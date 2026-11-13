@@ -1,7 +1,6 @@
 package scopedclient_test
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -34,11 +33,10 @@ func automationListed(t *testing.T, q *ent.AutomationQuery) bool {
 // An archivable entity has no Delete and no Discard on its scoped wrapper: it is archived and
 // unarchived, and only Purge (Workspace erasure) removes it.
 func TestArchivableEntityHasArchiveAndNoDelete(t *testing.T) {
-	for _, wrapper := range []reflect.Type{
-		reflect.TypeFor[*ent.BroadcastScoped](),
-		reflect.TypeFor[*ent.AutomationScoped](),
-		reflect.TypeFor[*ent.SegmentScoped](),
-	} {
+	archivable := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return e.Archivable })
+	require.NotEmpty(t, archivable, "the Automation is archivable")
+	for _, e := range archivable {
+		wrapper := e.Wrapper
 		for _, absent := range []string{"Delete", "DeleteOneID", "Discard", "Undiscard", "Restore", "QueryWithDiscarded"} {
 			_, has := wrapper.MethodByName(absent)
 			assert.Falsef(t, has, "%s has no %s", wrapper, absent)

@@ -14,7 +14,7 @@ typespec/{site,external,collect,staff,staffee,service,telemetry}   ──tsp com
   openapi/telemetry ──ogen──▶ gen/telemetry   (Go client only, `ogen.telemetry.yml`; embedded in `spec.go`, checked by `internal/telemetryschema`)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
-ent/schema/*.go + ent/template/scoped*.tmpl  ──entc──▶ ent/scoped.go, ent/scoped_registry.go  (scoped client: `client.Scoped(ws)`)
+ent/schema/*.go + ent/template/*.tmpl  ──entc + internal/entgen──▶ ent/scoped*.go (scoped client: `client.Scoped(ws)`), ent/kinds.go (the manifest of kinds), ent/stateform.go, ent/revision.go
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/api/staff/resources/{staff,service}_converter_gen.go
 ent + liveuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/kernel/patch fields)
@@ -39,6 +39,23 @@ config (the `environment` struct: `env`, `envDefault` and `validate` tags, profi
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
 
+- **`internal/entgen` holds the rules of ent generation.** `ent/entc.go` is a thin main that runs
+  `entgen.Hook` on the graph it generates: the hook classifies every entity once, by the marker each
+  mixin declares in its `Annotations()` (`ent/schema/kinds.go`: Workspace-owned, archivable,
+  discardable, Versioned, with a revision) and by its structure (a singleton is a whole unique index
+  on `workspace_id` alone), decodes each annotation into its `ent/schema` type once, and checks the
+  graph against every rule, failing the generation with all the problems at once; then it hands the
+  templates of `ent/template` the classification's funcs, which have no side effects. A kind is never
+  found by a column name. It does not import the generated `ent` package, so generation never depends
+  on its previous output compiling. A new rule gets a schema under `internal/entgen/testdata/` that
+  breaks it and a row in `TestCheckFindsEveryProblem`; `TestTheSchemaBreaksNoRule` holds the real
+  schema to all of them.
+- **The manifest of kinds** (`ent/kinds.go`, `ent.Kinds`): per entity, its table and whether it is
+  Workspace-owned, archivable, discardable, Versioned, with a revision and a singleton. The
+  migration generator reads the Workspace-owned tables from it (`internal/infra/devdb/tenantkeys.go`),
+  the Revision hook the types with a revision (`internal/app/entclient`), and the scoped client's
+  registry (`ent.ScopedEntities`) carries each entity's kind and wrapper type, which the tests of
+  `internal/scopedclient` choose their entities by.
 - **goverter** also maps request bodies → module inputs (`Inputs` in each surface's
   `resources/inputs.go`): an update becomes the module's patch (`internal/kernel/patch`: an absent key
   keeps, null clears, a value sets). Its extends only bind this surface's Opt types to the shared

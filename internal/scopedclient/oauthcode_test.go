@@ -30,6 +30,7 @@ func TestAnOAuthCodeOfOneWorkspaceCannotBeClaimedInAnother(t *testing.T) {
 	assert.Zero(t, claimed)
 	assert.Nil(t, code.UsedAt, "Acme's code is left unused")
 
+	// test writes: issuing a code across Workspaces is the operation under test.
 	_, err = globexScope.OAuthCode().Create().
 		SetCodeHash("a-code-for-acme-in-globex").
 		SetClientID(code.ClientID).

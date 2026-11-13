@@ -5,11 +5,9 @@ import (
 
 	atlas "ariga.io/atlas/sql/schema"
 
-	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/schema"
 )
-
-// workspaceColumn is the column every Workspace-owned table carries (the workspace mixin).
-const workspaceColumn = "workspace_id"
 
 // idColumn is the primary key ent gives every table.
 const idColumn = "id"
@@ -26,9 +24,17 @@ const idColumn = "id"
 // Atlas reads that action back as a bare SET NULL, so tenantKeys returns the action each such key
 // takes, by its name, for withSetNullColumns to put back on both sides of the diff.
 //
-// A table is Workspace-owned when its workspace_id is NOT NULL, so a table whose rows may belong to
-// no Workspace (the event journal) keeps its keys as they are, and so do the keys to workspaces.
+// A table is Workspace-owned when the manifest of kinds says its entity is (ent.Kinds: it takes
+// WorkspaceMixin), so a table whose workspace_id is declared outside the mixin (the event journal,
+// the tracking host change log) keeps its keys as they are, and so do the keys to workspaces.
 func tenantKeys(s *atlas.Schema) map[string]atlas.ReferenceOption {
+	owned := workspaceOwnedTables()
+	workspaceOwned := func(t *atlas.Table) (*atlas.Column, bool) {
+		if t == nil || !owned[t.Name] {
+			return nil, false
+		}
+		return t.Column(schema.WorkspaceColumn)
+	}
 	setNull := map[string]atlas.ReferenceOption{}
 	parents := map[*atlas.Table]bool{}
 	for _, t := range s.Tables {
@@ -61,7 +67,7 @@ func tenantKeys(s *atlas.Schema) map[string]atlas.ReferenceOption {
 		}
 	}
 	for p := range parents {
-		ws, _ := p.Column(workspaceColumn)
+		ws, _ := p.Column(schema.WorkspaceColumn)
 		id, _ := p.Column(idColumn)
 		p.AddIndexes(atlas.NewUniqueIndex(p.Name+"_workspace_id_id").AddColumns(ws, id))
 	}
@@ -85,15 +91,13 @@ func withSetNullColumns(s *atlas.Schema, actions map[string]atlas.ReferenceOptio
 	}
 }
 
-// workspaceOwned is the workspace_id column of t when t is Workspace-owned: it has one and it is
-// NOT NULL. The workspaces table itself is not.
-func workspaceOwned(t *atlas.Table) (*atlas.Column, bool) {
-	if t == nil || t.Name == workspace.Table {
-		return nil, false
+// workspaceOwnedTables are the tables of the Workspace-owned entities, from the manifest of kinds.
+func workspaceOwnedTables() map[string]bool {
+	owned := map[string]bool{}
+	for _, k := range ent.Kinds {
+		if k.WorkspaceOwned {
+			owned[k.Table] = true
+		}
 	}
-	c, ok := t.Column(workspaceColumn)
-	if !ok || c.Type == nil || c.Type.Null {
-		return nil, false
-	}
-	return c, true
+	return owned
 }

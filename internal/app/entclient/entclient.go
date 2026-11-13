@@ -9,12 +9,14 @@ package entclient
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"slices"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/domain/identity/usertombstones"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
@@ -65,20 +67,18 @@ func (c Clients) NewTx(drv dialect.Driver) *ent.Client {
 	return client
 }
 
-// revised is the mutation of a type with a revision (schema.RevisionMixin).
-type revised interface {
-	AddRevision(by int64)
-}
-
 // Revision is the hook that moves a row's revision on every update of a type that has one (ADR
-// 0119), on every client of the application, so no writer can forget it: an editor's write names
+// 0119, the manifest of kinds: ent.Kinds), on every client of the application, so no writer can
+// forget it: an editor's write names
 // the revision it was made on, and any other write in between makes it stale. An update that writes
 // Bookkeeping columns alone (ent.Bookkeeping) leaves it: no editor shows them, so a background job
 // that keeps them does not refuse a person's save.
 func Revision(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-		if r, ok := m.(revised); ok && m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) && !bookkeepingOnly(m) {
-			r.AddRevision(1)
+		if ent.Kinds[m.Type()].Revised && m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) && !bookkeepingOnly(m) {
+			if err := m.AddField(schema.RevisionColumn, int64(1)); err != nil {
+				return nil, fmt.Errorf("moving the revision of %s: %w", m.Type(), err)
+			}
 		}
 		return next.Mutate(ctx, m)
 	})
@@ -94,7 +94,7 @@ func bookkeepingOnly(m ent.Mutation) bool {
 	}
 	written := 0
 	for _, column := range slices.Concat(m.Fields(), m.AddedFields(), m.ClearedFields()) {
-		if column == updatedAt || column == revision {
+		if column == schema.UpdatedColumn || column == schema.RevisionColumn {
 			continue
 		}
 		if !kept[column] {
@@ -104,10 +104,3 @@ func bookkeepingOnly(m ent.Mutation) bool {
 	}
 	return written > 0
 }
-
-// updatedAt is the column schema.TimeMixin moves on every update, and revision the one this hook
-// moves.
-const (
-	updatedAt = "updated_at"
-	revision  = "revision"
-)

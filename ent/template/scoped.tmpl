@@ -455,7 +455,7 @@ func (b *{{ $N }}ScopedCreateBulk) Exec(ctx context.Context) error {
 type {{ $N }}ScopedUpsert struct{ u *sql.UpdateSet }
 
 {{ range $f := $n.MutableFields }}
-{{- if ne $f.Name "workspace_id" }}
+{{- if not (isWorkspaceField $f) }}
 {{- $ref := scopedRefTarget $ $f }}
 {{- if not $ref }}
 // Set{{ $f.StructField }} sets the "{{ $f.Name }}" field.
@@ -833,7 +833,7 @@ func (x *{{ $N }}ScopedUpdate) Exec(ctx context.Context) error {
 {{- $updater := eq $.Scope.Mode "update" }}
 {{- $fields := $.Fields }}{{ if $updater }}{{ $fields = $.MutableFields }}{{ end }}
 {{ range $f := $fields }}
-{{- if ne $f.Name "workspace_id" }}
+{{- if not (isWorkspaceField $f) }}
 // Set{{ $f.StructField }} sets the "{{ $f.Name }}" field.
 func (x *{{ $B }}) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $B }} {
 	x.b.Set{{ $f.StructField }}(v)

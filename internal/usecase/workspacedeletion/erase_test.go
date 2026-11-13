@@ -48,7 +48,9 @@ func runErase(t *testing.T, env *testhelper.TestEnv) {
 func rowsOf(t *testing.T, env *testhelper.TestEnv, ws int64) map[string]int {
 	t.Helper()
 	counts := map[string]int{}
-	for _, e := range ent.ScopedEntities() {
+	entities := ent.ScopedEntities()
+	for i := range entities {
+		e := &entities[i]
 		ids, err := e.IDs(t.Context(), env.DB, ws)
 		require.NoError(t, err)
 		counts[e.Name] = len(ids)
@@ -75,8 +77,9 @@ func TestEraseCoversEveryWorkspaceOwnedEntity(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.FeedDB.Workspace.Update().SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).ExecX(t.Context())
 	before := rowsOfAll(t, env)
-	for _, e := range ent.ScopedEntities() {
-		assert.Positivef(t, before[e.Name], "the fixtures hold a %s row", e.Name)
+	entities := ent.ScopedEntities()
+	for i := range entities {
+		assert.Positivef(t, before[entities[i].Name], "the fixtures hold a %s row", entities[i].Name)
 	}
 
 	runErase(t, env)

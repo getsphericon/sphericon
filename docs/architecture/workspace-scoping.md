@@ -11,7 +11,8 @@ has no `SetWorkspaceID`; a reference to another Workspace's row fails with
 `mise run generate`; nothing is hand-written per entity. A Workspace-owned table may hold at most
 one row per Workspace (a unique `workspace_id`): `brand_kits`, and `send_cap_limiters`, the Send
 cap's 24-hour bucket (ADR 0067). It is scoped, erased with its Workspace and seeded by fixtures
-like any other, and the isolation test lists it in `singletonEntities`. `Scoped.Workspace(ctx)` loads the
+like any other; the generation reads it from its unique index (`ent.Kinds`, `Singleton`), and the
+isolation test clears the Workspace's own row before it plants a copy. `Scoped.Workspace(ctx)` loads the
 tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Versioned definition
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
@@ -234,9 +235,10 @@ contact check reads the outer row's `workspace_id` column), not as a hand-writte
 
 ## Outside the mixin
 
-**Outside the mixin:** the event journal's `workspace_id` (a null Workspace is an Instance fact,
-ADR 0116) and the tracking host change log's (a tombstone that outlives the Workspace row). An
-authorization code (`OAuthCode`) is Workspace-owned: the consent creates it through the
+**Outside the mixin:** a `workspace_id` declared by hand does not make its entity Workspace-owned,
+and says why with `schema.NotWorkspaceOwned` (the generation refuses it otherwise): the event
+journal's (a null Workspace is an Instance fact, ADR 0116) and the tracking host change log's (a
+tombstone that outlives the Workspace row). An authorization code (`OAuthCode`) is Workspace-owned: the consent creates it through the
 admitted Workspace's scope, and the code exchange reads it by its secret with the raw client and
 claims it through the scope of the Workspace it names (construction point 6).
 

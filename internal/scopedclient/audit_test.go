@@ -229,9 +229,9 @@ func TestAuditDiffRedactsSensitiveFields(t *testing.T) {
 
 // makeRoomForPlanted clears a singleton entity's own row first: the scope without an actor writes
 // no entry, so the planted copy takes its place unaudited.
-func makeRoomForPlanted(t *testing.T, env *testhelper.TestEnv, e ent.ScopedEntity, ids []int64) {
+func makeRoomForPlanted(t *testing.T, env *testhelper.TestEnv, e *ent.ScopedEntity, ids []int64) {
 	t.Helper()
-	if singletonEntities[e.Name] {
+	if e.Singleton {
 		require.NoError(t, e.Delete(t.Context(), env.DB.Scoped(acme), ids[0]), e.Name)
 	}
 }
@@ -244,7 +244,8 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
 
 	auditedEntities := lo.Filter(ent.ScopedEntities(), func(e ent.ScopedEntity, _ int) bool { return len(e.AuditActions) > 0 })
-	for _, e := range auditedEntities {
+	for i := range auditedEntities {
+		e := &auditedEntities[i]
 		ids, err := e.IDs(ctx, env.DB, acme)
 		require.NoError(t, err)
 		require.NotEmpty(t, ids, e.Name)
@@ -259,8 +260,9 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		// Create a row by planting a copy of Globex's (no unique clash with Acme's rows),
 		// pointing its references at Acme rows.
 		remap := func(entity string, _ int64) int64 {
-			for _, target := range ent.ScopedEntities() {
-				if target.Name == entity {
+			targets := ent.ScopedEntities()
+			for i := range targets {
+				if target := &targets[i]; target.Name == entity {
 					refs, err := target.IDs(ctx, env.DB, acme)
 					require.NoError(t, err)
 					return refs[0]

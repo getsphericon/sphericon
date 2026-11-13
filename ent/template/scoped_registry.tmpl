@@ -1,7 +1,7 @@
 {{/*
-The list of workspace-mixin entities, with the generic operations the isolation test
-needs (internal/... scoped_isolation_test.go). A new entity joins the list, and so the
-test, by adding the workspace mixin to its schema.
+The list of Workspace-owned entities, with their kinds and the generic operations the tests of the
+scoped client need (internal/scopedclient). A new entity joins the list, and so the tests, by
+taking WorkspaceMixin.
 */}}
 {{ define "scoped_registry" }}
 {{ template "header" $ }}
@@ -15,11 +15,16 @@ import (
 	{{- end }}
 )
 
-// ScopedEntity describes one workspace-mixin entity for tests that must cover every
+// ScopedEntity describes one Workspace-owned entity for tests that must cover every
 // such entity without naming them.
 type ScopedEntity struct {
+	// Kind is the entity's kind (Kinds): the tests choose the entities of a kind by it.
+	Kind
+
 	// Name is the entity's schema name.
 	Name string
+	// Wrapper is the type of its scoped wrapper (*<Name>Scoped), whose methods the kind decides.
+	Wrapper reflect.Type
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
 	// schema.Audited.Action): create, update and delete (Purge), then discard for a discardable
 	// entity, which is never restored, and archive and unarchive for an archivable one (ADR 0100).
@@ -56,13 +61,15 @@ type ScopedRef struct {
 	Set func(ctx context.Context, s *Scoped, id, target int64) error
 }
 
-// ScopedEntities lists every workspace-mixin entity.
+// ScopedEntities lists every Workspace-owned entity.
 func ScopedEntities() []ScopedEntity {
 	return []ScopedEntity{
 		{{- range $n := scopedNodes $ }}{{ if $n.HasOneFieldID }}
 		{{- $N := $n.Name }}{{ $P := $n.Package }}{{ $Del := "Delete" }}{{ if or (discardable $n) (archivable $n) }}{{ $Del = "Purge" }}{{ end }}
 		{
+			Kind: Kinds["{{ $N }}"],
 			Name: "{{ $N }}",
+			Wrapper: reflect.TypeFor[*{{ $N }}Scoped](),
 			AuditActions: []string{ {{- with auditOf $n }}"{{ .Action }}.create", "{{ .Action }}.update", "{{ .Action }}.delete"{{ if discardable $n }}, "{{ .Action }}.discard"{{ end }}{{ if archivable $n }}, "{{ .Action }}.archive", "{{ .Action }}.unarchive"{{ end }}{{ end -}} },
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(ws)).Order(Asc({{ $P }}.FieldID)).IDs(ctx)
@@ -90,8 +97,7 @@ func ScopedEntities() []ScopedEntity {
 				}
 				_ = remap
 				b := s.{{ $N }}().Create()
-				{{- range $f := $n.Fields }}
-				{{- if not (or (eq $f.Name "workspace_id") (eq $f.Name "created_at") (eq $f.Name "updated_at")) }}
+				{{- range $f := replantFields $n }}
 				{{- $t := scopedRefTarget $ $f }}
 				{{- if $t }}
 				{{- if $f.Nillable }}
@@ -115,7 +121,6 @@ func ScopedEntities() []ScopedEntity {
 				}
 				{{- else }}
 				b.Set{{ $f.StructField }}(src.{{ $f.StructField }}{{ if and $f.Unique (eq $f.Type.String "string") }} + "-replanted"{{ end }})
-				{{- end }}
 				{{- end }}
 				{{- end }}
 				created, err := b.Save(ctx)
