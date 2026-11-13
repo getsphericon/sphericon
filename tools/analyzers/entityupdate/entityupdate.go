@@ -3,7 +3,7 @@
 // update goes by id through the scoped client instead (`s.Tag().UpdateOneID(id)`). What is an entity
 // and which of its methods starts a write is the generator's to say: the manifest of roles of the ent
 // package (ent/template/roles.tmpl, read through entx). Every package of the module is read, test code
-// included, but the generated ent package itself.
+// included (ent/schema too), but the generated ent package itself.
 package entityupdate
 
 import (
@@ -30,7 +30,7 @@ var Analyzer = &analysis.Analyzer{
 
 func run(pass *analysis.Pass) (any, error) {
 	path := pass.Pkg.Path()
-	if !strings.HasPrefix(path, tier.Module) || path == entx.Path || strings.HasPrefix(path, entx.Path+"/") {
+	if !strings.HasPrefix(path, tier.Module) || path == entx.Path {
 		return nil, nil
 	}
 	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)

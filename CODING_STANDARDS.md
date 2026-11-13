@@ -143,7 +143,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   same rules. A new generated method gets its role in the change that adds it, or the test fails.
 - **`entityupdate`.** A loaded entity carries the raw client, so its `Update()` writes past the
   Workspace scope (ADR 0017): a method that starts a write on a type the manifest calls an entity is a
-  finding in every package of the module, test code included, but the generated `ent`. Update by id
+  finding in every package of the module, test code and `ent/schema` included, but the generated
+  `ent` package itself. Update by id
   through the scoped client instead: `s.Tag().UpdateOneID(id)`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function

@@ -29,6 +29,7 @@ func emittedFiles(t *testing.T) map[string]bool {
 	t.Helper()
 	paths, err := filepath.Glob("../template/*.tmpl")
 	require.NoError(t, err)
+	require.NotEmpty(t, paths)
 	define := regexp.MustCompile(`\{\{-? define "([^"]+)" -?\}\}`)
 	files := map[string]bool{}
 	for _, path := range paths {
@@ -40,6 +41,7 @@ func emittedFiles(t *testing.T) map[string]bool {
 			}
 		}
 	}
+	require.Contains(t, files, "scoped.go")
 	return files
 }
 
@@ -60,6 +62,7 @@ func standIn(t *testing.T, dir string) (*token.FileSet, *types.Package) {
 	fset := token.NewFileSet()
 	paths, err := filepath.Glob(filepath.Join(dir, "*.go"))
 	require.NoError(t, err)
+	require.NotEmpty(t, paths, dir)
 	files := make([]*ast.File, 0, len(paths))
 	for _, path := range paths {
 		f, err := parser.ParseFile(fset, path, nil, 0)
@@ -278,6 +281,41 @@ func unlistedStateWrites(pkg *types.Package) []string {
 	return out
 }
 
+// unstartedBuilders lists the methods that return a write builder of another type than their own
+// and whose role is not RoleStart: such a method starts a write whoever generated it, so a new one of
+// ent's own (after an ent upgrade) fails here instead of passing the analyzers silently.
+func unstartedBuilders(pkg *types.Package) []string {
+	m := read(pkg)
+	typeOf := m.entries("TypeOf_")
+	builds := []string{"create", "update", "delete", "upsert", "scoped create", "scoped update", "scoped delete", "scoped upsert", "pointers"}
+	var out []string
+	for name := range typeOf {
+		n := m.named(name)
+		if n == nil {
+			continue
+		}
+		for _, fn := range methods(n) {
+			res := fn.Signature().Results()
+			if !fn.Exported() || res.Len() == 0 {
+				continue
+			}
+			p, ok := res.At(0).Type().(*types.Pointer)
+			if !ok {
+				continue
+			}
+			target, ok := p.Elem().(*types.Named)
+			if !ok || target.Obj().Pkg() != pkg || target.Obj().Name() == name || !slices.Contains(builds, typeOf[target.Obj().Name()]) {
+				continue
+			}
+			if m.values["RoleOf_"+name+"_"+fn.Name()] != "start" {
+				out = append(out, name+"."+fn.Name())
+			}
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
 // entityUpdates lists the types whose Update returns their own <T>UpdateOne: a loaded entity's update,
 // which bypasses the Workspace scope (ADR 0017), and the manifest's entities.
 func entityUpdates(pkg *types.Package) (byShape, byManifest []string) {
@@ -304,11 +342,15 @@ func TestTheManifestOfRolesCoversTheGeneratedPackage(t *testing.T) {
 	fset, pkg := generated(t)
 	emitted := emittedFiles(t)
 
+	roles := read(pkg).entries("RoleOf_")
 	found := problems(fset, pkg, emitted)
 	unlisted := unlistedStateWrites(pkg)
+	unstarted := unstartedBuilders(pkg)
 
+	assert.Greater(t, len(roles), 1000)
 	assert.Empty(t, found)
 	assert.Empty(t, unlisted)
+	assert.Empty(t, unstarted)
 }
 
 // The entity Update rule (tools/analyzers/entityupdate) reads the entities from the manifest; they
