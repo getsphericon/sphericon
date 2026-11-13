@@ -3,6 +3,7 @@ package workspaceoutsidemixin
 
 import (
 	"entgo.io/ent"
+	entschema "entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 
@@ -15,6 +16,7 @@ type Workspace struct{ ent.Schema }
 func (Workspace) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("journals", Journal.Type),
+		edge.To("claims", Claim.Type),
 	}
 }
 
@@ -54,5 +56,24 @@ func (Tombstone) Fields() []ent.Field {
 			schema.NotWorkspaceOwned{Reason: "the entry outlives its Workspace"},
 			schema.ScopedRef{Unchecked: true, Reason: "a tombstone of the Workspace"},
 		),
+	}
+}
+
+// Claim declares the Workspace-owned kind and its column by hand, without WorkspaceMixin.
+type Claim struct{ ent.Schema }
+
+func (Claim) Annotations() []entschema.Annotation {
+	return []entschema.Annotation{schema.WorkspaceOwned{}}
+}
+
+func (Claim) Fields() []ent.Field {
+	return []ent.Field{
+		field.Int64("workspace_id"),
+	}
+}
+
+func (Claim) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.From("workspace", Workspace.Type).Ref("claims").Field("workspace_id").Required().Unique(),
 	}
 }

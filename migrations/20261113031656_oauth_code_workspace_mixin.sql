@@ -6,3 +6,4 @@ ALTER TABLE "oauth_codes" DROP CONSTRAINT "oauth_codes_workspaces_workspace", AD
 
 -- +goose Down
 ALTER TABLE "oauth_codes" DROP CONSTRAINT "oauth_codes_workspaces_oauth_codes", ADD CONSTRAINT "oauth_codes_workspaces_workspace" FOREIGN KEY ("workspace_id") REFERENCES "workspaces" ("id") ON UPDATE NO ACTION ON DELETE CASCADE NOT VALID;
+ALTER TABLE "oauth_codes" VALIDATE CONSTRAINT "oauth_codes_workspaces_workspace";

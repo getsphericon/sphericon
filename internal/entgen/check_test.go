@@ -56,6 +56,7 @@ func TestCheckFindsEveryProblem(t *testing.T) {
 		}},
 		{"workspaceoutsidemixin", []string{
 			"Journal.workspace_id workspace-outside-mixin", "Trace.workspace_id workspace-outside-mixin",
+			"Claim.workspace_id workspace-outside-mixin",
 		}},
 	} {
 		t.Run(tc.dir, func(t *testing.T) {

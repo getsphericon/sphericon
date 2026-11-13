@@ -139,12 +139,13 @@ func (c *checker) classify(n *gen.Type) *entity {
 	e.kind.Versioned = c.marked(n, schema.Versioned{})
 	e.kind.Revised = c.marked(n, schema.Revised{})
 	for _, f := range n.Fields {
+		mixedIn := f.Position != nil && f.Position.MixedIn
 		switch {
-		case e.kind.WorkspaceOwned && f.Name == schema.WorkspaceColumn:
+		case e.kind.WorkspaceOwned && mixedIn && f.Name == schema.WorkspaceColumn:
 			e.workspace = f
-		case e.kind.Revised && f.Name == schema.RevisionColumn:
+		case e.kind.Revised && mixedIn && f.Name == schema.RevisionColumn:
 			e.revision = f
-		case f.Position != nil && f.Position.MixedIn && (f.Name == schema.CreatedColumn || f.Name == schema.UpdatedColumn):
+		case mixedIn && (f.Name == schema.CreatedColumn || f.Name == schema.UpdatedColumn):
 			e.timestamps = append(e.timestamps, f)
 		}
 	}
