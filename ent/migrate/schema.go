@@ -202,6 +202,48 @@ var (
 			},
 		},
 	}
+	// AutomationFiguresColumns holds the columns for the "automation_figures" table.
+	AutomationFiguresColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "step", Type: field.TypeInt},
+		{Name: "sent", Type: field.TypeInt, Default: 0},
+		{Name: "skipped", Type: field.TypeInt, Default: 0},
+		{Name: "delivered", Type: field.TypeInt, Default: 0},
+		{Name: "bounced", Type: field.TypeInt, Default: 0},
+		{Name: "complained", Type: field.TypeInt, Default: 0},
+		{Name: "captured", Type: field.TypeInt, Default: 0},
+		{Name: "automation_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// AutomationFiguresTable holds the schema information for the "automation_figures" table.
+	AutomationFiguresTable = &schema.Table{
+		Name:       "automation_figures",
+		Columns:    AutomationFiguresColumns,
+		PrimaryKey: []*schema.Column{AutomationFiguresColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "automation_figures_automations_automation",
+				Columns:    []*schema.Column{AutomationFiguresColumns[10]},
+				RefColumns: []*schema.Column{AutomationsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "automation_figures_workspaces_automation_figures",
+				Columns:    []*schema.Column{AutomationFiguresColumns[11]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "automation_figures_workspace_id_automation_id_step",
+				Unique:  true,
+				Columns: []*schema.Column{AutomationFiguresColumns[11], AutomationFiguresColumns[10], AutomationFiguresColumns[3]},
+			},
+		},
+	}
 	// AutomationRunsColumns holds the columns for the "automation_runs" table.
 	AutomationRunsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -495,6 +537,55 @@ var (
 				Name:    "broadcast_workspace_id_integration_id",
 				Unique:  false,
 				Columns: []*schema.Column{BroadcastsColumns[28], BroadcastsColumns[27]},
+			},
+		},
+	}
+	// BroadcastFiguresColumns holds the columns for the "broadcast_figures" table.
+	BroadcastFiguresColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "recipients", Type: field.TypeInt},
+		{Name: "unsubscribed", Type: field.TypeInt},
+		{Name: "sent", Type: field.TypeInt},
+		{Name: "skipped", Type: field.TypeInt},
+		{Name: "failed", Type: field.TypeInt},
+		{Name: "pending", Type: field.TypeInt},
+		{Name: "delivered", Type: field.TypeInt},
+		{Name: "undelivered", Type: field.TypeInt},
+		{Name: "bounced", Type: field.TypeInt},
+		{Name: "complained", Type: field.TypeInt},
+		{Name: "opened", Type: field.TypeInt},
+		{Name: "clicked", Type: field.TypeInt},
+		{Name: "captured", Type: field.TypeInt},
+		{Name: "pruned_at", Type: field.TypeTime, Nullable: true},
+		{Name: "broadcast_id", Type: field.TypeInt64},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// BroadcastFiguresTable holds the schema information for the "broadcast_figures" table.
+	BroadcastFiguresTable = &schema.Table{
+		Name:       "broadcast_figures",
+		Columns:    BroadcastFiguresColumns,
+		PrimaryKey: []*schema.Column{BroadcastFiguresColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "broadcast_figures_broadcasts_figures",
+				Columns:    []*schema.Column{BroadcastFiguresColumns[17]},
+				RefColumns: []*schema.Column{BroadcastsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "broadcast_figures_workspaces_broadcast_figures",
+				Columns:    []*schema.Column{BroadcastFiguresColumns[18]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "broadcast_figures_workspace_id_broadcast_id",
+				Unique:  true,
+				Columns: []*schema.Column{BroadcastFiguresColumns[18], BroadcastFiguresColumns[17]},
 			},
 		},
 	}
@@ -1803,6 +1894,11 @@ var (
 				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
 			},
 			{
+				Name:    "outbound_messages_kind_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{OutboundMessagesColumns[3], OutboundMessagesColumns[1]},
+			},
+			{
 				Name:    "outboundmessage_workspace_id_integration_id_sent_at",
 				Unique:  false,
 				Columns: []*schema.Column{OutboundMessagesColumns[33], OutboundMessagesColumns[28], OutboundMessagesColumns[13]},
@@ -3054,11 +3150,13 @@ var (
 		AuditEntriesTable,
 		AuthAttemptsTable,
 		AutomationsTable,
+		AutomationFiguresTable,
 		AutomationRunsTable,
 		AutomationVersionsTable,
 		BindingsTable,
 		BrandKitsTable,
 		BroadcastsTable,
+		BroadcastFiguresTable,
 		BroadcastRecipientsTable,
 		CapturedMessagesTable,
 		ConfirmationsTable,
@@ -3156,6 +3254,11 @@ func init() {
 	AutomationsTable.Annotation.Checks = map[string]string{
 		"automations_status_check": "status IN ('active', 'inactive')",
 	}
+	AutomationFiguresTable.ForeignKeys[0].RefTable = AutomationsTable
+	AutomationFiguresTable.ForeignKeys[1].RefTable = WorkspacesTable
+	AutomationFiguresTable.Annotation = &entsql.Annotation{
+		Table: "automation_figures",
+	}
 	AutomationRunsTable.ForeignKeys[0].RefTable = AutomationsTable
 	AutomationRunsTable.ForeignKeys[1].RefTable = ContactsTable
 	AutomationRunsTable.ForeignKeys[2].RefTable = AutomationVersionsTable
@@ -3205,6 +3308,11 @@ func init() {
 		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",
 		"broadcasts_sent_at_check":      "status <> 'sent' OR sent_at IS NOT NULL",
 		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
+	}
+	BroadcastFiguresTable.ForeignKeys[0].RefTable = BroadcastsTable
+	BroadcastFiguresTable.ForeignKeys[1].RefTable = WorkspacesTable
+	BroadcastFiguresTable.Annotation = &entsql.Annotation{
+		Table: "broadcast_figures",
 	}
 	BroadcastRecipientsTable.ForeignKeys[0].RefTable = BroadcastsTable
 	BroadcastRecipientsTable.ForeignKeys[1].RefTable = ContactsTable

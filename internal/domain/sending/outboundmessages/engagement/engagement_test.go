@@ -27,14 +27,14 @@ func recorder(env *testhelper.TestEnv) *engagement.Recorder {
 
 func openToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
-	token, err := env.Tracker.Token(messageID)
+	token, err := env.Tracker.Token(env.Tracked(t, messageID))
 	require.NoError(t, err)
 	return token
 }
 
 func clickToken(t *testing.T, env *testhelper.TestEnv, messageID int64, dest string) string {
 	t.Helper()
-	link, err := env.Tracker.ClickURL(messageID, dest)
+	link, err := env.Tracker.ClickURL(env.Tracked(t, messageID), dest)
 	require.NoError(t, err)
 	return link[len(env.Tracker.Origin()+"/e/c/"):]
 }

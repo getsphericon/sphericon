@@ -16,11 +16,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -104,11 +106,13 @@ const (
 	TypeAuditEntry           = "AuditEntry"
 	TypeAuthAttempt          = "AuthAttempt"
 	TypeAutomation           = "Automation"
+	TypeAutomationFigure     = "AutomationFigure"
 	TypeAutomationRun        = "AutomationRun"
 	TypeAutomationVersion    = "AutomationVersion"
 	TypeBinding              = "Binding"
 	TypeBrandKit             = "BrandKit"
 	TypeBroadcast            = "Broadcast"
+	TypeBroadcastFigure      = "BroadcastFigure"
 	TypeBroadcastRecipient   = "BroadcastRecipient"
 	TypeCapturedMessage      = "CapturedMessage"
 	TypeConfirmation         = "Confirmation"
@@ -4598,6 +4602,1212 @@ func (m *AutomationMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Automation edge %s", name)
+}
+
+// AutomationFigureMutation represents an operation that mutates the AutomationFigure nodes in the graph.
+type AutomationFigureMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int64
+	created_at        *time.Time
+	updated_at        *time.Time
+	step              *int
+	addstep           *int
+	sent              *int
+	addsent           *int
+	skipped           *int
+	addskipped        *int
+	delivered         *int
+	adddelivered      *int
+	bounced           *int
+	addbounced        *int
+	complained        *int
+	addcomplained     *int
+	captured          *int
+	addcaptured       *int
+	clearedFields     map[string]struct{}
+	workspace         *int64
+	clearedworkspace  bool
+	automation        *int64
+	clearedautomation bool
+	done              bool
+	oldValue          func(context.Context) (*AutomationFigure, error)
+	predicates        []predicate.AutomationFigure
+}
+
+var _ ent.Mutation = (*AutomationFigureMutation)(nil)
+
+// automationfigureOption allows management of the mutation configuration using functional options.
+type automationfigureOption func(*AutomationFigureMutation)
+
+// newAutomationFigureMutation creates new mutation for the AutomationFigure entity.
+func newAutomationFigureMutation(c config, op Op, opts ...automationfigureOption) *AutomationFigureMutation {
+	m := &AutomationFigureMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAutomationFigure,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAutomationFigureID sets the ID field of the mutation.
+func withAutomationFigureID(id int64) automationfigureOption {
+	return func(m *AutomationFigureMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AutomationFigure
+		)
+		m.oldValue = func(ctx context.Context) (*AutomationFigure, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AutomationFigure.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAutomationFigure sets the old AutomationFigure of the mutation.
+func withAutomationFigure(node *AutomationFigure) automationfigureOption {
+	return func(m *AutomationFigureMutation) {
+		m.oldValue = func(context.Context) (*AutomationFigure, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AutomationFigureMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AutomationFigureMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of AutomationFigure entities.
+func (m *AutomationFigureMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AutomationFigureMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AutomationFigureMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AutomationFigure.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AutomationFigureMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AutomationFigureMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AutomationFigureMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AutomationFigureMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AutomationFigureMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AutomationFigureMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *AutomationFigureMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *AutomationFigureMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *AutomationFigureMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetAutomationID sets the "automation_id" field.
+func (m *AutomationFigureMutation) SetAutomationID(i int64) {
+	m.automation = &i
+}
+
+// AutomationID returns the value of the "automation_id" field in the mutation.
+func (m *AutomationFigureMutation) AutomationID() (r int64, exists bool) {
+	v := m.automation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAutomationID returns the old "automation_id" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldAutomationID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAutomationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAutomationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAutomationID: %w", err)
+	}
+	return oldValue.AutomationID, nil
+}
+
+// ResetAutomationID resets all changes to the "automation_id" field.
+func (m *AutomationFigureMutation) ResetAutomationID() {
+	m.automation = nil
+}
+
+// SetStep sets the "step" field.
+func (m *AutomationFigureMutation) SetStep(i int) {
+	m.step = &i
+	m.addstep = nil
+}
+
+// Step returns the value of the "step" field in the mutation.
+func (m *AutomationFigureMutation) Step() (r int, exists bool) {
+	v := m.step
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStep returns the old "step" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldStep(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStep is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStep requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStep: %w", err)
+	}
+	return oldValue.Step, nil
+}
+
+// AddStep adds i to the "step" field.
+func (m *AutomationFigureMutation) AddStep(i int) {
+	if m.addstep != nil {
+		*m.addstep += i
+	} else {
+		m.addstep = &i
+	}
+}
+
+// AddedStep returns the value that was added to the "step" field in this mutation.
+func (m *AutomationFigureMutation) AddedStep() (r int, exists bool) {
+	v := m.addstep
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStep resets all changes to the "step" field.
+func (m *AutomationFigureMutation) ResetStep() {
+	m.step = nil
+	m.addstep = nil
+}
+
+// SetSent sets the "sent" field.
+func (m *AutomationFigureMutation) SetSent(i int) {
+	m.sent = &i
+	m.addsent = nil
+}
+
+// Sent returns the value of the "sent" field in the mutation.
+func (m *AutomationFigureMutation) Sent() (r int, exists bool) {
+	v := m.sent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSent returns the old "sent" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSent(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSent: %w", err)
+	}
+	return oldValue.Sent, nil
+}
+
+// AddSent adds i to the "sent" field.
+func (m *AutomationFigureMutation) AddSent(i int) {
+	if m.addsent != nil {
+		*m.addsent += i
+	} else {
+		m.addsent = &i
+	}
+}
+
+// AddedSent returns the value that was added to the "sent" field in this mutation.
+func (m *AutomationFigureMutation) AddedSent() (r int, exists bool) {
+	v := m.addsent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSent resets all changes to the "sent" field.
+func (m *AutomationFigureMutation) ResetSent() {
+	m.sent = nil
+	m.addsent = nil
+}
+
+// SetSkipped sets the "skipped" field.
+func (m *AutomationFigureMutation) SetSkipped(i int) {
+	m.skipped = &i
+	m.addskipped = nil
+}
+
+// Skipped returns the value of the "skipped" field in the mutation.
+func (m *AutomationFigureMutation) Skipped() (r int, exists bool) {
+	v := m.skipped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkipped returns the old "skipped" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldSkipped(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkipped is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkipped requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkipped: %w", err)
+	}
+	return oldValue.Skipped, nil
+}
+
+// AddSkipped adds i to the "skipped" field.
+func (m *AutomationFigureMutation) AddSkipped(i int) {
+	if m.addskipped != nil {
+		*m.addskipped += i
+	} else {
+		m.addskipped = &i
+	}
+}
+
+// AddedSkipped returns the value that was added to the "skipped" field in this mutation.
+func (m *AutomationFigureMutation) AddedSkipped() (r int, exists bool) {
+	v := m.addskipped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkipped resets all changes to the "skipped" field.
+func (m *AutomationFigureMutation) ResetSkipped() {
+	m.skipped = nil
+	m.addskipped = nil
+}
+
+// SetDelivered sets the "delivered" field.
+func (m *AutomationFigureMutation) SetDelivered(i int) {
+	m.delivered = &i
+	m.adddelivered = nil
+}
+
+// Delivered returns the value of the "delivered" field in the mutation.
+func (m *AutomationFigureMutation) Delivered() (r int, exists bool) {
+	v := m.delivered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDelivered returns the old "delivered" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldDelivered(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDelivered is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDelivered requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDelivered: %w", err)
+	}
+	return oldValue.Delivered, nil
+}
+
+// AddDelivered adds i to the "delivered" field.
+func (m *AutomationFigureMutation) AddDelivered(i int) {
+	if m.adddelivered != nil {
+		*m.adddelivered += i
+	} else {
+		m.adddelivered = &i
+	}
+}
+
+// AddedDelivered returns the value that was added to the "delivered" field in this mutation.
+func (m *AutomationFigureMutation) AddedDelivered() (r int, exists bool) {
+	v := m.adddelivered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDelivered resets all changes to the "delivered" field.
+func (m *AutomationFigureMutation) ResetDelivered() {
+	m.delivered = nil
+	m.adddelivered = nil
+}
+
+// SetBounced sets the "bounced" field.
+func (m *AutomationFigureMutation) SetBounced(i int) {
+	m.bounced = &i
+	m.addbounced = nil
+}
+
+// Bounced returns the value of the "bounced" field in the mutation.
+func (m *AutomationFigureMutation) Bounced() (r int, exists bool) {
+	v := m.bounced
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBounced returns the old "bounced" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldBounced(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBounced is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBounced requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBounced: %w", err)
+	}
+	return oldValue.Bounced, nil
+}
+
+// AddBounced adds i to the "bounced" field.
+func (m *AutomationFigureMutation) AddBounced(i int) {
+	if m.addbounced != nil {
+		*m.addbounced += i
+	} else {
+		m.addbounced = &i
+	}
+}
+
+// AddedBounced returns the value that was added to the "bounced" field in this mutation.
+func (m *AutomationFigureMutation) AddedBounced() (r int, exists bool) {
+	v := m.addbounced
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBounced resets all changes to the "bounced" field.
+func (m *AutomationFigureMutation) ResetBounced() {
+	m.bounced = nil
+	m.addbounced = nil
+}
+
+// SetComplained sets the "complained" field.
+func (m *AutomationFigureMutation) SetComplained(i int) {
+	m.complained = &i
+	m.addcomplained = nil
+}
+
+// Complained returns the value of the "complained" field in the mutation.
+func (m *AutomationFigureMutation) Complained() (r int, exists bool) {
+	v := m.complained
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComplained returns the old "complained" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldComplained(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComplained is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComplained requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComplained: %w", err)
+	}
+	return oldValue.Complained, nil
+}
+
+// AddComplained adds i to the "complained" field.
+func (m *AutomationFigureMutation) AddComplained(i int) {
+	if m.addcomplained != nil {
+		*m.addcomplained += i
+	} else {
+		m.addcomplained = &i
+	}
+}
+
+// AddedComplained returns the value that was added to the "complained" field in this mutation.
+func (m *AutomationFigureMutation) AddedComplained() (r int, exists bool) {
+	v := m.addcomplained
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetComplained resets all changes to the "complained" field.
+func (m *AutomationFigureMutation) ResetComplained() {
+	m.complained = nil
+	m.addcomplained = nil
+}
+
+// SetCaptured sets the "captured" field.
+func (m *AutomationFigureMutation) SetCaptured(i int) {
+	m.captured = &i
+	m.addcaptured = nil
+}
+
+// Captured returns the value of the "captured" field in the mutation.
+func (m *AutomationFigureMutation) Captured() (r int, exists bool) {
+	v := m.captured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCaptured returns the old "captured" field's value of the AutomationFigure entity.
+// If the AutomationFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AutomationFigureMutation) OldCaptured(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCaptured is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCaptured requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCaptured: %w", err)
+	}
+	return oldValue.Captured, nil
+}
+
+// AddCaptured adds i to the "captured" field.
+func (m *AutomationFigureMutation) AddCaptured(i int) {
+	if m.addcaptured != nil {
+		*m.addcaptured += i
+	} else {
+		m.addcaptured = &i
+	}
+}
+
+// AddedCaptured returns the value that was added to the "captured" field in this mutation.
+func (m *AutomationFigureMutation) AddedCaptured() (r int, exists bool) {
+	v := m.addcaptured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCaptured resets all changes to the "captured" field.
+func (m *AutomationFigureMutation) ResetCaptured() {
+	m.captured = nil
+	m.addcaptured = nil
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *AutomationFigureMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[automationfigure.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *AutomationFigureMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *AutomationFigureMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *AutomationFigureMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearAutomation clears the "automation" edge to the Automation entity.
+func (m *AutomationFigureMutation) ClearAutomation() {
+	m.clearedautomation = true
+	m.clearedFields[automationfigure.FieldAutomationID] = struct{}{}
+}
+
+// AutomationCleared reports if the "automation" edge to the Automation entity was cleared.
+func (m *AutomationFigureMutation) AutomationCleared() bool {
+	return m.clearedautomation
+}
+
+// AutomationIDs returns the "automation" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AutomationID instead. It exists only for internal usage by the builders.
+func (m *AutomationFigureMutation) AutomationIDs() (ids []int64) {
+	if id := m.automation; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAutomation resets all changes to the "automation" edge.
+func (m *AutomationFigureMutation) ResetAutomation() {
+	m.automation = nil
+	m.clearedautomation = false
+}
+
+// Where appends a list predicates to the AutomationFigureMutation builder.
+func (m *AutomationFigureMutation) Where(ps ...predicate.AutomationFigure) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AutomationFigureMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AutomationFigureMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AutomationFigure, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AutomationFigureMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AutomationFigureMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AutomationFigure).
+func (m *AutomationFigureMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AutomationFigureMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, automationfigure.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, automationfigure.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, automationfigure.FieldWorkspaceID)
+	}
+	if m.automation != nil {
+		fields = append(fields, automationfigure.FieldAutomationID)
+	}
+	if m.step != nil {
+		fields = append(fields, automationfigure.FieldStep)
+	}
+	if m.sent != nil {
+		fields = append(fields, automationfigure.FieldSent)
+	}
+	if m.skipped != nil {
+		fields = append(fields, automationfigure.FieldSkipped)
+	}
+	if m.delivered != nil {
+		fields = append(fields, automationfigure.FieldDelivered)
+	}
+	if m.bounced != nil {
+		fields = append(fields, automationfigure.FieldBounced)
+	}
+	if m.complained != nil {
+		fields = append(fields, automationfigure.FieldComplained)
+	}
+	if m.captured != nil {
+		fields = append(fields, automationfigure.FieldCaptured)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AutomationFigureMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case automationfigure.FieldCreatedAt:
+		return m.CreatedAt()
+	case automationfigure.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case automationfigure.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case automationfigure.FieldAutomationID:
+		return m.AutomationID()
+	case automationfigure.FieldStep:
+		return m.Step()
+	case automationfigure.FieldSent:
+		return m.Sent()
+	case automationfigure.FieldSkipped:
+		return m.Skipped()
+	case automationfigure.FieldDelivered:
+		return m.Delivered()
+	case automationfigure.FieldBounced:
+		return m.Bounced()
+	case automationfigure.FieldComplained:
+		return m.Complained()
+	case automationfigure.FieldCaptured:
+		return m.Captured()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AutomationFigureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case automationfigure.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case automationfigure.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case automationfigure.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case automationfigure.FieldAutomationID:
+		return m.OldAutomationID(ctx)
+	case automationfigure.FieldStep:
+		return m.OldStep(ctx)
+	case automationfigure.FieldSent:
+		return m.OldSent(ctx)
+	case automationfigure.FieldSkipped:
+		return m.OldSkipped(ctx)
+	case automationfigure.FieldDelivered:
+		return m.OldDelivered(ctx)
+	case automationfigure.FieldBounced:
+		return m.OldBounced(ctx)
+	case automationfigure.FieldComplained:
+		return m.OldComplained(ctx)
+	case automationfigure.FieldCaptured:
+		return m.OldCaptured(ctx)
+	}
+	return nil, fmt.Errorf("unknown AutomationFigure field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationFigureMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case automationfigure.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case automationfigure.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case automationfigure.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case automationfigure.FieldAutomationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAutomationID(v)
+		return nil
+	case automationfigure.FieldStep:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStep(v)
+		return nil
+	case automationfigure.FieldSent:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSent(v)
+		return nil
+	case automationfigure.FieldSkipped:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkipped(v)
+		return nil
+	case automationfigure.FieldDelivered:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDelivered(v)
+		return nil
+	case automationfigure.FieldBounced:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBounced(v)
+		return nil
+	case automationfigure.FieldComplained:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComplained(v)
+		return nil
+	case automationfigure.FieldCaptured:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCaptured(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationFigure field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AutomationFigureMutation) AddedFields() []string {
+	var fields []string
+	if m.addstep != nil {
+		fields = append(fields, automationfigure.FieldStep)
+	}
+	if m.addsent != nil {
+		fields = append(fields, automationfigure.FieldSent)
+	}
+	if m.addskipped != nil {
+		fields = append(fields, automationfigure.FieldSkipped)
+	}
+	if m.adddelivered != nil {
+		fields = append(fields, automationfigure.FieldDelivered)
+	}
+	if m.addbounced != nil {
+		fields = append(fields, automationfigure.FieldBounced)
+	}
+	if m.addcomplained != nil {
+		fields = append(fields, automationfigure.FieldComplained)
+	}
+	if m.addcaptured != nil {
+		fields = append(fields, automationfigure.FieldCaptured)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AutomationFigureMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case automationfigure.FieldStep:
+		return m.AddedStep()
+	case automationfigure.FieldSent:
+		return m.AddedSent()
+	case automationfigure.FieldSkipped:
+		return m.AddedSkipped()
+	case automationfigure.FieldDelivered:
+		return m.AddedDelivered()
+	case automationfigure.FieldBounced:
+		return m.AddedBounced()
+	case automationfigure.FieldComplained:
+		return m.AddedComplained()
+	case automationfigure.FieldCaptured:
+		return m.AddedCaptured()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AutomationFigureMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case automationfigure.FieldStep:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStep(v)
+		return nil
+	case automationfigure.FieldSent:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSent(v)
+		return nil
+	case automationfigure.FieldSkipped:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkipped(v)
+		return nil
+	case automationfigure.FieldDelivered:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDelivered(v)
+		return nil
+	case automationfigure.FieldBounced:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBounced(v)
+		return nil
+	case automationfigure.FieldComplained:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddComplained(v)
+		return nil
+	case automationfigure.FieldCaptured:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCaptured(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationFigure numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AutomationFigureMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AutomationFigureMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AutomationFigureMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown AutomationFigure nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AutomationFigureMutation) ResetField(name string) error {
+	switch name {
+	case automationfigure.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case automationfigure.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case automationfigure.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case automationfigure.FieldAutomationID:
+		m.ResetAutomationID()
+		return nil
+	case automationfigure.FieldStep:
+		m.ResetStep()
+		return nil
+	case automationfigure.FieldSent:
+		m.ResetSent()
+		return nil
+	case automationfigure.FieldSkipped:
+		m.ResetSkipped()
+		return nil
+	case automationfigure.FieldDelivered:
+		m.ResetDelivered()
+		return nil
+	case automationfigure.FieldBounced:
+		m.ResetBounced()
+		return nil
+	case automationfigure.FieldComplained:
+		m.ResetComplained()
+		return nil
+	case automationfigure.FieldCaptured:
+		m.ResetCaptured()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationFigure field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AutomationFigureMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, automationfigure.EdgeWorkspace)
+	}
+	if m.automation != nil {
+		edges = append(edges, automationfigure.EdgeAutomation)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AutomationFigureMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case automationfigure.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case automationfigure.EdgeAutomation:
+		if id := m.automation; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AutomationFigureMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AutomationFigureMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AutomationFigureMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, automationfigure.EdgeWorkspace)
+	}
+	if m.clearedautomation {
+		edges = append(edges, automationfigure.EdgeAutomation)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AutomationFigureMutation) EdgeCleared(name string) bool {
+	switch name {
+	case automationfigure.EdgeWorkspace:
+		return m.clearedworkspace
+	case automationfigure.EdgeAutomation:
+		return m.clearedautomation
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AutomationFigureMutation) ClearEdge(name string) error {
+	switch name {
+	case automationfigure.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case automationfigure.EdgeAutomation:
+		m.ClearAutomation()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationFigure unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AutomationFigureMutation) ResetEdge(name string) error {
+	switch name {
+	case automationfigure.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case automationfigure.EdgeAutomation:
+		m.ResetAutomation()
+		return nil
+	}
+	return fmt.Errorf("unknown AutomationFigure edge %s", name)
 }
 
 // AutomationRunMutation represents an operation that mutates the AutomationRun nodes in the graph.
@@ -9414,6 +10624,9 @@ type BroadcastMutation struct {
 	recipients         map[int64]struct{}
 	removedrecipients  map[int64]struct{}
 	clearedrecipients  bool
+	figures            map[int64]struct{}
+	removedfigures     map[int64]struct{}
+	clearedfigures     bool
 	segment            *int64
 	clearedsegment     bool
 	integration        *int64
@@ -10915,6 +12128,60 @@ func (m *BroadcastMutation) ResetRecipients() {
 	m.removedrecipients = nil
 }
 
+// AddFigureIDs adds the "figures" edge to the BroadcastFigure entity by ids.
+func (m *BroadcastMutation) AddFigureIDs(ids ...int64) {
+	if m.figures == nil {
+		m.figures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.figures[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFigures clears the "figures" edge to the BroadcastFigure entity.
+func (m *BroadcastMutation) ClearFigures() {
+	m.clearedfigures = true
+}
+
+// FiguresCleared reports if the "figures" edge to the BroadcastFigure entity was cleared.
+func (m *BroadcastMutation) FiguresCleared() bool {
+	return m.clearedfigures
+}
+
+// RemoveFigureIDs removes the "figures" edge to the BroadcastFigure entity by IDs.
+func (m *BroadcastMutation) RemoveFigureIDs(ids ...int64) {
+	if m.removedfigures == nil {
+		m.removedfigures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.figures, ids[i])
+		m.removedfigures[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFigures returns the removed IDs of the "figures" edge to the BroadcastFigure entity.
+func (m *BroadcastMutation) RemovedFiguresIDs() (ids []int64) {
+	for id := range m.removedfigures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FiguresIDs returns the "figures" edge IDs in the mutation.
+func (m *BroadcastMutation) FiguresIDs() (ids []int64) {
+	for id := range m.figures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFigures resets all changes to the "figures" edge.
+func (m *BroadcastMutation) ResetFigures() {
+	m.figures = nil
+	m.clearedfigures = false
+	m.removedfigures = nil
+}
+
 // ClearSegment clears the "segment" edge to the Segment entity.
 func (m *BroadcastMutation) ClearSegment() {
 	m.clearedsegment = true
@@ -11693,12 +12960,15 @@ func (m *BroadcastMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BroadcastMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.workspace != nil {
 		edges = append(edges, broadcast.EdgeWorkspace)
 	}
 	if m.recipients != nil {
 		edges = append(edges, broadcast.EdgeRecipients)
+	}
+	if m.figures != nil {
+		edges = append(edges, broadcast.EdgeFigures)
 	}
 	if m.segment != nil {
 		edges = append(edges, broadcast.EdgeSegment)
@@ -11723,6 +12993,12 @@ func (m *BroadcastMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case broadcast.EdgeFigures:
+		ids := make([]ent.Value, 0, len(m.figures))
+		for id := range m.figures {
+			ids = append(ids, id)
+		}
+		return ids
 	case broadcast.EdgeSegment:
 		if id := m.segment; id != nil {
 			return []ent.Value{*id}
@@ -11737,9 +13013,12 @@ func (m *BroadcastMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BroadcastMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedrecipients != nil {
 		edges = append(edges, broadcast.EdgeRecipients)
+	}
+	if m.removedfigures != nil {
+		edges = append(edges, broadcast.EdgeFigures)
 	}
 	return edges
 }
@@ -11754,18 +13033,27 @@ func (m *BroadcastMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case broadcast.EdgeFigures:
+		ids := make([]ent.Value, 0, len(m.removedfigures))
+		for id := range m.removedfigures {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BroadcastMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedworkspace {
 		edges = append(edges, broadcast.EdgeWorkspace)
 	}
 	if m.clearedrecipients {
 		edges = append(edges, broadcast.EdgeRecipients)
+	}
+	if m.clearedfigures {
+		edges = append(edges, broadcast.EdgeFigures)
 	}
 	if m.clearedsegment {
 		edges = append(edges, broadcast.EdgeSegment)
@@ -11784,6 +13072,8 @@ func (m *BroadcastMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case broadcast.EdgeRecipients:
 		return m.clearedrecipients
+	case broadcast.EdgeFigures:
+		return m.clearedfigures
 	case broadcast.EdgeSegment:
 		return m.clearedsegment
 	case broadcast.EdgeIntegration:
@@ -11819,6 +13109,9 @@ func (m *BroadcastMutation) ResetEdge(name string) error {
 	case broadcast.EdgeRecipients:
 		m.ResetRecipients()
 		return nil
+	case broadcast.EdgeFigures:
+		m.ResetFigures()
+		return nil
 	case broadcast.EdgeSegment:
 		m.ResetSegment()
 		return nil
@@ -11827,6 +13120,1810 @@ func (m *BroadcastMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Broadcast edge %s", name)
+}
+
+// BroadcastFigureMutation represents an operation that mutates the BroadcastFigure nodes in the graph.
+type BroadcastFigureMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *int64
+	created_at       *time.Time
+	updated_at       *time.Time
+	recipients       *int
+	addrecipients    *int
+	unsubscribed     *int
+	addunsubscribed  *int
+	sent             *int
+	addsent          *int
+	skipped          *int
+	addskipped       *int
+	failed           *int
+	addfailed        *int
+	pending          *int
+	addpending       *int
+	delivered        *int
+	adddelivered     *int
+	undelivered      *int
+	addundelivered   *int
+	bounced          *int
+	addbounced       *int
+	complained       *int
+	addcomplained    *int
+	opened           *int
+	addopened        *int
+	clicked          *int
+	addclicked       *int
+	captured         *int
+	addcaptured      *int
+	pruned_at        *time.Time
+	clearedFields    map[string]struct{}
+	workspace        *int64
+	clearedworkspace bool
+	broadcast        *int64
+	clearedbroadcast bool
+	done             bool
+	oldValue         func(context.Context) (*BroadcastFigure, error)
+	predicates       []predicate.BroadcastFigure
+}
+
+var _ ent.Mutation = (*BroadcastFigureMutation)(nil)
+
+// broadcastfigureOption allows management of the mutation configuration using functional options.
+type broadcastfigureOption func(*BroadcastFigureMutation)
+
+// newBroadcastFigureMutation creates new mutation for the BroadcastFigure entity.
+func newBroadcastFigureMutation(c config, op Op, opts ...broadcastfigureOption) *BroadcastFigureMutation {
+	m := &BroadcastFigureMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeBroadcastFigure,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withBroadcastFigureID sets the ID field of the mutation.
+func withBroadcastFigureID(id int64) broadcastfigureOption {
+	return func(m *BroadcastFigureMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *BroadcastFigure
+		)
+		m.oldValue = func(ctx context.Context) (*BroadcastFigure, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().BroadcastFigure.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withBroadcastFigure sets the old BroadcastFigure of the mutation.
+func withBroadcastFigure(node *BroadcastFigure) broadcastfigureOption {
+	return func(m *BroadcastFigureMutation) {
+		m.oldValue = func(context.Context) (*BroadcastFigure, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m BroadcastFigureMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m BroadcastFigureMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of BroadcastFigure entities.
+func (m *BroadcastFigureMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *BroadcastFigureMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *BroadcastFigureMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().BroadcastFigure.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *BroadcastFigureMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *BroadcastFigureMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *BroadcastFigureMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *BroadcastFigureMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *BroadcastFigureMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *BroadcastFigureMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *BroadcastFigureMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *BroadcastFigureMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *BroadcastFigureMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetBroadcastID sets the "broadcast_id" field.
+func (m *BroadcastFigureMutation) SetBroadcastID(i int64) {
+	m.broadcast = &i
+}
+
+// BroadcastID returns the value of the "broadcast_id" field in the mutation.
+func (m *BroadcastFigureMutation) BroadcastID() (r int64, exists bool) {
+	v := m.broadcast
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBroadcastID returns the old "broadcast_id" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldBroadcastID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBroadcastID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBroadcastID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBroadcastID: %w", err)
+	}
+	return oldValue.BroadcastID, nil
+}
+
+// ResetBroadcastID resets all changes to the "broadcast_id" field.
+func (m *BroadcastFigureMutation) ResetBroadcastID() {
+	m.broadcast = nil
+}
+
+// SetRecipients sets the "recipients" field.
+func (m *BroadcastFigureMutation) SetRecipients(i int) {
+	m.recipients = &i
+	m.addrecipients = nil
+}
+
+// Recipients returns the value of the "recipients" field in the mutation.
+func (m *BroadcastFigureMutation) Recipients() (r int, exists bool) {
+	v := m.recipients
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecipients returns the old "recipients" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldRecipients(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecipients is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecipients requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecipients: %w", err)
+	}
+	return oldValue.Recipients, nil
+}
+
+// AddRecipients adds i to the "recipients" field.
+func (m *BroadcastFigureMutation) AddRecipients(i int) {
+	if m.addrecipients != nil {
+		*m.addrecipients += i
+	} else {
+		m.addrecipients = &i
+	}
+}
+
+// AddedRecipients returns the value that was added to the "recipients" field in this mutation.
+func (m *BroadcastFigureMutation) AddedRecipients() (r int, exists bool) {
+	v := m.addrecipients
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRecipients resets all changes to the "recipients" field.
+func (m *BroadcastFigureMutation) ResetRecipients() {
+	m.recipients = nil
+	m.addrecipients = nil
+}
+
+// SetUnsubscribed sets the "unsubscribed" field.
+func (m *BroadcastFigureMutation) SetUnsubscribed(i int) {
+	m.unsubscribed = &i
+	m.addunsubscribed = nil
+}
+
+// Unsubscribed returns the value of the "unsubscribed" field in the mutation.
+func (m *BroadcastFigureMutation) Unsubscribed() (r int, exists bool) {
+	v := m.unsubscribed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUnsubscribed returns the old "unsubscribed" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldUnsubscribed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUnsubscribed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUnsubscribed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUnsubscribed: %w", err)
+	}
+	return oldValue.Unsubscribed, nil
+}
+
+// AddUnsubscribed adds i to the "unsubscribed" field.
+func (m *BroadcastFigureMutation) AddUnsubscribed(i int) {
+	if m.addunsubscribed != nil {
+		*m.addunsubscribed += i
+	} else {
+		m.addunsubscribed = &i
+	}
+}
+
+// AddedUnsubscribed returns the value that was added to the "unsubscribed" field in this mutation.
+func (m *BroadcastFigureMutation) AddedUnsubscribed() (r int, exists bool) {
+	v := m.addunsubscribed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUnsubscribed resets all changes to the "unsubscribed" field.
+func (m *BroadcastFigureMutation) ResetUnsubscribed() {
+	m.unsubscribed = nil
+	m.addunsubscribed = nil
+}
+
+// SetSent sets the "sent" field.
+func (m *BroadcastFigureMutation) SetSent(i int) {
+	m.sent = &i
+	m.addsent = nil
+}
+
+// Sent returns the value of the "sent" field in the mutation.
+func (m *BroadcastFigureMutation) Sent() (r int, exists bool) {
+	v := m.sent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSent returns the old "sent" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSent(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSent: %w", err)
+	}
+	return oldValue.Sent, nil
+}
+
+// AddSent adds i to the "sent" field.
+func (m *BroadcastFigureMutation) AddSent(i int) {
+	if m.addsent != nil {
+		*m.addsent += i
+	} else {
+		m.addsent = &i
+	}
+}
+
+// AddedSent returns the value that was added to the "sent" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSent() (r int, exists bool) {
+	v := m.addsent
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSent resets all changes to the "sent" field.
+func (m *BroadcastFigureMutation) ResetSent() {
+	m.sent = nil
+	m.addsent = nil
+}
+
+// SetSkipped sets the "skipped" field.
+func (m *BroadcastFigureMutation) SetSkipped(i int) {
+	m.skipped = &i
+	m.addskipped = nil
+}
+
+// Skipped returns the value of the "skipped" field in the mutation.
+func (m *BroadcastFigureMutation) Skipped() (r int, exists bool) {
+	v := m.skipped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkipped returns the old "skipped" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldSkipped(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkipped is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkipped requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkipped: %w", err)
+	}
+	return oldValue.Skipped, nil
+}
+
+// AddSkipped adds i to the "skipped" field.
+func (m *BroadcastFigureMutation) AddSkipped(i int) {
+	if m.addskipped != nil {
+		*m.addskipped += i
+	} else {
+		m.addskipped = &i
+	}
+}
+
+// AddedSkipped returns the value that was added to the "skipped" field in this mutation.
+func (m *BroadcastFigureMutation) AddedSkipped() (r int, exists bool) {
+	v := m.addskipped
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkipped resets all changes to the "skipped" field.
+func (m *BroadcastFigureMutation) ResetSkipped() {
+	m.skipped = nil
+	m.addskipped = nil
+}
+
+// SetFailed sets the "failed" field.
+func (m *BroadcastFigureMutation) SetFailed(i int) {
+	m.failed = &i
+	m.addfailed = nil
+}
+
+// Failed returns the value of the "failed" field in the mutation.
+func (m *BroadcastFigureMutation) Failed() (r int, exists bool) {
+	v := m.failed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailed returns the old "failed" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldFailed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailed: %w", err)
+	}
+	return oldValue.Failed, nil
+}
+
+// AddFailed adds i to the "failed" field.
+func (m *BroadcastFigureMutation) AddFailed(i int) {
+	if m.addfailed != nil {
+		*m.addfailed += i
+	} else {
+		m.addfailed = &i
+	}
+}
+
+// AddedFailed returns the value that was added to the "failed" field in this mutation.
+func (m *BroadcastFigureMutation) AddedFailed() (r int, exists bool) {
+	v := m.addfailed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailed resets all changes to the "failed" field.
+func (m *BroadcastFigureMutation) ResetFailed() {
+	m.failed = nil
+	m.addfailed = nil
+}
+
+// SetPending sets the "pending" field.
+func (m *BroadcastFigureMutation) SetPending(i int) {
+	m.pending = &i
+	m.addpending = nil
+}
+
+// Pending returns the value of the "pending" field in the mutation.
+func (m *BroadcastFigureMutation) Pending() (r int, exists bool) {
+	v := m.pending
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPending returns the old "pending" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldPending(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPending is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPending requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPending: %w", err)
+	}
+	return oldValue.Pending, nil
+}
+
+// AddPending adds i to the "pending" field.
+func (m *BroadcastFigureMutation) AddPending(i int) {
+	if m.addpending != nil {
+		*m.addpending += i
+	} else {
+		m.addpending = &i
+	}
+}
+
+// AddedPending returns the value that was added to the "pending" field in this mutation.
+func (m *BroadcastFigureMutation) AddedPending() (r int, exists bool) {
+	v := m.addpending
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPending resets all changes to the "pending" field.
+func (m *BroadcastFigureMutation) ResetPending() {
+	m.pending = nil
+	m.addpending = nil
+}
+
+// SetDelivered sets the "delivered" field.
+func (m *BroadcastFigureMutation) SetDelivered(i int) {
+	m.delivered = &i
+	m.adddelivered = nil
+}
+
+// Delivered returns the value of the "delivered" field in the mutation.
+func (m *BroadcastFigureMutation) Delivered() (r int, exists bool) {
+	v := m.delivered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDelivered returns the old "delivered" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldDelivered(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDelivered is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDelivered requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDelivered: %w", err)
+	}
+	return oldValue.Delivered, nil
+}
+
+// AddDelivered adds i to the "delivered" field.
+func (m *BroadcastFigureMutation) AddDelivered(i int) {
+	if m.adddelivered != nil {
+		*m.adddelivered += i
+	} else {
+		m.adddelivered = &i
+	}
+}
+
+// AddedDelivered returns the value that was added to the "delivered" field in this mutation.
+func (m *BroadcastFigureMutation) AddedDelivered() (r int, exists bool) {
+	v := m.adddelivered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDelivered resets all changes to the "delivered" field.
+func (m *BroadcastFigureMutation) ResetDelivered() {
+	m.delivered = nil
+	m.adddelivered = nil
+}
+
+// SetUndelivered sets the "undelivered" field.
+func (m *BroadcastFigureMutation) SetUndelivered(i int) {
+	m.undelivered = &i
+	m.addundelivered = nil
+}
+
+// Undelivered returns the value of the "undelivered" field in the mutation.
+func (m *BroadcastFigureMutation) Undelivered() (r int, exists bool) {
+	v := m.undelivered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUndelivered returns the old "undelivered" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldUndelivered(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUndelivered is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUndelivered requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUndelivered: %w", err)
+	}
+	return oldValue.Undelivered, nil
+}
+
+// AddUndelivered adds i to the "undelivered" field.
+func (m *BroadcastFigureMutation) AddUndelivered(i int) {
+	if m.addundelivered != nil {
+		*m.addundelivered += i
+	} else {
+		m.addundelivered = &i
+	}
+}
+
+// AddedUndelivered returns the value that was added to the "undelivered" field in this mutation.
+func (m *BroadcastFigureMutation) AddedUndelivered() (r int, exists bool) {
+	v := m.addundelivered
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUndelivered resets all changes to the "undelivered" field.
+func (m *BroadcastFigureMutation) ResetUndelivered() {
+	m.undelivered = nil
+	m.addundelivered = nil
+}
+
+// SetBounced sets the "bounced" field.
+func (m *BroadcastFigureMutation) SetBounced(i int) {
+	m.bounced = &i
+	m.addbounced = nil
+}
+
+// Bounced returns the value of the "bounced" field in the mutation.
+func (m *BroadcastFigureMutation) Bounced() (r int, exists bool) {
+	v := m.bounced
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBounced returns the old "bounced" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldBounced(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBounced is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBounced requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBounced: %w", err)
+	}
+	return oldValue.Bounced, nil
+}
+
+// AddBounced adds i to the "bounced" field.
+func (m *BroadcastFigureMutation) AddBounced(i int) {
+	if m.addbounced != nil {
+		*m.addbounced += i
+	} else {
+		m.addbounced = &i
+	}
+}
+
+// AddedBounced returns the value that was added to the "bounced" field in this mutation.
+func (m *BroadcastFigureMutation) AddedBounced() (r int, exists bool) {
+	v := m.addbounced
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetBounced resets all changes to the "bounced" field.
+func (m *BroadcastFigureMutation) ResetBounced() {
+	m.bounced = nil
+	m.addbounced = nil
+}
+
+// SetComplained sets the "complained" field.
+func (m *BroadcastFigureMutation) SetComplained(i int) {
+	m.complained = &i
+	m.addcomplained = nil
+}
+
+// Complained returns the value of the "complained" field in the mutation.
+func (m *BroadcastFigureMutation) Complained() (r int, exists bool) {
+	v := m.complained
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldComplained returns the old "complained" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldComplained(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldComplained is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldComplained requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldComplained: %w", err)
+	}
+	return oldValue.Complained, nil
+}
+
+// AddComplained adds i to the "complained" field.
+func (m *BroadcastFigureMutation) AddComplained(i int) {
+	if m.addcomplained != nil {
+		*m.addcomplained += i
+	} else {
+		m.addcomplained = &i
+	}
+}
+
+// AddedComplained returns the value that was added to the "complained" field in this mutation.
+func (m *BroadcastFigureMutation) AddedComplained() (r int, exists bool) {
+	v := m.addcomplained
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetComplained resets all changes to the "complained" field.
+func (m *BroadcastFigureMutation) ResetComplained() {
+	m.complained = nil
+	m.addcomplained = nil
+}
+
+// SetOpened sets the "opened" field.
+func (m *BroadcastFigureMutation) SetOpened(i int) {
+	m.opened = &i
+	m.addopened = nil
+}
+
+// Opened returns the value of the "opened" field in the mutation.
+func (m *BroadcastFigureMutation) Opened() (r int, exists bool) {
+	v := m.opened
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOpened returns the old "opened" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldOpened(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOpened is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOpened requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOpened: %w", err)
+	}
+	return oldValue.Opened, nil
+}
+
+// AddOpened adds i to the "opened" field.
+func (m *BroadcastFigureMutation) AddOpened(i int) {
+	if m.addopened != nil {
+		*m.addopened += i
+	} else {
+		m.addopened = &i
+	}
+}
+
+// AddedOpened returns the value that was added to the "opened" field in this mutation.
+func (m *BroadcastFigureMutation) AddedOpened() (r int, exists bool) {
+	v := m.addopened
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOpened resets all changes to the "opened" field.
+func (m *BroadcastFigureMutation) ResetOpened() {
+	m.opened = nil
+	m.addopened = nil
+}
+
+// SetClicked sets the "clicked" field.
+func (m *BroadcastFigureMutation) SetClicked(i int) {
+	m.clicked = &i
+	m.addclicked = nil
+}
+
+// Clicked returns the value of the "clicked" field in the mutation.
+func (m *BroadcastFigureMutation) Clicked() (r int, exists bool) {
+	v := m.clicked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClicked returns the old "clicked" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldClicked(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClicked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClicked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClicked: %w", err)
+	}
+	return oldValue.Clicked, nil
+}
+
+// AddClicked adds i to the "clicked" field.
+func (m *BroadcastFigureMutation) AddClicked(i int) {
+	if m.addclicked != nil {
+		*m.addclicked += i
+	} else {
+		m.addclicked = &i
+	}
+}
+
+// AddedClicked returns the value that was added to the "clicked" field in this mutation.
+func (m *BroadcastFigureMutation) AddedClicked() (r int, exists bool) {
+	v := m.addclicked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetClicked resets all changes to the "clicked" field.
+func (m *BroadcastFigureMutation) ResetClicked() {
+	m.clicked = nil
+	m.addclicked = nil
+}
+
+// SetCaptured sets the "captured" field.
+func (m *BroadcastFigureMutation) SetCaptured(i int) {
+	m.captured = &i
+	m.addcaptured = nil
+}
+
+// Captured returns the value of the "captured" field in the mutation.
+func (m *BroadcastFigureMutation) Captured() (r int, exists bool) {
+	v := m.captured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCaptured returns the old "captured" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldCaptured(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCaptured is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCaptured requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCaptured: %w", err)
+	}
+	return oldValue.Captured, nil
+}
+
+// AddCaptured adds i to the "captured" field.
+func (m *BroadcastFigureMutation) AddCaptured(i int) {
+	if m.addcaptured != nil {
+		*m.addcaptured += i
+	} else {
+		m.addcaptured = &i
+	}
+}
+
+// AddedCaptured returns the value that was added to the "captured" field in this mutation.
+func (m *BroadcastFigureMutation) AddedCaptured() (r int, exists bool) {
+	v := m.addcaptured
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCaptured resets all changes to the "captured" field.
+func (m *BroadcastFigureMutation) ResetCaptured() {
+	m.captured = nil
+	m.addcaptured = nil
+}
+
+// SetPrunedAt sets the "pruned_at" field.
+func (m *BroadcastFigureMutation) SetPrunedAt(t time.Time) {
+	m.pruned_at = &t
+}
+
+// PrunedAt returns the value of the "pruned_at" field in the mutation.
+func (m *BroadcastFigureMutation) PrunedAt() (r time.Time, exists bool) {
+	v := m.pruned_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrunedAt returns the old "pruned_at" field's value of the BroadcastFigure entity.
+// If the BroadcastFigure object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastFigureMutation) OldPrunedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrunedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrunedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrunedAt: %w", err)
+	}
+	return oldValue.PrunedAt, nil
+}
+
+// ClearPrunedAt clears the value of the "pruned_at" field.
+func (m *BroadcastFigureMutation) ClearPrunedAt() {
+	m.pruned_at = nil
+	m.clearedFields[broadcastfigure.FieldPrunedAt] = struct{}{}
+}
+
+// PrunedAtCleared returns if the "pruned_at" field was cleared in this mutation.
+func (m *BroadcastFigureMutation) PrunedAtCleared() bool {
+	_, ok := m.clearedFields[broadcastfigure.FieldPrunedAt]
+	return ok
+}
+
+// ResetPrunedAt resets all changes to the "pruned_at" field.
+func (m *BroadcastFigureMutation) ResetPrunedAt() {
+	m.pruned_at = nil
+	delete(m.clearedFields, broadcastfigure.FieldPrunedAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *BroadcastFigureMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[broadcastfigure.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *BroadcastFigureMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *BroadcastFigureMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *BroadcastFigureMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearBroadcast clears the "broadcast" edge to the Broadcast entity.
+func (m *BroadcastFigureMutation) ClearBroadcast() {
+	m.clearedbroadcast = true
+	m.clearedFields[broadcastfigure.FieldBroadcastID] = struct{}{}
+}
+
+// BroadcastCleared reports if the "broadcast" edge to the Broadcast entity was cleared.
+func (m *BroadcastFigureMutation) BroadcastCleared() bool {
+	return m.clearedbroadcast
+}
+
+// BroadcastIDs returns the "broadcast" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// BroadcastID instead. It exists only for internal usage by the builders.
+func (m *BroadcastFigureMutation) BroadcastIDs() (ids []int64) {
+	if id := m.broadcast; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetBroadcast resets all changes to the "broadcast" edge.
+func (m *BroadcastFigureMutation) ResetBroadcast() {
+	m.broadcast = nil
+	m.clearedbroadcast = false
+}
+
+// Where appends a list predicates to the BroadcastFigureMutation builder.
+func (m *BroadcastFigureMutation) Where(ps ...predicate.BroadcastFigure) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the BroadcastFigureMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *BroadcastFigureMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.BroadcastFigure, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *BroadcastFigureMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *BroadcastFigureMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (BroadcastFigure).
+func (m *BroadcastFigureMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *BroadcastFigureMutation) Fields() []string {
+	fields := make([]string, 0, 18)
+	if m.created_at != nil {
+		fields = append(fields, broadcastfigure.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, broadcastfigure.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, broadcastfigure.FieldWorkspaceID)
+	}
+	if m.broadcast != nil {
+		fields = append(fields, broadcastfigure.FieldBroadcastID)
+	}
+	if m.recipients != nil {
+		fields = append(fields, broadcastfigure.FieldRecipients)
+	}
+	if m.unsubscribed != nil {
+		fields = append(fields, broadcastfigure.FieldUnsubscribed)
+	}
+	if m.sent != nil {
+		fields = append(fields, broadcastfigure.FieldSent)
+	}
+	if m.skipped != nil {
+		fields = append(fields, broadcastfigure.FieldSkipped)
+	}
+	if m.failed != nil {
+		fields = append(fields, broadcastfigure.FieldFailed)
+	}
+	if m.pending != nil {
+		fields = append(fields, broadcastfigure.FieldPending)
+	}
+	if m.delivered != nil {
+		fields = append(fields, broadcastfigure.FieldDelivered)
+	}
+	if m.undelivered != nil {
+		fields = append(fields, broadcastfigure.FieldUndelivered)
+	}
+	if m.bounced != nil {
+		fields = append(fields, broadcastfigure.FieldBounced)
+	}
+	if m.complained != nil {
+		fields = append(fields, broadcastfigure.FieldComplained)
+	}
+	if m.opened != nil {
+		fields = append(fields, broadcastfigure.FieldOpened)
+	}
+	if m.clicked != nil {
+		fields = append(fields, broadcastfigure.FieldClicked)
+	}
+	if m.captured != nil {
+		fields = append(fields, broadcastfigure.FieldCaptured)
+	}
+	if m.pruned_at != nil {
+		fields = append(fields, broadcastfigure.FieldPrunedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *BroadcastFigureMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case broadcastfigure.FieldCreatedAt:
+		return m.CreatedAt()
+	case broadcastfigure.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case broadcastfigure.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case broadcastfigure.FieldBroadcastID:
+		return m.BroadcastID()
+	case broadcastfigure.FieldRecipients:
+		return m.Recipients()
+	case broadcastfigure.FieldUnsubscribed:
+		return m.Unsubscribed()
+	case broadcastfigure.FieldSent:
+		return m.Sent()
+	case broadcastfigure.FieldSkipped:
+		return m.Skipped()
+	case broadcastfigure.FieldFailed:
+		return m.Failed()
+	case broadcastfigure.FieldPending:
+		return m.Pending()
+	case broadcastfigure.FieldDelivered:
+		return m.Delivered()
+	case broadcastfigure.FieldUndelivered:
+		return m.Undelivered()
+	case broadcastfigure.FieldBounced:
+		return m.Bounced()
+	case broadcastfigure.FieldComplained:
+		return m.Complained()
+	case broadcastfigure.FieldOpened:
+		return m.Opened()
+	case broadcastfigure.FieldClicked:
+		return m.Clicked()
+	case broadcastfigure.FieldCaptured:
+		return m.Captured()
+	case broadcastfigure.FieldPrunedAt:
+		return m.PrunedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *BroadcastFigureMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case broadcastfigure.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case broadcastfigure.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case broadcastfigure.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case broadcastfigure.FieldBroadcastID:
+		return m.OldBroadcastID(ctx)
+	case broadcastfigure.FieldRecipients:
+		return m.OldRecipients(ctx)
+	case broadcastfigure.FieldUnsubscribed:
+		return m.OldUnsubscribed(ctx)
+	case broadcastfigure.FieldSent:
+		return m.OldSent(ctx)
+	case broadcastfigure.FieldSkipped:
+		return m.OldSkipped(ctx)
+	case broadcastfigure.FieldFailed:
+		return m.OldFailed(ctx)
+	case broadcastfigure.FieldPending:
+		return m.OldPending(ctx)
+	case broadcastfigure.FieldDelivered:
+		return m.OldDelivered(ctx)
+	case broadcastfigure.FieldUndelivered:
+		return m.OldUndelivered(ctx)
+	case broadcastfigure.FieldBounced:
+		return m.OldBounced(ctx)
+	case broadcastfigure.FieldComplained:
+		return m.OldComplained(ctx)
+	case broadcastfigure.FieldOpened:
+		return m.OldOpened(ctx)
+	case broadcastfigure.FieldClicked:
+		return m.OldClicked(ctx)
+	case broadcastfigure.FieldCaptured:
+		return m.OldCaptured(ctx)
+	case broadcastfigure.FieldPrunedAt:
+		return m.OldPrunedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown BroadcastFigure field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BroadcastFigureMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case broadcastfigure.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case broadcastfigure.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case broadcastfigure.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case broadcastfigure.FieldBroadcastID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBroadcastID(v)
+		return nil
+	case broadcastfigure.FieldRecipients:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecipients(v)
+		return nil
+	case broadcastfigure.FieldUnsubscribed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUnsubscribed(v)
+		return nil
+	case broadcastfigure.FieldSent:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSent(v)
+		return nil
+	case broadcastfigure.FieldSkipped:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkipped(v)
+		return nil
+	case broadcastfigure.FieldFailed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailed(v)
+		return nil
+	case broadcastfigure.FieldPending:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPending(v)
+		return nil
+	case broadcastfigure.FieldDelivered:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDelivered(v)
+		return nil
+	case broadcastfigure.FieldUndelivered:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUndelivered(v)
+		return nil
+	case broadcastfigure.FieldBounced:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBounced(v)
+		return nil
+	case broadcastfigure.FieldComplained:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetComplained(v)
+		return nil
+	case broadcastfigure.FieldOpened:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOpened(v)
+		return nil
+	case broadcastfigure.FieldClicked:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClicked(v)
+		return nil
+	case broadcastfigure.FieldCaptured:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCaptured(v)
+		return nil
+	case broadcastfigure.FieldPrunedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrunedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BroadcastFigure field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *BroadcastFigureMutation) AddedFields() []string {
+	var fields []string
+	if m.addrecipients != nil {
+		fields = append(fields, broadcastfigure.FieldRecipients)
+	}
+	if m.addunsubscribed != nil {
+		fields = append(fields, broadcastfigure.FieldUnsubscribed)
+	}
+	if m.addsent != nil {
+		fields = append(fields, broadcastfigure.FieldSent)
+	}
+	if m.addskipped != nil {
+		fields = append(fields, broadcastfigure.FieldSkipped)
+	}
+	if m.addfailed != nil {
+		fields = append(fields, broadcastfigure.FieldFailed)
+	}
+	if m.addpending != nil {
+		fields = append(fields, broadcastfigure.FieldPending)
+	}
+	if m.adddelivered != nil {
+		fields = append(fields, broadcastfigure.FieldDelivered)
+	}
+	if m.addundelivered != nil {
+		fields = append(fields, broadcastfigure.FieldUndelivered)
+	}
+	if m.addbounced != nil {
+		fields = append(fields, broadcastfigure.FieldBounced)
+	}
+	if m.addcomplained != nil {
+		fields = append(fields, broadcastfigure.FieldComplained)
+	}
+	if m.addopened != nil {
+		fields = append(fields, broadcastfigure.FieldOpened)
+	}
+	if m.addclicked != nil {
+		fields = append(fields, broadcastfigure.FieldClicked)
+	}
+	if m.addcaptured != nil {
+		fields = append(fields, broadcastfigure.FieldCaptured)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *BroadcastFigureMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case broadcastfigure.FieldRecipients:
+		return m.AddedRecipients()
+	case broadcastfigure.FieldUnsubscribed:
+		return m.AddedUnsubscribed()
+	case broadcastfigure.FieldSent:
+		return m.AddedSent()
+	case broadcastfigure.FieldSkipped:
+		return m.AddedSkipped()
+	case broadcastfigure.FieldFailed:
+		return m.AddedFailed()
+	case broadcastfigure.FieldPending:
+		return m.AddedPending()
+	case broadcastfigure.FieldDelivered:
+		return m.AddedDelivered()
+	case broadcastfigure.FieldUndelivered:
+		return m.AddedUndelivered()
+	case broadcastfigure.FieldBounced:
+		return m.AddedBounced()
+	case broadcastfigure.FieldComplained:
+		return m.AddedComplained()
+	case broadcastfigure.FieldOpened:
+		return m.AddedOpened()
+	case broadcastfigure.FieldClicked:
+		return m.AddedClicked()
+	case broadcastfigure.FieldCaptured:
+		return m.AddedCaptured()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *BroadcastFigureMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case broadcastfigure.FieldRecipients:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRecipients(v)
+		return nil
+	case broadcastfigure.FieldUnsubscribed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUnsubscribed(v)
+		return nil
+	case broadcastfigure.FieldSent:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSent(v)
+		return nil
+	case broadcastfigure.FieldSkipped:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkipped(v)
+		return nil
+	case broadcastfigure.FieldFailed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailed(v)
+		return nil
+	case broadcastfigure.FieldPending:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPending(v)
+		return nil
+	case broadcastfigure.FieldDelivered:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDelivered(v)
+		return nil
+	case broadcastfigure.FieldUndelivered:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUndelivered(v)
+		return nil
+	case broadcastfigure.FieldBounced:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddBounced(v)
+		return nil
+	case broadcastfigure.FieldComplained:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddComplained(v)
+		return nil
+	case broadcastfigure.FieldOpened:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOpened(v)
+		return nil
+	case broadcastfigure.FieldClicked:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddClicked(v)
+		return nil
+	case broadcastfigure.FieldCaptured:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCaptured(v)
+		return nil
+	}
+	return fmt.Errorf("unknown BroadcastFigure numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *BroadcastFigureMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(broadcastfigure.FieldPrunedAt) {
+		fields = append(fields, broadcastfigure.FieldPrunedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *BroadcastFigureMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *BroadcastFigureMutation) ClearField(name string) error {
+	switch name {
+	case broadcastfigure.FieldPrunedAt:
+		m.ClearPrunedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown BroadcastFigure nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *BroadcastFigureMutation) ResetField(name string) error {
+	switch name {
+	case broadcastfigure.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case broadcastfigure.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case broadcastfigure.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case broadcastfigure.FieldBroadcastID:
+		m.ResetBroadcastID()
+		return nil
+	case broadcastfigure.FieldRecipients:
+		m.ResetRecipients()
+		return nil
+	case broadcastfigure.FieldUnsubscribed:
+		m.ResetUnsubscribed()
+		return nil
+	case broadcastfigure.FieldSent:
+		m.ResetSent()
+		return nil
+	case broadcastfigure.FieldSkipped:
+		m.ResetSkipped()
+		return nil
+	case broadcastfigure.FieldFailed:
+		m.ResetFailed()
+		return nil
+	case broadcastfigure.FieldPending:
+		m.ResetPending()
+		return nil
+	case broadcastfigure.FieldDelivered:
+		m.ResetDelivered()
+		return nil
+	case broadcastfigure.FieldUndelivered:
+		m.ResetUndelivered()
+		return nil
+	case broadcastfigure.FieldBounced:
+		m.ResetBounced()
+		return nil
+	case broadcastfigure.FieldComplained:
+		m.ResetComplained()
+		return nil
+	case broadcastfigure.FieldOpened:
+		m.ResetOpened()
+		return nil
+	case broadcastfigure.FieldClicked:
+		m.ResetClicked()
+		return nil
+	case broadcastfigure.FieldCaptured:
+		m.ResetCaptured()
+		return nil
+	case broadcastfigure.FieldPrunedAt:
+		m.ResetPrunedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown BroadcastFigure field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *BroadcastFigureMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, broadcastfigure.EdgeWorkspace)
+	}
+	if m.broadcast != nil {
+		edges = append(edges, broadcastfigure.EdgeBroadcast)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *BroadcastFigureMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case broadcastfigure.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case broadcastfigure.EdgeBroadcast:
+		if id := m.broadcast; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *BroadcastFigureMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *BroadcastFigureMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *BroadcastFigureMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, broadcastfigure.EdgeWorkspace)
+	}
+	if m.clearedbroadcast {
+		edges = append(edges, broadcastfigure.EdgeBroadcast)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *BroadcastFigureMutation) EdgeCleared(name string) bool {
+	switch name {
+	case broadcastfigure.EdgeWorkspace:
+		return m.clearedworkspace
+	case broadcastfigure.EdgeBroadcast:
+		return m.clearedbroadcast
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *BroadcastFigureMutation) ClearEdge(name string) error {
+	switch name {
+	case broadcastfigure.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case broadcastfigure.EdgeBroadcast:
+		m.ClearBroadcast()
+		return nil
+	}
+	return fmt.Errorf("unknown BroadcastFigure unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *BroadcastFigureMutation) ResetEdge(name string) error {
+	switch name {
+	case broadcastfigure.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case broadcastfigure.EdgeBroadcast:
+		m.ResetBroadcast()
+		return nil
+	}
+	return fmt.Errorf("unknown BroadcastFigure edge %s", name)
 }
 
 // BroadcastRecipientMutation represents an operation that mutates the BroadcastRecipient nodes in the graph.
@@ -69153,6 +72250,12 @@ type WorkspaceMutation struct {
 	broadcast_recipients         map[int64]struct{}
 	removedbroadcast_recipients  map[int64]struct{}
 	clearedbroadcast_recipients  bool
+	broadcast_figures            map[int64]struct{}
+	removedbroadcast_figures     map[int64]struct{}
+	clearedbroadcast_figures     bool
+	automation_figures           map[int64]struct{}
+	removedautomation_figures    map[int64]struct{}
+	clearedautomation_figures    bool
 	email_templates              map[int64]struct{}
 	removedemail_templates       map[int64]struct{}
 	clearedemail_templates       bool
@@ -71795,6 +74898,114 @@ func (m *WorkspaceMutation) ResetBroadcastRecipients() {
 	m.removedbroadcast_recipients = nil
 }
 
+// AddBroadcastFigureIDs adds the "broadcast_figures" edge to the BroadcastFigure entity by ids.
+func (m *WorkspaceMutation) AddBroadcastFigureIDs(ids ...int64) {
+	if m.broadcast_figures == nil {
+		m.broadcast_figures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.broadcast_figures[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBroadcastFigures clears the "broadcast_figures" edge to the BroadcastFigure entity.
+func (m *WorkspaceMutation) ClearBroadcastFigures() {
+	m.clearedbroadcast_figures = true
+}
+
+// BroadcastFiguresCleared reports if the "broadcast_figures" edge to the BroadcastFigure entity was cleared.
+func (m *WorkspaceMutation) BroadcastFiguresCleared() bool {
+	return m.clearedbroadcast_figures
+}
+
+// RemoveBroadcastFigureIDs removes the "broadcast_figures" edge to the BroadcastFigure entity by IDs.
+func (m *WorkspaceMutation) RemoveBroadcastFigureIDs(ids ...int64) {
+	if m.removedbroadcast_figures == nil {
+		m.removedbroadcast_figures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.broadcast_figures, ids[i])
+		m.removedbroadcast_figures[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBroadcastFigures returns the removed IDs of the "broadcast_figures" edge to the BroadcastFigure entity.
+func (m *WorkspaceMutation) RemovedBroadcastFiguresIDs() (ids []int64) {
+	for id := range m.removedbroadcast_figures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BroadcastFiguresIDs returns the "broadcast_figures" edge IDs in the mutation.
+func (m *WorkspaceMutation) BroadcastFiguresIDs() (ids []int64) {
+	for id := range m.broadcast_figures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBroadcastFigures resets all changes to the "broadcast_figures" edge.
+func (m *WorkspaceMutation) ResetBroadcastFigures() {
+	m.broadcast_figures = nil
+	m.clearedbroadcast_figures = false
+	m.removedbroadcast_figures = nil
+}
+
+// AddAutomationFigureIDs adds the "automation_figures" edge to the AutomationFigure entity by ids.
+func (m *WorkspaceMutation) AddAutomationFigureIDs(ids ...int64) {
+	if m.automation_figures == nil {
+		m.automation_figures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.automation_figures[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAutomationFigures clears the "automation_figures" edge to the AutomationFigure entity.
+func (m *WorkspaceMutation) ClearAutomationFigures() {
+	m.clearedautomation_figures = true
+}
+
+// AutomationFiguresCleared reports if the "automation_figures" edge to the AutomationFigure entity was cleared.
+func (m *WorkspaceMutation) AutomationFiguresCleared() bool {
+	return m.clearedautomation_figures
+}
+
+// RemoveAutomationFigureIDs removes the "automation_figures" edge to the AutomationFigure entity by IDs.
+func (m *WorkspaceMutation) RemoveAutomationFigureIDs(ids ...int64) {
+	if m.removedautomation_figures == nil {
+		m.removedautomation_figures = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.automation_figures, ids[i])
+		m.removedautomation_figures[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAutomationFigures returns the removed IDs of the "automation_figures" edge to the AutomationFigure entity.
+func (m *WorkspaceMutation) RemovedAutomationFiguresIDs() (ids []int64) {
+	for id := range m.removedautomation_figures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AutomationFiguresIDs returns the "automation_figures" edge IDs in the mutation.
+func (m *WorkspaceMutation) AutomationFiguresIDs() (ids []int64) {
+	for id := range m.automation_figures {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAutomationFigures resets all changes to the "automation_figures" edge.
+func (m *WorkspaceMutation) ResetAutomationFigures() {
+	m.automation_figures = nil
+	m.clearedautomation_figures = false
+	m.removedautomation_figures = nil
+}
+
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by ids.
 func (m *WorkspaceMutation) AddEmailTemplateIDs(ids ...int64) {
 	if m.email_templates == nil {
@@ -73666,7 +76877,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 43)
+	edges := make([]string, 0, 45)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -73732,6 +76943,12 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.broadcast_recipients != nil {
 		edges = append(edges, workspace.EdgeBroadcastRecipients)
+	}
+	if m.broadcast_figures != nil {
+		edges = append(edges, workspace.EdgeBroadcastFigures)
+	}
+	if m.automation_figures != nil {
+		edges = append(edges, workspace.EdgeAutomationFigures)
 	}
 	if m.email_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -73935,6 +77152,18 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeBroadcastFigures:
+		ids := make([]ent.Value, 0, len(m.broadcast_figures))
+		for id := range m.broadcast_figures {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeAutomationFigures:
+		ids := make([]ent.Value, 0, len(m.automation_figures))
+		for id := range m.automation_figures {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeEmailTemplates:
 		ids := make([]ent.Value, 0, len(m.email_templates))
 		for id := range m.email_templates {
@@ -74067,7 +77296,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 43)
+	edges := make([]string, 0, 45)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -74133,6 +77362,12 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedbroadcast_recipients != nil {
 		edges = append(edges, workspace.EdgeBroadcastRecipients)
+	}
+	if m.removedbroadcast_figures != nil {
+		edges = append(edges, workspace.EdgeBroadcastFigures)
+	}
+	if m.removedautomation_figures != nil {
+		edges = append(edges, workspace.EdgeAutomationFigures)
 	}
 	if m.removedemail_templates != nil {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -74336,6 +77571,18 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeBroadcastFigures:
+		ids := make([]ent.Value, 0, len(m.removedbroadcast_figures))
+		for id := range m.removedbroadcast_figures {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeAutomationFigures:
+		ids := make([]ent.Value, 0, len(m.removedautomation_figures))
+		for id := range m.removedautomation_figures {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeEmailTemplates:
 		ids := make([]ent.Value, 0, len(m.removedemail_templates))
 		for id := range m.removedemail_templates {
@@ -74468,7 +77715,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 43)
+	edges := make([]string, 0, 45)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -74534,6 +77781,12 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	}
 	if m.clearedbroadcast_recipients {
 		edges = append(edges, workspace.EdgeBroadcastRecipients)
+	}
+	if m.clearedbroadcast_figures {
+		edges = append(edges, workspace.EdgeBroadcastFigures)
+	}
+	if m.clearedautomation_figures {
+		edges = append(edges, workspace.EdgeAutomationFigures)
 	}
 	if m.clearedemail_templates {
 		edges = append(edges, workspace.EdgeEmailTemplates)
@@ -74649,6 +77902,10 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedbroadcasts
 	case workspace.EdgeBroadcastRecipients:
 		return m.clearedbroadcast_recipients
+	case workspace.EdgeBroadcastFigures:
+		return m.clearedbroadcast_figures
+	case workspace.EdgeAutomationFigures:
+		return m.clearedautomation_figures
 	case workspace.EdgeEmailTemplates:
 		return m.clearedemail_templates
 	case workspace.EdgeBrandKits:
@@ -74772,6 +78029,12 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeBroadcastRecipients:
 		m.ResetBroadcastRecipients()
+		return nil
+	case workspace.EdgeBroadcastFigures:
+		m.ResetBroadcastFigures()
+		return nil
+	case workspace.EdgeAutomationFigures:
+		m.ResetAutomationFigures()
 		return nil
 	case workspace.EdgeEmailTemplates:
 		m.ResetEmailTemplates()

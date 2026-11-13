@@ -18,6 +18,9 @@ type AuthAttempt func(*sql.Selector)
 // Automation is the predicate function for automation builders.
 type Automation func(*sql.Selector)
 
+// AutomationFigure is the predicate function for automationfigure builders.
+type AutomationFigure func(*sql.Selector)
+
 // AutomationRun is the predicate function for automationrun builders.
 type AutomationRun func(*sql.Selector)
 
@@ -32,6 +35,9 @@ type BrandKit func(*sql.Selector)
 
 // Broadcast is the predicate function for broadcast builders.
 type Broadcast func(*sql.Selector)
+
+// BroadcastFigure is the predicate function for broadcastfigure builders.
+type BroadcastFigure func(*sql.Selector)
 
 // BroadcastRecipient is the predicate function for broadcastrecipient builders.
 type BroadcastRecipient func(*sql.Selector)

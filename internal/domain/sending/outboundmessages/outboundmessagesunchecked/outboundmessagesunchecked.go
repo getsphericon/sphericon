@@ -2,8 +2,9 @@
 // short links and the anonymizing of its delivery records. It is a step of a Contact's Erasure (ADR
 // 0021), which harms a live Contact when it runs alone: the use case
 // internal/usecase/contacterasure runs each owner's step in its order, in the one transaction of
-// the Erasure; only a use case may import this one (ADR 0110). The outboundmessages module does not
-// import it.
+// the Erasure. It also holds the deletes of message retention (ADR 0143), which
+// internal/usecase/messageretention runs once the figures the messages made are kept. Only a use
+// case may import this one (ADR 0110). The outboundmessages module does not import it.
 package outboundmessagesunchecked
 
 import (

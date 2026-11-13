@@ -71,7 +71,15 @@ func (t *Tracker) OnHost(host string) *Tracker {
 type messageClaims struct {
 	jwt.RegisteredClaims
 
-	MessageID publicid.ID `json:"mid"`
+	WorkspaceID publicid.ID `json:"ws"`
+	MessageID   publicid.ID `json:"mid"`
+}
+
+// Message is the Outbound message an open or a click token names, with its Workspace: a Tracking
+// host refuses another Workspace's token by the claim alone, so a link still answers once message
+// retention has deleted its message (ADR 0038, ADR 0143).
+type Message struct {
+	WorkspaceID, ID int64
 }
 
 // clickClaims bind one link of one Outbound message: the destination is signed, so a click URL
@@ -79,6 +87,7 @@ type messageClaims struct {
 type clickClaims struct {
 	jwt.RegisteredClaims
 
+	WorkspaceID publicid.ID `json:"ws"`
 	MessageID   publicid.ID `json:"mid"`
 	Destination string      `json:"dest"`
 }
@@ -120,46 +129,46 @@ func (t *Tracker) parse(token string, claims jwt.Claims, opts ...jwt.ParserOptio
 }
 
 // Token mints a signed token naming an Outbound message (open pixel).
-func (t *Tracker) Token(messageID int64) (string, error) {
-	return t.sign(&messageClaims{MessageID: publicid.ID(messageID)})
+func (t *Tracker) Token(m Message) (string, error) {
+	return t.sign(&messageClaims{WorkspaceID: publicid.ID(m.WorkspaceID), MessageID: publicid.ID(m.ID)})
 }
 
-// Decode validates an open token and returns the Outbound message id it carries. A click token
+// Decode validates an open token and returns the Outbound message it names. A click token
 // carries a destination and is refused: each link kind has its own token.
-func (t *Tracker) Decode(token string) (int64, error) {
+func (t *Tracker) Decode(token string) (Message, error) {
 	var c clickClaims
 	if err := t.parse(token, &c); err != nil {
-		return 0, err
+		return Message{}, err
 	}
-	if c.MessageID == 0 {
-		return 0, errors.New("tracking: missing mid claim")
+	if c.MessageID == 0 || c.WorkspaceID == 0 {
+		return Message{}, errors.New("tracking: missing mid or ws claim")
 	}
 	if c.Destination != "" {
-		return 0, errors.New("tracking: a click token is not an open token")
+		return Message{}, errors.New("tracking: a click token is not an open token")
 	}
-	return int64(c.MessageID), nil
+	return Message{WorkspaceID: int64(c.WorkspaceID), ID: int64(c.MessageID)}, nil
 }
 
 // clickToken mints a signed token for one link of an Outbound message.
-func (t *Tracker) clickToken(messageID int64, dest string) (string, error) {
-	return t.sign(&clickClaims{MessageID: publicid.ID(messageID), Destination: dest})
+func (t *Tracker) clickToken(m Message, dest string) (string, error) {
+	return t.sign(&clickClaims{WorkspaceID: publicid.ID(m.WorkspaceID), MessageID: publicid.ID(m.ID), Destination: dest})
 }
 
-// DecodeClick validates a click token and returns the Outbound message id and the destination
-// it carries. An open token (pixel) has no destination and is refused, as is any
+// DecodeClick validates a click token and returns the Outbound message it names and the
+// destination it carries. An open token (pixel) has no destination and is refused, as is any
 // destination that is not an absolute http(s) URL.
-func (t *Tracker) DecodeClick(token string) (messageID int64, destination string, err error) {
+func (t *Tracker) DecodeClick(token string) (Message, string, error) {
 	var c clickClaims
 	if err := t.parse(token, &c); err != nil {
-		return 0, "", err
+		return Message{}, "", err
 	}
-	if c.MessageID == 0 {
-		return 0, "", errors.New("tracking: missing mid claim")
+	if c.MessageID == 0 || c.WorkspaceID == 0 {
+		return Message{}, "", errors.New("tracking: missing mid or ws claim")
 	}
 	if !Trackable(c.Destination) {
-		return 0, "", errors.New("tracking: missing or invalid dest claim")
+		return Message{}, "", errors.New("tracking: missing or invalid dest claim")
 	}
-	return int64(c.MessageID), c.Destination, nil
+	return Message{WorkspaceID: int64(c.WorkspaceID), ID: int64(c.MessageID)}, c.Destination, nil
 }
 
 // unsubToken mints a signed scoped-unsubscribe token.
@@ -248,8 +257,8 @@ func (t *Tracker) OpenURL(token string) string {
 
 // ClickURL wraps a destination link so a click is recorded before redirecting. The
 // destination travels inside the signed token, never as a bare parameter.
-func (t *Tracker) ClickURL(messageID int64, dest string) (string, error) {
-	token, err := t.clickToken(messageID, dest)
+func (t *Tracker) ClickURL(m Message, dest string) (string, error) {
+	token, err := t.clickToken(m, dest)
 	if err != nil {
 		return "", err
 	}
@@ -309,12 +318,12 @@ func (t *Tracker) UnsubscribeFooter(target linktarget.Unsubscribe, postalAddress
 // the open pixel, nothing else: a Transactional send that asks for tracking uses it as is. On a
 // tokenizer error it falls back to the original body plus the pixel, so a send is never blocked
 // by odd markup.
-func (t *Tracker) Instrument(body string, messageID int64) (string, error) {
-	token, err := t.Token(messageID)
+func (t *Tracker) Instrument(body string, m Message) (string, error) {
+	token, err := t.Token(m)
 	if err != nil {
 		return body, err
 	}
-	rewritten, err := t.rewriteLinks(body, messageID)
+	rewritten, err := t.rewriteLinks(body, m)
 	if err != nil {
 		rewritten = body
 	}
@@ -324,8 +333,8 @@ func (t *Tracker) Instrument(body string, messageID int64) (string, error) {
 
 // Rewrite prepares a marketing body for one Outbound message: Instrument, plus the
 // unsubscribe footer (scoped to unsub, carrying the workspace's CAN-SPAM postal address).
-func (t *Tracker) Rewrite(body string, messageID int64, unsub linktarget.Unsubscribe, postalAddress string) (string, error) {
-	instrumented, err := t.Instrument(body, messageID)
+func (t *Tracker) Rewrite(body string, m Message, unsub linktarget.Unsubscribe, postalAddress string) (string, error) {
+	instrumented, err := t.Instrument(body, m)
 	if err != nil {
 		return body, err
 	}
@@ -340,7 +349,7 @@ func (t *Tracker) Rewrite(body string, messageID int64, unsub linktarget.Unsubsc
 // href it changes is serialized again; every other token goes out as its raw bytes, so the body
 // stays as it was written (ADR 0118): a token serialized again would escape the raw text of
 // <style> and <script> ('Arial' to &#39;Arial&#39;) and turn entities into characters.
-func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
+func (t *Tracker) rewriteLinks(body string, m Message) (string, error) {
 	z := html.NewTokenizer(strings.NewReader(body))
 	var sb strings.Builder
 	for {
@@ -361,7 +370,7 @@ func (t *Tracker) rewriteLinks(body string, messageID int64) (string, error) {
 		if tok.DataAtom == atom.A {
 			for i, a := range tok.Attr {
 				if a.Key == "href" && Trackable(a.Val) {
-					link, err := t.ClickURL(messageID, a.Val)
+					link, err := t.ClickURL(m, a.Val)
 					if err != nil {
 						return "", err
 					}

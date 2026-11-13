@@ -59,7 +59,7 @@ func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.
 
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.ContactID(fixtures.ContactTelegramErasableID)).CountX(ctx), "no Binding")
 	assert.Zero(t, env.DB.StartToken.Query().Where(starttoken.ContactID(fixtures.ContactTelegramErasableID)).CountX(ctx), "no Start token")
-	assert.Equal(t, http.StatusNotFound, follow(t, env, text[0], browserUA).Code, "the short link answers 404")
+	leadsNowhere(t, follow(t, env, text[0], browserUA), "the short link leads nowhere")
 	assert.Zero(t, env.DB.TrackedLink.Query().Where(trackedlink.URL(textLink)).CountX(ctx))
 	assert.False(t, env.DB.Event.Query().Where(event.ID(received)).ExistX(ctx), "the person's words are gone")
 	assert.True(t, env.DB.Event.Query().Where(event.ID(otherReceived)).ExistX(ctx), "another Contact's stay")

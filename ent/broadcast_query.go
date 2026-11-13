@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/predicate"
@@ -30,6 +31,7 @@ type BroadcastQuery struct {
 	predicates      []predicate.Broadcast
 	withWorkspace   *WorkspaceQuery
 	withRecipients  *BroadcastRecipientQuery
+	withFigures     *BroadcastFigureQuery
 	withSegment     *SegmentQuery
 	withIntegration *IntegrationQuery
 	modifiers       []func(*sql.Selector)
@@ -106,6 +108,28 @@ func (_q *BroadcastQuery) QueryRecipients() *BroadcastRecipientQuery {
 			sqlgraph.From(broadcast.Table, broadcast.FieldID, selector),
 			sqlgraph.To(broadcastrecipient.Table, broadcastrecipient.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, broadcast.RecipientsTable, broadcast.RecipientsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFigures chains the current query on the "figures" edge.
+func (_q *BroadcastQuery) QueryFigures() *BroadcastFigureQuery {
+	query := (&BroadcastFigureClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(broadcast.Table, broadcast.FieldID, selector),
+			sqlgraph.To(broadcastfigure.Table, broadcastfigure.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, broadcast.FiguresTable, broadcast.FiguresColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -351,6 +375,7 @@ func (_q *BroadcastQuery) Clone() *BroadcastQuery {
 		predicates:      append([]predicate.Broadcast{}, _q.predicates...),
 		withWorkspace:   _q.withWorkspace.Clone(),
 		withRecipients:  _q.withRecipients.Clone(),
+		withFigures:     _q.withFigures.Clone(),
 		withSegment:     _q.withSegment.Clone(),
 		withIntegration: _q.withIntegration.Clone(),
 		// clone intermediate query.
@@ -379,6 +404,17 @@ func (_q *BroadcastQuery) WithRecipients(opts ...func(*BroadcastRecipientQuery))
 		opt(query)
 	}
 	_q.withRecipients = query
+	return _q
+}
+
+// WithFigures tells the query-builder to eager-load the nodes that are connected to
+// the "figures" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *BroadcastQuery) WithFigures(opts ...func(*BroadcastFigureQuery)) *BroadcastQuery {
+	query := (&BroadcastFigureClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withFigures = query
 	return _q
 }
 
@@ -482,9 +518,10 @@ func (_q *BroadcastQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Br
 	var (
 		nodes       = []*Broadcast{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withWorkspace != nil,
 			_q.withRecipients != nil,
+			_q.withFigures != nil,
 			_q.withSegment != nil,
 			_q.withIntegration != nil,
 		}
@@ -520,6 +557,13 @@ func (_q *BroadcastQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Br
 		if err := _q.loadRecipients(ctx, query, nodes,
 			func(n *Broadcast) { n.Edges.Recipients = []*BroadcastRecipient{} },
 			func(n *Broadcast, e *BroadcastRecipient) { n.Edges.Recipients = append(n.Edges.Recipients, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withFigures; query != nil {
+		if err := _q.loadFigures(ctx, query, nodes,
+			func(n *Broadcast) { n.Edges.Figures = []*BroadcastFigure{} },
+			func(n *Broadcast, e *BroadcastFigure) { n.Edges.Figures = append(n.Edges.Figures, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -582,6 +626,36 @@ func (_q *BroadcastQuery) loadRecipients(ctx context.Context, query *BroadcastRe
 	}
 	query.Where(predicate.BroadcastRecipient(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(broadcast.RecipientsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.BroadcastID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "broadcast_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *BroadcastQuery) loadFigures(ctx context.Context, query *BroadcastFigureQuery, nodes []*Broadcast, init func(*Broadcast), assign func(*Broadcast, *BroadcastFigure)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Broadcast)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(broadcastfigure.FieldBroadcastID)
+	}
+	query.Where(predicate.BroadcastFigure(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(broadcast.FiguresColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -14,11 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -875,6 +877,36 @@ func (_u *WorkspaceUpdate) AddBroadcastRecipients(v ...*BroadcastRecipient) *Wor
 	return _u.AddBroadcastRecipientIDs(ids...)
 }
 
+// AddBroadcastFigureIDs adds the "broadcast_figures" edge to the BroadcastFigure entity by IDs.
+func (_u *WorkspaceUpdate) AddBroadcastFigureIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddBroadcastFigureIDs(ids...)
+	return _u
+}
+
+// AddBroadcastFigures adds the "broadcast_figures" edges to the BroadcastFigure entity.
+func (_u *WorkspaceUpdate) AddBroadcastFigures(v ...*BroadcastFigure) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBroadcastFigureIDs(ids...)
+}
+
+// AddAutomationFigureIDs adds the "automation_figures" edge to the AutomationFigure entity by IDs.
+func (_u *WorkspaceUpdate) AddAutomationFigureIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddAutomationFigureIDs(ids...)
+	return _u
+}
+
+// AddAutomationFigures adds the "automation_figures" edges to the AutomationFigure entity.
+func (_u *WorkspaceUpdate) AddAutomationFigures(v ...*AutomationFigure) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationFigureIDs(ids...)
+}
+
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
 func (_u *WorkspaceUpdate) AddEmailTemplateIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddEmailTemplateIDs(ids...)
@@ -1655,6 +1687,48 @@ func (_u *WorkspaceUpdate) RemoveBroadcastRecipients(v ...*BroadcastRecipient) *
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveBroadcastRecipientIDs(ids...)
+}
+
+// ClearBroadcastFigures clears all "broadcast_figures" edges to the BroadcastFigure entity.
+func (_u *WorkspaceUpdate) ClearBroadcastFigures() *WorkspaceUpdate {
+	_u.mutation.ClearBroadcastFigures()
+	return _u
+}
+
+// RemoveBroadcastFigureIDs removes the "broadcast_figures" edge to BroadcastFigure entities by IDs.
+func (_u *WorkspaceUpdate) RemoveBroadcastFigureIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveBroadcastFigureIDs(ids...)
+	return _u
+}
+
+// RemoveBroadcastFigures removes "broadcast_figures" edges to BroadcastFigure entities.
+func (_u *WorkspaceUpdate) RemoveBroadcastFigures(v ...*BroadcastFigure) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBroadcastFigureIDs(ids...)
+}
+
+// ClearAutomationFigures clears all "automation_figures" edges to the AutomationFigure entity.
+func (_u *WorkspaceUpdate) ClearAutomationFigures() *WorkspaceUpdate {
+	_u.mutation.ClearAutomationFigures()
+	return _u
+}
+
+// RemoveAutomationFigureIDs removes the "automation_figures" edge to AutomationFigure entities by IDs.
+func (_u *WorkspaceUpdate) RemoveAutomationFigureIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveAutomationFigureIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationFigures removes "automation_figures" edges to AutomationFigure entities.
+func (_u *WorkspaceUpdate) RemoveAutomationFigures(v ...*AutomationFigure) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationFigureIDs(ids...)
 }
 
 // ClearEmailTemplates clears all "email_templates" edges to the EmailTemplate entity.
@@ -3318,6 +3392,96 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBroadcastFiguresIDs(); len(nodes) > 0 && !_u.mutation.BroadcastFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastFiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationFiguresIDs(); len(nodes) > 0 && !_u.mutation.AutomationFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationFiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -5095,6 +5259,36 @@ func (_u *WorkspaceUpdateOne) AddBroadcastRecipients(v ...*BroadcastRecipient) *
 	return _u.AddBroadcastRecipientIDs(ids...)
 }
 
+// AddBroadcastFigureIDs adds the "broadcast_figures" edge to the BroadcastFigure entity by IDs.
+func (_u *WorkspaceUpdateOne) AddBroadcastFigureIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddBroadcastFigureIDs(ids...)
+	return _u
+}
+
+// AddBroadcastFigures adds the "broadcast_figures" edges to the BroadcastFigure entity.
+func (_u *WorkspaceUpdateOne) AddBroadcastFigures(v ...*BroadcastFigure) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddBroadcastFigureIDs(ids...)
+}
+
+// AddAutomationFigureIDs adds the "automation_figures" edge to the AutomationFigure entity by IDs.
+func (_u *WorkspaceUpdateOne) AddAutomationFigureIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddAutomationFigureIDs(ids...)
+	return _u
+}
+
+// AddAutomationFigures adds the "automation_figures" edges to the AutomationFigure entity.
+func (_u *WorkspaceUpdateOne) AddAutomationFigures(v ...*AutomationFigure) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddAutomationFigureIDs(ids...)
+}
+
 // AddEmailTemplateIDs adds the "email_templates" edge to the EmailTemplate entity by IDs.
 func (_u *WorkspaceUpdateOne) AddEmailTemplateIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddEmailTemplateIDs(ids...)
@@ -5875,6 +6069,48 @@ func (_u *WorkspaceUpdateOne) RemoveBroadcastRecipients(v ...*BroadcastRecipient
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveBroadcastRecipientIDs(ids...)
+}
+
+// ClearBroadcastFigures clears all "broadcast_figures" edges to the BroadcastFigure entity.
+func (_u *WorkspaceUpdateOne) ClearBroadcastFigures() *WorkspaceUpdateOne {
+	_u.mutation.ClearBroadcastFigures()
+	return _u
+}
+
+// RemoveBroadcastFigureIDs removes the "broadcast_figures" edge to BroadcastFigure entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveBroadcastFigureIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveBroadcastFigureIDs(ids...)
+	return _u
+}
+
+// RemoveBroadcastFigures removes "broadcast_figures" edges to BroadcastFigure entities.
+func (_u *WorkspaceUpdateOne) RemoveBroadcastFigures(v ...*BroadcastFigure) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveBroadcastFigureIDs(ids...)
+}
+
+// ClearAutomationFigures clears all "automation_figures" edges to the AutomationFigure entity.
+func (_u *WorkspaceUpdateOne) ClearAutomationFigures() *WorkspaceUpdateOne {
+	_u.mutation.ClearAutomationFigures()
+	return _u
+}
+
+// RemoveAutomationFigureIDs removes the "automation_figures" edge to AutomationFigure entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveAutomationFigureIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveAutomationFigureIDs(ids...)
+	return _u
+}
+
+// RemoveAutomationFigures removes "automation_figures" edges to AutomationFigure entities.
+func (_u *WorkspaceUpdateOne) RemoveAutomationFigures(v ...*AutomationFigure) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAutomationFigureIDs(ids...)
 }
 
 // ClearEmailTemplates clears all "email_templates" edges to the EmailTemplate entity.
@@ -7568,6 +7804,96 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(broadcastrecipient.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.BroadcastFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedBroadcastFiguresIDs(); len(nodes) > 0 && !_u.mutation.BroadcastFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.BroadcastFiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.BroadcastFiguresTable,
+			Columns: []string{workspace.BroadcastFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(broadcastfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.AutomationFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedAutomationFiguresIDs(); len(nodes) > 0 && !_u.mutation.AutomationFiguresCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AutomationFiguresIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.AutomationFiguresTable,
+			Columns: []string{workspace.AutomationFiguresColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(automationfigure.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

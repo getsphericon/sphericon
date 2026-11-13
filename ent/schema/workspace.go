@@ -211,6 +211,8 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("holds", Hold.Type),
 		edge.To("broadcasts", Broadcast.Type),
 		edge.To("broadcast_recipients", BroadcastRecipient.Type),
+		edge.To("broadcast_figures", BroadcastFigure.Type),
+		edge.To("automation_figures", AutomationFigure.Type),
 		edge.To("email_templates", EmailTemplate.Type),
 		edge.To("brand_kits", BrandKit.Type),
 		edge.To("automations", Automation.Type),

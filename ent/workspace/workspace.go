@@ -115,6 +115,10 @@ const (
 	EdgeBroadcasts = "broadcasts"
 	// EdgeBroadcastRecipients holds the string denoting the broadcast_recipients edge name in mutations.
 	EdgeBroadcastRecipients = "broadcast_recipients"
+	// EdgeBroadcastFigures holds the string denoting the broadcast_figures edge name in mutations.
+	EdgeBroadcastFigures = "broadcast_figures"
+	// EdgeAutomationFigures holds the string denoting the automation_figures edge name in mutations.
+	EdgeAutomationFigures = "automation_figures"
 	// EdgeEmailTemplates holds the string denoting the email_templates edge name in mutations.
 	EdgeEmailTemplates = "email_templates"
 	// EdgeBrandKits holds the string denoting the brand_kits edge name in mutations.
@@ -320,6 +324,20 @@ const (
 	BroadcastRecipientsInverseTable = "broadcast_recipients"
 	// BroadcastRecipientsColumn is the table column denoting the broadcast_recipients relation/edge.
 	BroadcastRecipientsColumn = "workspace_id"
+	// BroadcastFiguresTable is the table that holds the broadcast_figures relation/edge.
+	BroadcastFiguresTable = "broadcast_figures"
+	// BroadcastFiguresInverseTable is the table name for the BroadcastFigure entity.
+	// It exists in this package in order to avoid circular dependency with the "broadcastfigure" package.
+	BroadcastFiguresInverseTable = "broadcast_figures"
+	// BroadcastFiguresColumn is the table column denoting the broadcast_figures relation/edge.
+	BroadcastFiguresColumn = "workspace_id"
+	// AutomationFiguresTable is the table that holds the automation_figures relation/edge.
+	AutomationFiguresTable = "automation_figures"
+	// AutomationFiguresInverseTable is the table name for the AutomationFigure entity.
+	// It exists in this package in order to avoid circular dependency with the "automationfigure" package.
+	AutomationFiguresInverseTable = "automation_figures"
+	// AutomationFiguresColumn is the table column denoting the automation_figures relation/edge.
+	AutomationFiguresColumn = "workspace_id"
 	// EmailTemplatesTable is the table that holds the email_templates relation/edge.
 	EmailTemplatesTable = "email_templates"
 	// EmailTemplatesInverseTable is the table name for the EmailTemplate entity.
@@ -1039,6 +1057,34 @@ func ByBroadcastRecipients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOpti
 	}
 }
 
+// ByBroadcastFiguresCount orders the results by broadcast_figures count.
+func ByBroadcastFiguresCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newBroadcastFiguresStep(), opts...)
+	}
+}
+
+// ByBroadcastFigures orders the results by broadcast_figures terms.
+func ByBroadcastFigures(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newBroadcastFiguresStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByAutomationFiguresCount orders the results by automation_figures count.
+func ByAutomationFiguresCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAutomationFiguresStep(), opts...)
+	}
+}
+
+// ByAutomationFigures orders the results by automation_figures terms.
+func ByAutomationFigures(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAutomationFiguresStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByEmailTemplatesCount orders the results by email_templates count.
 func ByEmailTemplatesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1491,6 +1537,20 @@ func newBroadcastRecipientsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(BroadcastRecipientsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, BroadcastRecipientsTable, BroadcastRecipientsColumn),
+	)
+}
+func newBroadcastFiguresStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(BroadcastFiguresInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, BroadcastFiguresTable, BroadcastFiguresColumn),
+	)
+}
+func newAutomationFiguresStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AutomationFiguresInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AutomationFiguresTable, AutomationFiguresColumn),
 	)
 }
 func newEmailTemplatesStep() *sqlgraph.Step {

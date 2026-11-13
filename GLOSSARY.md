@@ -245,7 +245,10 @@ How long an Event is kept before it is deleted. Events split by purpose: **evide
 (consent proof such as `marketing.confirmed` and `sms.confirmed`, hard bounces and complaints, unsubscribes)
 are the audit and dispute record and are never deleted by age; **analytical** Events (opens, clicks,
 deliveries, customer-tracked actions) are deleted once older than the instance's retention window,
-so segment conditions cannot look back past it. With the Enterprise feature a Workspace also sets
+so segment conditions cannot look back past it. **Outbound messages** have a window of their own:
+past it a finished **Broadcast**'s figures are frozen and its recipients and messages deleted, and an
+**Automation**'s old messages are counted into its figures and deleted, so no report changes (ADR
+0143). With the Enterprise feature a Workspace also sets
 how long its **Audit log** keeps an Audit entry, which is otherwise never deleted.
 _Avoid_: TTL, expiry, purge, archive
 

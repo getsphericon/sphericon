@@ -92,13 +92,15 @@ type BroadcastEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// Recipients holds the value of the recipients edge.
 	Recipients []*BroadcastRecipient `json:"recipients,omitempty"`
+	// Figures holds the value of the figures edge.
+	Figures []*BroadcastFigure `json:"figures,omitempty"`
 	// Segment holds the value of the segment edge.
 	Segment *Segment `json:"segment,omitempty"`
 	// Integration holds the value of the integration edge.
 	Integration *Integration `json:"integration,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -121,12 +123,21 @@ func (e BroadcastEdges) RecipientsOrErr() ([]*BroadcastRecipient, error) {
 	return nil, &NotLoadedError{edge: "recipients"}
 }
 
+// FiguresOrErr returns the Figures value or an error if the edge
+// was not loaded in eager-loading.
+func (e BroadcastEdges) FiguresOrErr() ([]*BroadcastFigure, error) {
+	if e.loadedTypes[2] {
+		return e.Figures, nil
+	}
+	return nil, &NotLoadedError{edge: "figures"}
+}
+
 // SegmentOrErr returns the Segment value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e BroadcastEdges) SegmentOrErr() (*Segment, error) {
 	if e.Segment != nil {
 		return e.Segment, nil
-	} else if e.loadedTypes[2] {
+	} else if e.loadedTypes[3] {
 		return nil, &NotFoundError{label: segment.Label}
 	}
 	return nil, &NotLoadedError{edge: "segment"}
@@ -137,7 +148,7 @@ func (e BroadcastEdges) SegmentOrErr() (*Segment, error) {
 func (e BroadcastEdges) IntegrationOrErr() (*Integration, error) {
 	if e.Integration != nil {
 		return e.Integration, nil
-	} else if e.loadedTypes[3] {
+	} else if e.loadedTypes[4] {
 		return nil, &NotFoundError{label: integration.Label}
 	}
 	return nil, &NotLoadedError{edge: "integration"}
@@ -389,6 +400,11 @@ func (_m *Broadcast) QueryWorkspace() *WorkspaceQuery {
 // QueryRecipients queries the "recipients" edge of the Broadcast entity.
 func (_m *Broadcast) QueryRecipients() *BroadcastRecipientQuery {
 	return NewBroadcastClient(_m.config).QueryRecipients(_m)
+}
+
+// QueryFigures queries the "figures" edge of the Broadcast entity.
+func (_m *Broadcast) QueryFigures() *BroadcastFigureQuery {
+	return NewBroadcastClient(_m.config).QueryFigures(_m)
 }
 
 // QuerySegment queries the "segment" edge of the Broadcast entity.

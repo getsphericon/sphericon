@@ -77,6 +77,8 @@ const (
 	EdgeWorkspace = "workspace"
 	// EdgeRecipients holds the string denoting the recipients edge name in mutations.
 	EdgeRecipients = "recipients"
+	// EdgeFigures holds the string denoting the figures edge name in mutations.
+	EdgeFigures = "figures"
 	// EdgeSegment holds the string denoting the segment edge name in mutations.
 	EdgeSegment = "segment"
 	// EdgeIntegration holds the string denoting the integration edge name in mutations.
@@ -97,6 +99,13 @@ const (
 	RecipientsInverseTable = "broadcast_recipients"
 	// RecipientsColumn is the table column denoting the recipients relation/edge.
 	RecipientsColumn = "broadcast_id"
+	// FiguresTable is the table that holds the figures relation/edge.
+	FiguresTable = "broadcast_figures"
+	// FiguresInverseTable is the table name for the BroadcastFigure entity.
+	// It exists in this package in order to avoid circular dependency with the "broadcastfigure" package.
+	FiguresInverseTable = "broadcast_figures"
+	// FiguresColumn is the table column denoting the figures relation/edge.
+	FiguresColumn = "broadcast_id"
 	// SegmentTable is the table that holds the segment relation/edge.
 	SegmentTable = "broadcasts"
 	// SegmentInverseTable is the table name for the Segment entity.
@@ -383,6 +392,20 @@ func ByRecipients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByFiguresCount orders the results by figures count.
+func ByFiguresCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFiguresStep(), opts...)
+	}
+}
+
+// ByFigures orders the results by figures terms.
+func ByFigures(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFiguresStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // BySegmentField orders the results by segment field.
 func BySegmentField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -408,6 +431,13 @@ func newRecipientsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RecipientsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RecipientsTable, RecipientsColumn),
+	)
+}
+func newFiguresStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FiguresInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FiguresTable, FiguresColumn),
 	)
 }
 func newSegmentStep() *sqlgraph.Step {

@@ -47,7 +47,7 @@ func hit(t *testing.T, env *testhelper.TestEnv, path, userAgent, addr string) *h
 
 func clickPathTo(t *testing.T, env *testhelper.TestEnv, messageID int64, dest string) string {
 	t.Helper()
-	link, err := env.Tracker.ClickURL(messageID, dest)
+	link, err := env.Tracker.ClickURL(env.Tracked(t, messageID), dest)
 	require.NoError(t, err)
 	return "/e/c/" + link[len(env.Tracker.Origin()+"/e/c/"):]
 }

@@ -64,6 +64,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -567,8 +568,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		client := do.MustInvoke[*ent.Client](injector)
 		p := performers{}
 		add(tb, p, txDB, client, jobs.NewSendNoticeWorker(systemSender))
-		add(tb, p, txDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
-		add(tb, p, txDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
+		addScheduled(tb, p, txDB, client, injector)
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
 		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
@@ -772,3 +772,15 @@ var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil
 var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
 	return preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
 })
+
+// addScheduled registers the workers of the scheduled work a test runs: the Integration quota
+// refresh, the Sending domain check, and message retention's daily tick with the prune of one
+// Workspace it queues (ADR 0143).
+func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client, injector do.Injector) {
+	tb.Helper()
+	add(tb, p, sqlDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
+	add(tb, p, sqlDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
+	retention := do.MustInvoke[*messageretention.UseCase](injector)
+	add(tb, p, sqlDB, client, jobs.NewPruneMessagesWorker(retention))
+	add(tb, p, sqlDB, client, jobs.NewPruneWorkspaceMessagesWorker(retention))
+}

@@ -234,6 +234,28 @@ func TestConfigLoadEventsRetention(t *testing.T) {
 	require.Error(t, err, "a negative retention must be rejected")
 }
 
+func TestConfigLoadMessagesRetention(t *testing.T) {
+	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
+	cfg, err := config.Load(config.EnvTest)
+	require.NoError(t, err)
+	require.Equal(t, 400*24*time.Hour, cfg.MessagesRetention)
+
+	t.Setenv("SPHERICON_MESSAGES_RETENTION_DAYS", "0")
+	cfg, err = config.Load(config.EnvTest)
+	require.NoError(t, err)
+	require.Equal(t, time.Duration(0), cfg.MessagesRetention, "0 disables the prune")
+
+	t.Setenv("SPHERICON_MESSAGES_RETENTION_DAYS", "180")
+	cfg, err = config.Load(config.EnvTest)
+	require.NoError(t, err)
+	require.Equal(t, 180*24*time.Hour, cfg.MessagesRetention)
+
+	t.Setenv("SPHERICON_MESSAGES_RETENTION_DAYS", "179")
+	_, err = config.Load(config.EnvTest)
+	require.ErrorContains(t, err, "SPHERICON_MESSAGES_RETENTION_DAYS must be 0 or at least 180",
+		"a window shorter than the analytics overview reads is refused")
+}
+
 func TestConfigLoadUnverifiedUserRetention(t *testing.T) {
 	t.Setenv("SPHERICON_DATABASE_URL", "postgres://x")
 	cfg, err := config.Load(config.EnvTest)

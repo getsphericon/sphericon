@@ -10,7 +10,8 @@ per-instance window (default 400 days, `0` disables) that deletes only **analyti
 indefinitely as the audit and dispute record (GDPR consent proof, "why was this address
 suppressed"). Suppression itself does not depend on them: it is a materialized registry that
 survives Event deletion. Broadcast reports read the Outbound message's stamps (ADR 0053), not live Events, so
-deleting analytical Events does not change them; Complaint/Bounce rates (ADR 0011) read a short
+deleting analytical Events does not change them (the messages have a retention of their own, which
+keeps their figures, ADR 0143); Complaint/Bounce rates (ADR 0011) read a short
 live window far inside the retention default. The
 outbox is pruned separately and more aggressively: rows strictly below the lowest consumer-group
 cursor and older than a floor (7 days), since the `events` table is the durable record and

@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
+	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
@@ -90,6 +91,8 @@ type Deps struct {
 	SecondFactor *secondfactors.Module
 	Orders       *orders.Module
 	Deletion     *workspacedeletion.UseCase
+	// MessageRetention deletes old Outbound messages, keeping their figures (ADR 0143).
+	MessageRetention *messageretention.UseCase
 	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
 	// (ADR 0010, ADR 0071); verified is a live property.
 	SendingDomains *sendingdomains.Module
@@ -152,6 +155,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events, now))
+	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
+	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages, now))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
@@ -343,6 +348,14 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 			eventsRetentionSchedule,
 			func() (river.JobArgs, *river.InsertOpts) {
 				return PruneEventsArgs{}, nil
+			},
+			nil,
+		),
+		// Delete expired Outbound messages, keeping their figures, daily at 05:00 UTC (ADR 0143).
+		river.NewPeriodicJob(
+			messagesRetentionSchedule,
+			func() (river.JobArgs, *river.InsertOpts) {
+				return PruneMessagesArgs{}, nil
 			},
 			nil,
 		),

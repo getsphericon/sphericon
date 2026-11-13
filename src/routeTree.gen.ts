@@ -8,6 +8,8 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root.tsx'
 import { Route as IndexRouteImport } from './routes/index.tsx'
 import { Route as AcceptanceRouteImport } from './routes/acceptance.tsx'
@@ -92,6 +94,8 @@ import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdIndexRouteImport } from 
 import { Route as WorkspacesWorkspaceIdSegmentsSegmentIdEditRouteImport } from './routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as WorkspacesWorkspaceIdTemplatesTemplateIdEditRouteImport } from './routes/workspaces/$workspaceId/templates/$templateId/edit.tsx'
 
+const LinkExpiredLazyRouteImport = createFileRoute('/link-expired')()
+
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -141,6 +145,13 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() =>
   import('./routes/forgot-password.lazy.tsx').then((d) => d.Route),
+)
+const LinkExpiredLazyRoute = LinkExpiredLazyRouteImport.update({
+  id: '/link-expired',
+  path: '/link-expired',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() =>
+  import('./routes/link-expired.lazy.tsx').then((d) => d.Route),
 )
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -826,6 +837,7 @@ export interface FileRoutesByFullPath {
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/link-expired': typeof LinkExpiredLazyRoute
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
@@ -907,6 +919,7 @@ export interface FileRoutesByTo {
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/link-expired': typeof LinkExpiredLazyRoute
   '/account/security': typeof AccountSecurityRoute
   '/console/login': typeof ConsoleLoginRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -986,6 +999,7 @@ export interface FileRoutesById {
   '/unsubscribe': typeof UnsubscribeRoute
   '/unsubscribed': typeof UnsubscribedRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/link-expired': typeof LinkExpiredLazyRoute
   '/console/_authed': typeof ConsoleAuthedRouteRouteWithChildren
   '/workspaces/$workspaceId': typeof WorkspacesWorkspaceIdRouteRouteWithChildren
   '/account/security': typeof AccountSecurityRoute
@@ -1072,6 +1086,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
+    | '/link-expired'
     | '/workspaces/$workspaceId'
     | '/account/security'
     | '/console/login'
@@ -1153,6 +1168,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
+    | '/link-expired'
     | '/account/security'
     | '/console/login'
     | '/invitations/$token'
@@ -1231,6 +1247,7 @@ export interface FileRouteTypes {
     | '/unsubscribe'
     | '/unsubscribed'
     | '/verify-email'
+    | '/link-expired'
     | '/console/_authed'
     | '/workspaces/$workspaceId'
     | '/account/security'
@@ -1316,6 +1333,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   UnsubscribedRoute: typeof UnsubscribedRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  LinkExpiredLazyRoute: typeof LinkExpiredLazyRoute
   WorkspacesWorkspaceIdRouteRoute: typeof WorkspacesWorkspaceIdRouteRouteWithChildren
   InvitationsTokenRoute: typeof InvitationsTokenRoute
   LegalKeyRoute: typeof LegalKeyRoute
@@ -1379,6 +1397,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/link-expired': {
+      id: '/link-expired'
+      path: '/link-expired'
+      fullPath: '/link-expired'
+      preLoaderRoute: typeof LinkExpiredLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -2163,6 +2188,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnsubscribeRoute: UnsubscribeRoute,
   UnsubscribedRoute: UnsubscribedRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  LinkExpiredLazyRoute: LinkExpiredLazyRoute,
   WorkspacesWorkspaceIdRouteRoute: WorkspacesWorkspaceIdRouteRouteWithChildren,
   InvitationsTokenRoute: InvitationsTokenRoute,
   LegalKeyRoute: LegalKeyRoute,

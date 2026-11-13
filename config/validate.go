@@ -42,6 +42,16 @@ func validateEnvironment(e *environment) error {
 // rule says what a value must be under the validator tag with its param: the refusal of a value
 // that breaks it, and the rule the configuration reference lists.
 func rule(tag, param string) string {
+	spec := tag
+	if param != "" {
+		spec += "=" + param
+	}
+	if alternatives := strings.Split(spec, "|"); len(alternatives) > 1 {
+		for i, a := range alternatives {
+			alternatives[i] = alternative(a)
+		}
+		return "must be " + strings.Join(alternatives, " or ")
+	}
 	switch tag {
 	case "gt":
 		if param == "0" {
@@ -63,6 +73,19 @@ func rule(tag, param string) string {
 		return "must be set together with " + fieldVariable(param)
 	default:
 		return fmt.Sprintf("breaks the rule %s=%s", tag, param)
+	}
+}
+
+// alternative says one value an or-rule (`eq=0|gte=180`) allows: "0", "at least 180".
+func alternative(a string) string {
+	name, param, _ := strings.Cut(a, "=")
+	switch name {
+	case "eq":
+		return param
+	case "gte":
+		return "at least " + param
+	default:
+		return a
 	}
 }
 

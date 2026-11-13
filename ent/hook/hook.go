@@ -57,6 +57,18 @@ func (f AutomationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationMutation", m)
 }
 
+// The AutomationFigureFunc type is an adapter to allow the use of ordinary
+// function as AutomationFigure mutator.
+type AutomationFigureFunc func(context.Context, *ent.AutomationFigureMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AutomationFigureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AutomationFigureMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AutomationFigureMutation", m)
+}
+
 // The AutomationRunFunc type is an adapter to allow the use of ordinary
 // function as AutomationRun mutator.
 type AutomationRunFunc func(context.Context, *ent.AutomationRunMutation) (ent.Value, error)
@@ -115,6 +127,18 @@ func (f BroadcastFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BroadcastMutation", m)
+}
+
+// The BroadcastFigureFunc type is an adapter to allow the use of ordinary
+// function as BroadcastFigure mutator.
+type BroadcastFigureFunc func(context.Context, *ent.BroadcastFigureMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BroadcastFigureFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BroadcastFigureMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BroadcastFigureMutation", m)
 }
 
 // The BroadcastRecipientFunc type is an adapter to allow the use of ordinary

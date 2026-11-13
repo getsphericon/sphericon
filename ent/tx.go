@@ -22,6 +22,8 @@ type Tx struct {
 	AuthAttempt *AuthAttemptClient
 	// Automation is the client for interacting with the Automation builders.
 	Automation *AutomationClient
+	// AutomationFigure is the client for interacting with the AutomationFigure builders.
+	AutomationFigure *AutomationFigureClient
 	// AutomationRun is the client for interacting with the AutomationRun builders.
 	AutomationRun *AutomationRunClient
 	// AutomationVersion is the client for interacting with the AutomationVersion builders.
@@ -32,6 +34,8 @@ type Tx struct {
 	BrandKit *BrandKitClient
 	// Broadcast is the client for interacting with the Broadcast builders.
 	Broadcast *BroadcastClient
+	// BroadcastFigure is the client for interacting with the BroadcastFigure builders.
+	BroadcastFigure *BroadcastFigureClient
 	// BroadcastRecipient is the client for interacting with the BroadcastRecipient builders.
 	BroadcastRecipient *BroadcastRecipientClient
 	// CapturedMessage is the client for interacting with the CapturedMessage builders.
@@ -289,11 +293,13 @@ func (tx *Tx) init() {
 	tx.AuditEntry = NewAuditEntryClient(tx.config)
 	tx.AuthAttempt = NewAuthAttemptClient(tx.config)
 	tx.Automation = NewAutomationClient(tx.config)
+	tx.AutomationFigure = NewAutomationFigureClient(tx.config)
 	tx.AutomationRun = NewAutomationRunClient(tx.config)
 	tx.AutomationVersion = NewAutomationVersionClient(tx.config)
 	tx.Binding = NewBindingClient(tx.config)
 	tx.BrandKit = NewBrandKitClient(tx.config)
 	tx.Broadcast = NewBroadcastClient(tx.config)
+	tx.BroadcastFigure = NewBroadcastFigureClient(tx.config)
 	tx.BroadcastRecipient = NewBroadcastRecipientClient(tx.config)
 	tx.CapturedMessage = NewCapturedMessageClient(tx.config)
 	tx.Confirmation = NewConfirmationClient(tx.config)

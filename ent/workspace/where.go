@@ -2044,6 +2044,52 @@ func HasBroadcastRecipientsWith(preds ...predicate.BroadcastRecipient) predicate
 	})
 }
 
+// HasBroadcastFigures applies the HasEdge predicate on the "broadcast_figures" edge.
+func HasBroadcastFigures() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, BroadcastFiguresTable, BroadcastFiguresColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasBroadcastFiguresWith applies the HasEdge predicate on the "broadcast_figures" edge with a given conditions (other predicates).
+func HasBroadcastFiguresWith(preds ...predicate.BroadcastFigure) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newBroadcastFiguresStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAutomationFigures applies the HasEdge predicate on the "automation_figures" edge.
+func HasAutomationFigures() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AutomationFiguresTable, AutomationFiguresColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAutomationFiguresWith applies the HasEdge predicate on the "automation_figures" edge with a given conditions (other predicates).
+func HasAutomationFiguresWith(preds ...predicate.AutomationFigure) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newAutomationFiguresStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasEmailTemplates applies the HasEdge predicate on the "email_templates" edge.
 func HasEmailTemplates() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

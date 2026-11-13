@@ -107,7 +107,9 @@ func New(d Deps) http.Handler {
 		dest, err := d.Engagement.ShortLink(r.Context(), r.PathValue("token"), hit(r, d.Limiter))
 		switch {
 		case errors.Is(err, engagement.ErrNotFound):
-			http.NotFound(w, r)
+			// Its URL went with the link (message retention, ADR 0143) or it never was: a neutral
+			// page of the app, naming neither sender nor message.
+			http.Redirect(w, r, appURL+"/link-expired", http.StatusFound)
 		case err != nil:
 			slog.ErrorContext(r.Context(), "tracking: short link lookup failed", "err", err)
 			http.Error(w, "lookup failed", http.StatusInternalServerError)

@@ -9,11 +9,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -191,6 +193,57 @@ func init() {
 	automationDescName := automationFields[1].Descriptor()
 	// automation.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	automation.NameValidator = automationDescName.Validators[0].(func(string) error)
+	automationfigureMixin := schema.AutomationFigure{}.Mixin()
+	automationfigureMixinFields0 := automationfigureMixin[0].Fields()
+	_ = automationfigureMixinFields0
+	automationfigureFields := schema.AutomationFigure{}.Fields()
+	_ = automationfigureFields
+	// automationfigureDescCreatedAt is the schema descriptor for created_at field.
+	automationfigureDescCreatedAt := automationfigureMixinFields0[0].Descriptor()
+	// automationfigure.DefaultCreatedAt holds the default value on creation for the created_at field.
+	automationfigure.DefaultCreatedAt = automationfigureDescCreatedAt.Default.(func() time.Time)
+	// automationfigureDescUpdatedAt is the schema descriptor for updated_at field.
+	automationfigureDescUpdatedAt := automationfigureMixinFields0[1].Descriptor()
+	// automationfigure.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	automationfigure.DefaultUpdatedAt = automationfigureDescUpdatedAt.Default.(func() time.Time)
+	// automationfigure.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	automationfigure.UpdateDefaultUpdatedAt = automationfigureDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// automationfigureDescSent is the schema descriptor for sent field.
+	automationfigureDescSent := automationfigureFields[3].Descriptor()
+	// automationfigure.DefaultSent holds the default value on creation for the sent field.
+	automationfigure.DefaultSent = automationfigureDescSent.Default.(int)
+	// automationfigure.SentValidator is a validator for the "sent" field. It is called by the builders before save.
+	automationfigure.SentValidator = automationfigureDescSent.Validators[0].(func(int) error)
+	// automationfigureDescSkipped is the schema descriptor for skipped field.
+	automationfigureDescSkipped := automationfigureFields[4].Descriptor()
+	// automationfigure.DefaultSkipped holds the default value on creation for the skipped field.
+	automationfigure.DefaultSkipped = automationfigureDescSkipped.Default.(int)
+	// automationfigure.SkippedValidator is a validator for the "skipped" field. It is called by the builders before save.
+	automationfigure.SkippedValidator = automationfigureDescSkipped.Validators[0].(func(int) error)
+	// automationfigureDescDelivered is the schema descriptor for delivered field.
+	automationfigureDescDelivered := automationfigureFields[5].Descriptor()
+	// automationfigure.DefaultDelivered holds the default value on creation for the delivered field.
+	automationfigure.DefaultDelivered = automationfigureDescDelivered.Default.(int)
+	// automationfigure.DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
+	automationfigure.DeliveredValidator = automationfigureDescDelivered.Validators[0].(func(int) error)
+	// automationfigureDescBounced is the schema descriptor for bounced field.
+	automationfigureDescBounced := automationfigureFields[6].Descriptor()
+	// automationfigure.DefaultBounced holds the default value on creation for the bounced field.
+	automationfigure.DefaultBounced = automationfigureDescBounced.Default.(int)
+	// automationfigure.BouncedValidator is a validator for the "bounced" field. It is called by the builders before save.
+	automationfigure.BouncedValidator = automationfigureDescBounced.Validators[0].(func(int) error)
+	// automationfigureDescComplained is the schema descriptor for complained field.
+	automationfigureDescComplained := automationfigureFields[7].Descriptor()
+	// automationfigure.DefaultComplained holds the default value on creation for the complained field.
+	automationfigure.DefaultComplained = automationfigureDescComplained.Default.(int)
+	// automationfigure.ComplainedValidator is a validator for the "complained" field. It is called by the builders before save.
+	automationfigure.ComplainedValidator = automationfigureDescComplained.Validators[0].(func(int) error)
+	// automationfigureDescCaptured is the schema descriptor for captured field.
+	automationfigureDescCaptured := automationfigureFields[8].Descriptor()
+	// automationfigure.DefaultCaptured holds the default value on creation for the captured field.
+	automationfigure.DefaultCaptured = automationfigureDescCaptured.Default.(int)
+	// automationfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
+	automationfigure.CapturedValidator = automationfigureDescCaptured.Validators[0].(func(int) error)
 	automationrunMixin := schema.AutomationRun{}.Mixin()
 	automationrunMixinFields0 := automationrunMixin[0].Fields()
 	_ = automationrunMixinFields0
@@ -338,6 +391,73 @@ func init() {
 	broadcastDescLinkTracking := broadcastFields[11].Descriptor()
 	// broadcast.DefaultLinkTracking holds the default value on creation for the link_tracking field.
 	broadcast.DefaultLinkTracking = broadcastDescLinkTracking.Default.(bool)
+	broadcastfigureMixin := schema.BroadcastFigure{}.Mixin()
+	broadcastfigureMixinFields0 := broadcastfigureMixin[0].Fields()
+	_ = broadcastfigureMixinFields0
+	broadcastfigureFields := schema.BroadcastFigure{}.Fields()
+	_ = broadcastfigureFields
+	// broadcastfigureDescCreatedAt is the schema descriptor for created_at field.
+	broadcastfigureDescCreatedAt := broadcastfigureMixinFields0[0].Descriptor()
+	// broadcastfigure.DefaultCreatedAt holds the default value on creation for the created_at field.
+	broadcastfigure.DefaultCreatedAt = broadcastfigureDescCreatedAt.Default.(func() time.Time)
+	// broadcastfigureDescUpdatedAt is the schema descriptor for updated_at field.
+	broadcastfigureDescUpdatedAt := broadcastfigureMixinFields0[1].Descriptor()
+	// broadcastfigure.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	broadcastfigure.DefaultUpdatedAt = broadcastfigureDescUpdatedAt.Default.(func() time.Time)
+	// broadcastfigure.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	broadcastfigure.UpdateDefaultUpdatedAt = broadcastfigureDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// broadcastfigureDescRecipients is the schema descriptor for recipients field.
+	broadcastfigureDescRecipients := broadcastfigureFields[2].Descriptor()
+	// broadcastfigure.RecipientsValidator is a validator for the "recipients" field. It is called by the builders before save.
+	broadcastfigure.RecipientsValidator = broadcastfigureDescRecipients.Validators[0].(func(int) error)
+	// broadcastfigureDescUnsubscribed is the schema descriptor for unsubscribed field.
+	broadcastfigureDescUnsubscribed := broadcastfigureFields[3].Descriptor()
+	// broadcastfigure.UnsubscribedValidator is a validator for the "unsubscribed" field. It is called by the builders before save.
+	broadcastfigure.UnsubscribedValidator = broadcastfigureDescUnsubscribed.Validators[0].(func(int) error)
+	// broadcastfigureDescSent is the schema descriptor for sent field.
+	broadcastfigureDescSent := broadcastfigureFields[4].Descriptor()
+	// broadcastfigure.SentValidator is a validator for the "sent" field. It is called by the builders before save.
+	broadcastfigure.SentValidator = broadcastfigureDescSent.Validators[0].(func(int) error)
+	// broadcastfigureDescSkipped is the schema descriptor for skipped field.
+	broadcastfigureDescSkipped := broadcastfigureFields[5].Descriptor()
+	// broadcastfigure.SkippedValidator is a validator for the "skipped" field. It is called by the builders before save.
+	broadcastfigure.SkippedValidator = broadcastfigureDescSkipped.Validators[0].(func(int) error)
+	// broadcastfigureDescFailed is the schema descriptor for failed field.
+	broadcastfigureDescFailed := broadcastfigureFields[6].Descriptor()
+	// broadcastfigure.FailedValidator is a validator for the "failed" field. It is called by the builders before save.
+	broadcastfigure.FailedValidator = broadcastfigureDescFailed.Validators[0].(func(int) error)
+	// broadcastfigureDescPending is the schema descriptor for pending field.
+	broadcastfigureDescPending := broadcastfigureFields[7].Descriptor()
+	// broadcastfigure.PendingValidator is a validator for the "pending" field. It is called by the builders before save.
+	broadcastfigure.PendingValidator = broadcastfigureDescPending.Validators[0].(func(int) error)
+	// broadcastfigureDescDelivered is the schema descriptor for delivered field.
+	broadcastfigureDescDelivered := broadcastfigureFields[8].Descriptor()
+	// broadcastfigure.DeliveredValidator is a validator for the "delivered" field. It is called by the builders before save.
+	broadcastfigure.DeliveredValidator = broadcastfigureDescDelivered.Validators[0].(func(int) error)
+	// broadcastfigureDescUndelivered is the schema descriptor for undelivered field.
+	broadcastfigureDescUndelivered := broadcastfigureFields[9].Descriptor()
+	// broadcastfigure.UndeliveredValidator is a validator for the "undelivered" field. It is called by the builders before save.
+	broadcastfigure.UndeliveredValidator = broadcastfigureDescUndelivered.Validators[0].(func(int) error)
+	// broadcastfigureDescBounced is the schema descriptor for bounced field.
+	broadcastfigureDescBounced := broadcastfigureFields[10].Descriptor()
+	// broadcastfigure.BouncedValidator is a validator for the "bounced" field. It is called by the builders before save.
+	broadcastfigure.BouncedValidator = broadcastfigureDescBounced.Validators[0].(func(int) error)
+	// broadcastfigureDescComplained is the schema descriptor for complained field.
+	broadcastfigureDescComplained := broadcastfigureFields[11].Descriptor()
+	// broadcastfigure.ComplainedValidator is a validator for the "complained" field. It is called by the builders before save.
+	broadcastfigure.ComplainedValidator = broadcastfigureDescComplained.Validators[0].(func(int) error)
+	// broadcastfigureDescOpened is the schema descriptor for opened field.
+	broadcastfigureDescOpened := broadcastfigureFields[12].Descriptor()
+	// broadcastfigure.OpenedValidator is a validator for the "opened" field. It is called by the builders before save.
+	broadcastfigure.OpenedValidator = broadcastfigureDescOpened.Validators[0].(func(int) error)
+	// broadcastfigureDescClicked is the schema descriptor for clicked field.
+	broadcastfigureDescClicked := broadcastfigureFields[13].Descriptor()
+	// broadcastfigure.ClickedValidator is a validator for the "clicked" field. It is called by the builders before save.
+	broadcastfigure.ClickedValidator = broadcastfigureDescClicked.Validators[0].(func(int) error)
+	// broadcastfigureDescCaptured is the schema descriptor for captured field.
+	broadcastfigureDescCaptured := broadcastfigureFields[14].Descriptor()
+	// broadcastfigure.CapturedValidator is a validator for the "captured" field. It is called by the builders before save.
+	broadcastfigure.CapturedValidator = broadcastfigureDescCaptured.Validators[0].(func(int) error)
 	broadcastrecipientMixin := schema.BroadcastRecipient{}.Mixin()
 	broadcastrecipientMixinFields0 := broadcastrecipientMixin[0].Fields()
 	_ = broadcastrecipientMixinFields0

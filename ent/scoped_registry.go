@@ -9,11 +9,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/apitoken"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/automation"
+	"github.com/getsphericon/sphericon/ent/automationfigure"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/brandkit"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -292,6 +294,51 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Name:         "AutomationFigure",
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.AutomationFigure.Query().Where(automationfigure.WorkspaceID(ws)).Order(Asc(automationfigure.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.AutomationFigure().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationFigure().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationFigure().Update().Where(automationfigure.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.AutomationFigure().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.AutomationFigure().Delete().Where(automationfigure.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.AutomationFigure.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.AutomationFigure().Create()
+				b.SetAutomationID(remap("Automation", src.AutomationID))
+				b.SetStep(src.Step)
+				b.SetSent(src.Sent)
+				b.SetSkipped(src.Skipped)
+				b.SetDelivered(src.Delivered)
+				b.SetBounced(src.Bounced)
+				b.SetComplained(src.Complained)
+				b.SetCaptured(src.Captured)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Name:         "AutomationRun",
@@ -649,6 +696,12 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 				{
+					Name: "figures", Target: "BroadcastFigure",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Broadcast().UpdateOneID(id).AddFigureIDs(target).Exec(ctx)
+					},
+				},
+				{
 					Name: "segment", Target: "Segment",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Broadcast().UpdateOneID(id).SetSegmentID(target).Exec(ctx)
@@ -661,6 +714,60 @@ func ScopedEntities() []ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Name:         "BroadcastFigure",
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.BroadcastFigure.Query().Where(broadcastfigure.WorkspaceID(ws)).Order(Asc(broadcastfigure.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.BroadcastFigure().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.BroadcastFigure().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.BroadcastFigure().Update().Where(broadcastfigure.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.BroadcastFigure().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.BroadcastFigure().Delete().Where(broadcastfigure.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.BroadcastFigure.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.BroadcastFigure().Create()
+				b.SetBroadcastID(remap("Broadcast", src.BroadcastID))
+				b.SetRecipients(src.Recipients)
+				b.SetUnsubscribed(src.Unsubscribed)
+				b.SetSent(src.Sent)
+				b.SetSkipped(src.Skipped)
+				b.SetFailed(src.Failed)
+				b.SetPending(src.Pending)
+				b.SetDelivered(src.Delivered)
+				b.SetUndelivered(src.Undelivered)
+				b.SetBounced(src.Bounced)
+				b.SetComplained(src.Complained)
+				b.SetOpened(src.Opened)
+				b.SetClicked(src.Clicked)
+				b.SetCaptured(src.Captured)
+				if src.PrunedAt != nil {
+					b.SetPrunedAt(*src.PrunedAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Name:         "BroadcastRecipient",

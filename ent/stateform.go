@@ -11,6 +11,7 @@ const (
 	StateFormAutomationRunStatus               = "machine"
 	StateFormBroadcastArchivedAt               = "machine"
 	StateFormBroadcastStatus                   = "machine"
+	StateFormBroadcastFigurePrunedAt           = "latch"
 	StateFormInstanceStateNoticeAcknowledgedAt = "latch"
 	StateFormIntegrationDiscardedAt            = "latch"
 	StateFormIntegrationProviderRefusedAt      = "machine"

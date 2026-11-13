@@ -363,6 +363,7 @@ components:
         'internal/usecase/secondfactorreset*',
         'internal/usecase/callbackinterpretation*',
         'internal/usecase/workspacedeletion*',
+        'internal/usecase/messageretention*',
         'internal/usecase/workspaceview*',
         'internal/usecase/signup*',
         'internal/usecase/noticedelivery*',
