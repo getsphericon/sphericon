@@ -58,21 +58,26 @@ func OpenRiverListener(ctx context.Context, url string) (*pgxpool.Pool, error) {
 // RegisterPoolMetrics exports both pools' statistics through otelsql (the db.sql.connection.*
 // metrics) on the global meter provider, so they surface wherever that provider is scraped. The
 // pool attribute is their one label of ours, so cardinality is bounded by the number of pools
-// (two). The function it returns unregisters both.
+// (two). Both pools are required. The function it returns unregisters both.
 func RegisterPoolMetrics(sqlDB, riverDB *sql.DB) (func() error, error) {
-	sqlReg, err := registerPoolMetrics(PoolSQL, sqlDB)
+	sqlReg, err := registerOnePool(PoolSQL, sqlDB)
 	if err != nil {
 		return nil, err
 	}
-	riverReg, err := registerPoolMetrics(PoolRiver, riverDB)
+	riverReg, err := registerOnePool(PoolRiver, riverDB)
 	if err != nil {
-		return nil, errors.Join(err, sqlReg.Unregister())
+		unregisterErr := sqlReg.Unregister()
+		return nil, errors.Join(err, unregisterErr)
 	}
-	return func() error { return errors.Join(sqlReg.Unregister(), riverReg.Unregister()) }, nil
+	return func() error {
+		sqlErr := sqlReg.Unregister()
+		riverErr := riverReg.Unregister()
+		return errors.Join(sqlErr, riverErr)
+	}, nil
 }
 
-func registerPoolMetrics(pool string, d *sql.DB) (metric.Registration, error) {
-	reg, err := otelsql.RegisterDBStatsMetrics(d, otelsql.WithAttributes(attribute.String("pool", pool)))
+func registerOnePool(pool string, sqlDB *sql.DB) (metric.Registration, error) {
+	reg, err := otelsql.RegisterDBStatsMetrics(sqlDB, otelsql.WithAttributes(attribute.String("pool", pool)))
 	if err != nil {
 		return nil, fmt.Errorf("register the %s pool metrics: %w", pool, err)
 	}
