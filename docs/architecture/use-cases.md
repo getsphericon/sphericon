@@ -51,8 +51,8 @@ table at a time, each batch of listed ids deleted by itself through `*ent.Scoped
 [Table ownership](modules.md#table-ownership)), and moves the
 Workspace row on through
 `TombstoneIn` (deleting one checks only its typed name, so it is `workspaces.Module.Delete`,
-ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with the OAuth codes that name it removed by `oauthclientsunchecked.DeleteCodesIn` and every
-job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)), both in the tombstone's transaction; and the
+ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with every
+job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; and the
 Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace, writing it through
 `workspacesunchecked.CreateIn` and its Owner Membership through `membershipsunchecked.AddCreatorIn` with the Send cap it
 starts with (`instancestates.DefaultSendCapIn`, ADR 0067), and moves a deleted one back through
@@ -101,8 +101,7 @@ use writes behind the Removal check (`tagsunchecked.DeleteIn`, the retype
 deletion window leave, and the User row, `usersunchecked.DeleteIn`), the Second factor reset's
 removals (`secondfactorsunchecked.ResetIn`, the factor with its Recovery codes, and
 `passkeysunchecked.DeleteAllIn`), the restore and the tombstone of a Workspace's deletion cycle
-(`workspacesunchecked.RestoreIn` and `TombstoneIn`), the removal of the OAuth codes its erase
-makes (`oauthclientsunchecked.DeleteCodesIn`; the erase deletes a Workspace's rows itself, ADR
+(`workspacesunchecked.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
 0110, so no owner's removal of them has a name), the creation of a Workspace with its creator's Membership (`workspacesunchecked.CreateIn`, `membershipsunchecked.AddCreatorIn`) and each owner's step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
 the bus, `suppressionsunchecked.EraseContact` and the others
 `internal/usecase/contacterasure`

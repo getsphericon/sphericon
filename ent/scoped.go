@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -510,6 +511,22 @@ func (s *Scoped) verifyMembership(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Membership: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyOAuthCode fails with ErrNotInWorkspace unless every id is a OAuthCode of the Workspace.
+func (s *Scoped) verifyOAuthCode(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.OAuthCode.Query().Where(oauthcode.IDIn(ids...), oauthcode.WorkspaceID(s.ws)).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("OAuthCode: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -24634,6 +24651,9 @@ func (x *MembershipScopedCreate) check(ctx context.Context) error {
 	if err := x.s.verifyApiToken(ctx, m.ConnectionsIDs()); err != nil {
 		return fmt.Errorf("connections: %w", err)
 	}
+	if err := x.s.verifyOAuthCode(ctx, m.OauthCodesIDs()); err != nil {
+		return fmt.Errorf("oauth_codes: %w", err)
+	}
 	return nil
 }
 
@@ -24688,6 +24708,15 @@ func (b *MembershipScopedCreateBulk) check(ctx context.Context) error {
 		}
 		if err := b.s.verifyApiToken(ctx, ids); err != nil {
 			return fmt.Errorf("connections: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().OauthCodesIDs()...)
+		}
+		if err := b.s.verifyOAuthCode(ctx, ids); err != nil {
+			return fmt.Errorf("oauth_codes: %w", err)
 		}
 	}
 	return nil
@@ -25076,6 +25105,9 @@ func (x *MembershipScopedUpdateOne) check(ctx context.Context) error {
 	if err := x.s.verifyApiToken(ctx, m.ConnectionsIDs()); err != nil {
 		return fmt.Errorf("connections: %w", err)
 	}
+	if err := x.s.verifyOAuthCode(ctx, m.OauthCodesIDs()); err != nil {
+		return fmt.Errorf("oauth_codes: %w", err)
+	}
 	return nil
 }
 
@@ -25273,6 +25305,9 @@ func (x *MembershipScopedUpdate) check(ctx context.Context) error {
 	if err := x.s.verifyApiToken(ctx, m.ConnectionsIDs()); err != nil {
 		return fmt.Errorf("connections: %w", err)
 	}
+	if err := x.s.verifyOAuthCode(ctx, m.OauthCodesIDs()); err != nil {
+		return fmt.Errorf("oauth_codes: %w", err)
+	}
 	return nil
 }
 
@@ -25290,6 +25325,751 @@ func (x *MembershipScopedUpdate) Save(ctx context.Context) (int, error) {
 
 // Exec is like Save, discarding the count.
 func (x *MembershipScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// OAuthCodeScoped reaches OAuthCode entities of one Workspace.
+type OAuthCodeScoped struct{ s *Scoped }
+
+// OAuthCode returns the OAuthCode entities of the Workspace.
+func (s *Scoped) OAuthCode() *OAuthCodeScoped { return &OAuthCodeScoped{s: s} }
+
+// Query returns a OAuthCode query already confined to the Workspace.
+func (t *OAuthCodeScoped) Query() *OAuthCodeQuery {
+	return t.s.c.OAuthCode.Query().Where(oauthcode.WorkspaceID(t.s.ws))
+}
+
+// Get returns the OAuthCode with the id; a row of another Workspace is not found.
+func (t *OAuthCodeScoped) Get(ctx context.Context, id int64) (*OAuthCode, error) {
+	return t.Query().Where(oauthcode.ID(id)).Only(ctx)
+}
+
+// OAuthCodeScopedDeleteOne wraps OAuthCodeDeleteOne.
+type OAuthCodeScopedDeleteOne struct {
+	s *Scoped
+	b *OAuthCodeDeleteOne
+}
+
+// DeleteOneID deletes the OAuthCode with the id; a row of another Workspace is not found.
+func (t *OAuthCodeScoped) DeleteOneID(id int64) *OAuthCodeScopedDeleteOne {
+	return &OAuthCodeScopedDeleteOne{s: t.s, b: t.s.c.OAuthCode.DeleteOneID(id).Where(oauthcode.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *OAuthCodeScopedDeleteOne) Where(ps ...predicate.OAuthCode) *OAuthCodeScopedDeleteOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *OAuthCodeScopedDeleteOne) Exec(ctx context.Context) error {
+	return x.b.Exec(ctx)
+}
+
+// OAuthCodeScopedDelete wraps OAuthCodeDelete.
+type OAuthCodeScopedDelete struct {
+	s *Scoped
+	b *OAuthCodeDelete
+}
+
+// Delete deletes the OAuthCode entities of the Workspace that match the predicates.
+func (t *OAuthCodeScoped) Delete() *OAuthCodeScopedDelete {
+	return &OAuthCodeScopedDelete{s: t.s, b: t.s.c.OAuthCode.Delete().Where(oauthcode.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *OAuthCodeScopedDelete) Where(ps ...predicate.OAuthCode) *OAuthCodeScopedDelete {
+	x.b.Where(ps...)
+	return x
+}
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *OAuthCodeScopedDelete) Exec(ctx context.Context) (int, error) {
+	return x.b.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- create
+
+// OAuthCodeScopedCreate wraps OAuthCodeCreate. It has no way to name a Workspace.
+type OAuthCodeScopedCreate struct {
+	s *Scoped
+	b *OAuthCodeCreate
+}
+
+// Create starts a OAuthCode in the Workspace.
+func (t *OAuthCodeScoped) Create() *OAuthCodeScopedCreate {
+	return &OAuthCodeScopedCreate{s: t.s, b: t.s.c.OAuthCode.Create().SetWorkspaceID(t.s.ws)}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *OAuthCodeScopedCreate) SetCreatedAt(v time.Time) *OAuthCodeScopedCreate {
+	x.b.SetCreatedAt(v)
+	return x
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *OAuthCodeScopedCreate) SetNillableCreatedAt(v *time.Time) *OAuthCodeScopedCreate {
+	x.b.SetNillableCreatedAt(v)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OAuthCodeScopedCreate) SetUpdatedAt(v time.Time) *OAuthCodeScopedCreate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *OAuthCodeScopedCreate) SetNillableUpdatedAt(v *time.Time) *OAuthCodeScopedCreate {
+	x.b.SetNillableUpdatedAt(v)
+	return x
+}
+
+// SetCodeHash sets the "code_hash" field.
+func (x *OAuthCodeScopedCreate) SetCodeHash(v string) *OAuthCodeScopedCreate {
+	x.b.SetCodeHash(v)
+	return x
+}
+
+// SetRedirectURI sets the "redirect_uri" field.
+func (x *OAuthCodeScopedCreate) SetRedirectURI(v string) *OAuthCodeScopedCreate {
+	x.b.SetRedirectURI(v)
+	return x
+}
+
+// SetCodeChallenge sets the "code_challenge" field.
+func (x *OAuthCodeScopedCreate) SetCodeChallenge(v string) *OAuthCodeScopedCreate {
+	x.b.SetCodeChallenge(v)
+	return x
+}
+
+// SetScopes sets the "scopes" field.
+func (x *OAuthCodeScopedCreate) SetScopes(v []string) *OAuthCodeScopedCreate {
+	x.b.SetScopes(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *OAuthCodeScopedCreate) SetExpiresAt(v time.Time) *OAuthCodeScopedCreate {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetUsedAt sets the "used_at" field.
+func (x *OAuthCodeScopedCreate) SetUsedAt(v time.Time) *OAuthCodeScopedCreate {
+	x.b.SetUsedAt(v)
+	return x
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (x *OAuthCodeScopedCreate) SetNillableUsedAt(v *time.Time) *OAuthCodeScopedCreate {
+	x.b.SetNillableUsedAt(v)
+	return x
+}
+
+// SetClientID sets the "client_id" field.
+func (x *OAuthCodeScopedCreate) SetClientID(v int64) *OAuthCodeScopedCreate {
+	x.b.SetClientID(v)
+	return x
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (x *OAuthCodeScopedCreate) SetMembershipID(v int64) *OAuthCodeScopedCreate {
+	x.b.SetMembershipID(v)
+	return x
+}
+
+// SetClient sets the "client" edge to the OAuthClient entity.
+func (x *OAuthCodeScopedCreate) SetClient(v *OAuthClient) *OAuthCodeScopedCreate {
+	x.b.SetClient(v)
+	return x
+}
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *OAuthCodeScopedCreate) SetMembership(v *Membership) *OAuthCodeScopedCreate {
+	x.b.SetMembership(v)
+	return x
+}
+
+func (x *OAuthCodeScopedCreate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyMembership(ctx, m.MembershipIDs()); err != nil {
+		return fmt.Errorf("membership: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then creates the OAuthCode.
+func (x *OAuthCodeScopedCreate) Save(ctx context.Context) (*OAuthCode, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *OAuthCodeScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// OAuthCodeScopedCreateBulk creates several OAuthCode entities of one Workspace at once.
+type OAuthCodeScopedCreateBulk struct {
+	s  *Scoped
+	xs []*OAuthCodeScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *OAuthCodeScoped) CreateBulk(xs ...*OAuthCodeScopedCreate) *OAuthCodeScopedCreateBulk {
+	return &OAuthCodeScopedCreateBulk{s: t.s, xs: xs}
+}
+
+func (b *OAuthCodeScopedCreateBulk) raw(ctx context.Context) (*OAuthCodeCreateBulk, error) {
+	builders := make([]*OAuthCodeCreate, len(b.xs))
+	for i, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return nil, fmt.Errorf("OAuthCode: builder of another scope: %w", ErrNotInWorkspace)
+		}
+		builders[i] = x.b
+	}
+	if err := b.check(ctx); err != nil {
+		return nil, err
+	}
+	return b.s.c.OAuthCode.CreateBulk(builders...), nil
+}
+
+// check verifies the references of every builder against the Workspace, one query per
+// reference for the whole batch rather than one per row.
+func (b *OAuthCodeScopedCreateBulk) check(ctx context.Context) error {
+	{
+		var ids []int64
+		for _, x := range b.xs {
+			ids = append(ids, x.b.Mutation().MembershipIDs()...)
+		}
+		if err := b.s.verifyMembership(ctx, ids); err != nil {
+			return fmt.Errorf("membership: %w", err)
+		}
+	}
+	return nil
+}
+
+// Save verifies every builder's references, then creates the OAuthCode entities.
+func (b *OAuthCodeScopedCreateBulk) Save(ctx context.Context) ([]*OAuthCode, error) {
+	raw, err := b.raw(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return raw.Save(ctx)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *OAuthCodeScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- upsert
+
+// OAuthCodeScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type OAuthCodeScopedUpsert struct{ u *sql.UpdateSet }
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *OAuthCodeScopedUpsert) SetUpdatedAt(v time.Time) *OAuthCodeScopedUpsert {
+	u.u.Set(oauthcode.FieldUpdatedAt, v)
+	return u
+}
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *OAuthCodeScopedUpsert) UpdateUpdatedAt() *OAuthCodeScopedUpsert {
+	u.u.SetExcluded(oauthcode.FieldUpdatedAt)
+	return u
+}
+
+// SetScopes sets the "scopes" field.
+func (u *OAuthCodeScopedUpsert) SetScopes(v []string) *OAuthCodeScopedUpsert {
+	u.u.Set(oauthcode.FieldScopes, v)
+	return u
+}
+
+// UpdateScopes sets the "scopes" field to the value that was provided on create.
+func (u *OAuthCodeScopedUpsert) UpdateScopes() *OAuthCodeScopedUpsert {
+	u.u.SetExcluded(oauthcode.FieldScopes)
+	return u
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *OAuthCodeScopedUpsert) SetExpiresAt(v time.Time) *OAuthCodeScopedUpsert {
+	u.u.Set(oauthcode.FieldExpiresAt, v)
+	return u
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *OAuthCodeScopedUpsert) UpdateExpiresAt() *OAuthCodeScopedUpsert {
+	u.u.SetExcluded(oauthcode.FieldExpiresAt)
+	return u
+}
+
+// SetUsedAt sets the "used_at" field.
+func (u *OAuthCodeScopedUpsert) SetUsedAt(v time.Time) *OAuthCodeScopedUpsert {
+	u.u.Set(oauthcode.FieldUsedAt, v)
+	return u
+}
+
+// UpdateUsedAt sets the "used_at" field to the value that was provided on create.
+func (u *OAuthCodeScopedUpsert) UpdateUsedAt() *OAuthCodeScopedUpsert {
+	u.u.SetExcluded(oauthcode.FieldUsedAt)
+	return u
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (u *OAuthCodeScopedUpsert) ClearUsedAt() *OAuthCodeScopedUpsert {
+	u.u.SetNull(oauthcode.FieldUsedAt)
+	return u
+}
+
+// SetClientID sets the "client_id" field.
+func (u *OAuthCodeScopedUpsert) SetClientID(v int64) *OAuthCodeScopedUpsert {
+	u.u.Set(oauthcode.FieldClientID, v)
+	return u
+}
+
+// UpdateClientID sets the "client_id" field to the value that was provided on create.
+func (u *OAuthCodeScopedUpsert) UpdateClientID() *OAuthCodeScopedUpsert {
+	u.u.SetExcluded(oauthcode.FieldClientID)
+	return u
+}
+
+// UpdateMembershipID sets the "membership_id" field to the value that was provided on create.
+func (u *OAuthCodeScopedUpsert) UpdateMembershipID() *OAuthCodeScopedUpsert {
+	u.u.SetExcluded(oauthcode.FieldMembershipID)
+	return u
+}
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *OAuthCodeScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(oauthcode.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// OAuthCodeScopedUpsertOne is the "upsert" of one OAuthCode.
+type OAuthCodeScopedUpsertOne struct {
+	x *OAuthCodeScopedCreate
+	u *OAuthCodeUpsertOne
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *OAuthCodeScopedCreate) OnConflictColumns(columns ...string) *OAuthCodeScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *OAuthCodeScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *OAuthCodeScopedUpsertOne {
+	return &OAuthCodeScopedUpsertOne{x: x, u: x.b.OnConflict((&OAuthCodeScoped{s: x.s}).conflictOptions(columns, target)...)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *OAuthCodeScopedUpsertOne) UpdateNewValues() *OAuthCodeScopedUpsertOne {
+	u.u.UpdateNewValues()
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *OAuthCodeScopedUpsertOne) Ignore() *OAuthCodeScopedUpsertOne {
+	u.u.Ignore()
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *OAuthCodeScopedUpsertOne) DoNothing() *OAuthCodeScopedUpsertOne {
+	u.u.DoNothing()
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *OAuthCodeScopedUpsertOne) Update(set func(*OAuthCodeScopedUpsert)) *OAuthCodeScopedUpsertOne {
+	u.u.Update(func(s *OAuthCodeUpsert) { set(&OAuthCodeScopedUpsert{u: s.UpdateSet}) })
+	return u
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *OAuthCodeScopedUpsertOne) Exec(ctx context.Context) error {
+	if err := u.x.check(ctx); err != nil {
+		return err
+	}
+	return u.u.Exec(ctx)
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *OAuthCodeScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if err := u.x.check(ctx); err != nil {
+		return 0, err
+	}
+	return u.u.ID(ctx)
+}
+
+// OAuthCodeScopedUpsertBulk is the "upsert" of several OAuthCode entities.
+type OAuthCodeScopedUpsertBulk struct {
+	b       *OAuthCodeScopedCreateBulk
+	t       *OAuthCodeScoped
+	columns []string
+	opts    []func(*OAuthCodeUpsertBulk)
+}
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *OAuthCodeScopedCreateBulk) OnConflictColumns(columns ...string) *OAuthCodeScopedUpsertBulk {
+	return &OAuthCodeScopedUpsertBulk{b: b, t: &OAuthCodeScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *OAuthCodeScopedUpsertBulk) UpdateNewValues() *OAuthCodeScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OAuthCodeUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *OAuthCodeScopedUpsertBulk) Ignore() *OAuthCodeScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OAuthCodeUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *OAuthCodeScopedUpsertBulk) DoNothing() *OAuthCodeScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OAuthCodeUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *OAuthCodeScopedUpsertBulk) Update(set func(*OAuthCodeScopedUpsert)) *OAuthCodeScopedUpsertBulk {
+	u.opts = append(u.opts, func(r *OAuthCodeUpsertBulk) {
+		r.Update(func(s *OAuthCodeUpsert) { set(&OAuthCodeScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *OAuthCodeScopedUpsertBulk) Exec(ctx context.Context) error {
+	raw, err := u.b.raw(ctx)
+	if err != nil {
+		return err
+	}
+	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+	for _, o := range u.opts {
+		o(r)
+	}
+	return r.Exec(ctx)
+}
+
+// ---------------------------------------------------------------- update
+
+// OAuthCodeScopedUpdateOne wraps OAuthCodeUpdateOne. It has no way to move the row to another Workspace.
+type OAuthCodeScopedUpdateOne struct {
+	s *Scoped
+	b *OAuthCodeUpdateOne
+}
+
+// UpdateOneID updates the OAuthCode with the id; a row of another Workspace is not found.
+func (t *OAuthCodeScoped) UpdateOneID(id int64) *OAuthCodeScopedUpdateOne {
+	return &OAuthCodeScopedUpdateOne{s: t.s, b: t.s.c.OAuthCode.UpdateOneID(id).Where(oauthcode.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *OAuthCodeScopedUpdateOne) Where(ps ...predicate.OAuthCode) *OAuthCodeScopedUpdateOne {
+	x.b.Where(ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OAuthCodeScopedUpdateOne) SetUpdatedAt(v time.Time) *OAuthCodeScopedUpdateOne {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetScopes sets the "scopes" field.
+func (x *OAuthCodeScopedUpdateOne) SetScopes(v []string) *OAuthCodeScopedUpdateOne {
+	x.b.SetScopes(v)
+	return x
+}
+
+// AppendScopes appends value to the "scopes" field.
+func (x *OAuthCodeScopedUpdateOne) AppendScopes(v []string) *OAuthCodeScopedUpdateOne {
+	x.b.AppendScopes(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *OAuthCodeScopedUpdateOne) SetExpiresAt(v time.Time) *OAuthCodeScopedUpdateOne {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdateOne) SetNillableExpiresAt(v *time.Time) *OAuthCodeScopedUpdateOne {
+	x.b.SetNillableExpiresAt(v)
+	return x
+}
+
+// SetUsedAt sets the "used_at" field.
+func (x *OAuthCodeScopedUpdateOne) SetUsedAt(v time.Time) *OAuthCodeScopedUpdateOne {
+	x.b.SetUsedAt(v)
+	return x
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdateOne) SetNillableUsedAt(v *time.Time) *OAuthCodeScopedUpdateOne {
+	x.b.SetNillableUsedAt(v)
+	return x
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (x *OAuthCodeScopedUpdateOne) ClearUsedAt() *OAuthCodeScopedUpdateOne {
+	x.b.ClearUsedAt()
+	return x
+}
+
+// SetClientID sets the "client_id" field.
+func (x *OAuthCodeScopedUpdateOne) SetClientID(v int64) *OAuthCodeScopedUpdateOne {
+	x.b.SetClientID(v)
+	return x
+}
+
+// SetNillableClientID sets the "client_id" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdateOne) SetNillableClientID(v *int64) *OAuthCodeScopedUpdateOne {
+	x.b.SetNillableClientID(v)
+	return x
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (x *OAuthCodeScopedUpdateOne) SetMembershipID(v int64) *OAuthCodeScopedUpdateOne {
+	x.b.SetMembershipID(v)
+	return x
+}
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdateOne) SetNillableMembershipID(v *int64) *OAuthCodeScopedUpdateOne {
+	x.b.SetNillableMembershipID(v)
+	return x
+}
+
+// SetClient sets the "client" edge to the OAuthClient entity.
+func (x *OAuthCodeScopedUpdateOne) SetClient(v *OAuthClient) *OAuthCodeScopedUpdateOne {
+	x.b.SetClient(v)
+	return x
+}
+
+// ClearClient clears the "client" edge to the OAuthClient entity.
+func (x *OAuthCodeScopedUpdateOne) ClearClient() *OAuthCodeScopedUpdateOne {
+	x.b.ClearClient()
+	return x
+}
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *OAuthCodeScopedUpdateOne) SetMembership(v *Membership) *OAuthCodeScopedUpdateOne {
+	x.b.SetMembership(v)
+	return x
+}
+
+// ClearMembership clears the "membership" edge to the Membership entity.
+func (x *OAuthCodeScopedUpdateOne) ClearMembership() *OAuthCodeScopedUpdateOne {
+	x.b.ClearMembership()
+	return x
+}
+
+func (x *OAuthCodeScopedUpdateOne) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyMembership(ctx, m.MembershipIDs()); err != nil {
+		return fmt.Errorf("membership: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the OAuthCode.
+func (x *OAuthCodeScopedUpdateOne) Save(ctx context.Context) (*OAuthCode, error) {
+	if err := x.check(ctx); err != nil {
+		return nil, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *OAuthCodeScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// OAuthCodeScopedUpdate wraps OAuthCodeUpdate: a conditional bulk update of one Workspace.
+type OAuthCodeScopedUpdate struct {
+	s *Scoped
+	b *OAuthCodeUpdate
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the OAuthCode entities of the Workspace that match the predicates.
+func (t *OAuthCodeScoped) Update() *OAuthCodeScopedUpdate {
+	return &OAuthCodeScopedUpdate{s: t.s, b: t.s.c.OAuthCode.Update().Where(oauthcode.WorkspaceID(t.s.ws))}
+}
+
+// Where appends predicates the rows must match.
+func (x *OAuthCodeScopedUpdate) Where(ps ...predicate.OAuthCode) *OAuthCodeScopedUpdate {
+	x.b.Where(ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *OAuthCodeScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *OAuthCodeScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(oauthcode.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *OAuthCodeScopedUpdate) SetUpdatedAt(v time.Time) *OAuthCodeScopedUpdate {
+	x.b.SetUpdatedAt(v)
+	return x
+}
+
+// SetScopes sets the "scopes" field.
+func (x *OAuthCodeScopedUpdate) SetScopes(v []string) *OAuthCodeScopedUpdate {
+	x.b.SetScopes(v)
+	return x
+}
+
+// AppendScopes appends value to the "scopes" field.
+func (x *OAuthCodeScopedUpdate) AppendScopes(v []string) *OAuthCodeScopedUpdate {
+	x.b.AppendScopes(v)
+	return x
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (x *OAuthCodeScopedUpdate) SetExpiresAt(v time.Time) *OAuthCodeScopedUpdate {
+	x.b.SetExpiresAt(v)
+	return x
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdate) SetNillableExpiresAt(v *time.Time) *OAuthCodeScopedUpdate {
+	x.b.SetNillableExpiresAt(v)
+	return x
+}
+
+// SetUsedAt sets the "used_at" field.
+func (x *OAuthCodeScopedUpdate) SetUsedAt(v time.Time) *OAuthCodeScopedUpdate {
+	x.b.SetUsedAt(v)
+	return x
+}
+
+// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdate) SetNillableUsedAt(v *time.Time) *OAuthCodeScopedUpdate {
+	x.b.SetNillableUsedAt(v)
+	return x
+}
+
+// ClearUsedAt clears the value of the "used_at" field.
+func (x *OAuthCodeScopedUpdate) ClearUsedAt() *OAuthCodeScopedUpdate {
+	x.b.ClearUsedAt()
+	return x
+}
+
+// SetClientID sets the "client_id" field.
+func (x *OAuthCodeScopedUpdate) SetClientID(v int64) *OAuthCodeScopedUpdate {
+	x.b.SetClientID(v)
+	return x
+}
+
+// SetNillableClientID sets the "client_id" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdate) SetNillableClientID(v *int64) *OAuthCodeScopedUpdate {
+	x.b.SetNillableClientID(v)
+	return x
+}
+
+// SetMembershipID sets the "membership_id" field.
+func (x *OAuthCodeScopedUpdate) SetMembershipID(v int64) *OAuthCodeScopedUpdate {
+	x.b.SetMembershipID(v)
+	return x
+}
+
+// SetNillableMembershipID sets the "membership_id" field if the given value is not nil.
+func (x *OAuthCodeScopedUpdate) SetNillableMembershipID(v *int64) *OAuthCodeScopedUpdate {
+	x.b.SetNillableMembershipID(v)
+	return x
+}
+
+// SetClient sets the "client" edge to the OAuthClient entity.
+func (x *OAuthCodeScopedUpdate) SetClient(v *OAuthClient) *OAuthCodeScopedUpdate {
+	x.b.SetClient(v)
+	return x
+}
+
+// ClearClient clears the "client" edge to the OAuthClient entity.
+func (x *OAuthCodeScopedUpdate) ClearClient() *OAuthCodeScopedUpdate {
+	x.b.ClearClient()
+	return x
+}
+
+// SetMembership sets the "membership" edge to the Membership entity.
+func (x *OAuthCodeScopedUpdate) SetMembership(v *Membership) *OAuthCodeScopedUpdate {
+	x.b.SetMembership(v)
+	return x
+}
+
+// ClearMembership clears the "membership" edge to the Membership entity.
+func (x *OAuthCodeScopedUpdate) ClearMembership() *OAuthCodeScopedUpdate {
+	x.b.ClearMembership()
+	return x
+}
+
+func (x *OAuthCodeScopedUpdate) check(ctx context.Context) error {
+	m := x.b.Mutation()
+	_ = m
+	if err := x.s.verifyMembership(ctx, m.MembershipIDs()); err != nil {
+		return fmt.Errorf("membership: %w", err)
+	}
+	return nil
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *OAuthCodeScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	if err := x.check(ctx); err != nil {
+		return 0, err
+	}
+	return x.b.Save(ctx)
+}
+
+// Exec is like Save, discarding the count.
+func (x *OAuthCodeScopedUpdate) Exec(ctx context.Context) error {
 	_, err := x.Save(ctx)
 	return err
 }

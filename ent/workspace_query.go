@@ -39,6 +39,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -84,6 +85,7 @@ type WorkspaceQuery struct {
 	withBindings            *BindingQuery
 	withStartTokens         *StartTokenQuery
 	withAPITokens           *ApiTokenQuery
+	withOauthCodes          *OAuthCodeQuery
 	withIntegrations        *IntegrationQuery
 	withSendingDomains      *SendingDomainQuery
 	withJoinDomains         *JoinDomainQuery
@@ -454,6 +456,28 @@ func (_q *WorkspaceQuery) QueryAPITokens() *ApiTokenQuery {
 			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
 			sqlgraph.To(apitoken.Table, apitoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, workspace.APITokensTable, workspace.APITokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOauthCodes chains the current query on the "oauth_codes" edge.
+func (_q *WorkspaceQuery) QueryOauthCodes() *OAuthCodeQuery {
+	query := (&OAuthCodeClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(oauthcode.Table, oauthcode.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.OauthCodesTable, workspace.OauthCodesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -1371,6 +1395,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withBindings:            _q.withBindings.Clone(),
 		withStartTokens:         _q.withStartTokens.Clone(),
 		withAPITokens:           _q.withAPITokens.Clone(),
+		withOauthCodes:          _q.withOauthCodes.Clone(),
 		withIntegrations:        _q.withIntegrations.Clone(),
 		withSendingDomains:      _q.withSendingDomains.Clone(),
 		withJoinDomains:         _q.withJoinDomains.Clone(),
@@ -1561,6 +1586,17 @@ func (_q *WorkspaceQuery) WithAPITokens(opts ...func(*ApiTokenQuery)) *Workspace
 		opt(query)
 	}
 	_q.withAPITokens = query
+	return _q
+}
+
+// WithOauthCodes tells the query-builder to eager-load the nodes that are connected to
+// the "oauth_codes" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithOauthCodes(opts ...func(*OAuthCodeQuery)) *WorkspaceQuery {
+	query := (&OAuthCodeClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOauthCodes = query
 	return _q
 }
 
@@ -1994,7 +2030,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [46]bool{
+		loadedTypes = [47]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2009,6 +2045,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withBindings != nil,
 			_q.withStartTokens != nil,
 			_q.withAPITokens != nil,
+			_q.withOauthCodes != nil,
 			_q.withIntegrations != nil,
 			_q.withSendingDomains != nil,
 			_q.withJoinDomains != nil,
@@ -2161,6 +2198,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadAPITokens(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.APITokens = []*ApiToken{} },
 			func(n *Workspace, e *ApiToken) { n.Edges.APITokens = append(n.Edges.APITokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOauthCodes; query != nil {
+		if err := _q.loadOauthCodes(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.OauthCodes = []*OAuthCode{} },
+			func(n *Workspace, e *OAuthCode) { n.Edges.OauthCodes = append(n.Edges.OauthCodes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -2807,6 +2851,36 @@ func (_q *WorkspaceQuery) loadAPITokens(ctx context.Context, query *ApiTokenQuer
 	}
 	query.Where(predicate.ApiToken(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.APITokensColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadOauthCodes(ctx context.Context, query *OAuthCodeQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *OAuthCode)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(oauthcode.FieldWorkspaceID)
+	}
+	query.Where(predicate.OAuthCode(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.OauthCodesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

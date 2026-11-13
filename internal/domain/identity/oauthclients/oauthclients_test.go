@@ -12,6 +12,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
@@ -81,8 +82,9 @@ func TestDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 		ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI, State: "st",
 		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier), Scope: "contacts:read", Admission: johnInAcme, Approve: true,
 	}
+	// The codes minted for this test's request: the fixtures hold codes of their own.
 	codes := func() int {
-		n, err := env.DB.OAuthCode.Query().Count(t.Context())
+		n, err := env.DB.OAuthCode.Query().Where(oauthcode.CodeChallenge(good.CodeChallenge)).Count(t.Context())
 		require.NoError(t, err)
 		return n
 	}
@@ -124,7 +126,7 @@ func TestDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, u.Query().Get("code"))
 	assert.Equal(t, "st", u.Query().Get("state"))
-	stored, err := env.DB.OAuthCode.Query().Only(t.Context())
+	stored, err := env.DB.OAuthCode.Query().Where(oauthcode.CodeChallenge(good.CodeChallenge)).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, []string{"contacts:read"}, stored.Scopes)
 	assert.EqualValues(t, fixtures.AcmeID, stored.WorkspaceID)
@@ -161,7 +163,9 @@ func TestDecideAdmitsTheUserToTheWorkspaceFirst(t *testing.T) {
 	require.ErrorIs(t, notMember, workspaces.ErrNotFound)
 	require.ErrorIs(t, none, workspaces.ErrNotFound)
 	require.ErrorIs(t, pending, users.ErrAcceptancePending)
-	assert.Zero(t, env.DB.OAuthCode.Query().CountX(t.Context()))
+	minted, err := env.DB.OAuthCode.Query().Where(oauthcode.CodeChallenge(approval.CodeChallenge)).Count(t.Context())
+	require.NoError(t, err)
+	assert.Zero(t, minted)
 }
 
 // A code is spent only by the request it was issued for: a refused claim (another client, another

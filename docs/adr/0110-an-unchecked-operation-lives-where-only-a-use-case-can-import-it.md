@@ -163,8 +163,6 @@ Two facts about easement 0.5.1 bear on the fix:
   `domain-identity-unchecked` may use `ent.Client`: its subpackages join their use case's raw
   transaction.
 - **The list of what stays unchecked also holds** `usersunchecked.DeleteIn`, the User row of User
-  deletion, whose check needs `memberships` and `secondfactors` beside `users`, and
-  `oauthclientsunchecked.DeleteCodesIn`, the authorization codes that name a Workspace. The erase
-  removes a Workspace's rows through `*ent.Scoped`, and a code is no scoped row (it is looked up
-  before any scope exists), so the erase removes the codes through their owner's subpackage, in its
-  last transaction.
+  deletion, whose check needs `memberships` and `secondfactors` beside `users`. (An authorization
+  code was removed by `oauthclientsunchecked.DeleteCodesIn` while it was no scoped row; it is
+  Workspace-owned now, ADR 0017, so the erase removes it as it removes every Workspace-owned row.)

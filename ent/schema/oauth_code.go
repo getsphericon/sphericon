@@ -12,7 +12,9 @@ import (
 // OAuthCode is a short-lived, single-use authorization code minted when a user
 // approves the consent screen. The token endpoint exchanges it (with the PKCE
 // verifier) for a Connection: an ApiToken of the chosen workspace tied to the approving
-// User's Membership.
+// User's Membership. It is Workspace-owned: the consent creates it through the scope of the
+// Workspace it names, and the exchange reads it by its secret with the raw client and claims it
+// through the scope of the Workspace the row names.
 type OAuthCode struct {
 	ent.Schema
 }
@@ -24,7 +26,7 @@ func (OAuthCode) Annotations() []schema.Annotation {
 }
 
 func (OAuthCode) Mixin() []ent.Mixin {
-	return []ent.Mixin{TimeMixin{}}
+	return []ent.Mixin{TimeMixin{}, WorkspaceMixin{Ref: "oauth_codes"}}
 }
 
 func (OAuthCode) Fields() []ent.Field {
@@ -53,8 +55,6 @@ func (OAuthCode) Fields() []ent.Field {
 			Optional().
 			Nillable(),
 		field.Int64("client_id"),
-		// The workspace the minted token will belong to (chosen on the consent screen).
-		field.Int64("workspace_id"),
 		// The approving User's Membership of that workspace, which the Connection belongs to.
 		field.Int64("membership_id"),
 	}
@@ -67,11 +67,6 @@ func (OAuthCode) Edges() []ent.Edge {
 			Field("client_id").
 			Required().
 			Unique(),
-		edge.To("workspace", Workspace.Type).
-			Field("workspace_id").
-			Required().
-			Unique().
-			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.From("membership", Membership.Type).
 			Ref("oauth_codes").
 			Field("membership_id").

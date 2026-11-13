@@ -18,6 +18,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
+	FieldWorkspaceID = "workspace_id"
 	// FieldCodeHash holds the string denoting the code_hash field in the database.
 	FieldCodeHash = "code_hash"
 	// FieldRedirectURI holds the string denoting the redirect_uri field in the database.
@@ -32,25 +34,16 @@ const (
 	FieldUsedAt = "used_at"
 	// FieldClientID holds the string denoting the client_id field in the database.
 	FieldClientID = "client_id"
-	// FieldWorkspaceID holds the string denoting the workspace_id field in the database.
-	FieldWorkspaceID = "workspace_id"
 	// FieldMembershipID holds the string denoting the membership_id field in the database.
 	FieldMembershipID = "membership_id"
-	// EdgeClient holds the string denoting the client edge name in mutations.
-	EdgeClient = "client"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeClient holds the string denoting the client edge name in mutations.
+	EdgeClient = "client"
 	// EdgeMembership holds the string denoting the membership edge name in mutations.
 	EdgeMembership = "membership"
 	// Table holds the table name of the oauthcode in the database.
 	Table = "oauth_codes"
-	// ClientTable is the table that holds the client relation/edge.
-	ClientTable = "oauth_codes"
-	// ClientInverseTable is the table name for the OAuthClient entity.
-	// It exists in this package in order to avoid circular dependency with the "oauthclient" package.
-	ClientInverseTable = "oauth_clients"
-	// ClientColumn is the table column denoting the client relation/edge.
-	ClientColumn = "client_id"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
 	WorkspaceTable = "oauth_codes"
 	// WorkspaceInverseTable is the table name for the Workspace entity.
@@ -58,6 +51,13 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// ClientTable is the table that holds the client relation/edge.
+	ClientTable = "oauth_codes"
+	// ClientInverseTable is the table name for the OAuthClient entity.
+	// It exists in this package in order to avoid circular dependency with the "oauthclient" package.
+	ClientInverseTable = "oauth_clients"
+	// ClientColumn is the table column denoting the client relation/edge.
+	ClientColumn = "client_id"
 	// MembershipTable is the table that holds the membership relation/edge.
 	MembershipTable = "oauth_codes"
 	// MembershipInverseTable is the table name for the Membership entity.
@@ -72,6 +72,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldWorkspaceID,
 	FieldCodeHash,
 	FieldRedirectURI,
 	FieldCodeChallenge,
@@ -79,7 +80,6 @@ var Columns = []string{
 	FieldExpiresAt,
 	FieldUsedAt,
 	FieldClientID,
-	FieldWorkspaceID,
 	FieldMembershipID,
 }
 
@@ -128,6 +128,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByWorkspaceID orders the results by the workspace_id field.
+func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
+}
+
 // ByCodeHash orders the results by the code_hash field.
 func ByCodeHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCodeHash, opts...).ToFunc()
@@ -158,21 +163,9 @@ func ByClientID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClientID, opts...).ToFunc()
 }
 
-// ByWorkspaceID orders the results by the workspace_id field.
-func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldWorkspaceID, opts...).ToFunc()
-}
-
 // ByMembershipID orders the results by the membership_id field.
 func ByMembershipID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMembershipID, opts...).ToFunc()
-}
-
-// ByClientField orders the results by client field.
-func ByClientField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newClientStep(), sql.OrderByField(field, opts...))
-	}
 }
 
 // ByWorkspaceField orders the results by workspace field.
@@ -182,24 +175,31 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// ByClientField orders the results by client field.
+func ByClientField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newClientStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByMembershipField orders the results by membership field.
 func ByMembershipField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newMembershipStep(), sql.OrderByField(field, opts...))
 	}
 }
+func newWorkspaceStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(WorkspaceInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
 func newClientStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ClientInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ClientTable, ClientColumn),
-	)
-}
-func newWorkspaceStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(WorkspaceInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, false, WorkspaceTable, WorkspaceColumn),
 	)
 }
 func newMembershipStep() *sqlgraph.Step {

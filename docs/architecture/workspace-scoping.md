@@ -120,8 +120,10 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
    `Refresh`), where an authorization
    code or a refresh token names its grant: `apitokens`
-   claims the code through `oauthclients.ClaimCodeIn`, which checks the client, the redirect URI
-   and the PKCE verifier first, or reads its own refresh token, and scopes the Connection's writes to the Workspace that row names;
+   claims the code through `oauthclients.ClaimCodeIn`, which reads the code by its secret with the
+   raw client, checks the client, the redirect URI and the PKCE verifier first and marks it used
+   through the scope of the Workspace the code names (`tx.Scoped(grant.WorkspaceID)`), or reads its
+   own refresh token, and scopes the Connection's writes to the Workspace that row names;
 7. the platform Staff member (ADR 0026): `ee/domain/insights/workspaceoversight` scopes over the one Workspace the console
    is looking at, in three reads, each after the Workspace row is loaded and each through
    the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
@@ -162,7 +164,7 @@ every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys`
 (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
 Workspace), the unchecked operations of those identity modules
 that join their use case's raw transaction (ADR 0110: `workspacesunchecked`, `membershipsunchecked`,
-`usersunchecked`, `passkeysunchecked`, `secondfactorsunchecked` and `oauthclientsunchecked`, in the
+`usersunchecked`, `passkeysunchecked` and `secondfactorsunchecked`, in the
 component `domain-identity-unchecked`, which only a use case imports), the use cases `internal/usecase/secondfactorreset` (a
 Second factor reset, ADR 0020: one transaction across the Second factor and the Passkeys, none of
 which a Workspace owns),
@@ -232,8 +234,11 @@ contact check reads the outer row's `workspace_id` column), not as a hand-writte
 
 ## Outside the mixin
 
-**Outside the mixin:** `OAuthCode` keeps a hand-written `workspace_id` and a one-way `workspace`
-edge (an FK that cascades when the Workspace is erased), so it has no scoped wrapper.
+**Outside the mixin:** the event journal's `workspace_id` (a null Workspace is an Instance fact,
+ADR 0116) and the tracking host change log's (a tombstone that outlives the Workspace row). An
+authorization code (`OAuthCode`) is Workspace-owned: the consent creates it through the
+admitted Workspace's scope, and the code exchange reads it by its secret with the raw client and
+claims it through the scope of the Workspace it names (construction point 6).
 
 ## Lint
 

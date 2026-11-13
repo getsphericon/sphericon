@@ -97,6 +97,8 @@ const (
 	EdgeStartTokens = "start_tokens"
 	// EdgeAPITokens holds the string denoting the api_tokens edge name in mutations.
 	EdgeAPITokens = "api_tokens"
+	// EdgeOauthCodes holds the string denoting the oauth_codes edge name in mutations.
+	EdgeOauthCodes = "oauth_codes"
 	// EdgeIntegrations holds the string denoting the integrations edge name in mutations.
 	EdgeIntegrations = "integrations"
 	// EdgeSendingDomains holds the string denoting the sending_domains edge name in mutations.
@@ -261,6 +263,13 @@ const (
 	APITokensInverseTable = "api_tokens"
 	// APITokensColumn is the table column denoting the api_tokens relation/edge.
 	APITokensColumn = "workspace_id"
+	// OauthCodesTable is the table that holds the oauth_codes relation/edge.
+	OauthCodesTable = "oauth_codes"
+	// OauthCodesInverseTable is the table name for the OAuthCode entity.
+	// It exists in this package in order to avoid circular dependency with the "oauthcode" package.
+	OauthCodesInverseTable = "oauth_codes"
+	// OauthCodesColumn is the table column denoting the oauth_codes relation/edge.
+	OauthCodesColumn = "workspace_id"
 	// IntegrationsTable is the table that holds the integrations relation/edge.
 	IntegrationsTable = "integrations"
 	// IntegrationsInverseTable is the table name for the Integration entity.
@@ -931,6 +940,20 @@ func ByAPITokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByOauthCodesCount orders the results by oauth_codes count.
+func ByOauthCodesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOauthCodesStep(), opts...)
+	}
+}
+
+// ByOauthCodes orders the results by oauth_codes terms.
+func ByOauthCodes(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOauthCodesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByIntegrationsCount orders the results by integrations count.
 func ByIntegrationsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1474,6 +1497,13 @@ func newAPITokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(APITokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, APITokensTable, APITokensColumn),
+	)
+}
+func newOauthCodesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OauthCodesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OauthCodesTable, OauthCodesColumn),
 	)
 }
 func newIntegrationsStep() *sqlgraph.Step {

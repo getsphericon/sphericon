@@ -152,7 +152,7 @@ func TestSiteOAuthConsentErrorBranches(t *testing.T) {
 	badScope.Scope = siteapi.NewOptString("bogus")
 	_, err = owner.SiteOAuthDecide(ctx, badScope)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
-	codes, err := env.DB.OAuthCode.Query().Where(oauthcode.WorkspaceID(fixtures.AcmeID)).Count(ctx)
+	codes, err := env.DB.OAuthCode.Query().Where(oauthcode.WorkspaceID(fixtures.AcmeID), oauthcode.IDNEQ(fixtures.OAuthCodeAcmeID)).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, codes, "rejected decisions mint no code")
 

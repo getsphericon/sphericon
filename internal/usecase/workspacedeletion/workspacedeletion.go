@@ -7,8 +7,7 @@
 // table and the window with the erase date are the Workspace's own (workspaces.DeletionCycle,
 // workspaces.DeletionWindow), and its erase move is the module's unchecked operation
 // (workspacesunchecked.TombstoneIn, ADR 0110): the erase removes the Workspace's rows, then, in
-// the last transaction, its jobs in the queue (events.WorkspacePurger), the OAuth codes that name
-// it (oauthclientsunchecked.DeleteCodesIn) and writes the tombstone.
+// the last transaction, its jobs in the queue (events.WorkspacePurger), and writes the tombstone.
 //
 // The use case takes the raw client: it lists Workspaces that have no scope yet (the Owners'
 // deleted Workspaces, the ones whose window has passed) and opens a transaction per erase step.

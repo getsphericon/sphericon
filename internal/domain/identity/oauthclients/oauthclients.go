@@ -197,10 +197,9 @@ func (s *Module) Decide(ctx context.Context, d Decision) (string, error) {
 	}
 
 	code := rand.Text()
-	_, err = s.ent.OAuthCode.Create().
+	_, err = admitted.Scoped.OAuthCode().Create().
 		SetCodeHash(hashSecret(code)).
 		SetClientID(client.ID).
-		SetWorkspaceID(member.WorkspaceID).
 		SetMembershipID(member.ID).
 		SetRedirectURI(d.RedirectURI).
 		SetCodeChallenge(d.CodeChallenge).
@@ -331,10 +330,11 @@ type CodeClaim struct {
 }
 
 // ClaimCodeIn spends the authorization code of the claim c at now on the transaction tx and returns
-// it with its client loaded: the grant the consent recorded, whose Workspace it names. It checks
-// the request first (the client and the redirect URI of the authorization request, and the PKCE
-// verifier against the code's challenge), so a refused request leaves the code to the right one;
-// then it marks the code used, so it is exchanged once. ErrInvalidGrant for an unknown, expired or
+// it with its client loaded: the grant the consent recorded, whose Workspace it names. The code is
+// read by its secret on the raw client, the Workspace coming from the row. It checks the request
+// first (the client and the redirect URI of the authorization request, and the PKCE verifier against
+// the code's challenge), so a refused request leaves the code to the right one; then it marks the
+// code used through the scope of the code's Workspace, so it is exchanged once. ErrInvalidGrant for an unknown, expired or
 // used code, one a concurrent request claimed first, or a request it was not issued for.
 func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time) (*ent.OAuthCode, error) {
 	grant, err := tx.OAuthCode.Query().
@@ -358,7 +358,7 @@ func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time
 
 	// Single use: only the request that flips used_at wins.
 	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
-		claimed, err := tx.OAuthCode.Update().
+		claimed, err := tx.Scoped(grant.WorkspaceID).OAuthCode().Update().
 			Where(oauthcode.ID(grant.ID), oauthcode.UsedAtIsNil(), oauthcode.ExpiresAtGT(now)).
 			SetUsedAt(now).
 			Save(ctx)

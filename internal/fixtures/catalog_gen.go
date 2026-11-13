@@ -2847,6 +2847,14 @@ const (
 	NakatomiOwnerHollyPassword = "password"
 	// NakatomiPublicID is from fixtures/workspaces.
 	NakatomiPublicID = "NakatW71"
+	// OAuthCodeAcmeCode is from fixtures/oauth_codes.
+	OAuthCodeAcmeCode = "acme-oauth-code"
+	// OAuthCodeAcmeID is from fixtures/oauth_codes.
+	OAuthCodeAcmeID = 7700
+	// OAuthCodeGlobexCode is from fixtures/oauth_codes.
+	OAuthCodeGlobexCode = "globex-oauth-code"
+	// OAuthCodeGlobexID is from fixtures/oauth_codes.
+	OAuthCodeGlobexID = 7701
 	// OperatorNewsCurrentID is from fixtures/legal_document_versions.
 	OperatorNewsCurrentID = 3
 	// OperatorNewsCurrentLabel is from fixtures/legal_document_versions.

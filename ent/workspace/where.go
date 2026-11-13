@@ -1837,6 +1837,29 @@ func HasAPITokensWith(preds ...predicate.ApiToken) predicate.Workspace {
 	})
 }
 
+// HasOauthCodes applies the HasEdge predicate on the "oauth_codes" edge.
+func HasOauthCodes() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OauthCodesTable, OauthCodesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOauthCodesWith applies the HasEdge predicate on the "oauth_codes" edge with a given conditions (other predicates).
+func HasOauthCodesWith(preds ...predicate.OAuthCode) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newOauthCodesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasIntegrations applies the HasEdge predicate on the "integrations" edge.
 func HasIntegrations() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

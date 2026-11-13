@@ -202,6 +202,7 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("bindings", Binding.Type),
 		edge.To("start_tokens", StartToken.Type),
 		edge.To("api_tokens", ApiToken.Type),
+		edge.To("oauth_codes", OAuthCode.Type),
 		edge.To("integrations", Integration.Type),
 		edge.To("sending_domains", SendingDomain.Type),
 		edge.To("join_domains", JoinDomain.Type),

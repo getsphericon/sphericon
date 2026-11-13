@@ -1600,10 +1600,10 @@ var (
 				OnDelete:   schema.Cascade,
 			},
 			{
-				Symbol:     "oauth_codes_workspaces_workspace",
+				Symbol:     "oauth_codes_workspaces_oauth_codes",
 				Columns:    []*schema.Column{OauthCodesColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
-				OnDelete:   schema.Cascade,
+				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{

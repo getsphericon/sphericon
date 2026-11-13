@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
+	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -1621,6 +1622,66 @@ func ScopedEntities() []ScopedEntity {
 					Name: "connections", Target: "ApiToken",
 					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
 						return s.Membership().UpdateOneID(id).AddConnectionIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "oauth_codes", Target: "OAuthCode",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Membership().UpdateOneID(id).AddOauthCodeIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Name:         "OAuthCode",
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.OAuthCode.Query().Where(oauthcode.WorkspaceID(ws)).Order(Asc(oauthcode.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) error {
+				_, err := s.OAuthCode().Get(ctx, id)
+				return err
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.OAuthCode().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.OAuthCode().Update().Where(oauthcode.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.OAuthCode().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.OAuthCode().Delete().Where(oauthcode.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.OAuthCode.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.OAuthCode().Create()
+				b.SetCodeHash(src.CodeHash + "-replanted")
+				b.SetRedirectURI(src.RedirectURI)
+				b.SetCodeChallenge(src.CodeChallenge)
+				b.SetScopes(src.Scopes)
+				b.SetExpiresAt(src.ExpiresAt)
+				if src.UsedAt != nil {
+					b.SetUsedAt(*src.UsedAt)
+				}
+				b.SetClientID(src.ClientID)
+				b.SetMembershipID(remap("Membership", src.MembershipID))
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "membership", Target: "Membership",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.OAuthCode().UpdateOneID(id).SetMembershipID(target).Exec(ctx)
 					},
 				},
 			},
