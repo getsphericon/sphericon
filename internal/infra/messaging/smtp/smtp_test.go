@@ -48,7 +48,13 @@ type testServer struct {
 
 func newTestServer(ctx context.Context, t *testing.T, rejectData bool) *testServer {
 	t.Helper()
-	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
+	return newTestServerOn(ctx, t, "127.0.0.1:0", rejectData)
+}
+
+// newTestServerOn is newTestServer listening on addr, a host and port such as "[::1]:0".
+func newTestServerOn(ctx context.Context, t *testing.T, addr string, rejectData bool) *testServer {
+	t.Helper()
+	ln, err := (&net.ListenConfig{}).Listen(ctx, "tcp", addr)
 	require.NoError(t, err)
 	ts := &testServer{port: ln.Addr().(*net.TCPAddr).Port, rejectData: rejectData}
 
@@ -180,6 +186,21 @@ func TestSendDeliversWithConfiguredDefaults(t *testing.T) {
 	assert.Contains(t, got[0].data, "plain body")
 	assert.Contains(t, got[0].data, strings.Trim(receipt.MessageID, "<>"))
 	assert.Empty(t, got[0].username, "no credentials configured means no AUTH")
+}
+
+// A host given as an IPv6 literal, bare as a user types it, is dialed in brackets: the message
+// reaches a server listening on the IPv6 loopback.
+func TestSendDeliversToAnIPv6LiteralHost(t *testing.T) {
+	srv := newTestServerOn(t.Context(), t, "[::1]:0", false)
+	sender := build(t, smtp.Config{Host: "::1", Port: srv.port, From: "noreply@acme.com"})
+
+	_, err := sender.Send(t.Context(), messaging.EmailMessage{To: "rcpt@example.com", Subject: "Over IPv6", Text: "x"})
+	require.NoError(t, err)
+
+	got := srv.captured()
+	require.Len(t, got, 1)
+	assert.Contains(t, got[0].rcpt, "rcpt@example.com")
+	assert.Contains(t, got[0].data, "Subject: Over IPv6")
 }
 
 // A Workspace's marketing message reaches the server DKIM-signed, its one-click headers in the
