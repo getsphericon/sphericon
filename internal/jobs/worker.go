@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
@@ -38,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
@@ -83,7 +83,7 @@ type Deps struct {
 	// Notices issues the Notices of the domain events (ADR 0105).
 	Notices *noticedelivery.UseCase
 	// Callbacks reads again a Delivery notice that came before its message (the late notice job).
-	Callbacks *callbackinterpretation.UseCase
+	Callbacks *callbackinterpretation.Module
 	Catalog   *messaging.Catalog
 	Rules     *rules.Module
 	Users     *users.Module

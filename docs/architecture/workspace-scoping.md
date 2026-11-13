@@ -107,7 +107,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    to lock the Owner rows and remove the Membership;
 6. the Workspace comes from a secret rather than a login: the ingest hook
    `POST /hooks/{key}` (driver `internal/api/hooks`, ADR 0037), where the key belongs to one
-   Integration, so the Callback interpretation (`callbackinterpretation.UseCase.Receive`) finds
+   Integration, so the Callback interpretation (`callbackinterpretation.Module.Receive`) finds
    the Integration by key (`integrations.ByIngestKey`, on its raw client) and then
    scopes to its Workspace (`row.WorkspaceID`); the tracked links (driver `internal/api/tracking`), where an
    open or click token names an outbound message that the Outbound message's engagement
@@ -201,8 +201,8 @@ suspension and the Staff's other levers on the Workspace row: the abuse exemptio
 (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
 (composition only: it hands the raw client to the security handlers it mounts), `internal/domain/sending/outboundmessages/engagement` (the
 opens and clicks of the Outbound messages, ADR 0053: an open or click token names a message, and a short
-link's token a tracked link, before any scope exists, list item 6), `internal/usecase/callbackinterpretation` (the
-Callback interpretation behind the Ingest hook: an ingest key names an Integration and so its Workspace before any scope exists, list item 6), `ee/domain/insights/auditentries` (the Audit log's event
+link's token a tracked link, before any scope exists, list item 6), `internal/domain/sending/callbackinterpretation` (the
+Callback interpretation behind the Ingest hook, a sending module without a table, ADR 0112: an ingest key names an Integration and so its Workspace before any scope exists, list item 6), `ee/domain/insights/auditentries` (the Audit log's event
 consumer: its envelope carries only a Workspace id, ADR 0022), `ee/domain/insights/erasures` (the Export streams'
 event consumer, which writes the Erasures rows from `contact.erased`, and their prune job over every
 Workspace's rows, ADR 0045), `ee/usecase/auditlogretention` (the

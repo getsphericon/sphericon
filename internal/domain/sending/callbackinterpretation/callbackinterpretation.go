@@ -1,11 +1,13 @@
-// Package callbackinterpretation is the use case of the Callback interpretation (GLOSSARY, ADR
-// 0102), behind the Ingest hook: it reads the facts a Preset parsed from an Integration's callbacks
-// for what they mean (ADR 0076): the Preset parses, the
-// core interprets. Each Channel has one Interpreter, picked by the Integration's Channel in
-// interpreterFor, the one place a Channel plugs in; the facts are written in one transaction
-// before the Ingest hook answers 2xx (ADR 0037). It writes no table itself: the Outbound messages,
-// Suppressions, Unsubscribes, Confirmations and Bindings it changes go through their modules, and
-// the System events and the deferred notices through the bus.
+// Package callbackinterpretation is the Callback interpretation (GLOSSARY), behind the Ingest
+// hook: it reads the facts a Preset parsed from an Integration's callbacks for what they mean (ADR
+// 0076): the Preset parses, the core interprets. Each Channel has one Interpreter, picked by the
+// Integration's Channel in interpreterFor, the one place a Channel plugs in; the facts are written
+// in one transaction before the Ingest hook answers 2xx (ADR 0037). It is a domain module of the
+// sending context without a table (ADR 0112): the Outbound messages it stamps and the Bindings it
+// changes go through their modules (outboundmessages, bindings), and the rest is published as
+// System events on the bus (a delivery, a stop or a start observed in the Channel, a received
+// message, a number that reaches no handset), whose consumers write what follows from them; a
+// notice that came before its message is queued as a job to be read again (LateNoticeArgs).
 package callbackinterpretation
 
 import (
@@ -15,9 +17,9 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
@@ -81,40 +83,27 @@ func (tx Tx) DedupKey(eventID string) string {
 	return fmt.Sprintf("%s:%d:%s", tx.Integration.Channel, tx.Integration.ID, eventID)
 }
 
-// Bots opens the bot of a Telegram Integration, to answer what it was sent.
-type Bots interface {
-	Bot(row *ent.Integration) (messaging.TelegramBot, error)
-}
-
 // answerTimeout bounds one acknowledgement to a provider after the commit.
 const answerTimeout = 5 * time.Second
 
-// Integrations is what the Ingest hook reads of an Integration besides its row: its Preset with
-// the Preset's params, its hook URL, the confirmation of a subscription its provider asks for, and
-// the bot of a Telegram Integration. *integrations.Module satisfies it.
-type Integrations interface {
-	Bots
-	Presets() *preset.Registry
-	Params(row *ent.Integration) (preset.Params, error)
-	HookURL(row *ent.Integration) string
-	ConfirmSubscription(ctx context.Context, url string) error
-}
-
-// UseCase interprets the facts of every Ingest hook request.
-type UseCase struct {
+// Module interprets the facts of every Ingest hook request.
+type Module struct {
 	// client finds the Integration an ingest key names and scopes to its Workspace, before any
 	// scope exists (docs/architecture/workspace-scoping.md, Workspace scoping).
 	client *ent.Client
 	bus    *events.Bus
-	integ  Integrations
-	now    func() time.Time
+	// integ is what the hook reads of an Integration besides its row: its Preset with the Preset's
+	// params, its hook URL, the confirmation of a subscription its provider asks for, and the bot
+	// of a Telegram Integration.
+	integ *integrations.Module
+	now   func() time.Time
 }
 
-// New builds the use case on the raw client an ingest key is resolved with, the bus the facts'
+// New builds the module on the raw client an ingest key is resolved with, the bus the facts'
 // System events are published through, the Integrations module and the Instance clock the hook
-// reads. A nil integ serves only the facts that need neither a Preset nor a bot.
-func New(client *ent.Client, bus *events.Bus, integ Integrations, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, integ: integ, now: now}
+// reads.
+func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, integ: integ, now: now}
 }
 
 // InterpretInput is one Ingest hook request: the Integration the callback came to, the name of
@@ -127,12 +116,12 @@ type InterpretInput struct {
 
 // interpreterFor is the Interpreter of a Channel. A new Channel value fails the exhaustive
 // lint here until its Channel is given one: its own, or ignore while it reads nothing.
-func (m *UseCase) interpreterFor(ch channels.Channel) Interpreter {
+func (m *Module) interpreterFor(ch channels.Channel) Interpreter {
 	switch ch {
 	case channels.Email:
 		return email{}
 	case channels.Telegram:
-		return telegram{bots: m.integ}
+		return telegram{integ: m.integ}
 	case channels.SMS:
 		return sms{}
 	}
@@ -144,12 +133,12 @@ func (m *UseCase) interpreterFor(ch channels.Channel) Interpreter {
 // Channel than the Integration's (an Integration serves one Channel, ADR 0074) is the Preset's
 // mistake: it is dropped and logged, so the rest of the request still counts and the provider
 // does not redeliver it forever.
-func (m *UseCase) Interpret(ctx context.Context, s *ent.Scoped, in InterpretInput) error {
+func (m *Module) Interpret(ctx context.Context, s *ent.Scoped, in InterpretInput) error {
 	return m.interpret(ctx, s, in.Integration, in.Preset, in.Result, m.now(), 0)
 }
 
 // interpret is Interpret for the facts read for the attempt-th time before (InterpretLate).
-func (m *UseCase) interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time, attempt int) error {
+func (m *Module) interpret(ctx context.Context, s *ent.Scoped, row *ent.Integration, presetName string, res preset.Result, now time.Time, attempt int) error {
 	if res.Empty() {
 		return nil
 	}

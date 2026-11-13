@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/callbackinterpretation"
 )
 
 // receiveClock is the instant the hook believes it is, and the one callbacks are signed at.
@@ -25,7 +25,7 @@ var receiveClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 // fixtures/integrations.yml: whsec_ and the base64 of a plain string, as the fixture spells it.
 var secretGenericA = "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-secret-A0123456789"))
 
-func receiver(env *testhelper.TestEnv) *callbackinterpretation.UseCase {
+func receiver(env *testhelper.TestEnv) *callbackinterpretation.Module {
 	return callbackinterpretation.New(env.DB, env.Bus, env.Integrations, func() time.Time { return receiveClock })
 }
 

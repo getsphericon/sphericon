@@ -348,8 +348,7 @@ components:
       ]
     because: a use case is called by a driver (an API surface, MCP, a job, a command) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
-  # *ent.Scoped to take: the Second factor reset of a User, the Callback interpretation, whose
-  # ingest key names the Integration and so its Workspace, the deletion cycle of a Workspace, which
+  # *ent.Scoped to take: the Second factor reset of a User, the deletion cycle of a Workspace, which
   # lists the Workspaces that have no scope yet, the Workspace view, which creates a Workspace and
   # restores a deleted one, the Sign-up with the
   # steps that make a User Verified with its first one, Notice delivery, which reads a User or a
@@ -361,7 +360,6 @@ components:
     in:
       [
         'internal/usecase/secondfactorreset*',
-        'internal/usecase/callbackinterpretation*',
         'internal/usecase/workspacedeletion*',
         'internal/usecase/messageretention*',
         'internal/usecase/workspaceview*',
@@ -459,12 +457,14 @@ components:
   # Integrations and the Presets that read their callbacks, the Sending domains with their DKIM and
   # DMARC primitives, the Tracking domains and their host changes, the Bindings of Telegram
   # chats, the Message tokens (messagetoken), the Link clicks (linkclick), reputation, the Private relay ranges of Machine
-  # engagement and the Captured messages. Its raw-client holders (docs/architecture/workspace-scoping.md, Workspace scoping) are
+  # engagement, the Captured messages and the Callback interpretation (callbackinterpretation, ADR 0112), which
+  # has no table. Its raw-client holders (docs/architecture/workspace-scoping.md, Workspace scoping) are
   # `domain-sending-raw`.
   domain-sending-raw:
     in:
       [
         internal/domain/sending/bindings,
+        internal/domain/sending/callbackinterpretation,
         internal/domain/sending/capturedmessages,
         internal/domain/sending/integrations,
         internal/domain/sending/outboundmessages/engagement,

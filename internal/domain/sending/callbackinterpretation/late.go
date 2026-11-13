@@ -63,6 +63,6 @@ func (tx Tx) deferNotice(ctx context.Context, n preset.DeliveryNotice) error {
 // InterpretLate reads a deferred notice again, as Interpret read it when it came, in s, the
 // Workspace of row, its Integration. One that still matches no message is deferred again, until the
 // attempts are spent.
-func (m *UseCase) InterpretLate(ctx context.Context, s *ent.Scoped, row *ent.Integration, args LateNoticeArgs) error {
+func (m *Module) InterpretLate(ctx context.Context, s *ent.Scoped, row *ent.Integration, args LateNoticeArgs) error {
 	return m.interpret(ctx, s, row, args.Preset, preset.Result{Notices: []preset.DeliveryNotice{args.Notice}}, m.now(), args.Attempt)
 }
