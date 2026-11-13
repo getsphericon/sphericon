@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -22,6 +21,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
+
+// deletionWindow is ADR 0043's window, how long a deleted Workspace stays restorable, stated here
+// rather than read from the code under test.
+const deletionWindow = 30 * 24 * time.Hour
 
 func TestJournalKeepsUnconsumedFactsAndInstanceFactsWithoutTheirPersonalPayload(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -143,7 +146,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	defer cancel()
 	now := time.Now()
 	require.NoError(t, bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).Exec(ctx)
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-deletionWindow - time.Hour)).Exec(ctx)
 	}))
 	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
 	unblock, published := pauseJournalPublication(ctx, t, bus, fact)

@@ -64,12 +64,12 @@ func pendingDeletion() predicate.Workspace {
 
 // InsideDeletionWindow is a Workspace in its deletion window at now: pending and not past it.
 func InsideDeletionWindow(now time.Time) predicate.Workspace {
-	return workspace.And(workspace.DiscardedAtGT(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
+	return workspace.And(workspace.DiscardedAtGT(now.Add(-deletionWindow)), workspace.ErasedAtIsNil())
 }
 
 // PastDeletionWindow is a Workspace past its deletion window at now: pending and due for erase.
 func PastDeletionWindow(now time.Time) predicate.Workspace {
-	return workspace.And(workspace.DiscardedAtLTE(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
+	return workspace.And(workspace.DiscardedAtLTE(now.Add(-deletionWindow)), workspace.ErasedAtIsNil())
 }
 
 // DueForErase lists the Workspaces past their deletion window at now, the ones the erase removes,

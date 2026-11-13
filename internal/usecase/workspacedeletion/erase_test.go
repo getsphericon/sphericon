@@ -73,7 +73,7 @@ func rowsOfAll(t *testing.T, env *testhelper.TestEnv) map[string]int {
 // The fixtures hold rows of every scoped entity, which the first check requires.
 func TestEraseCoversEveryWorkspaceOwnedEntity(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.Update().SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.FeedDB.Workspace.Update().SetDiscardedAt(now.Add(-deletionWindow - time.Hour)).ExecX(t.Context())
 	before := rowsOfAll(t, env)
 	for _, e := range ent.ScopedEntities() {
 		assert.Positivef(t, before[e.Name], "the fixtures hold a %s row", e.Name)
@@ -101,7 +101,7 @@ func writeEventAfterContactDelete(next ent.Mutator) ent.Mutator {
 
 func TestEraseDueLeavesAWorkspaceInsideItsWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow-time.Hour)
+	deleteUmbrella(t, env, deletionWindow-time.Hour)
 	before := rowsOf(t, env, fixtures.UmbrellaID)
 
 	runErase(t, env)
@@ -115,7 +115,7 @@ func TestEraseDueLeavesAWorkspaceInsideItsWindow(t *testing.T) {
 
 func TestEraseDueRemovesWhatAWorkspaceOwnedAndKeepsATombstone(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	deleteUmbrella(t, env, deletionWindow+time.Hour)
 	before := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	acme := rowsOf(t, env, fixtures.AcmeID)
 	require.NotZero(t, rowsOf(t, env, fixtures.UmbrellaID)["SendingDomain"])
@@ -139,7 +139,7 @@ func TestEraseDueRemovesWhatAWorkspaceOwnedAndKeepsATombstone(t *testing.T) {
 
 func TestEraseDueReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	deleteUmbrella(t, env, deletionWindow+time.Hour)
 	_, cursor := feedTail(t, env, "")
 
 	runErase(t, env)
@@ -164,7 +164,7 @@ func TestEraseDueReleasesTheTrackingHostsAndAdvancesTheFeed(t *testing.T) {
 // Events step has run. The erasure settles, so nothing is left behind the tombstone.
 func TestEraseDueRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	deleteUmbrella(t, env, deletionWindow+time.Hour)
 	env.DB.Contact.Use(writeEventAfterContactDelete)
 
 	runErase(t, env)
@@ -180,7 +180,7 @@ func TestEraseDueRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 // messages before the Broadcast; the other Workspaces keep theirs.
 func TestEraseRemovesABroadcastThatHasSentOutboundMessages(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-deletionWindow - time.Hour)).ExecX(t.Context())
 	sent := env.DB.Scoped(fixtures.InitechID).OutboundMessage().Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastInitechID)).CountX(t.Context())
 	require.NotZero(t, sent)
 	acmeBefore := rowsOf(t, env, fixtures.AcmeID)
@@ -196,7 +196,7 @@ func TestEraseRemovesABroadcastThatHasSentOutboundMessages(t *testing.T) {
 
 func TestASecondEraseRunChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	deleteUmbrella(t, env, deletionWindow+time.Hour)
 	runErase(t, env)
 	_, cursor := feedTail(t, env, "")
 	hostLog := env.DB.TrackingHostChange.Query().CountX(t.Context())
@@ -247,7 +247,7 @@ func workspacesOfJobs(t *testing.T, env *testhelper.TestEnv, kind string) []int6
 // finish, and another Workspace's jobs and the Instance's stay.
 func TestEraseDueRemovesTheWorkspacesJobs(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	deleteUmbrella(t, env, deletionWindow+time.Hour)
 	later := now.Add(7 * 24 * time.Hour)
 	for _, ws := range []int64{fixtures.UmbrellaID, fixtures.AcmeID} {
 		bounceIn(t, env, ws, "bounced@example.com")
@@ -292,7 +292,7 @@ func lateBounce(t *testing.T, workspaceID int64, address string) jobs.SuppressEv
 // while the same job of a live Workspace still writes.
 func TestAJobOfAnErasedWorkspaceWritesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	deleteUmbrella(t, env, workspaces.DeletionWindow+time.Hour)
+	deleteUmbrella(t, env, deletionWindow+time.Hour)
 	runErase(t, env)
 	env.EnqueueJob(t, lateBounce(t, fixtures.UmbrellaID, "late@example.com"))
 	env.EnqueueJob(t, lateBounce(t, fixtures.AcmeID, "late@example.com"))
