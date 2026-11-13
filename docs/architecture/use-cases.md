@@ -119,14 +119,16 @@ the Removal check are (`<module>use`). The tests of the operation live in the us
 rows, and an unchecked operation's own tests of its rows are its subpackage's (`broadcastsunchecked`, `suppressionsunchecked`). What the Removal check finds is tested in its own package
 (`internal/domain/orchestration/removalcheck`, with the writes that create a use waiting for the
 Workspace lock), and each removal that runs it races those writes in its use case's own
-`workspace_lock_test.go`. The Secret re-encryption
-(`internal/usecase/secretreencryption`, `sphericon encryption-key reencrypt`) spans every
-Workspace and the Users and Staff members besides: it takes the `SecretSweeps` of each module that
-owns a table with stored secrets (`integrations`, `webhookendpoints`, `sendingdomains`, `secondfactors`,
-`staffmembers`, `automations`, `rules`), the columns as `secrets.Sweep` values the wiring builds on
-the raw client in a fixed order, and sweeps them by id and compare-and-swap
-(`secrets.Cipher.Reencrypt`). A sweep only stores the value it read again under the
-primary key, so no check guards it and it is no unchecked operation.
+`workspace_lock_test.go`. The Secret re-encryption (`sphericon encryption-key reencrypt`) spans
+every Workspace and the Users and Staff members besides, and is no use case (#1361): it holds no
+rule of its own. Each module that owns a table with stored secrets (`integrations`,
+`webhookendpoints`, `sendingdomains`, `secondfactors`, `staffmembers`, `automations`, `rules`, and
+the Enterprise Edition's) hands over its columns as `secrets.Sweep` values (`SecretSweeps`), which
+the wiring builds on the raw client in a fixed order and binds to the cipher
+(`app.SecretReencryption`), and the cipher sweeps them by id and compare-and-swap
+(`secrets.Cipher.Reencrypt`); the command prints the report (`internal/commandline`, whose tests run
+the owners' sweeps under a rotated key). A sweep only stores the value it read again under the primary key, so no check guards it
+and it is no unchecked operation.
 A use case need not guard a removal: an operation whose subject's owner would have to call a
 module above it is one too, and so is one that reads modules of several contexts. A Visitor
 identification (`internal/usecase/visitoridentification`, built in the container like every

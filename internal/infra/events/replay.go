@@ -47,8 +47,8 @@ type ReplayResult struct {
 // comes from one SELECT snapshot; there is no journal cursor and no commit-order assumption.
 // It never calls Publish, subscribers or general fan-out. Version, scope, bound and queue
 // errors leave no partial work. The Workspace key-share lock fences its final purge until commit.
-// The operator names the Workspace by its id (ADR 0043), which its owner resolves
-// (internal/usecase/eventhistory): a Workspace that is deleted or erased is
+// The operator names the Workspace by its id (ADR 0043), which the command line resolves through
+// its owner, workspaces (internal/commandline): a Workspace that is deleted or erased is
 // ErrReplayWorkspaceUnavailable.
 func (b *Bus) Replay(ctx context.Context, workspaceID int64, in ReplayRequest) (ReplayResult, error) {
 	var result ReplayResult

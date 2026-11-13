@@ -55,8 +55,8 @@ type JournalPage struct {
 }
 
 // WorkspaceJournal reads only the facts of the Workspace workspaceID, including while it awaits
-// deletion. The operator names it by its id (ADR 0043), which its owner resolves
-// (internal/usecase/eventhistory).
+// deletion. The operator names it by its id (ADR 0043), which the command line resolves through
+// its owner, workspaces (internal/commandline).
 func (b *Bus) WorkspaceJournal(ctx context.Context, workspaceID int64, in JournalQuery) (JournalPage, error) {
 	return b.readJournal(ctx, eventjournalentry.WorkspaceID(workspaceID), in)
 }

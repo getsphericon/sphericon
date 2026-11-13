@@ -115,9 +115,11 @@ Removal check reads under the Workspace lock, `internal/usecase/customfieldretyp
 edit's, `internal/usecase/integrationdeletion` the Integration's and
 `internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
 tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
-`internal/usecase/secretreencryption` the re-encryption of every stored
-secret, `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
-`internal/usecase/visitoridentification` what Identify binds and stitches). An operation that moves
+`internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
+`internal/usecase/visitoridentification` what Identify binds and stitches). An operation that is
+only a driver's work leaves the tier with its tests (#1361): `internal/commandline` holds the tests of
+a re-encryption run of every stored secret and its report, and the Event history's reads and
+replays of a Workspace an operator names by its id. An operation that moves
 into the module that owns its subject (ADR 0112) takes its tests to that module's `_test` package:
 `internal/domain/contacts/contacts` holds an import's rows (`UpsertBatch`) and
 `internal/domain/sending/outboundmessages` the refusals of a Transactional send

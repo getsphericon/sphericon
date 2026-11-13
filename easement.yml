@@ -1008,7 +1008,7 @@ examples:
     expect: rejected
     because: no domain module imports a use case
   - from: internal/usecase/contacterasure/contacterasure.go
-    to: internal/usecase/eventhistory/eventhistory.go
+    to: internal/usecase/tagdeletion/tagdeletion.go
     expect: rejected
     rule: isolation
     because: no use case imports another; what two share moves down into a domain module

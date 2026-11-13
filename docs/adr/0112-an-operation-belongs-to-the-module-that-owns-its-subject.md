@@ -9,6 +9,21 @@ status: accepted
 > on [[0110-an-unchecked-operation-lives-where-only-a-use-case-can-import-it]] (the cause goes before
 > the fence) and [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]] (the use
 > case tier stays open).
+>
+> **Amended by #1361:** the verdict on `secretreencryption` left to the CLI driver's rework (#1210)
+> is given here, along with one on `eventhistory`: neither holds an operation of the core, and both
+> leave the use case tier. The re-encryption was one call, `secrets.Cipher.Reencrypt` over the
+> owners' sweeps, whose list and order are the wiring's: the wiring binds the cipher and the sweeps
+> (`app.SecretReencryption`), and `encryption-key reencrypt` runs it and prints its report. The Event
+> history resolved the Workspace id an operator names through `workspaces` and asked the bus's
+> journal, which is the infrastructure's. It is no domain module of identity without a table
+> either, as an operation whose subject no module owns would be: it decides nothing. The bus checks
+> the scope, the bound and a deleted or erased Workspace under the Workspace's lock, and turning
+> the id an operator types into the Workspace it names is input mapping, as reading a Workspace
+> from a request's path is on HTTP. So `events list` and `replay` resolve the id through
+> `workspaces` once and ask the bus (`internal/commandline`), and the wiring's binding of the
+> re-encryption holds no rule either: a missing or reordered owner fails the run's tests, which
+> sweep the wiring's list (`app.SecretSweeps`).
 
 > **Amended by #1357:** the weighing of `callbackinterpretation` deferred to the hooks driver (#1209)
 > moves the Callback interpretation into sending, as `internal/domain/sending/callbackinterpretation`,

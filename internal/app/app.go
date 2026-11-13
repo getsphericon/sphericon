@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
@@ -37,9 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
-	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
@@ -422,8 +421,8 @@ func (a *App) ServiceCredentials() (*servicecredentials.Module, error) {
 }
 
 // SecretReencryption is the re-encryption of every stored secret from the DI container.
-func (a *App) SecretReencryption() (*secretreencryption.UseCase, error) {
-	return do.Invoke[*secretreencryption.UseCase](a.injector)
+func (a *App) SecretReencryption() (SecretReencryption, error) {
+	return do.Invoke[SecretReencryption](a.injector)
 }
 
 // Users is the product's Users module from the DI container, for harnesses that
@@ -451,10 +450,10 @@ func (a *App) Bus() (*events.Bus, error) {
 	return do.Invoke[*events.Bus](a.injector)
 }
 
-// EventHistory is the Event history use case from the DI container, which `sphericon events`
-// lists and replays through.
-func (a *App) EventHistory() (*eventhistory.UseCase, error) {
-	return do.Invoke[*eventhistory.UseCase](a.injector)
+// Workspaces is the Workspaces module from the DI container, which resolves the Workspace id an
+// operator names (`sphericon events`).
+func (a *App) Workspaces() (*workspaces.Module, error) {
+	return do.Invoke[*workspaces.Module](a.injector)
 }
 
 func (a *App) Shutdown(ctx context.Context) *do.ShutdownReport {

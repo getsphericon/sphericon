@@ -41,9 +41,10 @@ personal source keys and arbitrary request ids are never copied. `Bus.Replay` se
 supported consumer and a bounded recorded-time interval of one Workspace, validates versions and
 scope and queues its normal jobs atomically, under the Workspace's key-share lock, refusing one
 deleted or erased; it never publishes or runs mandatory subscribers. An operator names the
-Workspace by its id (`sphericon events list` and `replay`): the Event history use case
-(`internal/usecase/eventhistory`) resolves it through `workspaces`, since the bus touches a
-Workspace row only to lock it, and reads the Instance's own facts when no Workspace is named. History
+Workspace by its id (`sphericon events list` and `replay`): the command line
+(`internal/commandline`) resolves it through `workspaces` once and hands the bus the Workspace, since
+the bus touches a Workspace row only to lock it; it reads the Instance's own facts only when
+`--instance` is given, never for an empty id. History
 has no automatic expiry. Contact Erasure preserves anonymous report inputs; Workspace erasure
 drains its history in batches, then fences publication and replay's `FOR KEY SHARE` locks with
 the Workspace's `FOR UPDATE` row lock

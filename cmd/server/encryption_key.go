@@ -34,11 +34,11 @@ func encryptionKeyCommand(d deps) *cli.Command {
 			Name:  "reencrypt",
 			Usage: "seal every stored secret under the primary key; idempotent",
 			Action: d.withCoreWithin(reencryptTimeout, func(ctx context.Context, cmd *cli.Command, c core) error {
-				reencryption, err := c.SecretReencryption()
+				reencrypt, err := c.SecretReencryption()
 				if err != nil {
 					return err
 				}
-				counts, err := reencryption.Run(ctx)
+				counts, err := reencrypt(ctx)
 				return commandline.WriteReencryptionReport(out(cmd), counts, err)
 			}),
 		},

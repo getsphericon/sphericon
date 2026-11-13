@@ -2,14 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/urfave/cli/v3"
 
+	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 )
 
 // eventsCommand is `sphericon events`: `list` inspects the publication metadata one Workspace or
@@ -35,7 +34,7 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.IntFlag{Name: flagLimit, Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				history, err := c.EventHistory()
+				history, err := eventHistory(c)
 				if err != nil {
 					return err
 				}
@@ -43,12 +42,8 @@ func eventsCommand(d deps) *cli.Command {
 					Name: cmd.String(flagName), EventID: cmd.String(flagEventID),
 					From: cmd.Timestamp(flagFrom), Before: cmd.Timestamp(flagBefore), Limit: cmd.Int(flagLimit),
 				}
-				of := eventhistory.Of{Instance: cmd.Bool(flagInstance), Workspace: cmd.String(flagWorkspace)}
-				page, err := history.List(ctx, of, query)
-				if err != nil {
-					return err
-				}
-				return json.NewEncoder(out(cmd)).Encode(page)
+				of := commandline.JournalOf{Instance: cmd.Bool(flagInstance), Workspace: cmd.String(flagWorkspace)}
+				return history.List(ctx, out(cmd), of, query)
 			}),
 		},
 		&cli.Command{
@@ -71,19 +66,28 @@ func eventsCommand(d deps) *cli.Command {
 				if err != nil {
 					return fmt.Errorf("--before: %w", err)
 				}
-				history, err := c.EventHistory()
+				history, err := eventHistory(c)
 				if err != nil {
 					return err
 				}
-				result, err := history.Replay(ctx, cmd.String(flagWorkspace), events.ReplayRequest{
+				return history.Replay(ctx, out(cmd), cmd.String(flagWorkspace), events.ReplayRequest{
 					Consumer: cmd.String(flagConsumer), From: from, Before: before,
 					Limit: cmd.Int(flagLimit), DryRun: cmd.Bool(flagDryRun),
 				})
-				if err != nil {
-					return err
-				}
-				_, err = fmt.Fprintf(out(cmd), "matched %d; enqueued %d\n", result.Matched, result.Enqueued)
-				return err
 			}),
 		})
+}
+
+// eventHistory is what `sphericon events` reads and replays through: the Workspaces of the command
+// app, which resolve the id an operator names, and its bus, which keeps the journal.
+func eventHistory(c core) (commandline.EventHistory, error) {
+	ws, err := c.Workspaces()
+	if err != nil {
+		return commandline.EventHistory{}, err
+	}
+	bus, err := c.Bus()
+	if err != nil {
+		return commandline.EventHistory{}, err
+	}
+	return commandline.EventHistory{Workspaces: ws, Bus: bus}, nil
 }

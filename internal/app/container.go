@@ -114,13 +114,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
-	"github.com/getsphericon/sphericon/internal/usecase/eventhistory"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
-	"github.com/getsphericon/sphericon/internal/usecase/secretreencryption"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
@@ -173,6 +171,22 @@ func Container(cfg *config.Config) *do.RootScope {
 
 // Clock is the one clock of the Instance: every module that reads the time reads this one.
 type Clock func() time.Time
+
+// SecretReencryption stores every secret in the database again under the primary key of the
+// Encryption key (ADR 0102), so a key an operator rotated away from can be retired: it sweeps the
+// columns each owner holds as secrets, in order, and returns what it did per column. It fails at
+// the first value the cipher cannot read, which means a key is missing from the keyset; what was
+// already rewritten stays valid, and the counts are those of the columns it finished.
+type SecretReencryption func(ctx context.Context) ([]secrets.Count, error)
+
+// SecretSweeps are the columns of stored secrets the core's owners hold, on the raw client, in the
+// order SecretReencryption sweeps them before the Enterprise Edition's.
+func SecretSweeps(client *ent.Client) []secrets.Sweep {
+	return slices.Concat(
+		integrations.SecretSweeps(client), webhookendpoints.SecretSweeps(client), sendingdomains.SecretSweeps(client),
+		secondfactors.SecretSweeps(client), staffmembers.SecretSweeps(client), automations.SecretSweeps(client), rules.SecretSweeps(client),
+	)
+}
 
 // Version is the running version the Instance module judges releases against.
 type Version string
@@ -838,9 +852,6 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
 		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
 	}),
-	do.Lazy(func(i do.Injector) (*eventhistory.UseCase, error) {
-		return eventhistory.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*events.Bus](i)), nil
-	}),
 	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
 		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
@@ -874,15 +885,12 @@ var contentPackage = do.Package(
 		client := webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow)
 		return rules.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), client, do.MustInvoke[Clock](i)), nil
 	}),
-	// `sphericon encryption-key reencrypt`: each owner's columns of stored secrets, swept on the raw
-	// client in this order.
-	do.Lazy(func(i do.Injector) (*secretreencryption.UseCase, error) {
-		client := do.MustInvoke[*ent.Client](i)
-		return secretreencryption.New(slices.Concat(
-			integrations.SecretSweeps(client), webhookendpoints.SecretSweeps(client), sendingdomains.SecretSweeps(client),
-			secondfactors.SecretSweeps(client), staffmembers.SecretSweeps(client), automations.SecretSweeps(client), rules.SecretSweeps(client),
-			do.MustInvoke[*ee.Edition](i).SecretSweeps(),
-		), do.MustInvoke[*secrets.Cipher](i)), nil
+	// `sphericon encryption-key reencrypt`: the cipher sweeps each owner's columns of stored secrets
+	// on the raw client, in this order, under its primary key.
+	do.Lazy(func(i do.Injector) (SecretReencryption, error) {
+		sweeps := slices.Concat(SecretSweeps(do.MustInvoke[*ent.Client](i)), do.MustInvoke[*ee.Edition](i).SecretSweeps())
+		cipher := do.MustInvoke[*secrets.Cipher](i)
+		return func(ctx context.Context) ([]secrets.Count, error) { return cipher.Reencrypt(ctx, sweeps...) }, nil
 	}),
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
 	// exit of its Enrollment on the raw client.
