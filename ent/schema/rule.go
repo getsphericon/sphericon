@@ -21,7 +21,7 @@ type Rule struct {
 
 func (Rule) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("rules", append(Rule{}.Fields(), VersionedMixin{}.Fields()...)),
+		TableWithEnumChecks("rules", Rule{}.Fields()),
 		Audited{Action: "rule", NameField: nameField},
 	}
 }
@@ -31,7 +31,7 @@ func (Rule) Mixin() []ent.Mixin {
 		TimeMixin{}, WorkspaceMixin{Ref: "rules"}, DiscardMixin{},
 		// The status, activated_at (an active Rule reacts only to Events recorded at or after it)
 		// and the pointers to the live and draft versions.
-		VersionedMixin{Version: RuleVersion.Type}, RevisionMixin{},
+		VersionedMixin{Version: RuleVersion.Type, Table: "rules"}, RevisionMixin{},
 	}
 }
 

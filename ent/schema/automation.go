@@ -20,7 +20,7 @@ type Automation struct {
 
 func (Automation) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		TableWithEnumChecks("automations", append(Automation{}.Fields(), VersionedMixin{}.Fields()...)),
+		TableWithEnumChecks("automations", Automation{}.Fields()),
 		Audited{Action: "automation", NameField: nameField},
 	}
 }
@@ -28,7 +28,7 @@ func (Automation) Annotations() []schema.Annotation {
 func (Automation) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		TimeMixin{}, WorkspaceMixin{Ref: "automations"}, ArchiveMixin{},
-		VersionedMixin{Version: AutomationVersion.Type}, RevisionMixin{},
+		VersionedMixin{Version: AutomationVersion.Type, Table: "automations"}, RevisionMixin{},
 	}
 }
 

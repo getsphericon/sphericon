@@ -28,7 +28,8 @@ func (EventJournalEntry) Fields() []ent.Field {
 		field.String("event_id").NotEmpty().Immutable().Unique(),
 		field.String("name").NotEmpty().Immutable(),
 		field.Int("version").Positive().Immutable(),
-		field.Int64("workspace_id").Optional().Nillable().Immutable(),
+		field.Int64(WorkspaceColumn).Optional().Nillable().Immutable().
+			Annotations(NotWorkspaceOwned{Reason: "a null Workspace is an Instance fact: the bus owns both scopes (ADR 0116)"}),
 		field.Time("occurred_at").Immutable().Annotations(Attribute(reasonHistory)),
 		field.Time("recorded_at").Immutable().Annotations(Attribute(reasonHistory)),
 		field.JSON("inputs", json.RawMessage{}).Optional().Immutable(),

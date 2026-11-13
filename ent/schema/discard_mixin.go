@@ -17,8 +17,9 @@ import (
 // scoped wrapper and keeps its compare-and-swap lifecycle (ADR 0046). An entity takes either this
 // mixin or ArchiveMixin, never both (ADR 0100).
 //
-// A unique index on a discardable entity MUST be partial,
-// entsql.IndexWhere("discarded_at IS NULL"): otherwise a discarded row holds the name for ever.
+// A unique index or field of a discardable entity is partial, entsql.IndexWhere("discarded_at IS
+// NULL"), so a discarded row does not hold the name for ever, or says with UniqueOverAll why it
+// holds over discarded rows too; internal/entgen refuses one that is neither.
 //
 // discarded_at is a latch (ADR 0109): the generated Discard stamps it once, conditioned on its being
 // null, and nothing clears it. The Workspace's is a machine instead, its deletion cycle (ADR 0043), so
@@ -28,6 +29,11 @@ type DiscardMixin struct {
 
 	// Restorable marks the one discardable entity that comes back within its window, the Workspace.
 	Restorable bool
+}
+
+// Annotations declare the kind the mixin gives: discardable.
+func (DiscardMixin) Annotations() []schema.Annotation {
+	return []schema.Annotation{Discardable{}}
 }
 
 // GivenUpOnDiscard marks a bool a discarded row gives up: the generated Discard sets it to false in
@@ -45,7 +51,7 @@ func (m DiscardMixin) Fields() []ent.Field {
 		form = Machine()
 	}
 	return []ent.Field{
-		field.Time("discarded_at").
+		field.Time(DiscardedColumn).
 			Annotations(form).
 			Optional().
 			Nillable(),

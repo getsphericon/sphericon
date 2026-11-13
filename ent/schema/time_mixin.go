@@ -18,12 +18,12 @@ type TimeMixin struct {
 
 func (TimeMixin) Fields() []ent.Field {
 	return []ent.Field{
-		field.Time("created_at").
+		field.Time(CreatedColumn).
 			Annotations(Attribute(reasonHistory)).
 			Default(time.Now).
 			Immutable().
 			Annotations(entsql.Default("CURRENT_TIMESTAMP")),
-		field.Time("updated_at").
+		field.Time(UpdatedColumn).
 			Annotations(Attribute(reasonHistory)).
 			Default(time.Now).
 			UpdateDefault(time.Now).

@@ -36,15 +36,16 @@ func (SignupItem) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The item's address: its public page is served at a fixed path of the key. Unique across
-		// deleted items too, not partial as DiscardMixin asks: a User's answers are matched to an
-		// item by its key, so a new item that took a deleted one's key would inherit its answers.
+		// The item's address: its public page is served at a fixed path of the key.
 		field.String("key").
 			NotEmpty().
 			MaxLen(64).
 			SchemaType(map[string]string{dialect.Postgres: "varchar(64)"}).
 			Unique().
-			Immutable(),
+			Immutable().
+			Annotations(UniqueOverAll{
+				Reason: "a User's answers are matched to an item by its key, so a new item that took a deleted one's key would inherit its answers",
+			}),
 		field.String("title").
 			NotEmpty().
 			MaxLen(200).

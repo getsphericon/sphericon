@@ -151,8 +151,9 @@ orchestration module imports no insights or instance package, and an insights pa
 instance module.
 Besides the tiers, `internal/` holds the drivers, the wiring (with `internal/healthcheck`, the
 image's HEALTHCHECK command), the packages of the repository's own commands (component `tools`:
-`contractcopy`, `prcheck`, `upgradecheck`, `scopegen`, `goverterenum` and
-`fixtures/fixturegen`, which nothing of the application imports) and what the tests share below
+`contractcopy`, `prcheck`, `upgradecheck`, `scopegen`, `goverterenum`, `entgen` (the rules of
+ent generation, which `ent/entc.go` runs) and `fixtures/fixturegen`, which nothing of the
+application imports) and what the tests share below
 the harness (component `testsupport`: `fixtures`, `dnstest` and `telemetryschema`, which only the
 harness and `cmd/seed` import).
 To move a module into its context: `git mv` its directory, rewrite the import paths

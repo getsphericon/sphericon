@@ -77,7 +77,9 @@ func (Integration) Fields() []ent.Field {
 		field.String("ingest_key").
 			NotEmpty().
 			Unique().
-			Annotations(Sensitive{}),
+			Annotations(Sensitive{}, UniqueOverAll{
+				Reason: "a hook's address names one Integration for ever: a key a discarded Integration held is never served again",
+			}),
 		field.Bool("enabled").
 			Annotations(Attribute(reasonSetting)).
 			Default(true),
