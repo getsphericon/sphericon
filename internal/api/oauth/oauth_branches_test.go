@@ -70,8 +70,9 @@ func TestTokenEndpointRefusesAMalformedBody(t *testing.T) {
 func TestAnExpiredCodeCannotBeExchanged(t *testing.T) {
 	env := testhelper.Setup(t)
 	code := consent(t, env, approval("contacts:read", false)).Query().Get("code")
+	hash := credentials.HashSecret(code)
 	n, err := env.DB.OAuthCode.Update().
-		Where(oauthcode.CodeHash(credentials.HashSecret(code))).
+		Where(oauthcode.CodeHash(hash)).
 		SetExpiresAt(time.Now().Add(-time.Minute)).
 		Save(t.Context())
 	require.NoError(t, err)
@@ -82,7 +83,7 @@ func TestAnExpiredCodeCannotBeExchanged(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "invalid_grant", errorOf(t, rec))
 	assert.NotContains(t, rec.Body.String(), "access_token")
-	used, err := env.DB.OAuthCode.Query().Where(oauthcode.CodeHash(credentials.HashSecret(code)), oauthcode.UsedAtNotNil()).Exist(t.Context())
+	used, err := env.DB.OAuthCode.Query().Where(oauthcode.CodeHash(hash), oauthcode.UsedAtNotNil()).Exist(t.Context())
 	require.NoError(t, err)
 	assert.False(t, used, "an expired code is not consumed")
 }
