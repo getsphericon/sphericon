@@ -93,7 +93,7 @@ groups:
   - name: sphericon.database
     rules:
       - alert: SphericonDBPoolSaturated
-        expr: max by (pool) (db_pool_in_use / db_pool_max) >= 0.9
+        expr: max by (pool) (db_sql_connection_open{status="inuse"} / ignoring (status) db_sql_connection_max_open) >= 0.9
         for: 10m
         labels:
           severity: warning
@@ -103,7 +103,7 @@ groups:
           runbook_url: https://getsphericon.com/docs/operations/runbook#sphericondbpoolsaturated
 
       - alert: SphericonDBPoolWaits
-        expr: sum by (pool) (increase(db_pool_wait_count[15m])) > 100
+        expr: sum by (pool) (increase(db_sql_connection_wait_total[15m])) > 100
         for: 15m
         labels:
           severity: warning

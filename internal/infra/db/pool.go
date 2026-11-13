@@ -4,19 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/getsphericon/sphericon/config"
-	"go.opentelemetry.io/otel"
+	"github.com/XSAM/otelsql"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+
+	"github.com/getsphericon/sphericon/config"
 )
 
-const otelScope = "github.com/getsphericon/sphericon/internal/db"
-
-// Pool label values: the only label on the pool gauges, so cardinality is
-// bounded by the number of pools (two).
+// Pool attribute values of the pool metrics (RegisterPoolMetrics).
 const (
 	PoolSQL   = "sql"
 	PoolRiver = "river"
@@ -56,39 +55,31 @@ func OpenRiverListener(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pgxpool.NewWithConfig(ctx, cfg)
 }
 
-// RegisterPoolMetrics exports both pools' statistics as OTel observable gauges
-// on the global meter provider (so they surface wherever that provider is
-// scraped), labelled only by pool name. Either pool may be nil.
-func RegisterPoolMetrics(sqlDB, riverDB *sql.DB) (metric.Registration, error) {
-	meter := otel.Meter(otelScope)
-	var errs []error
-	mk := func(name, desc string) metric.Int64ObservableGauge {
-		g, err := meter.Int64ObservableGauge("db.pool."+name, metric.WithDescription(desc))
-		errs = append(errs, err)
-		return g
-	}
-	open := mk("open", "Connections currently open (in use plus idle).")
-	inUse := mk("in_use", "Connections currently in use.")
-	idle := mk("idle", "Idle connections.")
-	maxOpen := mk("max", "Configured maximum number of connections.")
-	waitCount := mk("wait_count", "Cumulative number of connection requests that had to wait (sql.DBStats.WaitCount).")
-	if err := errors.Join(errs...); err != nil {
+// RegisterPoolMetrics exports both pools' statistics through otelsql (the db.sql.connection.*
+// metrics) on the global meter provider, so they surface wherever that provider is scraped. The
+// pool attribute is their one label of ours, so cardinality is bounded by the number of pools
+// (two). Both pools are required. The function it returns unregisters both.
+func RegisterPoolMetrics(sqlDB, riverDB *sql.DB) (func() error, error) {
+	sqlReg, err := registerOnePool(PoolSQL, sqlDB)
+	if err != nil {
 		return nil, err
 	}
+	riverReg, err := registerOnePool(PoolRiver, riverDB)
+	if err != nil {
+		unregisterErr := sqlReg.Unregister()
+		return nil, errors.Join(err, unregisterErr)
+	}
+	return func() error {
+		sqlErr := sqlReg.Unregister()
+		riverErr := riverReg.Unregister()
+		return errors.Join(sqlErr, riverErr)
+	}, nil
+}
 
-	return meter.RegisterCallback(func(_ context.Context, o metric.Observer) error {
-		for pool, d := range map[string]*sql.DB{PoolSQL: sqlDB, PoolRiver: riverDB} {
-			if d == nil {
-				continue
-			}
-			st := d.Stats()
-			a := metric.WithAttributes(attribute.String("pool", pool))
-			o.ObserveInt64(open, int64(st.OpenConnections), a)
-			o.ObserveInt64(inUse, int64(st.InUse), a)
-			o.ObserveInt64(idle, int64(st.Idle), a)
-			o.ObserveInt64(maxOpen, int64(st.MaxOpenConnections), a)
-			o.ObserveInt64(waitCount, st.WaitCount, a)
-		}
-		return nil
-	}, open, inUse, idle, maxOpen, waitCount)
+func registerOnePool(pool string, sqlDB *sql.DB) (metric.Registration, error) {
+	reg, err := otelsql.RegisterDBStatsMetrics(sqlDB, otelsql.WithAttributes(attribute.String("pool", pool)))
+	if err != nil {
+		return nil, fmt.Errorf("register the %s pool metrics: %w", pool, err)
+	}
+	return reg, nil
 }

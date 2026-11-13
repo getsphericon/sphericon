@@ -7,6 +7,7 @@ require (
 	code.dny.dev/ssrf v0.3.0
 	entgo.io/ent v0.14.6
 	github.com/AfterShip/email-verifier v1.5.0
+	github.com/XSAM/otelsql v0.44.0
 	github.com/aws/aws-sdk-go-v2 v1.48.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.21.0
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.9

@@ -18,7 +18,6 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/samber/do/v2"
-	"go.opentelemetry.io/otel/metric"
 
 	sphericon "github.com/getsphericon/sphericon"
 	"github.com/getsphericon/sphericon/config"
@@ -223,12 +222,12 @@ type InternalHandler struct {
 type riverPool struct {
 	*sql.DB
 
-	listener *pgxpool.Pool
-	metrics  metric.Registration
+	listener          *pgxpool.Pool
+	unregisterMetrics func() error
 }
 
 func (p *riverPool) Shutdown() {
-	cleanup.Report("unregister the pool metrics", p.metrics.Unregister())
+	cleanup.Report("unregister the pool metrics", p.unregisterMetrics())
 	p.listener.Close()
 	cleanup.Close(p, "the job queue pool")
 }
@@ -509,13 +508,13 @@ var jobsPackage = do.Package(
 			cleanup.Close(pool, "the job queue pool")
 			return nil, err
 		}
-		reg, err := db.RegisterPoolMetrics(database.DB, pool)
+		unregisterMetrics, err := db.RegisterPoolMetrics(database.DB, pool)
 		if err != nil {
 			listener.Close()
 			cleanup.Close(pool, "the job queue pool")
 			return nil, err
 		}
-		return &riverPool{DB: pool, listener: listener, metrics: reg}, nil
+		return &riverPool{DB: pool, listener: listener, unregisterMetrics: unregisterMetrics}, nil
 	}),
 	// The queue depth gauge reads on scrape through the job queue's pool.
 	do.Lazy(func(i do.Injector) (*queueDepthGauge, error) {

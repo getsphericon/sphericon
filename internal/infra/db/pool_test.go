@@ -50,8 +50,8 @@ func TestOpenRiverDBAppliesMaxConns(t *testing.T) {
 	assert.Equal(t, 11, riverDB.Stats().MaxOpenConnections)
 }
 
-// Pool stats surface in a scrape of the global meter provider, labelled only
-// by pool name.
+// Both pools' stats surface in a scrape of the global meter provider as otelsql's
+// db.sql.connection.* metrics, told apart by the pool attribute.
 func TestPoolMetricsAppearInScrape(t *testing.T) {
 	cfg := testConfig(t)
 	pool := config.DBPool{MaxOpenConns: 7, MaxIdleConns: 7, ConnMaxLifetime: time.Minute, RiverMaxConns: 11}
@@ -72,19 +72,26 @@ func TestPoolMetricsAppearInScrape(t *testing.T) {
 	otel.SetMeterProvider(mp)
 	t.Cleanup(func() { otel.SetMeterProvider(prev); cleanup.Report("shut mp down", mp.Shutdown(context.Background())) })
 
-	registration, err := db.RegisterPoolMetrics(sqlDB, riverDB)
+	unregister, err := db.RegisterPoolMetrics(sqlDB, riverDB)
 	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Report("unregister the gauge", registration.Unregister()) })
+	t.Cleanup(func() { cleanup.Report("unregister the pool metrics", unregister()) })
 
 	rec := httptest.NewRecorder()
 	promhttp.HandlerFor(reg, promhttp.HandlerOpts{}).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/metrics", nil))
 	body, err := io.ReadAll(rec.Result().Body)
 	require.NoError(t, err)
 
-	assert.Regexp(t, `db_pool_max\{[^}]*pool="sql"\} 7`, string(body))
-	assert.Regexp(t, `db_pool_max\{[^}]*pool="river"\} 11`, string(body))
-	assert.Contains(t, string(body), "db_pool_in_use")
-	assert.Contains(t, string(body), "db_pool_idle")
-	assert.Regexp(t, `db_pool_wait_count\{[^}]*pool="sql"\}`, string(body))
-	assert.Regexp(t, `db_pool_wait_count\{[^}]*pool="river"\}`, string(body))
+	text := string(body)
+
+	// The alerts read these series (charts/sphericon/files/alerts.yaml).
+	for _, series := range []string{
+		`db_sql_connection_max_open\{[^}]*pool="sql"[^}]*\} 7`,
+		`db_sql_connection_max_open\{[^}]*pool="river"[^}]*\} 11`,
+		`db_sql_connection_open\{[^}]*pool="sql"[^}]*status="inuse"[^}]*\} 0`,
+		`db_sql_connection_open\{[^}]*pool="river"[^}]*status="inuse"[^}]*\} 0`,
+		`db_sql_connection_wait_total\{[^}]*pool="sql"[^}]*\} 0`,
+		`db_sql_connection_wait_total\{[^}]*pool="river"[^}]*\} 0`,
+	} {
+		assert.Regexp(t, series, text)
+	}
 }
