@@ -44,12 +44,13 @@ func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
 	return &Module{client: client, bus: bus, now: now}
 }
 
-// DeletionWindow is how long a deleted Workspace stays restorable before its data is
-// erased (ADR 0043). A constant, not configuration.
-const DeletionWindow = 30 * 24 * time.Hour
+// deletionWindow is how long a deleted Workspace stays restorable before its data is erased
+// (ADR 0043). A constant, not configuration: other packages read it as the erase date (EraseDate)
+// and the Workspaces inside and past it (InsideDeletionWindow, PastDeletionWindow).
+const deletionWindow = 30 * 24 * time.Hour
 
 // EraseDate is when the data of a Workspace deleted at discardedAt is erased.
-func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(DeletionWindow) }
+func EraseDate(discardedAt time.Time) time.Time { return discardedAt.Add(deletionWindow) }
 
 // ErrNotFound is the refusal of a Workspace that does not exist, is not live, or that
 // the User is not a member of. The cases are one refusal, so the answer does not tell a caller

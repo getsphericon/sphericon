@@ -29,8 +29,9 @@ import (
 //
 // The state is derived from two columns, so no column is added: active is a Workspace with no
 // discarded_at, pending_deletion has discarded_at and no erased_at, erased has erased_at. The
-// window is not a state: restoring is legal only while discarded_at is inside it, and that is
-// part of the update's condition, so the database decides a race with the erase job.
+// window is not a state: restoring is legal only while discarded_at is inside it and erasing only
+// once it is past it (InsideDeletionWindow, PastDeletionWindow), and that is part of each update's
+// condition, so the database decides a race between the restore and the erase job.
 
 // DeletionState is where a Workspace is in the deletion cycle.
 type DeletionState string
@@ -63,7 +64,19 @@ func pendingDeletion() predicate.Workspace {
 
 // InsideDeletionWindow is a Workspace in its deletion window at now: pending and not past it.
 func InsideDeletionWindow(now time.Time) predicate.Workspace {
-	return workspace.And(workspace.DiscardedAtGT(now.Add(-DeletionWindow)), workspace.ErasedAtIsNil())
+	return workspace.And(workspace.DiscardedAtGT(now.Add(-deletionWindow)), workspace.ErasedAtIsNil())
+}
+
+// PastDeletionWindow is a Workspace past its deletion window at now: pending and due for erase.
+func PastDeletionWindow(now time.Time) predicate.Workspace {
+	return workspace.And(workspace.DiscardedAtLTE(now.Add(-deletionWindow)), workspace.ErasedAtIsNil())
+}
+
+// DueForErase lists the Workspaces past their deletion window at now, the ones the erase removes,
+// by id. The erase passes the instant it then tombstones them at (workspacesunchecked.TombstoneIn),
+// so a Workspace it lists is never refused by the window.
+func (m *Module) DueForErase(ctx context.Context, now time.Time) ([]int64, error) {
+	return m.client.Workspace.Query().Where(PastDeletionWindow(now)).Order(workspace.ByID()).IDs(ctx)
 }
 
 // DeletionStateOf is the cycle state a Workspace row is in.

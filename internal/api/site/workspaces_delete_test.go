@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -40,7 +39,7 @@ func TestOwnerDeletesWorkspaceByTypingItsName(t *testing.T) {
 	deleted := deleteWorkspace(t, c, fixtures.InitechPublicID, "Initech")
 	assert.Equal(t, siteapi.WorkspaceId(fixtures.InitechPublicID), deleted.ID)
 	assert.WithinDuration(t, time.Now(), time.Time(deleted.DiscardedAt), time.Minute)
-	assert.Equal(t, time.Time(deleted.DiscardedAt).Add(workspaces.DeletionWindow), time.Time(deleted.EraseAt),
+	assert.Equal(t, time.Time(deleted.DiscardedAt).Add(testhelper.DeletionWindow), time.Time(deleted.EraseAt),
 		"the data is erased 30 days after the deletion")
 
 	list, err := c.SiteWorkspacesList(ctx)
@@ -93,7 +92,7 @@ func TestDeletedWorkspaceIsHiddenFromEveryMemberAndListedForOwners(t *testing.T)
 		require.NoError(t, err)
 		require.Len(t, got, 1, email)
 		assert.Equal(t, "Initech", got[0].Name)
-		assert.Equal(t, time.Time(got[0].DiscardedAt).Add(workspaces.DeletionWindow), time.Time(got[0].EraseAt))
+		assert.Equal(t, time.Time(got[0].DiscardedAt).Add(testhelper.DeletionWindow), time.Time(got[0].EraseAt))
 		assert.False(t, got[0].OnlyOwner, "Initech has two Owners, either can restore it: "+email)
 	}
 	for _, email := range []string{fixtures.InitechAdminAdaEmail, fixtures.InitechMemberMaxEmail, fixtures.OwnerJohnEmail} {
@@ -161,7 +160,7 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 
 	// Past the window the Workspace is no longer restorable.
 	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).
-		SetDiscardedAt(time.Now().Add(-workspaces.DeletionWindow - time.Hour)).ExecX(ctx)
+		SetDiscardedAt(time.Now().Add(-testhelper.DeletionWindow - time.Hour)).ExecX(ctx)
 	_, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
 	testhelper.SiteRefusal(t, err, http.StatusConflict, "a Workspace past its window is a conflict")
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)

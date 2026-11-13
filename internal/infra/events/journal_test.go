@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -143,7 +142,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	defer cancel()
 	now := time.Now()
 	require.NoError(t, bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).Exec(ctx)
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(now.Add(-testhelper.DeletionWindow - time.Hour)).Exec(ctx)
 	}))
 	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
 	unblock, published := pauseJournalPublication(ctx, t, bus, fact)
@@ -153,7 +152,8 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 				if err := purger.PurgeWorkspaceJobs(ctx, fixtures.AcmeID); err != nil {
 					return err
 				}
-				return workspacesunchecked.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
+				_, err := workspacesunchecked.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
+				return err
 			})
 		},
 	})

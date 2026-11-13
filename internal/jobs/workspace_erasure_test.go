@@ -22,7 +22,7 @@ func TestErasureJobTriggersTheModuleAtItsClock(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
 	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).
-		SetDiscardedAt(now.Add(-workspaces.DeletionWindow - time.Hour)).ExecX(t.Context())
+		SetDiscardedAt(now.Add(-testhelper.DeletionWindow - time.Hour)).ExecX(t.Context())
 	clock := func() time.Time { return now }
 	w := jobs.NewEraseWorkspacesWorker(workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock))
 
