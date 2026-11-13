@@ -26,7 +26,9 @@ owner is told by mail instead.
   session, and the holder of the link is the one invited.
 - **Budgets:** the notice and the verify mail share the forgot-password per-address budget
   (`SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR`), taken under a Kind of its own for
-  registration and for email change, so a stranger cannot mail-bomb an owner through either.
+  registration and for email change, so a stranger cannot mail-bomb an owner through either. A
+  resend of the verify link mails the same link, so it takes a slot of registration's Kind, for
+  every address alike.
 - **The exception** is a `selfhosted` Instance, where the gate is not required (ADR 0060): the password arrives with the request and
   no mail is sent, so registration keeps answering 409. A self-hosted Instance accepts
   that enumeration.
