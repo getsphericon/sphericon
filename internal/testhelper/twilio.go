@@ -123,9 +123,7 @@ func (env *TestEnv) PostTwilioCallback(t *testing.T, hookURL, authToken string, 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, strings.TrimPrefix(hookURL, env.AppURL), strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Twilio-Signature", twiliotest.Sign(authToken, hookURL, form))
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 // ReportTwilioStatus posts the status callback Twilio sends about a message it accepted from the

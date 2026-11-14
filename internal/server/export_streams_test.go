@@ -26,9 +26,7 @@ func getExport(t *testing.T, env *testhelper.TestEnv, bearer, target string) *ht
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, target, nil)
 	req.Header.Set("Authorization", "Bearer "+bearer)
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func TestExportStreamsRefuseALimitOutsideTheContract(t *testing.T) {

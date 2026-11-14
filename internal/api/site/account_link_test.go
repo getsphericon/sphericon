@@ -72,8 +72,7 @@ func accountLinkEnv(t *testing.T) *testhelper.TestEnv {
 
 func publishedKeys(t *testing.T, env *testhelper.TestEnv) receiver {
 	t.Helper()
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/.well-known/jwks.json", nil))
+	rec := env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/.well-known/jwks.json", nil))
 	require.Equal(t, http.StatusOK, rec.Code)
 	var set jose.JSONWebKeySet
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &set))

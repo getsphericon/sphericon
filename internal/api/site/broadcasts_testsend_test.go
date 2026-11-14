@@ -36,11 +36,10 @@ func testSendAsJane(_ *testhelper.TestEnv, c *siteapi.Client, to string) (*sitea
 func testSendOverHTTP(t *testing.T, env *testhelper.TestEnv, email, to string) *httptest.ResponseRecorder {
 	t.Helper()
 	path := fmt.Sprintf("/site/workspaces/%s/broadcasts/%s/test-send", fixtures.GlobexPublicID, testhelper.ID(fixtures.BroadcastGlobexID))
-	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(`{"email":"`+to+`"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(testhelper.RequestCookie("JWT", env.SiteToken(t, email, nil)))
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	return rec
 }
 

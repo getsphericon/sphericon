@@ -76,8 +76,7 @@ func (b *RedirectBrowser) sendBody(t *testing.T, method, target string, body io.
 	for _, c := range b.jar.Cookies(&cookieURL) {
 		req.AddCookie(c)
 	}
-	rec := httptest.NewRecorder()
-	b.env.Server.ServeHTTP(rec, req)
+	rec := b.env.Serve(req)
 	resp := rec.Result()
 	answer, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)

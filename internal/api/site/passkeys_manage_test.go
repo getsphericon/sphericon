@@ -177,10 +177,9 @@ func TestRemovingTheLastPasskeyWeakensTheActingSessionUnderTheRequirement(t *tes
 		claims.User.SetStrAttr(apiauth.ClaimMethod, string(apiauth.MethodPasskey))
 	})
 	status := func(session string) int {
-		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, tags, nil)
 		req.AddCookie(testhelper.RequestCookie("JWT", session))
-		env.Server.ServeHTTP(rec, req)
+		rec := env.Serve(req)
 		return rec.Code
 	}
 	require.Equal(t, http.StatusOK, status(session), "a Passkey session meets the requirement")

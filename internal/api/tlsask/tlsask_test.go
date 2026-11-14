@@ -50,8 +50,7 @@ func TestTLSAskIsNotOnThePublicMux(t *testing.T) {
 	host := fixtures.TrackingDomainServingHost
 
 	serve := func(target string) *httptest.ResponseRecorder {
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), http.MethodGet, target, nil))
+		w := env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodGet, target, nil))
 		return w
 	}
 	asked, unknown := serve("/tls/ask?domain="+url.QueryEscape(host)), serve("/definitely-unknown")

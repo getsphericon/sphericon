@@ -61,15 +61,11 @@ func TestConfirmEndpoint(t *testing.T) {
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
@@ -177,15 +173,11 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 
 	// Open: returns the pixel and records the open.
@@ -275,8 +267,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	assert.Equal(t, int64(fixtures.OutboundMessageWelcomeID), decoded.OutboundMessageID)
 
 	req := httptest.NewRequestWithContext(ctx, http.MethodPost, unsubPath(t, tr, target), nil)
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
+	w := env.Serve(req)
 	require.Equal(t, http.StatusNoContent, w.Code)
 
 	unsubscribed := env.QueuedMessages(t, systemevent.EmailUnsubscribed)
@@ -293,9 +284,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
@@ -333,15 +322,11 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
-		return w
+		return env.Serve(req)
 	}
 
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)

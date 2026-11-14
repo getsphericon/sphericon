@@ -35,9 +35,7 @@ func withTrackingLimit(limit int) testhelper.Option {
 func trackingGet(t *testing.T, env *testhelper.TestEnv, path string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func trackingToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
@@ -144,8 +142,7 @@ func TestOneClickUnsubscribeIsNeverRateLimited(t *testing.T) {
 	})
 	for i := range 10 {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, nil)
-		rec := httptest.NewRecorder()
-		env.Server.ServeHTTP(rec, req)
+		rec := env.Serve(req)
 		require.Equal(t, http.StatusNoContent, rec.Code, "POST %d", i+1)
 		require.Equal(t, http.StatusSeeOther, trackingGet(t, env, path).Code, "GET %d", i+1)
 	}

@@ -16,9 +16,7 @@ import (
 
 // serve drives the real in-memory server (no sockets).
 func serve(env *testhelper.TestEnv, req *http.Request) *httptest.ResponseRecorder {
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func appURL(t *testing.T) string {

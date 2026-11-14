@@ -28,8 +28,7 @@ func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	require.NoError(t, err)
 
 	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/e/o/"+token, nil)
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
+	w := env.Serve(req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})

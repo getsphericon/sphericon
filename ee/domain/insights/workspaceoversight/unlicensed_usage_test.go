@@ -30,10 +30,9 @@ func TestWithoutALicenseTheServiceEndpointsAnswer404OnThePublicPort(t *testing.T
 	env := testhelper.Setup(t, testhelper.WithoutLicense())
 
 	for _, path := range []string{"/service/usage", "/service/workspaces/1/holds"} {
-		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
 		req.Header.Set("Authorization", "Bearer "+primary)
-		env.Server.ServeHTTP(rec, req)
+		rec := env.Serve(req)
 		assert.Equal(t, http.StatusNotFound, rec.Code, path)
 	}
 }

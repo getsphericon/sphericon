@@ -132,11 +132,10 @@ func TestAnUnknownOrForeignWorkspaceIsNotFoundBeforeAPermissionIsChecked(t *test
 // send makes the request as the fixture user with the given login email and reads the answer.
 func send(t *testing.T, env *testhelper.TestEnv, email, method, path, body string) outcome {
 	t.Helper()
-	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(testhelper.RequestCookie("JWT", env.SiteToken(t, email, nil)))
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	var answer any
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &answer), rec.Body.String())
 	return outcome{status: rec.Code, code: codeOf(answer)}

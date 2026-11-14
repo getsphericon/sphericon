@@ -123,9 +123,7 @@ func (env *TestEnv) PostTelegramUpdate(t *testing.T, bot TelegramBot, update str
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, bot.HookPath, strings.NewReader(update))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Telegram-Bot-Api-Secret-Token", bot.Secret)
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 // BindTelegram binds the Telegram user to the Contact on the bot as a person does: a start link

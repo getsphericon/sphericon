@@ -136,9 +136,7 @@ func TestARecordKeepsTheClientAddressAndUserAgent(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Forwarded-For", "198.51.100.1, 203.0.113.7")
 	req.Header.Set("User-Agent", "Grace's browser")
-	rec := httptest.NewRecorder()
-
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 
 	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
 	records, err := env.ConsentRecords.Current(t.Context(), userByEmail(t, env, "grace@example.com").ID)

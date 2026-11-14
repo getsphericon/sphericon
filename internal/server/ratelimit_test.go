@@ -40,9 +40,7 @@ func postJSON(t *testing.T, env *testhelper.TestEnv, path, body string, headers 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func withHumanLimit(limit int) testhelper.Option {
@@ -99,8 +97,7 @@ func TestOperationalEndpointsAreNeverLimited(t *testing.T) {
 	for _, path := range []string{"/healthz", "/readyz", "/metrics", "/hooks/" + fixtures.IntegrationAcmeSesIngestKey} {
 		for range 5 {
 			req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
-			rec := httptest.NewRecorder()
-			env.Server.ServeHTTP(rec, req)
+			rec := env.Serve(req)
 			require.NotEqual(t, http.StatusTooManyRequests, rec.Code, path)
 		}
 	}

@@ -50,9 +50,7 @@ func twilioPost(t *testing.T, env *testhelper.TestEnv, target, signedURL, body s
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, target, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Twilio-Signature", twilioSignature(t, signedURL, body))
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 // Twilio signs the URL it posts to, which is the Integration's hook URL on the public address:

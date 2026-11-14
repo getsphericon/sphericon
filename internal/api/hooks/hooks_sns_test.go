@@ -40,9 +40,7 @@ func postSNS(t *testing.T, env *testhelper.TestEnv, key, body string) *httptest.
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/hooks/"+key, strings.NewReader(body))
 	req.Header.Set("Content-Type", "text/plain; charset=UTF-8")
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 // A hard bounce for a known Contact publishes one failure linked to it, keyed by the

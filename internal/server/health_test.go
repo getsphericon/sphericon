@@ -6,18 +6,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestHealthz(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/healthz", nil)
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
+	w := env.Serve(req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.JSONEq(t, `{"status":"ok"}`, w.Body.String())
@@ -27,8 +27,7 @@ func TestReadyz(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/readyz", nil)
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
+	w := env.Serve(req)
 
 	// The txdb test connection is live, so readiness reports OK.
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -46,8 +45,7 @@ func TestPublicHandlerDoesNotServeMetrics(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	serve := func(path string) *httptest.ResponseRecorder {
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
+		w := env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
 		return w
 	}
 

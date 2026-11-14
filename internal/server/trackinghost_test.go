@@ -51,9 +51,7 @@ func hostReq(env *testhelper.TestEnv, method, host, path string) *httptest.Respo
 	if host != "" {
 		req.Host = host
 	}
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
-	return w
+	return env.Serve(req)
 }
 
 // A verified Tracking host serves the link paths, scoped to its own Workspace, and no other
@@ -130,8 +128,7 @@ func TestTrackingHostServesTheFirstPartyTracker(t *testing.T) {
 		req.Host = host
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Collect-Key", key)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
+		w := env.Serve(req)
 		return w.Code
 	}
 
@@ -183,8 +180,7 @@ func TestTrackingHostFromTheEdgeServesTheTrackerForItsWorkspaceOnly(t *testing.T
 		req.Header.Set(edgeHeader, host)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Collect-Key", key)
-		w := httptest.NewRecorder()
-		env.Server.ServeHTTP(w, req)
+		w := env.Serve(req)
 		return w.Code
 	}
 	assert.Equal(t, http.StatusNoContent, collect(fixtures.UmbrellaCollectKey))
@@ -197,8 +193,7 @@ func viaPeer(env *testhelper.TestEnv, peer, header string) int {
 	if header != "" {
 		req.Header.Set(edgeHeader, header)
 	}
-	w := httptest.NewRecorder()
-	env.Server.ServeHTTP(w, req)
+	w := env.Serve(req)
 	return w.Code
 }
 
