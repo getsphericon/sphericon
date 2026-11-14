@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -71,14 +70,13 @@ func (w *NoticeEventWorker) Work(ctx context.Context, job *river.Job[NoticeEvent
 		return err
 	}
 	notices, err := w.notices.Issue(ctx, ev)
-	if err != nil || len(notices) == 0 {
+	if err != nil {
 		return err
 	}
-	params := make([]river.InsertManyParams, len(notices))
-	for i, n := range notices {
-		params[i] = river.InsertManyParams{Args: SendNoticeArgs{EventID: env.ID, To: n.To, Subject: n.Subject, Text: n.Text}}
-	}
-	if _, err := river.ClientFromContext[*sql.Tx](ctx).InsertMany(ctx, params); err != nil {
+	err = queueEach(ctx, notices, func(n noticedelivery.Notice) river.JobArgs {
+		return SendNoticeArgs{EventID: env.ID, To: n.To, Subject: n.Subject, Text: n.Text}
+	})
+	if err != nil {
 		return fmt.Errorf("queue the notices of %q: %w", env.Name, err)
 	}
 	return nil

@@ -26,24 +26,16 @@ import (
 func EventConsumers() []events.Consumer {
 	return []events.Consumer{
 		{Wants: observesMessage, Job: observeMessage, Replay: events.RetainForReplay[MessageObservationArgs](1)},
-		{Wants: suppresses, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
-			return SuppressEventArgs{events.EventJob{Envelope: env}}
-		}},
-		{Wants: isOrder, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
-			return OrderEventArgs{events.EventJob{Envelope: env}}
-		}},
+		{Wants: suppresses, Job: events.EnvelopeJob[SuppressEventArgs]},
+		{Wants: isOrder, Job: events.EnvelopeJob[OrderEventArgs]},
 		{Wants: triggers, Job: evaluateTrigger},
 		{Wants: firesRules, Job: evaluateRules},
-		{Wants: reachesWebhooks, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
-			return WebhookEventArgs{events.EventJob{Envelope: env}}
-		}},
+		{Wants: reachesWebhooks, Job: events.EnvelopeJob[WebhookEventArgs]},
 		{Wants: countsOnBroadcast, Job: func(env events.Envelope, ev events.DomainEvent) river.JobArgs {
 			e, _ := ev.(*events.MessageUnsubscribed) // countsOnBroadcast established the type.
 			return BroadcastUnsubscribeEventArgs{WorkspaceID: env.WorkspaceID, MessageID: e.OutboundMessageID, ObservedAt: e.ObservedAt}
 		}, Replay: events.RetainForReplay[BroadcastUnsubscribeEventArgs](1)},
-		{Wants: callsForNotices, Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
-			return NoticeEventArgs{events.EventJob{Envelope: env}}
-		}},
+		{Wants: callsForNotices, Job: events.EnvelopeJob[NoticeEventArgs]},
 	}
 }
 

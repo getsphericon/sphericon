@@ -14,10 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
-// recipientInsertChunk bounds a single InsertMany so a very large audience is enqueued in
-// batches rather than one giant statement.
-const recipientInsertChunk = 1000
-
 // SendRecipientArgs is one per-recipient send. BroadcastID rides along so the
 // worker can finalize without an extra lookup.
 type SendRecipientArgs struct {
@@ -28,6 +24,18 @@ type SendRecipientArgs struct {
 }
 
 func (SendRecipientArgs) Kind() string { return jobkind.SendRecipient.Kind }
+
+// InsertOpts puts a recipient's send in the broadcasts queue with broadcasts.RecipientAttempts.
+// It is unique by args: a plan job retried after inserting some chunks plans the same recipients
+// again, and river refuses a second job with the same args while the first is in any state but
+// cancelled or discarded, so each recipient keeps one job.
+func (SendRecipientArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{
+		Queue:       broadcasts.Queue,
+		MaxAttempts: broadcasts.RecipientAttempts,
+		UniqueOpts:  river.UniqueOpts{ByArgs: true},
+	}
+}
 
 // SendBroadcastWorker is the fan-out phase: it runs the module's delivery sequence with a
 // river scheduler, so the send scales across workers instead of running the whole audience
@@ -71,27 +79,15 @@ type riverSends struct {
 }
 
 func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []broadcasts.Send) error {
-	for i := 0; i < len(sends); i += recipientInsertChunk {
-		chunk := sends[i:min(i+recipientInsertChunk, len(sends))]
-		params := make([]river.InsertManyParams, 0, len(chunk))
-		for _, send := range chunk {
-			// A plan job retried after inserting some chunks plans the same recipients again:
-			// river refuses a second job with the same args while the first is in any state
-			// but cancelled or discarded, so each recipient keeps one job.
-			opts := &river.InsertOpts{Queue: broadcasts.Queue, MaxAttempts: broadcasts.RecipientAttempts, UniqueOpts: river.UniqueOpts{ByArgs: true}}
-			if !send.At.IsZero() {
-				opts.ScheduledAt = send.At
-			}
-			params = append(params, river.InsertManyParams{
-				Args:       SendRecipientArgs{WorkspaceID: r.workspaceID, RecipientID: send.RecipientID, BroadcastID: broadcastID},
-				InsertOpts: opts,
-			})
-		}
-		if _, err := r.rc.InsertMany(ctx, params); err != nil {
-			return err
+	params := make([]river.InsertManyParams, len(sends))
+	for i, send := range sends {
+		// A zero At is no schedule: river runs the job at once.
+		params[i] = river.InsertManyParams{
+			Args:       SendRecipientArgs{WorkspaceID: r.workspaceID, RecipientID: send.RecipientID, BroadcastID: broadcastID},
+			InsertOpts: &river.InsertOpts{ScheduledAt: send.At},
 		}
 	}
-	return nil
+	return insertMany(ctx, r.rc, params)
 }
 
 // SendRecipientWorker delivers one broadcast recipient. Each recipient is its
@@ -133,7 +129,7 @@ func riverResult(out broadcasts.Outcome) error {
 
 // SendBroadcast runs a Broadcast's delivery sequence synchronously (broadcasts.Delivery.RunInline):
 // the module plans and paces it exactly as production does and sends each recipient in order at
-// once. It is the queue-free adapter for the inline enqueuer and tests.
+// once. It is the queue-free adapter for tests.
 //
 // Audience = workspace contacts with an email address (optionally narrowed by a
 // segment) minus the ineligible (suppressed / unsubscribed, derived per ADR 0001).

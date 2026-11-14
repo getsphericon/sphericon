@@ -84,7 +84,6 @@ type Deps struct {
 	Notices *noticedelivery.UseCase
 	// Callbacks reads again a Delivery notice that came before its message (the late notice job).
 	Callbacks *callbackinterpretation.Module
-	Catalog   *messaging.Catalog
 	Rules     *rules.Module
 	Users     *users.Module
 	// SecondFactor reminds the Users whose Two-factor grace ends soon (ADR 0020).
@@ -276,15 +275,22 @@ func newRiverConfig(client *ent.Client, workers *river.Workers, logger *slog.Log
 	return cfg
 }
 
-// mustParseCron is the river schedule of a standard cron expression, as river's docs schedule a
-// periodic job at a time of day (robfig/cron); CRON_TZ=UTC fixes the zone. The expressions are
-// constants, so one that does not parse is a programming error.
-func mustParseCron(expr string) cron.Schedule {
-	schedule, err := cron.ParseStandard(expr)
+// every is the periodic job of args every interval, which also runs at start.
+func every(interval time.Duration, args river.JobArgs) *river.PeriodicJob {
+	return river.NewPeriodicJob(river.PeriodicInterval(interval),
+		func() (river.JobArgs, *river.InsertOpts) { return args, nil },
+		&river.PeriodicJobOpts{RunOnStart: true})
+}
+
+// dailyUTC is the periodic job of args once a day at hour:00 UTC, an off-peak hour, as river's
+// docs schedule a periodic job at a time of day (robfig/cron). It does not run at start.
+func dailyUTC(hour int, args river.JobArgs) *river.PeriodicJob {
+	schedule, err := cron.ParseStandard(fmt.Sprintf("CRON_TZ=UTC 0 %d * * *", hour))
 	if err != nil {
-		panic(fmt.Sprintf("jobs: the schedule %q: %v", expr, err))
+		panic(fmt.Sprintf("jobs: the daily schedule at %d: %v", hour, err))
 	}
-	return schedule
+	return river.NewPeriodicJob(schedule,
+		func() (river.JobArgs, *river.InsertOpts) { return args, nil }, nil)
 }
 
 // periodicJobs are core's periodic jobs, then extra, the Edition's.
@@ -292,123 +298,33 @@ func periodicJobs(extra []*river.PeriodicJob) []*river.PeriodicJob {
 	return append([]*river.PeriodicJob{
 		// Re-validate every Sending domain's DKIM DNS periodically so a record
 		// that disappears flips the domain back to unverified (ADR 0010).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(15*time.Minute),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return RecheckSendingDomainsArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
-		river.NewPeriodicJob(
-			river.PeriodicInterval(15*time.Minute),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return RecheckJoinDomainsArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
+		every(15*time.Minute, RecheckSendingDomainsArgs{}),
+		every(15*time.Minute, RecheckJoinDomainsArgs{}),
 		// Tracking domains are re-checked on their own cadence (ADR 0038, ADR 0071).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(15*time.Minute),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return RecheckTrackingDomainsArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
-		river.NewPeriodicJob(
-			river.PeriodicInterval(time.Hour),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return RefreshSendQuotasArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
+		every(15*time.Minute, RecheckTrackingDomainsArgs{}),
+		every(time.Hour, RefreshSendQuotasArgs{}),
 		// Drop failed-attempt rows past their window (ADR 0025).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(time.Hour),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PurgeAuthAttemptsArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
+		every(time.Hour, PurgeAuthAttemptsArgs{}),
 		// Remind Users a day before their Two-factor grace ends (ADR 0020).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(secondFactorReminderInterval),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return RemindSecondFactorArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
+		every(secondFactorReminderInterval, RemindSecondFactorArgs{}),
 		// Refresh the iCloud Private Relay egress ranges machine detection reads (ADR 0053).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(privateRelayRefreshInterval),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return RefreshPrivateRelayArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
-		// Delete expired analytical Events daily at 03:00 UTC (ADR 0019).
-		river.NewPeriodicJob(
-			eventsRetentionSchedule,
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PruneEventsArgs{}, nil
-			},
-			nil,
-		),
-		// Delete expired Outbound messages, keeping their figures, daily at 05:00 UTC (ADR 0143).
-		river.NewPeriodicJob(
-			messagesRetentionSchedule,
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PruneMessagesArgs{}, nil
-			},
-			nil,
-		),
+		every(privateRelayRefreshInterval, RefreshPrivateRelayArgs{}),
+		// Delete expired analytical Events (ADR 0019).
+		dailyUTC(3, PruneEventsArgs{}),
+		// Delete expired Outbound messages, keeping their figures (ADR 0143).
+		dailyUTC(5, PruneMessagesArgs{}),
 		// Erase Workspaces whose 30-day deletion window has passed (ADR 0043).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(workspaceErasureInterval),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return EraseWorkspacesArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
-		// Delete stale Unverified Users daily at 04:00 UTC (ADR 0030).
-		river.NewPeriodicJob(
-			unverifiedUsersSchedule,
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PruneUnverifiedUsersArgs{}, nil
-			},
-			nil,
-		),
-		// Delete Captured messages past the Test inbox's retention window daily at 06:00 UTC (ADR 0058).
-		river.NewPeriodicJob(
-			capturedMessagesSchedule,
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PruneCapturedMessagesArgs{}, nil
-			},
-			nil,
-		),
-		// Delete spent Passkey challenges daily at 05:00 UTC (ADR 0051).
-		river.NewPeriodicJob(
-			passkeyChallengesSchedule,
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PrunePasskeyChallengesArgs{}, nil
-			},
-			nil,
-		),
-		// Delete the lapsed and used Start tokens daily at 04:00 UTC (ADR 0076).
-		river.NewPeriodicJob(
-			startTokensSchedule,
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PruneStartTokensArgs{}, nil
-			},
-			nil,
-		),
+		every(workspaceErasureInterval, EraseWorkspacesArgs{}),
+		// Delete stale Unverified Users (ADR 0030).
+		dailyUTC(4, PruneUnverifiedUsersArgs{}),
+		// Delete Captured messages past the Test inbox's retention window (ADR 0058).
+		dailyUTC(6, PruneCapturedMessagesArgs{}),
+		// Delete spent Passkey challenges (ADR 0051).
+		dailyUTC(5, PrunePasskeyChallengesArgs{}),
+		// Delete the lapsed and used Start tokens (ADR 0076).
+		dailyUTC(4, PruneStartTokensArgs{}),
 		// Delete the expired pending sign-ups of the Sign-in providers hourly (ADR 0062).
-		river.NewPeriodicJob(
-			river.PeriodicInterval(pendingSignupsInterval),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return PrunePendingSignupsArgs{}, nil
-			},
-			&river.PeriodicJobOpts{RunOnStart: true},
-		),
+		every(pendingSignupsInterval, PrunePendingSignupsArgs{}),
 	}, extra...)
 }
 

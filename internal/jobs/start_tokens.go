@@ -11,9 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 )
 
-// startTokensSchedule is when the purge of Start tokens runs: daily at an off-peak hour, 04:00 UTC.
-var startTokensSchedule = mustParseCron("CRON_TZ=UTC 0 4 * * *")
-
 // PruneStartTokensArgs is the daily tick that deletes the Start tokens that lapsed or were used
 // (ADR 0076).
 type PruneStartTokensArgs struct{}

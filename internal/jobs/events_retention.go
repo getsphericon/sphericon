@@ -17,9 +17,6 @@ import (
 // never holds a long lock.
 const eventsRetentionBatch = 2000
 
-// eventsRetentionSchedule is when the Event retention job runs: daily at an off-peak hour, 03:00 UTC.
-var eventsRetentionSchedule = mustParseCron("CRON_TZ=UTC 0 3 * * *")
-
 // PruneEventsArgs is the daily tick that deletes expired analytical Events
 // (ADR 0019).
 type PruneEventsArgs struct{}

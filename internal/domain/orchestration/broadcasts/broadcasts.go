@@ -66,7 +66,7 @@ const Queue = "broadcasts"
 // RecipientAttempts is how many attempts a recipient's send job is given: the last failed one
 // gives the recipient up (Delivery.DeliverRecipient), and its failure stays on the recipient's
 // row. A hard bounce does not recover, so a runner's default retry budget would only hold the
-// Broadcast in sending; a runner queues each recipient's job with this many attempts.
+// Broadcast in sending; the runner's recipient job args carry this many attempts.
 const RecipientAttempts = 3
 
 // SendArgs is the fan-out (plan) job payload: which Broadcast to dispatch. The worker plans
@@ -80,6 +80,9 @@ type SendArgs struct {
 }
 
 func (SendArgs) Kind() string { return "send_broadcast" }
+
+// InsertOpts puts the plan job in the broadcasts queue, with its recipients' sends.
+func (SendArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{Queue: Queue} }
 
 // Module is the Broadcast send/schedule state machine. It holds no client: every
 // call receives the Workspace-scoped client (ADR 0017) built by the entry point, so
@@ -193,9 +196,9 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, id, revision int64, t
 				return err
 			}
 		}
-		opts := &river.InsertOpts{Queue: Queue}
+		var opts *river.InsertOpts
 		if at != nil {
-			opts.ScheduledAt = *at
+			opts = &river.InsertOpts{ScheduledAt: *at}
 		}
 		return q.Enqueue(ctx, SendArgs{WorkspaceID: ts.WorkspaceID(), BroadcastID: id, ScheduledAt: at}, opts)
 	})

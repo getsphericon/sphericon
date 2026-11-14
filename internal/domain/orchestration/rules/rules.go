@@ -735,7 +735,7 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev
 		if fired, err = ts.RuleFiring().Get(ctx, id); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: id}, &river.InsertOpts{})
+		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: id}, nil)
 	})
 	return fired, err
 }

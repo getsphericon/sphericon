@@ -49,6 +49,15 @@ type EventJob struct {
 // InsertOpts puts every event job in QueueEvents.
 func (EventJob) InsertOpts() river.InsertOpts { return river.InsertOpts{Queue: QueueEvents} }
 
+// EnvelopeJob is the Job of a consumer whose args are the whole envelope and nothing else
+// (struct{ EventJob }).
+func EnvelopeJob[A interface {
+	~struct{ EventJob }
+	river.JobArgs
+}](env Envelope, _ DomainEvent) river.JobArgs {
+	return A{EventJob{Envelope: env}}
+}
+
 // UseConsumers registers the consumers every later Publish inserts jobs for. Register them at
 // composition time, before the bus is shared with concurrent callers.
 func (b *Bus) UseConsumers(cs ...Consumer) {
@@ -76,13 +85,12 @@ func (p *txPublisher) journalAndQueueConsumers(ctx context.Context, env Envelope
 		if _, exists := inputs[policy.kind]; exists {
 			return fmt.Errorf("duplicate replay consumer %q", policy.kind)
 		}
+		if scope, ok := args.(jobkind.OfWorkspace); !ok || scope.JobWorkspace() == 0 || scope.JobWorkspace() != env.WorkspaceID {
+			return fmt.Errorf("retained input of %q must name the publishing Workspace", policy.kind)
+		}
 		data, err := json.Marshal(args)
 		if err != nil {
 			return fmt.Errorf("retain %q: %w", policy.kind, err)
-		}
-		var scope jobkind.Workspace
-		if err := json.Unmarshal(data, &scope); err != nil || scope.WorkspaceID == 0 || scope.WorkspaceID != env.WorkspaceID {
-			return fmt.Errorf("retained input of %q must name the publishing Workspace", policy.kind)
 		}
 		inputs[policy.kind] = retainedInput{Version: policy.version, Args: data}
 	}

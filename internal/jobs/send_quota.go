@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	stdsql "database/sql"
 
 	"github.com/riverqueue/river"
 
@@ -38,14 +37,9 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, row := range due {
-		args := integrations.RefreshQuotaArgs{WorkspaceID: row.WorkspaceID, IntegrationID: row.ID}
-		if _, err := rc.Insert(ctx, args, nil); err != nil {
-			return err
-		}
-	}
-	return nil
+	return queueEach(ctx, due, func(row *ent.Integration) river.JobArgs {
+		return integrations.RefreshQuotaArgs{WorkspaceID: row.WorkspaceID, IntegrationID: row.ID}
+	})
 }
 
 type RefreshIntegrationQuotaWorker struct {
