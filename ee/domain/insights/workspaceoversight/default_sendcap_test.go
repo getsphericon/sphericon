@@ -11,6 +11,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -106,9 +107,8 @@ func TestASignedUpUsersFirstWorkspaceStartsWithTheDefaultSendCap(t *testing.T) {
 // dump) is not copied onto a new Workspace.
 func TestASelfHostedInstanceGivesANewWorkspaceNoSendCap(t *testing.T) {
 	h := newHarness(t, testhelper.WithMode(config.ModeSelfHosted))
-	_, err := h.env.Instance.Ensure(t.Context())
+	_, _, err := suspension.NewDefaultSendCap(h.env.DB, true).SetIn(t.Context(), h.env.DB, new(500))
 	require.NoError(t, err)
-	h.env.DB.InstanceState.UpdateOneID(1).SetDefaultSendCap(500).ExecX(t.Context())
 
 	id := h.createWorkspace(t, "Self-hosted")
 

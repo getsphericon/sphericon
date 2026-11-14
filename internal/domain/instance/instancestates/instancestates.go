@@ -1,8 +1,8 @@
 // Package instancestates owns the Instance's own state (ADR 0032): the one row that no Workspace
 // owns (its random Instance id, the Telemetry report setting, the acknowledged notice, the
-// Release check's result, the default Send cap of new Workspaces). A Staff member decides about it
-// in the console (ADR 0063), and a change of the default Send cap is recorded in the Instance
-// audit log (ADR 0070). The row belongs to no Workspace, and the Instance-wide reads behind the
+// Release check's result). A Staff member decides about it in the console (ADR 0063), and changes
+// there the default Send cap of new Workspaces too, which suspension owns (ADR 0146): the module
+// asks suspension to change it and records the change in the Instance audit log (ADR 0070). The row belongs to no Workspace, and the Instance-wide reads behind the
 // Telemetry report and the banner of a newer release span every Workspace, so it holds the raw ent
 // client. The Release check (releasecheck.go) and the Telemetry report (telemetryreport.go) are
 // the module's operations too (ADR 0112): each reads and writes the one row and asks one outside
@@ -25,14 +25,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instanceauditentries"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/db"
-	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
-	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -121,7 +118,8 @@ type State struct {
 	DefaultSendCap *DefaultSendCap
 }
 
-// DefaultSendCap is the Send cap every new Workspace starts with (ADR 0067).
+// DefaultSendCap is the Send cap every new Workspace starts with (ADR 0067), suspension's
+// (ADR 0146).
 type DefaultSendCap struct {
 	// PerDay is the messages per rolling 24 hours; nil when new Workspaces get no Send cap.
 	PerDay *int
@@ -139,9 +137,9 @@ type Module struct {
 	ent *ent.Client
 	env Environment
 	now func() time.Time
-	// sendCaps is whether the Instance has Send caps (ADR 0067): only then does it have a default
-	// Send cap.
-	sendCaps providerlimit.SendCaps
+	// defaultSendCap is suspension's default Send cap, which a Staff member sets here (ADR 0146);
+	// it knows whether the Instance has Send caps (ADR 0067), and so a default.
+	defaultSendCap *suspension.DefaultSendCap
 	// releases is the Release check's source of the newest release; nil asks nobody.
 	releases ReleaseSource
 	// host is what the Telemetry report says about the running binary.
@@ -152,13 +150,14 @@ type Module struct {
 	log *slog.Logger
 }
 
-// New builds the module on the Instance clock now. sendCaps says whether the Instance has Send
-// caps (ADR 0067), and so a default Send cap a Staff member sets. The Release check asks releases
+// New builds the module on the Instance clock now. A Staff member sees and sets the default Send
+// cap through defaultSendCap, suspension's (ADR 0067, ADR 0146; nil, as in a test that does not
+// exercise it, shows none). The Release check asks releases
 // for the newest release (nil asks nobody). The Telemetry report says host about the running binary
 // (read by the wiring) and is sent through receiver, the client of the Telemetry contract's
 // receiver (built by the wiring from config.TelemetryReceiverURL; nil builds the report for the
 // preview and never sends it). log takes the lines of both. now and log are required.
-func New(client *ent.Client, env Environment, now func() time.Time, sendCaps providerlimit.SendCaps,
+func New(client *ent.Client, env Environment, now func() time.Time, defaultSendCap *suspension.DefaultSendCap,
 	releases ReleaseSource, host TelemetryHost, receiver *telemetryapi.Client, log *slog.Logger,
 ) *Module {
 	if now == nil {
@@ -167,7 +166,10 @@ func New(client *ent.Client, env Environment, now func() time.Time, sendCaps pro
 	if log == nil {
 		panic("instancestates: the module needs a logger")
 	}
-	return &Module{ent: client, env: env, now: now, sendCaps: sendCaps, releases: releases, host: host, receiver: receiver, log: log}
+	return &Module{
+		ent: client, env: env, now: now, defaultSendCap: defaultSendCap,
+		releases: releases, host: host, receiver: receiver, log: log,
+	}
 }
 
 // Ensure returns the Instance state row, creating it (with a fresh random Instance id)
@@ -219,37 +221,36 @@ func (m *Module) State(ctx context.Context) (State, error) {
 		LicenseExpiredAt:   m.env.LicenseExpiredAt,
 		TelemetrySchemaURL: m.env.SchemaURL,
 	}
-	if m.sendCaps {
-		s.DefaultSendCap = &DefaultSendCap{PerDay: row.DefaultSendCap}
+	if m.defaultSendCap == nil {
+		return s, nil
+	}
+	perDay, ok, err := m.defaultSendCap.Get(ctx)
+	if err != nil {
+		return State{}, err
+	}
+	if ok {
+		s.DefaultSendCap = &DefaultSendCap{PerDay: perDay}
 	}
 	return s, nil
 }
 
+// diffDefaultSendCap is the Diff key of a change of the default Send cap in the Instance audit log.
+const diffDefaultSendCap = "default_send_cap"
+
 // SetDefaultSendCap sets the Send cap of new Workspaces to perDay messages per rolling 24 hours, or
-// clears it with nil, as the Staff member by (ADR 0067). The change is recorded in the Instance
-// audit log with the old and the new value, in the same transaction; setting the same value or
-// clearing none is a no-op and records nothing. Existing Workspaces keep their Send caps.
-// providerlimit.ErrNoSendCaps on an Instance without Send caps; a Send cap outside the contract's
-// bounds (bounds.MaxPerDay) is refused.
+// clears it with nil, as the Staff member by (ADR 0067), through suspension, which owns it
+// (ADR 0146). The change is recorded in the Instance audit log with the old and the new value, in
+// the same transaction; setting the same value or clearing none is a no-op and records nothing.
+// Existing Workspaces keep their Send caps. suspension refuses it on an Instance without Send caps
+// (suspension.ErrNoSendCaps) and a Send cap outside the contract's bounds (bounds.MaxPerDay).
 func (m *Module) SetDefaultSendCap(ctx context.Context, by *ent.StaffMember, perDay *int) (DefaultSendCapChange, error) {
-	if err := m.sendCaps.Check(); err != nil {
-		return DefaultSendCapChange{}, err
-	}
-	if perDay != nil {
-		if err := validation.Range(fieldname.PerDay, *perDay, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
-			return DefaultSendCapChange{}, err
-		}
-	}
-	if _, err := m.Ensure(ctx); err != nil {
-		return DefaultSendCapChange{}, err
-	}
 	tx, err := m.ent.Tx(ctx)
 	if err != nil {
 		return DefaultSendCapChange{}, fmt.Errorf("set the default send cap: %w", err)
 	}
-	changed, err := setDefaultSendCap(ctx, tx.Client(), by, perDay)
+	changed, err := m.setDefaultSendCapIn(ctx, tx.Client(), by, perDay)
 	if err != nil {
-		return DefaultSendCapChange{}, errors.Join(fmt.Errorf("set the default send cap: %w", err), tx.Rollback())
+		return DefaultSendCapChange{}, errors.Join(err, tx.Rollback())
 	}
 	if err := tx.Commit(); err != nil {
 		return DefaultSendCapChange{}, fmt.Errorf("set the default send cap: %w", err)
@@ -257,53 +258,15 @@ func (m *Module) SetDefaultSendCap(ctx context.Context, by *ent.StaffMember, per
 	return DefaultSendCapChange{Changed: changed, DefaultSendCap: DefaultSendCap{PerDay: perDay}}, nil
 }
 
-// setDefaultSendCap changes the stored default on tx and records the change, unless it is the
-// same; it reports whether it changed.
-func setDefaultSendCap(ctx context.Context, tx *ent.Client, by *ent.StaffMember, perDay *int) (bool, error) {
-	row, err := tx.InstanceState.Query().Where(instancestate.ID(stateID)).ForUpdate().Only(ctx)
-	if err != nil {
+// setDefaultSendCapIn changes the default on tx and records the change, unless it is the same; it
+// reports whether it changed.
+func (m *Module) setDefaultSendCapIn(ctx context.Context, tx *ent.Client, by *ent.StaffMember, perDay *int) (bool, error) {
+	change, changed, err := m.defaultSendCap.SetIn(ctx, tx, perDay)
+	if err != nil || !changed {
 		return false, err
 	}
-	change, differs := events.ChangeOf(row.DefaultSendCap, perDay)
-	if !differs {
-		return false, nil
-	}
-	upd := tx.InstanceState.UpdateOneID(stateID)
-	if perDay == nil {
-		upd.ClearDefaultSendCap()
-	} else {
-		upd.SetDefaultSendCap(*perDay)
-	}
-	if err := upd.Exec(ctx); err != nil {
-		return false, err
-	}
-	diff := map[string]any{instancestate.FieldDefaultSendCap: change}
+	diff := map[string]any{diffDefaultSendCap: change}
 	return true, instanceauditentries.Record(ctx, tx, by.ID, instanceauditentries.ActionDefaultSendCapChange, diff)
-}
-
-// StartingSendCapIn is the Send cap a Workspace created now starts with (ADR 0067), read on tx, the
-// transaction that creates it: on an Instance with Send caps the stored default, nil when none is
-// set or the Instance state row does not exist yet; on one without them, none, whatever default is
-// stored. The Workspace creation and the Sign-up, which creates a User's first Workspace, both ask
-// it.
-func (m *Module) StartingSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
-	if !m.sendCaps {
-		return nil, nil
-	}
-	return defaultSendCapIn(ctx, tx)
-}
-
-// defaultSendCapIn is the stored default Send cap read on tx, nil when none is set or the Instance
-// state row does not exist yet.
-func defaultSendCapIn(ctx context.Context, tx *ent.Client) (*int, error) {
-	row, err := tx.InstanceState.Query().Where(instancestate.ID(stateID)).Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("read the default send cap: %w", err)
-	}
-	return row.DefaultSendCap, nil
 }
 
 // AuditEntries is a page of the Instance audit log, newest first, from the cursor a previous page

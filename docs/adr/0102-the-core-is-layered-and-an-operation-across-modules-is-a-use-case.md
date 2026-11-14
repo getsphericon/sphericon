@@ -87,7 +87,9 @@ Other parts of the core are misplaced too:
   - Use cases do not import each other (easement `isolated`). A piece two of them need moves down into the
     domain module that owns it. A piece that writes the rows of two modules has no single owner: each
     use case composes those modules itself, as the Workspace creation and the Sign-up both create a
-    Workspace with its Owner Membership.
+    Workspace with its Owner Membership. (Amended by
+    [[0146-the-send-cap-a-workspace-starts-with-belongs-to-suspension]]: both read the Send cap the
+    Workspace starts with from `suspension`, in identity, no longer from `instancestates`.)
   - A package that serves a protocol's or a console's endpoints is not a use case because it reaches
     many modules. Its endpoints are a driver, and only an operation across modules behind them is a
     use case: the OAuth server is the driver `internal/api/oauth`, and the exchange of a code or a

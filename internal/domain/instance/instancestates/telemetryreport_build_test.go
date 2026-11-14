@@ -29,7 +29,7 @@ var testHost = instancestates.TelemetryHost{
 
 func buildReport(t *testing.T, env *testhelper.TestEnv, now time.Time) telemetryapi.TelemetryReport {
 	t.Helper()
-	mod := instancestates.New(env.DB, instancestates.Environment{}, func() time.Time { return now }, false, nil, testHost, nil, slog.Default())
+	mod := instancestates.New(env.DB, instancestates.Environment{}, func() time.Time { return now }, nil, nil, testHost, nil, slog.Default())
 	report, err := mod.TelemetryReport(t.Context())
 	require.NoError(t, err)
 	return report
@@ -84,7 +84,7 @@ func TestReportActivityFlagsFallAwayWhenNothingHappenedInThirtyDays(t *testing.T
 
 func TestReportAgeCountsWholeDaysSinceTheInstanceFirstStarted(t *testing.T) {
 	env := testhelper.Setup(t)
-	row, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now, false, nil, testHost, nil, slog.Default()).Ensure(t.Context())
+	row, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now, nil, nil, testHost, nil, slog.Default()).Ensure(t.Context())
 	require.NoError(t, err)
 
 	report := buildReport(t, env, row.CreatedAt.Add(42*24*time.Hour+3*time.Hour))
@@ -99,7 +99,7 @@ func TestReportEditionAndDeployShapeAreWhatTheCallerSays(t *testing.T) {
 	host.Edition = telemetryapi.TelemetryEditionEe
 	host.DeployShape = telemetryapi.TelemetryDeployShapeKubernetes
 
-	report, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now, false, nil, host, nil, slog.Default()).TelemetryReport(t.Context())
+	report, err := instancestates.New(env.DB, instancestates.Environment{}, time.Now, nil, nil, host, nil, slog.Default()).TelemetryReport(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionEe, report.Edition)

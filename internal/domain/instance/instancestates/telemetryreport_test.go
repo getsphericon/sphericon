@@ -86,7 +86,7 @@ func newRig(t *testing.T, version string, edit func(*config.Config)) *rig {
 	client, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
 	require.NoError(t, err)
 	mod := instancestates.New(env.DB, instancestates.EnvironmentOf(cfg, version, time.Time{}), clk.now,
-		false, nil, host, client, slog.Default())
+		nil, nil, host, client, slog.Default())
 	_, err = mod.AcknowledgeNotice(t.Context())
 	require.NoError(t, err)
 	return &rig{mod: mod, recv: recv, clock: clk, db: env.DB, host: host}
@@ -226,7 +226,7 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	failing := newReceiver(t, http.StatusInternalServerError)
 	client, err := telemetryapi.NewClient(failing.URL)
 	require.NoError(t, err)
-	sender := instancestates.New(r.db, r.mod.Environment(), r.clock.now, false, nil, r.host, client, slog.Default())
+	sender := instancestates.New(r.db, r.mod.Environment(), r.clock.now, nil, nil, r.host, client, slog.Default())
 
 	require.NoError(t, sender.SendTelemetryReport(t.Context()))
 	assert.Nil(t, r.lastSent(t))

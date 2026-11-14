@@ -28,7 +28,7 @@ func logged(t *testing.T, running string, src instancestates.ReleaseSource) (*in
 	buf := &bytes.Buffer{}
 	log := slog.New(slog.NewTextHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	mod := instancestates.New(env.DB, instancestates.Environment{ReleaseCheck: true, Version: running}, time.Now,
-		false, src, instancestates.TelemetryHost{}, nil, log)
+		nil, src, instancestates.TelemetryHost{}, nil, log)
 	return mod, buf
 }
 

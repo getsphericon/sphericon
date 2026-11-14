@@ -661,6 +661,11 @@ var deliveryPackage = do.Package(
 // identityPackage provides the Users, Invitations, Workspace, Membership and Instance state modules,
 // the Login throttle, the second factor, and the creation and deletion of a Workspace.
 var identityPackage = do.Package(
+	// The default Send cap a new Workspace starts with (ADR 0146), suspension's, given whether the
+	// Instance has Send caps: identity sits below sending, so it takes the flag as a plain bool.
+	do.Lazy(func(i do.Injector) (*suspension.DefaultSendCap, error) {
+		return suspension.NewDefaultSendCap(do.MustInvoke[*ent.Client](i), bool(do.MustInvoke[providerlimit.SendCaps](i))), nil
+	}),
 	// One password hasher for every password a User or a Staff member sets.
 	do.Lazy(func(do.Injector) (*credentials.Hasher, error) {
 		return credentials.NewHasher(), nil
@@ -683,13 +688,13 @@ var identityPackage = do.Package(
 			users.WithProver(prover)), nil
 	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a use case,
-	// ADR 0102), which starts with the Instance's default Send cap where the Instance has them,
-	// and the sign-in through a Sign-in provider (ADR 0111).
+	// ADR 0102), which starts with the default Send cap (suspension's, ADR 0146) where the Instance
+	// has Send caps, and the sign-in through a Sign-in provider (ADR 0111).
 	do.Lazy(func(i do.Injector) (*signup.UseCase, error) {
 		usersModule := do.MustInvoke[*users.Module](i)
 		links := users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i))
 		return signup.New(do.MustInvoke[*events.Bus](i), usersModule, links, do.MustInvoke[*credentials.Hasher](i),
-			do.MustInvoke[*instancestates.Module](i),
+			do.MustInvoke[*suspension.DefaultSendCap](i),
 			signup.SignUpConfig{
 				Consents:            do.MustInvoke[*consentrecords.Module](i),
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
@@ -740,7 +745,7 @@ var identityPackage = do.Package(
 			return nil, err
 		}
 		return instancestates.New(do.MustInvoke[*ent.Client](i), instancestates.EnvironmentOf(cfg, version, lapsedAt), do.MustInvoke[Clock](i),
-			do.MustInvoke[providerlimit.SendCaps](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
+			do.MustInvoke[*suspension.DefaultSendCap](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
 	}),
 	// The Login throttle and the mail budgets of an address (ADR 0025), over the raw client.
 	do.Lazy(func(i do.Injector) (*throttle.Attempts, error) {
@@ -913,7 +918,7 @@ var contentPackage = do.Package(
 			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-			States: do.MustInvoke[*instancestates.Module](i),
+			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i),
 		}, workspaceid.New, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {

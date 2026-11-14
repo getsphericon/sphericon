@@ -8,6 +8,11 @@ status: accepted
 > a frequency cap per Destination joins the Send cap and the Provider limit as a third limit; it
 > protects the person, not capacity, and Transactional sends do not count against it.
 
+> **Amended by [[0146-the-send-cap-a-workspace-starts-with-belongs-to-suspension]]:** the default
+> Send cap of new Workspaces is `suspension`'s, beside the Send cap itself, in a one-row table of its
+> own; the Staff member still sets it in the console, and the change is still recorded in the
+> Instance audit log.
+
 ADR 0023 gave each Integration a ceiling that mirrors the customer's own provider account, and the
 app showed it as a "Send limit" the customer edits. It read as a limit the platform sets, which it
 is not: it protects the customer's provider account. The SaaS needs a limit of its own that the

@@ -25,8 +25,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -111,13 +111,14 @@ type UseCase struct {
 	holds           *holds.Holds
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
-	states          *instancestates.Module
+	defaultSendCap  *suspension.DefaultSendCap
 	newPublicID     func() string
 	now             func() time.Time
 }
 
-// Modules are the modules the use case reads and changes the Workspace through. States gives the
-// Send cap a new Workspace starts with (instancestates.Module.StartingSendCapIn, ADR 0067).
+// Modules are the modules the use case reads and changes the Workspace through. DefaultSendCap
+// gives the Send cap a new Workspace starts with (suspension.DefaultSendCap.StartingIn, ADR 0067,
+// ADR 0146).
 type Modules struct {
 	Workspaces      *workspaces.Module
 	Memberships     *memberships.Module
@@ -125,7 +126,7 @@ type Modules struct {
 	Holds           *holds.Holds
 	Outbound        *outboundmessages.Module
 	TrackingDomains *trackingdomains.Module
-	States          *instancestates.Module
+	DefaultSendCap  *suspension.DefaultSendCap
 }
 
 // New builds the use case over the bus whose transactions create and restore a Workspace and the
@@ -134,7 +135,7 @@ type Modules struct {
 func New(bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
-		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, states: mods.States,
+		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, defaultSendCap: mods.DefaultSendCap,
 		newPublicID: newPublicID, now: now,
 	}
 }

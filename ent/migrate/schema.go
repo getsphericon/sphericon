@@ -937,6 +937,19 @@ var (
 			},
 		},
 	}
+	// DefaultSendCapColumns holds the columns for the "default_send_cap" table.
+	DefaultSendCapColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "per_day", Type: field.TypeInt, Nullable: true},
+	}
+	// DefaultSendCapTable holds the schema information for the "default_send_cap" table.
+	DefaultSendCapTable = &schema.Table{
+		Name:       "default_send_cap",
+		Columns:    DefaultSendCapColumns,
+		PrimaryKey: []*schema.Column{DefaultSendCapColumns[0]},
+	}
 	// EmailTemplatesColumns holds the columns for the "email_templates" table.
 	EmailTemplatesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1281,7 +1294,6 @@ var (
 		{Name: "last_report_sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "latest_release", Type: field.TypeString, Nullable: true},
 		{Name: "latest_release_checked_at", Type: field.TypeTime, Nullable: true},
-		{Name: "default_send_cap", Type: field.TypeInt, Nullable: true},
 		{Name: "id_key", Type: field.TypeBytes},
 	}
 	// InstanceStateTable holds the schema information for the "instance_state" table.
@@ -3164,6 +3176,7 @@ var (
 		ContactsTable,
 		ContactTagsTable,
 		CustomFieldsTable,
+		DefaultSendCapTable,
 		EmailTemplatesTable,
 		ErasuresTable,
 		EventsTable,
@@ -3371,6 +3384,9 @@ func init() {
 	}
 	CustomFieldsTable.Annotation.Checks = map[string]string{
 		"custom_fields_type_check": "type IN ('string', 'number', 'bool', 'datetime')",
+	}
+	DefaultSendCapTable.Annotation = &entsql.Annotation{
+		Table: "default_send_cap",
 	}
 	EmailTemplatesTable.ForeignKeys[0].RefTable = WorkspacesTable
 	EmailTemplatesTable.Annotation = &entsql.Annotation{

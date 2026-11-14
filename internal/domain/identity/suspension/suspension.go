@@ -1,7 +1,8 @@
 // Package suspension owns what it means for a Workspace to be suspended, and the notice its Owners
 // get, and the platform's other levers over a Workspace's sending that Staff set on its row: the
 // abuse exemption (ADR 0026) and the Send cap (ADR 0067). Each change is audited in the
-// Workspace's own Audit log.
+// Workspace's own Audit log. It owns the default Send cap too, the Send cap a new Workspace starts
+// with (DefaultSendCap, ADR 0146), whose change the Instance audit log records.
 package suspension
 
 import (

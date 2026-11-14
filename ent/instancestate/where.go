@@ -94,11 +94,6 @@ func LatestReleaseCheckedAt(v time.Time) predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldEQ(FieldLatestReleaseCheckedAt, v))
 }
 
-// DefaultSendCap applies equality check predicate on the "default_send_cap" field. It's identical to DefaultSendCapEQ.
-func DefaultSendCap(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldEQ(FieldDefaultSendCap, v))
-}
-
 // IDKey applies equality check predicate on the "id_key" field. It's identical to IDKeyEQ.
 func IDKey(v []byte) predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldEQ(FieldIDKey, v))
@@ -482,56 +477,6 @@ func LatestReleaseCheckedAtIsNil() predicate.InstanceState {
 // LatestReleaseCheckedAtNotNil applies the NotNil predicate on the "latest_release_checked_at" field.
 func LatestReleaseCheckedAtNotNil() predicate.InstanceState {
 	return predicate.InstanceState(sql.FieldNotNull(FieldLatestReleaseCheckedAt))
-}
-
-// DefaultSendCapEQ applies the EQ predicate on the "default_send_cap" field.
-func DefaultSendCapEQ(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldEQ(FieldDefaultSendCap, v))
-}
-
-// DefaultSendCapNEQ applies the NEQ predicate on the "default_send_cap" field.
-func DefaultSendCapNEQ(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldNEQ(FieldDefaultSendCap, v))
-}
-
-// DefaultSendCapIn applies the In predicate on the "default_send_cap" field.
-func DefaultSendCapIn(vs ...int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldIn(FieldDefaultSendCap, vs...))
-}
-
-// DefaultSendCapNotIn applies the NotIn predicate on the "default_send_cap" field.
-func DefaultSendCapNotIn(vs ...int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldNotIn(FieldDefaultSendCap, vs...))
-}
-
-// DefaultSendCapGT applies the GT predicate on the "default_send_cap" field.
-func DefaultSendCapGT(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldGT(FieldDefaultSendCap, v))
-}
-
-// DefaultSendCapGTE applies the GTE predicate on the "default_send_cap" field.
-func DefaultSendCapGTE(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldGTE(FieldDefaultSendCap, v))
-}
-
-// DefaultSendCapLT applies the LT predicate on the "default_send_cap" field.
-func DefaultSendCapLT(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldLT(FieldDefaultSendCap, v))
-}
-
-// DefaultSendCapLTE applies the LTE predicate on the "default_send_cap" field.
-func DefaultSendCapLTE(v int) predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldLTE(FieldDefaultSendCap, v))
-}
-
-// DefaultSendCapIsNil applies the IsNil predicate on the "default_send_cap" field.
-func DefaultSendCapIsNil() predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldIsNull(FieldDefaultSendCap))
-}
-
-// DefaultSendCapNotNil applies the NotNil predicate on the "default_send_cap" field.
-func DefaultSendCapNotNil() predicate.InstanceState {
-	return predicate.InstanceState(sql.FieldNotNull(FieldDefaultSendCap))
 }
 
 // IDKeyEQ applies the EQ predicate on the "id_key" field.

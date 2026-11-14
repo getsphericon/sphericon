@@ -225,6 +225,18 @@ func (f CustomFieldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CustomFieldMutation", m)
 }
 
+// The DefaultSendCapFunc type is an adapter to allow the use of ordinary
+// function as DefaultSendCap mutator.
+type DefaultSendCapFunc func(context.Context, *ent.DefaultSendCapMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f DefaultSendCapFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.DefaultSendCapMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DefaultSendCapMutation", m)
+}
+
 // The EmailTemplateFunc type is an adapter to allow the use of ordinary
 // function as EmailTemplate mutator.
 type EmailTemplateFunc func(context.Context, *ent.EmailTemplateMutation) (ent.Value, error)

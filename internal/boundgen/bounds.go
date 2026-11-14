@@ -37,7 +37,7 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "MaxPerDay", Doc: "is a rolling 24-hour limit: a Provider limit's daily value or a Send cap.",
-		Spec: site, Schema: "MaxPerDay", Owners: []string{"Workspace", "InstanceState", "Integration"},
+		Spec: site, Schema: "MaxPerDay", Owners: []string{"Workspace", "DefaultSendCap", "Integration"},
 	},
 	{
 		Name: "MaxPerSecond", Doc: "is a Provider limit's value per second.",

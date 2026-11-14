@@ -100,7 +100,10 @@ context gets a package of its own by the same test.
   - Identity needs `instancestates`, the top context, for the Send cap a Workspace starts with:
     `signup` and `workspacecreation` (condition 1). (Amended by #1218: creating a Workspace is an
     operation of the Workspace view, `workspaceview`, see
-    [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]].)
+    [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]].) (Amended by
+    [[0146-the-send-cap-a-workspace-starts-with-belongs-to-suspension]]: the Send cap a Workspace
+    starts with is `suspension`'s, in identity, so this reason no longer holds; where the creation
+    lives is weighed apart.)
   - The Second factor reset also removes Passkeys, above the factor (ADR 0110), and User deletion
     becomes a use case (ADR 0110, ADR 0111, #1206) (condition 1). (Amended by #1355: Passkeys are
     not above the factor, `passkeys` imports only `users` and both sit in identity, so by this

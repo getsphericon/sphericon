@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -120,6 +121,7 @@ const (
 	TypeContact              = "Contact"
 	TypeContactTag           = "ContactTag"
 	TypeCustomField          = "CustomField"
+	TypeDefaultSendCap       = "DefaultSendCap"
 	TypeEmailTemplate        = "EmailTemplate"
 	TypeErasure              = "Erasure"
 	TypeEvent                = "Event"
@@ -22273,6 +22275,505 @@ func (m *CustomFieldMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown CustomField edge %s", name)
 }
 
+// DefaultSendCapMutation represents an operation that mutates the DefaultSendCap nodes in the graph.
+type DefaultSendCapMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int64
+	created_at    *time.Time
+	updated_at    *time.Time
+	per_day       *int
+	addper_day    *int
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*DefaultSendCap, error)
+	predicates    []predicate.DefaultSendCap
+}
+
+var _ ent.Mutation = (*DefaultSendCapMutation)(nil)
+
+// defaultsendcapOption allows management of the mutation configuration using functional options.
+type defaultsendcapOption func(*DefaultSendCapMutation)
+
+// newDefaultSendCapMutation creates new mutation for the DefaultSendCap entity.
+func newDefaultSendCapMutation(c config, op Op, opts ...defaultsendcapOption) *DefaultSendCapMutation {
+	m := &DefaultSendCapMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDefaultSendCap,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDefaultSendCapID sets the ID field of the mutation.
+func withDefaultSendCapID(id int64) defaultsendcapOption {
+	return func(m *DefaultSendCapMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *DefaultSendCap
+		)
+		m.oldValue = func(ctx context.Context) (*DefaultSendCap, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().DefaultSendCap.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDefaultSendCap sets the old DefaultSendCap of the mutation.
+func withDefaultSendCap(node *DefaultSendCap) defaultsendcapOption {
+	return func(m *DefaultSendCapMutation) {
+		m.oldValue = func(context.Context) (*DefaultSendCap, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DefaultSendCapMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DefaultSendCapMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of DefaultSendCap entities.
+func (m *DefaultSendCapMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DefaultSendCapMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DefaultSendCapMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().DefaultSendCap.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *DefaultSendCapMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *DefaultSendCapMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the DefaultSendCap entity.
+// If the DefaultSendCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DefaultSendCapMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *DefaultSendCapMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *DefaultSendCapMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *DefaultSendCapMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the DefaultSendCap entity.
+// If the DefaultSendCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DefaultSendCapMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *DefaultSendCapMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetPerDay sets the "per_day" field.
+func (m *DefaultSendCapMutation) SetPerDay(i int) {
+	m.per_day = &i
+	m.addper_day = nil
+}
+
+// PerDay returns the value of the "per_day" field in the mutation.
+func (m *DefaultSendCapMutation) PerDay() (r int, exists bool) {
+	v := m.per_day
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPerDay returns the old "per_day" field's value of the DefaultSendCap entity.
+// If the DefaultSendCap object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DefaultSendCapMutation) OldPerDay(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPerDay is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPerDay requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPerDay: %w", err)
+	}
+	return oldValue.PerDay, nil
+}
+
+// AddPerDay adds i to the "per_day" field.
+func (m *DefaultSendCapMutation) AddPerDay(i int) {
+	if m.addper_day != nil {
+		*m.addper_day += i
+	} else {
+		m.addper_day = &i
+	}
+}
+
+// AddedPerDay returns the value that was added to the "per_day" field in this mutation.
+func (m *DefaultSendCapMutation) AddedPerDay() (r int, exists bool) {
+	v := m.addper_day
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearPerDay clears the value of the "per_day" field.
+func (m *DefaultSendCapMutation) ClearPerDay() {
+	m.per_day = nil
+	m.addper_day = nil
+	m.clearedFields[defaultsendcap.FieldPerDay] = struct{}{}
+}
+
+// PerDayCleared returns if the "per_day" field was cleared in this mutation.
+func (m *DefaultSendCapMutation) PerDayCleared() bool {
+	_, ok := m.clearedFields[defaultsendcap.FieldPerDay]
+	return ok
+}
+
+// ResetPerDay resets all changes to the "per_day" field.
+func (m *DefaultSendCapMutation) ResetPerDay() {
+	m.per_day = nil
+	m.addper_day = nil
+	delete(m.clearedFields, defaultsendcap.FieldPerDay)
+}
+
+// Where appends a list predicates to the DefaultSendCapMutation builder.
+func (m *DefaultSendCapMutation) Where(ps ...predicate.DefaultSendCap) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the DefaultSendCapMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DefaultSendCapMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.DefaultSendCap, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *DefaultSendCapMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DefaultSendCapMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (DefaultSendCap).
+func (m *DefaultSendCapMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DefaultSendCapMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.created_at != nil {
+		fields = append(fields, defaultsendcap.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, defaultsendcap.FieldUpdatedAt)
+	}
+	if m.per_day != nil {
+		fields = append(fields, defaultsendcap.FieldPerDay)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DefaultSendCapMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case defaultsendcap.FieldCreatedAt:
+		return m.CreatedAt()
+	case defaultsendcap.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case defaultsendcap.FieldPerDay:
+		return m.PerDay()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DefaultSendCapMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case defaultsendcap.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case defaultsendcap.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case defaultsendcap.FieldPerDay:
+		return m.OldPerDay(ctx)
+	}
+	return nil, fmt.Errorf("unknown DefaultSendCap field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DefaultSendCapMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case defaultsendcap.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case defaultsendcap.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case defaultsendcap.FieldPerDay:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPerDay(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DefaultSendCap field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DefaultSendCapMutation) AddedFields() []string {
+	var fields []string
+	if m.addper_day != nil {
+		fields = append(fields, defaultsendcap.FieldPerDay)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DefaultSendCapMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case defaultsendcap.FieldPerDay:
+		return m.AddedPerDay()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DefaultSendCapMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case defaultsendcap.FieldPerDay:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPerDay(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DefaultSendCap numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DefaultSendCapMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(defaultsendcap.FieldPerDay) {
+		fields = append(fields, defaultsendcap.FieldPerDay)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DefaultSendCapMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DefaultSendCapMutation) ClearField(name string) error {
+	switch name {
+	case defaultsendcap.FieldPerDay:
+		m.ClearPerDay()
+		return nil
+	}
+	return fmt.Errorf("unknown DefaultSendCap nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DefaultSendCapMutation) ResetField(name string) error {
+	switch name {
+	case defaultsendcap.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case defaultsendcap.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case defaultsendcap.FieldPerDay:
+		m.ResetPerDay()
+		return nil
+	}
+	return fmt.Errorf("unknown DefaultSendCap field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DefaultSendCapMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DefaultSendCapMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DefaultSendCapMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DefaultSendCapMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DefaultSendCapMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DefaultSendCapMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DefaultSendCapMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown DefaultSendCap unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DefaultSendCapMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown DefaultSendCap edge %s", name)
+}
+
 // EmailTemplateMutation represents an operation that mutates the EmailTemplate nodes in the graph.
 type EmailTemplateMutation struct {
 	config
@@ -29389,8 +29890,6 @@ type InstanceStateMutation struct {
 	last_report_sent_at       *time.Time
 	latest_release            *string
 	latest_release_checked_at *time.Time
-	default_send_cap          *int
-	adddefault_send_cap       *int
 	id_key                    *[]byte
 	clearedFields             map[string]struct{}
 	done                      bool
@@ -29842,76 +30341,6 @@ func (m *InstanceStateMutation) ResetLatestReleaseCheckedAt() {
 	delete(m.clearedFields, instancestate.FieldLatestReleaseCheckedAt)
 }
 
-// SetDefaultSendCap sets the "default_send_cap" field.
-func (m *InstanceStateMutation) SetDefaultSendCap(i int) {
-	m.default_send_cap = &i
-	m.adddefault_send_cap = nil
-}
-
-// DefaultSendCap returns the value of the "default_send_cap" field in the mutation.
-func (m *InstanceStateMutation) DefaultSendCap() (r int, exists bool) {
-	v := m.default_send_cap
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDefaultSendCap returns the old "default_send_cap" field's value of the InstanceState entity.
-// If the InstanceState object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *InstanceStateMutation) OldDefaultSendCap(ctx context.Context) (v *int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDefaultSendCap is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDefaultSendCap requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDefaultSendCap: %w", err)
-	}
-	return oldValue.DefaultSendCap, nil
-}
-
-// AddDefaultSendCap adds i to the "default_send_cap" field.
-func (m *InstanceStateMutation) AddDefaultSendCap(i int) {
-	if m.adddefault_send_cap != nil {
-		*m.adddefault_send_cap += i
-	} else {
-		m.adddefault_send_cap = &i
-	}
-}
-
-// AddedDefaultSendCap returns the value that was added to the "default_send_cap" field in this mutation.
-func (m *InstanceStateMutation) AddedDefaultSendCap() (r int, exists bool) {
-	v := m.adddefault_send_cap
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDefaultSendCap clears the value of the "default_send_cap" field.
-func (m *InstanceStateMutation) ClearDefaultSendCap() {
-	m.default_send_cap = nil
-	m.adddefault_send_cap = nil
-	m.clearedFields[instancestate.FieldDefaultSendCap] = struct{}{}
-}
-
-// DefaultSendCapCleared returns if the "default_send_cap" field was cleared in this mutation.
-func (m *InstanceStateMutation) DefaultSendCapCleared() bool {
-	_, ok := m.clearedFields[instancestate.FieldDefaultSendCap]
-	return ok
-}
-
-// ResetDefaultSendCap resets all changes to the "default_send_cap" field.
-func (m *InstanceStateMutation) ResetDefaultSendCap() {
-	m.default_send_cap = nil
-	m.adddefault_send_cap = nil
-	delete(m.clearedFields, instancestate.FieldDefaultSendCap)
-}
-
 // SetIDKey sets the "id_key" field.
 func (m *InstanceStateMutation) SetIDKey(b []byte) {
 	m.id_key = &b
@@ -29982,7 +30411,7 @@ func (m *InstanceStateMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *InstanceStateMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, instancestate.FieldCreatedAt)
 	}
@@ -30006,9 +30435,6 @@ func (m *InstanceStateMutation) Fields() []string {
 	}
 	if m.latest_release_checked_at != nil {
 		fields = append(fields, instancestate.FieldLatestReleaseCheckedAt)
-	}
-	if m.default_send_cap != nil {
-		fields = append(fields, instancestate.FieldDefaultSendCap)
 	}
 	if m.id_key != nil {
 		fields = append(fields, instancestate.FieldIDKey)
@@ -30037,8 +30463,6 @@ func (m *InstanceStateMutation) Field(name string) (ent.Value, bool) {
 		return m.LatestRelease()
 	case instancestate.FieldLatestReleaseCheckedAt:
 		return m.LatestReleaseCheckedAt()
-	case instancestate.FieldDefaultSendCap:
-		return m.DefaultSendCap()
 	case instancestate.FieldIDKey:
 		return m.IDKey()
 	}
@@ -30066,8 +30490,6 @@ func (m *InstanceStateMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldLatestRelease(ctx)
 	case instancestate.FieldLatestReleaseCheckedAt:
 		return m.OldLatestReleaseCheckedAt(ctx)
-	case instancestate.FieldDefaultSendCap:
-		return m.OldDefaultSendCap(ctx)
 	case instancestate.FieldIDKey:
 		return m.OldIDKey(ctx)
 	}
@@ -30135,13 +30557,6 @@ func (m *InstanceStateMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetLatestReleaseCheckedAt(v)
 		return nil
-	case instancestate.FieldDefaultSendCap:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDefaultSendCap(v)
-		return nil
 	case instancestate.FieldIDKey:
 		v, ok := value.([]byte)
 		if !ok {
@@ -30156,21 +30571,13 @@ func (m *InstanceStateMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *InstanceStateMutation) AddedFields() []string {
-	var fields []string
-	if m.adddefault_send_cap != nil {
-		fields = append(fields, instancestate.FieldDefaultSendCap)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *InstanceStateMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case instancestate.FieldDefaultSendCap:
-		return m.AddedDefaultSendCap()
-	}
 	return nil, false
 }
 
@@ -30179,13 +30586,6 @@ func (m *InstanceStateMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *InstanceStateMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case instancestate.FieldDefaultSendCap:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDefaultSendCap(v)
-		return nil
 	}
 	return fmt.Errorf("unknown InstanceState numeric field %s", name)
 }
@@ -30205,9 +30605,6 @@ func (m *InstanceStateMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(instancestate.FieldLatestReleaseCheckedAt) {
 		fields = append(fields, instancestate.FieldLatestReleaseCheckedAt)
-	}
-	if m.FieldCleared(instancestate.FieldDefaultSendCap) {
-		fields = append(fields, instancestate.FieldDefaultSendCap)
 	}
 	return fields
 }
@@ -30234,9 +30631,6 @@ func (m *InstanceStateMutation) ClearField(name string) error {
 		return nil
 	case instancestate.FieldLatestReleaseCheckedAt:
 		m.ClearLatestReleaseCheckedAt()
-		return nil
-	case instancestate.FieldDefaultSendCap:
-		m.ClearDefaultSendCap()
 		return nil
 	}
 	return fmt.Errorf("unknown InstanceState nullable field %s", name)
@@ -30269,9 +30663,6 @@ func (m *InstanceStateMutation) ResetField(name string) error {
 		return nil
 	case instancestate.FieldLatestReleaseCheckedAt:
 		m.ResetLatestReleaseCheckedAt()
-		return nil
-	case instancestate.FieldDefaultSendCap:
-		m.ResetDefaultSendCap()
 		return nil
 	case instancestate.FieldIDKey:
 		m.ResetIDKey()

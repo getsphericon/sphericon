@@ -16,8 +16,8 @@ import (
 // no effect, and setting either is not found, whatever the License key.
 type SendCaps bool
 
-// ErrNoSendCaps refuses a change of a Send cap or of the default Send cap on an Instance that has
-// no Send caps: there is nothing to change there, so it is not found.
+// ErrNoSendCaps refuses a change of a Workspace's Send cap on an Instance that has no Send caps:
+// there is nothing to change there, so it is not found.
 var ErrNoSendCaps = validation.NotFound("providerlimit: this instance has no send caps", i18n.ErrorsSendCapsAbsent)
 
 // Of is the Send cap that applies to the Workspace ws: its own on an Instance that has Send caps,
