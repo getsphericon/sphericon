@@ -25,17 +25,10 @@ func PruneEvents(ctx context.Context, client *ent.Client, retention time.Duratio
 		return 0, nil
 	}
 	cutoff := now.Add(-retention)
-	return pruneBatches(ctx, "events", batchSize,
-		func(ctx context.Context) ([]int64, error) {
-			return client.Event.Query().
-				Where(event.CreatedAtLT(cutoff), expirable()).
-				Order(event.ByCreatedAt()).
-				Limit(batchSize).
-				IDs(ctx)
-		},
-		func(ctx context.Context, ids []int64) (int, error) {
-			return client.Event.Delete().Where(event.IDIn(ids...)).Exec(ctx)
-		})
+	batch := predicate.Event(oldest(event.Table, batchSize, event.CreatedAtLT(cutoff), expirable()))
+	return pruneBatches(ctx, "events", batchSize, func(ctx context.Context) (int, error) {
+		return client.Event.Delete().Where(batch).Exec(ctx)
+	})
 }
 
 // expirable is schema.ExpirableEventPredicate on the generated query: the same text the
@@ -59,39 +52,35 @@ func PruneReceipts(ctx context.Context, client *ent.Client, retention time.Durat
 		return 0, nil
 	}
 	cutoff := now.Add(-retention)
-	return pruneBatches(ctx, "receipts", batchSize,
-		func(ctx context.Context) ([]int64, error) {
-			return client.EventReceipt.Query().
-				Where(eventreceipt.CreatedAtLT(cutoff)).
-				Order(eventreceipt.ByCreatedAt()).
-				Limit(batchSize).
-				IDs(ctx)
-		},
-		func(ctx context.Context, ids []int64) (int, error) {
-			return client.EventReceipt.Delete().Where(eventreceipt.IDIn(ids...)).Exec(ctx)
-		})
+	batch := predicate.EventReceipt(oldest(eventreceipt.Table, batchSize, eventreceipt.CreatedAtLT(cutoff)))
+	return pruneBatches(ctx, "receipts", batchSize, func(ctx context.Context) (int, error) {
+		return client.EventReceipt.Delete().Where(batch).Exec(ctx)
+	})
 }
 
-// pruneBatches deletes the rows selectIDs selects, a batch of at most batchSize at a time, until a
-// batch comes back short, and returns how many it removed. what names the rows in its errors.
-func pruneBatches(ctx context.Context, what string, batchSize int,
-	selectIDs func(context.Context) ([]int64, error), deleteIDs func(context.Context, []int64) (int, error),
-) (int64, error) {
+// oldest narrows a delete to the batchSize oldest rows of table, by created_at, among those where
+// selects, so one statement deletes a batch. Both tables prune by their id and created_at columns.
+func oldest[P ~func(*sql.Selector)](table string, batchSize int, where ...P) func(*sql.Selector) {
+	return func(s *sql.Selector) {
+		batch := sql.Select(event.FieldID).From(sql.Table(table))
+		for _, p := range where {
+			p(batch)
+		}
+		s.Where(sql.In(s.C(event.FieldID), batch.OrderBy(event.FieldCreatedAt).Limit(batchSize)))
+	}
+}
+
+// pruneBatches runs deleteBatch, which deletes at most batchSize rows, until a batch comes back short,
+// and returns how many it removed. what names the rows in its errors.
+func pruneBatches(ctx context.Context, what string, batchSize int, deleteBatch func(context.Context) (int, error)) (int64, error) {
 	var total int64
 	for {
-		ids, err := selectIDs(ctx)
-		if err != nil {
-			return total, fmt.Errorf("select expired %s batch: %w", what, err)
-		}
-		if len(ids) == 0 {
-			return total, nil
-		}
-		n, err := deleteIDs(ctx, ids)
+		n, err := deleteBatch(ctx)
 		if err != nil {
 			return total, fmt.Errorf("delete expired %s batch: %w", what, err)
 		}
 		total += int64(n)
-		if len(ids) < batchSize {
+		if n < batchSize {
 			return total, nil
 		}
 	}

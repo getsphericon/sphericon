@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/riverqueue/river"
 
@@ -59,9 +60,17 @@ func EnvelopeJob[A interface {
 }
 
 // UseConsumers registers the consumers every later Publish inserts jobs for. Register them at
-// composition time, before the bus is shared with concurrent callers.
+// composition time, before the bus is shared with concurrent callers. Two replayable consumers of
+// one kind are a wiring mistake, refused here rather than on every publish.
 func (b *Bus) UseConsumers(cs ...Consumer) {
-	b.consumers = append(b.consumers, cs...)
+	for _, c := range cs {
+		if c.Replay != nil && slices.ContainsFunc(b.consumers, func(o Consumer) bool {
+			return o.Replay != nil && o.Replay.kind == c.Replay.kind
+		}) {
+			panic(fmt.Sprintf("events: duplicate replay consumer %q", c.Replay.kind))
+		}
+		b.consumers = append(b.consumers, c)
+	}
 }
 
 // journalAndQueueConsumers retains accepted publication metadata and explicitly replayable
@@ -79,11 +88,8 @@ func (p *txPublisher) journalAndQueueConsumers(ctx context.Context, env Envelope
 		if policy == nil {
 			continue
 		}
-		if policy.kind != args.Kind() || policy.version < 1 {
-			return fmt.Errorf("invalid replay policy for %q", args.Kind())
-		}
-		if _, exists := inputs[policy.kind]; exists {
-			return fmt.Errorf("duplicate replay consumer %q", policy.kind)
+		if policy.kind != args.Kind() {
+			return fmt.Errorf("replay policy of %q retains the args of %q", policy.kind, args.Kind())
 		}
 		if scope, ok := args.(jobkind.OfWorkspace); !ok || scope.JobWorkspace() == 0 || scope.JobWorkspace() != env.WorkspaceID {
 			return fmt.Errorf("retained input of %q must name the publishing Workspace", policy.kind)

@@ -37,6 +37,9 @@ func RetainForReplay[A interface {
 	river.JobArgs
 	jobkind.OfWorkspace
 }](version int) *ReplayPolicy {
+	if version < 1 {
+		panic(fmt.Sprintf("events: the replay version of a consumer starts at 1, not %d", version))
+	}
 	var zero A
 	return &ReplayPolicy{kind: zero.Kind(), version: version, decode: func(data json.RawMessage) (river.JobArgs, error) {
 		var args A
