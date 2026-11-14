@@ -1,10 +1,8 @@
 package integrations_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -61,7 +59,7 @@ func TestRefreshQuotaFailureKeepsManualOrUnlimitedAndRecordsAWarning(t *testing.
 	ses := &testhelper.FakeSES{}
 	ses.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
 	require.NoError(t, s.Integration().UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerDay(1000).Exec(t.Context()))
-	logs := captureLogs(t)
+	logs := testhelper.CaptureLogs(t)
 
 	err := quotaModule(env.Cipher, ses.Catalog()).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID))
 	require.NoError(t, err, "a failed lookup is recorded, never returned: it must not fail a save or a job")
@@ -229,16 +227,6 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
 	assert.Equal(t, providers.EnforcementShutdown, *row.ProviderEnforcement)
 	assert.True(t, row.ProviderSandbox)
-}
-
-// captureLogs routes the default logger to a buffer for the test.
-func captureLogs(t *testing.T) *bytes.Buffer {
-	t.Helper()
-	var buf bytes.Buffer
-	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
-	t.Cleanup(func() { slog.SetDefault(prev) })
-	return &buf
 }
 
 // failIntegrationWrites makes every write of op to an Integration fail with err.

@@ -1,11 +1,9 @@
 package hooks_test
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"log/slog"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -86,10 +84,7 @@ func TestATwilioCallbackSignedForAnotherURLIsRefused(t *testing.T) {
 // takes a callback so signed, and refuses and logs one signed with anything else, so nobody can
 // forge a STOP, a delivery report or a reply.
 func TestATwilioCallbackOfAConnectedAccountIsTakenAndAForgedOneRefusedAndLogged(t *testing.T) {
-	var logs bytes.Buffer
-	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
-	t.Cleanup(func() { slog.SetDefault(prev) })
+	logs := testhelper.CaptureJSONLogs(t)
 	env := setupHooks(t)
 	sms := env.AcmeTwilio(t)
 	status := url.Values{

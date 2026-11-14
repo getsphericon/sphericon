@@ -1,9 +1,7 @@
 package tracking_test
 
 import (
-	"bytes"
 	"context"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -149,10 +147,7 @@ func TestOneClickUnsubscribeIsNeverRateLimited(t *testing.T) {
 }
 
 func TestASkippedRecordingIsCountedUnderTheTrackingPolicy(t *testing.T) {
-	var logs bytes.Buffer
-	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
-	t.Cleanup(func() { slog.SetDefault(prev) })
+	logs := testhelper.CaptureJSONLogs(t)
 	testhelper.InstallOtel(t, func(ctx context.Context) (func(context.Context) error, error) {
 		return telemetry.Setup(ctx, &config.Config{OtelServiceName: "sphericon-test"}, "test", telemetry.BuildInfo{})
 	})

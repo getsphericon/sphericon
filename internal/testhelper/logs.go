@@ -32,8 +32,22 @@ func (l *Logs) String() string {
 func CaptureLogs(t *testing.T) *Logs {
 	t.Helper()
 	logs := &Logs{}
-	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(logs, nil)))
-	t.Cleanup(func() { slog.SetDefault(prev) })
+	capture(t, slog.NewTextHandler(logs, nil))
 	return logs
+}
+
+// CaptureJSONLogs is CaptureLogs written by slog's JSON handler, the production format, for a test
+// that reads a record's level or attributes as they are shipped.
+func CaptureJSONLogs(t *testing.T) *Logs {
+	t.Helper()
+	logs := &Logs{}
+	capture(t, slog.NewJSONHandler(logs, nil))
+	return logs
+}
+
+func capture(t *testing.T, h slog.Handler) {
+	t.Helper()
+	prev := slog.Default()
+	slog.SetDefault(slog.New(h))
+	t.Cleanup(func() { slog.SetDefault(prev) })
 }

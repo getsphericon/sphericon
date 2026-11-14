@@ -1,9 +1,7 @@
 package server_test
 
 import (
-	"bytes"
 	"context"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -131,10 +129,7 @@ func TestTheGeneratedClientTypesTheRateLimitResponse(t *testing.T) {
 }
 
 func TestARejectionIsCountedByPolicyAndLoggedWithoutTheEmail(t *testing.T) {
-	var logs bytes.Buffer
-	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
-	t.Cleanup(func() { slog.SetDefault(prev) })
+	logs := testhelper.CaptureJSONLogs(t)
 	testhelper.InstallOtel(t, func(ctx context.Context) (func(context.Context) error, error) {
 		return telemetry.Setup(ctx, &config.Config{OtelServiceName: "sphericon-test"}, "test", telemetry.BuildInfo{})
 	})
