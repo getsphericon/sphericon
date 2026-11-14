@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	stdsql "database/sql"
 
 	"github.com/riverqueue/river"
 
@@ -74,14 +73,9 @@ func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[Rec
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, row := range due {
-		args := VerifySendingDomainArgs{WorkspaceID: row.WorkspaceID, SendingDomainID: row.ID}
-		if _, err := rc.Insert(ctx, args, nil); err != nil {
-			return err
-		}
-	}
-	return nil
+	return queueEach(ctx, due, func(row *ent.SendingDomain) river.JobArgs {
+		return VerifySendingDomainArgs{WorkspaceID: row.WorkspaceID, SendingDomainID: row.ID}
+	})
 }
 
 // --- Tracking domains (ADR 0071): one check per verified host, retired ones included ---
@@ -130,14 +124,9 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, _ *river.Job[Re
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, row := range due {
-		args := VerifyTrackingDomainArgs{WorkspaceID: row.WorkspaceID, TrackingDomainID: row.ID}
-		if _, err := rc.Insert(ctx, args, nil); err != nil {
-			return err
-		}
-	}
-	return nil
+	return queueEach(ctx, due, func(row *ent.TrackingDomain) river.JobArgs {
+		return VerifyTrackingDomainArgs{WorkspaceID: row.WorkspaceID, TrackingDomainID: row.ID}
+	})
 }
 
 // --- periodic re-check of verified Join domains (the same shape as the Sending domain one) ---
@@ -189,12 +178,7 @@ func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, _ *river.Job[Rechec
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, row := range due {
-		args := VerifyJoinDomainArgs{WorkspaceID: row.WorkspaceID, JoinDomainID: row.ID}
-		if _, err := rc.Insert(ctx, args, nil); err != nil {
-			return err
-		}
-	}
-	return nil
+	return queueEach(ctx, due, func(row *ent.JoinDomain) river.JobArgs {
+		return VerifyJoinDomainArgs{WorkspaceID: row.WorkspaceID, JoinDomainID: row.ID}
+	})
 }

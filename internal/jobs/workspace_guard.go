@@ -57,9 +57,7 @@ type erasedWorkspace struct {
 var _ rivertype.WorkerMiddleware = (*erasedWorkspace)(nil)
 
 func (m *erasedWorkspace) Work(ctx context.Context, job *rivertype.JobRow, doInner func(context.Context) error) error {
-	var named struct {
-		WorkspaceID int64 `json:"workspaceId"`
-	}
+	var named jobkind.Workspace
 	if err := json.Unmarshal(job.EncodedArgs, &named); err != nil || named.WorkspaceID == 0 {
 		return doInner(ctx) // a job of the Instance; args that do not decode fail in the worker
 	}

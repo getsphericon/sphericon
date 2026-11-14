@@ -100,11 +100,8 @@ func (b *Bus) Replay(ctx context.Context, workspaceID int64, in ReplayRequest) (
 			if err != nil {
 				return fmt.Errorf("decode retained input of %s: %w", row.EventID, err)
 			}
-			var scope jobkind.Workspace
-			if err := json.Unmarshal(input.Args, &scope); err != nil {
-				return err
-			}
-			if scope.WorkspaceID != workspaceID || args.Kind() != policy.kind {
+			scope, ok := args.(jobkind.OfWorkspace)
+			if !ok || scope.JobWorkspace() != workspaceID || args.Kind() != policy.kind {
 				return fmt.Errorf("events: retained input of %s has a different scope or kind", row.EventID)
 			}
 			params = append(params, river.InsertManyParams{Args: args})

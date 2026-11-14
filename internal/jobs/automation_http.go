@@ -2,30 +2,27 @@ package jobs
 
 import (
 	"context"
-	"time"
 
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // RunHTTPStepWorker establishes Workspace scope and translates HTTP Step execution decisions
 // into the queue's retry, cancellation and snooze actions.
 type RunHTTPStepWorker struct {
-	river.WorkerDefaults[automations.RunHTTPStepArgs]
+	hookRetries[automations.RunHTTPStepArgs]
 
-	ent    *ent.Client
-	step   *automations.StepExecution
-	jitter webhook.HookJitter
+	ent  *ent.Client
+	step *automations.StepExecution
 }
 
 // NewRunHTTPStepWorker builds the queue adapter for the Step execution's HTTP execution, spreading
 // its retries by jitter.
 func NewRunHTTPStepWorker(client *ent.Client, step *automations.StepExecution, jitter webhook.HookJitter) *RunHTTPStepWorker {
-	return &RunHTTPStepWorker{ent: client, step: step, jitter: jitter}
+	return &RunHTTPStepWorker{jitter: jitter, ent: client, step: step}
 }
 
 func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[automations.RunHTTPStepArgs]) error {
@@ -39,9 +36,7 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[automations
 		return err
 	}
 	s := w.ent.Scoped(run.WorkspaceID)
-	decision, err := w.step.ExecuteHTTP(ctx, s, automations.ExecuteHTTPInput{RunID: run.ID, Step: job.Args.Step, Attempt: httpcall.Attempt{
-		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
-	}})
+	decision, err := w.step.ExecuteHTTP(ctx, s, automations.ExecuteHTTPInput{RunID: run.ID, Step: job.Args.Step, Attempt: hookAttempt(job.JobRow)})
 	if err != nil {
 		return err
 	}
@@ -52,12 +47,4 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[automations
 		return river.JobCancel(decision.Cancel)
 	}
 	return decision.Retry
-}
-
-// NextRetry is the call's retry policy (webhook.HookNextRetry): days, as for a Webhook delivery.
-func (w *RunHTTPStepWorker) NextRetry(job *river.Job[automations.RunHTTPStepArgs]) time.Time {
-	if job.AttemptedAt == nil {
-		return time.Time{} // river falls back to its default
-	}
-	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt, w.jitter)
 }

@@ -2,14 +2,12 @@ package jobs
 
 import (
 	"context"
-	"time"
 
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
@@ -51,18 +49,17 @@ func (httpAction) Run(_ context.Context, _ *ent.Scoped, in rules.ActionInput) (r
 // Standard Webhooks, the same SSRF-hardened client as an Automation's HTTP step), rendered for
 // the Contact and the Event that fired the Rule, and records how it ended on the Firing.
 type RunRuleHTTPWorker struct {
-	river.WorkerDefaults[RunRuleHTTPArgs]
+	hookRetries[RunRuleHTTPArgs]
 
-	ent    *ent.Client
-	mod    *rules.Module
-	jitter webhook.HookJitter
+	ent *ent.Client
+	mod *rules.Module
 }
 
 // NewRunRuleHTTPWorker builds the worker that runs a Firing's HTTP Action through the Rules
 // module, which holds the protected HTTP client and the Instance clock, spreading its retries by
 // jitter.
 func NewRunRuleHTTPWorker(client *ent.Client, mod *rules.Module, jitter webhook.HookJitter) *RunRuleHTTPWorker {
-	return &RunRuleHTTPWorker{ent: client, mod: mod, jitter: jitter}
+	return &RunRuleHTTPWorker{jitter: jitter, ent: client, mod: mod}
 }
 
 func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTPArgs]) error {
@@ -75,9 +72,7 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 		return err
 	}
 	s := w.ent.Scoped(f.WorkspaceID)
-	decision, err := w.mod.ExecuteHTTP(ctx, s, f.ID, job.Args.Index, httpcall.Attempt{
-		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
-	})
+	decision, err := w.mod.ExecuteHTTP(ctx, s, f.ID, job.Args.Index, hookAttempt(job.JobRow))
 	if err != nil {
 		return err
 	}
@@ -85,12 +80,4 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 		return river.JobSnooze(decision.Wait)
 	}
 	return decision.Retry
-}
-
-// NextRetry is the call's retry policy (webhook.HookNextRetry): days, as for a Webhook delivery.
-func (w *RunRuleHTTPWorker) NextRetry(job *river.Job[RunRuleHTTPArgs]) time.Time {
-	if job.AttemptedAt == nil {
-		return time.Time{} // river falls back to its default
-	}
-	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt, w.jitter)
 }

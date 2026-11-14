@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
 var _ = db.Declare(db.Fault("event_journal_entries_event_id_key", "the bus generates a fresh random ULID for each accepted publication"))
@@ -30,8 +31,12 @@ type ReplayPolicy struct {
 }
 
 // RetainForReplay opts a consumer into history using its normal, anonymous job args.
-// No consumer is replayable by default. The type's Kind is the stable replay selector.
-func RetainForReplay[A river.JobArgs](version int) *ReplayPolicy {
+// No consumer is replayable by default. The type's Kind is the stable replay selector, and the
+// args name their Workspace (jobkind.OfWorkspace), which publish and replay check.
+func RetainForReplay[A interface {
+	river.JobArgs
+	jobkind.OfWorkspace
+}](version int) *ReplayPolicy {
 	var zero A
 	return &ReplayPolicy{kind: zero.Kind(), version: version, decode: func(data json.RawMessage) (river.JobArgs, error) {
 		var args A

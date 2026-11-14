@@ -43,6 +43,9 @@ type TelemetryReportArgs struct{}
 
 func (TelemetryReportArgs) Kind() string { return "telemetry_report" }
 
+// InsertOpts runs a tick once: the next tick is the retry.
+func (TelemetryReportArgs) InsertOpts() river.InsertOpts { return river.InsertOpts{MaxAttempts: 1} }
+
 // TelemetryReportWorker sends the report when one is due
 // (instancestates.Module.SendTelemetryReport). A failed send is not a job failure: the next tick
 // tries again.
@@ -70,13 +73,7 @@ func instanceJobs(workers *river.Workers, deps Deps) []*river.PeriodicJob {
 	river.AddWorker(workers, NewReleaseCheckWorker(deps.Instance))
 	river.AddWorker(workers, NewTelemetryReportWorker(deps.Instance))
 	return []*river.PeriodicJob{
-		river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour),
-			func() (river.JobArgs, *river.InsertOpts) { return ReleaseCheckArgs{}, nil },
-			&river.PeriodicJobOpts{RunOnStart: true}),
-		river.NewPeriodicJob(river.PeriodicInterval(telemetryReportCheckInterval),
-			func() (river.JobArgs, *river.InsertOpts) {
-				return TelemetryReportArgs{}, &river.InsertOpts{MaxAttempts: 1}
-			},
-			&river.PeriodicJobOpts{RunOnStart: true}),
+		every(24*time.Hour, ReleaseCheckArgs{}),
+		every(telemetryReportCheckInterval, TelemetryReportArgs{}),
 	}
 }

@@ -27,7 +27,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -98,7 +97,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	// this queue is the process's committed one.
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
-		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: env.Cipher, SystemSender: mail, Catalog: registry.Default(),
+		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: env.Cipher, SystemSender: mail,
 		OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})

@@ -35,15 +35,11 @@ func EventConsumers() []events.Consumer {
 	return []events.Consumer{
 		{
 			Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == events.NameAuditEntry },
-			Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
-				return EntryEventArgs{events.EventJob{Envelope: env}}
-			},
+			Job:   events.EnvelopeJob[EntryEventArgs],
 		},
 		{
 			Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == systemevent.ContactErased },
-			Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
-				return ErasureEventArgs{events.EventJob{Envelope: env}}
-			},
+			Job:   events.EnvelopeJob[ErasureEventArgs],
 		},
 	}
 }

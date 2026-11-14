@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -40,12 +39,11 @@ func (DeliverWebhookArgs) InsertOpts() river.InsertOpts {
 }
 
 type DeliverWebhookWorker struct {
-	river.WorkerDefaults[DeliverWebhookArgs]
+	hookRetries[DeliverWebhookArgs]
 
 	ent    *ent.Client
 	client webhook.Doer
 	now    func() time.Time
-	jitter webhook.HookJitter
 	// mod keeps the endpoint's failure state and disables it, which tells the owners.
 	mod *webhookendpoints.Module
 }
@@ -55,10 +53,10 @@ type DeliverWebhookWorker struct {
 // tells the owners (ADR 0105).
 func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer webhook.Doer, now func() time.Time, jitter webhook.HookJitter, bus *events.Bus) *DeliverWebhookWorker {
 	return &DeliverWebhookWorker{
+		jitter: jitter,
 		ent:    client,
 		client: doer,
 		now:    now,
-		jitter: jitter,
 		mod:    webhookendpoints.New(bus, cipher, nil, nil, now),
 	}
 }
@@ -86,9 +84,7 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if sendErr == nil {
 		return nil
 	}
-	decision := httpcall.Subscription.Decide(sendErr, httpcall.Attempt{
-		Number: job.Attempt, Limit: job.MaxAttempts, CreatedAt: job.CreatedAt,
-	}, w.now())
+	decision := httpcall.Subscription.Decide(sendErr, hookAttempt(job.JobRow), w.now())
 	switch {
 	case decision.Outcome == httpcall.Wait:
 		return river.JobSnooze(decision.Wait)
@@ -97,15 +93,6 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	}
 	// A retry, or the last attempt, which river ends as exhausted.
 	return sendErr
-}
-
-// NextRetry is the delivery's retry policy (webhook.HookNextRetry), so a failed delivery is retried
-// for days rather than river's default hours; Dispatch inserts with the matching MaxAttempts.
-func (w *DeliverWebhookWorker) NextRetry(job *river.Job[DeliverWebhookArgs]) time.Time {
-	if job.AttemptedAt == nil {
-		return time.Time{} // river falls back to its default
-	}
-	return webhook.HookNextRetry(*job.AttemptedAt, job.Attempt, w.jitter)
 }
 
 // NewWebhookDispatcher is the dispatcher that queues the deliveries of an event through the river
@@ -124,21 +111,13 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventNam
 	if err != nil {
 		return err
 	}
-	if len(endpoints) == 0 {
-		return nil
-	}
-	params := make([]river.InsertManyParams, len(endpoints))
-	for i, e := range endpoints {
-		params[i] = river.InsertManyParams{Args: DeliverWebhookArgs{
+	return queueEach(ctx, endpoints, func(e *ent.WebhookEndpoint) river.JobArgs {
+		return DeliverWebhookArgs{
 			WorkspaceID: e.WorkspaceID,
 			EndpointID:  e.ID,
 			EventName:   eventName,
 			DeliveryID:  deliveryID,
 			Body:        body,
-		}}
-	}
-	if _, err := river.ClientFromContext[*sql.Tx](ctx).InsertMany(ctx, params); err != nil {
-		return err
-	}
-	return nil
+		}
+	})
 }

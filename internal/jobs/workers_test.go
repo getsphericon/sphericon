@@ -41,7 +41,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -100,7 +99,7 @@ func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEn
 	fs := &fakeSender{}
 	mod := newMod(env, resolvingTo(fs), time.Now)
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
-		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail, Catalog: registry.Default(),
+		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail,
 		OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})

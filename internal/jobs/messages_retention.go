@@ -11,10 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 )
 
-// messagesRetentionSchedule is when the message retention tick runs: daily at an off-peak hour,
-// 05:00 UTC, apart from the Event prune.
-var messagesRetentionSchedule = mustParseCron("CRON_TZ=UTC 0 5 * * *")
-
 // PruneMessagesArgs is the daily tick of message retention (ADR 0143).
 type PruneMessagesArgs struct{}
 
@@ -39,13 +35,9 @@ func (w *PruneMessagesWorker) Work(ctx context.Context, _ *river.Job[PruneMessag
 	if err != nil {
 		return err
 	}
-	rc := river.ClientFromContext[*stdsql.Tx](ctx)
-	for _, ws := range due {
-		if _, err := rc.Insert(ctx, PruneWorkspaceMessagesArgs{WorkspaceID: ws}, nil); err != nil {
-			return err
-		}
-	}
-	return nil
+	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+		return PruneWorkspaceMessagesArgs{WorkspaceID: ws}
+	})
 }
 
 // PruneWorkspaceMessagesArgs is message retention's work in one Workspace.

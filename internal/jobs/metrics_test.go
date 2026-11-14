@@ -35,7 +35,7 @@ func TestQueueMetricsReportDepthAndOldestAge(t *testing.T) {
 	e.insert(t, jobs.SendNoticeArgs{EventID: "01METRICS", To: "b@example.com", Subject: "Welcome", Text: "B"})
 	later := time.Now().Add(time.Hour)
 	_, err = e.queue.Insert(ctx, broadcasts.SendArgs{WorkspaceID: fixtures.AcmeID, BroadcastID: fixtures.BroadcastDraftID, ScheduledAt: &later},
-		&river.InsertOpts{Queue: broadcasts.Queue, ScheduledAt: later})
+		&river.InsertOpts{ScheduledAt: later})
 	require.NoError(t, err)
 	insertJob(t, e.pool, jobs.QueueWebhooks, rivertype.JobStateRunning, waiting)
 

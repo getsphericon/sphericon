@@ -570,7 +570,6 @@ var jobsPackage = do.Package(
 			SystemSender:     do.MustInvoke[SystemSender](i).EmailSender,
 			Notices:          do.MustInvoke[*noticedelivery.UseCase](i),
 			Callbacks:        do.MustInvoke[*callbackinterpretation.Module](i),
-			Catalog:          do.MustInvoke[*messaging.Catalog](i),
 			Rules:            do.MustInvoke[*rules.Module](i),
 			Users:            do.MustInvoke[*users.Module](i),
 			SecondFactor:     do.MustInvoke[*secondfactors.Module](i),
