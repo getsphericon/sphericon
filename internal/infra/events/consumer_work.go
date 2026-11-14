@@ -68,15 +68,32 @@ func WebhookDeliveryOf(env Envelope, publicID func(context.Context) (string, err
 	return WebhookDelivery{Name: name, ID: id, Body: body}, nil
 }
 
+// optInWebhook is an optional DomainEvent capability of an event without an Event row that an
+// endpoint still receives when its filter names it (an Audit entry, ADR 0022): what the endpoint
+// receives of it, instead of the envelope's data.
+type optInWebhook interface {
+	webhookData() (json.RawMessage, error)
+}
+
+// ReachesWebhooks reports whether ev may leave the platform through a Webhook endpoint: a live
+// Event (loaded history is recorded, never delivered), or an event an endpoint opts into
+// (optInWebhook). An event of the Instance and a change told only to a Workspace's people leave
+// through none.
+func ReachesWebhooks(ev DomainEvent) bool {
+	if _, optIn := ev.(optInWebhook); optIn {
+		return true
+	}
+	_, projected := ev.(Projected)
+	return projected && !IsBackfill(ev)
+}
+
 // webhookBody is the public body of a webhook delivery (webhookPayload).
 func webhookBody(env Envelope, ev DomainEvent, p Projection, name, id, workspacePublicID string) ([]byte, error) {
 	data := env.Data
-	if entry, ok := ev.(*AuditEntry); ok {
-		// The staff identity never reaches a customer's endpoint (ADR 0022).
-		entry.maskStaff()
+	if optIn, ok := ev.(optInWebhook); ok {
 		var err error
-		if data, err = json.Marshal(entry); err != nil {
-			return nil, fmt.Errorf("marshal audit entry: %w", err)
+		if data, err = optIn.webhookData(); err != nil {
+			return nil, err
 		}
 	}
 	data, err := publicData(data, workspacePublicID)
