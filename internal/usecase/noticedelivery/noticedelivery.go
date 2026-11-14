@@ -171,6 +171,15 @@ func (u *UseCase) mint(usr *ent.User, e *events.LinkRequested) (string, error) {
 	}
 }
 
+// workspace is the Workspace id, which a Notice of one names.
+func (u *UseCase) workspace(ctx context.Context, id int64) (*ent.Workspace, error) {
+	ws, err := u.client.Workspace.Get(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("notice: load workspace %d: %w", id, err)
+	}
+	return ws, nil
+}
+
 // user is the User id, found false when it is gone.
 func (u *UseCase) user(ctx context.Context, id int64) (*ent.User, bool, error) {
 	usr, err := u.client.User.Get(ctx, id)
@@ -222,18 +231,10 @@ func (u *UseCase) identityLinked(ctx context.Context, e *events.IdentityLinked) 
 		return nil, err
 	}
 	body := fmt.Sprintf("%s\n\n%s\n%s\n\n%s\n",
-		i18n.T(i18n.EmailIdentityLinkedIntro, map[string]any{"Provider": u.providerName(e.Provider)}),
+		i18n.T(i18n.EmailIdentityLinkedIntro, map[string]any{"Provider": u.providers.DisplayName(e.Provider)}),
 		i18n.T(i18n.EmailIdentityLinkedNotMe, nil), u.appLink("/signin-not-me", url.Values{"token": {token}}),
 		accountFooter())
 	return []Notice{{To: e.Email, Subject: i18n.T(i18n.EmailIdentityLinkedSubject, nil), Text: body}}, nil
-}
-
-// providerName is what the Sign-in provider name is called to a person.
-func (u *UseCase) providerName(name string) string {
-	if u.providers == nil {
-		return name
-	}
-	return u.providers.DisplayName(name)
 }
 
 // userDeleted is the one mail a User deletion sends the address: the owner of the mailbox learns
@@ -263,9 +264,9 @@ func passkeyChanged(e *events.PasskeyChange) ([]Notice, error) {
 // invitation is the mail of an Invitation, with its one-time link. The Workspace and the inviter
 // are named as they are now; an inviter gone since is "Someone".
 func (u *UseCase) invitation(ctx context.Context, e *events.InvitationCreated) ([]Notice, error) {
-	ws, err := u.client.Workspace.Get(ctx, e.WorkspaceID)
+	ws, err := u.workspace(ctx, e.WorkspaceID)
 	if err != nil {
-		return nil, fmt.Errorf("notice: load workspace %d: %w", e.WorkspaceID, err)
+		return nil, err
 	}
 	who := "Someone"
 	if e.InvitedBy != 0 {
@@ -355,9 +356,9 @@ func mailTime(t time.Time, zone *string) string {
 // it (ADR 0007), through the System sender because the Workspace cannot send while suspended (ADR
 // 0015), and records on the Workspace that they were told. A suspension lifted since tells no one.
 func (u *UseCase) suspended(ctx context.Context, e *events.WorkspaceSuspended) ([]Notice, error) {
-	ws, err := u.client.Workspace.Get(ctx, e.WorkspaceID)
+	ws, err := u.workspace(ctx, e.WorkspaceID)
 	if err != nil {
-		return nil, fmt.Errorf("notice: load workspace %d: %w", e.WorkspaceID, err)
+		return nil, err
 	}
 	if !suspension.Is(ws) {
 		return nil, nil
@@ -393,9 +394,9 @@ var disabledReasons = map[string]i18n.ID{
 func (u *UseCase) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Notice, error) {
 	switch e := ev.(type) {
 	case *events.AbuseWarned:
-		ws, err := u.client.Workspace.Get(ctx, e.WorkspaceID)
+		ws, err := u.workspace(ctx, e.WorkspaceID)
 		if err != nil {
-			return nil, fmt.Errorf("notice: load workspace %d: %w", e.WorkspaceID, err)
+			return nil, err
 		}
 		return u.toOwners(ctx, e.WorkspaceID, i18n.EmailAbuseWarningSubject, i18n.EmailAbuseWarningBody, map[string]any{
 			"Workspace": ws.Name, "Domain": e.Domain, "Metric": e.Metric, "Rate": e.Rate,
@@ -417,9 +418,9 @@ func (u *UseCase) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Not
 		return u.toOwners(ctx, e.WorkspaceID, i18n.EmailTrackingDomainRetiredGoneSubject, i18n.EmailTrackingDomainRetiredGoneBody,
 			map[string]any{"Host": e.Host, "Target": u.cfg.TrackingTarget})
 	case *events.WebhookEndpointDisabled:
-		ws, err := u.client.Workspace.Get(ctx, e.WorkspaceID)
+		ws, err := u.workspace(ctx, e.WorkspaceID)
 		if err != nil {
-			return nil, fmt.Errorf("notice: load workspace %d: %w", e.WorkspaceID, err)
+			return nil, err
 		}
 		data := map[string]any{
 			"Workspace": ws.Name,

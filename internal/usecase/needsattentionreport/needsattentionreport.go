@@ -93,6 +93,21 @@ const (
 // severities is the order of the list, most urgent first.
 var severities = []Severity{SeverityBlocked, SeverityDegraded, SeverityNotice}
 
+// severity is how urgent an item of the Kind is: its Kind alone decides it.
+func (k Kind) severity() Severity {
+	switch k {
+	case KindSendingDomainVerificationLost, KindIntegrationProviderStopped, KindIntegrationProviderRefused,
+		KindBroadcastHeld, KindAutomationCannotSend:
+		return SeverityBlocked
+	case KindDeliverabilityWarning, KindSendCapSpent, KindScheduledBroadcastOverSendCap, KindProviderLimitSpent,
+		KindIntegrationProviderProbation, KindIntegrationProviderSandbox:
+		return SeverityDegraded
+	case KindEnrollmentsFailed, KindBroadcastFailed, KindWebhookDisabled, KindSendingDomainNotBulkReady:
+		return SeverityNotice
+	}
+	panic("needsattentionreport: no severity for kind " + string(k))
+}
+
 // recent is how far back a failure that is not retried stays an item.
 const recent = 7 * 24 * time.Hour
 
@@ -124,17 +139,16 @@ type Item struct {
 
 // UseCase reads the items.
 type UseCase struct {
-	now      func() time.Time
-	watch    abusewarning.Watch
-	sendCaps providerlimit.SendCaps
-	out      *outboundmessages.Module
+	now   func() time.Time
+	watch abusewarning.Watch
+	out   *outboundmessages.Module
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
-// run, sendCaps says whether the Instance has Send caps (ADR 0067), out is the send path, whose
-// Preflight says whether an Automation's email step could send now, and now is the Instance clock.
-func New(watch abusewarning.Watch, sendCaps providerlimit.SendCaps, out *outboundmessages.Module, now func() time.Time) *UseCase {
-	return &UseCase{now: now, watch: watch, sendCaps: sendCaps, out: out}
+// run, out is the send path, whose Preflight says whether an Automation's email step could send
+// now and whose SendCapStatus says which Send cap applies (ADR 0067), and now is the Instance clock.
+func New(watch abusewarning.Watch, out *outboundmessages.Module, now func() time.Time) *UseCase {
+	return &UseCase{now: now, watch: watch, out: out}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a
@@ -148,7 +162,6 @@ func (m *UseCase) Items(ctx context.Context, s *ent.Scoped) ([]Item, error) {
 		m.automationsCannotSend,
 		m.deliverability,
 		m.sendCap,
-		m.scheduledOverSendCap,
 		failedRuns,
 		failedBroadcasts,
 		disabledWebhooks,
@@ -161,6 +174,9 @@ func (m *UseCase) Items(ctx context.Context, s *ent.Scoped) ([]Item, error) {
 			return nil, err
 		}
 		items = append(items, got...)
+	}
+	for i := range items {
+		items[i].Severity = items[i].Kind.severity()
 	}
 	slices.SortStableFunc(items, func(a, b Item) int {
 		return cmp.Or(
@@ -194,7 +210,7 @@ func domainsLost(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error
 	items := make([]Item, 0, len(domains))
 	for _, d := range domains {
 		items = append(items, Item{
-			Kind: KindSendingDomainVerificationLost, Severity: SeverityBlocked, Count: 1,
+			Kind: KindSendingDomainVerificationLost, Count: 1,
 			Subject: &Subject{ID: d.ID, Name: d.Domain}, Since: d.VerificationLostAt,
 		})
 	}
@@ -217,20 +233,20 @@ func (m *UseCase) integrations(ctx context.Context, s *ent.Scoped, now time.Time
 		subject := &Subject{ID: integ.ID, Name: integ.Name}
 		eff := providerlimit.EffectiveOf(integ)
 		if integ.ProviderRefusedAt != nil {
-			items = append(items, Item{Kind: KindIntegrationProviderRefused, Severity: SeverityBlocked, Count: 1, Subject: subject, Since: integ.ProviderRefusedAt})
+			items = append(items, Item{Kind: KindIntegrationProviderRefused, Count: 1, Subject: subject, Since: integ.ProviderRefusedAt})
 		}
 		switch eff.Enforcement {
 		case providers.EnforcementShutdown:
-			items = append(items, Item{Kind: KindIntegrationProviderStopped, Severity: SeverityBlocked, Count: 1, Subject: subject})
+			items = append(items, Item{Kind: KindIntegrationProviderStopped, Count: 1, Subject: subject})
 		case providers.EnforcementProbation:
-			items = append(items, Item{Kind: KindIntegrationProviderProbation, Severity: SeverityDegraded, Count: 1, Subject: subject})
+			items = append(items, Item{Kind: KindIntegrationProviderProbation, Count: 1, Subject: subject})
 		case providers.EnforcementNone:
 		}
 		if eff.Sandbox {
-			items = append(items, Item{Kind: KindIntegrationProviderSandbox, Severity: SeverityDegraded, Count: 1, Subject: subject})
+			items = append(items, Item{Kind: KindIntegrationProviderSandbox, Count: 1, Subject: subject})
 		}
 		if limit := eff.PerDay.Limit; limit != nil && usage[integ.ID] >= *limit {
-			items = append(items, Item{Kind: KindProviderLimitSpent, Severity: SeverityDegraded, Count: 1, Subject: subject})
+			items = append(items, Item{Kind: KindProviderLimitSpent, Count: 1, Subject: subject})
 		}
 	}
 	return items, nil
@@ -247,6 +263,7 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 			broadcast.HoldReasonIn(sourceHolds...),
 		).
 		Order(ent.Asc(broadcast.FieldID)).
+		Select(broadcast.FieldID, broadcast.FieldName, broadcast.FieldHoldReason).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -254,7 +271,7 @@ func heldBroadcasts(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, er
 	items := make([]Item, 0, len(held))
 	for _, b := range held {
 		items = append(items, Item{
-			Kind: KindBroadcastHeld, Severity: SeverityBlocked, Count: 1,
+			Kind: KindBroadcastHeld, Count: 1,
 			Subject: &Subject{ID: b.ID, Name: b.Name}, HoldReason: b.HoldReason,
 		})
 	}
@@ -302,13 +319,12 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 				}
 				holdOf[key] = hold
 			}
-			reason := hold
-			if !slices.Contains(sourceHolds, reason) {
+			if !slices.Contains(sourceHolds, hold) {
 				continue
 			}
 			items = append(items, Item{
-				Kind: KindAutomationCannotSend, Severity: SeverityBlocked, Count: 1,
-				Subject: &Subject{ID: a.ID, Name: a.Name}, HoldReason: &reason,
+				Kind: KindAutomationCannotSend, Count: 1,
+				Subject: &Subject{ID: a.ID, Name: a.Name}, HoldReason: &hold,
 			})
 			break
 		}
@@ -324,23 +340,30 @@ func (m *UseCase) deliverability(ctx context.Context, s *ent.Scoped, now time.Ti
 	if err != nil || w == nil {
 		return nil, err
 	}
-	return []Item{{Kind: KindDeliverabilityWarning, Severity: SeverityDegraded, Count: 1, Abuse: w}}, nil
+	return []Item{{Kind: KindDeliverabilityWarning, Count: 1, Abuse: w}}, nil
 }
 
+// sendCap reads the Send cap that applies to the Workspace, as the send path enforces it: spent
+// over the last 24 hours, and the scheduled Broadcasts it will not let out in full. Nothing
+// applies where no Send cap does.
 func (m *UseCase) sendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return nil, err
 	}
-	perDay := m.sendCaps.Of(ws)
-	if perDay == nil {
-		return nil, nil
-	}
-	sent, err := providerlimit.SentLast24h(ctx, s, now)
-	if err != nil || sent < *perDay {
+	st, err := m.out.SendCapStatus(ctx, s, ws)
+	if err != nil || st == nil {
 		return nil, err
 	}
-	return []Item{{Kind: KindSendCapSpent, Severity: SeverityDegraded, Count: 1}}, nil
+	var items []Item
+	if st.Sent24h >= st.PerDay {
+		items = append(items, Item{Kind: KindSendCapSpent, Count: 1})
+	}
+	over, err := scheduledOverSendCap(ctx, s, st.PerDay, now)
+	if err != nil {
+		return nil, err
+	}
+	return append(items, over...), nil
 }
 
 // overCapWindow is how far ahead a scheduled Broadcast is judged against the Send cap; one further
@@ -355,16 +378,8 @@ const overCapWindow = 24 * time.Hour
 // sending Broadcasts have left, since they all draw from the same bucket, and the Broadcast is an
 // item when there is a wait, finishing at its start plus the wait. Taking the earlier audiences at
 // its start leaves out what the bucket refills between their starts, so the read errs towards an
-// item. Nothing applies where no Send cap does.
-func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
-	ws, err := s.Workspace(ctx)
-	if err != nil {
-		return nil, err
-	}
-	perDay := m.sendCaps.Of(ws)
-	if perDay == nil {
-		return nil, nil
-	}
+// item. perDay is the Send cap that applies.
+func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now time.Time) ([]Item, error) {
 	scheduled, err := s.Broadcast().Query().
 		Where(
 			broadcast.StatusEQ(broadcast.StatusScheduled),
@@ -396,7 +411,7 @@ func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, now t
 		if start.Before(now) {
 			start = now
 		}
-		wait, err := providerlimit.SendCapDrain(ctx, s, *perDay, accumulated, start)
+		wait, err := providerlimit.SendCapDrain(ctx, s, perDay, accumulated, start)
 		if err != nil {
 			return nil, err
 		}
@@ -405,43 +420,59 @@ func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, now t
 		}
 		finish := start.Add(wait)
 		items = append(items, Item{
-			Kind: KindScheduledBroadcastOverSendCap, Severity: SeverityDegraded, Count: audience,
+			Kind: KindScheduledBroadcastOverSendCap, Count: audience,
 			Subject: &Subject{ID: b.ID, Name: b.Name}, EstimatedCompletionAt: &finish,
 		})
 	}
 	return items, nil
 }
 
-// failedRuns reads, per kept Automation, the runs that failed in the last week; an archived
-// Automation asks for no attention (ADR 0099), as an archived Broadcast does not.
+// failedRuns reads, per kept Automation, the runs that failed in the last week, counted and dated
+// by the first of them; an archived Automation asks for no attention (ADR 0099), as an archived
+// Broadcast does not.
 func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
-	runs, err := s.AutomationRun().Query().
+	var groups []struct {
+		AutomationID int64     `json:"automation_id"`
+		Count        int       `json:"count"`
+		Since        time.Time `json:"min"`
+	}
+	err := s.AutomationRun().Query().
 		Where(
 			automationrun.StatusEQ(automationrun.StatusFailed),
 			automationrun.EndedAtGTE(now.Add(-recent)),
 			automationrun.HasAutomationWith(automation.ArchivedAtIsNil()),
 		).
-		WithAutomation().
-		Order(ent.Asc(automationrun.FieldEndedAt)).
+		GroupBy(automationrun.FieldAutomationID).
+		Aggregate(ent.Count(), ent.Min(automationrun.FieldEndedAt)).
+		Scan(ctx, &groups)
+	if err != nil || len(groups) == 0 {
+		return nil, err
+	}
+	ids := make([]int64, len(groups))
+	for i, g := range groups {
+		ids[i] = g.AutomationID
+	}
+	kept, err := s.Automation().Query().
+		Where(automation.IDIn(ids...)).
+		Select(automation.FieldID, automation.FieldName).
 		All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var items []Item
-	byAutomation := map[int64]int{}
-	for _, r := range runs {
-		a := r.Edges.Automation
-		if a == nil {
+	nameOf := make(map[int64]string, len(kept))
+	for _, a := range kept {
+		nameOf[a.ID] = a.Name
+	}
+	items := make([]Item, 0, len(groups))
+	for _, g := range groups {
+		name, ok := nameOf[g.AutomationID]
+		if !ok {
 			continue
 		}
-		if i, ok := byAutomation[a.ID]; ok {
-			items[i].Count++
-			continue
-		}
-		byAutomation[a.ID] = len(items)
+		since := g.Since
 		items = append(items, Item{
-			Kind: KindEnrollmentsFailed, Severity: SeverityNotice, Count: 1,
-			Subject: &Subject{ID: a.ID, Name: a.Name}, Since: r.EndedAt,
+			Kind: KindEnrollmentsFailed, Count: g.Count,
+			Subject: &Subject{ID: g.AutomationID, Name: name}, Since: &since,
 		})
 	}
 	return items, nil
@@ -450,6 +481,7 @@ func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, erro
 func failedBroadcasts(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
 	failed, err := s.Broadcast().Query().
 		Where(broadcast.StatusEQ(broadcast.StatusFailed), broadcast.FailedAtGTE(now.Add(-recent))).
+		Select(broadcast.FieldID, broadcast.FieldName, broadcast.FieldFailedAt).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -457,7 +489,7 @@ func failedBroadcasts(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item
 	items := make([]Item, 0, len(failed))
 	for _, b := range failed {
 		items = append(items, Item{
-			Kind: KindBroadcastFailed, Severity: SeverityNotice, Count: 1,
+			Kind: KindBroadcastFailed, Count: 1,
 			Subject: &Subject{ID: b.ID, Name: b.Name}, Since: b.FailedAt,
 		})
 	}
@@ -478,7 +510,7 @@ func domainsNotBulkReady(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Ite
 	items := make([]Item, 0, len(domains))
 	for _, d := range domains {
 		items = append(items, Item{
-			Kind: KindSendingDomainNotBulkReady, Severity: SeverityNotice, Count: 1,
+			Kind: KindSendingDomainNotBulkReady, Count: 1,
 			Subject: &Subject{ID: d.ID, Name: d.Domain},
 		})
 	}
@@ -493,7 +525,7 @@ func disabledWebhooks(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, 
 	items := make([]Item, 0, len(hooks))
 	for _, h := range hooks {
 		items = append(items, Item{
-			Kind: KindWebhookDisabled, Severity: SeverityNotice, Count: 1,
+			Kind: KindWebhookDisabled, Count: 1,
 			Subject: &Subject{ID: h.ID, Name: h.URL}, Since: h.DisabledAt,
 		})
 	}

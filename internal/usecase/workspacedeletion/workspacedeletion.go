@@ -39,14 +39,12 @@ type UseCase struct {
 	bus        *events.Bus
 	workspaces *workspaces.Module
 	now        func() time.Time
-	batch      int
-	steps      []eraseStep
 }
 
 // New returns the use case over the Workspaces, which delete one; now is the Instance clock the
 // window is measured on.
 func New(client *ent.Client, bus *events.Bus, ws *workspaces.Module, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, workspaces: ws, now: now, batch: eraseBatch, steps: eraseSteps()}
+	return &UseCase{client: client, bus: bus, workspaces: ws, now: now}
 }
 
 // DeletedWorkspace is a Workspace in its deletion window, and whether it has one Owner alone: no
@@ -62,7 +60,7 @@ type DeletedWorkspace struct {
 func (m *UseCase) Deleted(ctx context.Context, userID int64) ([]DeletedWorkspace, error) {
 	held, err := m.client.Membership.Query().
 		Where(membership.UserID(userID), memberships.HoldersOf(memberships.PermWorkspaceDelete),
-			membership.HasWorkspaceWith(workspaces.InsideDeletionWindow(m.now()), workspace.DiscardedAtNotNil())).
+			membership.HasWorkspaceWith(workspaces.InsideDeletionWindow(m.now()))).
 		WithWorkspace().
 		Order(membership.ByWorkspaceField(workspace.FieldDiscardedAt, sql.OrderDesc()), ent.Desc(membership.FieldID)).
 		All(ctx)
@@ -89,9 +87,7 @@ func (m *UseCase) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor,
 // withSoleOwnership pairs each Workspace with whether it has exactly one Owner. Asked of the
 // Workspaces a User owns, it names the ones that have no other Owner to restore them.
 func (m *UseCase) withSoleOwnership(ctx context.Context, ws []*ent.Workspace) ([]DeletedWorkspace, error) {
-	owners, err := m.client.Membership.Query().
-		Where(membership.WorkspaceIDIn(lo.Map(ws, func(w *ent.Workspace, _ int) int64 { return w.ID })...), memberships.OwnerRole()).
-		All(ctx)
+	owners, err := memberships.OwnersOf(ctx, m.client, lo.Map(ws, func(w *ent.Workspace, _ int) int64 { return w.ID })...)
 	if err != nil {
 		return nil, err
 	}

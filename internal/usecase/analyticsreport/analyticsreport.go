@@ -17,7 +17,6 @@ package analyticsreport
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -29,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
@@ -162,11 +162,7 @@ func (m *UseCase) Overview(ctx context.Context, s *ent.Scoped, w Window) (*Overv
 
 // periodOf reads the figures of the period of Report days w.
 func periodOf(ctx context.Context, s *ent.Scoped, w reportday.Window) (Period, error) {
-	sending, err := sendingCounts(ctx, s, w.Since, w.Until)
-	if err != nil {
-		return Period{}, err
-	}
-	email, err := emailCounts(ctx, s, w.Since, w.Until)
+	sending, email, err := sendCounts(ctx, s, w.Since, w.Until)
 	if err != nil {
 		return Period{}, err
 	}
@@ -201,15 +197,18 @@ func engagementCohort(since, until time.Time) predicate.OutboundMessage {
 	)
 }
 
-// sendingCounts counts the Outbound messages sent in [since, until) per kind, and the delivery
-// stamps among them.
-func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sending, error) {
+// sendCounts counts the Outbound messages sent in [since, until) per kind, and the delivery
+// stamps among them, in one pass: the Broadcast and Automation groups are the engagementCohort
+// of the window, so their sends, opens and clicks are its Engagement rates.
+func sendCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Sending, Email, error) {
 	var rows []struct {
 		Kind       outboundmessage.Kind `sql:"kind"`
 		Sent       int                  `sql:"sent"`
 		Delivered  int                  `sql:"delivered"`
 		Bounced    int                  `sql:"bounced"`
 		Complained int                  `sql:"complained"`
+		Opened     int                  `sql:"opened"`
+		Clicked    int                  `sql:"clicked"`
 	}
 	err := s.OutboundMessage().Query().
 		Where(
@@ -224,13 +223,16 @@ func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (
 				sql.As(sql.Count(sel.C(outboundmessage.FieldDeliveredAt)), "delivered"),
 				sql.As(sql.Count(sel.C(outboundmessage.FieldBouncedAt)), "bounced"),
 				sql.As(sql.Count(sel.C(outboundmessage.FieldComplainedAt)), "complained"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldOpenedAt)), "opened"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldClickedAt)), "clicked"),
 			).GroupBy(sel.C(outboundmessage.FieldKind))
 		}).
 		Scan(ctx, &rows)
 	if err != nil {
-		return Sending{}, err
+		return Sending{}, Email{}, err
 	}
 	var out Sending
+	var email Email
 	for _, r := range rows {
 		switch r.Kind {
 		case outboundmessage.KindBroadcast:
@@ -240,33 +242,19 @@ func sendingCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (
 		case outboundmessage.KindTransactional:
 			out.Transactional = r.Sent
 		}
+		if r.Kind == outboundmessage.KindBroadcast || r.Kind == outboundmessage.KindAutomation {
+			email.Sent += r.Sent
+			email.Opened += r.Opened
+			email.Clicked += r.Clicked
+		}
 		out.Delivered += r.Delivered
 		out.Bounced += r.Bounced
 		out.Complained += r.Complained
 	}
-	return out, nil
-}
-
-func emailCounts(ctx context.Context, s *ent.Scoped, since, until time.Time) (Email, error) {
-	cohort := func() *ent.OutboundMessageQuery {
-		return s.OutboundMessage().Query().Where(engagementCohort(since, until))
-	}
-	sent, err := cohort().Count(ctx)
-	if err != nil {
-		return Email{}, err
-	}
-	opened, err := cohort().Where(outboundmessage.OpenedAtNotNil()).Count(ctx)
-	if err != nil {
-		return Email{}, err
-	}
-	clicked, err := cohort().Where(outboundmessage.ClickedAtNotNil()).Count(ctx)
-	if err != nil {
-		return Email{}, err
-	}
-	return Email{
-		Sent: sent, Opened: opened, Clicked: clicked,
-		OpenRate: ratio(opened, sent), ClickRate: ratio(clicked, sent), ClickToOpenRate: ratio(clicked, opened),
-	}, nil
+	email.OpenRate = broadcasts.Ratio(email.Opened, email.Sent)
+	email.ClickRate = broadcasts.Ratio(email.Clicked, email.Sent)
+	email.ClickToOpenRate = broadcasts.Ratio(email.Clicked, email.Opened)
+	return out, email, nil
 }
 
 func automationCounts(ctx context.Context, s *ent.Scoped) (Automations, error) {
@@ -302,9 +290,9 @@ func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Po
 		Where(engagementCohort(days.Since, days.Until)).
 		Modify(func(sel *sql.Selector) {
 			sel.Select(
-				sql.As("COUNT(*)", "sent"),
-				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(outboundmessage.FieldOpenedAt)), "opened"),
-				sql.As(fmt.Sprintf("COUNT(%s)", sel.C(outboundmessage.FieldClickedAt)), "clicked"),
+				sql.As(sql.Count("*"), "sent"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldOpenedAt)), "opened"),
+				sql.As(sql.Count(sel.C(outboundmessage.FieldClickedAt)), "clicked"),
 			)
 			sel.AppendSelectExprAs(reportday.Label(sel.C(outboundmessage.FieldSentAt), days.Loc), "day").
 				GroupBy("day")
@@ -317,19 +305,17 @@ func timeSeries(ctx context.Context, s *ent.Scoped, days reportday.Window) ([]Po
 	for _, r := range rows {
 		byDay[r.Day] = Point{Date: r.Day, Sent: r.Sent, Opened: r.Opened, Clicked: r.Clicked}
 	}
-	points := make([]Point, 0, len(days.Dates))
-	for _, day := range days.Dates {
-		p := byDay[day]
-		p.Date = day
-		points = append(points, p)
-	}
-	return points, nil
+	return zeroFilled(days, byDay, func(p *Point, day string) { p.Date = day }), nil
 }
 
-// ratio is num/denom in [0, 1], 0 for an empty denominator.
-func ratio(num, denom int) float32 {
-	if denom <= 0 {
-		return 0
+// zeroFilled lists one point per Report day of the window, in order: the day's point of byDay,
+// or the zero point on a day with none, each dated by date.
+func zeroFilled[P any](days reportday.Window, byDay map[string]P, date func(*P, string)) []P {
+	points := make([]P, 0, len(days.Dates))
+	for _, day := range days.Dates {
+		p := byDay[day]
+		date(&p, day)
+		points = append(points, p)
 	}
-	return float32(num) / float32(denom)
+	return points
 }

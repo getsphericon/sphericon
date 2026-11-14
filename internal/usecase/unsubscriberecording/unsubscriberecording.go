@@ -50,7 +50,6 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 	if dest == "" || target.WorkspaceID == 0 || target.Source == "" || target.Channel == "" {
 		return nil
 	}
-	channel := target.Channel
 	automationID, isAutomation := eligibility.ParseAutomationSource(target.Source)
 	at := u.now()
 
@@ -64,7 +63,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		if target.Channel == channels.SMS {
 			return publishSMSStop(ctx, sc, pub, target, dest, at)
 		}
-		o := unsubscribes.OptOut{Channel: channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
+		o := unsubscribes.OptOut{Channel: target.Channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
 		if target.Channel == channels.Telegram {
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
@@ -88,7 +87,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// Automation: unsubscribing from an automation also exits its active
 		// enrollment (ADR: two effects from one action).
 		if isAutomation && target.ContactID != 0 {
-			if _, err := automations.Exit(ctx, sc, pub, automationID, target.ContactID, u.now()); err != nil {
+			if _, err := automations.Exit(ctx, sc, pub, automationID, target.ContactID, at); err != nil {
 				return err
 			}
 		}
@@ -98,7 +97,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		}
 
 		if target.Channel == channels.Telegram {
-			return publishTelegramUnsubscribed(ctx, sc, pub, target, optOutID)
+			return publishTelegramUnsubscribed(ctx, sc, pub, target, automationID, optOutID)
 		}
 		if target.Channel != channels.Email {
 			return nil
@@ -116,7 +115,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 // Contact, or one whose Contact is gone, has nobody to name. The Event is keyed by the opt-out
 // row, not the link: a `/start` lifts an opt-out of everything, and a later click on the same link
 // is a new opt-out with a new Event, while its source id names neither the user nor the link.
-func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, optOutID int64) error {
+func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, automationID, optOutID int64) error {
 	if target.ContactID == 0 {
 		return nil
 	}
@@ -127,7 +126,6 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 	if err != nil {
 		return err
 	}
-	automationID, _ := eligibility.ParseAutomationSource(target.Source)
 	return pub.Publish(ctx, &events.TelegramUnsubscribed{
 		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Via: events.UnsubscribedByLink,
 		BroadcastID: target.BroadcastID, AutomationID: automationID,
