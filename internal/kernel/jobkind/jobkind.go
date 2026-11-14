@@ -34,9 +34,9 @@ type OfWorkspace interface {
 // queue. It is here because both the Automations and the Rules modules queue into it.
 const QueueHTTPCalls = "http_steps"
 
-// QueuedOnce is the uniqueness of a check queued again on a schedule (a periodic tick's fan-out,
-// a button that queues the same check): one job of the args waits or runs at a time, and a job
-// that finished does not block the next one, as river's default states (which keep a completed
+// QueuedOnce is the uniqueness of a check a periodic tick queues again and nothing else queues:
+// one job of the args waits or runs at a time, and a job that finished does not block the next
+// one, as river's default states (which keep a completed
 // job) would until the job is cleaned out.
 func QueuedOnce() river.UniqueOpts {
 	return river.UniqueOpts{ByArgs: true, ByState: []rivertype.JobState{
