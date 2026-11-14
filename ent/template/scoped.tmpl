@@ -3,11 +3,9 @@ The Workspace-scoped client (ADR 0017, "Form B"). For every entity that carries 
 workspace mixin it generates distinct wrapper types behind `client.Scoped(ws)`:
 creates cannot name a Workspace, every reference id set on a create/update is verified
 against the same Workspace when the builder is saved, and reads, update-by-id and
-delete-by-id are confined to the Workspace. A wrapper keeps its write as a recipe (its
-predicates and what its setters set) and builds the ent builder only when the write runs,
-on the client of the scope it runs on: the scope's own, or the transaction that carries
-its Audit entries (write<N>), so that client's hooks apply from the start. Regenerate
-with `mise run generate`.
+delete-by-id are confined to the Workspace. A wrapper keeps its write as a recipe and
+builds the ent builder only when the write runs, through write<N> (docs/agents/codegen.md).
+Regenerate with `mise run generate`.
 */}}
 {{ define "scoped" }}
 {{ template "header" $ }}
@@ -99,6 +97,16 @@ const (
 	RoleOf_Scoped_Workspace   = RoleRead
 )
 
+// written returns what a write made, or the zero value when it failed, so a row a rolled-back write
+// returned is never handed out.
+func written[T any](v T, err error) (T, error) {
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return v, nil
+}
+
 // uniqueIDs returns the sorted, de-duplicated ids.
 func uniqueIDs(ids []int64) []int64 {
 	s := slices.Clone(ids)
@@ -113,7 +121,7 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.{{ $n.Name }}.Query().Where({{ $n.Package }}.IDIn(ids...), {{ $n.Package }}.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.{{ $n.Name }}.Query().Where(s.in{{ $n.Name }}({{ $n.Package }}.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -165,22 +173,28 @@ const (
 	RoleOf_{{ $N }}Scoped_Update = RoleStart
 )
 
+// in{{ $N }} confines predicates of {{ $N }} rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) in{{ $N }}(ps ...predicate.{{ $N }}) []predicate.{{ $N }} {
+	return append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a {{ $N }} query already confined to the Workspace{{ if $D }}, hiding discarded rows
 // (a list query; QueryWithDiscarded sees them too){{ end }}{{ if $R }}, hiding archived rows
 // (a list query; QueryWithArchived sees them too){{ end }}.
 func (t *{{ $N }}Scoped) Query() *{{ $N }}Query {
-	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws){{ if $D }}, {{ $P }}.DiscardedAtIsNil(){{ end }}{{ if $R }}, {{ $P }}.ArchivedAtIsNil(){{ end }})
+	return t.s.c.{{ $N }}.Query().Where(t.s.in{{ $N }}({{ if $D }}{{ $P }}.DiscardedAtIsNil(){{ end }}{{ if $R }}{{ $P }}.ArchivedAtIsNil(){{ end }})...)
 }
 {{ if $D }}
 // QueryWithDiscarded returns a {{ $N }} query confined to the Workspace that also sees discarded rows.
 func (t *{{ $N }}Scoped) QueryWithDiscarded() *{{ $N }}Query {
-	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws))
+	return t.s.c.{{ $N }}.Query().Where(t.s.in{{ $N }}()...)
 }
 {{ end }}
 {{ if $R }}
 // QueryWithArchived returns a {{ $N }} query confined to the Workspace that also sees archived rows.
 func (t *{{ $N }}Scoped) QueryWithArchived() *{{ $N }}Query {
-	return t.s.c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(t.s.ws))
+	return t.s.c.{{ $N }}.Query().Where(t.s.in{{ $N }}()...)
 }
 
 // QueryArchived returns a {{ $N }} query confined to the Workspace that sees only archived rows
@@ -286,14 +300,14 @@ func (s *Scoped) check{{ $N }}(ctx context.Context, ms ...*{{ $N }}Mutation) err
 // Archive stamps archived_at, at `at`, on the kept {{ $N }} with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
 func (t *{{ $N }}Scoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
-	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtIsNil()}, ps...)
+	where := append(t.s.in{{ $N }}({{ $P }}.ID(id), {{ $P }}.ArchivedAtIsNil()), ps...)
 	return t.setArchived(ctx, id, where, "{{ verb $n "archive" }}", func(u *{{ $N }}UpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the {{ $N }} with the id. Unarchiving a kept row changes
 // nothing; only a row that does not exist in the Workspace is not found.
 func (t *{{ $N }}Scoped) Unarchive(ctx context.Context, id int64) error {
-	where := []predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtNotNil()}
+	where := t.s.in{{ $N }}({{ $P }}.ID(id), {{ $P }}.ArchivedAtNotNil())
 	err := t.setArchived(ctx, id, where, "{{ verb $n "unarchive" }}", func(u *{{ $N }}UpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
@@ -316,7 +330,7 @@ func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []pred
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
-	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.DiscardedAtIsNil()}, ps...)
+	where := append(t.s.in{{ $N }}({{ $P }}.ID(id), {{ $P }}.DiscardedAtIsNil()), ps...)
 	return t.s.write{{ $N }}(ctx, "{{ verb $n "discard" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at){{ range $f := discardClears $n }}.Set{{ $f.StructField }}(false){{ end }}.Save(ctx)
 		return nil, err
@@ -353,7 +367,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *{{ $N }}ScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.in{{ $N }}(x.where...)
 	return x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.{{ $N }}.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -387,14 +401,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *{{ $N }}ScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.in{{ $N }}(x.where...)
 	var n int
 	err := x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.{{ $N }}.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -412,13 +426,20 @@ func (t *{{ $N }}Scoped) Create() *{{ $N }}ScopedCreate {
 	return &{{ $N }}ScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *{{ $N }}ScopedCreate) build(s *Scoped) *{{ $N }}Create {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *{{ $N }}ScopedCreate) raw(s *Scoped) *{{ $N }}Create {
 	b := s.c.{{ $N }}.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *{{ $N }}ScopedCreate) build(ctx context.Context, s *Scoped) (*{{ $N }}Create, error) {
+	b := x.raw(s)
+	return written(b, s.check{{ $N }}(ctx, b.Mutation()))
 }
 
 {{ with extend $n "Node" $n "Builder" (print $N "ScopedCreate") "Raw" (print $N "Create") "Mode" "create" }}
@@ -438,11 +459,10 @@ const (
 func (x *{{ $N }}ScopedCreate) Save(ctx context.Context) (*{{ $N }}, error) {
 	var created *{{ $N }}
 	err := x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
@@ -452,10 +472,7 @@ func (x *{{ $N }}ScopedCreate) Save(ctx context.Context) (*{{ $N }}, error) {
 		return nil, nil
 		{{- end }}
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -493,7 +510,7 @@ func (b *{{ $N }}ScopedCreateBulk) build(ctx context.Context, s *Scoped) (*{{ $N
 	builders := make([]*{{ $N }}Create, len(b.xs))
 	ms := make([]*{{ $N }}Mutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.check{{ $N }}(ctx, ms...); err != nil {
@@ -526,10 +543,7 @@ func (b *{{ $N }}ScopedCreateBulk) Save(ctx context.Context) ([]*{{ $N }}, error
 		return nil, nil
 		{{- end }}
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -689,8 +703,8 @@ func (u *{{ $N }}ScopedUpsertOne) Update(set func(*{{ $N }}ScopedUpsert)) *{{ $N
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *{{ $N }}ScopedUpsertOne) build(ctx context.Context, s *Scoped) (*{{ $N }}UpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -726,10 +740,7 @@ func (u *{{ $N }}ScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 	{{- else }}
 	return u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
@@ -857,26 +868,28 @@ func (x *{{ $N }}ScopedUpdateOne) move(ctx context.Context, verb string) (*{{ $N
 }
 {{- end }}
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *{{ $N }}ScopedUpdateOne) build(ctx context.Context, s *Scoped) (*{{ $N }}UpdateOne, error) {
+	b := s.c.{{ $N }}.UpdateOneID(x.id).Where(s.in{{ $N }}(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.check{{ $N }}(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *{{ $N }}ScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*{{ $N }}, error) {
-	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.in{{ $N }}(x.where...)
 	var updated *{{ $N }}
 	err := x.s.write{{ $N }}(ctx, verb, append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.{{ $N }}.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -938,30 +951,32 @@ func (x *{{ $N }}ScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *{{ $N
 	{{ template "helper/scopedsetters" . }}
 {{ end }}
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *{{ $N }}ScopedUpdate) build(ctx context.Context, s *Scoped) (*{{ $N }}Update, error) {
+	b := s.c.{{ $N }}.Update().Where(s.in{{ $N }}(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.check{{ $N }}(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *{{ $N }}ScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.in{{ $N }}(x.where...)
 	var n int
 	err := x.s.write{{ $N }}(ctx, "{{ verb $n "update" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.{{ $N }}.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.

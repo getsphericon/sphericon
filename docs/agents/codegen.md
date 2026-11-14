@@ -49,7 +49,8 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   found by a column name. It does not import the generated `ent` package, so generation never depends
   on its previous output compiling. A new rule gets a schema under `internal/entgen/testdata/` that
   breaks it and a row in `TestCheckFindsEveryProblem`; `TestTheSchemaBreaksNoRule` holds the real
-  schema to all of them.
+  schema to all of them. A func that fails the generation on what a template asks of it (`verb`) is
+  tested by calling it.
 - **The scoped client keeps a write as a recipe** (`ent/template/scoped.tmpl`, ADR 0017). A wrapper
   (`<N>ScopedCreate`, `<N>ScopedUpdateOne`, `<N>ScopedDelete`, …) holds its predicates and what its
   setters set, and builds the ent builder only when the write runs, on the client of the scope it runs
@@ -60,10 +61,11 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   a Versioned definition's move: an edit of its draft changes only the version rows). A template never
   touches ent's unexported fields: an ent upgrade can neither break the build there nor move a write
   out of its transaction (`TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens` commits on a real
-  database to catch it, for the create, updates and deletes of the registry). The verbs of an entity's writes (create, update, delete, then discard, or
-  archive and unarchive, by its kind) are `entgen.Verbs`: the wrappers and the Versioned definitions'
-  pointers name a verb through the `verb` func, which fails the generation on one the entity has not,
-  and the registry's `AuditActions` lists them, which the contract's `AuditAction` enum must match.
+  database to catch it, for the create, updates and deletes of the registry). The verbs of an
+  entity's writes are `entgen.Verbs`, by its kind: the wrappers and the Versioned definitions'
+  pointers name a verb through the `verb` func, which fails the generation on one the entity has not
+  (`TestEachKindHasTheVerbsOfItsWrites`), and the registry's `AuditActions` lists them, which the
+  contract's `AuditAction` enum must match.
 - **The manifest of kinds** (`ent/kinds.go`, `ent.Kinds`): per entity, its table and whether it is
   Workspace-owned, archivable, discardable, Versioned, with a revision and a singleton. The
   migration generator reads the Workspace-owned tables from it (`internal/infra/devdb/tenantkeys.go`),
