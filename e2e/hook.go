@@ -85,14 +85,13 @@ func (h *Hooks) callsAt(path string) []HookCall {
 // Hook is one test's own endpoint on the receiver. It is the only way a scenario observes
 // an HTTP step: one wait, one absence check, like the Inbox.
 type Hook struct {
-	t      testing.TB
-	hooks  *Hooks
-	path   string
-	URL    string
+	t     testing.TB
+	hooks *Hooks
+	path  string
+	URL   string
+	// Secret is what every call's signature is verified with: the suite's own for a signed HTTP
+	// step, the one the app shows for a Webhook endpoint. An empty Secret expects no signature.
 	Secret string
-	// signedBySomeone is set for a Webhook endpoint's Hook, whose secret the test never sees:
-	// a call must be signed, by a secret the test cannot check.
-	signedBySomeone bool
 }
 
 // NewHook gives the test an endpoint of its own. A signed one verifies every call's
@@ -118,10 +117,6 @@ func (hk *Hook) Wait() HookCall {
 	}, HookTimeout, 100*time.Millisecond, "no call to %s", hk.path)
 	call := calls[0]
 	signature := call.Header.Get(standardwebhooks.HeaderWebhookSignature)
-	if hk.signedBySomeone {
-		assert.NotEmpty(hk.t, signature, "a webhook delivery is signed")
-		return call
-	}
 	if hk.Secret == "" {
 		assert.Empty(hk.t, signature, "an HTTP step without a secret sends no signature")
 		return call

@@ -5,7 +5,6 @@ package e2e
 import (
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/stretchr/testify/require"
 
@@ -62,17 +61,23 @@ func (w *Workspace) SignUpColleague(domain string) *Colleague {
 	w.t.Helper()
 	ctx := w.t.Context()
 	email := "colleague-" + uniq() + "@" + domain
-	anonymous, err := siteapi.NewClient(w.env.BaseURL+"/site", cookieSource(""))
-	require.NoError(w.t, err)
+	anonymous := w.anonymousSite()
 
 	signedUp, err := anonymous.SiteAuthSignUp(ctx, &siteapi.SiteSignUpInput{
 		Name: "Colleague", Email: siteapi.EmailAddress(email), Password: siteapi.NewOptString(colleaguePassword),
 	})
 	ok[siteapi.SiteAuthSignUpAccepted](w.t, "sign up", signedUp, err)
 
+	// The link opens the verify page, which reads its token from its own address and sends it
+	// with the password it asks for.
 	mail := w.Inbox.Wait(Match{To: email, Subject: "Verify your Sphericon email"})
+	link := mail.TextLink("/verify-email")
+	require.NotEmpty(w.t, link, "the verify mail carries a link: %q", mail.Text)
+	page, err := url.Parse(link)
+	require.NoError(w.t, err)
+	token := w.pageToken(page, "/verify-email")
 	verified, err := anonymous.SiteAuthVerifyEmail(ctx,
-		&siteapi.SiteVerifyEmailInput{Token: tokenInMail(w, mail), Password: siteapi.NewOptString(colleaguePassword)},
+		&siteapi.SiteVerifyEmailInput{Token: token, Password: siteapi.NewOptString(colleaguePassword)},
 		siteapi.SiteAuthVerifyEmailParams{})
 	landed := ok[siteapi.SiteVerifyEmailResultHeaders](w.t, "follow the verify link", verified, err)
 
@@ -81,18 +86,6 @@ func (w *Workspace) SignUpColleague(domain string) *Colleague {
 	session, err := siteapi.NewClient(w.env.BaseURL+"/site", cookieSource(cookie.Value))
 	require.NoError(w.t, err)
 	return &Colleague{Email: email, Landing: landed.Response.LandingWorkspaceId, site: session}
-}
-
-// tokenInMail reads the link token out of a verify mail.
-func tokenInMail(w *Workspace, m Message) string {
-	w.t.Helper()
-	_, rest, found := strings.Cut(m.Text, "token=")
-	require.True(w.t, found, "the verify mail carries a token link: %q", m.Text)
-	token, _, _ := strings.Cut(rest, "\n")
-	token, _, _ = strings.Cut(strings.TrimSpace(token), " ")
-	unescaped, err := url.QueryUnescape(token)
-	require.NoError(w.t, err)
-	return unescaped
 }
 
 // RequireJoinedByDomain asserts that the Colleague landed in this Workspace and that the
