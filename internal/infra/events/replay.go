@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"github.com/riverqueue/river"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
@@ -122,18 +123,11 @@ func (b *Bus) Replay(ctx context.Context, workspaceID int64, in ReplayRequest) (
 	return result, err
 }
 
+// replayPolicy is the policy of the one replayable consumer of kind (UseConsumers keeps it one).
 func (b *Bus) replayPolicy(kind string) (*ReplayPolicy, error) {
-	var found *ReplayPolicy
-	for _, c := range b.consumers {
-		if c.Replay != nil && c.Replay.kind == kind {
-			if found != nil {
-				return nil, fmt.Errorf("events: duplicate replay consumer %q", kind)
-			}
-			found = c.Replay
-		}
-	}
-	if found == nil {
+	c, found := lo.Find(b.consumers, func(c Consumer) bool { return c.Replay != nil && c.Replay.kind == kind })
+	if !found {
 		return nil, fmt.Errorf("%w: %q", ErrReplayConsumerUnsupported, kind)
 	}
-	return found, nil
+	return c.Replay, nil
 }

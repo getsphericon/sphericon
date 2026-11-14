@@ -40,9 +40,9 @@ func ListLog(ctx context.Context, s *ent.Scoped, f LogFilter, p pagination.Param
 		q = q.Where(event.EmailEqualFold(f.Email))
 	}
 	if !f.IncludeMachine {
-		// The flag belongs to opens and clicks only: a customer's own Event may carry a
-		// property of that name.
-		q = q.Where(event.Or(event.ActionNotIn(engagementActions...), HumanOnly()))
+		// The machine column is the projection's (Projection.Machine), set by an open or a click
+		// alone: a customer's property of that name never reaches it.
+		q = q.Where(HumanOnly())
 	}
 	return pagination.List(ctx, p, q.Order(ent.Desc(event.FieldCreatedAt), ent.Desc(event.FieldID)))
 }
