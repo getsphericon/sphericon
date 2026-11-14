@@ -203,7 +203,7 @@ func (p *AutomationPointers) CompareAndSwap(ctx context.Context, before VersionS
 	} else if before.Archived && !after.Archived {
 		verb = "unarchive"
 	}
-	_, err := u.save(ctx, verb)
+	_, err := u.save(ctx, verb, true)
 	if IsNotFound(err) {
 		return false, nil
 	}
@@ -355,7 +355,7 @@ func (p *RulePointers) CompareAndSwap(ctx context.Context, before VersionState[R
 	if after.Discarded && !before.Discarded {
 		verb = "discard"
 	}
-	_, err := u.save(ctx, verb)
+	_, err := u.save(ctx, verb, true)
 	if IsNotFound(err) {
 		return false, nil
 	}

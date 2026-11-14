@@ -95,6 +95,23 @@ func TestSiteAutomationPublishAndRevertAreAudited(t *testing.T) {
 	}, got, "Revert, the next draft, Publish")
 }
 
+// An edit of an existing draft rewrites the draft in place and moves no pointer, yet it is a change
+// of the Automation by its actor: the Audit log records it as an update with no field changed, the
+// one trace of the edit (the version rows are not audited).
+func TestSiteAutomationDraftEditIsAudited(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWelcomeSeriesID)}
+
+	revision := env.AutomationRevision(ctx, t, int64(params.ID))
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(revision), TriggerEvent: siteapi.NewOptString("signup_edited")}, params)
+	require.NoError(t, err)
+
+	got := auditedVersionMoves(t, env, fixtures.AutomationWelcomeSeriesID)
+	assert.Equal(t, []any{[]any{"automation.update", "", ""}}, got)
+}
+
 // versionIDOf is the id of the Automation's version with that number.
 func versionIDOf(t *testing.T, env *testhelper.TestEnv, automationID int64, number int) int64 {
 	t.Helper()

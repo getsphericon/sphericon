@@ -901,8 +901,9 @@ func (t *ApiTokenScoped) Get(ctx context.Context, id int64) (*ApiToken, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeApiToken(ctx context.Context, verb string, where []predicate.ApiToken, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeApiToken(ctx context.Context, verb string, where []predicate.ApiToken, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*ApiToken
@@ -935,7 +936,7 @@ func (s *Scoped) writeApiToken(ctx context.Context, verb string, where []predica
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeApiToken(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeApiToken(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -992,7 +993,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ApiTokenScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeApiToken(ctx, "delete", append([]predicate.ApiToken{apitoken.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeApiToken(ctx, "delete", append([]predicate.ApiToken{apitoken.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.ApiToken.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -1026,7 +1027,7 @@ const (
 func (x *ApiTokenScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeApiToken(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeApiToken(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.ApiToken.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -1244,7 +1245,7 @@ const (
 // Save verifies the references against the Workspace, then creates the ApiToken.
 func (x *ApiTokenScopedCreate) Save(ctx context.Context) (*ApiToken, error) {
 	var created *ApiToken
-	err := x.s.writeApiToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeApiToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkApiToken(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -1311,7 +1312,7 @@ func (b *ApiTokenScopedCreateBulk) Save(ctx context.Context) ([]*ApiToken, error
 		return nil, err
 	}
 	var created []*ApiToken
-	err := b.s.writeApiToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeApiToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -1597,7 +1598,7 @@ func (u *ApiTokenScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeApiToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeApiToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -1672,7 +1673,7 @@ func (u *ApiTokenScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeApiToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeApiToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -1854,15 +1855,16 @@ const RoleOf_ApiTokenScopedUpdateOne_ClearLastUsedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the ApiToken.
 func (x *ApiTokenScopedUpdateOne) Save(ctx context.Context) (*ApiToken, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *ApiTokenScopedUpdateOne) save(ctx context.Context, verb string) (*ApiToken, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *ApiTokenScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*ApiToken, error) {
 	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *ApiToken
-	err := x.s.writeApiToken(ctx, verb, append([]predicate.ApiToken{apitoken.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeApiToken(ctx, verb, append([]predicate.ApiToken{apitoken.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.ApiToken.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -2086,7 +2088,7 @@ func (x *ApiTokenScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeApiToken(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeApiToken(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.ApiToken.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -2152,8 +2154,8 @@ func (t *AuditEntryScoped) Get(ctx context.Context, id int64) (*AuditEntry, erro
 // writeAuditEntry runs a write of AuditEntry rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeAuditEntry(ctx context.Context, verb string, where []predicate.AuditEntry, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeAuditEntry(ctx context.Context, verb string, where []predicate.AuditEntry, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -2193,7 +2195,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AuditEntryScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeAuditEntry(ctx, "delete", append([]predicate.AuditEntry{auditentry.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeAuditEntry(ctx, "delete", append([]predicate.AuditEntry{auditentry.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AuditEntry.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -2227,7 +2229,7 @@ const (
 func (x *AuditEntryScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAuditEntry(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAuditEntry(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AuditEntry.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -2481,7 +2483,7 @@ const (
 // Save verifies the references against the Workspace, then creates the AuditEntry.
 func (x *AuditEntryScopedCreate) Save(ctx context.Context) (*AuditEntry, error) {
 	var created *AuditEntry
-	err := x.s.writeAuditEntry(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAuditEntry(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkAuditEntry(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -2548,7 +2550,7 @@ func (b *AuditEntryScopedCreateBulk) Save(ctx context.Context) ([]*AuditEntry, e
 		return nil, err
 	}
 	var created []*AuditEntry
-	err := b.s.writeAuditEntry(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeAuditEntry(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -2748,7 +2750,7 @@ func (u *AuditEntryScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *AuditEntryScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeAuditEntry(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeAuditEntry(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -2819,7 +2821,7 @@ func (u *AuditEntryScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeAuditEntry(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeAuditEntry(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -2917,15 +2919,16 @@ const RoleOf_AuditEntryScopedUpdateOne_ClearUserAgent = RoleStep
 
 // Save verifies the references against the Workspace, then updates the AuditEntry.
 func (x *AuditEntryScopedUpdateOne) Save(ctx context.Context) (*AuditEntry, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *AuditEntryScopedUpdateOne) save(ctx context.Context, verb string) (*AuditEntry, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *AuditEntryScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*AuditEntry, error) {
 	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *AuditEntry
-	err := x.s.writeAuditEntry(ctx, verb, append([]predicate.AuditEntry{auditentry.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAuditEntry(ctx, verb, append([]predicate.AuditEntry{auditentry.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.AuditEntry.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -3065,7 +3068,7 @@ func (x *AuditEntryScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAuditEntry(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAuditEntry(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.AuditEntry.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -3149,8 +3152,9 @@ func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, erro
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeAutomation(ctx context.Context, verb string, where []predicate.Automation, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeAutomation(ctx context.Context, verb string, where []predicate.Automation, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Automation
@@ -3183,7 +3187,7 @@ func (s *Scoped) writeAutomation(ctx context.Context, verb string, where []predi
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeAutomation(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeAutomation(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -3258,7 +3262,7 @@ func (t *AutomationScoped) Unarchive(ctx context.Context, id int64) error {
 }
 
 func (t *AutomationScoped) setArchived(ctx context.Context, id int64, where []predicate.Automation, verb string, set func(*AutomationUpdateOne)) error {
-	return t.s.writeAutomation(ctx, verb, where, func(s *Scoped) ([]int64, error) {
+	return t.s.writeAutomation(ctx, verb, where, false, func(s *Scoped) ([]int64, error) {
 		u := s.c.Automation.UpdateOneID(id).Where(where...)
 		set(u)
 		_, err := u.Save(ctx)
@@ -3295,7 +3299,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeAutomation(ctx, "delete", append([]predicate.Automation{automation.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeAutomation(ctx, "delete", append([]predicate.Automation{automation.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Automation.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -3329,7 +3333,7 @@ const (
 func (x *AutomationScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomation(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomation(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Automation.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -3573,7 +3577,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Automation.
 func (x *AutomationScopedCreate) Save(ctx context.Context) (*Automation, error) {
 	var created *Automation
-	err := x.s.writeAutomation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkAutomation(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -3640,7 +3644,7 @@ func (b *AutomationScopedCreateBulk) Save(ctx context.Context) ([]*Automation, e
 		return nil, err
 	}
 	var created []*Automation
-	err := b.s.writeAutomation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeAutomation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -3946,7 +3950,7 @@ func (u *AutomationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeAutomation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeAutomation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -4021,7 +4025,7 @@ func (u *AutomationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeAutomation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeAutomation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -4355,15 +4359,16 @@ const RoleOf_AutomationScopedUpdateOne_RemoveRuns = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Automation.
 func (x *AutomationScopedUpdateOne) Save(ctx context.Context) (*Automation, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *AutomationScopedUpdateOne) save(ctx context.Context, verb string) (*Automation, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *AutomationScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Automation, error) {
 	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Automation
-	err := x.s.writeAutomation(ctx, verb, append([]predicate.Automation{automation.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomation(ctx, verb, append([]predicate.Automation{automation.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Automation.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -4739,7 +4744,7 @@ func (x *AutomationScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomation(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomation(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Automation.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -4805,8 +4810,8 @@ func (t *AutomationFigureScoped) Get(ctx context.Context, id int64) (*Automation
 // writeAutomationFigure runs a write of AutomationFigure rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeAutomationFigure(ctx context.Context, verb string, where []predicate.AutomationFigure, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeAutomationFigure(ctx context.Context, verb string, where []predicate.AutomationFigure, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -4855,7 +4860,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationFigureScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeAutomationFigure(ctx, "delete", append([]predicate.AutomationFigure{automationfigure.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeAutomationFigure(ctx, "delete", append([]predicate.AutomationFigure{automationfigure.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AutomationFigure.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -4889,7 +4894,7 @@ const (
 func (x *AutomationFigureScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomationFigure(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationFigure(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AutomationFigure.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -5101,7 +5106,7 @@ const (
 // Save verifies the references against the Workspace, then creates the AutomationFigure.
 func (x *AutomationFigureScopedCreate) Save(ctx context.Context) (*AutomationFigure, error) {
 	var created *AutomationFigure
-	err := x.s.writeAutomationFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkAutomationFigure(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -5168,7 +5173,7 @@ func (b *AutomationFigureScopedCreateBulk) Save(ctx context.Context) ([]*Automat
 		return nil, err
 	}
 	var created []*AutomationFigure
-	err := b.s.writeAutomationFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeAutomationFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -5464,7 +5469,7 @@ func (u *AutomationFigureScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *AutomationFigureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeAutomationFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeAutomationFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -5535,7 +5540,7 @@ func (u *AutomationFigureScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeAutomationFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeAutomationFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -5737,15 +5742,16 @@ const RoleOf_AutomationFigureScopedUpdateOne_AddCaptured = RoleStep
 
 // Save verifies the references against the Workspace, then updates the AutomationFigure.
 func (x *AutomationFigureScopedUpdateOne) Save(ctx context.Context) (*AutomationFigure, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *AutomationFigureScopedUpdateOne) save(ctx context.Context, verb string) (*AutomationFigure, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *AutomationFigureScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*AutomationFigure, error) {
 	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *AutomationFigure
-	err := x.s.writeAutomationFigure(ctx, verb, append([]predicate.AutomationFigure{automationfigure.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationFigure(ctx, verb, append([]predicate.AutomationFigure{automationfigure.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.AutomationFigure.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -5989,7 +5995,7 @@ func (x *AutomationFigureScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomationFigure(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationFigure(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.AutomationFigure.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -6055,8 +6061,8 @@ func (t *AutomationRunScoped) Get(ctx context.Context, id int64) (*AutomationRun
 // writeAutomationRun runs a write of AutomationRun rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeAutomationRun(ctx context.Context, verb string, where []predicate.AutomationRun, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeAutomationRun(ctx context.Context, verb string, where []predicate.AutomationRun, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -6123,7 +6129,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationRunScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeAutomationRun(ctx, "delete", append([]predicate.AutomationRun{automationrun.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeAutomationRun(ctx, "delete", append([]predicate.AutomationRun{automationrun.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AutomationRun.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -6157,7 +6163,7 @@ const (
 func (x *AutomationRunScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomationRun(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationRun(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AutomationRun.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -6455,7 +6461,7 @@ const (
 // Save verifies the references against the Workspace, then creates the AutomationRun.
 func (x *AutomationRunScopedCreate) Save(ctx context.Context) (*AutomationRun, error) {
 	var created *AutomationRun
-	err := x.s.writeAutomationRun(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationRun(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkAutomationRun(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -6522,7 +6528,7 @@ func (b *AutomationRunScopedCreateBulk) Save(ctx context.Context) ([]*Automation
 		return nil, err
 	}
 	var created []*AutomationRun
-	err := b.s.writeAutomationRun(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeAutomationRun(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -6870,7 +6876,7 @@ func (u *AutomationRunScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *AutomationRunScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeAutomationRun(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeAutomationRun(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -6941,7 +6947,7 @@ func (u *AutomationRunScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeAutomationRun(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeAutomationRun(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -7275,15 +7281,16 @@ const RoleOf_AutomationRunScopedUpdateOne_ClearContact = RoleStep
 
 // Save verifies the references against the Workspace, then updates the AutomationRun.
 func (x *AutomationRunScopedUpdateOne) Save(ctx context.Context) (*AutomationRun, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *AutomationRunScopedUpdateOne) save(ctx context.Context, verb string) (*AutomationRun, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *AutomationRunScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*AutomationRun, error) {
 	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *AutomationRun
-	err := x.s.writeAutomationRun(ctx, verb, append([]predicate.AutomationRun{automationrun.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationRun(ctx, verb, append([]predicate.AutomationRun{automationrun.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.AutomationRun.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -7659,7 +7666,7 @@ func (x *AutomationRunScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomationRun(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationRun(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.AutomationRun.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -7725,8 +7732,8 @@ func (t *AutomationVersionScoped) Get(ctx context.Context, id int64) (*Automatio
 // writeAutomationVersion runs a write of AutomationVersion rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeAutomationVersion(ctx context.Context, verb string, where []predicate.AutomationVersion, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeAutomationVersion(ctx context.Context, verb string, where []predicate.AutomationVersion, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -7784,7 +7791,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationVersionScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeAutomationVersion(ctx, "delete", append([]predicate.AutomationVersion{automationversion.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeAutomationVersion(ctx, "delete", append([]predicate.AutomationVersion{automationversion.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AutomationVersion.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -7818,7 +7825,7 @@ const (
 func (x *AutomationVersionScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomationVersion(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationVersion(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AutomationVersion.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -7990,7 +7997,7 @@ const (
 // Save verifies the references against the Workspace, then creates the AutomationVersion.
 func (x *AutomationVersionScopedCreate) Save(ctx context.Context) (*AutomationVersion, error) {
 	var created *AutomationVersion
-	err := x.s.writeAutomationVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkAutomationVersion(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -8057,7 +8064,7 @@ func (b *AutomationVersionScopedCreateBulk) Save(ctx context.Context) ([]*Automa
 		return nil, err
 	}
 	var created []*AutomationVersion
-	err := b.s.writeAutomationVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeAutomationVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -8289,7 +8296,7 @@ func (u *AutomationVersionScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *AutomationVersionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeAutomationVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeAutomationVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -8360,7 +8367,7 @@ func (u *AutomationVersionScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeAutomationVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeAutomationVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -8558,15 +8565,16 @@ const RoleOf_AutomationVersionScopedUpdateOne_RemoveRuns = RoleStep
 
 // Save verifies the references against the Workspace, then updates the AutomationVersion.
 func (x *AutomationVersionScopedUpdateOne) Save(ctx context.Context) (*AutomationVersion, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *AutomationVersionScopedUpdateOne) save(ctx context.Context, verb string) (*AutomationVersion, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *AutomationVersionScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*AutomationVersion, error) {
 	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *AutomationVersion
-	err := x.s.writeAutomationVersion(ctx, verb, append([]predicate.AutomationVersion{automationversion.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationVersion(ctx, verb, append([]predicate.AutomationVersion{automationversion.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.AutomationVersion.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -8806,7 +8814,7 @@ func (x *AutomationVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeAutomationVersion(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeAutomationVersion(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.AutomationVersion.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -8872,8 +8880,8 @@ func (t *BindingScoped) Get(ctx context.Context, id int64) (*Binding, error) {
 // writeBinding runs a write of Binding rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeBinding(ctx context.Context, verb string, where []predicate.Binding, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeBinding(ctx context.Context, verb string, where []predicate.Binding, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -8940,7 +8948,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BindingScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeBinding(ctx, "delete", append([]predicate.Binding{binding.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeBinding(ctx, "delete", append([]predicate.Binding{binding.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Binding.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -8974,7 +8982,7 @@ const (
 func (x *BindingScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBinding(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBinding(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Binding.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -9172,7 +9180,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Binding.
 func (x *BindingScopedCreate) Save(ctx context.Context) (*Binding, error) {
 	var created *Binding
-	err := x.s.writeBinding(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBinding(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkBinding(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -9239,7 +9247,7 @@ func (b *BindingScopedCreateBulk) Save(ctx context.Context) ([]*Binding, error) 
 		return nil, err
 	}
 	var created []*Binding
-	err := b.s.writeBinding(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeBinding(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -9471,7 +9479,7 @@ func (u *BindingScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *BindingScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeBinding(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeBinding(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -9542,7 +9550,7 @@ func (u *BindingScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeBinding(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeBinding(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -9726,15 +9734,16 @@ const RoleOf_BindingScopedUpdateOne_ClearVisitor = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Binding.
 func (x *BindingScopedUpdateOne) Save(ctx context.Context) (*Binding, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *BindingScopedUpdateOne) save(ctx context.Context, verb string) (*Binding, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *BindingScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Binding, error) {
 	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Binding
-	err := x.s.writeBinding(ctx, verb, append([]predicate.Binding{binding.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBinding(ctx, verb, append([]predicate.Binding{binding.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Binding.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -9960,7 +9969,7 @@ func (x *BindingScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBinding(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBinding(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Binding.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -10028,8 +10037,9 @@ func (t *BrandKitScoped) Get(ctx context.Context, id int64) (*BrandKit, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeBrandKit(ctx context.Context, verb string, where []predicate.BrandKit, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeBrandKit(ctx context.Context, verb string, where []predicate.BrandKit, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*BrandKit
@@ -10062,7 +10072,7 @@ func (s *Scoped) writeBrandKit(ctx context.Context, verb string, where []predica
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeBrandKit(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeBrandKit(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -10110,7 +10120,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BrandKitScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeBrandKit(ctx, "delete", append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeBrandKit(ctx, "delete", append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.BrandKit.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -10144,7 +10154,7 @@ const (
 func (x *BrandKitScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBrandKit(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBrandKit(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.BrandKit.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -10334,7 +10344,7 @@ const (
 // Save verifies the references against the Workspace, then creates the BrandKit.
 func (x *BrandKitScopedCreate) Save(ctx context.Context) (*BrandKit, error) {
 	var created *BrandKit
-	err := x.s.writeBrandKit(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBrandKit(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkBrandKit(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -10401,7 +10411,7 @@ func (b *BrandKitScopedCreateBulk) Save(ctx context.Context) ([]*BrandKit, error
 		return nil, err
 	}
 	var created []*BrandKit
-	err := b.s.writeBrandKit(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeBrandKit(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -10737,7 +10747,7 @@ func (u *BrandKitScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeBrandKit(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeBrandKit(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -10812,7 +10822,7 @@ func (u *BrandKitScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeBrandKit(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeBrandKit(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -11054,15 +11064,16 @@ const RoleOf_BrandKitScopedUpdateOne_SetNillableFooterText = RoleStep
 
 // Save verifies the references against the Workspace, then updates the BrandKit.
 func (x *BrandKitScopedUpdateOne) Save(ctx context.Context) (*BrandKit, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *BrandKitScopedUpdateOne) save(ctx context.Context, verb string) (*BrandKit, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *BrandKitScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*BrandKit, error) {
 	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *BrandKit
-	err := x.s.writeBrandKit(ctx, verb, append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBrandKit(ctx, verb, append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.BrandKit.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -11346,7 +11357,7 @@ func (x *BrandKitScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBrandKit(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBrandKit(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.BrandKit.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -11430,8 +11441,9 @@ func (t *BroadcastScoped) Get(ctx context.Context, id int64) (*Broadcast, error)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeBroadcast(ctx context.Context, verb string, where []predicate.Broadcast, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeBroadcast(ctx context.Context, verb string, where []predicate.Broadcast, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Broadcast
@@ -11464,7 +11476,7 @@ func (s *Scoped) writeBroadcast(ctx context.Context, verb string, where []predic
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeBroadcast(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeBroadcast(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -11539,7 +11551,7 @@ func (t *BroadcastScoped) Unarchive(ctx context.Context, id int64) error {
 }
 
 func (t *BroadcastScoped) setArchived(ctx context.Context, id int64, where []predicate.Broadcast, verb string, set func(*BroadcastUpdateOne)) error {
-	return t.s.writeBroadcast(ctx, verb, where, func(s *Scoped) ([]int64, error) {
+	return t.s.writeBroadcast(ctx, verb, where, false, func(s *Scoped) ([]int64, error) {
 		u := s.c.Broadcast.UpdateOneID(id).Where(where...)
 		set(u)
 		_, err := u.Save(ctx)
@@ -11576,7 +11588,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BroadcastScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeBroadcast(ctx, "delete", append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeBroadcast(ctx, "delete", append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Broadcast.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -11610,7 +11622,7 @@ const (
 func (x *BroadcastScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBroadcast(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcast(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Broadcast.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -12148,7 +12160,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Broadcast.
 func (x *BroadcastScopedCreate) Save(ctx context.Context) (*Broadcast, error) {
 	var created *Broadcast
-	err := x.s.writeBroadcast(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcast(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkBroadcast(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -12215,7 +12227,7 @@ func (b *BroadcastScopedCreateBulk) Save(ctx context.Context) ([]*Broadcast, err
 		return nil, err
 	}
 	var created []*Broadcast
-	err := b.s.writeBroadcast(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeBroadcast(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -12913,7 +12925,7 @@ func (u *BroadcastScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeBroadcast(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeBroadcast(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -12988,7 +13000,7 @@ func (u *BroadcastScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeBroadcast(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeBroadcast(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -13744,15 +13756,16 @@ const RoleOf_BroadcastScopedUpdateOne_ClearIntegration = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Broadcast.
 func (x *BroadcastScopedUpdateOne) Save(ctx context.Context) (*Broadcast, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *BroadcastScopedUpdateOne) save(ctx context.Context, verb string) (*Broadcast, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *BroadcastScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Broadcast, error) {
 	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Broadcast
-	err := x.s.writeBroadcast(ctx, verb, append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcast(ctx, verb, append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Broadcast.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -14550,7 +14563,7 @@ func (x *BroadcastScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBroadcast(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcast(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Broadcast.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -14616,8 +14629,8 @@ func (t *BroadcastFigureScoped) Get(ctx context.Context, id int64) (*BroadcastFi
 // writeBroadcastFigure runs a write of BroadcastFigure rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeBroadcastFigure(ctx context.Context, verb string, where []predicate.BroadcastFigure, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeBroadcastFigure(ctx context.Context, verb string, where []predicate.BroadcastFigure, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -14666,7 +14679,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BroadcastFigureScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeBroadcastFigure(ctx, "delete", append([]predicate.BroadcastFigure{broadcastfigure.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeBroadcastFigure(ctx, "delete", append([]predicate.BroadcastFigure{broadcastfigure.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.BroadcastFigure.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -14700,7 +14713,7 @@ const (
 func (x *BroadcastFigureScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBroadcastFigure(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastFigure(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.BroadcastFigure.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -14918,7 +14931,7 @@ const (
 // Save verifies the references against the Workspace, then creates the BroadcastFigure.
 func (x *BroadcastFigureScopedCreate) Save(ctx context.Context) (*BroadcastFigure, error) {
 	var created *BroadcastFigure
-	err := x.s.writeBroadcastFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkBroadcastFigure(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -14985,7 +14998,7 @@ func (b *BroadcastFigureScopedCreateBulk) Save(ctx context.Context) ([]*Broadcas
 		return nil, err
 	}
 	var created []*BroadcastFigure
-	err := b.s.writeBroadcastFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeBroadcastFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -15167,7 +15180,7 @@ func (u *BroadcastFigureScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *BroadcastFigureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeBroadcastFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeBroadcastFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -15238,7 +15251,7 @@ func (u *BroadcastFigureScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeBroadcastFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeBroadcastFigure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -15316,15 +15329,16 @@ const ClearsState_BroadcastFigureScopedUpdateOne_ClearPrunedAt = "PrunedAt"
 
 // Save verifies the references against the Workspace, then updates the BroadcastFigure.
 func (x *BroadcastFigureScopedUpdateOne) Save(ctx context.Context) (*BroadcastFigure, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *BroadcastFigureScopedUpdateOne) save(ctx context.Context, verb string) (*BroadcastFigure, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *BroadcastFigureScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*BroadcastFigure, error) {
 	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *BroadcastFigure
-	err := x.s.writeBroadcastFigure(ctx, verb, append([]predicate.BroadcastFigure{broadcastfigure.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastFigure(ctx, verb, append([]predicate.BroadcastFigure{broadcastfigure.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.BroadcastFigure.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -15444,7 +15458,7 @@ func (x *BroadcastFigureScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBroadcastFigure(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastFigure(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.BroadcastFigure.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -15512,8 +15526,8 @@ func (t *BroadcastRecipientScoped) Get(ctx context.Context, id int64) (*Broadcas
 // writeBroadcastRecipient runs a write of BroadcastRecipient rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeBroadcastRecipient(ctx context.Context, verb string, where []predicate.BroadcastRecipient, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeBroadcastRecipient(ctx context.Context, verb string, where []predicate.BroadcastRecipient, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -15571,7 +15585,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BroadcastRecipientScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeBroadcastRecipient(ctx, "delete", append([]predicate.BroadcastRecipient{broadcastrecipient.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeBroadcastRecipient(ctx, "delete", append([]predicate.BroadcastRecipient{broadcastrecipient.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.BroadcastRecipient.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -15605,7 +15619,7 @@ const (
 func (x *BroadcastRecipientScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBroadcastRecipient(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastRecipient(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.BroadcastRecipient.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -15763,7 +15777,7 @@ const (
 // Save verifies the references against the Workspace, then creates the BroadcastRecipient.
 func (x *BroadcastRecipientScopedCreate) Save(ctx context.Context) (*BroadcastRecipient, error) {
 	var created *BroadcastRecipient
-	err := x.s.writeBroadcastRecipient(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastRecipient(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkBroadcastRecipient(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -15830,7 +15844,7 @@ func (b *BroadcastRecipientScopedCreateBulk) Save(ctx context.Context) ([]*Broad
 		return nil, err
 	}
 	var created []*BroadcastRecipient
-	err := b.s.writeBroadcastRecipient(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeBroadcastRecipient(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -16054,7 +16068,7 @@ func (u *BroadcastRecipientScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *BroadcastRecipientScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeBroadcastRecipient(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeBroadcastRecipient(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -16125,7 +16139,7 @@ func (u *BroadcastRecipientScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeBroadcastRecipient(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeBroadcastRecipient(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -16299,15 +16313,16 @@ const RoleOf_BroadcastRecipientScopedUpdateOne_ClearContact = RoleStep
 
 // Save verifies the references against the Workspace, then updates the BroadcastRecipient.
 func (x *BroadcastRecipientScopedUpdateOne) Save(ctx context.Context) (*BroadcastRecipient, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *BroadcastRecipientScopedUpdateOne) save(ctx context.Context, verb string) (*BroadcastRecipient, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *BroadcastRecipientScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*BroadcastRecipient, error) {
 	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *BroadcastRecipient
-	err := x.s.writeBroadcastRecipient(ctx, verb, append([]predicate.BroadcastRecipient{broadcastrecipient.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastRecipient(ctx, verb, append([]predicate.BroadcastRecipient{broadcastrecipient.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.BroadcastRecipient.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -16523,7 +16538,7 @@ func (x *BroadcastRecipientScopedUpdate) Save(ctx context.Context) (int, error) 
 	}
 	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeBroadcastRecipient(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeBroadcastRecipient(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.BroadcastRecipient.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -16589,8 +16604,8 @@ func (t *CapturedMessageScoped) Get(ctx context.Context, id int64) (*CapturedMes
 // writeCapturedMessage runs a write of CapturedMessage rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeCapturedMessage(ctx context.Context, verb string, where []predicate.CapturedMessage, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeCapturedMessage(ctx context.Context, verb string, where []predicate.CapturedMessage, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -16648,7 +16663,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *CapturedMessageScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeCapturedMessage(ctx, "delete", append([]predicate.CapturedMessage{capturedmessage.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeCapturedMessage(ctx, "delete", append([]predicate.CapturedMessage{capturedmessage.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.CapturedMessage.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -16682,7 +16697,7 @@ const (
 func (x *CapturedMessageScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeCapturedMessage(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCapturedMessage(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.CapturedMessage.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -16922,7 +16937,7 @@ const (
 // Save verifies the references against the Workspace, then creates the CapturedMessage.
 func (x *CapturedMessageScopedCreate) Save(ctx context.Context) (*CapturedMessage, error) {
 	var created *CapturedMessage
-	err := x.s.writeCapturedMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCapturedMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkCapturedMessage(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -16989,7 +17004,7 @@ func (b *CapturedMessageScopedCreateBulk) Save(ctx context.Context) ([]*Captured
 		return nil, err
 	}
 	var created []*CapturedMessage
-	err := b.s.writeCapturedMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeCapturedMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -17157,7 +17172,7 @@ func (u *CapturedMessageScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *CapturedMessageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeCapturedMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeCapturedMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -17228,7 +17243,7 @@ func (u *CapturedMessageScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeCapturedMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeCapturedMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -17316,15 +17331,16 @@ const RoleOf_CapturedMessageScopedUpdateOne_ClearOutboundMessage = RoleStep
 
 // Save verifies the references against the Workspace, then updates the CapturedMessage.
 func (x *CapturedMessageScopedUpdateOne) Save(ctx context.Context) (*CapturedMessage, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *CapturedMessageScopedUpdateOne) save(ctx context.Context, verb string) (*CapturedMessage, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *CapturedMessageScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*CapturedMessage, error) {
 	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *CapturedMessage
-	err := x.s.writeCapturedMessage(ctx, verb, append([]predicate.CapturedMessage{capturedmessage.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCapturedMessage(ctx, verb, append([]predicate.CapturedMessage{capturedmessage.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.CapturedMessage.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -17454,7 +17470,7 @@ func (x *CapturedMessageScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeCapturedMessage(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCapturedMessage(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.CapturedMessage.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -17520,8 +17536,8 @@ func (t *ConfirmationScoped) Get(ctx context.Context, id int64) (*Confirmation, 
 // writeConfirmation runs a write of Confirmation rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeConfirmation(ctx context.Context, verb string, where []predicate.Confirmation, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeConfirmation(ctx context.Context, verb string, where []predicate.Confirmation, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -17570,7 +17586,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ConfirmationScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeConfirmation(ctx, "delete", append([]predicate.Confirmation{confirmation.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeConfirmation(ctx, "delete", append([]predicate.Confirmation{confirmation.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Confirmation.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -17604,7 +17620,7 @@ const (
 func (x *ConfirmationScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeConfirmation(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeConfirmation(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Confirmation.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -17798,7 +17814,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Confirmation.
 func (x *ConfirmationScopedCreate) Save(ctx context.Context) (*Confirmation, error) {
 	var created *Confirmation
-	err := x.s.writeConfirmation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeConfirmation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkConfirmation(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -17865,7 +17881,7 @@ func (b *ConfirmationScopedCreateBulk) Save(ctx context.Context) ([]*Confirmatio
 		return nil, err
 	}
 	var created []*Confirmation
-	err := b.s.writeConfirmation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeConfirmation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -18153,7 +18169,7 @@ func (u *ConfirmationScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *ConfirmationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeConfirmation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeConfirmation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -18224,7 +18240,7 @@ func (u *ConfirmationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeConfirmation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeConfirmation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -18444,15 +18460,16 @@ const RoleOf_ConfirmationScopedUpdateOne_ClearContact = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Confirmation.
 func (x *ConfirmationScopedUpdateOne) Save(ctx context.Context) (*Confirmation, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *ConfirmationScopedUpdateOne) save(ctx context.Context, verb string) (*Confirmation, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *ConfirmationScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Confirmation, error) {
 	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Confirmation
-	err := x.s.writeConfirmation(ctx, verb, append([]predicate.Confirmation{confirmation.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeConfirmation(ctx, verb, append([]predicate.Confirmation{confirmation.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Confirmation.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -18714,7 +18731,7 @@ func (x *ConfirmationScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeConfirmation(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeConfirmation(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Confirmation.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -18782,8 +18799,9 @@ func (t *ContactScoped) Get(ctx context.Context, id int64) (*Contact, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeContact(ctx context.Context, verb string, where []predicate.Contact, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeContact(ctx context.Context, verb string, where []predicate.Contact, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Contact
@@ -18816,7 +18834,7 @@ func (s *Scoped) writeContact(ctx context.Context, verb string, where []predicat
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeContact(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeContact(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -18909,7 +18927,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ContactScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeContact(ctx, "delete", append([]predicate.Contact{contact.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeContact(ctx, "delete", append([]predicate.Contact{contact.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Contact.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -18943,7 +18961,7 @@ const (
 func (x *ContactScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeContact(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContact(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Contact.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -19345,7 +19363,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Contact.
 func (x *ContactScopedCreate) Save(ctx context.Context) (*Contact, error) {
 	var created *Contact
-	err := x.s.writeContact(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContact(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkContact(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -19412,7 +19430,7 @@ func (b *ContactScopedCreateBulk) Save(ctx context.Context) ([]*Contact, error) 
 		return nil, err
 	}
 	var created []*Contact
-	err := b.s.writeContact(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeContact(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -19884,7 +19902,7 @@ func (u *ContactScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeContact(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeContact(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -19959,7 +19977,7 @@ func (u *ContactScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeContact(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeContact(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -20533,15 +20551,16 @@ const RoleOf_ContactScopedUpdateOne_RemoveOrders = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Contact.
 func (x *ContactScopedUpdateOne) Save(ctx context.Context) (*Contact, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *ContactScopedUpdateOne) save(ctx context.Context, verb string) (*Contact, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *ContactScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Contact, error) {
 	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Contact
-	err := x.s.writeContact(ctx, verb, append([]predicate.Contact{contact.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContact(ctx, verb, append([]predicate.Contact{contact.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Contact.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -21157,7 +21176,7 @@ func (x *ContactScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeContact(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContact(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Contact.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -21215,8 +21234,8 @@ func (t *ContactTagScoped) Query() *ContactTagQuery {
 // writeContactTag runs a write of ContactTag rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeContactTag(ctx context.Context, verb string, where []predicate.ContactTag, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeContactTag(ctx context.Context, verb string, where []predicate.ContactTag, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -21274,7 +21293,7 @@ const (
 func (x *ContactTagScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.ContactTag{contacttag.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeContactTag(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContactTag(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.ContactTag.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -21350,7 +21369,7 @@ const (
 // Save verifies the references against the Workspace, then creates the ContactTag.
 func (x *ContactTagScopedCreate) Save(ctx context.Context) (*ContactTag, error) {
 	var created *ContactTag
-	err := x.s.writeContactTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContactTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkContactTag(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -21417,7 +21436,7 @@ func (b *ContactTagScopedCreateBulk) Save(ctx context.Context) ([]*ContactTag, e
 		return nil, err
 	}
 	var created []*ContactTag
-	err := b.s.writeContactTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeContactTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -21561,7 +21580,7 @@ func (u *ContactTagScopedUpsertOne) build(ctx context.Context, s *Scoped) (*Cont
 
 // Exec verifies the references, then executes the upsert.
 func (u *ContactTagScopedUpsertOne) Exec(ctx context.Context) error {
-	return u.x.s.writeContactTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.x.s.writeContactTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -21625,7 +21644,7 @@ func (u *ContactTagScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeContactTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeContactTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -21756,7 +21775,7 @@ func (x *ContactTagScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.ContactTag{contacttag.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeContactTag(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeContactTag(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.ContactTag.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -21824,8 +21843,9 @@ func (t *CustomFieldScoped) Get(ctx context.Context, id int64) (*CustomField, er
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeCustomField(ctx context.Context, verb string, where []predicate.CustomField, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeCustomField(ctx context.Context, verb string, where []predicate.CustomField, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*CustomField
@@ -21858,7 +21878,7 @@ func (s *Scoped) writeCustomField(ctx context.Context, verb string, where []pred
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeCustomField(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeCustomField(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -21906,7 +21926,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *CustomFieldScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeCustomField(ctx, "delete", append([]predicate.CustomField{customfield.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeCustomField(ctx, "delete", append([]predicate.CustomField{customfield.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.CustomField.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -21940,7 +21960,7 @@ const (
 func (x *CustomFieldScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeCustomField(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCustomField(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.CustomField.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -22072,7 +22092,7 @@ const (
 // Save verifies the references against the Workspace, then creates the CustomField.
 func (x *CustomFieldScopedCreate) Save(ctx context.Context) (*CustomField, error) {
 	var created *CustomField
-	err := x.s.writeCustomField(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCustomField(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkCustomField(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -22139,7 +22159,7 @@ func (b *CustomFieldScopedCreateBulk) Save(ctx context.Context) ([]*CustomField,
 		return nil, err
 	}
 	var created []*CustomField
-	err := b.s.writeCustomField(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeCustomField(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -22355,7 +22375,7 @@ func (u *CustomFieldScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeCustomField(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeCustomField(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -22430,7 +22450,7 @@ func (u *CustomFieldScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeCustomField(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeCustomField(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -22538,15 +22558,16 @@ const RoleOf_CustomFieldScopedUpdateOne_SetNillableType = RoleStep
 
 // Save verifies the references against the Workspace, then updates the CustomField.
 func (x *CustomFieldScopedUpdateOne) Save(ctx context.Context) (*CustomField, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *CustomFieldScopedUpdateOne) save(ctx context.Context, verb string) (*CustomField, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *CustomFieldScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*CustomField, error) {
 	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *CustomField
-	err := x.s.writeCustomField(ctx, verb, append([]predicate.CustomField{customfield.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCustomField(ctx, verb, append([]predicate.CustomField{customfield.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.CustomField.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -22696,7 +22717,7 @@ func (x *CustomFieldScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeCustomField(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeCustomField(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.CustomField.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -22764,8 +22785,9 @@ func (t *EmailTemplateScoped) Get(ctx context.Context, id int64) (*EmailTemplate
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeEmailTemplate(ctx context.Context, verb string, where []predicate.EmailTemplate, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeEmailTemplate(ctx context.Context, verb string, where []predicate.EmailTemplate, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*EmailTemplate
@@ -22798,7 +22820,7 @@ func (s *Scoped) writeEmailTemplate(ctx context.Context, verb string, where []pr
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeEmailTemplate(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeEmailTemplate(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -22846,7 +22868,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *EmailTemplateScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeEmailTemplate(ctx, "delete", append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeEmailTemplate(ctx, "delete", append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.EmailTemplate.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -22880,7 +22902,7 @@ const (
 func (x *EmailTemplateScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeEmailTemplate(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEmailTemplate(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.EmailTemplate.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -23048,7 +23070,7 @@ const (
 // Save verifies the references against the Workspace, then creates the EmailTemplate.
 func (x *EmailTemplateScopedCreate) Save(ctx context.Context) (*EmailTemplate, error) {
 	var created *EmailTemplate
-	err := x.s.writeEmailTemplate(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEmailTemplate(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkEmailTemplate(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -23115,7 +23137,7 @@ func (b *EmailTemplateScopedCreateBulk) Save(ctx context.Context) ([]*EmailTempl
 		return nil, err
 	}
 	var created []*EmailTemplate
-	err := b.s.writeEmailTemplate(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeEmailTemplate(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -23395,7 +23417,7 @@ func (u *EmailTemplateScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeEmailTemplate(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeEmailTemplate(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -23470,7 +23492,7 @@ func (u *EmailTemplateScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeEmailTemplate(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeEmailTemplate(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -23646,15 +23668,16 @@ const RoleOf_EmailTemplateScopedUpdateOne_ClearEditorVersion = RoleStep
 
 // Save verifies the references against the Workspace, then updates the EmailTemplate.
 func (x *EmailTemplateScopedUpdateOne) Save(ctx context.Context) (*EmailTemplate, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *EmailTemplateScopedUpdateOne) save(ctx context.Context, verb string) (*EmailTemplate, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *EmailTemplateScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*EmailTemplate, error) {
 	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *EmailTemplate
-	err := x.s.writeEmailTemplate(ctx, verb, append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEmailTemplate(ctx, verb, append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.EmailTemplate.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -23872,7 +23895,7 @@ func (x *EmailTemplateScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeEmailTemplate(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEmailTemplate(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.EmailTemplate.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -23938,8 +23961,8 @@ func (t *ErasureScoped) Get(ctx context.Context, id int64) (*Erasure, error) {
 // writeErasure runs a write of Erasure rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeErasure(ctx context.Context, verb string, where []predicate.Erasure, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeErasure(ctx context.Context, verb string, where []predicate.Erasure, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -23979,7 +24002,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ErasureScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeErasure(ctx, "delete", append([]predicate.Erasure{erasure.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeErasure(ctx, "delete", append([]predicate.Erasure{erasure.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Erasure.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -24013,7 +24036,7 @@ const (
 func (x *ErasureScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeErasure(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeErasure(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Erasure.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -24189,7 +24212,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Erasure.
 func (x *ErasureScopedCreate) Save(ctx context.Context) (*Erasure, error) {
 	var created *Erasure
-	err := x.s.writeErasure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeErasure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkErasure(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -24256,7 +24279,7 @@ func (b *ErasureScopedCreateBulk) Save(ctx context.Context) ([]*Erasure, error) 
 		return nil, err
 	}
 	var created []*Erasure
-	err := b.s.writeErasure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeErasure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -24456,7 +24479,7 @@ func (u *ErasureScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *ErasureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeErasure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeErasure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -24527,7 +24550,7 @@ func (u *ErasureScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeErasure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeErasure(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -24625,15 +24648,16 @@ const RoleOf_ErasureScopedUpdateOne_ClearPhoneHashEncrypted = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Erasure.
 func (x *ErasureScopedUpdateOne) Save(ctx context.Context) (*Erasure, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *ErasureScopedUpdateOne) save(ctx context.Context, verb string) (*Erasure, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *ErasureScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Erasure, error) {
 	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Erasure
-	err := x.s.writeErasure(ctx, verb, append([]predicate.Erasure{erasure.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeErasure(ctx, verb, append([]predicate.Erasure{erasure.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Erasure.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -24773,7 +24797,7 @@ func (x *ErasureScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeErasure(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeErasure(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Erasure.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -24839,8 +24863,8 @@ func (t *EventScoped) Get(ctx context.Context, id int64) (*Event, error) {
 // writeEvent runs a write of Event rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeEvent(ctx context.Context, verb string, where []predicate.Event, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeEvent(ctx context.Context, verb string, where []predicate.Event, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -24907,7 +24931,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *EventScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeEvent(ctx, "delete", append([]predicate.Event{event.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeEvent(ctx, "delete", append([]predicate.Event{event.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Event.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -24941,7 +24965,7 @@ const (
 func (x *EventScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeEvent(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEvent(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Event.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -25295,7 +25319,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Event.
 func (x *EventScopedCreate) Save(ctx context.Context) (*Event, error) {
 	var created *Event
-	err := x.s.writeEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkEvent(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -25362,7 +25386,7 @@ func (b *EventScopedCreateBulk) Save(ctx context.Context) ([]*Event, error) {
 		return nil, err
 	}
 	var created []*Event
-	err := b.s.writeEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -25730,7 +25754,7 @@ func (u *EventScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *EventScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -25801,7 +25825,7 @@ func (u *EventScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -26145,15 +26169,16 @@ const RoleOf_EventScopedUpdateOne_ClearAutomation = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Event.
 func (x *EventScopedUpdateOne) Save(ctx context.Context) (*Event, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *EventScopedUpdateOne) save(ctx context.Context, verb string) (*Event, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *EventScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Event, error) {
 	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Event
-	err := x.s.writeEvent(ctx, verb, append([]predicate.Event{event.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEvent(ctx, verb, append([]predicate.Event{event.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Event.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -26539,7 +26564,7 @@ func (x *EventScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeEvent(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeEvent(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Event.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -26605,8 +26630,8 @@ func (t *HeldOrderEventScoped) Get(ctx context.Context, id int64) (*HeldOrderEve
 // writeHeldOrderEvent runs a write of HeldOrderEvent rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeHeldOrderEvent(ctx context.Context, verb string, where []predicate.HeldOrderEvent, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeHeldOrderEvent(ctx context.Context, verb string, where []predicate.HeldOrderEvent, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -26646,7 +26671,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *HeldOrderEventScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeHeldOrderEvent(ctx, "delete", append([]predicate.HeldOrderEvent{heldorderevent.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeHeldOrderEvent(ctx, "delete", append([]predicate.HeldOrderEvent{heldorderevent.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.HeldOrderEvent.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -26680,7 +26705,7 @@ const (
 func (x *HeldOrderEventScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeHeldOrderEvent(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHeldOrderEvent(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.HeldOrderEvent.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -26800,7 +26825,7 @@ const (
 // Save verifies the references against the Workspace, then creates the HeldOrderEvent.
 func (x *HeldOrderEventScopedCreate) Save(ctx context.Context) (*HeldOrderEvent, error) {
 	var created *HeldOrderEvent
-	err := x.s.writeHeldOrderEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHeldOrderEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkHeldOrderEvent(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -26867,7 +26892,7 @@ func (b *HeldOrderEventScopedCreateBulk) Save(ctx context.Context) ([]*HeldOrder
 		return nil, err
 	}
 	var created []*HeldOrderEvent
-	err := b.s.writeHeldOrderEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeHeldOrderEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -27019,7 +27044,7 @@ func (u *HeldOrderEventScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *HeldOrderEventScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeHeldOrderEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeHeldOrderEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -27090,7 +27115,7 @@ func (u *HeldOrderEventScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeHeldOrderEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeHeldOrderEvent(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -27136,15 +27161,16 @@ const RoleOf_HeldOrderEventScopedUpdateOne_SetUpdatedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the HeldOrderEvent.
 func (x *HeldOrderEventScopedUpdateOne) Save(ctx context.Context) (*HeldOrderEvent, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *HeldOrderEventScopedUpdateOne) save(ctx context.Context, verb string) (*HeldOrderEvent, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *HeldOrderEventScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*HeldOrderEvent, error) {
 	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *HeldOrderEvent
-	err := x.s.writeHeldOrderEvent(ctx, verb, append([]predicate.HeldOrderEvent{heldorderevent.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHeldOrderEvent(ctx, verb, append([]predicate.HeldOrderEvent{heldorderevent.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.HeldOrderEvent.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -27232,7 +27258,7 @@ func (x *HeldOrderEventScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeHeldOrderEvent(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHeldOrderEvent(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.HeldOrderEvent.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -27300,8 +27326,9 @@ func (t *HoldScoped) Get(ctx context.Context, id int64) (*Hold, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeHold(ctx context.Context, verb string, where []predicate.Hold, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeHold(ctx context.Context, verb string, where []predicate.Hold, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Hold
@@ -27334,7 +27361,7 @@ func (s *Scoped) writeHold(ctx context.Context, verb string, where []predicate.H
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeHold(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeHold(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -27382,7 +27409,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *HoldScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeHold(ctx, "delete", append([]predicate.Hold{hold.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeHold(ctx, "delete", append([]predicate.Hold{hold.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Hold.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -27416,7 +27443,7 @@ const (
 func (x *HoldScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeHold(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHold(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Hold.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -27554,7 +27581,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Hold.
 func (x *HoldScopedCreate) Save(ctx context.Context) (*Hold, error) {
 	var created *Hold
-	err := x.s.writeHold(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHold(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkHold(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -27621,7 +27648,7 @@ func (b *HoldScopedCreateBulk) Save(ctx context.Context) ([]*Hold, error) {
 		return nil, err
 	}
 	var created []*Hold
-	err := b.s.writeHold(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeHold(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -27869,7 +27896,7 @@ func (u *HoldScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeHold(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeHold(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -27944,7 +27971,7 @@ func (u *HoldScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeHold(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeHold(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -28088,15 +28115,16 @@ const RoleOf_HoldScopedUpdateOne_SetNillableSetBy = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Hold.
 func (x *HoldScopedUpdateOne) Save(ctx context.Context) (*Hold, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *HoldScopedUpdateOne) save(ctx context.Context, verb string) (*Hold, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *HoldScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Hold, error) {
 	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Hold
-	err := x.s.writeHold(ctx, verb, append([]predicate.Hold{hold.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHold(ctx, verb, append([]predicate.Hold{hold.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Hold.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -28282,7 +28310,7 @@ func (x *HoldScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeHold(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeHold(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Hold.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -28358,8 +28386,9 @@ func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, er
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeIntegration(ctx context.Context, verb string, where []predicate.Integration, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeIntegration(ctx context.Context, verb string, where []predicate.Integration, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Integration
@@ -28392,7 +28421,7 @@ func (s *Scoped) writeIntegration(ctx context.Context, verb string, where []pred
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeIntegration(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeIntegration(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -28453,7 +28482,7 @@ func (s *Scoped) checkIntegration(ctx context.Context, ms ...*IntegrationMutatio
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *IntegrationScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Integration) error {
 	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil()}, ps...)
-	return t.s.writeIntegration(ctx, "discard", where, func(s *Scoped) ([]int64, error) {
+	return t.s.writeIntegration(ctx, "discard", where, false, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(at).SetIsDefault(false).Save(ctx)
 		return nil, err
 	})
@@ -28488,7 +28517,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *IntegrationScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeIntegration(ctx, "delete", append([]predicate.Integration{integration.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeIntegration(ctx, "delete", append([]predicate.Integration{integration.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Integration.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -28522,7 +28551,7 @@ const (
 func (x *IntegrationScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeIntegration(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeIntegration(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Integration.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -28986,7 +29015,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Integration.
 func (x *IntegrationScopedCreate) Save(ctx context.Context) (*Integration, error) {
 	var created *Integration
-	err := x.s.writeIntegration(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeIntegration(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkIntegration(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -29053,7 +29082,7 @@ func (b *IntegrationScopedCreateBulk) Save(ctx context.Context) ([]*Integration,
 		return nil, err
 	}
 	var created []*Integration
-	err := b.s.writeIntegration(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeIntegration(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -29673,7 +29702,7 @@ func (u *IntegrationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeIntegration(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeIntegration(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -29748,7 +29777,7 @@ func (u *IntegrationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeIntegration(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeIntegration(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -30448,15 +30477,16 @@ const RoleOf_IntegrationScopedUpdateOne_RemoveStartTokens = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Integration.
 func (x *IntegrationScopedUpdateOne) Save(ctx context.Context) (*Integration, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *IntegrationScopedUpdateOne) save(ctx context.Context, verb string) (*Integration, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *IntegrationScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Integration, error) {
 	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Integration
-	err := x.s.writeIntegration(ctx, verb, append([]predicate.Integration{integration.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeIntegration(ctx, verb, append([]predicate.Integration{integration.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Integration.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -31198,7 +31228,7 @@ func (x *IntegrationScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeIntegration(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeIntegration(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Integration.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -31264,8 +31294,8 @@ func (t *InvitationScoped) Get(ctx context.Context, id int64) (*Invitation, erro
 // writeInvitation runs a write of Invitation rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeInvitation(ctx context.Context, verb string, where []predicate.Invitation, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeInvitation(ctx context.Context, verb string, where []predicate.Invitation, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -31305,7 +31335,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *InvitationScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeInvitation(ctx, "delete", append([]predicate.Invitation{invitation.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeInvitation(ctx, "delete", append([]predicate.Invitation{invitation.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Invitation.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -31339,7 +31369,7 @@ const (
 func (x *InvitationScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeInvitation(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeInvitation(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Invitation.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -31539,7 +31569,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Invitation.
 func (x *InvitationScopedCreate) Save(ctx context.Context) (*Invitation, error) {
 	var created *Invitation
-	err := x.s.writeInvitation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeInvitation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkInvitation(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -31606,7 +31636,7 @@ func (b *InvitationScopedCreateBulk) Save(ctx context.Context) ([]*Invitation, e
 		return nil, err
 	}
 	var created []*Invitation
-	err := b.s.writeInvitation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeInvitation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -31884,7 +31914,7 @@ func (u *InvitationScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *InvitationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeInvitation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeInvitation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -31955,7 +31985,7 @@ func (u *InvitationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeInvitation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeInvitation(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -32213,15 +32243,16 @@ const RoleOf_InvitationScopedUpdateOne_RemovePendingSignups = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Invitation.
 func (x *InvitationScopedUpdateOne) Save(ctx context.Context) (*Invitation, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *InvitationScopedUpdateOne) save(ctx context.Context, verb string) (*Invitation, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *InvitationScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Invitation, error) {
 	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Invitation
-	err := x.s.writeInvitation(ctx, verb, append([]predicate.Invitation{invitation.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeInvitation(ctx, verb, append([]predicate.Invitation{invitation.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Invitation.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -32521,7 +32552,7 @@ func (x *InvitationScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeInvitation(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeInvitation(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Invitation.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -32589,8 +32620,9 @@ func (t *JoinDomainScoped) Get(ctx context.Context, id int64) (*JoinDomain, erro
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeJoinDomain(ctx context.Context, verb string, where []predicate.JoinDomain, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeJoinDomain(ctx context.Context, verb string, where []predicate.JoinDomain, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*JoinDomain
@@ -32623,7 +32655,7 @@ func (s *Scoped) writeJoinDomain(ctx context.Context, verb string, where []predi
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeJoinDomain(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeJoinDomain(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -32671,7 +32703,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *JoinDomainScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeJoinDomain(ctx, "delete", append([]predicate.JoinDomain{joindomain.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeJoinDomain(ctx, "delete", append([]predicate.JoinDomain{joindomain.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.JoinDomain.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -32705,7 +32737,7 @@ const (
 func (x *JoinDomainScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeJoinDomain(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeJoinDomain(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.JoinDomain.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -32837,7 +32869,7 @@ const (
 // Save verifies the references against the Workspace, then creates the JoinDomain.
 func (x *JoinDomainScopedCreate) Save(ctx context.Context) (*JoinDomain, error) {
 	var created *JoinDomain
-	err := x.s.writeJoinDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeJoinDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkJoinDomain(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -32904,7 +32936,7 @@ func (b *JoinDomainScopedCreateBulk) Save(ctx context.Context) ([]*JoinDomain, e
 		return nil, err
 	}
 	var created []*JoinDomain
-	err := b.s.writeJoinDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeJoinDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -33150,7 +33182,7 @@ func (u *JoinDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeJoinDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeJoinDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -33225,7 +33257,7 @@ func (u *JoinDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeJoinDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeJoinDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -33365,15 +33397,16 @@ const RoleOf_JoinDomainScopedUpdateOne_ClearLastCheckedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the JoinDomain.
 func (x *JoinDomainScopedUpdateOne) Save(ctx context.Context) (*JoinDomain, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *JoinDomainScopedUpdateOne) save(ctx context.Context, verb string) (*JoinDomain, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *JoinDomainScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*JoinDomain, error) {
 	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *JoinDomain
-	err := x.s.writeJoinDomain(ctx, verb, append([]predicate.JoinDomain{joindomain.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeJoinDomain(ctx, verb, append([]predicate.JoinDomain{joindomain.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.JoinDomain.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -33555,7 +33588,7 @@ func (x *JoinDomainScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeJoinDomain(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeJoinDomain(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.JoinDomain.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -33621,8 +33654,8 @@ func (t *MembershipScoped) Get(ctx context.Context, id int64) (*Membership, erro
 // writeMembership runs a write of Membership rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeMembership(ctx context.Context, verb string, where []predicate.Membership, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeMembership(ctx context.Context, verb string, where []predicate.Membership, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -33680,7 +33713,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *MembershipScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeMembership(ctx, "delete", append([]predicate.Membership{membership.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeMembership(ctx, "delete", append([]predicate.Membership{membership.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Membership.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -33714,7 +33747,7 @@ const (
 func (x *MembershipScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeMembership(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeMembership(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Membership.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -33886,7 +33919,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Membership.
 func (x *MembershipScopedCreate) Save(ctx context.Context) (*Membership, error) {
 	var created *Membership
-	err := x.s.writeMembership(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeMembership(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkMembership(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -33953,7 +33986,7 @@ func (b *MembershipScopedCreateBulk) Save(ctx context.Context) ([]*Membership, e
 		return nil, err
 	}
 	var created []*Membership
-	err := b.s.writeMembership(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeMembership(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -34185,7 +34218,7 @@ func (u *MembershipScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *MembershipScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeMembership(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeMembership(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -34256,7 +34289,7 @@ func (u *MembershipScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeMembership(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeMembership(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -34486,15 +34519,16 @@ const RoleOf_MembershipScopedUpdateOne_RemoveOauthCodes = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Membership.
 func (x *MembershipScopedUpdateOne) Save(ctx context.Context) (*Membership, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *MembershipScopedUpdateOne) save(ctx context.Context, verb string) (*Membership, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *MembershipScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Membership, error) {
 	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Membership
-	err := x.s.writeMembership(ctx, verb, append([]predicate.Membership{membership.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeMembership(ctx, verb, append([]predicate.Membership{membership.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Membership.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -34766,7 +34800,7 @@ func (x *MembershipScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeMembership(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeMembership(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Membership.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -34832,8 +34866,8 @@ func (t *OAuthCodeScoped) Get(ctx context.Context, id int64) (*OAuthCode, error)
 // writeOAuthCode runs a write of OAuthCode rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeOAuthCode(ctx context.Context, verb string, where []predicate.OAuthCode, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeOAuthCode(ctx context.Context, verb string, where []predicate.OAuthCode, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -34882,7 +34916,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OAuthCodeScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeOAuthCode(ctx, "delete", append([]predicate.OAuthCode{oauthcode.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeOAuthCode(ctx, "delete", append([]predicate.OAuthCode{oauthcode.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.OAuthCode.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -34916,7 +34950,7 @@ const (
 func (x *OAuthCodeScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOAuthCode(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOAuthCode(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.OAuthCode.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -35086,7 +35120,7 @@ const (
 // Save verifies the references against the Workspace, then creates the OAuthCode.
 func (x *OAuthCodeScopedCreate) Save(ctx context.Context) (*OAuthCode, error) {
 	var created *OAuthCode
-	err := x.s.writeOAuthCode(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOAuthCode(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkOAuthCode(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -35153,7 +35187,7 @@ func (b *OAuthCodeScopedCreateBulk) Save(ctx context.Context) ([]*OAuthCode, err
 		return nil, err
 	}
 	var created []*OAuthCode
-	err := b.s.writeOAuthCode(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeOAuthCode(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -35391,7 +35425,7 @@ func (u *OAuthCodeScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *OAuthCodeScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeOAuthCode(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeOAuthCode(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -35462,7 +35496,7 @@ func (u *OAuthCodeScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeOAuthCode(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeOAuthCode(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -35642,15 +35676,16 @@ const RoleOf_OAuthCodeScopedUpdateOne_ClearMembership = RoleStep
 
 // Save verifies the references against the Workspace, then updates the OAuthCode.
 func (x *OAuthCodeScopedUpdateOne) Save(ctx context.Context) (*OAuthCode, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *OAuthCodeScopedUpdateOne) save(ctx context.Context, verb string) (*OAuthCode, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *OAuthCodeScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*OAuthCode, error) {
 	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *OAuthCode
-	err := x.s.writeOAuthCode(ctx, verb, append([]predicate.OAuthCode{oauthcode.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOAuthCode(ctx, verb, append([]predicate.OAuthCode{oauthcode.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.OAuthCode.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -35872,7 +35907,7 @@ func (x *OAuthCodeScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOAuthCode(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOAuthCode(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.OAuthCode.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -35938,8 +35973,8 @@ func (t *OrderScoped) Get(ctx context.Context, id int64) (*Order, error) {
 // writeOrder runs a write of Order rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeOrder(ctx context.Context, verb string, where []predicate.Order, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeOrder(ctx context.Context, verb string, where []predicate.Order, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -36015,7 +36050,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OrderScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeOrder(ctx, "delete", append([]predicate.Order{order.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeOrder(ctx, "delete", append([]predicate.Order{order.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Order.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -36049,7 +36084,7 @@ const (
 func (x *OrderScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOrder(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrder(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Order.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -36257,7 +36292,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Order.
 func (x *OrderScopedCreate) Save(ctx context.Context) (*Order, error) {
 	var created *Order
-	err := x.s.writeOrder(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrder(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkOrder(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -36324,7 +36359,7 @@ func (b *OrderScopedCreateBulk) Save(ctx context.Context) ([]*Order, error) {
 		return nil, err
 	}
 	var created []*Order
-	err := b.s.writeOrder(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeOrder(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -36492,7 +36527,7 @@ func (u *OrderScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *OrderScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeOrder(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeOrder(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -36563,7 +36598,7 @@ func (u *OrderScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeOrder(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeOrder(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -36691,15 +36726,16 @@ const RoleOf_OrderScopedUpdateOne_RemoveMovements = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Order.
 func (x *OrderScopedUpdateOne) Save(ctx context.Context) (*Order, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *OrderScopedUpdateOne) save(ctx context.Context, verb string) (*Order, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *OrderScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Order, error) {
 	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Order
-	err := x.s.writeOrder(ctx, verb, append([]predicate.Order{order.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrder(ctx, verb, append([]predicate.Order{order.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Order.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -36869,7 +36905,7 @@ func (x *OrderScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOrder(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrder(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Order.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -36935,8 +36971,8 @@ func (t *OrderMovementScoped) Get(ctx context.Context, id int64) (*OrderMovement
 // writeOrderMovement runs a write of OrderMovement rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeOrderMovement(ctx context.Context, verb string, where []predicate.OrderMovement, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeOrderMovement(ctx context.Context, verb string, where []predicate.OrderMovement, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -36985,7 +37021,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OrderMovementScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeOrderMovement(ctx, "delete", append([]predicate.OrderMovement{ordermovement.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeOrderMovement(ctx, "delete", append([]predicate.OrderMovement{ordermovement.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.OrderMovement.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -37019,7 +37055,7 @@ const (
 func (x *OrderMovementScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOrderMovement(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrderMovement(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.OrderMovement.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -37175,7 +37211,7 @@ const (
 // Save verifies the references against the Workspace, then creates the OrderMovement.
 func (x *OrderMovementScopedCreate) Save(ctx context.Context) (*OrderMovement, error) {
 	var created *OrderMovement
-	err := x.s.writeOrderMovement(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrderMovement(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkOrderMovement(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -37242,7 +37278,7 @@ func (b *OrderMovementScopedCreateBulk) Save(ctx context.Context) ([]*OrderMovem
 		return nil, err
 	}
 	var created []*OrderMovement
-	err := b.s.writeOrderMovement(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeOrderMovement(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -37394,7 +37430,7 @@ func (u *OrderMovementScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *OrderMovementScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeOrderMovement(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeOrderMovement(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -37465,7 +37501,7 @@ func (u *OrderMovementScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeOrderMovement(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeOrderMovement(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -37511,15 +37547,16 @@ const RoleOf_OrderMovementScopedUpdateOne_SetUpdatedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the OrderMovement.
 func (x *OrderMovementScopedUpdateOne) Save(ctx context.Context) (*OrderMovement, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *OrderMovementScopedUpdateOne) save(ctx context.Context, verb string) (*OrderMovement, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *OrderMovementScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*OrderMovement, error) {
 	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *OrderMovement
-	err := x.s.writeOrderMovement(ctx, verb, append([]predicate.OrderMovement{ordermovement.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrderMovement(ctx, verb, append([]predicate.OrderMovement{ordermovement.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.OrderMovement.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -37607,7 +37644,7 @@ func (x *OrderMovementScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOrderMovement(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOrderMovement(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.OrderMovement.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -37673,8 +37710,8 @@ func (t *OutboundMessageScoped) Get(ctx context.Context, id int64) (*OutboundMes
 // writeOutboundMessage runs a write of OutboundMessage rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeOutboundMessage(ctx context.Context, verb string, where []predicate.OutboundMessage, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeOutboundMessage(ctx context.Context, verb string, where []predicate.OutboundMessage, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -37786,7 +37823,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OutboundMessageScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeOutboundMessage(ctx, "delete", append([]predicate.OutboundMessage{outboundmessage.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeOutboundMessage(ctx, "delete", append([]predicate.OutboundMessage{outboundmessage.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.OutboundMessage.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -37820,7 +37857,7 @@ const (
 func (x *OutboundMessageScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOutboundMessage(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOutboundMessage(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.OutboundMessage.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -38492,7 +38529,7 @@ const (
 // Save verifies the references against the Workspace, then creates the OutboundMessage.
 func (x *OutboundMessageScopedCreate) Save(ctx context.Context) (*OutboundMessage, error) {
 	var created *OutboundMessage
-	err := x.s.writeOutboundMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOutboundMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkOutboundMessage(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -38559,7 +38596,7 @@ func (b *OutboundMessageScopedCreateBulk) Save(ctx context.Context) ([]*Outbound
 		return nil, err
 	}
 	var created []*OutboundMessage
-	err := b.s.writeOutboundMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeOutboundMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -39289,7 +39326,7 @@ func (u *OutboundMessageScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *OutboundMessageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeOutboundMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeOutboundMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -39360,7 +39397,7 @@ func (u *OutboundMessageScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeOutboundMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeOutboundMessage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -40246,15 +40283,16 @@ const RoleOf_OutboundMessageScopedUpdateOne_ClearTemplate = RoleStep
 
 // Save verifies the references against the Workspace, then updates the OutboundMessage.
 func (x *OutboundMessageScopedUpdateOne) Save(ctx context.Context) (*OutboundMessage, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *OutboundMessageScopedUpdateOne) save(ctx context.Context, verb string) (*OutboundMessage, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *OutboundMessageScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*OutboundMessage, error) {
 	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *OutboundMessage
-	err := x.s.writeOutboundMessage(ctx, verb, append([]predicate.OutboundMessage{outboundmessage.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOutboundMessage(ctx, verb, append([]predicate.OutboundMessage{outboundmessage.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.OutboundMessage.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -41182,7 +41220,7 @@ func (x *OutboundMessageScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeOutboundMessage(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeOutboundMessage(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.OutboundMessage.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -41248,8 +41286,8 @@ func (t *ProviderLimiterScoped) Get(ctx context.Context, id int64) (*ProviderLim
 // writeProviderLimiter runs a write of ProviderLimiter rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeProviderLimiter(ctx context.Context, verb string, where []predicate.ProviderLimiter, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeProviderLimiter(ctx context.Context, verb string, where []predicate.ProviderLimiter, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -41298,7 +41336,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ProviderLimiterScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeProviderLimiter(ctx, "delete", append([]predicate.ProviderLimiter{providerlimiter.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeProviderLimiter(ctx, "delete", append([]predicate.ProviderLimiter{providerlimiter.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.ProviderLimiter.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -41332,7 +41370,7 @@ const (
 func (x *ProviderLimiterScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeProviderLimiter(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeProviderLimiter(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.ProviderLimiter.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -41452,7 +41490,7 @@ const (
 // Save verifies the references against the Workspace, then creates the ProviderLimiter.
 func (x *ProviderLimiterScopedCreate) Save(ctx context.Context) (*ProviderLimiter, error) {
 	var created *ProviderLimiter
-	err := x.s.writeProviderLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeProviderLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkProviderLimiter(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -41519,7 +41557,7 @@ func (b *ProviderLimiterScopedCreateBulk) Save(ctx context.Context) ([]*Provider
 		return nil, err
 	}
 	var created []*ProviderLimiter
-	err := b.s.writeProviderLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeProviderLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -41735,7 +41773,7 @@ func (u *ProviderLimiterScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *ProviderLimiterScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeProviderLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeProviderLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -41806,7 +41844,7 @@ func (u *ProviderLimiterScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeProviderLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeProviderLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -41922,15 +41960,16 @@ const RoleOf_ProviderLimiterScopedUpdateOne_SetNillableRefilledAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the ProviderLimiter.
 func (x *ProviderLimiterScopedUpdateOne) Save(ctx context.Context) (*ProviderLimiter, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *ProviderLimiterScopedUpdateOne) save(ctx context.Context, verb string) (*ProviderLimiter, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *ProviderLimiterScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*ProviderLimiter, error) {
 	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *ProviderLimiter
-	err := x.s.writeProviderLimiter(ctx, verb, append([]predicate.ProviderLimiter{providerlimiter.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeProviderLimiter(ctx, verb, append([]predicate.ProviderLimiter{providerlimiter.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.ProviderLimiter.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -42088,7 +42127,7 @@ func (x *ProviderLimiterScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeProviderLimiter(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeProviderLimiter(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.ProviderLimiter.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -42164,8 +42203,9 @@ func (t *RuleScoped) Get(ctx context.Context, id int64) (*Rule, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeRule(ctx context.Context, verb string, where []predicate.Rule, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeRule(ctx context.Context, verb string, where []predicate.Rule, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Rule
@@ -42198,7 +42238,7 @@ func (s *Scoped) writeRule(ctx context.Context, verb string, where []predicate.R
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeRule(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeRule(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -42258,7 +42298,7 @@ func (s *Scoped) checkRule(ctx context.Context, ms ...*RuleMutation) error {
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *RuleScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Rule) error {
 	where := append([]predicate.Rule{rule.ID(id), rule.WorkspaceID(t.s.ws), rule.DiscardedAtIsNil()}, ps...)
-	return t.s.writeRule(ctx, "discard", where, func(s *Scoped) ([]int64, error) {
+	return t.s.writeRule(ctx, "discard", where, false, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.Rule.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 		return nil, err
 	})
@@ -42293,7 +42333,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeRule(ctx, "delete", append([]predicate.Rule{rule.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeRule(ctx, "delete", append([]predicate.Rule{rule.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Rule.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -42327,7 +42367,7 @@ const (
 func (x *RuleScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRule(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRule(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Rule.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -42571,7 +42611,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Rule.
 func (x *RuleScopedCreate) Save(ctx context.Context) (*Rule, error) {
 	var created *Rule
-	err := x.s.writeRule(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRule(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkRule(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -42638,7 +42678,7 @@ func (b *RuleScopedCreateBulk) Save(ctx context.Context) ([]*Rule, error) {
 		return nil, err
 	}
 	var created []*Rule
-	err := b.s.writeRule(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeRule(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -42944,7 +42984,7 @@ func (u *RuleScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeRule(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeRule(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -43019,7 +43059,7 @@ func (u *RuleScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeRule(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeRule(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -43353,15 +43393,16 @@ const RoleOf_RuleScopedUpdateOne_RemoveFirings = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Rule.
 func (x *RuleScopedUpdateOne) Save(ctx context.Context) (*Rule, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *RuleScopedUpdateOne) save(ctx context.Context, verb string) (*Rule, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *RuleScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Rule, error) {
 	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Rule
-	err := x.s.writeRule(ctx, verb, append([]predicate.Rule{rule.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRule(ctx, verb, append([]predicate.Rule{rule.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Rule.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -43737,7 +43778,7 @@ func (x *RuleScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRule(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRule(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Rule.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -43803,8 +43844,8 @@ func (t *RuleFiringScoped) Get(ctx context.Context, id int64) (*RuleFiring, erro
 // writeRuleFiring runs a write of RuleFiring rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeRuleFiring(ctx context.Context, verb string, where []predicate.RuleFiring, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeRuleFiring(ctx context.Context, verb string, where []predicate.RuleFiring, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -43871,7 +43912,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleFiringScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeRuleFiring(ctx, "delete", append([]predicate.RuleFiring{rulefiring.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeRuleFiring(ctx, "delete", append([]predicate.RuleFiring{rulefiring.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.RuleFiring.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -43905,7 +43946,7 @@ const (
 func (x *RuleFiringScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRuleFiring(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleFiring(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.RuleFiring.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -44103,7 +44144,7 @@ const (
 // Save verifies the references against the Workspace, then creates the RuleFiring.
 func (x *RuleFiringScopedCreate) Save(ctx context.Context) (*RuleFiring, error) {
 	var created *RuleFiring
-	err := x.s.writeRuleFiring(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleFiring(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkRuleFiring(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -44170,7 +44211,7 @@ func (b *RuleFiringScopedCreateBulk) Save(ctx context.Context) ([]*RuleFiring, e
 		return nil, err
 	}
 	var created []*RuleFiring
-	err := b.s.writeRuleFiring(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeRuleFiring(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -44442,7 +44483,7 @@ func (u *RuleFiringScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *RuleFiringScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeRuleFiring(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeRuleFiring(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -44513,7 +44554,7 @@ func (u *RuleFiringScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeRuleFiring(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeRuleFiring(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -44767,15 +44808,16 @@ const RoleOf_RuleFiringScopedUpdateOne_ClearVersion = RoleStep
 
 // Save verifies the references against the Workspace, then updates the RuleFiring.
 func (x *RuleFiringScopedUpdateOne) Save(ctx context.Context) (*RuleFiring, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *RuleFiringScopedUpdateOne) save(ctx context.Context, verb string) (*RuleFiring, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *RuleFiringScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*RuleFiring, error) {
 	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *RuleFiring
-	err := x.s.writeRuleFiring(ctx, verb, append([]predicate.RuleFiring{rulefiring.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleFiring(ctx, verb, append([]predicate.RuleFiring{rulefiring.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.RuleFiring.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -45071,7 +45113,7 @@ func (x *RuleFiringScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRuleFiring(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleFiring(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.RuleFiring.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -45137,8 +45179,8 @@ func (t *RuleVersionScoped) Get(ctx context.Context, id int64) (*RuleVersion, er
 // writeRuleVersion runs a write of RuleVersion rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeRuleVersion(ctx context.Context, verb string, where []predicate.RuleVersion, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeRuleVersion(ctx context.Context, verb string, where []predicate.RuleVersion, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -45205,7 +45247,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleVersionScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeRuleVersion(ctx, "delete", append([]predicate.RuleVersion{ruleversion.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeRuleVersion(ctx, "delete", append([]predicate.RuleVersion{ruleversion.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.RuleVersion.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -45239,7 +45281,7 @@ const (
 func (x *RuleVersionScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRuleVersion(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersion(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.RuleVersion.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -45411,7 +45453,7 @@ const (
 // Save verifies the references against the Workspace, then creates the RuleVersion.
 func (x *RuleVersionScopedCreate) Save(ctx context.Context) (*RuleVersion, error) {
 	var created *RuleVersion
-	err := x.s.writeRuleVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkRuleVersion(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -45478,7 +45520,7 @@ func (b *RuleVersionScopedCreateBulk) Save(ctx context.Context) ([]*RuleVersion,
 		return nil, err
 	}
 	var created []*RuleVersion
-	err := b.s.writeRuleVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeRuleVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -45678,7 +45720,7 @@ func (u *RuleVersionScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *RuleVersionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeRuleVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeRuleVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -45749,7 +45791,7 @@ func (u *RuleVersionScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeRuleVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeRuleVersion(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -45953,15 +45995,16 @@ const RoleOf_RuleVersionScopedUpdateOne_RemoveFirings = RoleStep
 
 // Save verifies the references against the Workspace, then updates the RuleVersion.
 func (x *RuleVersionScopedUpdateOne) Save(ctx context.Context) (*RuleVersion, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *RuleVersionScopedUpdateOne) save(ctx context.Context, verb string) (*RuleVersion, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *RuleVersionScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*RuleVersion, error) {
 	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *RuleVersion
-	err := x.s.writeRuleVersion(ctx, verb, append([]predicate.RuleVersion{ruleversion.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersion(ctx, verb, append([]predicate.RuleVersion{ruleversion.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.RuleVersion.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -46207,7 +46250,7 @@ func (x *RuleVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRuleVersion(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersion(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.RuleVersion.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -46275,8 +46318,8 @@ func (t *RuleVersionTriggerScoped) Get(ctx context.Context, id int64) (*RuleVers
 // writeRuleVersionTrigger runs a write of RuleVersionTrigger rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeRuleVersionTrigger(ctx context.Context, verb string, where []predicate.RuleVersionTrigger, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeRuleVersionTrigger(ctx context.Context, verb string, where []predicate.RuleVersionTrigger, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -46325,7 +46368,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleVersionTriggerScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeRuleVersionTrigger(ctx, "delete", append([]predicate.RuleVersionTrigger{ruleversiontrigger.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeRuleVersionTrigger(ctx, "delete", append([]predicate.RuleVersionTrigger{ruleversiontrigger.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.RuleVersionTrigger.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -46359,7 +46402,7 @@ const (
 func (x *RuleVersionTriggerScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRuleVersionTrigger(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersionTrigger(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.RuleVersionTrigger.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -46463,7 +46506,7 @@ const (
 // Save verifies the references against the Workspace, then creates the RuleVersionTrigger.
 func (x *RuleVersionTriggerScopedCreate) Save(ctx context.Context) (*RuleVersionTrigger, error) {
 	var created *RuleVersionTrigger
-	err := x.s.writeRuleVersionTrigger(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersionTrigger(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkRuleVersionTrigger(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -46530,7 +46573,7 @@ func (b *RuleVersionTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleV
 		return nil, err
 	}
 	var created []*RuleVersionTrigger
-	err := b.s.writeRuleVersionTrigger(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeRuleVersionTrigger(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -46706,7 +46749,7 @@ func (u *RuleVersionTriggerScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *RuleVersionTriggerScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeRuleVersionTrigger(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeRuleVersionTrigger(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -46777,7 +46820,7 @@ func (u *RuleVersionTriggerScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeRuleVersionTrigger(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeRuleVersionTrigger(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -46875,15 +46918,16 @@ const RoleOf_RuleVersionTriggerScopedUpdateOne_ClearVersion = RoleStep
 
 // Save verifies the references against the Workspace, then updates the RuleVersionTrigger.
 func (x *RuleVersionTriggerScopedUpdateOne) Save(ctx context.Context) (*RuleVersionTrigger, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *RuleVersionTriggerScopedUpdateOne) save(ctx context.Context, verb string) (*RuleVersionTrigger, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *RuleVersionTriggerScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*RuleVersionTrigger, error) {
 	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *RuleVersionTrigger
-	err := x.s.writeRuleVersionTrigger(ctx, verb, append([]predicate.RuleVersionTrigger{ruleversiontrigger.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersionTrigger(ctx, verb, append([]predicate.RuleVersionTrigger{ruleversiontrigger.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.RuleVersionTrigger.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -47023,7 +47067,7 @@ func (x *RuleVersionTriggerScopedUpdate) Save(ctx context.Context) (int, error) 
 	}
 	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeRuleVersionTrigger(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeRuleVersionTrigger(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.RuleVersionTrigger.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -47107,8 +47151,9 @@ func (t *SegmentScoped) Get(ctx context.Context, id int64) (*Segment, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeSegment(ctx context.Context, verb string, where []predicate.Segment, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeSegment(ctx context.Context, verb string, where []predicate.Segment, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Segment
@@ -47141,7 +47186,7 @@ func (s *Scoped) writeSegment(ctx context.Context, verb string, where []predicat
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeSegment(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeSegment(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -47180,7 +47225,7 @@ func (t *SegmentScoped) Unarchive(ctx context.Context, id int64) error {
 }
 
 func (t *SegmentScoped) setArchived(ctx context.Context, id int64, where []predicate.Segment, verb string, set func(*SegmentUpdateOne)) error {
-	return t.s.writeSegment(ctx, verb, where, func(s *Scoped) ([]int64, error) {
+	return t.s.writeSegment(ctx, verb, where, false, func(s *Scoped) ([]int64, error) {
 		u := s.c.Segment.UpdateOneID(id).Where(where...)
 		set(u)
 		_, err := u.Save(ctx)
@@ -47217,7 +47262,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SegmentScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeSegment(ctx, "delete", append([]predicate.Segment{segment.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeSegment(ctx, "delete", append([]predicate.Segment{segment.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Segment.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -47251,7 +47296,7 @@ const (
 func (x *SegmentScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSegment(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSegment(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Segment.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -47393,7 +47438,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Segment.
 func (x *SegmentScopedCreate) Save(ctx context.Context) (*Segment, error) {
 	var created *Segment
-	err := x.s.writeSegment(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSegment(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkSegment(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -47460,7 +47505,7 @@ func (b *SegmentScopedCreateBulk) Save(ctx context.Context) ([]*Segment, error) 
 		return nil, err
 	}
 	var created []*Segment
-	err := b.s.writeSegment(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeSegment(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -47714,7 +47759,7 @@ func (u *SegmentScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeSegment(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeSegment(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -47789,7 +47834,7 @@ func (u *SegmentScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeSegment(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeSegment(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -47937,15 +47982,16 @@ const RoleOf_SegmentScopedUpdateOne_ClearCondition = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Segment.
 func (x *SegmentScopedUpdateOne) Save(ctx context.Context) (*Segment, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *SegmentScopedUpdateOne) save(ctx context.Context, verb string) (*Segment, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *SegmentScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Segment, error) {
 	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Segment
-	err := x.s.writeSegment(ctx, verb, append([]predicate.Segment{segment.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSegment(ctx, verb, append([]predicate.Segment{segment.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Segment.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -48135,7 +48181,7 @@ func (x *SegmentScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSegment(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSegment(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Segment.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -48201,8 +48247,8 @@ func (t *SendCapLimiterScoped) Get(ctx context.Context, id int64) (*SendCapLimit
 // writeSendCapLimiter runs a write of SendCapLimiter rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeSendCapLimiter(ctx context.Context, verb string, where []predicate.SendCapLimiter, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeSendCapLimiter(ctx context.Context, verb string, where []predicate.SendCapLimiter, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -48242,7 +48288,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SendCapLimiterScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeSendCapLimiter(ctx, "delete", append([]predicate.SendCapLimiter{sendcaplimiter.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeSendCapLimiter(ctx, "delete", append([]predicate.SendCapLimiter{sendcaplimiter.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.SendCapLimiter.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -48276,7 +48322,7 @@ const (
 func (x *SendCapLimiterScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSendCapLimiter(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendCapLimiter(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.SendCapLimiter.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -48372,7 +48418,7 @@ const (
 // Save verifies the references against the Workspace, then creates the SendCapLimiter.
 func (x *SendCapLimiterScopedCreate) Save(ctx context.Context) (*SendCapLimiter, error) {
 	var created *SendCapLimiter
-	err := x.s.writeSendCapLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendCapLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkSendCapLimiter(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -48439,7 +48485,7 @@ func (b *SendCapLimiterScopedCreateBulk) Save(ctx context.Context) ([]*SendCapLi
 		return nil, err
 	}
 	var created []*SendCapLimiter
-	err := b.s.writeSendCapLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeSendCapLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -48631,7 +48677,7 @@ func (u *SendCapLimiterScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *SendCapLimiterScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeSendCapLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeSendCapLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -48702,7 +48748,7 @@ func (u *SendCapLimiterScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeSendCapLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeSendCapLimiter(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -48792,15 +48838,16 @@ const RoleOf_SendCapLimiterScopedUpdateOne_SetNillableRefilledAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the SendCapLimiter.
 func (x *SendCapLimiterScopedUpdateOne) Save(ctx context.Context) (*SendCapLimiter, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *SendCapLimiterScopedUpdateOne) save(ctx context.Context, verb string) (*SendCapLimiter, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *SendCapLimiterScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*SendCapLimiter, error) {
 	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *SendCapLimiter
-	err := x.s.writeSendCapLimiter(ctx, verb, append([]predicate.SendCapLimiter{sendcaplimiter.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendCapLimiter(ctx, verb, append([]predicate.SendCapLimiter{sendcaplimiter.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.SendCapLimiter.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -48932,7 +48979,7 @@ func (x *SendCapLimiterScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSendCapLimiter(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendCapLimiter(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.SendCapLimiter.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -49008,8 +49055,9 @@ func (t *SendingDomainScoped) Get(ctx context.Context, id int64) (*SendingDomain
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []predicate.SendingDomain, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []predicate.SendingDomain, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*SendingDomain
@@ -49042,7 +49090,7 @@ func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []pr
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeSendingDomain(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeSendingDomain(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -49066,7 +49114,7 @@ func (s *Scoped) checkSendingDomain(ctx context.Context, ms ...*SendingDomainMut
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.SendingDomain) error {
 	where := append([]predicate.SendingDomain{sendingdomain.ID(id), sendingdomain.WorkspaceID(t.s.ws), sendingdomain.DiscardedAtIsNil()}, ps...)
-	return t.s.writeSendingDomain(ctx, "discard", where, func(s *Scoped) ([]int64, error) {
+	return t.s.writeSendingDomain(ctx, "discard", where, false, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.SendingDomain.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 		return nil, err
 	})
@@ -49101,7 +49149,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SendingDomainScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeSendingDomain(ctx, "delete", append([]predicate.SendingDomain{sendingdomain.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeSendingDomain(ctx, "delete", append([]predicate.SendingDomain{sendingdomain.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.SendingDomain.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -49135,7 +49183,7 @@ const (
 func (x *SendingDomainScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSendingDomain(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendingDomain(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.SendingDomain.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -49355,7 +49403,7 @@ const (
 // Save verifies the references against the Workspace, then creates the SendingDomain.
 func (x *SendingDomainScopedCreate) Save(ctx context.Context) (*SendingDomain, error) {
 	var created *SendingDomain
-	err := x.s.writeSendingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkSendingDomain(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -49422,7 +49470,7 @@ func (b *SendingDomainScopedCreateBulk) Save(ctx context.Context) ([]*SendingDom
 		return nil, err
 	}
 	var created []*SendingDomain
-	err := b.s.writeSendingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeSendingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -49808,7 +49856,7 @@ func (u *SendingDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeSendingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeSendingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -49883,7 +49931,7 @@ func (u *SendingDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeSendingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeSendingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -50175,15 +50223,16 @@ const RoleOf_SendingDomainScopedUpdateOne_ClearDmarcFoundAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the SendingDomain.
 func (x *SendingDomainScopedUpdateOne) Save(ctx context.Context) (*SendingDomain, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *SendingDomainScopedUpdateOne) save(ctx context.Context, verb string) (*SendingDomain, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *SendingDomainScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*SendingDomain, error) {
 	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *SendingDomain
-	err := x.s.writeSendingDomain(ctx, verb, append([]predicate.SendingDomain{sendingdomain.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendingDomain(ctx, verb, append([]predicate.SendingDomain{sendingdomain.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.SendingDomain.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -50517,7 +50566,7 @@ func (x *SendingDomainScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSendingDomain(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSendingDomain(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.SendingDomain.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -50583,8 +50632,8 @@ func (t *StartTokenScoped) Get(ctx context.Context, id int64) (*StartToken, erro
 // writeStartToken runs a write of StartToken rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeStartToken(ctx context.Context, verb string, where []predicate.StartToken, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeStartToken(ctx context.Context, verb string, where []predicate.StartToken, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -50651,7 +50700,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *StartTokenScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeStartToken(ctx, "delete", append([]predicate.StartToken{starttoken.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeStartToken(ctx, "delete", append([]predicate.StartToken{starttoken.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.StartToken.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -50685,7 +50734,7 @@ const (
 func (x *StartTokenScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeStartToken(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeStartToken(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.StartToken.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -50867,7 +50916,7 @@ const (
 // Save verifies the references against the Workspace, then creates the StartToken.
 func (x *StartTokenScopedCreate) Save(ctx context.Context) (*StartToken, error) {
 	var created *StartToken
-	err := x.s.writeStartToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeStartToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkStartToken(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -50934,7 +50983,7 @@ func (b *StartTokenScopedCreateBulk) Save(ctx context.Context) ([]*StartToken, e
 		return nil, err
 	}
 	var created []*StartToken
-	err := b.s.writeStartToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeStartToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -51116,7 +51165,7 @@ func (u *StartTokenScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *StartTokenScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeStartToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeStartToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -51187,7 +51236,7 @@ func (u *StartTokenScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeStartToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeStartToken(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -51265,15 +51314,16 @@ const ClearsState_StartTokenScopedUpdateOne_ClearUsedAt = "UsedAt"
 
 // Save verifies the references against the Workspace, then updates the StartToken.
 func (x *StartTokenScopedUpdateOne) Save(ctx context.Context) (*StartToken, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *StartTokenScopedUpdateOne) save(ctx context.Context, verb string) (*StartToken, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *StartTokenScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*StartToken, error) {
 	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *StartToken
-	err := x.s.writeStartToken(ctx, verb, append([]predicate.StartToken{starttoken.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeStartToken(ctx, verb, append([]predicate.StartToken{starttoken.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.StartToken.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -51393,7 +51443,7 @@ func (x *StartTokenScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeStartToken(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeStartToken(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.StartToken.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -51459,8 +51509,8 @@ func (t *SuppressionScoped) Get(ctx context.Context, id int64) (*Suppression, er
 // writeSuppression runs a write of Suppression rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeSuppression(ctx context.Context, verb string, where []predicate.Suppression, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeSuppression(ctx context.Context, verb string, where []predicate.Suppression, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -51509,7 +51559,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SuppressionScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeSuppression(ctx, "delete", append([]predicate.Suppression{suppression.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeSuppression(ctx, "delete", append([]predicate.Suppression{suppression.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Suppression.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -51543,7 +51593,7 @@ const (
 func (x *SuppressionScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSuppression(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSuppression(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Suppression.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -51711,7 +51761,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Suppression.
 func (x *SuppressionScopedCreate) Save(ctx context.Context) (*Suppression, error) {
 	var created *Suppression
-	err := x.s.writeSuppression(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSuppression(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkSuppression(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -51778,7 +51828,7 @@ func (b *SuppressionScopedCreateBulk) Save(ctx context.Context) ([]*Suppression,
 		return nil, err
 	}
 	var created []*Suppression
-	err := b.s.writeSuppression(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeSuppression(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -52024,7 +52074,7 @@ func (u *SuppressionScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *SuppressionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeSuppression(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeSuppression(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -52095,7 +52145,7 @@ func (u *SuppressionScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeSuppression(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeSuppression(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -52269,15 +52319,16 @@ const RoleOf_SuppressionScopedUpdateOne_ClearContact = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Suppression.
 func (x *SuppressionScopedUpdateOne) Save(ctx context.Context) (*Suppression, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *SuppressionScopedUpdateOne) save(ctx context.Context, verb string) (*Suppression, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *SuppressionScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Suppression, error) {
 	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Suppression
-	err := x.s.writeSuppression(ctx, verb, append([]predicate.Suppression{suppression.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSuppression(ctx, verb, append([]predicate.Suppression{suppression.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Suppression.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -52493,7 +52544,7 @@ func (x *SuppressionScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeSuppression(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeSuppression(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Suppression.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -52561,8 +52612,9 @@ func (t *TagScoped) Get(ctx context.Context, id int64) (*Tag, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeTag(ctx context.Context, verb string, where []predicate.Tag, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeTag(ctx context.Context, verb string, where []predicate.Tag, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*Tag
@@ -52595,7 +52647,7 @@ func (s *Scoped) writeTag(ctx context.Context, verb string, where []predicate.Ta
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeTag(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeTag(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -52643,7 +52695,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *TagScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeTag(ctx, "delete", append([]predicate.Tag{tag.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeTag(ctx, "delete", append([]predicate.Tag{tag.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Tag.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -52677,7 +52729,7 @@ const (
 func (x *TagScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeTag(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTag(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Tag.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -52773,7 +52825,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Tag.
 func (x *TagScopedCreate) Save(ctx context.Context) (*Tag, error) {
 	var created *Tag
-	err := x.s.writeTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkTag(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -52840,7 +52892,7 @@ func (b *TagScopedCreateBulk) Save(ctx context.Context) ([]*Tag, error) {
 		return nil, err
 	}
 	var created []*Tag
-	err := b.s.writeTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -53016,7 +53068,7 @@ func (u *TagScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -53091,7 +53143,7 @@ func (u *TagScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeTag(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -53155,15 +53207,16 @@ const RoleOf_TagScopedUpdateOne_SetNillableName = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Tag.
 func (x *TagScopedUpdateOne) Save(ctx context.Context) (*Tag, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *TagScopedUpdateOne) save(ctx context.Context, verb string) (*Tag, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *TagScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Tag, error) {
 	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Tag
-	err := x.s.writeTag(ctx, verb, append([]predicate.Tag{tag.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTag(ctx, verb, append([]predicate.Tag{tag.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Tag.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -53269,7 +53322,7 @@ func (x *TagScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeTag(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTag(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Tag.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -53335,8 +53388,8 @@ func (t *TrackedLinkScoped) Get(ctx context.Context, id int64) (*TrackedLink, er
 // writeTrackedLink runs a write of TrackedLink rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeTrackedLink(ctx context.Context, verb string, where []predicate.TrackedLink, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeTrackedLink(ctx context.Context, verb string, where []predicate.TrackedLink, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -53385,7 +53438,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *TrackedLinkScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeTrackedLink(ctx, "delete", append([]predicate.TrackedLink{trackedlink.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeTrackedLink(ctx, "delete", append([]predicate.TrackedLink{trackedlink.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.TrackedLink.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -53419,7 +53472,7 @@ const (
 func (x *TrackedLinkScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeTrackedLink(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackedLink(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.TrackedLink.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -53541,7 +53594,7 @@ const (
 // Save verifies the references against the Workspace, then creates the TrackedLink.
 func (x *TrackedLinkScopedCreate) Save(ctx context.Context) (*TrackedLink, error) {
 	var created *TrackedLink
-	err := x.s.writeTrackedLink(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackedLink(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkTrackedLink(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -53608,7 +53661,7 @@ func (b *TrackedLinkScopedCreateBulk) Save(ctx context.Context) ([]*TrackedLink,
 		return nil, err
 	}
 	var created []*TrackedLink
-	err := b.s.writeTrackedLink(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeTrackedLink(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -53760,7 +53813,7 @@ func (u *TrackedLinkScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *TrackedLinkScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeTrackedLink(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeTrackedLink(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -53831,7 +53884,7 @@ func (u *TrackedLinkScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeTrackedLink(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeTrackedLink(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -53877,15 +53930,16 @@ const RoleOf_TrackedLinkScopedUpdateOne_SetUpdatedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the TrackedLink.
 func (x *TrackedLinkScopedUpdateOne) Save(ctx context.Context) (*TrackedLink, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *TrackedLinkScopedUpdateOne) save(ctx context.Context, verb string) (*TrackedLink, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *TrackedLinkScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*TrackedLink, error) {
 	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *TrackedLink
-	err := x.s.writeTrackedLink(ctx, verb, append([]predicate.TrackedLink{trackedlink.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackedLink(ctx, verb, append([]predicate.TrackedLink{trackedlink.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.TrackedLink.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -53973,7 +54027,7 @@ func (x *TrackedLinkScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeTrackedLink(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackedLink(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.TrackedLink.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -54041,8 +54095,9 @@ func (t *TrackingDomainScoped) Get(ctx context.Context, id int64) (*TrackingDoma
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeTrackingDomain(ctx context.Context, verb string, where []predicate.TrackingDomain, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeTrackingDomain(ctx context.Context, verb string, where []predicate.TrackingDomain, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*TrackingDomain
@@ -54075,7 +54130,7 @@ func (s *Scoped) writeTrackingDomain(ctx context.Context, verb string, where []p
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeTrackingDomain(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeTrackingDomain(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -54123,7 +54178,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *TrackingDomainScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeTrackingDomain(ctx, "delete", append([]predicate.TrackingDomain{trackingdomain.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeTrackingDomain(ctx, "delete", append([]predicate.TrackingDomain{trackingdomain.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.TrackingDomain.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -54157,7 +54212,7 @@ const (
 func (x *TrackingDomainScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeTrackingDomain(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackingDomain(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.TrackingDomain.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -54343,7 +54398,7 @@ const (
 // Save verifies the references against the Workspace, then creates the TrackingDomain.
 func (x *TrackingDomainScopedCreate) Save(ctx context.Context) (*TrackingDomain, error) {
 	var created *TrackingDomain
-	err := x.s.writeTrackingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkTrackingDomain(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -54410,7 +54465,7 @@ func (b *TrackingDomainScopedCreateBulk) Save(ctx context.Context) ([]*TrackingD
 		return nil, err
 	}
 	var created []*TrackingDomain
-	err := b.s.writeTrackingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeTrackingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -54706,7 +54761,7 @@ func (u *TrackingDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeTrackingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeTrackingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -54781,7 +54836,7 @@ func (u *TrackingDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeTrackingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeTrackingDomain(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -54975,15 +55030,16 @@ const RoleOf_TrackingDomainScopedUpdateOne_ClearStateChangedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the TrackingDomain.
 func (x *TrackingDomainScopedUpdateOne) Save(ctx context.Context) (*TrackingDomain, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *TrackingDomainScopedUpdateOne) save(ctx context.Context, verb string) (*TrackingDomain, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *TrackingDomainScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*TrackingDomain, error) {
 	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *TrackingDomain
-	err := x.s.writeTrackingDomain(ctx, verb, append([]predicate.TrackingDomain{trackingdomain.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackingDomain(ctx, verb, append([]predicate.TrackingDomain{trackingdomain.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.TrackingDomain.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -55219,7 +55275,7 @@ func (x *TrackingDomainScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeTrackingDomain(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeTrackingDomain(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.TrackingDomain.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -55285,8 +55341,8 @@ func (t *UnsubscribeScoped) Get(ctx context.Context, id int64) (*Unsubscribe, er
 // writeUnsubscribe runs a write of Unsubscribe rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeUnsubscribe(ctx context.Context, verb string, where []predicate.Unsubscribe, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeUnsubscribe(ctx context.Context, verb string, where []predicate.Unsubscribe, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -55335,7 +55391,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *UnsubscribeScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeUnsubscribe(ctx, "delete", append([]predicate.Unsubscribe{unsubscribe.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeUnsubscribe(ctx, "delete", append([]predicate.Unsubscribe{unsubscribe.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Unsubscribe.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -55369,7 +55425,7 @@ const (
 func (x *UnsubscribeScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeUnsubscribe(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUnsubscribe(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Unsubscribe.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -55527,7 +55583,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Unsubscribe.
 func (x *UnsubscribeScopedCreate) Save(ctx context.Context) (*Unsubscribe, error) {
 	var created *Unsubscribe
-	err := x.s.writeUnsubscribe(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUnsubscribe(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkUnsubscribe(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -55594,7 +55650,7 @@ func (b *UnsubscribeScopedCreateBulk) Save(ctx context.Context) ([]*Unsubscribe,
 		return nil, err
 	}
 	var created []*Unsubscribe
-	err := b.s.writeUnsubscribe(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeUnsubscribe(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -55834,7 +55890,7 @@ func (u *UnsubscribeScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *UnsubscribeScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeUnsubscribe(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeUnsubscribe(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -55905,7 +55961,7 @@ func (u *UnsubscribeScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeUnsubscribe(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeUnsubscribe(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -56073,15 +56129,16 @@ const RoleOf_UnsubscribeScopedUpdateOne_ClearContact = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Unsubscribe.
 func (x *UnsubscribeScopedUpdateOne) Save(ctx context.Context) (*Unsubscribe, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *UnsubscribeScopedUpdateOne) save(ctx context.Context, verb string) (*Unsubscribe, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *UnsubscribeScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Unsubscribe, error) {
 	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Unsubscribe
-	err := x.s.writeUnsubscribe(ctx, verb, append([]predicate.Unsubscribe{unsubscribe.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUnsubscribe(ctx, verb, append([]predicate.Unsubscribe{unsubscribe.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Unsubscribe.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -56291,7 +56348,7 @@ func (x *UnsubscribeScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeUnsubscribe(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUnsubscribe(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Unsubscribe.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -56357,8 +56414,8 @@ func (t *UsageScoped) Get(ctx context.Context, id int64) (*Usage, error) {
 // writeUsage runs a write of Usage rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeUsage(ctx context.Context, verb string, where []predicate.Usage, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeUsage(ctx context.Context, verb string, where []predicate.Usage, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -56398,7 +56455,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *UsageScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeUsage(ctx, "delete", append([]predicate.Usage{usage.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeUsage(ctx, "delete", append([]predicate.Usage{usage.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Usage.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -56432,7 +56489,7 @@ const (
 func (x *UsageScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeUsage(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUsage(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Usage.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -56572,7 +56629,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Usage.
 func (x *UsageScopedCreate) Save(ctx context.Context) (*Usage, error) {
 	var created *Usage
-	err := x.s.writeUsage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUsage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkUsage(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -56639,7 +56696,7 @@ func (b *UsageScopedCreateBulk) Save(ctx context.Context) ([]*Usage, error) {
 		return nil, err
 	}
 	var created []*Usage
-	err := b.s.writeUsage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeUsage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -56861,7 +56918,7 @@ func (u *UsageScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *UsageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeUsage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeUsage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -56932,7 +56989,7 @@ func (u *UsageScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeUsage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeUsage(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -57054,15 +57111,16 @@ const RoleOf_UsageScopedUpdateOne_SetNillableComputedAt = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Usage.
 func (x *UsageScopedUpdateOne) Save(ctx context.Context) (*Usage, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *UsageScopedUpdateOne) save(ctx context.Context, verb string) (*Usage, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *UsageScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Usage, error) {
 	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Usage
-	err := x.s.writeUsage(ctx, verb, append([]predicate.Usage{usage.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUsage(ctx, verb, append([]predicate.Usage{usage.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Usage.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -57226,7 +57284,7 @@ func (x *UsageScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeUsage(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeUsage(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Usage.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -57292,8 +57350,8 @@ func (t *VisitorScoped) Get(ctx context.Context, id int64) (*Visitor, error) {
 // writeVisitor runs a write of Visitor rows: run builds it on the client of the scope it is
 // given and executes it, and reaches no other client. The
 // entity is not audited, so run gets the scope itself.
-func (s *Scoped) writeVisitor(ctx context.Context, verb string, where []predicate.Visitor, run func(s *Scoped) ([]int64, error)) error {
-	_, _ = verb, where
+func (s *Scoped) writeVisitor(ctx context.Context, verb string, where []predicate.Visitor, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, keepUnchanged
 	_, err := run(s)
 	return err
 }
@@ -57360,7 +57418,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *VisitorScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeVisitor(ctx, "delete", append([]predicate.Visitor{visitor.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeVisitor(ctx, "delete", append([]predicate.Visitor{visitor.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Visitor.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -57394,7 +57452,7 @@ const (
 func (x *VisitorScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeVisitor(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeVisitor(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Visitor.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -57558,7 +57616,7 @@ const (
 // Save verifies the references against the Workspace, then creates the Visitor.
 func (x *VisitorScopedCreate) Save(ctx context.Context) (*Visitor, error) {
 	var created *Visitor
-	err := x.s.writeVisitor(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeVisitor(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkVisitor(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -57625,7 +57683,7 @@ func (b *VisitorScopedCreateBulk) Save(ctx context.Context) ([]*Visitor, error) 
 		return nil, err
 	}
 	var created []*Visitor
-	err := b.s.writeVisitor(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeVisitor(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -57825,7 +57883,7 @@ func (u *VisitorScopedUpsertOne) Exec(ctx context.Context) error {
 // ID is like Exec, returning the inserted or updated id.
 func (u *VisitorScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	var id int64
-	err := u.x.s.writeVisitor(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeVisitor(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -57896,7 +57954,7 @@ func (u *VisitorScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeVisitor(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeVisitor(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -58100,15 +58158,16 @@ const RoleOf_VisitorScopedUpdateOne_ClearContact = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Visitor.
 func (x *VisitorScopedUpdateOne) Save(ctx context.Context) (*Visitor, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *VisitorScopedUpdateOne) save(ctx context.Context, verb string) (*Visitor, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *VisitorScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*Visitor, error) {
 	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *Visitor
-	err := x.s.writeVisitor(ctx, verb, append([]predicate.Visitor{visitor.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeVisitor(ctx, verb, append([]predicate.Visitor{visitor.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.Visitor.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -58354,7 +58413,7 @@ func (x *VisitorScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeVisitor(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeVisitor(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.Visitor.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -58422,8 +58481,9 @@ func (t *WebhookEndpointScoped) Get(ctx context.Context, id int64) (*WebhookEndp
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed. Through any other scope run gets the scope itself.
-func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []predicate.WebhookEndpoint, run func(s *Scoped) ([]int64, error)) error {
+// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
+// draft changes only the version rows, which are not audited). Through any other scope run gets the scope itself.
+func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []predicate.WebhookEndpoint, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
 			var before []*WebhookEndpoint
@@ -58456,7 +58516,7 @@ func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeWebhookEndpoint(verb, beforeByID[id], afterByID[id]); changed {
+				if change, changed := auditChangeWebhookEndpoint(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -58504,7 +58564,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *WebhookEndpointScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.writeWebhookEndpoint(ctx, "delete", append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	return x.s.writeWebhookEndpoint(ctx, "delete", append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.WebhookEndpoint.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -58538,7 +58598,7 @@ const (
 func (x *WebhookEndpointScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeWebhookEndpoint(ctx, "delete", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeWebhookEndpoint(ctx, "delete", where, false, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.WebhookEndpoint.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -58804,7 +58864,7 @@ const (
 // Save verifies the references against the Workspace, then creates the WebhookEndpoint.
 func (x *WebhookEndpointScopedCreate) Save(ctx context.Context) (*WebhookEndpoint, error) {
 	var created *WebhookEndpoint
-	err := x.s.writeWebhookEndpoint(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeWebhookEndpoint(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.checkWebhookEndpoint(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -58871,7 +58931,7 @@ func (b *WebhookEndpointScopedCreateBulk) Save(ctx context.Context) ([]*WebhookE
 		return nil, err
 	}
 	var created []*WebhookEndpoint
-	err := b.s.writeWebhookEndpoint(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := b.s.writeWebhookEndpoint(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -59333,7 +59393,7 @@ func (u *WebhookEndpointScopedUpsertOne) ID(ctx context.Context) (int64, error) 
 		return 0, ErrAuditUpsert
 	}
 	var id int64
-	err := u.x.s.writeWebhookEndpoint(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.writeWebhookEndpoint(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -59408,7 +59468,7 @@ func (u *WebhookEndpointScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.writeWebhookEndpoint(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
+	return u.b.s.writeWebhookEndpoint(ctx, "create", nil, false, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -59778,15 +59838,16 @@ const RoleOf_WebhookEndpointScopedUpdateOne_ClearDisabledReason = RoleStep
 
 // Save verifies the references against the Workspace, then updates the WebhookEndpoint.
 func (x *WebhookEndpointScopedUpdateOne) Save(ctx context.Context) (*WebhookEndpoint, error) {
-	return x.save(ctx, "update")
+	return x.save(ctx, "update", false)
 }
 
 // save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it.
-func (x *WebhookEndpointScopedUpdateOne) save(ctx context.Context, verb string) (*WebhookEndpoint, error) {
+// unarchive or discard through it, and record their move even when no audited field changed
+// (keepUnchanged).
+func (x *WebhookEndpointScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*WebhookEndpoint, error) {
 	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *WebhookEndpoint
-	err := x.s.writeWebhookEndpoint(ctx, verb, append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+	err := x.s.writeWebhookEndpoint(ctx, verb, append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.WebhookEndpoint.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -60198,7 +60259,7 @@ func (x *WebhookEndpointScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.writeWebhookEndpoint(ctx, "update", where, func(s *Scoped) ([]int64, error) {
+	err := x.s.writeWebhookEndpoint(ctx, "update", where, false, func(s *Scoped) ([]int64, error) {
 		b := s.c.WebhookEndpoint.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
