@@ -139,6 +139,16 @@ const (
 	RoleOf_Scoped_Workspace   = RoleRead
 )
 
+// written returns what a write made, or the zero value when it failed, so a row a rolled-back write
+// returned is never handed out.
+func written[T any](v T, err error) (T, error) {
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return v, nil
+}
+
 // uniqueIDs returns the sorted, de-duplicated ids.
 func uniqueIDs(ids []int64) []int64 {
 	s := slices.Clone(ids)
@@ -152,7 +162,7 @@ func (s *Scoped) verifyApiToken(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.ApiToken.Query().Where(apitoken.IDIn(ids...), apitoken.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.ApiToken.Query().Where(s.inApiToken(apitoken.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -168,7 +178,7 @@ func (s *Scoped) verifyAuditEntry(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.AuditEntry.Query().Where(auditentry.IDIn(ids...), auditentry.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.AuditEntry.Query().Where(s.inAuditEntry(auditentry.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -184,7 +194,7 @@ func (s *Scoped) verifyAutomation(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Automation.Query().Where(automation.IDIn(ids...), automation.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Automation.Query().Where(s.inAutomation(automation.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -200,7 +210,7 @@ func (s *Scoped) verifyAutomationFigure(ctx context.Context, ids []int64) error 
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.AutomationFigure.Query().Where(automationfigure.IDIn(ids...), automationfigure.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.AutomationFigure.Query().Where(s.inAutomationFigure(automationfigure.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -216,7 +226,7 @@ func (s *Scoped) verifyAutomationRun(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.AutomationRun.Query().Where(automationrun.IDIn(ids...), automationrun.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.AutomationRun.Query().Where(s.inAutomationRun(automationrun.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -232,7 +242,7 @@ func (s *Scoped) verifyAutomationVersion(ctx context.Context, ids []int64) error
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.AutomationVersion.Query().Where(automationversion.IDIn(ids...), automationversion.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.AutomationVersion.Query().Where(s.inAutomationVersion(automationversion.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -248,7 +258,7 @@ func (s *Scoped) verifyBinding(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Binding.Query().Where(binding.IDIn(ids...), binding.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Binding.Query().Where(s.inBinding(binding.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -264,7 +274,7 @@ func (s *Scoped) verifyBrandKit(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.BrandKit.Query().Where(brandkit.IDIn(ids...), brandkit.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.BrandKit.Query().Where(s.inBrandKit(brandkit.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -280,7 +290,7 @@ func (s *Scoped) verifyBroadcast(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Broadcast.Query().Where(broadcast.IDIn(ids...), broadcast.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Broadcast.Query().Where(s.inBroadcast(broadcast.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -296,7 +306,7 @@ func (s *Scoped) verifyBroadcastFigure(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.BroadcastFigure.Query().Where(broadcastfigure.IDIn(ids...), broadcastfigure.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.BroadcastFigure.Query().Where(s.inBroadcastFigure(broadcastfigure.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -312,7 +322,7 @@ func (s *Scoped) verifyBroadcastRecipient(ctx context.Context, ids []int64) erro
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.BroadcastRecipient.Query().Where(broadcastrecipient.IDIn(ids...), broadcastrecipient.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.BroadcastRecipient.Query().Where(s.inBroadcastRecipient(broadcastrecipient.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -328,7 +338,7 @@ func (s *Scoped) verifyCapturedMessage(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.CapturedMessage.Query().Where(capturedmessage.IDIn(ids...), capturedmessage.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.CapturedMessage.Query().Where(s.inCapturedMessage(capturedmessage.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -344,7 +354,7 @@ func (s *Scoped) verifyConfirmation(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Confirmation.Query().Where(confirmation.IDIn(ids...), confirmation.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Confirmation.Query().Where(s.inConfirmation(confirmation.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -360,7 +370,7 @@ func (s *Scoped) verifyContact(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Contact.Query().Where(contact.IDIn(ids...), contact.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Contact.Query().Where(s.inContact(contact.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -376,7 +386,7 @@ func (s *Scoped) verifyCustomField(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.CustomField.Query().Where(customfield.IDIn(ids...), customfield.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.CustomField.Query().Where(s.inCustomField(customfield.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -392,7 +402,7 @@ func (s *Scoped) verifyEmailTemplate(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.EmailTemplate.Query().Where(emailtemplate.IDIn(ids...), emailtemplate.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.EmailTemplate.Query().Where(s.inEmailTemplate(emailtemplate.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -408,7 +418,7 @@ func (s *Scoped) verifyErasure(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Erasure.Query().Where(erasure.IDIn(ids...), erasure.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Erasure.Query().Where(s.inErasure(erasure.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -424,7 +434,7 @@ func (s *Scoped) verifyEvent(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Event.Query().Where(event.IDIn(ids...), event.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Event.Query().Where(s.inEvent(event.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -440,7 +450,7 @@ func (s *Scoped) verifyHeldOrderEvent(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.HeldOrderEvent.Query().Where(heldorderevent.IDIn(ids...), heldorderevent.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.HeldOrderEvent.Query().Where(s.inHeldOrderEvent(heldorderevent.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -456,7 +466,7 @@ func (s *Scoped) verifyHold(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Hold.Query().Where(hold.IDIn(ids...), hold.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Hold.Query().Where(s.inHold(hold.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -472,7 +482,7 @@ func (s *Scoped) verifyIntegration(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Integration.Query().Where(integration.IDIn(ids...), integration.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Integration.Query().Where(s.inIntegration(integration.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -488,7 +498,7 @@ func (s *Scoped) verifyInvitation(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Invitation.Query().Where(invitation.IDIn(ids...), invitation.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Invitation.Query().Where(s.inInvitation(invitation.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -504,7 +514,7 @@ func (s *Scoped) verifyJoinDomain(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.JoinDomain.Query().Where(joindomain.IDIn(ids...), joindomain.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.JoinDomain.Query().Where(s.inJoinDomain(joindomain.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -520,7 +530,7 @@ func (s *Scoped) verifyMembership(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Membership.Query().Where(membership.IDIn(ids...), membership.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Membership.Query().Where(s.inMembership(membership.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -536,7 +546,7 @@ func (s *Scoped) verifyOAuthCode(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.OAuthCode.Query().Where(oauthcode.IDIn(ids...), oauthcode.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.OAuthCode.Query().Where(s.inOAuthCode(oauthcode.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -552,7 +562,7 @@ func (s *Scoped) verifyOrder(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Order.Query().Where(order.IDIn(ids...), order.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Order.Query().Where(s.inOrder(order.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -568,7 +578,7 @@ func (s *Scoped) verifyOrderMovement(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.OrderMovement.Query().Where(ordermovement.IDIn(ids...), ordermovement.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.OrderMovement.Query().Where(s.inOrderMovement(ordermovement.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -584,7 +594,7 @@ func (s *Scoped) verifyOutboundMessage(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.OutboundMessage.Query().Where(outboundmessage.IDIn(ids...), outboundmessage.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.OutboundMessage.Query().Where(s.inOutboundMessage(outboundmessage.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -600,7 +610,7 @@ func (s *Scoped) verifyProviderLimiter(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.ProviderLimiter.Query().Where(providerlimiter.IDIn(ids...), providerlimiter.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.ProviderLimiter.Query().Where(s.inProviderLimiter(providerlimiter.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -616,7 +626,7 @@ func (s *Scoped) verifyRule(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Rule.Query().Where(rule.IDIn(ids...), rule.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Rule.Query().Where(s.inRule(rule.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -632,7 +642,7 @@ func (s *Scoped) verifyRuleFiring(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.RuleFiring.Query().Where(rulefiring.IDIn(ids...), rulefiring.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.RuleFiring.Query().Where(s.inRuleFiring(rulefiring.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -648,7 +658,7 @@ func (s *Scoped) verifyRuleVersion(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.RuleVersion.Query().Where(ruleversion.IDIn(ids...), ruleversion.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.RuleVersion.Query().Where(s.inRuleVersion(ruleversion.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -664,7 +674,7 @@ func (s *Scoped) verifyRuleVersionTrigger(ctx context.Context, ids []int64) erro
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.RuleVersionTrigger.Query().Where(ruleversiontrigger.IDIn(ids...), ruleversiontrigger.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.RuleVersionTrigger.Query().Where(s.inRuleVersionTrigger(ruleversiontrigger.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -680,7 +690,7 @@ func (s *Scoped) verifySegment(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Segment.Query().Where(segment.IDIn(ids...), segment.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Segment.Query().Where(s.inSegment(segment.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -696,7 +706,7 @@ func (s *Scoped) verifySendCapLimiter(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.SendCapLimiter.Query().Where(sendcaplimiter.IDIn(ids...), sendcaplimiter.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.SendCapLimiter.Query().Where(s.inSendCapLimiter(sendcaplimiter.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -712,7 +722,7 @@ func (s *Scoped) verifySendingDomain(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.SendingDomain.Query().Where(sendingdomain.IDIn(ids...), sendingdomain.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.SendingDomain.Query().Where(s.inSendingDomain(sendingdomain.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -728,7 +738,7 @@ func (s *Scoped) verifyStartToken(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.StartToken.Query().Where(starttoken.IDIn(ids...), starttoken.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.StartToken.Query().Where(s.inStartToken(starttoken.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -744,7 +754,7 @@ func (s *Scoped) verifySuppression(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Suppression.Query().Where(suppression.IDIn(ids...), suppression.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Suppression.Query().Where(s.inSuppression(suppression.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -760,7 +770,7 @@ func (s *Scoped) verifyTag(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Tag.Query().Where(tag.IDIn(ids...), tag.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Tag.Query().Where(s.inTag(tag.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -776,7 +786,7 @@ func (s *Scoped) verifyTrackedLink(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.TrackedLink.Query().Where(trackedlink.IDIn(ids...), trackedlink.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.TrackedLink.Query().Where(s.inTrackedLink(trackedlink.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -792,7 +802,7 @@ func (s *Scoped) verifyTrackingDomain(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.TrackingDomain.Query().Where(trackingdomain.IDIn(ids...), trackingdomain.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.TrackingDomain.Query().Where(s.inTrackingDomain(trackingdomain.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -808,7 +818,7 @@ func (s *Scoped) verifyUnsubscribe(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Unsubscribe.Query().Where(unsubscribe.IDIn(ids...), unsubscribe.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Unsubscribe.Query().Where(s.inUnsubscribe(unsubscribe.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -824,7 +834,7 @@ func (s *Scoped) verifyUsage(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Usage.Query().Where(usage.IDIn(ids...), usage.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Usage.Query().Where(s.inUsage(usage.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -840,7 +850,7 @@ func (s *Scoped) verifyVisitor(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.Visitor.Query().Where(visitor.IDIn(ids...), visitor.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.Visitor.Query().Where(s.inVisitor(visitor.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -856,7 +866,7 @@ func (s *Scoped) verifyWebhookEndpoint(ctx context.Context, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	n, err := s.c.WebhookEndpoint.Query().Where(webhookendpoint.IDIn(ids...), webhookendpoint.WorkspaceID(s.ws)).Count(ctx)
+	n, err := s.c.WebhookEndpoint.Query().Where(s.inWebhookEndpoint(webhookendpoint.IDIn(ids...))...).Count(ctx)
 	if err != nil {
 		return err
 	}
@@ -886,9 +896,15 @@ const (
 	RoleOf_ApiTokenScoped_Update      = RoleStart
 )
 
+// inApiToken confines predicates of ApiToken rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inApiToken(ps ...predicate.ApiToken) []predicate.ApiToken {
+	return append([]predicate.ApiToken{apitoken.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a ApiToken query already confined to the Workspace.
 func (t *ApiTokenScoped) Query() *ApiTokenQuery {
-	return t.s.c.ApiToken.Query().Where(apitoken.WorkspaceID(t.s.ws))
+	return t.s.c.ApiToken.Query().Where(t.s.inApiToken()...)
 }
 
 // Get returns the ApiToken with the id; a row of another Workspace is not found.
@@ -991,7 +1007,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ApiTokenScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inApiToken(x.where...)
 	return x.s.writeApiToken(ctx, "delete", append([]predicate.ApiToken{apitoken.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.ApiToken.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -1024,14 +1040,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *ApiTokenScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inApiToken(x.where...)
 	var n int
 	err := x.s.writeApiToken(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.ApiToken.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -1049,13 +1065,20 @@ func (t *ApiTokenScoped) Create() *ApiTokenScopedCreate {
 	return &ApiTokenScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *ApiTokenScopedCreate) build(s *Scoped) *ApiTokenCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ApiTokenScopedCreate) raw(s *Scoped) *ApiTokenCreate {
 	b := s.c.ApiToken.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ApiTokenScopedCreate) build(ctx context.Context, s *Scoped) (*ApiTokenCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkApiToken(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -1245,20 +1268,16 @@ const (
 func (x *ApiTokenScopedCreate) Save(ctx context.Context) (*ApiToken, error) {
 	var created *ApiToken
 	err := x.s.writeApiToken(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkApiToken(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -1296,7 +1315,7 @@ func (b *ApiTokenScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ApiTo
 	builders := make([]*ApiTokenCreate, len(b.xs))
 	ms := make([]*ApiTokenMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkApiToken(ctx, ms...); err != nil {
@@ -1325,10 +1344,7 @@ func (b *ApiTokenScopedCreateBulk) Save(ctx context.Context) ([]*ApiToken, error
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -1573,8 +1589,8 @@ func (u *ApiTokenScopedUpsertOne) Update(set func(*ApiTokenScopedUpsert)) *ApiTo
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *ApiTokenScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ApiTokenUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkApiToken(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -1607,10 +1623,7 @@ func (u *ApiTokenScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // ApiTokenScopedUpsertBulk is the "upsert" of several ApiToken entities.
@@ -1857,26 +1870,28 @@ func (x *ApiTokenScopedUpdateOne) Save(ctx context.Context) (*ApiToken, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ApiTokenScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ApiTokenUpdateOne, error) {
+	b := s.c.ApiToken.UpdateOneID(x.id).Where(s.inApiToken(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkApiToken(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *ApiTokenScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ApiToken, error) {
-	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inApiToken(x.where...)
 	var updated *ApiToken
 	err := x.s.writeApiToken(ctx, verb, append([]predicate.ApiToken{apitoken.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.ApiToken.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkApiToken(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -2077,30 +2092,32 @@ func (x *ApiTokenScopedUpdate) ClearLastUsedAt() *ApiTokenScopedUpdate {
 
 const RoleOf_ApiTokenScopedUpdate_ClearLastUsedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ApiTokenScopedUpdate) build(ctx context.Context, s *Scoped) (*ApiTokenUpdate, error) {
+	b := s.c.ApiToken.Update().Where(s.inApiToken(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkApiToken(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *ApiTokenScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.ApiToken{apitoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inApiToken(x.where...)
 	var n int
 	err := x.s.writeApiToken(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.ApiToken.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkApiToken(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -2138,9 +2155,15 @@ const (
 	RoleOf_AuditEntryScoped_Update      = RoleStart
 )
 
+// inAuditEntry confines predicates of AuditEntry rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAuditEntry(ps ...predicate.AuditEntry) []predicate.AuditEntry {
+	return append([]predicate.AuditEntry{auditentry.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a AuditEntry query already confined to the Workspace.
 func (t *AuditEntryScoped) Query() *AuditEntryQuery {
-	return t.s.c.AuditEntry.Query().Where(auditentry.WorkspaceID(t.s.ws))
+	return t.s.c.AuditEntry.Query().Where(t.s.inAuditEntry()...)
 }
 
 // Get returns the AuditEntry with the id; a row of another Workspace is not found.
@@ -2191,7 +2214,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AuditEntryScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAuditEntry(x.where...)
 	return x.s.writeAuditEntry(ctx, "delete", append([]predicate.AuditEntry{auditentry.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AuditEntry.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -2224,14 +2247,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *AuditEntryScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAuditEntry(x.where...)
 	var n int
 	err := x.s.writeAuditEntry(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AuditEntry.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -2249,13 +2272,20 @@ func (t *AuditEntryScoped) Create() *AuditEntryScopedCreate {
 	return &AuditEntryScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *AuditEntryScopedCreate) build(s *Scoped) *AuditEntryCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AuditEntryScopedCreate) raw(s *Scoped) *AuditEntryCreate {
 	b := s.c.AuditEntry.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AuditEntryScopedCreate) build(ctx context.Context, s *Scoped) (*AuditEntryCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAuditEntry(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -2481,20 +2511,16 @@ const (
 func (x *AuditEntryScopedCreate) Save(ctx context.Context) (*AuditEntry, error) {
 	var created *AuditEntry
 	err := x.s.writeAuditEntry(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkAuditEntry(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -2532,7 +2558,7 @@ func (b *AuditEntryScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Aud
 	builders := make([]*AuditEntryCreate, len(b.xs))
 	ms := make([]*AuditEntryMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkAuditEntry(ctx, ms...); err != nil {
@@ -2557,10 +2583,7 @@ func (b *AuditEntryScopedCreateBulk) Save(ctx context.Context) ([]*AuditEntry, e
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -2727,8 +2750,8 @@ func (u *AuditEntryScopedUpsertOne) Update(set func(*AuditEntryScopedUpsert)) *A
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *AuditEntryScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AuditEntryUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkAuditEntry(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -2757,10 +2780,7 @@ func (u *AuditEntryScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // AuditEntryScopedUpsertBulk is the "upsert" of several AuditEntry entities.
@@ -2919,26 +2939,28 @@ func (x *AuditEntryScopedUpdateOne) Save(ctx context.Context) (*AuditEntry, erro
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AuditEntryScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AuditEntryUpdateOne, error) {
+	b := s.c.AuditEntry.UpdateOneID(x.id).Where(s.inAuditEntry(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAuditEntry(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *AuditEntryScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AuditEntry, error) {
-	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAuditEntry(x.where...)
 	var updated *AuditEntry
 	err := x.s.writeAuditEntry(ctx, verb, append([]predicate.AuditEntry{auditentry.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AuditEntry.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAuditEntry(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -3055,30 +3077,32 @@ func (x *AuditEntryScopedUpdate) ClearUserAgent() *AuditEntryScopedUpdate {
 
 const RoleOf_AuditEntryScopedUpdate_ClearUserAgent = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AuditEntryScopedUpdate) build(ctx context.Context, s *Scoped) (*AuditEntryUpdate, error) {
+	b := s.c.AuditEntry.Update().Where(s.inAuditEntry(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAuditEntry(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *AuditEntryScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.AuditEntry{auditentry.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAuditEntry(x.where...)
 	var n int
 	err := x.s.writeAuditEntry(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AuditEntry.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAuditEntry(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -3120,15 +3144,21 @@ const (
 	RoleOf_AutomationScoped_Update            = RoleStart
 )
 
+// inAutomation confines predicates of Automation rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomation(ps ...predicate.Automation) []predicate.Automation {
+	return append([]predicate.Automation{automation.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Automation query already confined to the Workspace, hiding archived rows
 // (a list query; QueryWithArchived sees them too).
 func (t *AutomationScoped) Query() *AutomationQuery {
-	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil())
+	return t.s.c.Automation.Query().Where(t.s.inAutomation(automation.ArchivedAtIsNil())...)
 }
 
 // QueryWithArchived returns a Automation query confined to the Workspace that also sees archived rows.
 func (t *AutomationScoped) QueryWithArchived() *AutomationQuery {
-	return t.s.c.Automation.Query().Where(automation.WorkspaceID(t.s.ws))
+	return t.s.c.Automation.Query().Where(t.s.inAutomation()...)
 }
 
 // QueryArchived returns a Automation query confined to the Workspace that sees only archived rows
@@ -3239,14 +3269,14 @@ func (s *Scoped) checkAutomation(ctx context.Context, ms ...*AutomationMutation)
 // Archive stamps archived_at, at `at`, on the kept Automation with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
 func (t *AutomationScoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.Automation) error {
-	where := append([]predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtIsNil()}, ps...)
+	where := append(t.s.inAutomation(automation.ID(id), automation.ArchivedAtIsNil()), ps...)
 	return t.setArchived(ctx, id, where, "archive", func(u *AutomationUpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the Automation with the id. Unarchiving a kept row changes
 // nothing; only a row that does not exist in the Workspace is not found.
 func (t *AutomationScoped) Unarchive(ctx context.Context, id int64) error {
-	where := []predicate.Automation{automation.ID(id), automation.WorkspaceID(t.s.ws), automation.ArchivedAtNotNil()}
+	where := t.s.inAutomation(automation.ID(id), automation.ArchivedAtNotNil())
 	err := t.setArchived(ctx, id, where, "unarchive", func(u *AutomationUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
@@ -3292,7 +3322,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomation(x.where...)
 	return x.s.writeAutomation(ctx, "delete", append([]predicate.Automation{automation.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Automation.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -3325,14 +3355,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *AutomationScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomation(x.where...)
 	var n int
 	err := x.s.writeAutomation(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Automation.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -3350,13 +3380,20 @@ func (t *AutomationScoped) Create() *AutomationScopedCreate {
 	return &AutomationScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *AutomationScopedCreate) build(s *Scoped) *AutomationCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationScopedCreate) raw(s *Scoped) *AutomationCreate {
 	b := s.c.Automation.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomation(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -3572,20 +3609,16 @@ const (
 func (x *AutomationScopedCreate) Save(ctx context.Context) (*Automation, error) {
 	var created *Automation
 	err := x.s.writeAutomation(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkAutomation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -3623,7 +3656,7 @@ func (b *AutomationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Aut
 	builders := make([]*AutomationCreate, len(b.xs))
 	ms := make([]*AutomationMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkAutomation(ctx, ms...); err != nil {
@@ -3652,10 +3685,7 @@ func (b *AutomationScopedCreateBulk) Save(ctx context.Context) ([]*Automation, e
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -3920,8 +3950,8 @@ func (u *AutomationScopedUpsertOne) Update(set func(*AutomationScopedUpsert)) *A
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *AutomationScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkAutomation(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -3954,10 +3984,7 @@ func (u *AutomationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // AutomationScopedUpsertBulk is the "upsert" of several Automation entities.
@@ -4363,26 +4390,28 @@ func (x *AutomationScopedUpdateOne) move(ctx context.Context, verb string) (*Aut
 	return x.save(ctx, verb, recordUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationUpdateOne, error) {
+	b := s.c.Automation.UpdateOneID(x.id).Where(s.inAutomation(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomation(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *AutomationScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Automation, error) {
-	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomation(x.where...)
 	var updated *Automation
 	err := x.s.writeAutomation(ctx, verb, append([]predicate.Automation{automation.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Automation.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -4735,30 +4764,32 @@ func (x *AutomationScopedUpdate) RemoveRuns(v ...*AutomationRun) *AutomationScop
 
 const RoleOf_AutomationScopedUpdate_RemoveRuns = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationUpdate, error) {
+	b := s.c.Automation.Update().Where(s.inAutomation(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomation(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *AutomationScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Automation{automation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomation(x.where...)
 	var n int
 	err := x.s.writeAutomation(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Automation.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -4796,9 +4827,15 @@ const (
 	RoleOf_AutomationFigureScoped_Update      = RoleStart
 )
 
+// inAutomationFigure confines predicates of AutomationFigure rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomationFigure(ps ...predicate.AutomationFigure) []predicate.AutomationFigure {
+	return append([]predicate.AutomationFigure{automationfigure.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a AutomationFigure query already confined to the Workspace.
 func (t *AutomationFigureScoped) Query() *AutomationFigureQuery {
-	return t.s.c.AutomationFigure.Query().Where(automationfigure.WorkspaceID(t.s.ws))
+	return t.s.c.AutomationFigure.Query().Where(t.s.inAutomationFigure()...)
 }
 
 // Get returns the AutomationFigure with the id; a row of another Workspace is not found.
@@ -4858,7 +4895,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationFigureScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationFigure(x.where...)
 	return x.s.writeAutomationFigure(ctx, "delete", append([]predicate.AutomationFigure{automationfigure.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AutomationFigure.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -4891,14 +4928,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *AutomationFigureScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationFigure(x.where...)
 	var n int
 	err := x.s.writeAutomationFigure(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AutomationFigure.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -4916,13 +4953,20 @@ func (t *AutomationFigureScoped) Create() *AutomationFigureScopedCreate {
 	return &AutomationFigureScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *AutomationFigureScopedCreate) build(s *Scoped) *AutomationFigureCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationFigureScopedCreate) raw(s *Scoped) *AutomationFigureCreate {
 	b := s.c.AutomationFigure.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationFigureScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationFigureCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomationFigure(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -5106,20 +5150,16 @@ const (
 func (x *AutomationFigureScopedCreate) Save(ctx context.Context) (*AutomationFigure, error) {
 	var created *AutomationFigure
 	err := x.s.writeAutomationFigure(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkAutomationFigure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -5157,7 +5197,7 @@ func (b *AutomationFigureScopedCreateBulk) build(ctx context.Context, s *Scoped)
 	builders := make([]*AutomationFigureCreate, len(b.xs))
 	ms := make([]*AutomationFigureMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkAutomationFigure(ctx, ms...); err != nil {
@@ -5182,10 +5222,7 @@ func (b *AutomationFigureScopedCreateBulk) Save(ctx context.Context) ([]*Automat
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -5448,8 +5485,8 @@ func (u *AutomationFigureScopedUpsertOne) Update(set func(*AutomationFigureScope
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *AutomationFigureScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationFigureUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkAutomationFigure(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -5478,10 +5515,7 @@ func (u *AutomationFigureScopedUpsertOne) ID(ctx context.Context) (int64, error)
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // AutomationFigureScopedUpsertBulk is the "upsert" of several AutomationFigure entities.
@@ -5744,26 +5778,28 @@ func (x *AutomationFigureScopedUpdateOne) Save(ctx context.Context) (*Automation
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationFigureScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationFigureUpdateOne, error) {
+	b := s.c.AutomationFigure.UpdateOneID(x.id).Where(s.inAutomationFigure(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationFigure(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *AutomationFigureScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AutomationFigure, error) {
-	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationFigure(x.where...)
 	var updated *AutomationFigure
 	err := x.s.writeAutomationFigure(ctx, verb, append([]predicate.AutomationFigure{automationfigure.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AutomationFigure.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomationFigure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -5984,30 +6020,32 @@ func (x *AutomationFigureScopedUpdate) AddCaptured(v int) *AutomationFigureScope
 
 const RoleOf_AutomationFigureScopedUpdate_AddCaptured = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationFigureScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationFigureUpdate, error) {
+	b := s.c.AutomationFigure.Update().Where(s.inAutomationFigure(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationFigure(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *AutomationFigureScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.AutomationFigure{automationfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationFigure(x.where...)
 	var n int
 	err := x.s.writeAutomationFigure(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AutomationFigure.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomationFigure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -6045,9 +6083,15 @@ const (
 	RoleOf_AutomationRunScoped_Update      = RoleStart
 )
 
+// inAutomationRun confines predicates of AutomationRun rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomationRun(ps ...predicate.AutomationRun) []predicate.AutomationRun {
+	return append([]predicate.AutomationRun{automationrun.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a AutomationRun query already confined to the Workspace.
 func (t *AutomationRunScoped) Query() *AutomationRunQuery {
-	return t.s.c.AutomationRun.Query().Where(automationrun.WorkspaceID(t.s.ws))
+	return t.s.c.AutomationRun.Query().Where(t.s.inAutomationRun()...)
 }
 
 // Get returns the AutomationRun with the id; a row of another Workspace is not found.
@@ -6125,7 +6169,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationRunScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationRun(x.where...)
 	return x.s.writeAutomationRun(ctx, "delete", append([]predicate.AutomationRun{automationrun.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AutomationRun.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -6158,14 +6202,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *AutomationRunScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationRun(x.where...)
 	var n int
 	err := x.s.writeAutomationRun(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AutomationRun.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -6183,13 +6227,20 @@ func (t *AutomationRunScoped) Create() *AutomationRunScopedCreate {
 	return &AutomationRunScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *AutomationRunScopedCreate) build(s *Scoped) *AutomationRunCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationRunScopedCreate) raw(s *Scoped) *AutomationRunCreate {
 	b := s.c.AutomationRun.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationRunScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationRunCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomationRun(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -6459,20 +6510,16 @@ const (
 func (x *AutomationRunScopedCreate) Save(ctx context.Context) (*AutomationRun, error) {
 	var created *AutomationRun
 	err := x.s.writeAutomationRun(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkAutomationRun(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -6510,7 +6557,7 @@ func (b *AutomationRunScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 	builders := make([]*AutomationRunCreate, len(b.xs))
 	ms := make([]*AutomationRunMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkAutomationRun(ctx, ms...); err != nil {
@@ -6535,10 +6582,7 @@ func (b *AutomationRunScopedCreateBulk) Save(ctx context.Context) ([]*Automation
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -6853,8 +6897,8 @@ func (u *AutomationRunScopedUpsertOne) Update(set func(*AutomationRunScopedUpser
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *AutomationRunScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationRunUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkAutomationRun(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -6883,10 +6927,7 @@ func (u *AutomationRunScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // AutomationRunScopedUpsertBulk is the "upsert" of several AutomationRun entities.
@@ -7281,26 +7322,28 @@ func (x *AutomationRunScopedUpdateOne) Save(ctx context.Context) (*AutomationRun
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationRunScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationRunUpdateOne, error) {
+	b := s.c.AutomationRun.UpdateOneID(x.id).Where(s.inAutomationRun(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationRun(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *AutomationRunScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AutomationRun, error) {
-	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationRun(x.where...)
 	var updated *AutomationRun
 	err := x.s.writeAutomationRun(ctx, verb, append([]predicate.AutomationRun{automationrun.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AutomationRun.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomationRun(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -7653,30 +7696,32 @@ func (x *AutomationRunScopedUpdate) ClearContact() *AutomationRunScopedUpdate {
 
 const RoleOf_AutomationRunScopedUpdate_ClearContact = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationRunScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationRunUpdate, error) {
+	b := s.c.AutomationRun.Update().Where(s.inAutomationRun(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationRun(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *AutomationRunScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.AutomationRun{automationrun.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationRun(x.where...)
 	var n int
 	err := x.s.writeAutomationRun(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AutomationRun.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomationRun(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -7714,9 +7759,15 @@ const (
 	RoleOf_AutomationVersionScoped_Update      = RoleStart
 )
 
+// inAutomationVersion confines predicates of AutomationVersion rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inAutomationVersion(ps ...predicate.AutomationVersion) []predicate.AutomationVersion {
+	return append([]predicate.AutomationVersion{automationversion.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a AutomationVersion query already confined to the Workspace.
 func (t *AutomationVersionScoped) Query() *AutomationVersionQuery {
-	return t.s.c.AutomationVersion.Query().Where(automationversion.WorkspaceID(t.s.ws))
+	return t.s.c.AutomationVersion.Query().Where(t.s.inAutomationVersion()...)
 }
 
 // Get returns the AutomationVersion with the id; a row of another Workspace is not found.
@@ -7785,7 +7836,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *AutomationVersionScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationVersion(x.where...)
 	return x.s.writeAutomationVersion(ctx, "delete", append([]predicate.AutomationVersion{automationversion.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.AutomationVersion.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -7818,14 +7869,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *AutomationVersionScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationVersion(x.where...)
 	var n int
 	err := x.s.writeAutomationVersion(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.AutomationVersion.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -7843,13 +7894,20 @@ func (t *AutomationVersionScoped) Create() *AutomationVersionScopedCreate {
 	return &AutomationVersionScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *AutomationVersionScopedCreate) build(s *Scoped) *AutomationVersionCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *AutomationVersionScopedCreate) raw(s *Scoped) *AutomationVersionCreate {
 	b := s.c.AutomationVersion.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *AutomationVersionScopedCreate) build(ctx context.Context, s *Scoped) (*AutomationVersionCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkAutomationVersion(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -7993,20 +8051,16 @@ const (
 func (x *AutomationVersionScopedCreate) Save(ctx context.Context) (*AutomationVersion, error) {
 	var created *AutomationVersion
 	err := x.s.writeAutomationVersion(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkAutomationVersion(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -8044,7 +8098,7 @@ func (b *AutomationVersionScopedCreateBulk) build(ctx context.Context, s *Scoped
 	builders := make([]*AutomationVersionCreate, len(b.xs))
 	ms := make([]*AutomationVersionMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkAutomationVersion(ctx, ms...); err != nil {
@@ -8069,10 +8123,7 @@ func (b *AutomationVersionScopedCreateBulk) Save(ctx context.Context) ([]*Automa
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -8271,8 +8322,8 @@ func (u *AutomationVersionScopedUpsertOne) Update(set func(*AutomationVersionSco
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *AutomationVersionScopedUpsertOne) build(ctx context.Context, s *Scoped) (*AutomationVersionUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkAutomationVersion(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -8301,10 +8352,7 @@ func (u *AutomationVersionScopedUpsertOne) ID(ctx context.Context) (int64, error
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // AutomationVersionScopedUpsertBulk is the "upsert" of several AutomationVersion entities.
@@ -8563,26 +8611,28 @@ func (x *AutomationVersionScopedUpdateOne) Save(ctx context.Context) (*Automatio
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationVersionScopedUpdateOne) build(ctx context.Context, s *Scoped) (*AutomationVersionUpdateOne, error) {
+	b := s.c.AutomationVersion.UpdateOneID(x.id).Where(s.inAutomationVersion(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationVersion(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *AutomationVersionScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*AutomationVersion, error) {
-	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationVersion(x.where...)
 	var updated *AutomationVersion
 	err := x.s.writeAutomationVersion(ctx, verb, append([]predicate.AutomationVersion{automationversion.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AutomationVersion.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomationVersion(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -8799,30 +8849,32 @@ func (x *AutomationVersionScopedUpdate) RemoveRuns(v ...*AutomationRun) *Automat
 
 const RoleOf_AutomationVersionScopedUpdate_RemoveRuns = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *AutomationVersionScopedUpdate) build(ctx context.Context, s *Scoped) (*AutomationVersionUpdate, error) {
+	b := s.c.AutomationVersion.Update().Where(s.inAutomationVersion(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkAutomationVersion(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *AutomationVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.AutomationVersion{automationversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inAutomationVersion(x.where...)
 	var n int
 	err := x.s.writeAutomationVersion(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.AutomationVersion.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkAutomationVersion(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -8860,9 +8912,15 @@ const (
 	RoleOf_BindingScoped_Update      = RoleStart
 )
 
+// inBinding confines predicates of Binding rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inBinding(ps ...predicate.Binding) []predicate.Binding {
+	return append([]predicate.Binding{binding.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Binding query already confined to the Workspace.
 func (t *BindingScoped) Query() *BindingQuery {
-	return t.s.c.Binding.Query().Where(binding.WorkspaceID(t.s.ws))
+	return t.s.c.Binding.Query().Where(t.s.inBinding()...)
 }
 
 // Get returns the Binding with the id; a row of another Workspace is not found.
@@ -8940,7 +8998,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BindingScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBinding(x.where...)
 	return x.s.writeBinding(ctx, "delete", append([]predicate.Binding{binding.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Binding.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -8973,14 +9031,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *BindingScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBinding(x.where...)
 	var n int
 	err := x.s.writeBinding(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Binding.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -8998,13 +9056,20 @@ func (t *BindingScoped) Create() *BindingScopedCreate {
 	return &BindingScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *BindingScopedCreate) build(s *Scoped) *BindingCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *BindingScopedCreate) raw(s *Scoped) *BindingCreate {
 	b := s.c.Binding.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *BindingScopedCreate) build(ctx context.Context, s *Scoped) (*BindingCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkBinding(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -9174,20 +9239,16 @@ const (
 func (x *BindingScopedCreate) Save(ctx context.Context) (*Binding, error) {
 	var created *Binding
 	err := x.s.writeBinding(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkBinding(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -9225,7 +9286,7 @@ func (b *BindingScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Bindin
 	builders := make([]*BindingCreate, len(b.xs))
 	ms := make([]*BindingMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkBinding(ctx, ms...); err != nil {
@@ -9250,10 +9311,7 @@ func (b *BindingScopedCreateBulk) Save(ctx context.Context) ([]*Binding, error) 
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -9452,8 +9510,8 @@ func (u *BindingScopedUpsertOne) Update(set func(*BindingScopedUpsert)) *Binding
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *BindingScopedUpsertOne) build(ctx context.Context, s *Scoped) (*BindingUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkBinding(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -9482,10 +9540,7 @@ func (u *BindingScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // BindingScopedUpsertBulk is the "upsert" of several Binding entities.
@@ -9730,26 +9785,28 @@ func (x *BindingScopedUpdateOne) Save(ctx context.Context) (*Binding, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BindingScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BindingUpdateOne, error) {
+	b := s.c.Binding.UpdateOneID(x.id).Where(s.inBinding(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBinding(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BindingScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Binding, error) {
-	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBinding(x.where...)
 	var updated *Binding
 	err := x.s.writeBinding(ctx, verb, append([]predicate.Binding{binding.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Binding.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBinding(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -9952,30 +10009,32 @@ func (x *BindingScopedUpdate) ClearVisitor() *BindingScopedUpdate {
 
 const RoleOf_BindingScopedUpdate_ClearVisitor = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BindingScopedUpdate) build(ctx context.Context, s *Scoped) (*BindingUpdate, error) {
+	b := s.c.Binding.Update().Where(s.inBinding(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBinding(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *BindingScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Binding{binding.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBinding(x.where...)
 	var n int
 	err := x.s.writeBinding(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Binding.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBinding(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -10013,9 +10072,15 @@ const (
 	RoleOf_BrandKitScoped_Update      = RoleStart
 )
 
+// inBrandKit confines predicates of BrandKit rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inBrandKit(ps ...predicate.BrandKit) []predicate.BrandKit {
+	return append([]predicate.BrandKit{brandkit.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a BrandKit query already confined to the Workspace.
 func (t *BrandKitScoped) Query() *BrandKitQuery {
-	return t.s.c.BrandKit.Query().Where(brandkit.WorkspaceID(t.s.ws))
+	return t.s.c.BrandKit.Query().Where(t.s.inBrandKit()...)
 }
 
 // Get returns the BrandKit with the id; a row of another Workspace is not found.
@@ -10109,7 +10174,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BrandKitScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBrandKit(x.where...)
 	return x.s.writeBrandKit(ctx, "delete", append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.BrandKit.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -10142,14 +10207,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *BrandKitScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBrandKit(x.where...)
 	var n int
 	err := x.s.writeBrandKit(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.BrandKit.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -10167,13 +10232,20 @@ func (t *BrandKitScoped) Create() *BrandKitScopedCreate {
 	return &BrandKitScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *BrandKitScopedCreate) build(s *Scoped) *BrandKitCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *BrandKitScopedCreate) raw(s *Scoped) *BrandKitCreate {
 	b := s.c.BrandKit.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *BrandKitScopedCreate) build(ctx context.Context, s *Scoped) (*BrandKitCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkBrandKit(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -10335,20 +10407,16 @@ const (
 func (x *BrandKitScopedCreate) Save(ctx context.Context) (*BrandKit, error) {
 	var created *BrandKit
 	err := x.s.writeBrandKit(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkBrandKit(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -10386,7 +10454,7 @@ func (b *BrandKitScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Brand
 	builders := make([]*BrandKitCreate, len(b.xs))
 	ms := make([]*BrandKitMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkBrandKit(ctx, ms...); err != nil {
@@ -10415,10 +10483,7 @@ func (b *BrandKitScopedCreateBulk) Save(ctx context.Context) ([]*BrandKit, error
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -10713,8 +10778,8 @@ func (u *BrandKitScopedUpsertOne) Update(set func(*BrandKitScopedUpsert)) *Brand
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *BrandKitScopedUpsertOne) build(ctx context.Context, s *Scoped) (*BrandKitUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkBrandKit(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -10747,10 +10812,7 @@ func (u *BrandKitScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // BrandKitScopedUpsertBulk is the "upsert" of several BrandKit entities.
@@ -11057,26 +11119,28 @@ func (x *BrandKitScopedUpdateOne) Save(ctx context.Context) (*BrandKit, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BrandKitScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BrandKitUpdateOne, error) {
+	b := s.c.BrandKit.UpdateOneID(x.id).Where(s.inBrandKit(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBrandKit(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BrandKitScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*BrandKit, error) {
-	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBrandKit(x.where...)
 	var updated *BrandKit
 	err := x.s.writeBrandKit(ctx, verb, append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.BrandKit.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBrandKit(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -11337,30 +11401,32 @@ func (x *BrandKitScopedUpdate) SetNillableFooterText(v *string) *BrandKitScopedU
 
 const RoleOf_BrandKitScopedUpdate_SetNillableFooterText = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BrandKitScopedUpdate) build(ctx context.Context, s *Scoped) (*BrandKitUpdate, error) {
+	b := s.c.BrandKit.Update().Where(s.inBrandKit(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBrandKit(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *BrandKitScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.BrandKit{brandkit.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBrandKit(x.where...)
 	var n int
 	err := x.s.writeBrandKit(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.BrandKit.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBrandKit(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -11402,15 +11468,21 @@ const (
 	RoleOf_BroadcastScoped_Update            = RoleStart
 )
 
+// inBroadcast confines predicates of Broadcast rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inBroadcast(ps ...predicate.Broadcast) []predicate.Broadcast {
+	return append([]predicate.Broadcast{broadcast.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Broadcast query already confined to the Workspace, hiding archived rows
 // (a list query; QueryWithArchived sees them too).
 func (t *BroadcastScoped) Query() *BroadcastQuery {
-	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtIsNil())
+	return t.s.c.Broadcast.Query().Where(t.s.inBroadcast(broadcast.ArchivedAtIsNil())...)
 }
 
 // QueryWithArchived returns a Broadcast query confined to the Workspace that also sees archived rows.
 func (t *BroadcastScoped) QueryWithArchived() *BroadcastQuery {
-	return t.s.c.Broadcast.Query().Where(broadcast.WorkspaceID(t.s.ws))
+	return t.s.c.Broadcast.Query().Where(t.s.inBroadcast()...)
 }
 
 // QueryArchived returns a Broadcast query confined to the Workspace that sees only archived rows
@@ -11521,14 +11593,14 @@ func (s *Scoped) checkBroadcast(ctx context.Context, ms ...*BroadcastMutation) e
 // Archive stamps archived_at, at `at`, on the kept Broadcast with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
 func (t *BroadcastScoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.Broadcast) error {
-	where := append([]predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtIsNil()}, ps...)
+	where := append(t.s.inBroadcast(broadcast.ID(id), broadcast.ArchivedAtIsNil()), ps...)
 	return t.setArchived(ctx, id, where, "archive", func(u *BroadcastUpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the Broadcast with the id. Unarchiving a kept row changes
 // nothing; only a row that does not exist in the Workspace is not found.
 func (t *BroadcastScoped) Unarchive(ctx context.Context, id int64) error {
-	where := []predicate.Broadcast{broadcast.ID(id), broadcast.WorkspaceID(t.s.ws), broadcast.ArchivedAtNotNil()}
+	where := t.s.inBroadcast(broadcast.ID(id), broadcast.ArchivedAtNotNil())
 	err := t.setArchived(ctx, id, where, "unarchive", func(u *BroadcastUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
@@ -11574,7 +11646,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BroadcastScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcast(x.where...)
 	return x.s.writeBroadcast(ctx, "delete", append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Broadcast.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -11607,14 +11679,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *BroadcastScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcast(x.where...)
 	var n int
 	err := x.s.writeBroadcast(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Broadcast.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -11632,13 +11704,20 @@ func (t *BroadcastScoped) Create() *BroadcastScopedCreate {
 	return &BroadcastScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *BroadcastScopedCreate) build(s *Scoped) *BroadcastCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *BroadcastScopedCreate) raw(s *Scoped) *BroadcastCreate {
 	b := s.c.Broadcast.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *BroadcastScopedCreate) build(ctx context.Context, s *Scoped) (*BroadcastCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkBroadcast(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -12148,20 +12227,16 @@ const (
 func (x *BroadcastScopedCreate) Save(ctx context.Context) (*Broadcast, error) {
 	var created *Broadcast
 	err := x.s.writeBroadcast(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkBroadcast(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -12199,7 +12274,7 @@ func (b *BroadcastScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Broa
 	builders := make([]*BroadcastCreate, len(b.xs))
 	ms := make([]*BroadcastMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkBroadcast(ctx, ms...); err != nil {
@@ -12228,10 +12303,7 @@ func (b *BroadcastScopedCreateBulk) Save(ctx context.Context) ([]*Broadcast, err
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -12888,8 +12960,8 @@ func (u *BroadcastScopedUpsertOne) Update(set func(*BroadcastScopedUpsert)) *Bro
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *BroadcastScopedUpsertOne) build(ctx context.Context, s *Scoped) (*BroadcastUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkBroadcast(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -12922,10 +12994,7 @@ func (u *BroadcastScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // BroadcastScopedUpsertBulk is the "upsert" of several Broadcast entities.
@@ -13746,26 +13815,28 @@ func (x *BroadcastScopedUpdateOne) Save(ctx context.Context) (*Broadcast, error)
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BroadcastScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BroadcastUpdateOne, error) {
+	b := s.c.Broadcast.UpdateOneID(x.id).Where(s.inBroadcast(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBroadcast(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BroadcastScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Broadcast, error) {
-	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcast(x.where...)
 	var updated *Broadcast
 	err := x.s.writeBroadcast(ctx, verb, append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Broadcast.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBroadcast(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -14540,30 +14611,32 @@ func (x *BroadcastScopedUpdate) ClearIntegration() *BroadcastScopedUpdate {
 
 const RoleOf_BroadcastScopedUpdate_ClearIntegration = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BroadcastScopedUpdate) build(ctx context.Context, s *Scoped) (*BroadcastUpdate, error) {
+	b := s.c.Broadcast.Update().Where(s.inBroadcast(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBroadcast(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *BroadcastScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Broadcast{broadcast.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcast(x.where...)
 	var n int
 	err := x.s.writeBroadcast(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Broadcast.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBroadcast(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -14601,9 +14674,15 @@ const (
 	RoleOf_BroadcastFigureScoped_Update      = RoleStart
 )
 
+// inBroadcastFigure confines predicates of BroadcastFigure rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inBroadcastFigure(ps ...predicate.BroadcastFigure) []predicate.BroadcastFigure {
+	return append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a BroadcastFigure query already confined to the Workspace.
 func (t *BroadcastFigureScoped) Query() *BroadcastFigureQuery {
-	return t.s.c.BroadcastFigure.Query().Where(broadcastfigure.WorkspaceID(t.s.ws))
+	return t.s.c.BroadcastFigure.Query().Where(t.s.inBroadcastFigure()...)
 }
 
 // Get returns the BroadcastFigure with the id; a row of another Workspace is not found.
@@ -14663,7 +14742,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BroadcastFigureScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastFigure(x.where...)
 	return x.s.writeBroadcastFigure(ctx, "delete", append([]predicate.BroadcastFigure{broadcastfigure.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.BroadcastFigure.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -14696,14 +14775,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *BroadcastFigureScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastFigure(x.where...)
 	var n int
 	err := x.s.writeBroadcastFigure(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.BroadcastFigure.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -14721,13 +14800,20 @@ func (t *BroadcastFigureScoped) Create() *BroadcastFigureScopedCreate {
 	return &BroadcastFigureScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *BroadcastFigureScopedCreate) build(s *Scoped) *BroadcastFigureCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *BroadcastFigureScopedCreate) raw(s *Scoped) *BroadcastFigureCreate {
 	b := s.c.BroadcastFigure.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *BroadcastFigureScopedCreate) build(ctx context.Context, s *Scoped) (*BroadcastFigureCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkBroadcastFigure(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -14917,20 +15003,16 @@ const (
 func (x *BroadcastFigureScopedCreate) Save(ctx context.Context) (*BroadcastFigure, error) {
 	var created *BroadcastFigure
 	err := x.s.writeBroadcastFigure(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkBroadcastFigure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -14968,7 +15050,7 @@ func (b *BroadcastFigureScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 	builders := make([]*BroadcastFigureCreate, len(b.xs))
 	ms := make([]*BroadcastFigureMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkBroadcastFigure(ctx, ms...); err != nil {
@@ -14993,10 +15075,7 @@ func (b *BroadcastFigureScopedCreateBulk) Save(ctx context.Context) ([]*Broadcas
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -15145,8 +15224,8 @@ func (u *BroadcastFigureScopedUpsertOne) Update(set func(*BroadcastFigureScopedU
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *BroadcastFigureScopedUpsertOne) build(ctx context.Context, s *Scoped) (*BroadcastFigureUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkBroadcastFigure(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -15175,10 +15254,7 @@ func (u *BroadcastFigureScopedUpsertOne) ID(ctx context.Context) (int64, error) 
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // BroadcastFigureScopedUpsertBulk is the "upsert" of several BroadcastFigure entities.
@@ -15317,26 +15393,28 @@ func (x *BroadcastFigureScopedUpdateOne) Save(ctx context.Context) (*BroadcastFi
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BroadcastFigureScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BroadcastFigureUpdateOne, error) {
+	b := s.c.BroadcastFigure.UpdateOneID(x.id).Where(s.inBroadcastFigure(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBroadcastFigure(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BroadcastFigureScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*BroadcastFigure, error) {
-	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastFigure(x.where...)
 	var updated *BroadcastFigure
 	err := x.s.writeBroadcastFigure(ctx, verb, append([]predicate.BroadcastFigure{broadcastfigure.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.BroadcastFigure.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBroadcastFigure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -15433,30 +15511,32 @@ const RoleOf_BroadcastFigureScopedUpdate_ClearPrunedAt = RoleStep
 
 const ClearsState_BroadcastFigureScopedUpdate_ClearPrunedAt = "PrunedAt"
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BroadcastFigureScopedUpdate) build(ctx context.Context, s *Scoped) (*BroadcastFigureUpdate, error) {
+	b := s.c.BroadcastFigure.Update().Where(s.inBroadcastFigure(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBroadcastFigure(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *BroadcastFigureScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.BroadcastFigure{broadcastfigure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastFigure(x.where...)
 	var n int
 	err := x.s.writeBroadcastFigure(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.BroadcastFigure.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBroadcastFigure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -15496,9 +15576,15 @@ const (
 	RoleOf_BroadcastRecipientScoped_Update      = RoleStart
 )
 
+// inBroadcastRecipient confines predicates of BroadcastRecipient rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inBroadcastRecipient(ps ...predicate.BroadcastRecipient) []predicate.BroadcastRecipient {
+	return append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a BroadcastRecipient query already confined to the Workspace.
 func (t *BroadcastRecipientScoped) Query() *BroadcastRecipientQuery {
-	return t.s.c.BroadcastRecipient.Query().Where(broadcastrecipient.WorkspaceID(t.s.ws))
+	return t.s.c.BroadcastRecipient.Query().Where(t.s.inBroadcastRecipient()...)
 }
 
 // Get returns the BroadcastRecipient with the id; a row of another Workspace is not found.
@@ -15567,7 +15653,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *BroadcastRecipientScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastRecipient(x.where...)
 	return x.s.writeBroadcastRecipient(ctx, "delete", append([]predicate.BroadcastRecipient{broadcastrecipient.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.BroadcastRecipient.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -15600,14 +15686,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *BroadcastRecipientScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastRecipient(x.where...)
 	var n int
 	err := x.s.writeBroadcastRecipient(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.BroadcastRecipient.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -15625,13 +15711,20 @@ func (t *BroadcastRecipientScoped) Create() *BroadcastRecipientScopedCreate {
 	return &BroadcastRecipientScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *BroadcastRecipientScopedCreate) build(s *Scoped) *BroadcastRecipientCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *BroadcastRecipientScopedCreate) raw(s *Scoped) *BroadcastRecipientCreate {
 	b := s.c.BroadcastRecipient.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *BroadcastRecipientScopedCreate) build(ctx context.Context, s *Scoped) (*BroadcastRecipientCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkBroadcastRecipient(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -15761,20 +15854,16 @@ const (
 func (x *BroadcastRecipientScopedCreate) Save(ctx context.Context) (*BroadcastRecipient, error) {
 	var created *BroadcastRecipient
 	err := x.s.writeBroadcastRecipient(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkBroadcastRecipient(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -15812,7 +15901,7 @@ func (b *BroadcastRecipientScopedCreateBulk) build(ctx context.Context, s *Scope
 	builders := make([]*BroadcastRecipientCreate, len(b.xs))
 	ms := make([]*BroadcastRecipientMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkBroadcastRecipient(ctx, ms...); err != nil {
@@ -15837,10 +15926,7 @@ func (b *BroadcastRecipientScopedCreateBulk) Save(ctx context.Context) ([]*Broad
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -16031,8 +16117,8 @@ func (u *BroadcastRecipientScopedUpsertOne) Update(set func(*BroadcastRecipientS
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *BroadcastRecipientScopedUpsertOne) build(ctx context.Context, s *Scoped) (*BroadcastRecipientUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkBroadcastRecipient(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -16061,10 +16147,7 @@ func (u *BroadcastRecipientScopedUpsertOne) ID(ctx context.Context) (int64, erro
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // BroadcastRecipientScopedUpsertBulk is the "upsert" of several BroadcastRecipient entities.
@@ -16299,26 +16382,28 @@ func (x *BroadcastRecipientScopedUpdateOne) Save(ctx context.Context) (*Broadcas
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BroadcastRecipientScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BroadcastRecipientUpdateOne, error) {
+	b := s.c.BroadcastRecipient.UpdateOneID(x.id).Where(s.inBroadcastRecipient(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBroadcastRecipient(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BroadcastRecipientScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*BroadcastRecipient, error) {
-	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastRecipient(x.where...)
 	var updated *BroadcastRecipient
 	err := x.s.writeBroadcastRecipient(ctx, verb, append([]predicate.BroadcastRecipient{broadcastrecipient.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.BroadcastRecipient.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBroadcastRecipient(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -16511,30 +16596,32 @@ func (x *BroadcastRecipientScopedUpdate) ClearContact() *BroadcastRecipientScope
 
 const RoleOf_BroadcastRecipientScopedUpdate_ClearContact = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *BroadcastRecipientScopedUpdate) build(ctx context.Context, s *Scoped) (*BroadcastRecipientUpdate, error) {
+	b := s.c.BroadcastRecipient.Update().Where(s.inBroadcastRecipient(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkBroadcastRecipient(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *BroadcastRecipientScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.BroadcastRecipient{broadcastrecipient.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inBroadcastRecipient(x.where...)
 	var n int
 	err := x.s.writeBroadcastRecipient(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.BroadcastRecipient.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkBroadcastRecipient(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -16572,9 +16659,15 @@ const (
 	RoleOf_CapturedMessageScoped_Update      = RoleStart
 )
 
+// inCapturedMessage confines predicates of CapturedMessage rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inCapturedMessage(ps ...predicate.CapturedMessage) []predicate.CapturedMessage {
+	return append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a CapturedMessage query already confined to the Workspace.
 func (t *CapturedMessageScoped) Query() *CapturedMessageQuery {
-	return t.s.c.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(t.s.ws))
+	return t.s.c.CapturedMessage.Query().Where(t.s.inCapturedMessage()...)
 }
 
 // Get returns the CapturedMessage with the id; a row of another Workspace is not found.
@@ -16643,7 +16736,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *CapturedMessageScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCapturedMessage(x.where...)
 	return x.s.writeCapturedMessage(ctx, "delete", append([]predicate.CapturedMessage{capturedmessage.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.CapturedMessage.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -16676,14 +16769,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *CapturedMessageScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCapturedMessage(x.where...)
 	var n int
 	err := x.s.writeCapturedMessage(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.CapturedMessage.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -16701,13 +16794,20 @@ func (t *CapturedMessageScoped) Create() *CapturedMessageScopedCreate {
 	return &CapturedMessageScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *CapturedMessageScopedCreate) build(s *Scoped) *CapturedMessageCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *CapturedMessageScopedCreate) raw(s *Scoped) *CapturedMessageCreate {
 	b := s.c.CapturedMessage.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *CapturedMessageScopedCreate) build(ctx context.Context, s *Scoped) (*CapturedMessageCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkCapturedMessage(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -16919,20 +17019,16 @@ const (
 func (x *CapturedMessageScopedCreate) Save(ctx context.Context) (*CapturedMessage, error) {
 	var created *CapturedMessage
 	err := x.s.writeCapturedMessage(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkCapturedMessage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -16970,7 +17066,7 @@ func (b *CapturedMessageScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 	builders := make([]*CapturedMessageCreate, len(b.xs))
 	ms := make([]*CapturedMessageMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkCapturedMessage(ctx, ms...); err != nil {
@@ -16995,10 +17091,7 @@ func (b *CapturedMessageScopedCreateBulk) Save(ctx context.Context) ([]*Captured
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -17133,8 +17226,8 @@ func (u *CapturedMessageScopedUpsertOne) Update(set func(*CapturedMessageScopedU
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *CapturedMessageScopedUpsertOne) build(ctx context.Context, s *Scoped) (*CapturedMessageUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkCapturedMessage(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -17163,10 +17256,7 @@ func (u *CapturedMessageScopedUpsertOne) ID(ctx context.Context) (int64, error) 
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // CapturedMessageScopedUpsertBulk is the "upsert" of several CapturedMessage entities.
@@ -17315,26 +17405,28 @@ func (x *CapturedMessageScopedUpdateOne) Save(ctx context.Context) (*CapturedMes
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *CapturedMessageScopedUpdateOne) build(ctx context.Context, s *Scoped) (*CapturedMessageUpdateOne, error) {
+	b := s.c.CapturedMessage.UpdateOneID(x.id).Where(s.inCapturedMessage(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkCapturedMessage(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *CapturedMessageScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*CapturedMessage, error) {
-	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCapturedMessage(x.where...)
 	var updated *CapturedMessage
 	err := x.s.writeCapturedMessage(ctx, verb, append([]predicate.CapturedMessage{capturedmessage.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.CapturedMessage.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkCapturedMessage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -17441,30 +17533,32 @@ func (x *CapturedMessageScopedUpdate) ClearOutboundMessage() *CapturedMessageSco
 
 const RoleOf_CapturedMessageScopedUpdate_ClearOutboundMessage = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *CapturedMessageScopedUpdate) build(ctx context.Context, s *Scoped) (*CapturedMessageUpdate, error) {
+	b := s.c.CapturedMessage.Update().Where(s.inCapturedMessage(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkCapturedMessage(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *CapturedMessageScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.CapturedMessage{capturedmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCapturedMessage(x.where...)
 	var n int
 	err := x.s.writeCapturedMessage(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.CapturedMessage.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkCapturedMessage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -17502,9 +17596,15 @@ const (
 	RoleOf_ConfirmationScoped_Update      = RoleStart
 )
 
+// inConfirmation confines predicates of Confirmation rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inConfirmation(ps ...predicate.Confirmation) []predicate.Confirmation {
+	return append([]predicate.Confirmation{confirmation.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Confirmation query already confined to the Workspace.
 func (t *ConfirmationScoped) Query() *ConfirmationQuery {
-	return t.s.c.Confirmation.Query().Where(confirmation.WorkspaceID(t.s.ws))
+	return t.s.c.Confirmation.Query().Where(t.s.inConfirmation()...)
 }
 
 // Get returns the Confirmation with the id; a row of another Workspace is not found.
@@ -17564,7 +17664,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ConfirmationScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inConfirmation(x.where...)
 	return x.s.writeConfirmation(ctx, "delete", append([]predicate.Confirmation{confirmation.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Confirmation.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -17597,14 +17697,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *ConfirmationScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inConfirmation(x.where...)
 	var n int
 	err := x.s.writeConfirmation(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Confirmation.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -17622,13 +17722,20 @@ func (t *ConfirmationScoped) Create() *ConfirmationScopedCreate {
 	return &ConfirmationScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *ConfirmationScopedCreate) build(s *Scoped) *ConfirmationCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ConfirmationScopedCreate) raw(s *Scoped) *ConfirmationCreate {
 	b := s.c.Confirmation.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ConfirmationScopedCreate) build(ctx context.Context, s *Scoped) (*ConfirmationCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkConfirmation(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -17794,20 +17901,16 @@ const (
 func (x *ConfirmationScopedCreate) Save(ctx context.Context) (*Confirmation, error) {
 	var created *Confirmation
 	err := x.s.writeConfirmation(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkConfirmation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -17845,7 +17948,7 @@ func (b *ConfirmationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*C
 	builders := make([]*ConfirmationCreate, len(b.xs))
 	ms := make([]*ConfirmationMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkConfirmation(ctx, ms...); err != nil {
@@ -17870,10 +17973,7 @@ func (b *ConfirmationScopedCreateBulk) Save(ctx context.Context) ([]*Confirmatio
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -18128,8 +18228,8 @@ func (u *ConfirmationScopedUpsertOne) Update(set func(*ConfirmationScopedUpsert)
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *ConfirmationScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ConfirmationUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkConfirmation(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -18158,10 +18258,7 @@ func (u *ConfirmationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // ConfirmationScopedUpsertBulk is the "upsert" of several Confirmation entities.
@@ -18442,26 +18539,28 @@ func (x *ConfirmationScopedUpdateOne) Save(ctx context.Context) (*Confirmation, 
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ConfirmationScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ConfirmationUpdateOne, error) {
+	b := s.c.Confirmation.UpdateOneID(x.id).Where(s.inConfirmation(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkConfirmation(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *ConfirmationScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Confirmation, error) {
-	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inConfirmation(x.where...)
 	var updated *Confirmation
 	err := x.s.writeConfirmation(ctx, verb, append([]predicate.Confirmation{confirmation.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Confirmation.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkConfirmation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -18700,30 +18799,32 @@ func (x *ConfirmationScopedUpdate) ClearContact() *ConfirmationScopedUpdate {
 
 const RoleOf_ConfirmationScopedUpdate_ClearContact = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ConfirmationScopedUpdate) build(ctx context.Context, s *Scoped) (*ConfirmationUpdate, error) {
+	b := s.c.Confirmation.Update().Where(s.inConfirmation(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkConfirmation(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *ConfirmationScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Confirmation{confirmation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inConfirmation(x.where...)
 	var n int
 	err := x.s.writeConfirmation(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Confirmation.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkConfirmation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -18761,9 +18862,15 @@ const (
 	RoleOf_ContactScoped_Update      = RoleStart
 )
 
+// inContact confines predicates of Contact rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inContact(ps ...predicate.Contact) []predicate.Contact {
+	return append([]predicate.Contact{contact.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Contact query already confined to the Workspace.
 func (t *ContactScoped) Query() *ContactQuery {
-	return t.s.c.Contact.Query().Where(contact.WorkspaceID(t.s.ws))
+	return t.s.c.Contact.Query().Where(t.s.inContact()...)
 }
 
 // Get returns the Contact with the id; a row of another Workspace is not found.
@@ -18902,7 +19009,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ContactScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inContact(x.where...)
 	return x.s.writeContact(ctx, "delete", append([]predicate.Contact{contact.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Contact.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -18935,14 +19042,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *ContactScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inContact(x.where...)
 	var n int
 	err := x.s.writeContact(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Contact.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -18960,13 +19067,20 @@ func (t *ContactScoped) Create() *ContactScopedCreate {
 	return &ContactScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *ContactScopedCreate) build(s *Scoped) *ContactCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ContactScopedCreate) raw(s *Scoped) *ContactCreate {
 	b := s.c.Contact.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ContactScopedCreate) build(ctx context.Context, s *Scoped) (*ContactCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkContact(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -19340,20 +19454,16 @@ const (
 func (x *ContactScopedCreate) Save(ctx context.Context) (*Contact, error) {
 	var created *Contact
 	err := x.s.writeContact(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkContact(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -19391,7 +19501,7 @@ func (b *ContactScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Contac
 	builders := make([]*ContactCreate, len(b.xs))
 	ms := make([]*ContactMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkContact(ctx, ms...); err != nil {
@@ -19420,10 +19530,7 @@ func (b *ContactScopedCreateBulk) Save(ctx context.Context) ([]*Contact, error) 
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -19854,8 +19961,8 @@ func (u *ContactScopedUpsertOne) Update(set func(*ContactScopedUpsert)) *Contact
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *ContactScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ContactUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkContact(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -19888,10 +19995,7 @@ func (u *ContactScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // ContactScopedUpsertBulk is the "upsert" of several Contact entities.
@@ -20530,26 +20634,28 @@ func (x *ContactScopedUpdateOne) Save(ctx context.Context) (*Contact, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ContactUpdateOne, error) {
+	b := s.c.Contact.UpdateOneID(x.id).Where(s.inContact(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContact(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *ContactScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Contact, error) {
-	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inContact(x.where...)
 	var updated *Contact
 	err := x.s.writeContact(ctx, verb, append([]predicate.Contact{contact.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Contact.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkContact(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -21142,30 +21248,32 @@ func (x *ContactScopedUpdate) RemoveOrders(v ...*Order) *ContactScopedUpdate {
 
 const RoleOf_ContactScopedUpdate_RemoveOrders = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactUpdate, error) {
+	b := s.c.Contact.Update().Where(s.inContact(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContact(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *ContactScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Contact{contact.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inContact(x.where...)
 	var n int
 	err := x.s.writeContact(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Contact.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkContact(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -21200,9 +21308,15 @@ const (
 	RoleOf_ContactTagScoped_Update     = RoleStart
 )
 
+// inContactTag confines predicates of ContactTag rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inContactTag(ps ...predicate.ContactTag) []predicate.ContactTag {
+	return append([]predicate.ContactTag{contacttag.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a ContactTag query already confined to the Workspace.
 func (t *ContactTagScoped) Query() *ContactTagQuery {
-	return t.s.c.ContactTag.Query().Where(contacttag.WorkspaceID(t.s.ws))
+	return t.s.c.ContactTag.Query().Where(t.s.inContactTag()...)
 }
 
 // writeContactTag runs a write of ContactTag rows: run builds it on the client of the scope it is
@@ -21265,14 +21379,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *ContactTagScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.ContactTag{contacttag.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inContactTag(x.where...)
 	var n int
 	err := x.s.writeContactTag(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.ContactTag.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -21290,13 +21404,20 @@ func (t *ContactTagScoped) Create() *ContactTagScopedCreate {
 	return &ContactTagScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *ContactTagScopedCreate) build(s *Scoped) *ContactTagCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ContactTagScopedCreate) raw(s *Scoped) *ContactTagCreate {
 	b := s.c.ContactTag.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ContactTagScopedCreate) build(ctx context.Context, s *Scoped) (*ContactTagCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkContactTag(ctx, b.Mutation()))
 }
 
 // SetContactID sets the "contact_id" field.
@@ -21344,20 +21465,16 @@ const (
 func (x *ContactTagScopedCreate) Save(ctx context.Context) (*ContactTag, error) {
 	var created *ContactTag
 	err := x.s.writeContactTag(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkContactTag(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -21395,7 +21512,7 @@ func (b *ContactTagScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Con
 	builders := make([]*ContactTagCreate, len(b.xs))
 	ms := make([]*ContactTagMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkContactTag(ctx, ms...); err != nil {
@@ -21420,10 +21537,7 @@ func (b *ContactTagScopedCreateBulk) Save(ctx context.Context) ([]*ContactTag, e
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -21541,8 +21655,8 @@ func (u *ContactTagScopedUpsertOne) Update(set func(*ContactTagScopedUpsert)) *C
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *ContactTagScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ContactTagUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkContactTag(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -21741,30 +21855,32 @@ func (x *ContactTagScopedUpdate) ClearTag() *ContactTagScopedUpdate {
 
 const RoleOf_ContactTagScopedUpdate_ClearTag = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ContactTagScopedUpdate) build(ctx context.Context, s *Scoped) (*ContactTagUpdate, error) {
+	b := s.c.ContactTag.Update().Where(s.inContactTag(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkContactTag(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *ContactTagScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.ContactTag{contacttag.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inContactTag(x.where...)
 	var n int
 	err := x.s.writeContactTag(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.ContactTag.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkContactTag(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -21802,9 +21918,15 @@ const (
 	RoleOf_CustomFieldScoped_Update      = RoleStart
 )
 
+// inCustomField confines predicates of CustomField rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inCustomField(ps ...predicate.CustomField) []predicate.CustomField {
+	return append([]predicate.CustomField{customfield.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a CustomField query already confined to the Workspace.
 func (t *CustomFieldScoped) Query() *CustomFieldQuery {
-	return t.s.c.CustomField.Query().Where(customfield.WorkspaceID(t.s.ws))
+	return t.s.c.CustomField.Query().Where(t.s.inCustomField()...)
 }
 
 // Get returns the CustomField with the id; a row of another Workspace is not found.
@@ -21898,7 +22020,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *CustomFieldScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCustomField(x.where...)
 	return x.s.writeCustomField(ctx, "delete", append([]predicate.CustomField{customfield.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.CustomField.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -21931,14 +22053,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *CustomFieldScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCustomField(x.where...)
 	var n int
 	err := x.s.writeCustomField(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.CustomField.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -21956,13 +22078,20 @@ func (t *CustomFieldScoped) Create() *CustomFieldScopedCreate {
 	return &CustomFieldScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *CustomFieldScopedCreate) build(s *Scoped) *CustomFieldCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *CustomFieldScopedCreate) raw(s *Scoped) *CustomFieldCreate {
 	b := s.c.CustomField.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *CustomFieldScopedCreate) build(ctx context.Context, s *Scoped) (*CustomFieldCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkCustomField(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -22066,20 +22195,16 @@ const (
 func (x *CustomFieldScopedCreate) Save(ctx context.Context) (*CustomField, error) {
 	var created *CustomField
 	err := x.s.writeCustomField(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkCustomField(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -22117,7 +22242,7 @@ func (b *CustomFieldScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Cu
 	builders := make([]*CustomFieldCreate, len(b.xs))
 	ms := make([]*CustomFieldMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkCustomField(ctx, ms...); err != nil {
@@ -22146,10 +22271,7 @@ func (b *CustomFieldScopedCreateBulk) Save(ctx context.Context) ([]*CustomField,
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -22324,8 +22446,8 @@ func (u *CustomFieldScopedUpsertOne) Update(set func(*CustomFieldScopedUpsert)) 
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *CustomFieldScopedUpsertOne) build(ctx context.Context, s *Scoped) (*CustomFieldUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkCustomField(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -22358,10 +22480,7 @@ func (u *CustomFieldScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // CustomFieldScopedUpsertBulk is the "upsert" of several CustomField entities.
@@ -22534,26 +22653,28 @@ func (x *CustomFieldScopedUpdateOne) Save(ctx context.Context) (*CustomField, er
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *CustomFieldScopedUpdateOne) build(ctx context.Context, s *Scoped) (*CustomFieldUpdateOne, error) {
+	b := s.c.CustomField.UpdateOneID(x.id).Where(s.inCustomField(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkCustomField(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *CustomFieldScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*CustomField, error) {
-	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCustomField(x.where...)
 	var updated *CustomField
 	err := x.s.writeCustomField(ctx, verb, append([]predicate.CustomField{customfield.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.CustomField.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkCustomField(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -22680,30 +22801,32 @@ func (x *CustomFieldScopedUpdate) SetNillableType(v *customfield.Type) *CustomFi
 
 const RoleOf_CustomFieldScopedUpdate_SetNillableType = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *CustomFieldScopedUpdate) build(ctx context.Context, s *Scoped) (*CustomFieldUpdate, error) {
+	b := s.c.CustomField.Update().Where(s.inCustomField(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkCustomField(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *CustomFieldScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.CustomField{customfield.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inCustomField(x.where...)
 	var n int
 	err := x.s.writeCustomField(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.CustomField.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkCustomField(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -22741,9 +22864,15 @@ const (
 	RoleOf_EmailTemplateScoped_Update      = RoleStart
 )
 
+// inEmailTemplate confines predicates of EmailTemplate rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inEmailTemplate(ps ...predicate.EmailTemplate) []predicate.EmailTemplate {
+	return append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a EmailTemplate query already confined to the Workspace.
 func (t *EmailTemplateScoped) Query() *EmailTemplateQuery {
-	return t.s.c.EmailTemplate.Query().Where(emailtemplate.WorkspaceID(t.s.ws))
+	return t.s.c.EmailTemplate.Query().Where(t.s.inEmailTemplate()...)
 }
 
 // Get returns the EmailTemplate with the id; a row of another Workspace is not found.
@@ -22837,7 +22966,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *EmailTemplateScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEmailTemplate(x.where...)
 	return x.s.writeEmailTemplate(ctx, "delete", append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.EmailTemplate.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -22870,14 +22999,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *EmailTemplateScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEmailTemplate(x.where...)
 	var n int
 	err := x.s.writeEmailTemplate(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.EmailTemplate.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -22895,13 +23024,20 @@ func (t *EmailTemplateScoped) Create() *EmailTemplateScopedCreate {
 	return &EmailTemplateScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *EmailTemplateScopedCreate) build(s *Scoped) *EmailTemplateCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *EmailTemplateScopedCreate) raw(s *Scoped) *EmailTemplateCreate {
 	b := s.c.EmailTemplate.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *EmailTemplateScopedCreate) build(ctx context.Context, s *Scoped) (*EmailTemplateCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkEmailTemplate(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -23041,20 +23177,16 @@ const (
 func (x *EmailTemplateScopedCreate) Save(ctx context.Context) (*EmailTemplate, error) {
 	var created *EmailTemplate
 	err := x.s.writeEmailTemplate(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkEmailTemplate(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -23092,7 +23224,7 @@ func (b *EmailTemplateScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 	builders := make([]*EmailTemplateCreate, len(b.xs))
 	ms := make([]*EmailTemplateMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkEmailTemplate(ctx, ms...); err != nil {
@@ -23121,10 +23253,7 @@ func (b *EmailTemplateScopedCreateBulk) Save(ctx context.Context) ([]*EmailTempl
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -23363,8 +23492,8 @@ func (u *EmailTemplateScopedUpsertOne) Update(set func(*EmailTemplateScopedUpser
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *EmailTemplateScopedUpsertOne) build(ctx context.Context, s *Scoped) (*EmailTemplateUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkEmailTemplate(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -23397,10 +23526,7 @@ func (u *EmailTemplateScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // EmailTemplateScopedUpsertBulk is the "upsert" of several EmailTemplate entities.
@@ -23641,26 +23767,28 @@ func (x *EmailTemplateScopedUpdateOne) Save(ctx context.Context) (*EmailTemplate
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *EmailTemplateScopedUpdateOne) build(ctx context.Context, s *Scoped) (*EmailTemplateUpdateOne, error) {
+	b := s.c.EmailTemplate.UpdateOneID(x.id).Where(s.inEmailTemplate(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkEmailTemplate(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *EmailTemplateScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*EmailTemplate, error) {
-	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEmailTemplate(x.where...)
 	var updated *EmailTemplate
 	err := x.s.writeEmailTemplate(ctx, verb, append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.EmailTemplate.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkEmailTemplate(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -23855,30 +23983,32 @@ func (x *EmailTemplateScopedUpdate) ClearEditorVersion() *EmailTemplateScopedUpd
 
 const RoleOf_EmailTemplateScopedUpdate_ClearEditorVersion = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *EmailTemplateScopedUpdate) build(ctx context.Context, s *Scoped) (*EmailTemplateUpdate, error) {
+	b := s.c.EmailTemplate.Update().Where(s.inEmailTemplate(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkEmailTemplate(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *EmailTemplateScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.EmailTemplate{emailtemplate.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEmailTemplate(x.where...)
 	var n int
 	err := x.s.writeEmailTemplate(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.EmailTemplate.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkEmailTemplate(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -23916,9 +24046,15 @@ const (
 	RoleOf_ErasureScoped_Update      = RoleStart
 )
 
+// inErasure confines predicates of Erasure rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inErasure(ps ...predicate.Erasure) []predicate.Erasure {
+	return append([]predicate.Erasure{erasure.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Erasure query already confined to the Workspace.
 func (t *ErasureScoped) Query() *ErasureQuery {
-	return t.s.c.Erasure.Query().Where(erasure.WorkspaceID(t.s.ws))
+	return t.s.c.Erasure.Query().Where(t.s.inErasure()...)
 }
 
 // Get returns the Erasure with the id; a row of another Workspace is not found.
@@ -23969,7 +24105,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ErasureScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inErasure(x.where...)
 	return x.s.writeErasure(ctx, "delete", append([]predicate.Erasure{erasure.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Erasure.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -24002,14 +24138,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *ErasureScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inErasure(x.where...)
 	var n int
 	err := x.s.writeErasure(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Erasure.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -24027,13 +24163,20 @@ func (t *ErasureScoped) Create() *ErasureScopedCreate {
 	return &ErasureScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *ErasureScopedCreate) build(s *Scoped) *ErasureCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ErasureScopedCreate) raw(s *Scoped) *ErasureCreate {
 	b := s.c.Erasure.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ErasureScopedCreate) build(ctx context.Context, s *Scoped) (*ErasureCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkErasure(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -24181,20 +24324,16 @@ const (
 func (x *ErasureScopedCreate) Save(ctx context.Context) (*Erasure, error) {
 	var created *Erasure
 	err := x.s.writeErasure(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkErasure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -24232,7 +24371,7 @@ func (b *ErasureScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Erasur
 	builders := make([]*ErasureCreate, len(b.xs))
 	ms := make([]*ErasureMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkErasure(ctx, ms...); err != nil {
@@ -24257,10 +24396,7 @@ func (b *ErasureScopedCreateBulk) Save(ctx context.Context) ([]*Erasure, error) 
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -24427,8 +24563,8 @@ func (u *ErasureScopedUpsertOne) Update(set func(*ErasureScopedUpsert)) *Erasure
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *ErasureScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ErasureUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkErasure(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -24457,10 +24593,7 @@ func (u *ErasureScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // ErasureScopedUpsertBulk is the "upsert" of several Erasure entities.
@@ -24619,26 +24752,28 @@ func (x *ErasureScopedUpdateOne) Save(ctx context.Context) (*Erasure, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ErasureScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ErasureUpdateOne, error) {
+	b := s.c.Erasure.UpdateOneID(x.id).Where(s.inErasure(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkErasure(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *ErasureScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Erasure, error) {
-	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inErasure(x.where...)
 	var updated *Erasure
 	err := x.s.writeErasure(ctx, verb, append([]predicate.Erasure{erasure.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Erasure.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkErasure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -24755,30 +24890,32 @@ func (x *ErasureScopedUpdate) ClearPhoneHashEncrypted() *ErasureScopedUpdate {
 
 const RoleOf_ErasureScopedUpdate_ClearPhoneHashEncrypted = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ErasureScopedUpdate) build(ctx context.Context, s *Scoped) (*ErasureUpdate, error) {
+	b := s.c.Erasure.Update().Where(s.inErasure(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkErasure(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *ErasureScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Erasure{erasure.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inErasure(x.where...)
 	var n int
 	err := x.s.writeErasure(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Erasure.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkErasure(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -24816,9 +24953,15 @@ const (
 	RoleOf_EventScoped_Update      = RoleStart
 )
 
+// inEvent confines predicates of Event rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inEvent(ps ...predicate.Event) []predicate.Event {
+	return append([]predicate.Event{event.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Event query already confined to the Workspace.
 func (t *EventScoped) Query() *EventQuery {
-	return t.s.c.Event.Query().Where(event.WorkspaceID(t.s.ws))
+	return t.s.c.Event.Query().Where(t.s.inEvent()...)
 }
 
 // Get returns the Event with the id; a row of another Workspace is not found.
@@ -24896,7 +25039,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *EventScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEvent(x.where...)
 	return x.s.writeEvent(ctx, "delete", append([]predicate.Event{event.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Event.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -24929,14 +25072,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *EventScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEvent(x.where...)
 	var n int
 	err := x.s.writeEvent(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Event.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -24954,13 +25097,20 @@ func (t *EventScoped) Create() *EventScopedCreate {
 	return &EventScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *EventScopedCreate) build(s *Scoped) *EventCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *EventScopedCreate) raw(s *Scoped) *EventCreate {
 	b := s.c.Event.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *EventScopedCreate) build(ctx context.Context, s *Scoped) (*EventCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkEvent(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -25286,20 +25436,16 @@ const (
 func (x *EventScopedCreate) Save(ctx context.Context) (*Event, error) {
 	var created *Event
 	err := x.s.writeEvent(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkEvent(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -25337,7 +25483,7 @@ func (b *EventScopedCreateBulk) build(ctx context.Context, s *Scoped) (*EventCre
 	builders := make([]*EventCreate, len(b.xs))
 	ms := make([]*EventMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkEvent(ctx, ms...); err != nil {
@@ -25362,10 +25508,7 @@ func (b *EventScopedCreateBulk) Save(ctx context.Context) ([]*Event, error) {
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -25700,8 +25843,8 @@ func (u *EventScopedUpsertOne) Update(set func(*EventScopedUpsert)) *EventScoped
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *EventScopedUpsertOne) build(ctx context.Context, s *Scoped) (*EventUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkEvent(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -25730,10 +25873,7 @@ func (u *EventScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // EventScopedUpsertBulk is the "upsert" of several Event entities.
@@ -26138,26 +26278,28 @@ func (x *EventScopedUpdateOne) Save(ctx context.Context) (*Event, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *EventScopedUpdateOne) build(ctx context.Context, s *Scoped) (*EventUpdateOne, error) {
+	b := s.c.Event.UpdateOneID(x.id).Where(s.inEvent(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkEvent(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *EventScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Event, error) {
-	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEvent(x.where...)
 	var updated *Event
 	err := x.s.writeEvent(ctx, verb, append([]predicate.Event{event.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Event.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkEvent(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -26520,30 +26662,32 @@ func (x *EventScopedUpdate) ClearAutomation() *EventScopedUpdate {
 
 const RoleOf_EventScopedUpdate_ClearAutomation = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *EventScopedUpdate) build(ctx context.Context, s *Scoped) (*EventUpdate, error) {
+	b := s.c.Event.Update().Where(s.inEvent(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkEvent(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *EventScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Event{event.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inEvent(x.where...)
 	var n int
 	err := x.s.writeEvent(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Event.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkEvent(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -26581,9 +26725,15 @@ const (
 	RoleOf_HeldOrderEventScoped_Update      = RoleStart
 )
 
+// inHeldOrderEvent confines predicates of HeldOrderEvent rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inHeldOrderEvent(ps ...predicate.HeldOrderEvent) []predicate.HeldOrderEvent {
+	return append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a HeldOrderEvent query already confined to the Workspace.
 func (t *HeldOrderEventScoped) Query() *HeldOrderEventQuery {
-	return t.s.c.HeldOrderEvent.Query().Where(heldorderevent.WorkspaceID(t.s.ws))
+	return t.s.c.HeldOrderEvent.Query().Where(t.s.inHeldOrderEvent()...)
 }
 
 // Get returns the HeldOrderEvent with the id; a row of another Workspace is not found.
@@ -26634,7 +26784,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *HeldOrderEventScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHeldOrderEvent(x.where...)
 	return x.s.writeHeldOrderEvent(ctx, "delete", append([]predicate.HeldOrderEvent{heldorderevent.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.HeldOrderEvent.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -26667,14 +26817,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *HeldOrderEventScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHeldOrderEvent(x.where...)
 	var n int
 	err := x.s.writeHeldOrderEvent(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.HeldOrderEvent.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -26692,13 +26842,20 @@ func (t *HeldOrderEventScoped) Create() *HeldOrderEventScopedCreate {
 	return &HeldOrderEventScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *HeldOrderEventScopedCreate) build(s *Scoped) *HeldOrderEventCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *HeldOrderEventScopedCreate) raw(s *Scoped) *HeldOrderEventCreate {
 	b := s.c.HeldOrderEvent.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *HeldOrderEventScopedCreate) build(ctx context.Context, s *Scoped) (*HeldOrderEventCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkHeldOrderEvent(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -26790,20 +26947,16 @@ const (
 func (x *HeldOrderEventScopedCreate) Save(ctx context.Context) (*HeldOrderEvent, error) {
 	var created *HeldOrderEvent
 	err := x.s.writeHeldOrderEvent(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkHeldOrderEvent(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -26841,7 +26994,7 @@ func (b *HeldOrderEventScopedCreateBulk) build(ctx context.Context, s *Scoped) (
 	builders := make([]*HeldOrderEventCreate, len(b.xs))
 	ms := make([]*HeldOrderEventMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkHeldOrderEvent(ctx, ms...); err != nil {
@@ -26866,10 +27019,7 @@ func (b *HeldOrderEventScopedCreateBulk) Save(ctx context.Context) ([]*HeldOrder
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -26988,8 +27138,8 @@ func (u *HeldOrderEventScopedUpsertOne) Update(set func(*HeldOrderEventScopedUps
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *HeldOrderEventScopedUpsertOne) build(ctx context.Context, s *Scoped) (*HeldOrderEventUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkHeldOrderEvent(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -27018,10 +27168,7 @@ func (u *HeldOrderEventScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // HeldOrderEventScopedUpsertBulk is the "upsert" of several HeldOrderEvent entities.
@@ -27128,26 +27275,28 @@ func (x *HeldOrderEventScopedUpdateOne) Save(ctx context.Context) (*HeldOrderEve
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *HeldOrderEventScopedUpdateOne) build(ctx context.Context, s *Scoped) (*HeldOrderEventUpdateOne, error) {
+	b := s.c.HeldOrderEvent.UpdateOneID(x.id).Where(s.inHeldOrderEvent(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkHeldOrderEvent(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *HeldOrderEventScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*HeldOrderEvent, error) {
-	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHeldOrderEvent(x.where...)
 	var updated *HeldOrderEvent
 	err := x.s.writeHeldOrderEvent(ctx, verb, append([]predicate.HeldOrderEvent{heldorderevent.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.HeldOrderEvent.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkHeldOrderEvent(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -27212,30 +27361,32 @@ func (x *HeldOrderEventScopedUpdate) SetUpdatedAt(v time.Time) *HeldOrderEventSc
 
 const RoleOf_HeldOrderEventScopedUpdate_SetUpdatedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *HeldOrderEventScopedUpdate) build(ctx context.Context, s *Scoped) (*HeldOrderEventUpdate, error) {
+	b := s.c.HeldOrderEvent.Update().Where(s.inHeldOrderEvent(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkHeldOrderEvent(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *HeldOrderEventScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.HeldOrderEvent{heldorderevent.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHeldOrderEvent(x.where...)
 	var n int
 	err := x.s.writeHeldOrderEvent(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.HeldOrderEvent.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkHeldOrderEvent(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -27273,9 +27424,15 @@ const (
 	RoleOf_HoldScoped_Update      = RoleStart
 )
 
+// inHold confines predicates of Hold rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inHold(ps ...predicate.Hold) []predicate.Hold {
+	return append([]predicate.Hold{hold.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Hold query already confined to the Workspace.
 func (t *HoldScoped) Query() *HoldQuery {
-	return t.s.c.Hold.Query().Where(hold.WorkspaceID(t.s.ws))
+	return t.s.c.Hold.Query().Where(t.s.inHold()...)
 }
 
 // Get returns the Hold with the id; a row of another Workspace is not found.
@@ -27369,7 +27526,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *HoldScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHold(x.where...)
 	return x.s.writeHold(ctx, "delete", append([]predicate.Hold{hold.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Hold.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -27402,14 +27559,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *HoldScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHold(x.where...)
 	var n int
 	err := x.s.writeHold(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Hold.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -27427,13 +27584,20 @@ func (t *HoldScoped) Create() *HoldScopedCreate {
 	return &HoldScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *HoldScopedCreate) build(s *Scoped) *HoldCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *HoldScopedCreate) raw(s *Scoped) *HoldCreate {
 	b := s.c.Hold.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *HoldScopedCreate) build(ctx context.Context, s *Scoped) (*HoldCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkHold(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -27543,20 +27707,16 @@ const (
 func (x *HoldScopedCreate) Save(ctx context.Context) (*Hold, error) {
 	var created *Hold
 	err := x.s.writeHold(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkHold(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -27594,7 +27754,7 @@ func (b *HoldScopedCreateBulk) build(ctx context.Context, s *Scoped) (*HoldCreat
 	builders := make([]*HoldCreate, len(b.xs))
 	ms := make([]*HoldMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkHold(ctx, ms...); err != nil {
@@ -27623,10 +27783,7 @@ func (b *HoldScopedCreateBulk) Save(ctx context.Context) ([]*Hold, error) {
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -27833,8 +27990,8 @@ func (u *HoldScopedUpsertOne) Update(set func(*HoldScopedUpsert)) *HoldScopedUps
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *HoldScopedUpsertOne) build(ctx context.Context, s *Scoped) (*HoldUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkHold(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -27867,10 +28024,7 @@ func (u *HoldScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // HoldScopedUpsertBulk is the "upsert" of several Hold entities.
@@ -28079,26 +28233,28 @@ func (x *HoldScopedUpdateOne) Save(ctx context.Context) (*Hold, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *HoldScopedUpdateOne) build(ctx context.Context, s *Scoped) (*HoldUpdateOne, error) {
+	b := s.c.Hold.UpdateOneID(x.id).Where(s.inHold(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkHold(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *HoldScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Hold, error) {
-	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHold(x.where...)
 	var updated *Hold
 	err := x.s.writeHold(ctx, verb, append([]predicate.Hold{hold.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Hold.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkHold(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -28261,30 +28417,32 @@ func (x *HoldScopedUpdate) SetNillableSetBy(v *string) *HoldScopedUpdate {
 
 const RoleOf_HoldScopedUpdate_SetNillableSetBy = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *HoldScopedUpdate) build(ctx context.Context, s *Scoped) (*HoldUpdate, error) {
+	b := s.c.Hold.Update().Where(s.inHold(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkHold(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *HoldScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Hold{hold.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inHold(x.where...)
 	var n int
 	err := x.s.writeHold(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Hold.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkHold(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -28324,15 +28482,21 @@ const (
 	RoleOf_IntegrationScoped_Update             = RoleStart
 )
 
+// inIntegration confines predicates of Integration rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inIntegration(ps ...predicate.Integration) []predicate.Integration {
+	return append([]predicate.Integration{integration.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Integration query already confined to the Workspace, hiding discarded rows
 // (a list query; QueryWithDiscarded sees them too).
 func (t *IntegrationScoped) Query() *IntegrationQuery {
-	return t.s.c.Integration.Query().Where(integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil())
+	return t.s.c.Integration.Query().Where(t.s.inIntegration(integration.DiscardedAtIsNil())...)
 }
 
 // QueryWithDiscarded returns a Integration query confined to the Workspace that also sees discarded rows.
 func (t *IntegrationScoped) QueryWithDiscarded() *IntegrationQuery {
-	return t.s.c.Integration.Query().Where(integration.WorkspaceID(t.s.ws))
+	return t.s.c.Integration.Query().Where(t.s.inIntegration()...)
 }
 
 // Get returns the Integration with the id, discarded or not; a row of another Workspace is not found.
@@ -28439,7 +28603,7 @@ func (s *Scoped) checkIntegration(ctx context.Context, ms ...*IntegrationMutatio
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *IntegrationScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Integration) error {
-	where := append([]predicate.Integration{integration.ID(id), integration.WorkspaceID(t.s.ws), integration.DiscardedAtIsNil()}, ps...)
+	where := append(t.s.inIntegration(integration.ID(id), integration.DiscardedAtIsNil()), ps...)
 	return t.s.writeIntegration(ctx, "discard", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.Integration.UpdateOneID(id).Where(where...).SetDiscardedAt(at).SetIsDefault(false).Save(ctx)
 		return nil, err
@@ -28474,7 +28638,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *IntegrationScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inIntegration(x.where...)
 	return x.s.writeIntegration(ctx, "delete", append([]predicate.Integration{integration.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Integration.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -28507,14 +28671,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *IntegrationScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inIntegration(x.where...)
 	var n int
 	err := x.s.writeIntegration(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Integration.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -28532,13 +28696,20 @@ func (t *IntegrationScoped) Create() *IntegrationScopedCreate {
 	return &IntegrationScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *IntegrationScopedCreate) build(s *Scoped) *IntegrationCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *IntegrationScopedCreate) raw(s *Scoped) *IntegrationCreate {
 	b := s.c.Integration.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *IntegrationScopedCreate) build(ctx context.Context, s *Scoped) (*IntegrationCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkIntegration(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -28974,20 +29145,16 @@ const (
 func (x *IntegrationScopedCreate) Save(ctx context.Context) (*Integration, error) {
 	var created *Integration
 	err := x.s.writeIntegration(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkIntegration(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -29025,7 +29192,7 @@ func (b *IntegrationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*In
 	builders := make([]*IntegrationCreate, len(b.xs))
 	ms := make([]*IntegrationMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkIntegration(ctx, ms...); err != nil {
@@ -29054,10 +29221,7 @@ func (b *IntegrationScopedCreateBulk) Save(ctx context.Context) ([]*Integration,
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -29636,8 +29800,8 @@ func (u *IntegrationScopedUpsertOne) Update(set func(*IntegrationScopedUpsert)) 
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *IntegrationScopedUpsertOne) build(ctx context.Context, s *Scoped) (*IntegrationUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkIntegration(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -29670,10 +29834,7 @@ func (u *IntegrationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // IntegrationScopedUpsertBulk is the "upsert" of several Integration entities.
@@ -30438,26 +30599,28 @@ func (x *IntegrationScopedUpdateOne) Save(ctx context.Context) (*Integration, er
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *IntegrationScopedUpdateOne) build(ctx context.Context, s *Scoped) (*IntegrationUpdateOne, error) {
+	b := s.c.Integration.UpdateOneID(x.id).Where(s.inIntegration(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkIntegration(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *IntegrationScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Integration, error) {
-	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inIntegration(x.where...)
 	var updated *Integration
 	err := x.s.writeIntegration(ctx, verb, append([]predicate.Integration{integration.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Integration.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkIntegration(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -31176,30 +31339,32 @@ func (x *IntegrationScopedUpdate) RemoveStartTokens(v ...*StartToken) *Integrati
 
 const RoleOf_IntegrationScopedUpdate_RemoveStartTokens = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *IntegrationScopedUpdate) build(ctx context.Context, s *Scoped) (*IntegrationUpdate, error) {
+	b := s.c.Integration.Update().Where(s.inIntegration(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkIntegration(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *IntegrationScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Integration{integration.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inIntegration(x.where...)
 	var n int
 	err := x.s.writeIntegration(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Integration.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkIntegration(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -31237,9 +31402,15 @@ const (
 	RoleOf_InvitationScoped_Update      = RoleStart
 )
 
+// inInvitation confines predicates of Invitation rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inInvitation(ps ...predicate.Invitation) []predicate.Invitation {
+	return append([]predicate.Invitation{invitation.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Invitation query already confined to the Workspace.
 func (t *InvitationScoped) Query() *InvitationQuery {
-	return t.s.c.Invitation.Query().Where(invitation.WorkspaceID(t.s.ws))
+	return t.s.c.Invitation.Query().Where(t.s.inInvitation()...)
 }
 
 // Get returns the Invitation with the id; a row of another Workspace is not found.
@@ -31290,7 +31461,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *InvitationScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inInvitation(x.where...)
 	return x.s.writeInvitation(ctx, "delete", append([]predicate.Invitation{invitation.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Invitation.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -31323,14 +31494,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *InvitationScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inInvitation(x.where...)
 	var n int
 	err := x.s.writeInvitation(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Invitation.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -31348,13 +31519,20 @@ func (t *InvitationScoped) Create() *InvitationScopedCreate {
 	return &InvitationScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *InvitationScopedCreate) build(s *Scoped) *InvitationCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *InvitationScopedCreate) raw(s *Scoped) *InvitationCreate {
 	b := s.c.Invitation.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *InvitationScopedCreate) build(ctx context.Context, s *Scoped) (*InvitationCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkInvitation(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -31526,20 +31704,16 @@ const (
 func (x *InvitationScopedCreate) Save(ctx context.Context) (*Invitation, error) {
 	var created *Invitation
 	err := x.s.writeInvitation(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkInvitation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -31577,7 +31751,7 @@ func (b *InvitationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Inv
 	builders := make([]*InvitationCreate, len(b.xs))
 	ms := make([]*InvitationMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkInvitation(ctx, ms...); err != nil {
@@ -31602,10 +31776,7 @@ func (b *InvitationScopedCreateBulk) Save(ctx context.Context) ([]*Invitation, e
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -31850,8 +32021,8 @@ func (u *InvitationScopedUpsertOne) Update(set func(*InvitationScopedUpsert)) *I
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *InvitationScopedUpsertOne) build(ctx context.Context, s *Scoped) (*InvitationUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkInvitation(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -31880,10 +32051,7 @@ func (u *InvitationScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // InvitationScopedUpsertBulk is the "upsert" of several Invitation entities.
@@ -32202,26 +32370,28 @@ func (x *InvitationScopedUpdateOne) Save(ctx context.Context) (*Invitation, erro
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *InvitationScopedUpdateOne) build(ctx context.Context, s *Scoped) (*InvitationUpdateOne, error) {
+	b := s.c.Invitation.UpdateOneID(x.id).Where(s.inInvitation(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkInvitation(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *InvitationScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Invitation, error) {
-	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inInvitation(x.where...)
 	var updated *Invitation
 	err := x.s.writeInvitation(ctx, verb, append([]predicate.Invitation{invitation.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Invitation.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkInvitation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -32498,30 +32668,32 @@ func (x *InvitationScopedUpdate) RemovePendingSignups(v ...*PendingSignup) *Invi
 
 const RoleOf_InvitationScopedUpdate_RemovePendingSignups = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *InvitationScopedUpdate) build(ctx context.Context, s *Scoped) (*InvitationUpdate, error) {
+	b := s.c.Invitation.Update().Where(s.inInvitation(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkInvitation(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *InvitationScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Invitation{invitation.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inInvitation(x.where...)
 	var n int
 	err := x.s.writeInvitation(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Invitation.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkInvitation(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -32559,9 +32731,15 @@ const (
 	RoleOf_JoinDomainScoped_Update      = RoleStart
 )
 
+// inJoinDomain confines predicates of JoinDomain rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inJoinDomain(ps ...predicate.JoinDomain) []predicate.JoinDomain {
+	return append([]predicate.JoinDomain{joindomain.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a JoinDomain query already confined to the Workspace.
 func (t *JoinDomainScoped) Query() *JoinDomainQuery {
-	return t.s.c.JoinDomain.Query().Where(joindomain.WorkspaceID(t.s.ws))
+	return t.s.c.JoinDomain.Query().Where(t.s.inJoinDomain()...)
 }
 
 // Get returns the JoinDomain with the id; a row of another Workspace is not found.
@@ -32655,7 +32833,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *JoinDomainScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inJoinDomain(x.where...)
 	return x.s.writeJoinDomain(ctx, "delete", append([]predicate.JoinDomain{joindomain.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.JoinDomain.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -32688,14 +32866,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *JoinDomainScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inJoinDomain(x.where...)
 	var n int
 	err := x.s.writeJoinDomain(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.JoinDomain.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -32713,13 +32891,20 @@ func (t *JoinDomainScoped) Create() *JoinDomainScopedCreate {
 	return &JoinDomainScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *JoinDomainScopedCreate) build(s *Scoped) *JoinDomainCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *JoinDomainScopedCreate) raw(s *Scoped) *JoinDomainCreate {
 	b := s.c.JoinDomain.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *JoinDomainScopedCreate) build(ctx context.Context, s *Scoped) (*JoinDomainCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkJoinDomain(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -32823,20 +33008,16 @@ const (
 func (x *JoinDomainScopedCreate) Save(ctx context.Context) (*JoinDomain, error) {
 	var created *JoinDomain
 	err := x.s.writeJoinDomain(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkJoinDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -32874,7 +33055,7 @@ func (b *JoinDomainScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Joi
 	builders := make([]*JoinDomainCreate, len(b.xs))
 	ms := make([]*JoinDomainMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkJoinDomain(ctx, ms...); err != nil {
@@ -32903,10 +33084,7 @@ func (b *JoinDomainScopedCreateBulk) Save(ctx context.Context) ([]*JoinDomain, e
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -33111,8 +33289,8 @@ func (u *JoinDomainScopedUpsertOne) Update(set func(*JoinDomainScopedUpsert)) *J
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *JoinDomainScopedUpsertOne) build(ctx context.Context, s *Scoped) (*JoinDomainUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkJoinDomain(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -33145,10 +33323,7 @@ func (u *JoinDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // JoinDomainScopedUpsertBulk is the "upsert" of several JoinDomain entities.
@@ -33353,26 +33528,28 @@ func (x *JoinDomainScopedUpdateOne) Save(ctx context.Context) (*JoinDomain, erro
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *JoinDomainScopedUpdateOne) build(ctx context.Context, s *Scoped) (*JoinDomainUpdateOne, error) {
+	b := s.c.JoinDomain.UpdateOneID(x.id).Where(s.inJoinDomain(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkJoinDomain(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *JoinDomainScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*JoinDomain, error) {
-	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inJoinDomain(x.where...)
 	var updated *JoinDomain
 	err := x.s.writeJoinDomain(ctx, verb, append([]predicate.JoinDomain{joindomain.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.JoinDomain.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkJoinDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -33531,30 +33708,32 @@ func (x *JoinDomainScopedUpdate) ClearLastCheckedAt() *JoinDomainScopedUpdate {
 
 const RoleOf_JoinDomainScopedUpdate_ClearLastCheckedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *JoinDomainScopedUpdate) build(ctx context.Context, s *Scoped) (*JoinDomainUpdate, error) {
+	b := s.c.JoinDomain.Update().Where(s.inJoinDomain(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkJoinDomain(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *JoinDomainScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.JoinDomain{joindomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inJoinDomain(x.where...)
 	var n int
 	err := x.s.writeJoinDomain(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.JoinDomain.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkJoinDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -33592,9 +33771,15 @@ const (
 	RoleOf_MembershipScoped_Update      = RoleStart
 )
 
+// inMembership confines predicates of Membership rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inMembership(ps ...predicate.Membership) []predicate.Membership {
+	return append([]predicate.Membership{membership.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Membership query already confined to the Workspace.
 func (t *MembershipScoped) Query() *MembershipQuery {
-	return t.s.c.Membership.Query().Where(membership.WorkspaceID(t.s.ws))
+	return t.s.c.Membership.Query().Where(t.s.inMembership()...)
 }
 
 // Get returns the Membership with the id; a row of another Workspace is not found.
@@ -33663,7 +33848,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *MembershipScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inMembership(x.where...)
 	return x.s.writeMembership(ctx, "delete", append([]predicate.Membership{membership.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Membership.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -33696,14 +33881,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *MembershipScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inMembership(x.where...)
 	var n int
 	err := x.s.writeMembership(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Membership.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -33721,13 +33906,20 @@ func (t *MembershipScoped) Create() *MembershipScopedCreate {
 	return &MembershipScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *MembershipScopedCreate) build(s *Scoped) *MembershipCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *MembershipScopedCreate) raw(s *Scoped) *MembershipCreate {
 	b := s.c.Membership.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *MembershipScopedCreate) build(ctx context.Context, s *Scoped) (*MembershipCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkMembership(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -33871,20 +34063,16 @@ const (
 func (x *MembershipScopedCreate) Save(ctx context.Context) (*Membership, error) {
 	var created *Membership
 	err := x.s.writeMembership(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkMembership(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -33922,7 +34110,7 @@ func (b *MembershipScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Mem
 	builders := make([]*MembershipCreate, len(b.xs))
 	ms := make([]*MembershipMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkMembership(ctx, ms...); err != nil {
@@ -33947,10 +34135,7 @@ func (b *MembershipScopedCreateBulk) Save(ctx context.Context) ([]*Membership, e
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -34149,8 +34334,8 @@ func (u *MembershipScopedUpsertOne) Update(set func(*MembershipScopedUpsert)) *M
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *MembershipScopedUpsertOne) build(ctx context.Context, s *Scoped) (*MembershipUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkMembership(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -34179,10 +34364,7 @@ func (u *MembershipScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // MembershipScopedUpsertBulk is the "upsert" of several Membership entities.
@@ -34473,26 +34655,28 @@ func (x *MembershipScopedUpdateOne) Save(ctx context.Context) (*Membership, erro
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *MembershipScopedUpdateOne) build(ctx context.Context, s *Scoped) (*MembershipUpdateOne, error) {
+	b := s.c.Membership.UpdateOneID(x.id).Where(s.inMembership(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkMembership(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *MembershipScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Membership, error) {
-	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inMembership(x.where...)
 	var updated *Membership
 	err := x.s.writeMembership(ctx, verb, append([]predicate.Membership{membership.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Membership.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkMembership(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -34741,30 +34925,32 @@ func (x *MembershipScopedUpdate) RemoveOauthCodes(v ...*OAuthCode) *MembershipSc
 
 const RoleOf_MembershipScopedUpdate_RemoveOauthCodes = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *MembershipScopedUpdate) build(ctx context.Context, s *Scoped) (*MembershipUpdate, error) {
+	b := s.c.Membership.Update().Where(s.inMembership(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkMembership(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *MembershipScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Membership{membership.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inMembership(x.where...)
 	var n int
 	err := x.s.writeMembership(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Membership.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkMembership(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -34802,9 +34988,15 @@ const (
 	RoleOf_OAuthCodeScoped_Update      = RoleStart
 )
 
+// inOAuthCode confines predicates of OAuthCode rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inOAuthCode(ps ...predicate.OAuthCode) []predicate.OAuthCode {
+	return append([]predicate.OAuthCode{oauthcode.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a OAuthCode query already confined to the Workspace.
 func (t *OAuthCodeScoped) Query() *OAuthCodeQuery {
-	return t.s.c.OAuthCode.Query().Where(oauthcode.WorkspaceID(t.s.ws))
+	return t.s.c.OAuthCode.Query().Where(t.s.inOAuthCode()...)
 }
 
 // Get returns the OAuthCode with the id; a row of another Workspace is not found.
@@ -34864,7 +35056,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OAuthCodeScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOAuthCode(x.where...)
 	return x.s.writeOAuthCode(ctx, "delete", append([]predicate.OAuthCode{oauthcode.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.OAuthCode.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -34897,14 +35089,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *OAuthCodeScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOAuthCode(x.where...)
 	var n int
 	err := x.s.writeOAuthCode(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.OAuthCode.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -34922,13 +35114,20 @@ func (t *OAuthCodeScoped) Create() *OAuthCodeScopedCreate {
 	return &OAuthCodeScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *OAuthCodeScopedCreate) build(s *Scoped) *OAuthCodeCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *OAuthCodeScopedCreate) raw(s *Scoped) *OAuthCodeCreate {
 	b := s.c.OAuthCode.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *OAuthCodeScopedCreate) build(ctx context.Context, s *Scoped) (*OAuthCodeCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkOAuthCode(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -35070,20 +35269,16 @@ const (
 func (x *OAuthCodeScopedCreate) Save(ctx context.Context) (*OAuthCode, error) {
 	var created *OAuthCode
 	err := x.s.writeOAuthCode(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkOAuthCode(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -35121,7 +35316,7 @@ func (b *OAuthCodeScopedCreateBulk) build(ctx context.Context, s *Scoped) (*OAut
 	builders := make([]*OAuthCodeCreate, len(b.xs))
 	ms := make([]*OAuthCodeMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkOAuthCode(ctx, ms...); err != nil {
@@ -35146,10 +35341,7 @@ func (b *OAuthCodeScopedCreateBulk) Save(ctx context.Context) ([]*OAuthCode, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -35354,8 +35546,8 @@ func (u *OAuthCodeScopedUpsertOne) Update(set func(*OAuthCodeScopedUpsert)) *OAu
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *OAuthCodeScopedUpsertOne) build(ctx context.Context, s *Scoped) (*OAuthCodeUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkOAuthCode(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -35384,10 +35576,7 @@ func (u *OAuthCodeScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // OAuthCodeScopedUpsertBulk is the "upsert" of several OAuthCode entities.
@@ -35628,26 +35817,28 @@ func (x *OAuthCodeScopedUpdateOne) Save(ctx context.Context) (*OAuthCode, error)
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OAuthCodeScopedUpdateOne) build(ctx context.Context, s *Scoped) (*OAuthCodeUpdateOne, error) {
+	b := s.c.OAuthCode.UpdateOneID(x.id).Where(s.inOAuthCode(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOAuthCode(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *OAuthCodeScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*OAuthCode, error) {
-	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOAuthCode(x.where...)
 	var updated *OAuthCode
 	err := x.s.writeOAuthCode(ctx, verb, append([]predicate.OAuthCode{oauthcode.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.OAuthCode.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOAuthCode(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -35846,30 +36037,32 @@ func (x *OAuthCodeScopedUpdate) ClearMembership() *OAuthCodeScopedUpdate {
 
 const RoleOf_OAuthCodeScopedUpdate_ClearMembership = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OAuthCodeScopedUpdate) build(ctx context.Context, s *Scoped) (*OAuthCodeUpdate, error) {
+	b := s.c.OAuthCode.Update().Where(s.inOAuthCode(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOAuthCode(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *OAuthCodeScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.OAuthCode{oauthcode.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOAuthCode(x.where...)
 	var n int
 	err := x.s.writeOAuthCode(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.OAuthCode.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOAuthCode(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -35907,9 +36100,15 @@ const (
 	RoleOf_OrderScoped_Update      = RoleStart
 )
 
+// inOrder confines predicates of Order rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inOrder(ps ...predicate.Order) []predicate.Order {
+	return append([]predicate.Order{order.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Order query already confined to the Workspace.
 func (t *OrderScoped) Query() *OrderQuery {
-	return t.s.c.Order.Query().Where(order.WorkspaceID(t.s.ws))
+	return t.s.c.Order.Query().Where(t.s.inOrder()...)
 }
 
 // Get returns the Order with the id; a row of another Workspace is not found.
@@ -35996,7 +36195,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OrderScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrder(x.where...)
 	return x.s.writeOrder(ctx, "delete", append([]predicate.Order{order.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Order.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -36029,14 +36228,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *OrderScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrder(x.where...)
 	var n int
 	err := x.s.writeOrder(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Order.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -36054,13 +36253,20 @@ func (t *OrderScoped) Create() *OrderScopedCreate {
 	return &OrderScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *OrderScopedCreate) build(s *Scoped) *OrderCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *OrderScopedCreate) raw(s *Scoped) *OrderCreate {
 	b := s.c.Order.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *OrderScopedCreate) build(ctx context.Context, s *Scoped) (*OrderCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkOrder(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -36240,20 +36446,16 @@ const (
 func (x *OrderScopedCreate) Save(ctx context.Context) (*Order, error) {
 	var created *Order
 	err := x.s.writeOrder(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkOrder(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -36291,7 +36493,7 @@ func (b *OrderScopedCreateBulk) build(ctx context.Context, s *Scoped) (*OrderCre
 	builders := make([]*OrderCreate, len(b.xs))
 	ms := make([]*OrderMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkOrder(ctx, ms...); err != nil {
@@ -36316,10 +36518,7 @@ func (b *OrderScopedCreateBulk) Save(ctx context.Context) ([]*Order, error) {
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -36454,8 +36653,8 @@ func (u *OrderScopedUpsertOne) Update(set func(*OrderScopedUpsert)) *OrderScoped
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *OrderScopedUpsertOne) build(ctx context.Context, s *Scoped) (*OrderUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkOrder(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -36484,10 +36683,7 @@ func (u *OrderScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // OrderScopedUpsertBulk is the "upsert" of several Order entities.
@@ -36676,26 +36872,28 @@ func (x *OrderScopedUpdateOne) Save(ctx context.Context) (*Order, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OrderScopedUpdateOne) build(ctx context.Context, s *Scoped) (*OrderUpdateOne, error) {
+	b := s.c.Order.UpdateOneID(x.id).Where(s.inOrder(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOrder(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *OrderScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Order, error) {
-	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrder(x.where...)
 	var updated *Order
 	err := x.s.writeOrder(ctx, verb, append([]predicate.Order{order.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Order.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOrder(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -36842,30 +37040,32 @@ func (x *OrderScopedUpdate) RemoveMovements(v ...*OrderMovement) *OrderScopedUpd
 
 const RoleOf_OrderScopedUpdate_RemoveMovements = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OrderScopedUpdate) build(ctx context.Context, s *Scoped) (*OrderUpdate, error) {
+	b := s.c.Order.Update().Where(s.inOrder(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOrder(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *OrderScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Order{order.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrder(x.where...)
 	var n int
 	err := x.s.writeOrder(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Order.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOrder(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -36903,9 +37103,15 @@ const (
 	RoleOf_OrderMovementScoped_Update      = RoleStart
 )
 
+// inOrderMovement confines predicates of OrderMovement rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inOrderMovement(ps ...predicate.OrderMovement) []predicate.OrderMovement {
+	return append([]predicate.OrderMovement{ordermovement.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a OrderMovement query already confined to the Workspace.
 func (t *OrderMovementScoped) Query() *OrderMovementQuery {
-	return t.s.c.OrderMovement.Query().Where(ordermovement.WorkspaceID(t.s.ws))
+	return t.s.c.OrderMovement.Query().Where(t.s.inOrderMovement()...)
 }
 
 // Get returns the OrderMovement with the id; a row of another Workspace is not found.
@@ -36965,7 +37171,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OrderMovementScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrderMovement(x.where...)
 	return x.s.writeOrderMovement(ctx, "delete", append([]predicate.OrderMovement{ordermovement.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.OrderMovement.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -36998,14 +37204,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *OrderMovementScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrderMovement(x.where...)
 	var n int
 	err := x.s.writeOrderMovement(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.OrderMovement.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -37023,13 +37229,20 @@ func (t *OrderMovementScoped) Create() *OrderMovementScopedCreate {
 	return &OrderMovementScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *OrderMovementScopedCreate) build(s *Scoped) *OrderMovementCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *OrderMovementScopedCreate) raw(s *Scoped) *OrderMovementCreate {
 	b := s.c.OrderMovement.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *OrderMovementScopedCreate) build(ctx context.Context, s *Scoped) (*OrderMovementCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkOrderMovement(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -37157,20 +37370,16 @@ const (
 func (x *OrderMovementScopedCreate) Save(ctx context.Context) (*OrderMovement, error) {
 	var created *OrderMovement
 	err := x.s.writeOrderMovement(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkOrderMovement(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -37208,7 +37417,7 @@ func (b *OrderMovementScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 	builders := make([]*OrderMovementCreate, len(b.xs))
 	ms := make([]*OrderMovementMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkOrderMovement(ctx, ms...); err != nil {
@@ -37233,10 +37442,7 @@ func (b *OrderMovementScopedCreateBulk) Save(ctx context.Context) ([]*OrderMovem
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -37355,8 +37561,8 @@ func (u *OrderMovementScopedUpsertOne) Update(set func(*OrderMovementScopedUpser
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *OrderMovementScopedUpsertOne) build(ctx context.Context, s *Scoped) (*OrderMovementUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkOrderMovement(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -37385,10 +37591,7 @@ func (u *OrderMovementScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // OrderMovementScopedUpsertBulk is the "upsert" of several OrderMovement entities.
@@ -37495,26 +37698,28 @@ func (x *OrderMovementScopedUpdateOne) Save(ctx context.Context) (*OrderMovement
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OrderMovementScopedUpdateOne) build(ctx context.Context, s *Scoped) (*OrderMovementUpdateOne, error) {
+	b := s.c.OrderMovement.UpdateOneID(x.id).Where(s.inOrderMovement(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOrderMovement(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *OrderMovementScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*OrderMovement, error) {
-	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrderMovement(x.where...)
 	var updated *OrderMovement
 	err := x.s.writeOrderMovement(ctx, verb, append([]predicate.OrderMovement{ordermovement.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.OrderMovement.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOrderMovement(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -37579,30 +37784,32 @@ func (x *OrderMovementScopedUpdate) SetUpdatedAt(v time.Time) *OrderMovementScop
 
 const RoleOf_OrderMovementScopedUpdate_SetUpdatedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OrderMovementScopedUpdate) build(ctx context.Context, s *Scoped) (*OrderMovementUpdate, error) {
+	b := s.c.OrderMovement.Update().Where(s.inOrderMovement(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOrderMovement(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *OrderMovementScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.OrderMovement{ordermovement.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOrderMovement(x.where...)
 	var n int
 	err := x.s.writeOrderMovement(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.OrderMovement.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOrderMovement(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -37640,9 +37847,15 @@ const (
 	RoleOf_OutboundMessageScoped_Update      = RoleStart
 )
 
+// inOutboundMessage confines predicates of OutboundMessage rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inOutboundMessage(ps ...predicate.OutboundMessage) []predicate.OutboundMessage {
+	return append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a OutboundMessage query already confined to the Workspace.
 func (t *OutboundMessageScoped) Query() *OutboundMessageQuery {
-	return t.s.c.OutboundMessage.Query().Where(outboundmessage.WorkspaceID(t.s.ws))
+	return t.s.c.OutboundMessage.Query().Where(t.s.inOutboundMessage()...)
 }
 
 // Get returns the OutboundMessage with the id; a row of another Workspace is not found.
@@ -37765,7 +37978,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *OutboundMessageScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOutboundMessage(x.where...)
 	return x.s.writeOutboundMessage(ctx, "delete", append([]predicate.OutboundMessage{outboundmessage.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.OutboundMessage.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -37798,14 +38011,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *OutboundMessageScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOutboundMessage(x.where...)
 	var n int
 	err := x.s.writeOutboundMessage(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.OutboundMessage.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -37823,13 +38036,20 @@ func (t *OutboundMessageScoped) Create() *OutboundMessageScopedCreate {
 	return &OutboundMessageScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *OutboundMessageScopedCreate) build(s *Scoped) *OutboundMessageCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *OutboundMessageScopedCreate) raw(s *Scoped) *OutboundMessageCreate {
 	b := s.c.OutboundMessage.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *OutboundMessageScopedCreate) build(ctx context.Context, s *Scoped) (*OutboundMessageCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkOutboundMessage(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -38473,20 +38693,16 @@ const (
 func (x *OutboundMessageScopedCreate) Save(ctx context.Context) (*OutboundMessage, error) {
 	var created *OutboundMessage
 	err := x.s.writeOutboundMessage(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkOutboundMessage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -38524,7 +38740,7 @@ func (b *OutboundMessageScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 	builders := make([]*OutboundMessageCreate, len(b.xs))
 	ms := make([]*OutboundMessageMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkOutboundMessage(ctx, ms...); err != nil {
@@ -38549,10 +38765,7 @@ func (b *OutboundMessageScopedCreateBulk) Save(ctx context.Context) ([]*Outbound
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -39249,8 +39462,8 @@ func (u *OutboundMessageScopedUpsertOne) Update(set func(*OutboundMessageScopedU
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *OutboundMessageScopedUpsertOne) build(ctx context.Context, s *Scoped) (*OutboundMessageUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkOutboundMessage(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -39279,10 +39492,7 @@ func (u *OutboundMessageScopedUpsertOne) ID(ctx context.Context) (int64, error) 
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // OutboundMessageScopedUpsertBulk is the "upsert" of several OutboundMessage entities.
@@ -40229,26 +40439,28 @@ func (x *OutboundMessageScopedUpdateOne) Save(ctx context.Context) (*OutboundMes
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OutboundMessageScopedUpdateOne) build(ctx context.Context, s *Scoped) (*OutboundMessageUpdateOne, error) {
+	b := s.c.OutboundMessage.UpdateOneID(x.id).Where(s.inOutboundMessage(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOutboundMessage(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *OutboundMessageScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*OutboundMessage, error) {
-	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOutboundMessage(x.where...)
 	var updated *OutboundMessage
 	err := x.s.writeOutboundMessage(ctx, verb, append([]predicate.OutboundMessage{outboundmessage.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.OutboundMessage.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOutboundMessage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -41153,30 +41365,32 @@ func (x *OutboundMessageScopedUpdate) ClearTemplate() *OutboundMessageScopedUpda
 
 const RoleOf_OutboundMessageScopedUpdate_ClearTemplate = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *OutboundMessageScopedUpdate) build(ctx context.Context, s *Scoped) (*OutboundMessageUpdate, error) {
+	b := s.c.OutboundMessage.Update().Where(s.inOutboundMessage(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkOutboundMessage(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *OutboundMessageScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.OutboundMessage{outboundmessage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inOutboundMessage(x.where...)
 	var n int
 	err := x.s.writeOutboundMessage(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.OutboundMessage.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkOutboundMessage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -41214,9 +41428,15 @@ const (
 	RoleOf_ProviderLimiterScoped_Update      = RoleStart
 )
 
+// inProviderLimiter confines predicates of ProviderLimiter rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inProviderLimiter(ps ...predicate.ProviderLimiter) []predicate.ProviderLimiter {
+	return append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a ProviderLimiter query already confined to the Workspace.
 func (t *ProviderLimiterScoped) Query() *ProviderLimiterQuery {
-	return t.s.c.ProviderLimiter.Query().Where(providerlimiter.WorkspaceID(t.s.ws))
+	return t.s.c.ProviderLimiter.Query().Where(t.s.inProviderLimiter()...)
 }
 
 // Get returns the ProviderLimiter with the id; a row of another Workspace is not found.
@@ -41276,7 +41496,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *ProviderLimiterScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inProviderLimiter(x.where...)
 	return x.s.writeProviderLimiter(ctx, "delete", append([]predicate.ProviderLimiter{providerlimiter.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.ProviderLimiter.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -41309,14 +41529,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *ProviderLimiterScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inProviderLimiter(x.where...)
 	var n int
 	err := x.s.writeProviderLimiter(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.ProviderLimiter.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -41334,13 +41554,20 @@ func (t *ProviderLimiterScoped) Create() *ProviderLimiterScopedCreate {
 	return &ProviderLimiterScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *ProviderLimiterScopedCreate) build(s *Scoped) *ProviderLimiterCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ProviderLimiterScopedCreate) raw(s *Scoped) *ProviderLimiterCreate {
 	b := s.c.ProviderLimiter.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ProviderLimiterScopedCreate) build(ctx context.Context, s *Scoped) (*ProviderLimiterCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkProviderLimiter(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -41432,20 +41659,16 @@ const (
 func (x *ProviderLimiterScopedCreate) Save(ctx context.Context) (*ProviderLimiter, error) {
 	var created *ProviderLimiter
 	err := x.s.writeProviderLimiter(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkProviderLimiter(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -41483,7 +41706,7 @@ func (b *ProviderLimiterScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 	builders := make([]*ProviderLimiterCreate, len(b.xs))
 	ms := make([]*ProviderLimiterMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkProviderLimiter(ctx, ms...); err != nil {
@@ -41508,10 +41731,7 @@ func (b *ProviderLimiterScopedCreateBulk) Save(ctx context.Context) ([]*Provider
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -41694,8 +41914,8 @@ func (u *ProviderLimiterScopedUpsertOne) Update(set func(*ProviderLimiterScopedU
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *ProviderLimiterScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ProviderLimiterUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkProviderLimiter(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -41724,10 +41944,7 @@ func (u *ProviderLimiterScopedUpsertOne) ID(ctx context.Context) (int64, error) 
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // ProviderLimiterScopedUpsertBulk is the "upsert" of several ProviderLimiter entities.
@@ -41904,26 +42121,28 @@ func (x *ProviderLimiterScopedUpdateOne) Save(ctx context.Context) (*ProviderLim
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ProviderLimiterScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ProviderLimiterUpdateOne, error) {
+	b := s.c.ProviderLimiter.UpdateOneID(x.id).Where(s.inProviderLimiter(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkProviderLimiter(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *ProviderLimiterScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ProviderLimiter, error) {
-	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inProviderLimiter(x.where...)
 	var updated *ProviderLimiter
 	err := x.s.writeProviderLimiter(ctx, verb, append([]predicate.ProviderLimiter{providerlimiter.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.ProviderLimiter.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkProviderLimiter(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -42058,30 +42277,32 @@ func (x *ProviderLimiterScopedUpdate) SetNillableRefilledAt(v *time.Time) *Provi
 
 const RoleOf_ProviderLimiterScopedUpdate_SetNillableRefilledAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ProviderLimiterScopedUpdate) build(ctx context.Context, s *Scoped) (*ProviderLimiterUpdate, error) {
+	b := s.c.ProviderLimiter.Update().Where(s.inProviderLimiter(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkProviderLimiter(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *ProviderLimiterScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.ProviderLimiter{providerlimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inProviderLimiter(x.where...)
 	var n int
 	err := x.s.writeProviderLimiter(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.ProviderLimiter.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkProviderLimiter(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -42121,15 +42342,21 @@ const (
 	RoleOf_RuleScoped_Update             = RoleStart
 )
 
+// inRule confines predicates of Rule rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inRule(ps ...predicate.Rule) []predicate.Rule {
+	return append([]predicate.Rule{rule.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Rule query already confined to the Workspace, hiding discarded rows
 // (a list query; QueryWithDiscarded sees them too).
 func (t *RuleScoped) Query() *RuleQuery {
-	return t.s.c.Rule.Query().Where(rule.WorkspaceID(t.s.ws), rule.DiscardedAtIsNil())
+	return t.s.c.Rule.Query().Where(t.s.inRule(rule.DiscardedAtIsNil())...)
 }
 
 // QueryWithDiscarded returns a Rule query confined to the Workspace that also sees discarded rows.
 func (t *RuleScoped) QueryWithDiscarded() *RuleQuery {
-	return t.s.c.Rule.Query().Where(rule.WorkspaceID(t.s.ws))
+	return t.s.c.Rule.Query().Where(t.s.inRule()...)
 }
 
 // Get returns the Rule with the id, discarded or not; a row of another Workspace is not found.
@@ -42235,7 +42462,7 @@ func (s *Scoped) checkRule(ctx context.Context, ms ...*RuleMutation) error {
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *RuleScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.Rule) error {
-	where := append([]predicate.Rule{rule.ID(id), rule.WorkspaceID(t.s.ws), rule.DiscardedAtIsNil()}, ps...)
+	where := append(t.s.inRule(rule.ID(id), rule.DiscardedAtIsNil()), ps...)
 	return t.s.writeRule(ctx, "discard", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.Rule.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 		return nil, err
@@ -42270,7 +42497,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRule(x.where...)
 	return x.s.writeRule(ctx, "delete", append([]predicate.Rule{rule.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Rule.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -42303,14 +42530,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *RuleScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRule(x.where...)
 	var n int
 	err := x.s.writeRule(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Rule.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -42328,13 +42555,20 @@ func (t *RuleScoped) Create() *RuleScopedCreate {
 	return &RuleScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *RuleScopedCreate) build(s *Scoped) *RuleCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *RuleScopedCreate) raw(s *Scoped) *RuleCreate {
 	b := s.c.Rule.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *RuleScopedCreate) build(ctx context.Context, s *Scoped) (*RuleCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkRule(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -42550,20 +42784,16 @@ const (
 func (x *RuleScopedCreate) Save(ctx context.Context) (*Rule, error) {
 	var created *Rule
 	err := x.s.writeRule(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkRule(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -42601,7 +42831,7 @@ func (b *RuleScopedCreateBulk) build(ctx context.Context, s *Scoped) (*RuleCreat
 	builders := make([]*RuleCreate, len(b.xs))
 	ms := make([]*RuleMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkRule(ctx, ms...); err != nil {
@@ -42630,10 +42860,7 @@ func (b *RuleScopedCreateBulk) Save(ctx context.Context) ([]*Rule, error) {
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -42898,8 +43125,8 @@ func (u *RuleScopedUpsertOne) Update(set func(*RuleScopedUpsert)) *RuleScopedUps
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *RuleScopedUpsertOne) build(ctx context.Context, s *Scoped) (*RuleUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkRule(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -42932,10 +43159,7 @@ func (u *RuleScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // RuleScopedUpsertBulk is the "upsert" of several Rule entities.
@@ -43341,26 +43565,28 @@ func (x *RuleScopedUpdateOne) move(ctx context.Context, verb string) (*Rule, err
 	return x.save(ctx, verb, recordUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleScopedUpdateOne) build(ctx context.Context, s *Scoped) (*RuleUpdateOne, error) {
+	b := s.c.Rule.UpdateOneID(x.id).Where(s.inRule(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRule(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *RuleScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Rule, error) {
-	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRule(x.where...)
 	var updated *Rule
 	err := x.s.writeRule(ctx, verb, append([]predicate.Rule{rule.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Rule.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRule(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -43713,30 +43939,32 @@ func (x *RuleScopedUpdate) RemoveFirings(v ...*RuleFiring) *RuleScopedUpdate {
 
 const RoleOf_RuleScopedUpdate_RemoveFirings = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleScopedUpdate) build(ctx context.Context, s *Scoped) (*RuleUpdate, error) {
+	b := s.c.Rule.Update().Where(s.inRule(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRule(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *RuleScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Rule{rule.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRule(x.where...)
 	var n int
 	err := x.s.writeRule(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Rule.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRule(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -43774,9 +44002,15 @@ const (
 	RoleOf_RuleFiringScoped_Update      = RoleStart
 )
 
+// inRuleFiring confines predicates of RuleFiring rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inRuleFiring(ps ...predicate.RuleFiring) []predicate.RuleFiring {
+	return append([]predicate.RuleFiring{rulefiring.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a RuleFiring query already confined to the Workspace.
 func (t *RuleFiringScoped) Query() *RuleFiringQuery {
-	return t.s.c.RuleFiring.Query().Where(rulefiring.WorkspaceID(t.s.ws))
+	return t.s.c.RuleFiring.Query().Where(t.s.inRuleFiring()...)
 }
 
 // Get returns the RuleFiring with the id; a row of another Workspace is not found.
@@ -43854,7 +44088,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleFiringScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleFiring(x.where...)
 	return x.s.writeRuleFiring(ctx, "delete", append([]predicate.RuleFiring{rulefiring.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.RuleFiring.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -43887,14 +44121,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *RuleFiringScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleFiring(x.where...)
 	var n int
 	err := x.s.writeRuleFiring(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.RuleFiring.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -43912,13 +44146,20 @@ func (t *RuleFiringScoped) Create() *RuleFiringScopedCreate {
 	return &RuleFiringScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *RuleFiringScopedCreate) build(s *Scoped) *RuleFiringCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *RuleFiringScopedCreate) raw(s *Scoped) *RuleFiringCreate {
 	b := s.c.RuleFiring.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *RuleFiringScopedCreate) build(ctx context.Context, s *Scoped) (*RuleFiringCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkRuleFiring(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -44088,20 +44329,16 @@ const (
 func (x *RuleFiringScopedCreate) Save(ctx context.Context) (*RuleFiring, error) {
 	var created *RuleFiring
 	err := x.s.writeRuleFiring(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkRuleFiring(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -44139,7 +44376,7 @@ func (b *RuleFiringScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Rul
 	builders := make([]*RuleFiringCreate, len(b.xs))
 	ms := make([]*RuleFiringMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkRuleFiring(ctx, ms...); err != nil {
@@ -44164,10 +44401,7 @@ func (b *RuleFiringScopedCreateBulk) Save(ctx context.Context) ([]*RuleFiring, e
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -44406,8 +44640,8 @@ func (u *RuleFiringScopedUpsertOne) Update(set func(*RuleFiringScopedUpsert)) *R
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *RuleFiringScopedUpsertOne) build(ctx context.Context, s *Scoped) (*RuleFiringUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkRuleFiring(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -44436,10 +44670,7 @@ func (u *RuleFiringScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // RuleFiringScopedUpsertBulk is the "upsert" of several RuleFiring entities.
@@ -44754,26 +44985,28 @@ func (x *RuleFiringScopedUpdateOne) Save(ctx context.Context) (*RuleFiring, erro
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleFiringScopedUpdateOne) build(ctx context.Context, s *Scoped) (*RuleFiringUpdateOne, error) {
+	b := s.c.RuleFiring.UpdateOneID(x.id).Where(s.inRuleFiring(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRuleFiring(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *RuleFiringScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*RuleFiring, error) {
-	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleFiring(x.where...)
 	var updated *RuleFiring
 	err := x.s.writeRuleFiring(ctx, verb, append([]predicate.RuleFiring{rulefiring.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.RuleFiring.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRuleFiring(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -45046,30 +45279,32 @@ func (x *RuleFiringScopedUpdate) ClearVersion() *RuleFiringScopedUpdate {
 
 const RoleOf_RuleFiringScopedUpdate_ClearVersion = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleFiringScopedUpdate) build(ctx context.Context, s *Scoped) (*RuleFiringUpdate, error) {
+	b := s.c.RuleFiring.Update().Where(s.inRuleFiring(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRuleFiring(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *RuleFiringScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.RuleFiring{rulefiring.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleFiring(x.where...)
 	var n int
 	err := x.s.writeRuleFiring(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.RuleFiring.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRuleFiring(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -45107,9 +45342,15 @@ const (
 	RoleOf_RuleVersionScoped_Update      = RoleStart
 )
 
+// inRuleVersion confines predicates of RuleVersion rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inRuleVersion(ps ...predicate.RuleVersion) []predicate.RuleVersion {
+	return append([]predicate.RuleVersion{ruleversion.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a RuleVersion query already confined to the Workspace.
 func (t *RuleVersionScoped) Query() *RuleVersionQuery {
-	return t.s.c.RuleVersion.Query().Where(ruleversion.WorkspaceID(t.s.ws))
+	return t.s.c.RuleVersion.Query().Where(t.s.inRuleVersion()...)
 }
 
 // Get returns the RuleVersion with the id; a row of another Workspace is not found.
@@ -45187,7 +45428,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleVersionScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersion(x.where...)
 	return x.s.writeRuleVersion(ctx, "delete", append([]predicate.RuleVersion{ruleversion.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.RuleVersion.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -45220,14 +45461,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *RuleVersionScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersion(x.where...)
 	var n int
 	err := x.s.writeRuleVersion(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.RuleVersion.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -45245,13 +45486,20 @@ func (t *RuleVersionScoped) Create() *RuleVersionScopedCreate {
 	return &RuleVersionScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *RuleVersionScopedCreate) build(s *Scoped) *RuleVersionCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *RuleVersionScopedCreate) raw(s *Scoped) *RuleVersionCreate {
 	b := s.c.RuleVersion.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *RuleVersionScopedCreate) build(ctx context.Context, s *Scoped) (*RuleVersionCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkRuleVersion(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -45395,20 +45643,16 @@ const (
 func (x *RuleVersionScopedCreate) Save(ctx context.Context) (*RuleVersion, error) {
 	var created *RuleVersion
 	err := x.s.writeRuleVersion(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkRuleVersion(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -45446,7 +45690,7 @@ func (b *RuleVersionScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Ru
 	builders := make([]*RuleVersionCreate, len(b.xs))
 	ms := make([]*RuleVersionMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkRuleVersion(ctx, ms...); err != nil {
@@ -45471,10 +45715,7 @@ func (b *RuleVersionScopedCreateBulk) Save(ctx context.Context) ([]*RuleVersion,
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -45641,8 +45882,8 @@ func (u *RuleVersionScopedUpsertOne) Update(set func(*RuleVersionScopedUpsert)) 
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *RuleVersionScopedUpsertOne) build(ctx context.Context, s *Scoped) (*RuleVersionUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkRuleVersion(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -45671,10 +45912,7 @@ func (u *RuleVersionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // RuleVersionScopedUpsertBulk is the "upsert" of several RuleVersion entities.
@@ -45939,26 +46177,28 @@ func (x *RuleVersionScopedUpdateOne) Save(ctx context.Context) (*RuleVersion, er
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleVersionScopedUpdateOne) build(ctx context.Context, s *Scoped) (*RuleVersionUpdateOne, error) {
+	b := s.c.RuleVersion.UpdateOneID(x.id).Where(s.inRuleVersion(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRuleVersion(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *RuleVersionScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*RuleVersion, error) {
-	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersion(x.where...)
 	var updated *RuleVersion
 	err := x.s.writeRuleVersion(ctx, verb, append([]predicate.RuleVersion{ruleversion.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.RuleVersion.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRuleVersion(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -46181,30 +46421,32 @@ func (x *RuleVersionScopedUpdate) RemoveFirings(v ...*RuleFiring) *RuleVersionSc
 
 const RoleOf_RuleVersionScopedUpdate_RemoveFirings = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleVersionScopedUpdate) build(ctx context.Context, s *Scoped) (*RuleVersionUpdate, error) {
+	b := s.c.RuleVersion.Update().Where(s.inRuleVersion(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRuleVersion(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *RuleVersionScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.RuleVersion{ruleversion.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersion(x.where...)
 	var n int
 	err := x.s.writeRuleVersion(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.RuleVersion.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRuleVersion(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -46244,9 +46486,15 @@ const (
 	RoleOf_RuleVersionTriggerScoped_Update      = RoleStart
 )
 
+// inRuleVersionTrigger confines predicates of RuleVersionTrigger rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inRuleVersionTrigger(ps ...predicate.RuleVersionTrigger) []predicate.RuleVersionTrigger {
+	return append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a RuleVersionTrigger query already confined to the Workspace.
 func (t *RuleVersionTriggerScoped) Query() *RuleVersionTriggerQuery {
-	return t.s.c.RuleVersionTrigger.Query().Where(ruleversiontrigger.WorkspaceID(t.s.ws))
+	return t.s.c.RuleVersionTrigger.Query().Where(t.s.inRuleVersionTrigger()...)
 }
 
 // Get returns the RuleVersionTrigger with the id; a row of another Workspace is not found.
@@ -46306,7 +46554,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *RuleVersionTriggerScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersionTrigger(x.where...)
 	return x.s.writeRuleVersionTrigger(ctx, "delete", append([]predicate.RuleVersionTrigger{ruleversiontrigger.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.RuleVersionTrigger.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -46339,14 +46587,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *RuleVersionTriggerScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersionTrigger(x.where...)
 	var n int
 	err := x.s.writeRuleVersionTrigger(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.RuleVersionTrigger.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -46364,13 +46612,20 @@ func (t *RuleVersionTriggerScoped) Create() *RuleVersionTriggerScopedCreate {
 	return &RuleVersionTriggerScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *RuleVersionTriggerScopedCreate) build(s *Scoped) *RuleVersionTriggerCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *RuleVersionTriggerScopedCreate) raw(s *Scoped) *RuleVersionTriggerCreate {
 	b := s.c.RuleVersionTrigger.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *RuleVersionTriggerScopedCreate) build(ctx context.Context, s *Scoped) (*RuleVersionTriggerCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkRuleVersionTrigger(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -46446,20 +46701,16 @@ const (
 func (x *RuleVersionTriggerScopedCreate) Save(ctx context.Context) (*RuleVersionTrigger, error) {
 	var created *RuleVersionTrigger
 	err := x.s.writeRuleVersionTrigger(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkRuleVersionTrigger(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -46497,7 +46748,7 @@ func (b *RuleVersionTriggerScopedCreateBulk) build(ctx context.Context, s *Scope
 	builders := make([]*RuleVersionTriggerCreate, len(b.xs))
 	ms := make([]*RuleVersionTriggerMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkRuleVersionTrigger(ctx, ms...); err != nil {
@@ -46522,10 +46773,7 @@ func (b *RuleVersionTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleV
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -46668,8 +46916,8 @@ func (u *RuleVersionTriggerScopedUpsertOne) Update(set func(*RuleVersionTriggerS
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *RuleVersionTriggerScopedUpsertOne) build(ctx context.Context, s *Scoped) (*RuleVersionTriggerUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkRuleVersionTrigger(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -46698,10 +46946,7 @@ func (u *RuleVersionTriggerScopedUpsertOne) ID(ctx context.Context) (int64, erro
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // RuleVersionTriggerScopedUpsertBulk is the "upsert" of several RuleVersionTrigger entities.
@@ -46860,26 +47105,28 @@ func (x *RuleVersionTriggerScopedUpdateOne) Save(ctx context.Context) (*RuleVers
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleVersionTriggerScopedUpdateOne) build(ctx context.Context, s *Scoped) (*RuleVersionTriggerUpdateOne, error) {
+	b := s.c.RuleVersionTrigger.UpdateOneID(x.id).Where(s.inRuleVersionTrigger(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRuleVersionTrigger(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *RuleVersionTriggerScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*RuleVersionTrigger, error) {
-	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersionTrigger(x.where...)
 	var updated *RuleVersionTrigger
 	err := x.s.writeRuleVersionTrigger(ctx, verb, append([]predicate.RuleVersionTrigger{ruleversiontrigger.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.RuleVersionTrigger.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRuleVersionTrigger(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -46996,30 +47243,32 @@ func (x *RuleVersionTriggerScopedUpdate) ClearVersion() *RuleVersionTriggerScope
 
 const RoleOf_RuleVersionTriggerScopedUpdate_ClearVersion = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *RuleVersionTriggerScopedUpdate) build(ctx context.Context, s *Scoped) (*RuleVersionTriggerUpdate, error) {
+	b := s.c.RuleVersionTrigger.Update().Where(s.inRuleVersionTrigger(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkRuleVersionTrigger(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *RuleVersionTriggerScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.RuleVersionTrigger{ruleversiontrigger.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inRuleVersionTrigger(x.where...)
 	var n int
 	err := x.s.writeRuleVersionTrigger(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.RuleVersionTrigger.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkRuleVersionTrigger(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -47061,15 +47310,21 @@ const (
 	RoleOf_SegmentScoped_Update            = RoleStart
 )
 
+// inSegment confines predicates of Segment rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inSegment(ps ...predicate.Segment) []predicate.Segment {
+	return append([]predicate.Segment{segment.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Segment query already confined to the Workspace, hiding archived rows
 // (a list query; QueryWithArchived sees them too).
 func (t *SegmentScoped) Query() *SegmentQuery {
-	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil())
+	return t.s.c.Segment.Query().Where(t.s.inSegment(segment.ArchivedAtIsNil())...)
 }
 
 // QueryWithArchived returns a Segment query confined to the Workspace that also sees archived rows.
 func (t *SegmentScoped) QueryWithArchived() *SegmentQuery {
-	return t.s.c.Segment.Query().Where(segment.WorkspaceID(t.s.ws))
+	return t.s.c.Segment.Query().Where(t.s.inSegment()...)
 }
 
 // QueryArchived returns a Segment query confined to the Workspace that sees only archived rows
@@ -47144,14 +47399,14 @@ func (s *Scoped) checkSegment(ctx context.Context, ms ...*SegmentMutation) error
 // Archive stamps archived_at, at `at`, on the kept Segment with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
 func (t *SegmentScoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.Segment) error {
-	where := append([]predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtIsNil()}, ps...)
+	where := append(t.s.inSegment(segment.ID(id), segment.ArchivedAtIsNil()), ps...)
 	return t.setArchived(ctx, id, where, "archive", func(u *SegmentUpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the Segment with the id. Unarchiving a kept row changes
 // nothing; only a row that does not exist in the Workspace is not found.
 func (t *SegmentScoped) Unarchive(ctx context.Context, id int64) error {
-	where := []predicate.Segment{segment.ID(id), segment.WorkspaceID(t.s.ws), segment.ArchivedAtNotNil()}
+	where := t.s.inSegment(segment.ID(id), segment.ArchivedAtNotNil())
 	err := t.setArchived(ctx, id, where, "unarchive", func(u *SegmentUpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
@@ -47197,7 +47452,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SegmentScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSegment(x.where...)
 	return x.s.writeSegment(ctx, "delete", append([]predicate.Segment{segment.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Segment.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -47230,14 +47485,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *SegmentScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSegment(x.where...)
 	var n int
 	err := x.s.writeSegment(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Segment.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -47255,13 +47510,20 @@ func (t *SegmentScoped) Create() *SegmentScopedCreate {
 	return &SegmentScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *SegmentScopedCreate) build(s *Scoped) *SegmentCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *SegmentScopedCreate) raw(s *Scoped) *SegmentCreate {
 	b := s.c.Segment.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *SegmentScopedCreate) build(ctx context.Context, s *Scoped) (*SegmentCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkSegment(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -47375,20 +47637,16 @@ const (
 func (x *SegmentScopedCreate) Save(ctx context.Context) (*Segment, error) {
 	var created *Segment
 	err := x.s.writeSegment(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkSegment(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -47426,7 +47684,7 @@ func (b *SegmentScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Segmen
 	builders := make([]*SegmentCreate, len(b.xs))
 	ms := make([]*SegmentMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkSegment(ctx, ms...); err != nil {
@@ -47455,10 +47713,7 @@ func (b *SegmentScopedCreateBulk) Save(ctx context.Context) ([]*Segment, error) 
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -47671,8 +47926,8 @@ func (u *SegmentScopedUpsertOne) Update(set func(*SegmentScopedUpsert)) *Segment
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *SegmentScopedUpsertOne) build(ctx context.Context, s *Scoped) (*SegmentUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkSegment(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -47705,10 +47960,7 @@ func (u *SegmentScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // SegmentScopedUpsertBulk is the "upsert" of several Segment entities.
@@ -47921,26 +48173,28 @@ func (x *SegmentScopedUpdateOne) Save(ctx context.Context) (*Segment, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SegmentScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SegmentUpdateOne, error) {
+	b := s.c.Segment.UpdateOneID(x.id).Where(s.inSegment(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSegment(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *SegmentScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Segment, error) {
-	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSegment(x.where...)
 	var updated *Segment
 	err := x.s.writeSegment(ctx, verb, append([]predicate.Segment{segment.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Segment.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSegment(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -48107,30 +48361,32 @@ func (x *SegmentScopedUpdate) ClearCondition() *SegmentScopedUpdate {
 
 const RoleOf_SegmentScopedUpdate_ClearCondition = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SegmentScopedUpdate) build(ctx context.Context, s *Scoped) (*SegmentUpdate, error) {
+	b := s.c.Segment.Update().Where(s.inSegment(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSegment(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *SegmentScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Segment{segment.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSegment(x.where...)
 	var n int
 	err := x.s.writeSegment(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Segment.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSegment(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -48168,9 +48424,15 @@ const (
 	RoleOf_SendCapLimiterScoped_Update      = RoleStart
 )
 
+// inSendCapLimiter confines predicates of SendCapLimiter rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inSendCapLimiter(ps ...predicate.SendCapLimiter) []predicate.SendCapLimiter {
+	return append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a SendCapLimiter query already confined to the Workspace.
 func (t *SendCapLimiterScoped) Query() *SendCapLimiterQuery {
-	return t.s.c.SendCapLimiter.Query().Where(sendcaplimiter.WorkspaceID(t.s.ws))
+	return t.s.c.SendCapLimiter.Query().Where(t.s.inSendCapLimiter()...)
 }
 
 // Get returns the SendCapLimiter with the id; a row of another Workspace is not found.
@@ -48221,7 +48483,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SendCapLimiterScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendCapLimiter(x.where...)
 	return x.s.writeSendCapLimiter(ctx, "delete", append([]predicate.SendCapLimiter{sendcaplimiter.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.SendCapLimiter.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -48254,14 +48516,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *SendCapLimiterScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendCapLimiter(x.where...)
 	var n int
 	err := x.s.writeSendCapLimiter(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.SendCapLimiter.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -48279,13 +48541,20 @@ func (t *SendCapLimiterScoped) Create() *SendCapLimiterScopedCreate {
 	return &SendCapLimiterScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *SendCapLimiterScopedCreate) build(s *Scoped) *SendCapLimiterCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *SendCapLimiterScopedCreate) raw(s *Scoped) *SendCapLimiterCreate {
 	b := s.c.SendCapLimiter.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *SendCapLimiterScopedCreate) build(ctx context.Context, s *Scoped) (*SendCapLimiterCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkSendCapLimiter(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -48353,20 +48622,16 @@ const (
 func (x *SendCapLimiterScopedCreate) Save(ctx context.Context) (*SendCapLimiter, error) {
 	var created *SendCapLimiter
 	err := x.s.writeSendCapLimiter(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkSendCapLimiter(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -48404,7 +48669,7 @@ func (b *SendCapLimiterScopedCreateBulk) build(ctx context.Context, s *Scoped) (
 	builders := make([]*SendCapLimiterCreate, len(b.xs))
 	ms := make([]*SendCapLimiterMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkSendCapLimiter(ctx, ms...); err != nil {
@@ -48429,10 +48694,7 @@ func (b *SendCapLimiterScopedCreateBulk) Save(ctx context.Context) ([]*SendCapLi
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -48591,8 +48853,8 @@ func (u *SendCapLimiterScopedUpsertOne) Update(set func(*SendCapLimiterScopedUps
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *SendCapLimiterScopedUpsertOne) build(ctx context.Context, s *Scoped) (*SendCapLimiterUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkSendCapLimiter(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -48621,10 +48883,7 @@ func (u *SendCapLimiterScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // SendCapLimiterScopedUpsertBulk is the "upsert" of several SendCapLimiter entities.
@@ -48775,26 +49034,28 @@ func (x *SendCapLimiterScopedUpdateOne) Save(ctx context.Context) (*SendCapLimit
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendCapLimiterScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SendCapLimiterUpdateOne, error) {
+	b := s.c.SendCapLimiter.UpdateOneID(x.id).Where(s.inSendCapLimiter(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendCapLimiter(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *SendCapLimiterScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*SendCapLimiter, error) {
-	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendCapLimiter(x.where...)
 	var updated *SendCapLimiter
 	err := x.s.writeSendCapLimiter(ctx, verb, append([]predicate.SendCapLimiter{sendcaplimiter.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.SendCapLimiter.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSendCapLimiter(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -48903,30 +49164,32 @@ func (x *SendCapLimiterScopedUpdate) SetNillableRefilledAt(v *time.Time) *SendCa
 
 const RoleOf_SendCapLimiterScopedUpdate_SetNillableRefilledAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendCapLimiterScopedUpdate) build(ctx context.Context, s *Scoped) (*SendCapLimiterUpdate, error) {
+	b := s.c.SendCapLimiter.Update().Where(s.inSendCapLimiter(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendCapLimiter(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *SendCapLimiterScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.SendCapLimiter{sendcaplimiter.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendCapLimiter(x.where...)
 	var n int
 	err := x.s.writeSendCapLimiter(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.SendCapLimiter.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSendCapLimiter(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -48966,15 +49229,21 @@ const (
 	RoleOf_SendingDomainScoped_Update             = RoleStart
 )
 
+// inSendingDomain confines predicates of SendingDomain rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inSendingDomain(ps ...predicate.SendingDomain) []predicate.SendingDomain {
+	return append([]predicate.SendingDomain{sendingdomain.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a SendingDomain query already confined to the Workspace, hiding discarded rows
 // (a list query; QueryWithDiscarded sees them too).
 func (t *SendingDomainScoped) Query() *SendingDomainQuery {
-	return t.s.c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(t.s.ws), sendingdomain.DiscardedAtIsNil())
+	return t.s.c.SendingDomain.Query().Where(t.s.inSendingDomain(sendingdomain.DiscardedAtIsNil())...)
 }
 
 // QueryWithDiscarded returns a SendingDomain query confined to the Workspace that also sees discarded rows.
 func (t *SendingDomainScoped) QueryWithDiscarded() *SendingDomainQuery {
-	return t.s.c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(t.s.ws))
+	return t.s.c.SendingDomain.Query().Where(t.s.inSendingDomain()...)
 }
 
 // Get returns the SendingDomain with the id, discarded or not; a row of another Workspace is not found.
@@ -49044,7 +49313,7 @@ func (s *Scoped) checkSendingDomain(ctx context.Context, ms ...*SendingDomainMut
 // another Workspace, an already discarded row or one a predicate excludes is not found. A discarded
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *SendingDomainScoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.SendingDomain) error {
-	where := append([]predicate.SendingDomain{sendingdomain.ID(id), sendingdomain.WorkspaceID(t.s.ws), sendingdomain.DiscardedAtIsNil()}, ps...)
+	where := append(t.s.inSendingDomain(sendingdomain.ID(id), sendingdomain.DiscardedAtIsNil()), ps...)
 	return t.s.writeSendingDomain(ctx, "discard", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.SendingDomain.UpdateOneID(id).Where(where...).SetDiscardedAt(at).Save(ctx)
 		return nil, err
@@ -49079,7 +49348,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SendingDomainScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendingDomain(x.where...)
 	return x.s.writeSendingDomain(ctx, "delete", append([]predicate.SendingDomain{sendingdomain.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.SendingDomain.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -49112,14 +49381,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *SendingDomainScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendingDomain(x.where...)
 	var n int
 	err := x.s.writeSendingDomain(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.SendingDomain.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -49137,13 +49406,20 @@ func (t *SendingDomainScoped) Create() *SendingDomainScopedCreate {
 	return &SendingDomainScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *SendingDomainScopedCreate) build(s *Scoped) *SendingDomainCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *SendingDomainScopedCreate) raw(s *Scoped) *SendingDomainCreate {
 	b := s.c.SendingDomain.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *SendingDomainScopedCreate) build(ctx context.Context, s *Scoped) (*SendingDomainCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkSendingDomain(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -49335,20 +49611,16 @@ const (
 func (x *SendingDomainScopedCreate) Save(ctx context.Context) (*SendingDomain, error) {
 	var created *SendingDomain
 	err := x.s.writeSendingDomain(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkSendingDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -49386,7 +49658,7 @@ func (b *SendingDomainScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 	builders := make([]*SendingDomainCreate, len(b.xs))
 	ms := make([]*SendingDomainMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkSendingDomain(ctx, ms...); err != nil {
@@ -49415,10 +49687,7 @@ func (b *SendingDomainScopedCreateBulk) Save(ctx context.Context) ([]*SendingDom
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -49763,8 +50032,8 @@ func (u *SendingDomainScopedUpsertOne) Update(set func(*SendingDomainScopedUpser
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *SendingDomainScopedUpsertOne) build(ctx context.Context, s *Scoped) (*SendingDomainUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkSendingDomain(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -49797,10 +50066,7 @@ func (u *SendingDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // SendingDomainScopedUpsertBulk is the "upsert" of several SendingDomain entities.
@@ -50157,26 +50423,28 @@ func (x *SendingDomainScopedUpdateOne) Save(ctx context.Context) (*SendingDomain
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendingDomainScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SendingDomainUpdateOne, error) {
+	b := s.c.SendingDomain.UpdateOneID(x.id).Where(s.inSendingDomain(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendingDomain(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *SendingDomainScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*SendingDomain, error) {
-	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendingDomain(x.where...)
 	var updated *SendingDomain
 	err := x.s.writeSendingDomain(ctx, verb, append([]predicate.SendingDomain{sendingdomain.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.SendingDomain.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSendingDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -50487,30 +50755,32 @@ func (x *SendingDomainScopedUpdate) ClearDmarcFoundAt() *SendingDomainScopedUpda
 
 const RoleOf_SendingDomainScopedUpdate_ClearDmarcFoundAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SendingDomainScopedUpdate) build(ctx context.Context, s *Scoped) (*SendingDomainUpdate, error) {
+	b := s.c.SendingDomain.Update().Where(s.inSendingDomain(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSendingDomain(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *SendingDomainScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.SendingDomain{sendingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSendingDomain(x.where...)
 	var n int
 	err := x.s.writeSendingDomain(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.SendingDomain.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSendingDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -50548,9 +50818,15 @@ const (
 	RoleOf_StartTokenScoped_Update      = RoleStart
 )
 
+// inStartToken confines predicates of StartToken rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inStartToken(ps ...predicate.StartToken) []predicate.StartToken {
+	return append([]predicate.StartToken{starttoken.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a StartToken query already confined to the Workspace.
 func (t *StartTokenScoped) Query() *StartTokenQuery {
-	return t.s.c.StartToken.Query().Where(starttoken.WorkspaceID(t.s.ws))
+	return t.s.c.StartToken.Query().Where(t.s.inStartToken()...)
 }
 
 // Get returns the StartToken with the id; a row of another Workspace is not found.
@@ -50628,7 +50904,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *StartTokenScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inStartToken(x.where...)
 	return x.s.writeStartToken(ctx, "delete", append([]predicate.StartToken{starttoken.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.StartToken.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -50661,14 +50937,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *StartTokenScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inStartToken(x.where...)
 	var n int
 	err := x.s.writeStartToken(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.StartToken.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -50686,13 +50962,20 @@ func (t *StartTokenScoped) Create() *StartTokenScopedCreate {
 	return &StartTokenScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *StartTokenScopedCreate) build(s *Scoped) *StartTokenCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *StartTokenScopedCreate) raw(s *Scoped) *StartTokenCreate {
 	b := s.c.StartToken.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *StartTokenScopedCreate) build(ctx context.Context, s *Scoped) (*StartTokenCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkStartToken(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -50846,20 +51129,16 @@ const (
 func (x *StartTokenScopedCreate) Save(ctx context.Context) (*StartToken, error) {
 	var created *StartToken
 	err := x.s.writeStartToken(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkStartToken(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -50897,7 +51176,7 @@ func (b *StartTokenScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Sta
 	builders := make([]*StartTokenCreate, len(b.xs))
 	ms := make([]*StartTokenMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkStartToken(ctx, ms...); err != nil {
@@ -50922,10 +51201,7 @@ func (b *StartTokenScopedCreateBulk) Save(ctx context.Context) ([]*StartToken, e
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -51074,8 +51350,8 @@ func (u *StartTokenScopedUpsertOne) Update(set func(*StartTokenScopedUpsert)) *S
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *StartTokenScopedUpsertOne) build(ctx context.Context, s *Scoped) (*StartTokenUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkStartToken(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -51104,10 +51380,7 @@ func (u *StartTokenScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // StartTokenScopedUpsertBulk is the "upsert" of several StartToken entities.
@@ -51246,26 +51519,28 @@ func (x *StartTokenScopedUpdateOne) Save(ctx context.Context) (*StartToken, erro
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *StartTokenScopedUpdateOne) build(ctx context.Context, s *Scoped) (*StartTokenUpdateOne, error) {
+	b := s.c.StartToken.UpdateOneID(x.id).Where(s.inStartToken(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkStartToken(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *StartTokenScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*StartToken, error) {
-	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inStartToken(x.where...)
 	var updated *StartToken
 	err := x.s.writeStartToken(ctx, verb, append([]predicate.StartToken{starttoken.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.StartToken.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkStartToken(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -51362,30 +51637,32 @@ const RoleOf_StartTokenScopedUpdate_ClearUsedAt = RoleStep
 
 const ClearsState_StartTokenScopedUpdate_ClearUsedAt = "UsedAt"
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *StartTokenScopedUpdate) build(ctx context.Context, s *Scoped) (*StartTokenUpdate, error) {
+	b := s.c.StartToken.Update().Where(s.inStartToken(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkStartToken(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *StartTokenScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.StartToken{starttoken.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inStartToken(x.where...)
 	var n int
 	err := x.s.writeStartToken(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.StartToken.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkStartToken(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -51423,9 +51700,15 @@ const (
 	RoleOf_SuppressionScoped_Update      = RoleStart
 )
 
+// inSuppression confines predicates of Suppression rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inSuppression(ps ...predicate.Suppression) []predicate.Suppression {
+	return append([]predicate.Suppression{suppression.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Suppression query already confined to the Workspace.
 func (t *SuppressionScoped) Query() *SuppressionQuery {
-	return t.s.c.Suppression.Query().Where(suppression.WorkspaceID(t.s.ws))
+	return t.s.c.Suppression.Query().Where(t.s.inSuppression()...)
 }
 
 // Get returns the Suppression with the id; a row of another Workspace is not found.
@@ -51485,7 +51768,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *SuppressionScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSuppression(x.where...)
 	return x.s.writeSuppression(ctx, "delete", append([]predicate.Suppression{suppression.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Suppression.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -51518,14 +51801,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *SuppressionScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSuppression(x.where...)
 	var n int
 	err := x.s.writeSuppression(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Suppression.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -51543,13 +51826,20 @@ func (t *SuppressionScoped) Create() *SuppressionScopedCreate {
 	return &SuppressionScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *SuppressionScopedCreate) build(s *Scoped) *SuppressionCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *SuppressionScopedCreate) raw(s *Scoped) *SuppressionCreate {
 	b := s.c.Suppression.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *SuppressionScopedCreate) build(ctx context.Context, s *Scoped) (*SuppressionCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkSuppression(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -51689,20 +51979,16 @@ const (
 func (x *SuppressionScopedCreate) Save(ctx context.Context) (*Suppression, error) {
 	var created *Suppression
 	err := x.s.writeSuppression(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkSuppression(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -51740,7 +52026,7 @@ func (b *SuppressionScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Su
 	builders := make([]*SuppressionCreate, len(b.xs))
 	ms := make([]*SuppressionMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkSuppression(ctx, ms...); err != nil {
@@ -51765,10 +52051,7 @@ func (b *SuppressionScopedCreateBulk) Save(ctx context.Context) ([]*Suppression,
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -51981,8 +52264,8 @@ func (u *SuppressionScopedUpsertOne) Update(set func(*SuppressionScopedUpsert)) 
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *SuppressionScopedUpsertOne) build(ctx context.Context, s *Scoped) (*SuppressionUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkSuppression(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -52011,10 +52294,7 @@ func (u *SuppressionScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // SuppressionScopedUpsertBulk is the "upsert" of several Suppression entities.
@@ -52249,26 +52529,28 @@ func (x *SuppressionScopedUpdateOne) Save(ctx context.Context) (*Suppression, er
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SuppressionScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SuppressionUpdateOne, error) {
+	b := s.c.Suppression.UpdateOneID(x.id).Where(s.inSuppression(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSuppression(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *SuppressionScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Suppression, error) {
-	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSuppression(x.where...)
 	var updated *Suppression
 	err := x.s.writeSuppression(ctx, verb, append([]predicate.Suppression{suppression.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Suppression.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSuppression(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -52461,30 +52743,32 @@ func (x *SuppressionScopedUpdate) ClearContact() *SuppressionScopedUpdate {
 
 const RoleOf_SuppressionScopedUpdate_ClearContact = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *SuppressionScopedUpdate) build(ctx context.Context, s *Scoped) (*SuppressionUpdate, error) {
+	b := s.c.Suppression.Update().Where(s.inSuppression(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkSuppression(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *SuppressionScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Suppression{suppression.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inSuppression(x.where...)
 	var n int
 	err := x.s.writeSuppression(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Suppression.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkSuppression(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -52522,9 +52806,15 @@ const (
 	RoleOf_TagScoped_Update      = RoleStart
 )
 
+// inTag confines predicates of Tag rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inTag(ps ...predicate.Tag) []predicate.Tag {
+	return append([]predicate.Tag{tag.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Tag query already confined to the Workspace.
 func (t *TagScoped) Query() *TagQuery {
-	return t.s.c.Tag.Query().Where(tag.WorkspaceID(t.s.ws))
+	return t.s.c.Tag.Query().Where(t.s.inTag()...)
 }
 
 // Get returns the Tag with the id; a row of another Workspace is not found.
@@ -52618,7 +52908,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *TagScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTag(x.where...)
 	return x.s.writeTag(ctx, "delete", append([]predicate.Tag{tag.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Tag.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -52651,14 +52941,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *TagScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTag(x.where...)
 	var n int
 	err := x.s.writeTag(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Tag.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -52676,13 +52966,20 @@ func (t *TagScoped) Create() *TagScopedCreate {
 	return &TagScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *TagScopedCreate) build(s *Scoped) *TagCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *TagScopedCreate) raw(s *Scoped) *TagCreate {
 	b := s.c.Tag.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *TagScopedCreate) build(ctx context.Context, s *Scoped) (*TagCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkTag(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -52750,20 +53047,16 @@ const (
 func (x *TagScopedCreate) Save(ctx context.Context) (*Tag, error) {
 	var created *Tag
 	err := x.s.writeTag(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkTag(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -52801,7 +53094,7 @@ func (b *TagScopedCreateBulk) build(ctx context.Context, s *Scoped) (*TagCreateB
 	builders := make([]*TagCreate, len(b.xs))
 	ms := make([]*TagMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkTag(ctx, ms...); err != nil {
@@ -52830,10 +53123,7 @@ func (b *TagScopedCreateBulk) Save(ctx context.Context) ([]*Tag, error) {
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -52968,8 +53258,8 @@ func (u *TagScopedUpsertOne) Update(set func(*TagScopedUpsert)) *TagScopedUpsert
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *TagScopedUpsertOne) build(ctx context.Context, s *Scoped) (*TagUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkTag(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -53002,10 +53292,7 @@ func (u *TagScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // TagScopedUpsertBulk is the "upsert" of several Tag entities.
@@ -53134,26 +53421,28 @@ func (x *TagScopedUpdateOne) Save(ctx context.Context) (*Tag, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *TagScopedUpdateOne) build(ctx context.Context, s *Scoped) (*TagUpdateOne, error) {
+	b := s.c.Tag.UpdateOneID(x.id).Where(s.inTag(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkTag(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *TagScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Tag, error) {
-	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTag(x.where...)
 	var updated *Tag
 	err := x.s.writeTag(ctx, verb, append([]predicate.Tag{tag.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Tag.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkTag(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -53236,30 +53525,32 @@ func (x *TagScopedUpdate) SetNillableName(v *string) *TagScopedUpdate {
 
 const RoleOf_TagScopedUpdate_SetNillableName = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *TagScopedUpdate) build(ctx context.Context, s *Scoped) (*TagUpdate, error) {
+	b := s.c.Tag.Update().Where(s.inTag(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkTag(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *TagScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Tag{tag.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTag(x.where...)
 	var n int
 	err := x.s.writeTag(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Tag.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkTag(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -53297,9 +53588,15 @@ const (
 	RoleOf_TrackedLinkScoped_Update      = RoleStart
 )
 
+// inTrackedLink confines predicates of TrackedLink rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inTrackedLink(ps ...predicate.TrackedLink) []predicate.TrackedLink {
+	return append([]predicate.TrackedLink{trackedlink.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a TrackedLink query already confined to the Workspace.
 func (t *TrackedLinkScoped) Query() *TrackedLinkQuery {
-	return t.s.c.TrackedLink.Query().Where(trackedlink.WorkspaceID(t.s.ws))
+	return t.s.c.TrackedLink.Query().Where(t.s.inTrackedLink()...)
 }
 
 // Get returns the TrackedLink with the id; a row of another Workspace is not found.
@@ -53359,7 +53656,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *TrackedLinkScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackedLink(x.where...)
 	return x.s.writeTrackedLink(ctx, "delete", append([]predicate.TrackedLink{trackedlink.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.TrackedLink.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -53392,14 +53689,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *TrackedLinkScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackedLink(x.where...)
 	var n int
 	err := x.s.writeTrackedLink(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.TrackedLink.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -53417,13 +53714,20 @@ func (t *TrackedLinkScoped) Create() *TrackedLinkScopedCreate {
 	return &TrackedLinkScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *TrackedLinkScopedCreate) build(s *Scoped) *TrackedLinkCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *TrackedLinkScopedCreate) raw(s *Scoped) *TrackedLinkCreate {
 	b := s.c.TrackedLink.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *TrackedLinkScopedCreate) build(ctx context.Context, s *Scoped) (*TrackedLinkCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkTrackedLink(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -53517,20 +53821,16 @@ const (
 func (x *TrackedLinkScopedCreate) Save(ctx context.Context) (*TrackedLink, error) {
 	var created *TrackedLink
 	err := x.s.writeTrackedLink(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkTrackedLink(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -53568,7 +53868,7 @@ func (b *TrackedLinkScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Tr
 	builders := make([]*TrackedLinkCreate, len(b.xs))
 	ms := make([]*TrackedLinkMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkTrackedLink(ctx, ms...); err != nil {
@@ -53593,10 +53893,7 @@ func (b *TrackedLinkScopedCreateBulk) Save(ctx context.Context) ([]*TrackedLink,
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -53715,8 +54012,8 @@ func (u *TrackedLinkScopedUpsertOne) Update(set func(*TrackedLinkScopedUpsert)) 
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *TrackedLinkScopedUpsertOne) build(ctx context.Context, s *Scoped) (*TrackedLinkUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkTrackedLink(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -53745,10 +54042,7 @@ func (u *TrackedLinkScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // TrackedLinkScopedUpsertBulk is the "upsert" of several TrackedLink entities.
@@ -53855,26 +54149,28 @@ func (x *TrackedLinkScopedUpdateOne) Save(ctx context.Context) (*TrackedLink, er
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *TrackedLinkScopedUpdateOne) build(ctx context.Context, s *Scoped) (*TrackedLinkUpdateOne, error) {
+	b := s.c.TrackedLink.UpdateOneID(x.id).Where(s.inTrackedLink(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkTrackedLink(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *TrackedLinkScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*TrackedLink, error) {
-	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackedLink(x.where...)
 	var updated *TrackedLink
 	err := x.s.writeTrackedLink(ctx, verb, append([]predicate.TrackedLink{trackedlink.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.TrackedLink.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkTrackedLink(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -53939,30 +54235,32 @@ func (x *TrackedLinkScopedUpdate) SetUpdatedAt(v time.Time) *TrackedLinkScopedUp
 
 const RoleOf_TrackedLinkScopedUpdate_SetUpdatedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *TrackedLinkScopedUpdate) build(ctx context.Context, s *Scoped) (*TrackedLinkUpdate, error) {
+	b := s.c.TrackedLink.Update().Where(s.inTrackedLink(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkTrackedLink(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *TrackedLinkScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.TrackedLink{trackedlink.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackedLink(x.where...)
 	var n int
 	err := x.s.writeTrackedLink(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.TrackedLink.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkTrackedLink(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -54000,9 +54298,15 @@ const (
 	RoleOf_TrackingDomainScoped_Update      = RoleStart
 )
 
+// inTrackingDomain confines predicates of TrackingDomain rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inTrackingDomain(ps ...predicate.TrackingDomain) []predicate.TrackingDomain {
+	return append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a TrackingDomain query already confined to the Workspace.
 func (t *TrackingDomainScoped) Query() *TrackingDomainQuery {
-	return t.s.c.TrackingDomain.Query().Where(trackingdomain.WorkspaceID(t.s.ws))
+	return t.s.c.TrackingDomain.Query().Where(t.s.inTrackingDomain()...)
 }
 
 // Get returns the TrackingDomain with the id; a row of another Workspace is not found.
@@ -54096,7 +54400,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *TrackingDomainScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackingDomain(x.where...)
 	return x.s.writeTrackingDomain(ctx, "delete", append([]predicate.TrackingDomain{trackingdomain.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.TrackingDomain.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -54129,14 +54433,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *TrackingDomainScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackingDomain(x.where...)
 	var n int
 	err := x.s.writeTrackingDomain(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.TrackingDomain.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -54154,13 +54458,20 @@ func (t *TrackingDomainScoped) Create() *TrackingDomainScopedCreate {
 	return &TrackingDomainScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *TrackingDomainScopedCreate) build(s *Scoped) *TrackingDomainCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *TrackingDomainScopedCreate) raw(s *Scoped) *TrackingDomainCreate {
 	b := s.c.TrackingDomain.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *TrackingDomainScopedCreate) build(ctx context.Context, s *Scoped) (*TrackingDomainCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkTrackingDomain(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -54318,20 +54629,16 @@ const (
 func (x *TrackingDomainScopedCreate) Save(ctx context.Context) (*TrackingDomain, error) {
 	var created *TrackingDomain
 	err := x.s.writeTrackingDomain(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkTrackingDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -54369,7 +54676,7 @@ func (b *TrackingDomainScopedCreateBulk) build(ctx context.Context, s *Scoped) (
 	builders := make([]*TrackingDomainCreate, len(b.xs))
 	ms := make([]*TrackingDomainMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkTrackingDomain(ctx, ms...); err != nil {
@@ -54398,10 +54705,7 @@ func (b *TrackingDomainScopedCreateBulk) Save(ctx context.Context) ([]*TrackingD
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -54656,8 +54960,8 @@ func (u *TrackingDomainScopedUpsertOne) Update(set func(*TrackingDomainScopedUps
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *TrackingDomainScopedUpsertOne) build(ctx context.Context, s *Scoped) (*TrackingDomainUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkTrackingDomain(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -54690,10 +54994,7 @@ func (u *TrackingDomainScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // TrackingDomainScopedUpsertBulk is the "upsert" of several TrackingDomain entities.
@@ -54952,26 +55253,28 @@ func (x *TrackingDomainScopedUpdateOne) Save(ctx context.Context) (*TrackingDoma
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *TrackingDomainScopedUpdateOne) build(ctx context.Context, s *Scoped) (*TrackingDomainUpdateOne, error) {
+	b := s.c.TrackingDomain.UpdateOneID(x.id).Where(s.inTrackingDomain(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkTrackingDomain(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *TrackingDomainScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*TrackingDomain, error) {
-	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackingDomain(x.where...)
 	var updated *TrackingDomain
 	err := x.s.writeTrackingDomain(ctx, verb, append([]predicate.TrackingDomain{trackingdomain.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.TrackingDomain.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkTrackingDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -55184,30 +55487,32 @@ func (x *TrackingDomainScopedUpdate) ClearStateChangedAt() *TrackingDomainScoped
 
 const RoleOf_TrackingDomainScopedUpdate_ClearStateChangedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *TrackingDomainScopedUpdate) build(ctx context.Context, s *Scoped) (*TrackingDomainUpdate, error) {
+	b := s.c.TrackingDomain.Update().Where(s.inTrackingDomain(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkTrackingDomain(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *TrackingDomainScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.TrackingDomain{trackingdomain.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inTrackingDomain(x.where...)
 	var n int
 	err := x.s.writeTrackingDomain(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.TrackingDomain.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkTrackingDomain(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -55245,9 +55550,15 @@ const (
 	RoleOf_UnsubscribeScoped_Update      = RoleStart
 )
 
+// inUnsubscribe confines predicates of Unsubscribe rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inUnsubscribe(ps ...predicate.Unsubscribe) []predicate.Unsubscribe {
+	return append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Unsubscribe query already confined to the Workspace.
 func (t *UnsubscribeScoped) Query() *UnsubscribeQuery {
-	return t.s.c.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(t.s.ws))
+	return t.s.c.Unsubscribe.Query().Where(t.s.inUnsubscribe()...)
 }
 
 // Get returns the Unsubscribe with the id; a row of another Workspace is not found.
@@ -55307,7 +55618,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *UnsubscribeScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUnsubscribe(x.where...)
 	return x.s.writeUnsubscribe(ctx, "delete", append([]predicate.Unsubscribe{unsubscribe.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Unsubscribe.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -55340,14 +55651,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *UnsubscribeScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUnsubscribe(x.where...)
 	var n int
 	err := x.s.writeUnsubscribe(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Unsubscribe.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -55365,13 +55676,20 @@ func (t *UnsubscribeScoped) Create() *UnsubscribeScopedCreate {
 	return &UnsubscribeScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *UnsubscribeScopedCreate) build(s *Scoped) *UnsubscribeCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *UnsubscribeScopedCreate) raw(s *Scoped) *UnsubscribeCreate {
 	b := s.c.Unsubscribe.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *UnsubscribeScopedCreate) build(ctx context.Context, s *Scoped) (*UnsubscribeCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkUnsubscribe(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -55501,20 +55819,16 @@ const (
 func (x *UnsubscribeScopedCreate) Save(ctx context.Context) (*Unsubscribe, error) {
 	var created *Unsubscribe
 	err := x.s.writeUnsubscribe(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkUnsubscribe(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -55552,7 +55866,7 @@ func (b *UnsubscribeScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Un
 	builders := make([]*UnsubscribeCreate, len(b.xs))
 	ms := make([]*UnsubscribeMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkUnsubscribe(ctx, ms...); err != nil {
@@ -55577,10 +55891,7 @@ func (b *UnsubscribeScopedCreateBulk) Save(ctx context.Context) ([]*Unsubscribe,
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -55787,8 +56098,8 @@ func (u *UnsubscribeScopedUpsertOne) Update(set func(*UnsubscribeScopedUpsert)) 
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *UnsubscribeScopedUpsertOne) build(ctx context.Context, s *Scoped) (*UnsubscribeUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkUnsubscribe(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -55817,10 +56128,7 @@ func (u *UnsubscribeScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // UnsubscribeScopedUpsertBulk is the "upsert" of several Unsubscribe entities.
@@ -56049,26 +56357,28 @@ func (x *UnsubscribeScopedUpdateOne) Save(ctx context.Context) (*Unsubscribe, er
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *UnsubscribeScopedUpdateOne) build(ctx context.Context, s *Scoped) (*UnsubscribeUpdateOne, error) {
+	b := s.c.Unsubscribe.UpdateOneID(x.id).Where(s.inUnsubscribe(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkUnsubscribe(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *UnsubscribeScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Unsubscribe, error) {
-	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUnsubscribe(x.where...)
 	var updated *Unsubscribe
 	err := x.s.writeUnsubscribe(ctx, verb, append([]predicate.Unsubscribe{unsubscribe.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Unsubscribe.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkUnsubscribe(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -56255,30 +56565,32 @@ func (x *UnsubscribeScopedUpdate) ClearContact() *UnsubscribeScopedUpdate {
 
 const RoleOf_UnsubscribeScopedUpdate_ClearContact = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *UnsubscribeScopedUpdate) build(ctx context.Context, s *Scoped) (*UnsubscribeUpdate, error) {
+	b := s.c.Unsubscribe.Update().Where(s.inUnsubscribe(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkUnsubscribe(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *UnsubscribeScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Unsubscribe{unsubscribe.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUnsubscribe(x.where...)
 	var n int
 	err := x.s.writeUnsubscribe(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Unsubscribe.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkUnsubscribe(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -56316,9 +56628,15 @@ const (
 	RoleOf_UsageScoped_Update      = RoleStart
 )
 
+// inUsage confines predicates of Usage rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inUsage(ps ...predicate.Usage) []predicate.Usage {
+	return append([]predicate.Usage{usage.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Usage query already confined to the Workspace.
 func (t *UsageScoped) Query() *UsageQuery {
-	return t.s.c.Usage.Query().Where(usage.WorkspaceID(t.s.ws))
+	return t.s.c.Usage.Query().Where(t.s.inUsage()...)
 }
 
 // Get returns the Usage with the id; a row of another Workspace is not found.
@@ -56369,7 +56687,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *UsageScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUsage(x.where...)
 	return x.s.writeUsage(ctx, "delete", append([]predicate.Usage{usage.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Usage.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -56402,14 +56720,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *UsageScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUsage(x.where...)
 	var n int
 	err := x.s.writeUsage(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Usage.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -56427,13 +56745,20 @@ func (t *UsageScoped) Create() *UsageScopedCreate {
 	return &UsageScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *UsageScopedCreate) build(s *Scoped) *UsageCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *UsageScopedCreate) raw(s *Scoped) *UsageCreate {
 	b := s.c.Usage.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *UsageScopedCreate) build(ctx context.Context, s *Scoped) (*UsageCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkUsage(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -56545,20 +56870,16 @@ const (
 func (x *UsageScopedCreate) Save(ctx context.Context) (*Usage, error) {
 	var created *Usage
 	err := x.s.writeUsage(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkUsage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -56596,7 +56917,7 @@ func (b *UsageScopedCreateBulk) build(ctx context.Context, s *Scoped) (*UsageCre
 	builders := make([]*UsageCreate, len(b.xs))
 	ms := make([]*UsageMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkUsage(ctx, ms...); err != nil {
@@ -56621,10 +56942,7 @@ func (b *UsageScopedCreateBulk) Save(ctx context.Context) ([]*Usage, error) {
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -56813,8 +57131,8 @@ func (u *UsageScopedUpsertOne) Update(set func(*UsageScopedUpsert)) *UsageScoped
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *UsageScopedUpsertOne) build(ctx context.Context, s *Scoped) (*UsageUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkUsage(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -56843,10 +57161,7 @@ func (u *UsageScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // UsageScopedUpsertBulk is the "upsert" of several Usage entities.
@@ -57029,26 +57344,28 @@ func (x *UsageScopedUpdateOne) Save(ctx context.Context) (*Usage, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *UsageScopedUpdateOne) build(ctx context.Context, s *Scoped) (*UsageUpdateOne, error) {
+	b := s.c.Usage.UpdateOneID(x.id).Where(s.inUsage(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkUsage(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *UsageScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Usage, error) {
-	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUsage(x.where...)
 	var updated *Usage
 	err := x.s.writeUsage(ctx, verb, append([]predicate.Usage{usage.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Usage.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkUsage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -57189,30 +57506,32 @@ func (x *UsageScopedUpdate) SetNillableComputedAt(v *time.Time) *UsageScopedUpda
 
 const RoleOf_UsageScopedUpdate_SetNillableComputedAt = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *UsageScopedUpdate) build(ctx context.Context, s *Scoped) (*UsageUpdate, error) {
+	b := s.c.Usage.Update().Where(s.inUsage(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkUsage(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *UsageScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Usage{usage.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inUsage(x.where...)
 	var n int
 	err := x.s.writeUsage(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Usage.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkUsage(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -57250,9 +57569,15 @@ const (
 	RoleOf_VisitorScoped_Update      = RoleStart
 )
 
+// inVisitor confines predicates of Visitor rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inVisitor(ps ...predicate.Visitor) []predicate.Visitor {
+	return append([]predicate.Visitor{visitor.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a Visitor query already confined to the Workspace.
 func (t *VisitorScoped) Query() *VisitorQuery {
-	return t.s.c.Visitor.Query().Where(visitor.WorkspaceID(t.s.ws))
+	return t.s.c.Visitor.Query().Where(t.s.inVisitor()...)
 }
 
 // Get returns the Visitor with the id; a row of another Workspace is not found.
@@ -57330,7 +57655,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *VisitorScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inVisitor(x.where...)
 	return x.s.writeVisitor(ctx, "delete", append([]predicate.Visitor{visitor.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.Visitor.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -57363,14 +57688,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *VisitorScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inVisitor(x.where...)
 	var n int
 	err := x.s.writeVisitor(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.Visitor.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -57388,13 +57713,20 @@ func (t *VisitorScoped) Create() *VisitorScopedCreate {
 	return &VisitorScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *VisitorScopedCreate) build(s *Scoped) *VisitorCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *VisitorScopedCreate) raw(s *Scoped) *VisitorCreate {
 	b := s.c.Visitor.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *VisitorScopedCreate) build(ctx context.Context, s *Scoped) (*VisitorCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkVisitor(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -57530,20 +57862,16 @@ const (
 func (x *VisitorScopedCreate) Save(ctx context.Context) (*Visitor, error) {
 	var created *Visitor
 	err := x.s.writeVisitor(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkVisitor(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -57581,7 +57909,7 @@ func (b *VisitorScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Visito
 	builders := make([]*VisitorCreate, len(b.xs))
 	ms := make([]*VisitorMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkVisitor(ctx, ms...); err != nil {
@@ -57606,10 +57934,7 @@ func (b *VisitorScopedCreateBulk) Save(ctx context.Context) ([]*Visitor, error) 
 		}
 		return nil, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -57776,8 +58101,8 @@ func (u *VisitorScopedUpsertOne) Update(set func(*VisitorScopedUpsert)) *Visitor
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *VisitorScopedUpsertOne) build(ctx context.Context, s *Scoped) (*VisitorUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkVisitor(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -57806,10 +58131,7 @@ func (u *VisitorScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // VisitorScopedUpsertBulk is the "upsert" of several Visitor entities.
@@ -58074,26 +58396,28 @@ func (x *VisitorScopedUpdateOne) Save(ctx context.Context) (*Visitor, error) {
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *VisitorScopedUpdateOne) build(ctx context.Context, s *Scoped) (*VisitorUpdateOne, error) {
+	b := s.c.Visitor.UpdateOneID(x.id).Where(s.inVisitor(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkVisitor(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *VisitorScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Visitor, error) {
-	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inVisitor(x.where...)
 	var updated *Visitor
 	err := x.s.writeVisitor(ctx, verb, append([]predicate.Visitor{visitor.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Visitor.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkVisitor(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -58316,30 +58640,32 @@ func (x *VisitorScopedUpdate) ClearContact() *VisitorScopedUpdate {
 
 const RoleOf_VisitorScopedUpdate_ClearContact = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *VisitorScopedUpdate) build(ctx context.Context, s *Scoped) (*VisitorUpdate, error) {
+	b := s.c.Visitor.Update().Where(s.inVisitor(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkVisitor(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *VisitorScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.Visitor{visitor.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inVisitor(x.where...)
 	var n int
 	err := x.s.writeVisitor(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.Visitor.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkVisitor(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.
@@ -58377,9 +58703,15 @@ const (
 	RoleOf_WebhookEndpointScoped_Update      = RoleStart
 )
 
+// inWebhookEndpoint confines predicates of WebhookEndpoint rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inWebhookEndpoint(ps ...predicate.WebhookEndpoint) []predicate.WebhookEndpoint {
+	return append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(s.ws)}, ps...)
+}
+
 // Query returns a WebhookEndpoint query already confined to the Workspace.
 func (t *WebhookEndpointScoped) Query() *WebhookEndpointQuery {
-	return t.s.c.WebhookEndpoint.Query().Where(webhookendpoint.WorkspaceID(t.s.ws))
+	return t.s.c.WebhookEndpoint.Query().Where(t.s.inWebhookEndpoint()...)
 }
 
 // Get returns the WebhookEndpoint with the id; a row of another Workspace is not found.
@@ -58473,7 +58805,7 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *WebhookEndpointScopedDeleteOne) Exec(ctx context.Context) error {
-	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inWebhookEndpoint(x.where...)
 	return x.s.writeWebhookEndpoint(ctx, "delete", append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.WebhookEndpoint.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
@@ -58506,14 +58838,14 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *WebhookEndpointScopedDelete) Exec(ctx context.Context) (int, error) {
-	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inWebhookEndpoint(x.where...)
 	var n int
 	err := x.s.writeWebhookEndpoint(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.WebhookEndpoint.Delete().Where(where...).Exec(ctx)
 		return nil, err
 	})
-	return n, err
+	return written(n, err)
 }
 
 // ---------------------------------------------------------------- create
@@ -58531,13 +58863,20 @@ func (t *WebhookEndpointScoped) Create() *WebhookEndpointScopedCreate {
 	return &WebhookEndpointScopedCreate{s: t.s}
 }
 
-// build makes the ent create on the client of s, in its Workspace.
-func (x *WebhookEndpointScopedCreate) build(s *Scoped) *WebhookEndpointCreate {
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *WebhookEndpointScopedCreate) raw(s *Scoped) *WebhookEndpointCreate {
 	b := s.c.WebhookEndpoint.Create().SetWorkspaceID(s.ws)
 	for _, set := range x.set {
 		set(b)
 	}
 	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *WebhookEndpointScopedCreate) build(ctx context.Context, s *Scoped) (*WebhookEndpointCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkWebhookEndpoint(ctx, b.Mutation()))
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -58775,20 +59114,16 @@ const (
 func (x *WebhookEndpointScopedCreate) Save(ctx context.Context) (*WebhookEndpoint, error) {
 	var created *WebhookEndpoint
 	err := x.s.writeWebhookEndpoint(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := x.build(s)
-		if err := s.checkWebhookEndpoint(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		if created, err = b.Save(ctx); err != nil {
 			return nil, err
 		}
 		return []int64{created.ID}, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -58826,7 +59161,7 @@ func (b *WebhookEndpointScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 	builders := make([]*WebhookEndpointCreate, len(b.xs))
 	ms := make([]*WebhookEndpointMutation, len(b.xs))
 	for i, x := range b.xs {
-		builders[i] = x.build(s)
+		builders[i] = x.raw(s)
 		ms[i] = builders[i].Mutation()
 	}
 	if err := s.checkWebhookEndpoint(ctx, ms...); err != nil {
@@ -58855,10 +59190,7 @@ func (b *WebhookEndpointScopedCreateBulk) Save(ctx context.Context) ([]*WebhookE
 		}
 		return ids, nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	return created, nil
+	return written(created, err)
 }
 
 // Exec is like Save, discarding the entities.
@@ -59279,8 +59611,8 @@ func (u *WebhookEndpointScopedUpsertOne) Update(set func(*WebhookEndpointScopedU
 
 // build makes the ent upsert on the client of s and verifies the create's references.
 func (u *WebhookEndpointScopedUpsertOne) build(ctx context.Context, s *Scoped) (*WebhookEndpointUpsertOne, error) {
-	b := u.x.build(s)
-	if err := s.checkWebhookEndpoint(ctx, b.Mutation()); err != nil {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
 		return nil, err
 	}
 	r := b.OnConflict(u.conflict...)
@@ -59313,10 +59645,7 @@ func (u *WebhookEndpointScopedUpsertOne) ID(ctx context.Context) (int64, error) 
 		}
 		return []int64{id}, nil
 	})
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return written(id, err)
 }
 
 // WebhookEndpointScopedUpsertBulk is the "upsert" of several WebhookEndpoint entities.
@@ -59751,26 +60080,28 @@ func (x *WebhookEndpointScopedUpdateOne) Save(ctx context.Context) (*WebhookEndp
 	return x.save(ctx, "update", skipUnchanged)
 }
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *WebhookEndpointScopedUpdateOne) build(ctx context.Context, s *Scoped) (*WebhookEndpointUpdateOne, error) {
+	b := s.c.WebhookEndpoint.UpdateOneID(x.id).Where(s.inWebhookEndpoint(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkWebhookEndpoint(ctx, b.Mutation()))
+}
+
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *WebhookEndpointScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*WebhookEndpoint, error) {
-	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inWebhookEndpoint(x.where...)
 	var updated *WebhookEndpoint
 	err := x.s.writeWebhookEndpoint(ctx, verb, append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.WebhookEndpoint.UpdateOneID(x.id).Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkWebhookEndpoint(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		updated, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return nil, err
-	}
-	return updated, nil
+	return written(updated, err)
 }
 
 // Exec is like Save, discarding the entity.
@@ -60159,30 +60490,32 @@ func (x *WebhookEndpointScopedUpdate) ClearDisabledReason() *WebhookEndpointScop
 
 const RoleOf_WebhookEndpointScopedUpdate_ClearDisabledReason = RoleStep
 
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *WebhookEndpointScopedUpdate) build(ctx context.Context, s *Scoped) (*WebhookEndpointUpdate, error) {
+	b := s.c.WebhookEndpoint.Update().Where(s.inWebhookEndpoint(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkWebhookEndpoint(ctx, b.Mutation()))
+}
+
 // Save verifies the references against the Workspace, then updates the rows and
 // returns how many changed.
 func (x *WebhookEndpointScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	where := append([]predicate.WebhookEndpoint{webhookendpoint.WorkspaceID(x.s.ws)}, x.where...)
+	where := x.s.inWebhookEndpoint(x.where...)
 	var n int
 	err := x.s.writeWebhookEndpoint(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
-		b := s.c.WebhookEndpoint.Update().Where(where...)
-		for _, set := range x.set {
-			set(b)
-		}
-		if err := s.checkWebhookEndpoint(ctx, b.Mutation()); err != nil {
+		b, err := x.build(ctx, s)
+		if err != nil {
 			return nil, err
 		}
-		var err error
 		n, err = b.Save(ctx)
 		return nil, err
 	})
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return written(n, err)
 }
 
 // Exec is like Save, discarding the count.

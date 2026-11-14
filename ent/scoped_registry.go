@@ -64,9 +64,8 @@ type ScopedEntity struct {
 	// Wrapper is the type of its scoped wrapper (*<Name>Scoped), whose methods the kind decides.
 	Wrapper reflect.Type
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
-	// schema.Audited.Action, the verbs internal/entgen's Verbs gives its kind): create, update and
-	// delete (Purge), then discard for a discardable entity, which is never restored, and archive and
-	// unarchive for an archivable one (ADR 0100). None when the entity is not audited.
+	// schema.Audited.Action and the verbs internal/entgen's Verbs gives its kind). None when the
+	// entity is not audited.
 	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)

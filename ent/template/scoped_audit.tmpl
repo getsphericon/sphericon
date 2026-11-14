@@ -1,11 +1,9 @@
 {{/*
 Audit capture in the scoped client (ADR 0022). The actor (kind, id) is part of
 *ent.Scoped. For an entity that opts in with schema.Audited every wrapper in scoped.tmpl
-writes through the entity's one audited write (write<N>), which opens a transaction (or
-joins the one the scope is already bound to), builds and runs the mutation on that
-transaction's client and publishes an audit change through the scope's AuditPublisher in it. A scope without an
-actor, or with the `ingest` actor, takes the plain path with no transaction and no
-entry. ent cannot import internal/infra/events, so the transaction opener and the publisher
+writes through the entity's one write (write<N>, which says how), and the change it
+records goes out through the scope's AuditPublisher. A scope without an actor, or with the
+`ingest` actor, takes the plain path with no transaction and no entry. ent cannot import internal/infra/events, so the transaction opener and the publisher
 are small interfaces that the events bus implements.
 */}}
 {{ define "scoped_audit" }}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/samber/lo"
@@ -44,7 +45,19 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 	bus := testhelper.BusOn(t, sqlDB)
 	failing := c.Scoped(acme).As(johnActor, failAfterWrite{bus: bus})
 	committing := bus.Act(c.Scoped(acme), johnActor)
-	entries := func() int { return len(testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameAuditEntry)) }
+	// actions lists the actions of the entity's queued Audit entries, of the row with the target id
+	// when one is given.
+	actions := func(e *ent.ScopedEntity, target ...string) []string {
+		var out []string
+		for _, env := range testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameAuditEntry) {
+			var entry events.AuditEntry
+			require.NoError(t, json.Unmarshal(env.Data, &entry))
+			if slices.Contains(e.AuditActions, entry.Action) && (len(target) == 0 || slices.Contains(target, entry.TargetID)) {
+				out = append(out, entry.Action)
+			}
+		}
+		return out
+	}
 
 	entities := ent.ScopedEntities()
 	audited := lo.Filter(entities, func(e *ent.ScopedEntity, _ int) bool { return len(e.AuditActions) > 0 })
@@ -61,16 +74,17 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 			ids, err = e.IDs(ctx, c, acme)
 			require.NoError(t, err)
 			remap := func(entity string, _ int64) int64 { return firstID(ctx, t, c, entities, entity, acme) }
-			recorded := entries()
 
 			_, err = e.Replant(ctx, failing, foreign[0], remap)
 			require.ErrorIs(t, err, errAfterWrite, "create")
 			after, err := e.IDs(ctx, c, acme)
 			require.NoError(t, err)
 			assert.Equal(t, ids, after, "a rolled-back create leaves no row")
-			left := entries()
-			assert.Equal(t, recorded, left, "a rolled-back create leaves no entry")
+			created := lo.Filter(actions(e), func(a string, _ int) bool { return strings.HasSuffix(a, ".create") })
+			assert.Empty(t, created, "a rolled-back create leaves no entry")
 
+			// test writes: the row the rolled-back updates and deletes aim at stands on nothing, which a
+			// fixture row cannot promise (a delete of one with rows on it fails before the write).
 			_, err = e.Replant(ctx, committing, foreign[0], remap)
 			require.NoError(t, err)
 			planted, err := e.IDs(ctx, c, acme)
@@ -85,7 +99,6 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 				return string(b)
 			}
 			row := read()
-			recorded = entries()
 
 			for name, write := range map[string]func() error{
 				"update by id": func() error { return e.Touch(ctx, failing, id) },
@@ -95,11 +108,13 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 			} {
 				err := write()
 				require.ErrorIs(t, err, errAfterWrite, name)
+				// An update that moves only updated_at records no entry anyway: the row shows its escape.
 				now := read()
 				assert.JSONEq(t, row, now, "a rolled-back %s leaves the row as it was", name)
 			}
-			left = entries()
-			assert.Equal(t, recorded, left, "a rolled-back write leaves no entry")
+			onRow := actions(e, testhelper.ID(id))
+			require.Len(t, onRow, 1, "a rolled-back update or delete leaves no entry")
+			assert.True(t, strings.HasSuffix(onRow[0], ".create"), onRow[0])
 		})
 	}
 }
