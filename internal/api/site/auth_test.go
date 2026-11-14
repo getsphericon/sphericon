@@ -28,10 +28,9 @@ func loginBody(email, password string) string {
 // headers are only observable on the wire).
 func postLogin(t *testing.T, env *testhelper.TestEnv, email, password string) *httptest.ResponseRecorder {
 	t.Helper()
-	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, loginPath, strings.NewReader(loginBody(email, password)))
 	req.Header.Set("Content-Type", "application/json")
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	return rec
 }
 
@@ -128,11 +127,10 @@ func TestTheLibraryAuthAndAvatarRoutesAreGone(t *testing.T) {
 		{http.MethodGet, "/auth/list"},
 		{http.MethodGet, "/avatar/whatever.image"},
 	} {
-		rec := httptest.NewRecorder()
 		body := strings.NewReader(loginBody(fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 		req := httptest.NewRequestWithContext(t.Context(), c.method, c.path, body)
 		req.Header.Set("Content-Type", "application/json")
-		env.Server.ServeHTTP(rec, req)
+		rec := env.Serve(req)
 		assert.Equal(t, http.StatusNotFound, rec.Code, c.path)
 		assert.Empty(t, rec.Result().Cookies(), c.path)
 	}

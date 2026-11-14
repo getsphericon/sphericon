@@ -24,9 +24,7 @@ func loginWithFetchSite(t *testing.T, env *testhelper.TestEnv, fetchSite string)
 	if fetchSite != "" {
 		req.Header.Set("Sec-Fetch-Site", fetchSite)
 	}
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func TestSessionCookieIsSameSiteLax(t *testing.T) {

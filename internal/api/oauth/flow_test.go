@@ -328,8 +328,7 @@ func assertResourceIndicator(t *testing.T, env *testhelper.TestEnv, mcpResource,
 type roundTripper struct{ env *testhelper.TestEnv }
 
 func (r roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	rec := httptest.NewRecorder()
-	r.env.Server.ServeHTTP(rec, req)
+	rec := r.env.Serve(req)
 	return rec.Result(), nil
 }
 

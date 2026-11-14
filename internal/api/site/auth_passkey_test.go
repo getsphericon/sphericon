@@ -24,11 +24,10 @@ const (
 // passkeyLoginCall is one request of a Passkey login: anonymous, with the ceremony cookie when set.
 func passkeyLoginCall(t *testing.T, env *testhelper.TestEnv, path, ceremony, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(testhelper.RequestCookie(passkeyCeremonyCookie, ceremony))
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	return rec
 }
 

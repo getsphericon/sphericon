@@ -41,8 +41,7 @@ func sendLinked(t *testing.T, env *testhelper.TestEnv, dest string, track extern
 
 func get(t *testing.T, env *testhelper.TestEnv, path string) *httptest.ResponseRecorder {
 	t.Helper()
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
+	rec := env.Serve(httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil))
 	return rec
 }
 

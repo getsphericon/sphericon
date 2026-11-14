@@ -40,9 +40,7 @@ func hit(t *testing.T, env *testhelper.TestEnv, path, userAgent, addr string) *h
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("X-Forwarded-For", addr)
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func clickPathTo(t *testing.T, env *testhelper.TestEnv, messageID int64, dest string) string {

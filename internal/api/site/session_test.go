@@ -27,10 +27,9 @@ func (c *movableClock) now() time.Time { return c.t }
 // session cookie.
 func workspacesStatus(t *testing.T, env *testhelper.TestEnv, session string) int {
 	t.Helper()
-	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)
 	req.AddCookie(testhelper.RequestCookie("JWT", session))
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	return rec.Code
 }
 

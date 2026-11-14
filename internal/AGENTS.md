@@ -243,6 +243,8 @@ clients in a test: ask the env for an actor. For a raw bearer (raw HTTP or MCP) 
 for another tenant. Such helpers may persist a token with explicit scopes, but only
 through the production hash/generate functions.
 `env.MCPClient(t, bearer)` connects an MCP session.
+A test of the raw HTTP surface (a header, a redirect, a cookie) builds its request and sends it
+with `env.Serve(req)`, which returns the recorded answer.
 
 Tenant-isolation tests use the committed Globex rows by name (`fixtures.SegmentGlobexID`,
 `fixtures.TemplateGlobexName`, …). Acme's three roles are `OwnerJohn`, `AdminAlice` and

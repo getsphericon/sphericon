@@ -79,11 +79,10 @@ func workspaceOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 // siteGet sends a GET as the fixture user and returns the status and the body.
 func siteGet(t *testing.T, env *testhelper.TestEnv, email, path string) (status int, body []byte) {
 	t.Helper()
-	rec := httptest.NewRecorder()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
 	token := env.SiteToken(t, email, nil)
 	req.AddCookie(testhelper.RequestCookie("JWT", token))
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	return rec.Code, rec.Body.Bytes()
 }
 
@@ -234,13 +233,12 @@ func TestAStrongSessionMeetsTheRequirementWithoutASecondFactor(t *testing.T) {
 	env := requirementEnv(t, ritaGraceEnds.Add(time.Hour))
 	path := "/site/workspaces/" + fixtures.UmbrellaPublicID + "/tags"
 	get := func(method apiauth.Method) int {
-		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
 		token := env.SiteToken(t, fixtures.UmbrellaOwnerRitaEmail, func(c *gptoken.Claims) {
 			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
 		})
 		req.AddCookie(testhelper.RequestCookie("JWT", token))
-		env.Server.ServeHTTP(rec, req)
+		rec := env.Serve(req)
 		return rec.Code
 	}
 
@@ -257,13 +255,12 @@ func TestTheGraceEndFollowsTheStrengthOfTheSession(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(c.now))
 	requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 	graceEnds := func(method apiauth.Method) any {
-		rec := httptest.NewRecorder()
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)
 		token := env.SiteToken(t, fixtures.PasskeyPatEmail, func(c *gptoken.Claims) {
 			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
 		})
 		req.AddCookie(testhelper.RequestCookie("JWT", token))
-		env.Server.ServeHTTP(rec, req)
+		rec := env.Serve(req)
 		require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 		var list []map[string]any
 		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &list))

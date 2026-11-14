@@ -45,9 +45,7 @@ func postCollect(t *testing.T, env *testhelper.TestEnv, c collectReq) *httptest.
 	if c.origin != "" {
 		req.Header.Set("Origin", c.origin)
 	}
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func TestCollectAnswers429OverTheWorkspaceLimitAndAnotherWorkspaceIsUnaffected(t *testing.T) {

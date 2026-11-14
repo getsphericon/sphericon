@@ -50,8 +50,7 @@ func TestMCPRequiresBearerToken(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json, text/event-stream")
 			req.Header["Authorization"] = auth
-			rec := httptest.NewRecorder()
-			env.Server.ServeHTTP(rec, req)
+			rec := env.Serve(req)
 			assert.Equal(t, http.StatusUnauthorized, rec.Code)
 		})
 	}

@@ -62,9 +62,7 @@ func signedPost(t *testing.T, env *testhelper.TestEnv, key, secret, id, body str
 	req.Header.Set("Webhook-Id", id)
 	req.Header.Set("Webhook-Timestamp", strconv.FormatInt(hookClock.Unix(), 10))
 	req.Header.Set("Webhook-Signature", sig)
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func failureBody(id, destination string, hard bool) string {
@@ -141,8 +139,7 @@ func TestHookRefusesAnUnsignedOrUnreadableRequest(t *testing.T) {
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 
 	unsigned := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/hooks/"+key, strings.NewReader(failureBody("evt_1", "a@example.com", true)))
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, unsigned)
+	rec := env.Serve(unsigned)
 	assert.Equal(t, http.StatusForbidden, rec.Code)
 
 	// Correctly signed, but not JSON: the provider's to fix, not retried.

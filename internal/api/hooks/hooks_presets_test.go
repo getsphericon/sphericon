@@ -40,9 +40,7 @@ func postmarkPost(t *testing.T, env *testhelper.TestEnv, key, user, password, bo
 	if password != "" {
 		req.SetBasicAuth(user, password)
 	}
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 // mailgunPost wraps eventData in Mailgun's envelope, signed with signingKey.
@@ -53,9 +51,7 @@ func mailgunPost(t *testing.T, env *testhelper.TestEnv, key, signingKey, eventDa
 	mac.Write([]byte(timestamp + mailgunToken))
 	body := `{"signature":{"token":"` + mailgunToken + `","timestamp":"` + timestamp + `","signature":"` + hex.EncodeToString(mac.Sum(nil)) + `"},"event-data":` + eventData + `}`
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/hooks/"+key, strings.NewReader(body))
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 // failuresFor is every delivery failure published for an address.

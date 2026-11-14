@@ -33,9 +33,7 @@ func getAPI(t *testing.T, env *testhelper.TestEnv, bearer string, headers map[st
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func anchorBearer() string {
@@ -169,9 +167,7 @@ func postMCP(t *testing.T, env *testhelper.TestEnv, bearer string) *httptest.Res
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, testhelper.MCPEndpoint, nil)
 	req.Header.Set("Authorization", "Bearer "+bearer)
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
+	return env.Serve(req)
 }
 
 func TestFailedMCPAuthenticationsAreLimitedToo(t *testing.T) {

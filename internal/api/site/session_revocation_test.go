@@ -19,7 +19,6 @@ import (
 // when empty) and returns the recorded response.
 func sendWithSession(t *testing.T, env *testhelper.TestEnv, method, path, session, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	rec := httptest.NewRecorder()
 	var rd io.Reader
 	if body != "" {
 		rd = strings.NewReader(body)
@@ -31,7 +30,7 @@ func sendWithSession(t *testing.T, env *testhelper.TestEnv, method, path, sessio
 	if session != "" {
 		req.AddCookie(testhelper.RequestCookie("JWT", session))
 	}
-	env.Server.ServeHTTP(rec, req)
+	rec := env.Serve(req)
 	return rec
 }
 
