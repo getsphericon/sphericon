@@ -19,10 +19,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
-	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -75,7 +73,7 @@ func TestSendBroadcastDeliversToEligibleContacts(t *testing.T) {
 	// ineligible. Bob is unsubscribed from "broadcasts" in the fixtures, the email-less
 	// contact has no destination.
 	fs := &fakeSender{}
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastDraftID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastDraftID))
 
 	// One message per delivered contact; no unrendered merge tags leak through
 	// (substitution itself is covered by the emailrender tests).
@@ -176,7 +174,7 @@ func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 	complained := env.DB.Contact.GetX(ctx, fixtures.ContactComplainedID)
 
 	fs := &fakeSender{}
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastScheduledID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastScheduledID))
 
 	got := make([]string, len(fs.sent))
 	for i, m := range fs.sent {
@@ -201,7 +199,7 @@ func TestSendBroadcastSkipsUnsubscribedFromEverything(t *testing.T) {
 	gone := env.DB.Contact.GetX(ctx, fixtures.ContactUnsubscribedEverythingID)
 
 	fs := &fakeSender{}
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastSendingID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastSendingID))
 
 	// Positive control: the eligible audience (alice + carol; bob is broadcasts-
 	// unsubscribed) is still delivered to, and the everything-opt-out is excluded.
@@ -232,7 +230,7 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 	noah := env.DB.Contact.GetX(ctx, fixtures.ContactNoahID) // plan=free
 
 	fs := &fakeSender{}
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastProSegmentID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastProSegmentID))
 
 	got := make([]string, len(fs.sent))
 	for i, m := range fs.sent {
@@ -252,7 +250,7 @@ func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	ctx := context.Background()
 
 	fs := &fakeSender{}
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastWithoutTelegramID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastWithoutTelegramID))
 
 	got := make([]string, len(fs.sent))
 	for i, m := range fs.sent {
@@ -275,7 +273,7 @@ func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *
 	env.MakeDefaultTelegram(t, bot)
 	before := env.DB.StartToken.Query().IDsX(ctx)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), fixtures.BroadcastTelegramInviteID))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), fixtures.BroadcastTelegramInviteID))
 
 	sent := env.CustomerMail.Messages()
 	require.NotEmpty(t, sent)
@@ -294,7 +292,7 @@ func TestSendBroadcastMarksFailedOnSendError(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(erroringSender{}), time.Now), fixtures.BroadcastScheduledID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(erroringSender{}), time.Now), fixtures.BroadcastScheduledID))
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastScheduledID)
 	assert.Equal(t, broadcast.StatusSent, got.Status, "broadcast finalizes even when every send fails")
@@ -326,14 +324,13 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 
 	// Fixture broadcast 100; the resolver reports no usable provider. That is a
 	// reversible hold on the source, not a failed broadcast.
-	err := jobs.SendBroadcast(ctx, env.DB, newMod(env, failingResolver(messaging.ErrNoProvider), time.Now), fixtures.BroadcastDraftID)
-	var held *broadcasts.HeldError
-	require.ErrorAs(t, err, &held)
-	assert.Equal(t, holdreason.NoIntegration, held.Reason)
+	err := env.SendBroadcastThrough(t, newMod(env, failingResolver(messaging.ErrNoProvider), time.Now), fixtures.BroadcastDraftID)
+	require.ErrorIs(t, err, testhelper.ErrBroadcastWaits)
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.NotEqual(t, broadcast.StatusFailed, got.Status)
 	require.NotNil(t, got.HoldReason)
+	assert.Equal(t, holdreason.NoIntegration, *got.HoldReason)
 }
 
 // newMod builds the Outbound send module over a test resolver, with a real tracker
@@ -342,7 +339,7 @@ func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func
 	return outboundmessages.New(env.Bus, env.Holds, resolver, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
 }
 
-// The synchronous adapter runs the production sequence: the module plans, paces and settles
+// A Send delivered by the real workers runs the production sequence: the module plans, paces and settles
 // the Broadcast, so the pacing it records is what the river adapter would schedule by.
 func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -350,7 +347,7 @@ func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(10000).ExecX(ctx)
 	fs := &fakeSender{}
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastDraftID))
+	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastDraftID))
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	assert.Equal(t, broadcast.StatusSent, got.Status)
@@ -358,7 +355,7 @@ func TestSendBroadcastRunsTheProductionSequence(t *testing.T) {
 	assert.Len(t, fs.sent, figuresOf(t, env, fixtures.BroadcastDraftID).Sent)
 }
 
-// The synchronous adapter paces from Outbound send's clock (the Instance clock), as the river
+// A Send delivered by the real workers paces from Outbound send's clock (the Instance clock), as the river
 // adapter does, not from the wall.
 func TestSendBroadcastPacesFromOutboundSendsClock(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -367,22 +364,27 @@ func TestSendBroadcastPacesFromOutboundSendsClock(t *testing.T) {
 	at := time.Now().Add(time.Hour)
 	mod := newMod(env, resolvingTo(&fakeSender{}), func() time.Time { return at })
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, mod, fixtures.BroadcastDraftID))
+	require.NoError(t, env.SendBroadcastThrough(t, mod, fixtures.BroadcastDraftID))
 
 	got := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID)
 	require.NotNil(t, got.LastScheduledAt)
 	assert.WithinDuration(t, at, *got.LastScheduledAt, time.Second, "the last send is a fraction of a second after the clock's time")
 }
 
-// A sent Broadcast stays sent when the synchronous adapter is run on it again.
-func TestSendBroadcastOnASentBroadcastIsRefused(t *testing.T) {
+// A plan job queued for a Broadcast that is already sent is stale: it sends nothing and the
+// Broadcast stays sent.
+func TestAPlanJobOfASentBroadcastSendsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
+	fs := &fakeSender{}
+	sent := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID)
+	env.EnqueueJob(t, broadcasts.SendArgs{WorkspaceID: sent.WorkspaceID, BroadcastID: sent.ID})
 
-	err := jobs.SendBroadcast(ctx, env.DB, newMod(env, resolvingTo(&fakeSender{}), time.Now), fixtures.BroadcastSentID)
+	err := env.DeliverQueuedBroadcastsThrough(t, newMod(env, resolvingTo(fs), time.Now))
 
-	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
+	require.NoError(t, err, "a stale plan job ends quietly")
 	assert.Equal(t, broadcast.StatusSent, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID).Status)
+	assert.Empty(t, fs.sent)
 }
 
 // figuresOf is a Broadcast's delivery figures, derived from its rows in its Workspace.

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
@@ -44,9 +43,7 @@ func (env *TestEnv) QueuedEnvelopes(t *testing.T, names ...string) []events.Enve
 // QueuedEnvelopesOn is QueuedEnvelopes for a database a test wrote to for real (RealDB).
 func QueuedEnvelopesOn(t *testing.T, sqlDB *sql.DB, names ...string) []events.Envelope {
 	t.Helper()
-	rc, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
-	require.NoError(t, err)
-	return queuedEnvelopes(t, rc, names)
+	return queuedEnvelopes(t, RiverClientOn(t, sqlDB), names)
 }
 
 func queuedEnvelopes(t *testing.T, rc *river.Client[*sql.Tx], names []string) []events.Envelope {
@@ -213,12 +210,8 @@ func (env *TestEnv) PerformEventJobOf(t *testing.T, args river.JobArgs, publishe
 func (env *TestEnv) RetryJobs(t *testing.T, only ...river.JobArgs) {
 	t.Helper()
 	require.NotEmpty(t, only)
-	kinds := make([]string, len(only))
-	for i, args := range only {
-		kinds[i] = args.Kind()
-	}
 	rc := env.riverClient(t)
-	res, err := rc.JobList(t.Context(), river.NewJobListParams().Kinds(kinds...).
+	res, err := rc.JobList(t.Context(), river.NewJobListParams().Kinds(kindsOf(only)...).
 		States(rivertype.JobStateCompleted, rivertype.JobStateRetryable).First(maxQueuedJobs))
 	require.NoError(t, err)
 	for _, job := range res.Jobs {

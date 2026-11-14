@@ -34,9 +34,6 @@ type Outcome struct {
 	// Wait, when positive, asks again after it without spending an attempt: the source is held, a
 	// send limit is spent or another attempt holds a live claim. Nothing was consumed.
 	Wait time.Duration
-	// GaveUp reports that the recipient's last attempt failed with Err and its failure is
-	// recorded, the Broadcast settled: no further attempt can change it, so a runner moves on.
-	GaveUp bool
 }
 
 // RunQueued runs a queued plan job: the delivery sequence of a Broadcast that was claimed for the
@@ -52,32 +49,6 @@ func (d *Delivery) RunQueued(ctx context.Context, s *ent.Scoped, args SendArgs, 
 		return Outcome{} // stale: unscheduled, sent or failed since the job was queued
 	}
 	return outcomeOf(err)
-}
-
-// RunInline runs a Broadcast's delivery sequence at once, with no queue: it plans and paces it as a
-// queued run does, then delivers each recipient in order, ignoring the times (they are still
-// computed and recorded). With no retry runtime every send's first attempt is its last, so a failed
-// recipient is given up at once and the run goes on (a bad recipient must not abort the batch); a
-// hold, a Deferral or a live claim stops it, leaving the remaining recipients pending for a later
-// run, and so does a give-up that could not be recorded.
-func (d *Delivery) RunInline(ctx context.Context, s *ent.Scoped, id int64) error {
-	return d.run(ctx, s, id, inline{d: d, s: s}, triggerPlan)
-}
-
-// inline is the synchronous scheduler of RunInline: it delivers each send in order at once.
-type inline struct {
-	d *Delivery
-	s *ent.Scoped
-}
-
-func (i inline) Schedule(ctx context.Context, _ int64, sends []Send) error {
-	for _, send := range sends {
-		out := i.d.DeliverRecipient(ctx, i.s, send.RecipientID, Attempt{Number: 1, Limit: 1})
-		if out.Err != nil && !out.GaveUp {
-			return out.Err
-		}
-	}
-	return nil
 }
 
 // boundToSchedule reports whether a queued plan job still answers the Broadcast's schedule. A job
@@ -114,7 +85,7 @@ func (d *Delivery) DeliverRecipient(ctx context.Context, s *ent.Scoped, recipien
 		// A give-up that cannot be recorded is returned with the failure, so the job is not lost.
 		return outcomeOf(errors.Join(err, gerr))
 	}
-	return Outcome{Err: err, GaveUp: true}
+	return Outcome{Err: err}
 }
 
 // outcomeOf reads an error of the delivery: nil is done, a hold, a Deferral or a live claim waits

@@ -8,6 +8,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -77,19 +78,16 @@ func NewWebhookEventWorker(client *ent.Client, dispatcher events.WebhookDispatch
 
 func (w *WebhookEventWorker) Work(ctx context.Context, job *river.Job[WebhookEventArgs]) error {
 	env := job.Args.Envelope
-	// A receiver knows the Workspace by the public id the APIs show it by (ADR 0043).
-	ws, err := w.ent.Workspace.Get(ctx, env.WorkspaceID)
-	if ent.IsNotFound(err) {
-		return nil // an erased Workspace has no endpoint left to deliver to
+	// A receiver knows the Workspace by the public id the APIs show it by (ADR 0043), read only
+	// when an endpoint receives the event.
+	publicID := func(ctx context.Context) (string, error) {
+		return w.ent.Workspace.Query().Where(workspace.ID(env.WorkspaceID)).Select(workspace.FieldPublicID).String(ctx)
 	}
+	d, err := events.WebhookDeliveryOf(env, publicID)
 	if err != nil {
 		return err
 	}
-	d, err := events.WebhookDeliveryOf(env, ws.PublicID)
-	if err != nil {
-		return err
-	}
-	return w.dispatcher.Dispatch(ctx, w.ent.Scoped(env.WorkspaceID), d.Name, d.ID, d.Body)
+	return w.dispatcher.Dispatch(ctx, w.ent.Scoped(env.WorkspaceID), d)
 }
 
 // triggers wants an Event a Contact's Automations may react to: one with a Contact, live (loaded

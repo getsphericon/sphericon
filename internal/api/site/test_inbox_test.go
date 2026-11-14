@@ -237,10 +237,12 @@ func TestABroadcastThroughSMTPWithoutAVerifiedDomainIsHeldAndNothingIsCaptured(t
 	require.NoError(t, err)
 	delivered := env.TryDeliverQueuedBroadcasts(t)
 
-	require.ErrorContains(t, delivered, string(holdreason.UnverifiedDomain))
+	require.ErrorIs(t, delivered, testhelper.ErrBroadcastWaits)
 	assert.Equal(t, before, env.DB.CapturedMessage.Query().CountX(t.Context()))
-	status := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastGlobexID).Status
-	assert.NotEqual(t, broadcast.StatusSent, status, "held, not sent")
+	held := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastGlobexID)
+	assert.NotEqual(t, broadcast.StatusSent, held.Status, "held, not sent")
+	require.NotNil(t, held.HoldReason)
+	assert.Equal(t, holdreason.UnverifiedDomain, *held.HoldReason)
 }
 
 // Globex's Test inbox as its default: its suppressed bounce@globex.test is not sent to, and once

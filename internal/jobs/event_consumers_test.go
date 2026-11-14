@@ -101,36 +101,44 @@ type chainArgs struct {
 func (chainArgs) Kind() string { return "event_chain_test" }
 
 // An event an event job publishes is caused by the event the job handles and shares its
-// correlation id, whatever chain the job was inserted in: the envelope says what is handled.
+// correlation id: Publish queues a consumer's job while handling the event it publishes, so the
+// job's metadata carries that chain to the job's work.
 func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := testhelper.RealDB(t)
 	bus := testhelper.BusOn(t, sqlDB)
-	inserter, err := jobs.NewInserter(sqlDB)
+	bus.UseConsumers(events.Consumer{
+		Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == systemevent.ContactCreated },
+		Job:   events.EnvelopeJob[chainArgs],
+	})
+	// The handled event is published while handling another, the chain's root.
+	root := events.Handling(ctx, events.Envelope{ID: "01JROOT"})
+	err := bus.WithinTx(root, func(_ *ent.Client, pub events.Publisher) error {
+		return pub.Publish(root, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 6, Email: "handled@example.com"})
+	})
 	require.NoError(t, err)
+	queued, err := testhelper.RiverClientOn(t, sqlDB).JobList(ctx, river.NewJobListParams().Kinds(chainArgs{}.Kind()))
+	require.NoError(t, err)
+	require.Len(t, queued.Jobs, 1)
+	handled := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
+	require.Len(t, handled, 1)
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = tx.Rollback() })
-	handled := events.Envelope{ID: "01JHANDLED", Name: systemevent.ContactCreated, WorkspaceID: fixtures.AcmeID, CorrelationID: "01JROOT", Data: []byte(`{}`)}
-	// The publisher of the handled event ran while handling another: the job's metadata records
-	// that chain, one link up.
-	publishing := events.Handling(ctx, events.Envelope{ID: "01JPUBLISHER", CorrelationID: "01JROOT"})
-	queued, err := inserter.InsertTx(publishing, tx, chainArgs{events.EventJob{Envelope: handled}}, nil)
-	require.NoError(t, err)
 	w := rivertest.NewWorker(t, riverdatabasesql.New(sqlDB), jobs.BaseConfig(), river.WorkFunc(func(ctx context.Context, _ *river.Job[chainArgs]) error {
 		return bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 			return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: fixtures.AcmeID, ContactID: 7, Email: "caused@example.com"})
 		})
 	}))
 
-	_, err = w.WorkJob(ctx, t, tx, queued.Job)
+	_, err = w.WorkJob(ctx, t, tx, queued.Jobs[0])
 
 	require.NoError(t, err)
 	published := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
-	require.NotEmpty(t, published)
-	last := published[len(published)-1]
-	assert.Equal(t, "01JROOT", last.CorrelationID)
-	assert.Equal(t, "01JHANDLED", last.CausationID)
+	require.Len(t, published, 2)
+	caused := published[1]
+	assert.Equal(t, "01JROOT", caused.CorrelationID)
+	assert.Equal(t, handled[0].ID, caused.CausationID)
 }
 
 // orderEvent is a collected order Event of Alice in Acme.

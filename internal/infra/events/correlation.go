@@ -105,18 +105,10 @@ func (*JobChain) InsertMany(ctx context.Context, params []*rivertype.JobInsertPa
 	return doInner(ctx)
 }
 
-// Work runs the job in the chain its metadata recorded, if any. An event consumer's job (one of
-// QueueEvents) runs instead in the context of handling its envelope (Handling): what it publishes
-// is caused by the event it handles. The metadata of such a job records the chain its publisher
-// ran in. Minimal anonymous jobs have no envelope and use the event context captured
-// by publication in that metadata.
+// Work runs the job in the chain its metadata recorded, if any. A consumer's job is inserted in
+// the context of handling its event (Publish queues it under Handling), so its metadata records
+// that event as the cause: what the job publishes is caused by the event it handles.
 func (*JobChain) Work(ctx context.Context, job *rivertype.JobRow, doInner func(context.Context) error) error {
-	if job.Queue == QueueEvents {
-		var env Envelope
-		if err := json.Unmarshal(job.EncodedArgs, &env); err == nil && env.ID != "" {
-			return doInner(Handling(ctx, env))
-		}
-	}
 	var c chain
 	if err := json.Unmarshal(job.Metadata, &c); err != nil || c.Correlation == "" {
 		return doInner(ctx)

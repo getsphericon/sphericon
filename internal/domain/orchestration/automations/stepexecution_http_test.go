@@ -59,7 +59,7 @@ func TestHTTPExecutionAdvancesTheEnrollmentAndQueuesItsNextStep(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
@@ -90,7 +90,7 @@ func TestHTTPExecutionKeepsTemporaryFailuresActiveUntilRecovery(t *testing.T) {
 	attempt.Number = 2
 	decision, err = automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: attempt})
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err = s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, run.CurrentStep)
@@ -153,7 +153,7 @@ func TestHTTPExecutionRateLimitWaitsWithTheEnrollmentStillActive(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusTooManyRequests, retryAfter: "120"}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{Wait: 120 * time.Second}, decision)
+	assert.Equal(t, httpcall.Execution{Wait: 120 * time.Second}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
@@ -205,7 +205,7 @@ func TestHTTPExecutionKeepsTheEnrollmentsPinnedVersionAfterPublish(t *testing.T)
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, 1, run.CurrentStep, "the original HTTP Step still ran")
@@ -221,7 +221,7 @@ func TestHTTPExecutionCannotAdvanceWithoutItsNextQueuedStep(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.ErrorIs(t, err, events.ErrNoJobQueue)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
@@ -242,7 +242,7 @@ func TestHTTPExecutionIgnoresAnExitedEnrollment(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusExited, run.Status)
@@ -259,7 +259,7 @@ func TestHTTPExecutionIgnoresAJobForAnotherStep(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 1, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
@@ -278,7 +278,7 @@ func TestHTTPExecutionIgnoresAnAlreadyAdvancedStep(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	run, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
 	assert.Equal(t, automationrun.StatusActive, run.Status)
@@ -297,7 +297,7 @@ func TestHTTPExecutionIgnoresErasedWork(t *testing.T) {
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
-	assert.Equal(t, automations.HTTPExecution{}, decision)
+	assert.Equal(t, httpcall.Execution{}, decision)
 	_, err = s.AutomationRun().Get(t.Context(), runID)
 	assert.True(t, ent.IsNotFound(err))
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())

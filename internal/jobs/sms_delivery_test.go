@@ -45,7 +45,7 @@ func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing
 	ctx := t.Context()
 	account := env.LacunaTwilio(t)
 	id := int64(fixtures.BroadcastLacunaSmsHelloID)
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	adaText := textOf(t, env, fixtures.ContactLacunaAdaPhone)
 	beaText := textOf(t, env, fixtures.ContactLacunaBeaPhone)
@@ -76,7 +76,7 @@ func TestAnAutomationTriggeredByAnUndeliveredTextEnrollsItsContact(t *testing.T)
 	ctx := t.Context()
 	account := env.LacunaTwilio(t)
 	id := int64(fixtures.BroadcastLacunaSmsHelloID)
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	text := textOf(t, env, fixtures.ContactLacunaAdaPhone)
 	reportStatus(t, env, account, text, "undelivered", "30007")

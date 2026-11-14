@@ -6,50 +6,15 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
-	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
-
-// RunRuleHTTPArgs is one http Action of one Firing. It carries no personal data: the Firing is
-// read from the database and goes with its Contact on Erasure, which leaves the job nothing to do.
-type RunRuleHTTPArgs struct {
-	jobkind.Workspace
-
-	FiringID int64 `json:"firing_id"`
-	// Index is the Action's position in the Firing, so two http Actions of one Firing are two jobs.
-	Index int `json:"index"`
-}
-
-func (RunRuleHTTPArgs) Kind() string { return "rule_http_action" }
-
-// InsertOpts puts the call on the queue of the HTTP steps with the retry horizon of a hook
-// (webhook.HookMaxAttempts), as an Automation's HTTP step: an Action that calls a third party can be
-// retried for days and must not hold the Actions job, or the Actions after it.
-func (RunRuleHTTPArgs) InsertOpts() river.InsertOpts {
-	return river.InsertOpts{
-		Queue:       automations.QueueHTTPSteps,
-		MaxAttempts: webhook.HookMaxAttempts(),
-		UniqueOpts:  river.UniqueOpts{ByArgs: true},
-	}
-}
-
-// httpAction is the Runner of the http Action: it hands the call to a job of its own and leaves
-// the Action Pending, which the job records when the call ends.
-type httpAction struct{}
-
-func (httpAction) Run(_ context.Context, _ *ent.Scoped, in rules.ActionInput) (rules.Result, error) {
-	return rules.Result{Status: rules.Pending, Job: RunRuleHTTPArgs{
-		WorkspaceID: in.Firing.WorkspaceID, FiringID: in.Firing.ID, Index: in.Index,
-	}}, nil
-}
 
 // RunRuleHTTPWorker makes the call of an http Action (sealed URL, headers and secret, signed
 // Standard Webhooks, the same SSRF-hardened client as an Automation's HTTP step), rendered for
 // the Contact and the Event that fired the Rule, and records how it ended on the Firing.
 type RunRuleHTTPWorker struct {
-	hookRetries[RunRuleHTTPArgs]
+	hookRetries[rules.HTTPArgs]
 
 	ent *ent.Client
 	mod *rules.Module
@@ -62,7 +27,7 @@ func NewRunRuleHTTPWorker(client *ent.Client, mod *rules.Module, jitter webhook.
 	return &RunRuleHTTPWorker{jitter: jitter, ent: client, mod: mod}
 }
 
-func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTPArgs]) error {
+func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[rules.HTTPArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the Workspace of the loaded Firing.
 	f, err := w.ent.RuleFiring.Get(ctx, job.Args.FiringID)
 	if ent.IsNotFound(err) {
@@ -76,8 +41,5 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[RunRuleHTTP
 	if err != nil {
 		return err
 	}
-	if decision.Wait > 0 {
-		return river.JobSnooze(decision.Wait)
-	}
-	return decision.Retry
+	return executionResult(decision)
 }

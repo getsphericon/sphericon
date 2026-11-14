@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,7 +17,7 @@ import (
 func pruneCaptured(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneCapturedMessagesWorker(env.DB, retention, time.Now)
-	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneCapturedMessagesArgs]{JobRow: &rivertype.JobRow{}}))
+	require.NoError(t, w.Work(context.Background(), job(jobs.PruneCapturedMessagesArgs{})))
 }
 
 func capturedExists(t *testing.T, env *testhelper.TestEnv, id int64) bool {

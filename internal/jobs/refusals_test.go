@@ -7,9 +7,11 @@ import (
 	"testing"
 
 	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -17,17 +19,18 @@ import (
 
 var errRefused = validation.Refuse("test: refused", i18n.ErrorsNameEmpty)
 
-// A refusal of a module ends the job for good, whatever the job; any other error is left to
-// river's retry (ADR 0107).
+// A refusal, a module's or a provider's, ends the job for good, whatever the job; any other error
+// is left to river's retry (ADR 0107).
 func TestARefusalEndsTheJobAndAnyOtherErrorRetriesIt(t *testing.T) {
 	m := &jobs.RefusalsEnd{}
 	work := func(err error) error {
-		return m.Work(context.Background(), nil, func(context.Context) error { return err })
+		return m.Work(context.Background(), &rivertype.JobRow{Kind: "refused"}, func(context.Context) error { return err })
 	}
 
 	var cancel *river.JobCancelError
 	require.ErrorAs(t, work(fmt.Errorf("wrapped: %w", errRefused)), &cancel)
 	require.ErrorAs(t, work(validation.Fields(errRefused.On("name"))), &cancel)
+	require.ErrorAs(t, work(fmt.Errorf("send: %w", messaging.ErrRefused)), &cancel)
 
 	broken := errors.New("db down")
 	assert.Equal(t, broken, work(broken), "a fault is left to river's retry")

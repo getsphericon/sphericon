@@ -127,7 +127,7 @@ func (e *riverEnv) workCtx() context.Context {
 // on its own. It rolls back with the test.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, automations.QueueHTTPSteps))
+	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, jobkind.QueueHTTPCalls))
 	require.NoError(t, err)
 }
 
@@ -178,15 +178,15 @@ func TestDispatchFansOutToMatchingEnabledEndpoints(t *testing.T) {
 	e := newRiverEnv(t)
 
 	// Endpoint 100 filters to three event types; 101 is disabled.
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), systemevent.EmailOpened, "d-1", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), emptyDelivery(systemevent.EmailOpened, "d-1")))
 	assert.Equal(t, []string{jobkind.DeliverWebhook.Kind}, e.queued(t))
 
 	// Filtered out: no endpoint of the workspace subscribes to it.
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), "segment.created", "d-2", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.AcmeID), emptyDelivery("segment.created", "d-2")))
 	assert.Len(t, e.queued(t), 1)
 
 	// An endpoint with no filter receives every event (Globex's, workspace 2).
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.GlobexID), "segment.created", "d-3", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), e.DB.Scoped(fixtures.GlobexID), emptyDelivery("segment.created", "d-3")))
 	assert.Len(t, e.queued(t), 2)
 }
 
@@ -196,11 +196,11 @@ func TestDispatchRetriedQueuesEachDeliveryOnce(t *testing.T) {
 	e := newRiverEnv(t)
 	initech := e.DB.Scoped(fixtures.InitechID)
 
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-1", []byte(`{}`)))
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-1", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, emptyDelivery(events.NameAuditEntry, "d-1")))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, emptyDelivery(events.NameAuditEntry, "d-1")))
 	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
 
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-2", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, emptyDelivery(events.NameAuditEntry, "d-2")))
 	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID, fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
 }
 
@@ -223,11 +223,11 @@ func TestDispatchSendsAuditEntriesOnlyToEndpointsThatSelectThem(t *testing.T) {
 	e := newRiverEnv(t)
 	initech := e.DB.Scoped(fixtures.InitechID)
 
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, events.NameAuditEntry, "d-audit", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, emptyDelivery(events.NameAuditEntry, "d-audit")))
 	assert.Equal(t, []int64{fixtures.WebhookInitechAuditID}, e.queuedEndpoints(t))
 
 	e.clearQueue(t)
-	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, systemevent.ContactCreated, "d-contact", []byte(`{}`)))
+	require.NoError(t, jobs.NewWebhookDispatcher().Dispatch(e.workCtx(), initech, emptyDelivery(systemevent.ContactCreated, "d-contact")))
 	assert.Equal(t, []int64{fixtures.WebhookInitechID}, e.queuedEndpoints(t), "an empty filter still receives customer events")
 }
 
@@ -688,4 +688,9 @@ func TestRecheckTrackingDomainsWorkerFansOutOneJobPerVerifiedHost(t *testing.T) 
 	for _, k := range kinds {
 		assert.Equal(t, "tracking_domain_verify", k)
 	}
+}
+
+// emptyDelivery is a webhook delivery of name under id with an empty body.
+func emptyDelivery(name, id string) events.WebhookDelivery {
+	return events.WebhookDelivery{Name: name, ID: id, Body: func(context.Context) ([]byte, error) { return []byte(`{}`), nil }}
 }

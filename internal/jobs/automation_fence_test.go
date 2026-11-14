@@ -9,7 +9,6 @@ import (
 
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
@@ -209,8 +208,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	pool, err := sql.Open("pgx", e.url)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	queue, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
-	require.NoError(t, err)
+	queue := testhelper.RiverClientOn(t, pool)
 	workCtx := rivertest.WorkContext(ctx, queue)
 
 	rcv := newHookReceiver(t)

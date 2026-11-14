@@ -3,17 +3,20 @@ package jobs
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // The job runner holds no domain rule (ADR 0107): whether an error ends a job or retries it is
-// decided by its form alone. A refusal of a module (a validation refusal) is the job's final
-// outcome, since the same input is refused again; any other error retries the job.
+// decided by its form alone. A refusal is the job's final outcome, since the same input is refused
+// again: a module's (a validation refusal) and a provider's (messaging.ErrRefused, the same answer
+// on every retry until a person changes the account). Any other error retries the job.
 
 // refused reports whether err is a refusal of a module: a validation.RefusalError or a
 // validation.FieldsError in its chain.
@@ -25,20 +28,35 @@ func refused(err error) bool {
 	return ok
 }
 
-// RefusalsEnd is the worker middleware that ends a job its worker refused for good: a refusal is
-// cancelled (river.JobCancel), so it is not retried, and any other error goes on to river's retry.
+// RefusalsEnd is the worker middleware that ends a job refused for good, the one place that
+// decides it: a refusal is cancelled (river.JobCancel), so it is not retried, and any other error
+// goes on to river's retry and its ErrorHandler. river logs a cancel only at debug level, so the
+// middleware logs it: a provider's refusal as an error, since a person must change the account, and
+// a module's as a warning, since the module said why.
 type RefusalsEnd struct {
 	river.MiddlewareDefaults
 }
 
 var _ rivertype.WorkerMiddleware = (*RefusalsEnd)(nil)
 
-func (*RefusalsEnd) Work(ctx context.Context, _ *rivertype.JobRow, doInner func(context.Context) error) error {
+func (*RefusalsEnd) Work(ctx context.Context, job *rivertype.JobRow, doInner func(context.Context) error) error {
 	err := doInner(ctx)
-	if err != nil && refused(err) {
-		return river.JobCancel(err)
+	providerRefused := errors.Is(err, messaging.ErrRefused)
+	if err == nil || (!providerRefused && !refused(err)) {
+		return err
 	}
-	return err
+	level := slog.LevelWarn
+	if providerRefused {
+		level = slog.LevelError
+	}
+	slog.Log(ctx, level, "river job refused, cancelled",
+		slog.String("kind", job.Kind),
+		slog.String("queue", job.Queue),
+		slog.Int64("job_id", job.ID),
+		slog.Int("attempt", job.Attempt),
+		slog.Any("error", err),
+	)
+	return river.JobCancel(err)
 }
 
 // actionResult is a Rule Action's outcome for the error its module returned: nil succeeds; a

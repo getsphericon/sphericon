@@ -7,7 +7,9 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
@@ -32,6 +34,11 @@ type EvaluateTriggerArgs struct {
 
 func (EvaluateTriggerArgs) Kind() string { return jobkind.EvaluateTrigger.Kind }
 
+// InsertOpts puts the evaluation, a consumer's job, in the events queue (ADR 0101).
+func (EvaluateTriggerArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: events.QueueEvents}
+}
+
 type EvaluateTriggerWorker struct {
 	river.WorkerDefaults[EvaluateTriggerArgs]
 
@@ -48,7 +55,8 @@ func NewEvaluateTriggerWorker(client *ent.Client, steps *automations.StepExecuti
 func (w *EvaluateTriggerWorker) Work(ctx context.Context, job *river.Job[EvaluateTriggerArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the loaded contact's
 	// Workspace, not from the job argument.
-	c, err := w.ent.Contact.Get(ctx, job.Args.ContactID)
+	// Only its Workspace is read: the module reads the Contact again in its own scope.
+	c, err := w.ent.Contact.Query().Where(contact.ID(job.Args.ContactID)).Select(contact.FieldWorkspaceID).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil // contact deleted since enqueue; nothing to enroll
 	}

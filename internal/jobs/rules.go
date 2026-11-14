@@ -7,6 +7,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
@@ -29,6 +30,11 @@ type EvaluateRulesArgs struct {
 
 func (EvaluateRulesArgs) Kind() string { return jobkind.RuleEvaluate.Kind }
 
+// InsertOpts puts the evaluation, a consumer's job, in the events queue (ADR 0101).
+func (EvaluateRulesArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: events.QueueEvents}
+}
+
 // EvaluateRulesWorker loads the Contact and hands the Event to the Rule module, which writes a
 // Firing and queues its Actions job for every Rule that fires.
 type EvaluateRulesWorker struct {
@@ -41,7 +47,8 @@ type EvaluateRulesWorker struct {
 func (w *EvaluateRulesWorker) Work(ctx context.Context, job *river.Job[EvaluateRulesArgs]) error {
 	// Job entry point (ADR 0017): the scope is built from the loaded Contact's Workspace, not
 	// from the job argument.
-	c, err := w.ent.Contact.Get(ctx, job.Args.ContactID)
+	// Only its Workspace is read: the module reads the Contact again in its own scope.
+	c, err := w.ent.Contact.Query().Where(contact.ID(job.Args.ContactID)).Select(contact.FieldWorkspaceID).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil // erased since the Event was recorded: nothing to act on
 	}
@@ -90,7 +97,6 @@ func RuleActionRunners(mod *outboundmessages.Module, bus *events.Bus, steps *aut
 		rules.ActionApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
 		rules.ActionRemoveTag: tagAction{mod: mod, tags: tagging},
 		rules.ActionEnroll:    enrollAction{steps: steps},
-		rules.ActionHTTP:      httpAction{},
 	}
 }
 

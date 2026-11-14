@@ -18,8 +18,8 @@ import (
 
 type recorder struct{ names []string }
 
-func (r *recorder) Dispatch(_ context.Context, _ *ent.Scoped, name, _ string, _ []byte) error {
-	r.names = append(r.names, name)
+func (r *recorder) Dispatch(_ context.Context, _ *ent.Scoped, d events.WebhookDelivery) error {
+	r.names = append(r.names, d.Name)
 	return nil
 }
 
@@ -38,12 +38,12 @@ func TestForwarderDeliversAuditEntriesOnlyUnderLicense(t *testing.T) {
 	unlicensed := licenseFor(t)
 
 	next := &recorder{}
-	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, events.NameAuditEntry, "d1", nil))
+	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, events.WebhookDelivery{Name: events.NameAuditEntry, ID: "d1"}))
 	assert.Empty(t, next.names, "without a license nothing is delivered")
-	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, systemevent.ContactCreated, "d2", nil))
+	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, events.WebhookDelivery{Name: systemevent.ContactCreated, ID: "d2"}))
 	assert.Equal(t, []string{systemevent.ContactCreated}, next.names, "customer events are not gated")
 
 	next = &recorder{}
-	require.NoError(t, auditentries.Forwarder(next, licenseFor(t, licensekey.FeatureAudit)).Dispatch(t.Context(), nil, events.NameAuditEntry, "d3", nil))
+	require.NoError(t, auditentries.Forwarder(next, licenseFor(t, licensekey.FeatureAudit)).Dispatch(t.Context(), nil, events.WebhookDelivery{Name: events.NameAuditEntry, ID: "d3"}))
 	assert.Equal(t, []string{events.NameAuditEntry}, next.names)
 }

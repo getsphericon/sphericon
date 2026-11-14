@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
@@ -249,10 +250,10 @@ func WorkerConfig(client *ent.Client) *river.Config {
 // Queues are the queues the worker client works, each with its number of workers.
 func Queues() map[string]river.QueueConfig {
 	return map[string]river.QueueConfig{
-		river.QueueDefault:         {MaxWorkers: 5},
-		broadcasts.Queue:           {MaxWorkers: 10},
-		QueueWebhooks:              {MaxWorkers: 5},
-		automations.QueueHTTPSteps: {MaxWorkers: 5},
+		river.QueueDefault:     {MaxWorkers: 5},
+		broadcasts.Queue:       {MaxWorkers: 10},
+		QueueWebhooks:          {MaxWorkers: 5},
+		jobkind.QueueHTTPCalls: {MaxWorkers: 5},
 		// The domain events' consumers (ADR 0101): short jobs, most of which only queue more.
 		events.QueueEvents: {MaxWorkers: 10},
 	}

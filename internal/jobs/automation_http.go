@@ -40,11 +40,5 @@ func (w *RunHTTPStepWorker) Work(ctx context.Context, job *river.Job[automations
 	if err != nil {
 		return err
 	}
-	if decision.Wait > 0 {
-		return river.JobSnooze(decision.Wait)
-	}
-	if decision.Cancel != nil {
-		return river.JobCancel(decision.Cancel)
-	}
-	return decision.Retry
+	return executionResult(decision)
 }

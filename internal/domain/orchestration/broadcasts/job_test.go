@@ -146,7 +146,6 @@ func TestAQueuedPlanFaultSpendsAnAttempt(t *testing.T) {
 
 	require.Error(t, out.Err)
 	assert.Zero(t, out.Wait, "a failure is not a wait")
-	assert.False(t, out.GaveUp)
 }
 
 // A failed send before the last attempt spends the attempt: the recipient stays pending for the
@@ -160,7 +159,6 @@ func TestAFailedSendBeforeTheLastAttemptLeavesTheRecipientPending(t *testing.T) 
 
 	require.ErrorContains(t, out.Err, "smtp unavailable")
 	assert.Zero(t, out.Wait, "a failure spends an attempt: it is not a wait")
-	assert.False(t, out.GaveUp)
 	assert.True(t, d.pending(id))
 	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
 }
@@ -175,7 +173,6 @@ func TestAFailedLastAttemptGivesTheRecipientUpAndSettlesTheBroadcast(t *testing.
 	out := d.deliver(id, lastAttempt)
 
 	require.ErrorContains(t, out.Err, "smtp unavailable")
-	assert.True(t, out.GaveUp)
 	assert.Zero(t, out.Wait)
 	assert.False(t, d.pending(id))
 	assert.Equal(t, broadcast.StatusSent, d.broadcastRow().Status)
@@ -197,7 +194,6 @@ func TestARecipientWithALiveClaimWaits(t *testing.T) {
 
 	require.ErrorIs(t, out.Err, outboundmessages.ErrInProgress)
 	assert.Positive(t, out.Wait)
-	assert.False(t, out.GaveUp)
 	assert.True(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusPending, d.messageOf(id).Status)
 	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
@@ -229,7 +225,6 @@ func TestALastAttemptWaitsInsteadOfGivingUpOnALiveClaim(t *testing.T) {
 
 	require.ErrorIs(t, out.Err, outboundmessages.ErrInProgress)
 	assert.Positive(t, out.Wait)
-	assert.False(t, out.GaveUp)
 	assert.True(t, d.pending(id), "nothing is failed while the claim is live")
 	assert.Equal(t, outboundmessage.StatusPending, d.messageOf(id).Status)
 	assert.Equal(t, broadcast.StatusSending, d.broadcastRow().Status)
@@ -247,7 +242,7 @@ func TestALastAttemptGivesUpOverAnExpiredClaim(t *testing.T) {
 
 	out := d.deliver(id, lastAttempt)
 
-	assert.True(t, out.GaveUp)
+	require.Error(t, out.Err, "the give-up still ends the job with its failure")
 	assert.False(t, d.pending(id))
 	assert.Equal(t, outboundmessage.StatusFailed, d.messageOf(id).Status)
 }
@@ -303,7 +298,6 @@ func TestAHeldRecipientWaitsTheHoldBackoff(t *testing.T) {
 	assert.Equal(t, outboundmessages.HoldBackoff, out.Wait)
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, out.Err, &held)
-	assert.False(t, out.GaveUp, "a hold is no failure, even on the last attempt")
 	assert.True(t, d.pending(id))
 }
 

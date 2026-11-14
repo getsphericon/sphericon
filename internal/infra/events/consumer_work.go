@@ -17,7 +17,7 @@ import (
 // endpoints. The webhooks consumer delegates to it, keeping durable delivery
 // (per-endpoint jobs, retries) in river.
 type WebhookDispatcher interface {
-	Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error
+	Dispatch(ctx context.Context, s *ent.Scoped, d WebhookDelivery) error
 }
 
 // webhookPayload is the public JSON delivered to endpoints (and signed).
@@ -33,19 +33,19 @@ type webhookPayload struct {
 
 // WebhookDelivery is what a Webhook endpoint receives for an event (ADR 0039): the name an
 // endpoint selects it by, the id a receiver drops a repeated delivery by, and the public body,
-// which is signed.
+// which is signed. Body builds it, so a dispatcher builds it only for an event an endpoint receives:
+// most events reach none.
 type WebhookDelivery struct {
 	Name string
 	ID   string
-	Body []byte
+	Body func(ctx context.Context) ([]byte, error)
 }
 
-// WebhookDeliveryOf serializes the event of env into its public webhook body. Endpoints select
-// on the semantic action (e.g. "page_view"), not the bus type. An event that is not Projected (an
-// Audit entry) has no Event action: it is delivered under its bus type, only to endpoints that
-// select it, and the Edition's dispatcher gates it by license (ADR 0022); the Staff identity in it
-// is masked.
-func WebhookDeliveryOf(env Envelope, workspacePublicID string) (WebhookDelivery, error) {
+// WebhookDeliveryOf is the webhook delivery of the event of env. Endpoints select it by its
+// semantic action (a customer's "purchase", "email.opened"), or by the envelope name for an
+// event with no projection (an Audit entry). Its body carries the Workspace's public id, which
+// publicID reads when the body is built.
+func WebhookDeliveryOf(env Envelope, publicID func(context.Context) (string, error)) (WebhookDelivery, error) {
 	ev, err := Decode(env)
 	if err != nil {
 		return WebhookDelivery{}, err
@@ -55,20 +55,34 @@ func WebhookDeliveryOf(env Envelope, workspacePublicID string) (WebhookDelivery,
 	if !projected {
 		name = env.Name
 	}
+	// An event with a natural upstream id (a provider notification) is delivered under it, so
+	// a receiver that sees it twice can drop the second delivery.
+	id := env.SourceID()
+	body := func(ctx context.Context) ([]byte, error) {
+		workspacePublicID, err := publicID(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return webhookBody(env, ev, p, name, id, workspacePublicID)
+	}
+	return WebhookDelivery{Name: name, ID: id, Body: body}, nil
+}
+
+// webhookBody is the public body of a webhook delivery (webhookPayload).
+func webhookBody(env Envelope, ev DomainEvent, p Projection, name, id, workspacePublicID string) ([]byte, error) {
 	data := env.Data
 	if entry, ok := ev.(*AuditEntry); ok {
 		// The staff identity never reaches a customer's endpoint (ADR 0022).
 		entry.MaskStaff()
+		var err error
 		if data, err = json.Marshal(entry); err != nil {
-			return WebhookDelivery{}, fmt.Errorf("marshal audit entry: %w", err)
+			return nil, fmt.Errorf("marshal audit entry: %w", err)
 		}
 	}
-	if data, err = publicData(data, workspacePublicID); err != nil {
-		return WebhookDelivery{}, err
+	data, err := publicData(data, workspacePublicID)
+	if err != nil {
+		return nil, err
 	}
-	// An event with a natural upstream id (a provider notification) is delivered under it, so
-	// a receiver that sees it twice can drop the second delivery.
-	id := env.SourceID()
 	body, err := json.Marshal(webhookPayload{
 		ID:          id,
 		Type:        name,
@@ -79,9 +93,9 @@ func WebhookDeliveryOf(env Envelope, workspacePublicID string) (WebhookDelivery,
 		Data:        data,
 	})
 	if err != nil {
-		return WebhookDelivery{}, fmt.Errorf("marshal webhook payload: %w", err)
+		return nil, fmt.Errorf("marshal webhook payload: %w", err)
 	}
-	return WebhookDelivery{Name: name, ID: id, Body: body}, nil
+	return body, nil
 }
 
 // PropertiesBound is the most JSON an Event's properties may weigh to be shown to a Rule or copied

@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -23,7 +21,7 @@ const unverifiedRetention = 7 * 24 * time.Hour
 func pruneUnverified(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneUnverifiedUsersWorker(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now), retention)
-	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneUnverifiedUsersArgs]{JobRow: &rivertype.JobRow{}}))
+	require.NoError(t, w.Work(context.Background(), job(jobs.PruneUnverifiedUsersArgs{})))
 }
 
 func userExists(t *testing.T, env *testhelper.TestEnv, id int64) bool {

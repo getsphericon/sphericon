@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -44,7 +42,7 @@ var (
 func pruneEvents(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
 	w := jobs.NewPruneEventsWorker(env.DB, retention, time.Now)
-	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.PruneEventsArgs]{JobRow: &rivertype.JobRow{}}))
+	require.NoError(t, w.Work(context.Background(), job(jobs.PruneEventsArgs{})))
 }
 
 func presentEvents(t *testing.T, env *testhelper.TestEnv, ids []int64) int {

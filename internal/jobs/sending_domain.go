@@ -27,6 +27,12 @@ type VerifySendingDomainArgs struct {
 
 func (VerifySendingDomainArgs) Kind() string { return "sending_domain_verify" }
 
+// InsertOpts queues one check of a domain at a time (jobkind.QueuedOnce): a tick that comes round
+// while the last check waits or retries queues none.
+func (VerifySendingDomainArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
+
 type VerifySendingDomainWorker struct {
 	river.WorkerDefaults[VerifySendingDomainArgs]
 
@@ -88,6 +94,12 @@ type VerifyTrackingDomainArgs struct {
 
 func (VerifyTrackingDomainArgs) Kind() string { return "tracking_domain_verify" }
 
+// InsertOpts queues one check of a domain at a time (jobkind.QueuedOnce): a tick that comes round
+// while the last check waits or retries queues none.
+func (VerifyTrackingDomainArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
+
 type VerifyTrackingDomainWorker struct {
 	river.WorkerDefaults[VerifyTrackingDomainArgs]
 
@@ -138,6 +150,12 @@ type VerifyJoinDomainArgs struct {
 }
 
 func (VerifyJoinDomainArgs) Kind() string { return "join_domain_verify" }
+
+// InsertOpts queues one check of a domain at a time (jobkind.QueuedOnce): a tick that comes round
+// while the last check waits or retries queues none.
+func (VerifyJoinDomainArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
 
 type VerifyJoinDomainWorker struct {
 	river.WorkerDefaults[VerifyJoinDomainArgs]

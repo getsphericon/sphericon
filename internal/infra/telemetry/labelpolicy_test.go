@@ -102,8 +102,7 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)
-	admin, err := river.NewClient(riverdatabasesql.New(pool), &river.Config{})
-	require.NoError(t, err)
+	admin := testhelper.RiverClientOn(t, pool)
 	purge := func() {
 		_, err := admin.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, events.QueueEvents))
 		require.NoError(t, err)

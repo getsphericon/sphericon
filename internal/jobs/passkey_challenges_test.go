@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,7 +16,7 @@ import (
 func prunePasskeyChallenges(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
 	w := jobs.NewPrunePasskeyChallengesWorker(env.DB, func() time.Time { return now })
-	require.NoError(t, w.Work(t.Context(), &river.Job[jobs.PrunePasskeyChallengesArgs]{JobRow: &rivertype.JobRow{}}))
+	require.NoError(t, w.Work(t.Context(), job(jobs.PrunePasskeyChallengesArgs{})))
 }
 
 func challengeKept(t *testing.T, env *testhelper.TestEnv, id int64) bool {

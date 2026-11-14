@@ -52,6 +52,16 @@ const (
 	RateLimitedPastHorizon Reason = "rate_limited_past_horizon"
 )
 
+// Execution is what the owner of a call tells its job after one attempt: the zero value is done
+// (the result is recorded, or nothing is left to call); Wait asks again after it without
+// spending an attempt; Retry spends the attempt with its error; Cancel ends the job for good with
+// its reason, as a call given up whose result is already recorded.
+type Execution struct {
+	Retry  error
+	Cancel error
+	Wait   time.Duration
+}
+
 // Decision is what to do after a failed attempt. Wait is set only for the Wait outcome, Reason
 // only for GiveUp.
 type Decision struct {

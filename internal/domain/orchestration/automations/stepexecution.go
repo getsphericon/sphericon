@@ -20,11 +20,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
-// QueueHTTPSteps isolates the HTTP steps of Automations (ADR 0039): an outbound call to a
-// third party can take its whole timeout and be retried for days, so it must neither hold
-// the default queue's automation steps nor the Webhook deliveries' queue.
-const QueueHTTPSteps = "http_steps"
-
 // RunStepArgs is the job that executes one step of one Enrollment. Step is the position the
 // job expects the Enrollment to be at: a job delivered again after its step moved the
 // Enrollment finds it elsewhere and ends quietly. The args carry the run id, so Erasure can
@@ -55,7 +50,7 @@ func (RunHTTPStepArgs) Kind() string { return jobkind.HTTPStep.Kind }
 // the call is in flight would queue a second one and the receiver would be called twice.
 func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{
-		Queue:       QueueHTTPSteps,
+		Queue:       jobkind.QueueHTTPCalls,
 		MaxAttempts: webhook.HookMaxAttempts(),
 		UniqueOpts:  river.UniqueOpts{ByArgs: true},
 	}
