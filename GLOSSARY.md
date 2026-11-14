@@ -215,7 +215,7 @@ Removing a Contact's personal data at the Workspace's request (GDPR Art. 17). It
 a Contact _is_ — there is no softer delete that keeps personal data. The Contact, its Visitors,
 Custom field values, Tags and Confirmation are removed, as are its customer-tracked Events and the Captured messages sent to its Destinations; the
 reserved `email.*` Events and delivery records stay as anonymous rows, so deliverability and
-metering counts do not change. Its Orders stay as Orders of no known Contact (ADR 0064), so revenue
+metering counts do not change. Its Orders and their financial history stay as Orders of no known Contact (ADR 0064), so revenue
 does not change either; they keep the shop's `order_id`, which a later refund matches. What survives
 of the person is the minimum that keeps the refusal honored: the
 Unsubscribe rows, the active Suppression rows and the `denied` Engagement tracking consents for
@@ -291,14 +291,14 @@ its live **Rule version**; an edit writes a draft, and only **Publish** makes it
 _Avoid_: Workflow, flow, hook, automation (an Automation is sequential and stateful)
 
 **Order**:
-The read model of one purchase a Workspace's shop reported through order Events, one per `order_id`:
-its total, its currency, its refunds and whether it was cancelled. Created and changed only by Events;
-it holds no catalogue and no payment state.
+One purchase a Workspace's shop reported through order Events, identified by its `order_id`: its
+purchase amount before refunds, currency, refunds and cancellation. It holds no catalogue or payment state.
 _Avoid_: Purchase, transaction, sale
 
 **Revenue**:
 The net amount of Orders in the Workspace's reporting currency: each Order's total minus its refunds,
-a cancelled Order counting nothing. **Attributed revenue** is the part credited to a Broadcast or an Automation.
+a floor of zero per Order, and a cancelled Order counting nothing; late facts can refine past days.
+**Attributed revenue** is the part credited to a Broadcast or an Automation.
 **Captured revenue** is an On-site form's own figure: Orders of Contacts it captured, placed inside the
 Attribution window after their Form submit; it is not attribution and takes nothing from a message.
 _Avoid_: Sales, turnover, GMV

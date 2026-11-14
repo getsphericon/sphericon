@@ -22,6 +22,10 @@ The receipts that reject a redelivered external fact (ADR 0114) end with the sam
 Events' own deduplication by `source_id` ends with it too, and a provider redelivers within days.
 A receipt holds only a digest and no Workspace, so its age is its only end.
 
+Orders retain their own minimal financial inputs and repeat identities for the life of the Order
+(ADR 0064). That permits financial restatement after an analytical order Event or a general receipt
+has expired. It adds no retention to the original customer Event, its personal data or its envelope.
+
 Consequence: segment conditions that look back past the window are capped by it, and this is
 documented as a product limit, not a bug. Deleting an Event is irreversible, so the window is an
 self-hoster choice with a documented default rather than a hidden constant.

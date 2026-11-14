@@ -19,8 +19,11 @@ the rows:
   rows are still being deleted.
 - **An Automation's old messages are added into its figures.** An Automation lives for years, so it
   is never frozen whole: each batch of its messages past the window that have left pending is
-  counted into `automation_figures`, one row per step position, and deleted in the same transaction.
-  The report adds those counts to its live ones, so it reads exactly what it read before.
+  counted into `automation_figures`, one row per Automation, version and stable Step id (ADR 0122),
+  and deleted in the same transaction. The message keeps its version and Step provenance
+  independently of its nullable Enrollment link, so Erasure does not make versions indistinguishable.
+  The report adds the counts to its live ones by that same key; an Automation's overall totals sum
+  the versions. An array position is display order, never a historical identity.
 - **A Transactional message is deleted.** Nothing is reported from it past the window.
 
 The daily tick queues one prune per Workspace with something past the window, and each prune works

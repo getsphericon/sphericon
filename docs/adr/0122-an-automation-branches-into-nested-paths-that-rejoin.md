@@ -46,8 +46,11 @@ like an `if` in code, has neither by construction.
 - **Every Step has an id**, given when it is created and kept by every version of the Automation,
   as an HTTP step's already is. Everything that names a Step by its position today names it by the
   id instead: the Enrollment's current Step, the Outbound message's step, the send's idempotency
-  key and the HTTP call's id, the report's figures per Step across versions, and now the path a
-  Branch chose and the engagement test below. Inserting a Step above changes none of them.
+  key and the HTTP call's id, the report's figures per Step, and now the path a Branch chose and
+  the engagement test below. Inserting a Step above changes none of them. Moving a Step preserves
+  its id; copying it creates a new one. Report inputs and stored figures retain both the version
+  and the Step id, unique within the Automation, so versions remain distinguishable even when a
+  Step's content changes. Whole-Automation totals can sum the versions.
 - **The Condition is the one language** of Segments and Rules: the Contact's fields, Custom fields,
   Tags and past Events, and the properties of the Event the Enrollment began with (its `event`
   copy), as a Rule reads its triggering Event: decided in memory and folded into the tree as a
