@@ -3,7 +3,11 @@ The Workspace-scoped client (ADR 0017, "Form B"). For every entity that carries 
 workspace mixin it generates distinct wrapper types behind `client.Scoped(ws)`:
 creates cannot name a Workspace, every reference id set on a create/update is verified
 against the same Workspace when the builder is saved, and reads, update-by-id and
-delete-by-id are confined to the Workspace. Regenerate with `mise run generate`.
+delete-by-id are confined to the Workspace. A wrapper keeps its write as a recipe (its
+predicates and what its setters set) and builds the ent builder only when the write runs,
+on the client of the scope it runs on: the scope's own, or the transaction that carries
+its Audit entries (write<N>), so that client's hooks apply from the start. Regenerate
+with `mise run generate`.
 */}}
 {{ define "scoped" }}
 {{ template "header" $ }}
@@ -191,19 +195,103 @@ func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
 	return t.Query{{ if $D }}WithDiscarded{{ end }}{{ if $R }}WithArchived{{ end }}().Where({{ $P }}.ID(id)).Only(ctx)
 }
 {{ end }}
+
+// write{{ $N }} runs a write of {{ $N }} rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. {{ if $A }}Through an audited scope (Scoped.As)
+// that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
+// joins or opens: the rows where matches are read before the write, then the same rows and the ones
+// run reports it created after it, and verb is recorded for each of them. Through any other scope{{ else }}The
+// entity is not audited, so{{ end }} run gets the scope itself.
+func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predicate.{{ $N }}, run func(s *Scoped) ([]int64, error)) error {
+	{{- if $A }}
+	if s.auditing() {
+		return s.audited(ctx, func(ts *Scoped) error {
+			var before []*{{ $N }}
+			if where != nil {
+				var err error
+				if before, err = ts.c.{{ $N }}.Query().Where(where...).All(ctx); err != nil {
+					return err
+				}
+			}
+			created, err := run(ts)
+			if err != nil {
+				return err
+			}
+			ids := make([]int64, 0, len(before)+len(created))
+			was := make(map[int64]*{{ $N }}, len(before))
+			for _, row := range before {
+				ids = append(ids, row.ID)
+				was[row.ID] = row
+			}
+			ids = append(ids, created...)
+			after, err := ts.c.{{ $N }}.Query().Where({{ $P }}.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			now := make(map[int64]*{{ $N }}, len(after))
+			for _, row := range after {
+				now[row.ID] = row
+			}
+			for _, id := range ids {
+				if was[id] == nil && now[id] == nil {
+					continue
+				}
+				if err := ts.record(ctx, auditChange{{ $N }}(verb, was[id], now[id])); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	}
+	{{- else }}
+	_, _ = verb, where
+	{{- end }}
+	_, err := run(s)
+	return err
+}
+
+// check{{ $N }} verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) check{{ $N }}(ctx context.Context, ms ...*{{ $N }}Mutation) error {
+	{{- range $e := scopedEdges $n }}
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.{{ $e.StructField }}IDs()...)
+		}
+		if err := s.verify{{ $e.Type.Name }}(ctx, ids); err != nil {
+			return fmt.Errorf("{{ $e.Name }}: %w", err)
+		}
+	}
+	{{- end }}
+	{{- range $r := scopedFieldRefs $n }}
+	{
+		var ids []int64
+		for _, m := range ms {
+			if v, ok := m.{{ $r.Field.MutationGet }}(); ok {
+				ids = append(ids, v)
+			}
+		}
+		if err := s.verify{{ $r.Target.Name }}(ctx, ids); err != nil {
+			return fmt.Errorf("{{ $r.Field.Name }}: %w", err)
+		}
+	}
+	{{- end }}
+	return nil
+}
 {{ if $R }}
 // Archive stamps archived_at, at `at`, on the kept {{ $N }} with the id (ps fence it further); a row of
 // another Workspace, an already archived row or one a predicate excludes is not found.
 func (t *{{ $N }}Scoped) Archive(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtIsNil()}, ps...)
-	return t.setArchived(ctx, id, where, "archive", func(u *{{ $N }}UpdateOne) { u.SetArchivedAt(at) })
+	return t.setArchived(ctx, id, where, "{{ verb $n "archive" }}", func(u *{{ $N }}UpdateOne) { u.SetArchivedAt(at) })
 }
 
 // Unarchive clears archived_at on the {{ $N }} with the id. Unarchiving a kept row changes
 // nothing; only a row that does not exist in the Workspace is not found.
 func (t *{{ $N }}Scoped) Unarchive(ctx context.Context, id int64) error {
 	where := []predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.ArchivedAtNotNil()}
-	err := t.setArchived(ctx, id, where, "unarchive", func(u *{{ $N }}UpdateOne) { u.ClearArchivedAt() })
+	err := t.setArchived(ctx, id, where, "{{ verb $n "unarchive" }}", func(u *{{ $N }}UpdateOne) { u.ClearArchivedAt() })
 	if !IsNotFound(err) {
 		return err
 	}
@@ -212,30 +300,12 @@ func (t *{{ $N }}Scoped) Unarchive(ctx context.Context, id int64) error {
 }
 
 func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []predicate.{{ $N }}, verb string, set func(*{{ $N }}UpdateOne)) error {
-	write := func(c *Client) (*{{ $N }}, error) {
-		u := c.{{ $N }}.UpdateOneID(id).Where(where...)
+	return t.s.write{{ $N }}(ctx, verb, where, func(s *Scoped) ([]int64, error) {
+		u := s.c.{{ $N }}.UpdateOneID(id).Where(where...)
 		set(u)
-		return u.Save(ctx)
-	}
-	{{- if $A }}
-	if t.s.auditing() {
-		return t.s.audited(ctx, func(ts *Scoped) error {
-			before, err := ts.c.{{ $N }}.Query().Where(where...).Only(ctx)
-			if err != nil {
-				return err
-			}
-			after, err := write(ts.c)
-			if err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChange{{ $N }}(verb, before, after))
-		})
-	}
-	{{- else }}
-	_ = verb
-	{{- end }}
-	_, err := write(t.s.c)
-	return err
+		_, err := u.Save(ctx)
+		return nil, err
+	})
 }
 {{ end }}{{ if $D }}
 // Discard stamps discarded_at, at `at`, on the kept {{ $N }} with the id (ps fence it further){{ with discardClears $n }}
@@ -244,44 +314,30 @@ func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []pred
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.DiscardedAtIsNil()}, ps...)
-	write := func(c *Client) (*{{ $N }}, error) {
-		return c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at){{ range $f := discardClears $n }}.Set{{ $f.StructField }}(false){{ end }}.Save(ctx)
-	}
-	{{- if $A }}
-	if t.s.auditing() {
-		return t.s.audited(ctx, func(ts *Scoped) error {
-			before, err := ts.c.{{ $N }}.Query().Where(where...).Only(ctx)
-			if err != nil {
-				return err
-			}
-			after, err := write(ts.c)
-			if err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChange{{ $N }}("discard", before, after))
-		})
-	}
-	{{- end }}
-	_, err := write(t.s.c)
-	return err
+	return t.s.write{{ $N }}(ctx, "{{ verb $n "discard" }}", where, func(s *Scoped) ([]int64, error) {
+		_, err := s.c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at){{ range $f := discardClears $n }}.Set{{ $f.StructField }}(false){{ end }}.Save(ctx)
+		return nil, err
+	})
 }
 {{ end }}
 
 {{ if $n.HasOneFieldID }}
-// {{ $N }}ScopedDeleteOne wraps {{ $N }}DeleteOne.
+// {{ $N }}ScopedDeleteOne deletes one {{ $N }}: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
 type {{ $N }}ScopedDeleteOne struct {
-	s *Scoped
-	b *{{ $N }}DeleteOne
+	s     *Scoped
+	id    int64
+	where []predicate.{{ $N }}
 }
 
 // {{ $Del }}OneID {{ if $Aside }}physically removes{{ else }}deletes{{ end }} the {{ $N }} with the id; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) {{ $Del }}OneID(id int64) *{{ $N }}ScopedDeleteOne {
-	return &{{ $N }}ScopedDeleteOne{s: t.s, b: t.s.c.{{ $N }}.DeleteOneID(id).Where({{ $P }}.WorkspaceID(t.s.ws))}
+	return &{{ $N }}ScopedDeleteOne{s: t.s, id: id}
 }
 
 // Where appends predicates the row must also match (fencing).
 func (x *{{ $N }}ScopedDeleteOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}ScopedDeleteOne {
-	x.b.Where(ps...)
+	x.where = append(x.where, ps...)
 	return x
 }
 
@@ -294,39 +350,28 @@ const (
 
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *{{ $N }}ScopedDeleteOne) Exec(ctx context.Context) error {
-	{{- if $A }}
-	if x.s.auditing() {
-		return x.s.audited(ctx, func(ts *Scoped) error {
-			before, err := ts.c.{{ $N }}.Query().Where(x.b._d.mutation.predicates...).Only(ctx)
-			if err != nil {
-				return err
-			}
-			x.b._d.auditRebind(ts.c)
-			if err := x.b.Exec(ctx); err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChange{{ $N }}("delete", before, nil))
-		})
-	}
-	{{- end }}
-	return x.b.Exec(ctx)
+	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	return x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+		return nil, s.c.{{ $N }}.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
 }
 
 {{ end }}
-// {{ $N }}ScopedDelete wraps {{ $N }}Delete.
+// {{ $N }}ScopedDelete deletes the {{ $N }} rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
 type {{ $N }}ScopedDelete struct {
-	s *Scoped
-	b *{{ $N }}Delete
+	s     *Scoped
+	where []predicate.{{ $N }}
 }
 
 // {{ $Del }} {{ if $Aside }}physically removes{{ else }}deletes{{ end }} the {{ $N }} entities of the Workspace that match the predicates.
 func (t *{{ $N }}Scoped) {{ $Del }}() *{{ $N }}ScopedDelete {
-	return &{{ $N }}ScopedDelete{s: t.s, b: t.s.c.{{ $N }}.Delete().Where({{ $P }}.WorkspaceID(t.s.ws))}
+	return &{{ $N }}ScopedDelete{s: t.s}
 }
 
 // Where appends predicates the rows must match.
 func (x *{{ $N }}ScopedDelete) Where(ps ...predicate.{{ $N }}) *{{ $N }}ScopedDelete {
-	x.b.Where(ps...)
+	x.where = append(x.where, ps...)
 	return x
 }
 
@@ -339,50 +384,42 @@ const (
 
 // Exec deletes the rows and returns how many were deleted.
 func (x *{{ $N }}ScopedDelete) Exec(ctx context.Context) (int, error) {
-	{{- if $A }}
-	if x.s.auditing() {
-		var n int
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			rows, err := ts.c.{{ $N }}.Query().Where(x.b.mutation.predicates...).All(ctx)
-			if err != nil {
-				return err
-			}
-			x.b.auditRebind(ts.c)
-			if n, err = x.b.Exec(ctx); err != nil {
-				return err
-			}
-			for _, row := range rows {
-				if err := ts.record(ctx, auditChange{{ $N }}("delete", row, nil)); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		return n, err
-	}
-	{{- end }}
-	return x.b.Exec(ctx)
+	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	var n int
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", where, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.{{ $N }}.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return n, err
 }
 
 // ---------------------------------------------------------------- create
 
-// {{ $N }}ScopedCreate wraps {{ $N }}Create. It has no way to name a Workspace.
+// {{ $N }}ScopedCreate creates a {{ $N }} of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
 type {{ $N }}ScopedCreate struct {
-	s *Scoped
-	b *{{ $N }}Create
+	s   *Scoped
+	set []func(*{{ $N }}Create)
 }
 
 // Create starts a {{ $N }} in the Workspace.
 func (t *{{ $N }}Scoped) Create() *{{ $N }}ScopedCreate {
-	return &{{ $N }}ScopedCreate{s: t.s, b: t.s.c.{{ $N }}.Create().SetWorkspaceID(t.s.ws)}
+	return &{{ $N }}ScopedCreate{s: t.s}
 }
 
-{{ with extend $n "Node" $n "Builder" (print $N "ScopedCreate") "Mode" "create" }}
-	{{ template "helper/scopedsetters" . }}
-{{ end }}
+// build makes the ent create on the client of s, in its Workspace.
+func (x *{{ $N }}ScopedCreate) build(s *Scoped) *{{ $N }}Create {
+	b := s.c.{{ $N }}.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
 
-{{ with extend $n "Node" $n "Builder" (print $N "ScopedCreate") }}
-	{{ template "helper/scopedcheck" . }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedCreate") "Raw" (print $N "Create") "Mode" "create" }}
+	{{ template "helper/scopedsetters" . }}
 {{ end }}
 
 const (
@@ -396,24 +433,26 @@ const (
 
 // Save verifies the references against the Workspace, then creates the {{ $N }}.
 func (x *{{ $N }}ScopedCreate) Save(ctx context.Context) (*{{ $N }}, error) {
-	if err := x.check(ctx); err != nil {
+	var created *{{ $N }}
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, func(s *Scoped) ([]int64, error) {
+		b := x.build(s)
+		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+			return nil, err
+		}
+		var err error
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		{{- if $A }}
+		return []int64{created.ID}, nil
+		{{- else }}
+		return nil, nil
+		{{- end }}
+	})
+	if err != nil {
 		return nil, err
 	}
-	{{- if $A }}
-	if x.s.auditing() {
-		var created *{{ $N }}
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			x.b.auditRebind(ts.c)
-			var err error
-			if created, err = x.b.Save(ctx); err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChange{{ $N }}("create", nil, created))
-		})
-		return created, err
-	}
-	{{- end }}
-	return x.b.Save(ctx)
+	return created, nil
 }
 
 // Exec is like Save, discarding the entity.
@@ -435,76 +474,59 @@ func (t *{{ $N }}Scoped) CreateBulk(xs ...*{{ $N }}ScopedCreate) *{{ $N }}Scoped
 	return &{{ $N }}ScopedCreateBulk{s: t.s, xs: xs}
 }
 
-func (b *{{ $N }}ScopedCreateBulk) raw(ctx context.Context) (*{{ $N }}CreateBulk, error) {
-	builders := make([]*{{ $N }}Create, len(b.xs))
-	for i, x := range b.xs {
+// foreign refuses a create started on another Workspace's scope.
+func (b *{{ $N }}ScopedCreateBulk) foreign() error {
+	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
-			return nil, fmt.Errorf("{{ $N }}: builder of another scope: %w", ErrNotInWorkspace)
+			return fmt.Errorf("{{ $N }}: builder of another scope: %w", ErrNotInWorkspace)
 		}
-		builders[i] = x.b
 	}
-	if err := b.check(ctx); err != nil {
-		return nil, err
-	}
-	return b.s.c.{{ $N }}.CreateBulk(builders...), nil
+	return nil
 }
 
-// check verifies the references of every builder against the Workspace, one query per
-// reference for the whole batch rather than one per row.
-func (b *{{ $N }}ScopedCreateBulk) check(ctx context.Context) error {
-	{{- range $e := scopedEdges $n }}
-	{
-		var ids []int64
-		for _, x := range b.xs {
-			ids = append(ids, x.b.Mutation().{{ $e.StructField }}IDs()...)
-		}
-		if err := b.s.verify{{ $e.Type.Name }}(ctx, ids); err != nil {
-			return fmt.Errorf("{{ $e.Name }}: %w", err)
-		}
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *{{ $N }}ScopedCreateBulk) build(ctx context.Context, s *Scoped) (*{{ $N }}CreateBulk, error) {
+	builders := make([]*{{ $N }}Create, len(b.xs))
+	ms := make([]*{{ $N }}Mutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.build(s)
+		ms[i] = builders[i].Mutation()
 	}
-	{{- end }}
-	{{- range $r := scopedFieldRefs $n }}
-	{
-		var ids []int64
-		for _, x := range b.xs {
-			if v, ok := x.b.Mutation().{{ $r.Field.MutationGet }}(); ok {
-				ids = append(ids, v)
-			}
-		}
-		if err := b.s.verify{{ $r.Target.Name }}(ctx, ids); err != nil {
-			return fmt.Errorf("{{ $r.Field.Name }}: %w", err)
-		}
+	if err := s.check{{ $N }}(ctx, ms...); err != nil {
+		return nil, err
 	}
-	{{- end }}
-	return nil
+	return s.c.{{ $N }}.CreateBulk(builders...), nil
 }
 
 // Save verifies every builder's references, then creates the {{ $N }} entities.
 func (b *{{ $N }}ScopedCreateBulk) Save(ctx context.Context) ([]*{{ $N }}, error) {
-	raw, err := b.raw(ctx)
+	if err := b.foreign(); err != nil {
+		return nil, err
+	}
+	var created []*{{ $N }}
+	err := b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		{{- if $A }}
+		ids := make([]int64, len(created))
+		for i, row := range created {
+			ids[i] = row.ID
+		}
+		return ids, nil
+		{{- else }}
+		return nil, nil
+		{{- end }}
+	})
 	if err != nil {
 		return nil, err
 	}
-	{{- if $A }}
-	if b.s.auditing() {
-		var created []*{{ $N }}
-		err := b.s.audited(ctx, func(ts *Scoped) error {
-			raw.auditRebind(ts.c)
-			var err error
-			if created, err = raw.Save(ctx); err != nil {
-				return err
-			}
-			for _, row := range created {
-				if err := ts.record(ctx, auditChange{{ $N }}("create", nil, row)); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		return created, err
-	}
-	{{- end }}
-	return raw.Save(ctx)
+	return created, nil
 }
 
 // Exec is like Save, discarding the entities.
@@ -600,10 +622,12 @@ func (t *{{ $N }}Scoped) conflictOptions(columns []string, target *sql.Predicate
 	return opts
 }
 
-// {{ $N }}ScopedUpsertOne is the "upsert" of one {{ $N }}.
+// {{ $N }}ScopedUpsertOne is the "upsert" of one {{ $N }}: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
 type {{ $N }}ScopedUpsertOne struct {
-	x *{{ $N }}ScopedCreate
-	u *{{ $N }}UpsertOne
+	x        *{{ $N }}ScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*{{ $N }}UpsertOne)
 	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
 	doNothing bool
 }
@@ -630,93 +654,96 @@ func (x *{{ $N }}ScopedCreate) OnConflictColumns(columns ...string) *{{ $N }}Sco
 // OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
 // index's predicate, which Postgres needs to infer the index from the columns.
 func (x *{{ $N }}ScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *{{ $N }}ScopedUpsertOne {
-	return &{{ $N }}ScopedUpsertOne{x: x, u: x.b.OnConflict((&{{ $N }}Scoped{s: x.s}).conflictOptions(columns, target)...)}
+	return &{{ $N }}ScopedUpsertOne{x: x, conflict: (&{{ $N }}Scoped{s: x.s}).conflictOptions(columns, target)}
 }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
 func (u *{{ $N }}ScopedUpsertOne) UpdateNewValues() *{{ $N }}ScopedUpsertOne {
-	u.u.UpdateNewValues()
+	u.set = append(u.set, func(r *{{ $N }}UpsertOne) { r.UpdateNewValues() })
 	return u
 }
 
 // Ignore sets each column to itself in case of conflict.
 func (u *{{ $N }}ScopedUpsertOne) Ignore() *{{ $N }}ScopedUpsertOne {
-	u.u.Ignore()
+	u.set = append(u.set, func(r *{{ $N }}UpsertOne) { r.Ignore() })
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 func (u *{{ $N }}ScopedUpsertOne) DoNothing() *{{ $N }}ScopedUpsertOne {
-	u.u.DoNothing()
+	u.set = append(u.set, func(r *{{ $N }}UpsertOne) { r.DoNothing() })
 	u.doNothing = true
 	return u
 }
 
 // Update overrides fields' `UPDATE` values.
 func (u *{{ $N }}ScopedUpsertOne) Update(set func(*{{ $N }}ScopedUpsert)) *{{ $N }}ScopedUpsertOne {
-	u.u.Update(func(s *{{ $N }}Upsert) { set(&{{ $N }}ScopedUpsert{u: s.UpdateSet}) })
+	u.set = append(u.set, func(r *{{ $N }}UpsertOne) {
+		r.Update(func(s *{{ $N }}Upsert) { set(&{{ $N }}ScopedUpsert{u: s.UpdateSet}) })
+	})
 	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *{{ $N }}ScopedUpsertOne) build(ctx context.Context, s *Scoped) (*{{ $N }}UpsertOne, error) {
+	b := u.x.build(s)
+	if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
 }
 
 // Exec verifies the references, then executes the upsert.
 func (u *{{ $N }}ScopedUpsertOne) Exec(ctx context.Context) error {
-	if err := u.x.check(ctx); err != nil {
-		return err
-	}
-	{{- if $A }}
-	if u.x.s.auditing() {
-		_, err := u.audited(ctx)
-		return err
-	}
-	{{- end }}
-	return u.u.Exec(ctx)
+	{{- if $n.HasOneFieldID }}
+	_, err := u.ID(ctx)
+	return err
 }
 
-{{ if $n.HasOneFieldID }}
-// ID is like Exec, returning the inserted or updated id.
+// ID is like Exec, returning the inserted or updated id.{{ if $A }} An audited upsert must be DO NOTHING:
+// an insert is a create, a conflict (sql.ErrNoRows) writes nothing and records nothing.{{ end }}
 func (u *{{ $N }}ScopedUpsertOne) ID(ctx context.Context) (int64, error) {
-	if err := u.x.check(ctx); err != nil {
-		return 0, err
-	}
 	{{- if $A }}
-	if u.x.s.auditing() {
-		return u.audited(ctx)
-	}
-	{{- end }}
-	return u.u.ID(ctx)
-}
-{{- if $A }}
-
-// audited runs a DO NOTHING upsert with its entry: an insert is a create, a conflict
-// (sql.ErrNoRows) writes nothing and records nothing.
-func (u *{{ $N }}ScopedUpsertOne) audited(ctx context.Context) (int64, error) {
-	if !u.doNothing {
+	if u.x.s.auditing() && !u.doNothing {
 		return 0, ErrAuditUpsert
 	}
+	{{- end }}
 	var id int64
-	err := u.x.s.audited(ctx, func(ts *Scoped) error {
-		u.x.b.auditRebind(ts.c)
-		var err error
-		if id, err = u.u.ID(ctx); err != nil {
-			return err
-		}
-		row, err := ts.c.{{ $N }}.Get(ctx, id)
+	err := u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return ts.record(ctx, auditChange{{ $N }}("create", nil, row))
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
 	})
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+	{{- else }}
+	return u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		return nil, r.Exec(ctx)
+	})
+	{{- end }}
 }
-{{- end }}
 
-{{ end }}
 // {{ $N }}ScopedUpsertBulk is the "upsert" of several {{ $N }} entities.
 type {{ $N }}ScopedUpsertBulk struct {
-	b *{{ $N }}ScopedCreateBulk
-	t *{{ $N }}Scoped
+	b       *{{ $N }}ScopedCreateBulk
+	t       *{{ $N }}Scoped
 	columns []string
-	opts []func(*{{ $N }}UpsertBulk)
+	set     []func(*{{ $N }}UpsertBulk)
 }
 
 const (
@@ -737,107 +764,108 @@ func (b *{{ $N }}ScopedCreateBulk) OnConflictColumns(columns ...string) *{{ $N }
 
 // UpdateNewValues updates the mutable fields using the new values set on create.
 func (u *{{ $N }}ScopedUpsertBulk) UpdateNewValues() *{{ $N }}ScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *{{ $N }}UpsertBulk) { r.UpdateNewValues() })
+	u.set = append(u.set, func(r *{{ $N }}UpsertBulk) { r.UpdateNewValues() })
 	return u
 }
 
 // Ignore sets each column to itself in case of conflict.
 func (u *{{ $N }}ScopedUpsertBulk) Ignore() *{{ $N }}ScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *{{ $N }}UpsertBulk) { r.Ignore() })
+	u.set = append(u.set, func(r *{{ $N }}UpsertBulk) { r.Ignore() })
 	return u
 }
 
 // DoNothing configures the conflict_action to `DO NOTHING`.
 func (u *{{ $N }}ScopedUpsertBulk) DoNothing() *{{ $N }}ScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *{{ $N }}UpsertBulk) { r.DoNothing() })
+	u.set = append(u.set, func(r *{{ $N }}UpsertBulk) { r.DoNothing() })
 	return u
 }
 
 // Update overrides fields' `UPDATE` values.
 func (u *{{ $N }}ScopedUpsertBulk) Update(set func(*{{ $N }}ScopedUpsert)) *{{ $N }}ScopedUpsertBulk {
-	u.opts = append(u.opts, func(r *{{ $N }}UpsertBulk) {
+	u.set = append(u.set, func(r *{{ $N }}UpsertBulk) {
 		r.Update(func(s *{{ $N }}Upsert) { set(&{{ $N }}ScopedUpsert{u: s.UpdateSet}) })
 	})
 	return u
 }
 
-// Exec verifies every builder's references, then executes the upsert.
+// Exec verifies every builder's references, then executes the upsert.{{ if $A }} An audited entity has
+// no bulk upsert: it cannot tell an insert from an update.{{ end }}
 func (u *{{ $N }}ScopedUpsertBulk) Exec(ctx context.Context) error {
 	{{- if $A }}
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
 	{{- end }}
-	raw, err := u.b.raw(ctx)
-	if err != nil {
+	if err := u.b.foreign(); err != nil {
 		return err
 	}
-	r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
-	for _, o := range u.opts {
-		o(r)
-	}
-	return r.Exec(ctx)
+	return u.b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
 }
 
 // ---------------------------------------------------------------- update
 
 {{ if $n.HasOneFieldID }}
-// {{ $N }}ScopedUpdateOne wraps {{ $N }}UpdateOne. It has no way to move the row to another Workspace.
+// {{ $N }}ScopedUpdateOne updates one {{ $N }}. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
 type {{ $N }}ScopedUpdateOne struct {
-	s *Scoped
-	b *{{ $N }}UpdateOne
+	s     *Scoped
+	id    int64
+	where []predicate.{{ $N }}
+	set   []func(*{{ $N }}UpdateOne)
 }
 
 // UpdateOneID updates the {{ $N }} with the id; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) UpdateOneID(id int64) *{{ $N }}ScopedUpdateOne {
-	return &{{ $N }}ScopedUpdateOne{s: t.s, b: t.s.c.{{ $N }}.UpdateOneID(id).Where({{ $P }}.WorkspaceID(t.s.ws))}
+	return &{{ $N }}ScopedUpdateOne{s: t.s, id: id}
 }
 
 // Where appends predicates the row must also match (fencing).
 func (x *{{ $N }}ScopedUpdateOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}ScopedUpdateOne {
-	x.b.Where(ps...)
+	x.where = append(x.where, ps...)
 	return x
 }
 
-{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdateOne") "Mode" "update" }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdateOne") "Raw" (print $N "UpdateOne") "Mode" "update" }}
 	{{ template "helper/scopedsetters" . }}
-{{ end }}
-
-{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdateOne") }}
-	{{ template "helper/scopedcheck" . }}
 {{ end }}
 
 // Save verifies the references against the Workspace, then updates the {{ $N }}.
 func (x *{{ $N }}ScopedUpdateOne) Save(ctx context.Context) (*{{ $N }}, error) {
-    {{- if versioned $n }}
-    return x.save(ctx, "update")
+	return x.save(ctx, "{{ verb $n "update" }}")
 }
 
-// save keeps a machine's deletion verb while sharing the reference checks and audit capture.
+// save is Save under the verb of the write it is: a Versioned definition's pointers archive,
+// unarchive or discard through it.
 func (x *{{ $N }}ScopedUpdateOne) save(ctx context.Context, verb string) (*{{ $N }}, error) {
-    {{- end }}
-	if err := x.check(ctx); err != nil {
+	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	var updated *{{ $N }}
+	err := x.s.write{{ $N }}(ctx, verb, append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), func(s *Scoped) ([]int64, error) {
+		b := s.c.{{ $N }}.UpdateOneID(x.id).Where(where...)
+		for _, set := range x.set {
+			set(b)
+		}
+		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+			return nil, err
+		}
+		var err error
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	if err != nil {
 		return nil, err
 	}
-	{{- if $A }}
-	if x.s.auditing() {
-		var updated *{{ $N }}
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			id, _ := x.b.Mutation().ID()
-			before, err := ts.c.{{ $N }}.Query().Where(x.b.mutation.predicates...).Where({{ $P }}.ID(id)).Only(ctx)
-			if err != nil {
-				return err
-			}
-			x.b.auditRebind(ts.c)
-			if updated, err = x.b.Save(ctx); err != nil {
-				return err
-			}
-			return ts.record(ctx, auditChange{{ $N }}({{ if versioned $n }}verb{{ else }}"update"{{ end }}, before, updated))
-		})
-		return updated, err
-	}
-	{{- end }}
-	return x.b.Save(ctx)
+	return updated, nil
 }
 
 // Exec is like Save, discarding the entity.
@@ -855,22 +883,24 @@ const (
 )
 
 {{ end }}
-// {{ $N }}ScopedUpdate wraps {{ $N }}Update: a conditional bulk update of one Workspace.
+// {{ $N }}ScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
 type {{ $N }}ScopedUpdate struct {
-	s *Scoped
-	b *{{ $N }}Update
+	s     *Scoped
+	where []predicate.{{ $N }}
+	set   []func(*{{ $N }}Update)
 	// modErr is set when a Modify modifier tried to assign workspace_id.
 	modErr error
 }
 
 // Update updates the {{ $N }} entities of the Workspace that match the predicates.
 func (t *{{ $N }}Scoped) Update() *{{ $N }}ScopedUpdate {
-	return &{{ $N }}ScopedUpdate{s: t.s, b: t.s.c.{{ $N }}.Update().Where({{ $P }}.WorkspaceID(t.s.ws))}
+	return &{{ $N }}ScopedUpdate{s: t.s}
 }
 
 // Where appends predicates the rows must match.
 func (x *{{ $N }}ScopedUpdate) Where(ps ...predicate.{{ $N }}) *{{ $N }}ScopedUpdate {
-	x.b.Where(ps...)
+	x.where = append(x.where, ps...)
 	return x
 }
 
@@ -886,17 +916,15 @@ func (x *{{ $N }}ScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *{{ $N
 		if probe.workspace {
 			x.modErr = ErrWorkspaceAssign
 		}
-		x.b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		x.set = append(x.set, func(b *{{ $N }}Update) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
 	}
 	return x
 }
 
-{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdate") "Mode" "update" }}
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdate") "Raw" (print $N "Update") "Mode" "update" }}
 	{{ template "helper/scopedsetters" . }}
-{{ end }}
-
-{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdate") }}
-	{{ template "helper/scopedcheck" . }}
 {{ end }}
 
 // Save verifies the references against the Workspace, then updates the rows and
@@ -905,46 +933,24 @@ func (x *{{ $N }}ScopedUpdate) Save(ctx context.Context) (int, error) {
 	if x.modErr != nil {
 		return 0, x.modErr
 	}
-	if err := x.check(ctx); err != nil {
+	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
+	var n int
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "update" }}", where, func(s *Scoped) ([]int64, error) {
+		b := s.c.{{ $N }}.Update().Where(where...)
+		for _, set := range x.set {
+			set(b)
+		}
+		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
+			return nil, err
+		}
+		var err error
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	if err != nil {
 		return 0, err
 	}
-	{{- if $A }}
-	if x.s.auditing() {
-		var n int
-		err := x.s.audited(ctx, func(ts *Scoped) error {
-			before, err := ts.c.{{ $N }}.Query().Where(x.b.mutation.predicates...).All(ctx)
-			if err != nil {
-				return err
-			}
-			x.b.auditRebind(ts.c)
-			if n, err = x.b.Save(ctx); err != nil {
-				return err
-			}
-			ids := make([]int64, len(before))
-			for i, row := range before {
-				ids[i] = row.ID
-			}
-			after, err := ts.c.{{ $N }}.Query().Where({{ $P }}.IDIn(ids...)).All(ctx)
-			if err != nil {
-				return err
-			}
-			byID := make(map[int64]*{{ $N }}, len(after))
-			for _, row := range after {
-				byID[row.ID] = row
-			}
-			for _, row := range before {
-				if now, ok := byID[row.ID]; ok {
-					if err := ts.record(ctx, auditChange{{ $N }}("update", row, now)); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		})
-		return n, err
-	}
-	{{- end }}
-	return x.b.Save(ctx)
+	return n, nil
 }
 
 // Exec is like Save, discarding the count.
@@ -964,17 +970,19 @@ const (
 {{ end }}
 {{ end }}
 
-{{/* Setters shared by the create and the update wrappers: they delegate to the raw
-     builder in x.b, skipping workspace_id and the workspace edge. */}}
+
+{{/* Setters shared by the create and the update wrappers: each appends to the wrapper's list what it
+     sets on the ent builder the wrapper builds (Raw), skipping workspace_id and the workspace edge. */}}
 {{ define "helper/scopedsetters" }}
 {{- $B := $.Scope.Builder }}
+{{- $Raw := $.Scope.Raw }}
 {{- $updater := eq $.Scope.Mode "update" }}
 {{- $fields := $.Fields }}{{ if $updater }}{{ $fields = $.MutableFields }}{{ end }}
 {{ range $f := $fields }}
 {{- if not (isWorkspaceField $f) }}
 // Set{{ $f.StructField }} sets the "{{ $f.Name }}" field.
 func (x *{{ $B }}) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $B }} {
-	x.b.Set{{ $f.StructField }}(v)
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.Set{{ $f.StructField }}(v) })
 	return x
 }
 
@@ -989,7 +997,9 @@ const SetsState_{{ $B }}_Set{{ $f.StructField }} = "{{ $f.StructField }}"
 
 // SetNillable{{ $f.StructField }} sets the "{{ $f.Name }}" field if the given value is not nil.
 func (x *{{ $B }}) SetNillable{{ $f.StructField }}(v *{{ $f.Type }}) *{{ $B }} {
-	x.b.SetNillable{{ $f.StructField }}(v)
+	if v != nil {
+		x.Set{{ $f.StructField }}(*v)
+	}
 	return x
 }
 
@@ -1003,7 +1013,7 @@ const SetsState_{{ $B }}_SetNillable{{ $f.StructField }} = "{{ $f.StructField }}
 
 // {{ $f.MutationAdd }} adds value to the "{{ $f.Name }}" field.
 func (x *{{ $B }}) {{ $f.MutationAdd }}(v {{ $f.SignedType }}) *{{ $B }} {
-	x.b.{{ $f.MutationAdd }}(v)
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.{{ $f.MutationAdd }}(v) })
 	return x
 }
 
@@ -1013,7 +1023,7 @@ const RoleOf_{{ $B }}_{{ $f.MutationAdd }} = RoleStep
 
 // {{ $f.MutationAppend }} appends value to the "{{ $f.Name }}" field.
 func (x *{{ $B }}) {{ $f.MutationAppend }}(v {{ $f.Type }}) *{{ $B }} {
-	x.b.{{ $f.MutationAppend }}(v)
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.{{ $f.MutationAppend }}(v) })
 	return x
 }
 
@@ -1023,7 +1033,7 @@ const RoleOf_{{ $B }}_{{ $f.MutationAppend }} = RoleStep
 
 // Clear{{ $f.StructField }} clears the value of the "{{ $f.Name }}" field.
 func (x *{{ $B }}) Clear{{ $f.StructField }}() *{{ $B }} {
-	x.b.Clear{{ $f.StructField }}()
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.Clear{{ $f.StructField }}() })
 	return x
 }
 
@@ -1046,7 +1056,7 @@ const ClearsState_{{ $B }}_Clear{{ $f.StructField }} = "{{ $f.StructField }}"
 {{- if $withSetter }}
 // {{ $idsFunc }} {{ $op }}s the "{{ $e.Name }}" edge to the {{ $e.Type.Name }} entity by ID{{ if not $e.Unique }}s{{ end }}.
 func (x *{{ $B }}) {{ $idsFunc }}({{ if $e.Unique }}id{{ else }}ids ...{{ end }} {{ $e.Type.ID.Type }}) *{{ $B }} {
-	x.b.{{ $idsFunc }}({{ if $e.Unique }}id{{ else }}ids...{{ end }})
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.{{ $idsFunc }}({{ if $e.Unique }}id{{ else }}ids...{{ end }}) })
 	return x
 }
 
@@ -1056,7 +1066,9 @@ const RoleOf_{{ $B }}_{{ $idsFunc }} = RoleStep
 
 // SetNillable{{ $e.StructField }}ID sets the "{{ $e.Name }}" edge to the {{ $e.Type.Name }} entity by ID if the given value is not nil.
 func (x *{{ $B }}) SetNillable{{ $e.StructField }}ID(id *{{ $e.Type.ID.Type }}) *{{ $B }} {
-	x.b.SetNillable{{ $e.StructField }}ID(id)
+	if id != nil {
+		x.{{ $e.MutationSet }}(*id)
+	}
 	return x
 }
 
@@ -1066,7 +1078,7 @@ const RoleOf_{{ $B }}_SetNillable{{ $e.StructField }}ID = RoleStep
 
 // {{ $func }} {{ $op }}s the "{{ $e.Name }}" edge{{ if not $e.Unique }}s{{ end }} to the {{ $e.Type.Name }} entity.
 func (x *{{ $B }}) {{ $func }}(v {{ if not $e.Unique }}...{{ end }}*{{ $e.Type.Name }}) *{{ $B }} {
-	x.b.{{ $func }}(v{{ if not $e.Unique }}...{{ end }})
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.{{ $func }}(v{{ if not $e.Unique }}...{{ end }}) })
 	return x
 }
 
@@ -1075,7 +1087,7 @@ const RoleOf_{{ $B }}_{{ $func }} = RoleStep
 
 // {{ $e.MutationClear }} clears the "{{ $e.Name }}" edge{{ if not $e.Unique }}s{{ end }} to the {{ $e.Type.Name }} entity.
 func (x *{{ $B }}) {{ $e.MutationClear }}() *{{ $B }} {
-	x.b.{{ $e.MutationClear }}()
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.{{ $e.MutationClear }}() })
 	return x
 }
 
@@ -1084,7 +1096,7 @@ const RoleOf_{{ $B }}_{{ $e.MutationClear }} = RoleStep
 
 // {{ $e.MutationRemove }} removes the "{{ $e.Name }}" edge to {{ $e.Type.Name }} entities by IDs.
 func (x *{{ $B }}) {{ $e.MutationRemove }}(ids ...{{ $e.Type.ID.Type }}) *{{ $B }} {
-	x.b.{{ $e.MutationRemove }}(ids...)
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.{{ $e.MutationRemove }}(ids...) })
 	return x
 }
 
@@ -1092,7 +1104,7 @@ const RoleOf_{{ $B }}_{{ $e.MutationRemove }} = RoleStep
 
 // Remove{{ $e.StructField }} removes "{{ $e.Name }}" edges to {{ $e.Type.Name }} entities.
 func (x *{{ $B }}) Remove{{ $e.StructField }}(v ...*{{ $e.Type.Name }}) *{{ $B }} {
-	x.b.Remove{{ $e.StructField }}(v...)
+	x.set = append(x.set, func(b *{{ $Raw }}) { b.Remove{{ $e.StructField }}(v...) })
 	return x
 }
 
@@ -1102,26 +1114,4 @@ const RoleOf_{{ $B }}_Remove{{ $e.StructField }} = RoleStep
 {{ end }}
 {{ end }}
 {{ end }}
-{{ end }}
-
-{{/* check verifies every reference the builder recorded against the Workspace. */}}
-{{ define "helper/scopedcheck" }}
-{{- $B := $.Scope.Builder }}
-func (x *{{ $B }}) check(ctx context.Context) error {
-	m := x.b.Mutation()
-	_ = m
-	{{- range $e := scopedEdges $.Scope.Node }}
-	if err := x.s.verify{{ $e.Type.Name }}(ctx, m.{{ $e.StructField }}IDs()); err != nil {
-		return fmt.Errorf("{{ $e.Name }}: %w", err)
-	}
-	{{- end }}
-	{{- range $r := scopedFieldRefs $.Scope.Node }}
-	if v, ok := m.{{ $r.Field.MutationGet }}(); ok {
-		if err := x.s.verify{{ $r.Target.Name }}(ctx, []int64{v}); err != nil {
-			return fmt.Errorf("{{ $r.Field.Name }}: %w", err)
-		}
-	}
-	{{- end }}
-	return nil
-}
 {{ end }}

@@ -64,14 +64,14 @@ type ScopedEntity struct {
 	// Wrapper is the type of its scoped wrapper (*<Name>Scoped), whose methods the kind decides.
 	Wrapper reflect.Type
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
-	// schema.Audited.Action): create, update and delete (Purge), then discard for a discardable
-	// entity, which is never restored, and archive and unarchive for an archivable one (ADR 0100).
-	// None when the entity is not audited.
+	// schema.Audited.Action, the verbs internal/entgen's Verbs gives its kind): create, update and
+	// delete (Purge), then discard for a discardable entity, which is never restored, and archive and
+	// unarchive for an archivable one (ADR 0100). None when the entity is not audited.
 	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)
 	// Get reads the row through the scoped client.
-	Get func(ctx context.Context, s *Scoped, id int64) error
+	Get func(ctx context.Context, s *Scoped, id int64) (any, error)
 	// Touch updates the row by id through the scoped client (only updated_at changes).
 	Touch func(ctx context.Context, s *Scoped, id int64) error
 	// BulkTouch is the conditional bulk update of the row; it returns the rows changed.
@@ -117,9 +117,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.ApiToken.Query().Where(apitoken.WorkspaceID(ws)).Order(Asc(apitoken.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.ApiToken().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ApiToken().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.ApiToken().UpdateOneID(id).Exec(ctx)
@@ -175,9 +174,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AuditEntry.Query().Where(auditentry.WorkspaceID(ws)).Order(Asc(auditentry.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.AuditEntry().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AuditEntry().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.AuditEntry().UpdateOneID(id).Exec(ctx)
@@ -243,9 +241,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Automation.Query().Where(automation.WorkspaceID(ws)).Order(Asc(automation.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Automation().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Automation().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Automation().UpdateOneID(id).Exec(ctx)
@@ -322,9 +319,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationFigure.Query().Where(automationfigure.WorkspaceID(ws)).Order(Asc(automationfigure.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.AutomationFigure().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AutomationFigure().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.AutomationFigure().UpdateOneID(id).Exec(ctx)
@@ -369,9 +365,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationRun.Query().Where(automationrun.WorkspaceID(ws)).Order(Asc(automationrun.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.AutomationRun().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AutomationRun().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.AutomationRun().UpdateOneID(id).Exec(ctx)
@@ -454,9 +449,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.AutomationVersion.Query().Where(automationversion.WorkspaceID(ws)).Order(Asc(automationversion.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.AutomationVersion().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.AutomationVersion().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.AutomationVersion().UpdateOneID(id).Exec(ctx)
@@ -514,9 +508,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Binding.Query().Where(binding.WorkspaceID(ws)).Order(Asc(binding.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Binding().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Binding().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Binding().UpdateOneID(id).Exec(ctx)
@@ -578,9 +571,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BrandKit.Query().Where(brandkit.WorkspaceID(ws)).Order(Asc(brandkit.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.BrandKit().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.BrandKit().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.BrandKit().UpdateOneID(id).Exec(ctx)
@@ -627,9 +619,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Broadcast.Query().Where(broadcast.WorkspaceID(ws)).Order(Asc(broadcast.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Broadcast().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Broadcast().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Broadcast().UpdateOneID(id).Exec(ctx)
@@ -754,9 +745,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BroadcastFigure.Query().Where(broadcastfigure.WorkspaceID(ws)).Order(Asc(broadcastfigure.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.BroadcastFigure().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.BroadcastFigure().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.BroadcastFigure().UpdateOneID(id).Exec(ctx)
@@ -810,9 +800,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.BroadcastRecipient.Query().Where(broadcastrecipient.WorkspaceID(ws)).Order(Asc(broadcastrecipient.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.BroadcastRecipient().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.BroadcastRecipient().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.BroadcastRecipient().UpdateOneID(id).Exec(ctx)
@@ -872,9 +861,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(ws)).Order(Asc(capturedmessage.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.CapturedMessage().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.CapturedMessage().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.CapturedMessage().UpdateOneID(id).Exec(ctx)
@@ -937,9 +925,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Confirmation.Query().Where(confirmation.WorkspaceID(ws)).Order(Asc(confirmation.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Confirmation().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Confirmation().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Confirmation().UpdateOneID(id).Exec(ctx)
@@ -998,9 +985,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Contact.Query().Where(contact.WorkspaceID(ws)).Order(Asc(contact.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Contact().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Contact().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Contact().UpdateOneID(id).Exec(ctx)
@@ -1108,9 +1094,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.CustomField.Query().Where(customfield.WorkspaceID(ws)).Order(Asc(customfield.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.CustomField().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.CustomField().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.CustomField().UpdateOneID(id).Exec(ctx)
@@ -1151,9 +1136,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.EmailTemplate.Query().Where(emailtemplate.WorkspaceID(ws)).Order(Asc(emailtemplate.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.EmailTemplate().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.EmailTemplate().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.EmailTemplate().UpdateOneID(id).Exec(ctx)
@@ -1200,9 +1184,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Erasure.Query().Where(erasure.WorkspaceID(ws)).Order(Asc(erasure.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Erasure().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Erasure().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Erasure().UpdateOneID(id).Exec(ctx)
@@ -1252,9 +1235,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Event.Query().Where(event.WorkspaceID(ws)).Order(Asc(event.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Event().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Event().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Event().UpdateOneID(id).Exec(ctx)
@@ -1345,9 +1327,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.HeldOrderEvent.Query().Where(heldorderevent.WorkspaceID(ws)).Order(Asc(heldorderevent.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.HeldOrderEvent().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.HeldOrderEvent().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.HeldOrderEvent().UpdateOneID(id).Exec(ctx)
@@ -1389,9 +1370,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Hold.Query().Where(hold.WorkspaceID(ws)).Order(Asc(hold.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Hold().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Hold().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Hold().UpdateOneID(id).Exec(ctx)
@@ -1436,9 +1416,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Integration.Query().Where(integration.WorkspaceID(ws)).Order(Asc(integration.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Integration().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Integration().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Integration().UpdateOneID(id).Exec(ctx)
@@ -1542,9 +1521,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Invitation.Query().Where(invitation.WorkspaceID(ws)).Order(Asc(invitation.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Invitation().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Invitation().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Invitation().UpdateOneID(id).Exec(ctx)
@@ -1593,9 +1571,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.JoinDomain.Query().Where(joindomain.WorkspaceID(ws)).Order(Asc(joindomain.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.JoinDomain().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.JoinDomain().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.JoinDomain().UpdateOneID(id).Exec(ctx)
@@ -1640,9 +1617,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Membership.Query().Where(membership.WorkspaceID(ws)).Order(Asc(membership.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Membership().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Membership().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Membership().UpdateOneID(id).Exec(ctx)
@@ -1700,9 +1676,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OAuthCode.Query().Where(oauthcode.WorkspaceID(ws)).Order(Asc(oauthcode.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.OAuthCode().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.OAuthCode().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.OAuthCode().UpdateOneID(id).Exec(ctx)
@@ -1756,9 +1731,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Order.Query().Where(order.WorkspaceID(ws)).Order(Asc(order.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Order().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Order().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Order().UpdateOneID(id).Exec(ctx)
@@ -1822,9 +1796,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OrderMovement.Query().Where(ordermovement.WorkspaceID(ws)).Order(Asc(ordermovement.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.OrderMovement().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.OrderMovement().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.OrderMovement().UpdateOneID(id).Exec(ctx)
@@ -1871,9 +1844,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.OutboundMessage.Query().Where(outboundmessage.WorkspaceID(ws)).Order(Asc(outboundmessage.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.OutboundMessage().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.OutboundMessage().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.OutboundMessage().UpdateOneID(id).Exec(ctx)
@@ -2037,9 +2009,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.ProviderLimiter.Query().Where(providerlimiter.WorkspaceID(ws)).Order(Asc(providerlimiter.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.ProviderLimiter().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ProviderLimiter().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.ProviderLimiter().UpdateOneID(id).Exec(ctx)
@@ -2080,9 +2051,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Rule.Query().Where(rule.WorkspaceID(ws)).Order(Asc(rule.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Rule().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Rule().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Rule().UpdateOneID(id).Exec(ctx)
@@ -2159,9 +2129,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleFiring.Query().Where(rulefiring.WorkspaceID(ws)).Order(Asc(rulefiring.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.RuleFiring().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.RuleFiring().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.RuleFiring().UpdateOneID(id).Exec(ctx)
@@ -2229,9 +2198,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleVersion.Query().Where(ruleversion.WorkspaceID(ws)).Order(Asc(ruleversion.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.RuleVersion().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.RuleVersion().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.RuleVersion().UpdateOneID(id).Exec(ctx)
@@ -2293,9 +2261,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.RuleVersionTrigger.Query().Where(ruleversiontrigger.WorkspaceID(ws)).Order(Asc(ruleversiontrigger.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.RuleVersionTrigger().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.RuleVersionTrigger().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.RuleVersionTrigger().UpdateOneID(id).Exec(ctx)
@@ -2341,9 +2308,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Segment.Query().Where(segment.WorkspaceID(ws)).Order(Asc(segment.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Segment().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Segment().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Segment().UpdateOneID(id).Exec(ctx)
@@ -2388,9 +2354,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendCapLimiter.Query().Where(sendcaplimiter.WorkspaceID(ws)).Order(Asc(sendcaplimiter.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.SendCapLimiter().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.SendCapLimiter().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.SendCapLimiter().UpdateOneID(id).Exec(ctx)
@@ -2429,9 +2394,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.SendingDomain.Query().Where(sendingdomain.WorkspaceID(ws)).Order(Asc(sendingdomain.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.SendingDomain().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.SendingDomain().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.SendingDomain().UpdateOneID(id).Exec(ctx)
@@ -2490,9 +2454,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.StartToken.Query().Where(starttoken.WorkspaceID(ws)).Order(Asc(starttoken.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.StartToken().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.StartToken().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.StartToken().UpdateOneID(id).Exec(ctx)
@@ -2541,9 +2504,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Suppression.Query().Where(suppression.WorkspaceID(ws)).Order(Asc(suppression.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Suppression().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Suppression().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Suppression().UpdateOneID(id).Exec(ctx)
@@ -2596,9 +2558,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Tag.Query().Where(tag.WorkspaceID(ws)).Order(Asc(tag.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Tag().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Tag().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Tag().UpdateOneID(id).Exec(ctx)
@@ -2637,9 +2598,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.TrackedLink.Query().Where(trackedlink.WorkspaceID(ws)).Order(Asc(trackedlink.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.TrackedLink().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.TrackedLink().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.TrackedLink().UpdateOneID(id).Exec(ctx)
@@ -2681,9 +2641,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.TrackingDomain.Query().Where(trackingdomain.WorkspaceID(ws)).Order(Asc(trackingdomain.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.TrackingDomain().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.TrackingDomain().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.TrackingDomain().UpdateOneID(id).Exec(ctx)
@@ -2735,9 +2694,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(ws)).Order(Asc(unsubscribe.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Unsubscribe().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Unsubscribe().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Unsubscribe().UpdateOneID(id).Exec(ctx)
@@ -2790,9 +2748,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Usage.Query().Where(usage.WorkspaceID(ws)).Order(Asc(usage.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Usage().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Usage().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Usage().UpdateOneID(id).Exec(ctx)
@@ -2836,9 +2793,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.Visitor.Query().Where(visitor.WorkspaceID(ws)).Order(Asc(visitor.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.Visitor().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.Visitor().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.Visitor().UpdateOneID(id).Exec(ctx)
@@ -2899,9 +2855,8 @@ func ScopedEntities() []*ScopedEntity {
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.WebhookEndpoint.Query().Where(webhookendpoint.WorkspaceID(ws)).Order(Asc(webhookendpoint.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.WebhookEndpoint().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.WebhookEndpoint().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.WebhookEndpoint().UpdateOneID(id).Exec(ctx)

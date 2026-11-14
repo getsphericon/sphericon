@@ -1,8 +1,9 @@
 {{/*
 Audit capture in the scoped client (ADR 0022). The actor (kind, id) is part of
-*ent.Scoped. For an entity that opts in with schema.Audited the wrappers in scoped.tmpl
-open a transaction (or join the one the scope is already bound to), run the mutation and
-publish an audit change through the scope's AuditPublisher in it. A scope without an
+*ent.Scoped. For an entity that opts in with schema.Audited every wrapper in scoped.tmpl
+writes through the entity's one audited write (write<N>), which opens a transaction (or
+joins the one the scope is already bound to), builds and runs the mutation on that
+transaction's client and publishes an audit change through the scope's AuditPublisher in it. A scope without an
 actor, or with the `ingest` actor, takes the plain path with no transaction and no
 entry. ent cannot import internal/infra/events, so the transaction opener and the publisher
 are small interfaces that the events bus implements.
@@ -236,28 +237,6 @@ func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
 	{{- end }}
 	{{- end }}
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *{{ $N }}Create) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}UpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}Update) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}Delete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}CreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 {{- end }}
 {{ end }}

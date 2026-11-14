@@ -209,28 +209,6 @@ func auditChangeApiToken(verb string, before, after *ApiToken) AuditChange {
 	return change
 }
 
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *ApiTokenCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
-}
-func (b *ApiTokenUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
-}
-func (b *ApiTokenUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
-}
-func (b *ApiTokenDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.ApiToken.Hooks()
-}
-func (b *ApiTokenCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // AutomationAuditSensitive lists the Automation fields whose values never reach the Audit log.
 var AutomationAuditSensitive = map[string]bool{}
 
@@ -266,28 +244,6 @@ func auditChangeAutomation(verb string, before, after *Automation) AuditChange {
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *AutomationCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
-}
-func (b *AutomationUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
-}
-func (b *AutomationUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
-}
-func (b *AutomationDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Automation.Hooks()
-}
-func (b *AutomationCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // BrandKitAuditSensitive lists the BrandKit fields whose values never reach the Audit log.
@@ -327,28 +283,6 @@ func auditChangeBrandKit(verb string, before, after *BrandKit) AuditChange {
 		Diff:       AuditDiff(b, a, BrandKitAuditSensitive),
 	}
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *BrandKitCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
-}
-func (b *BrandKitUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
-}
-func (b *BrandKitUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
-}
-func (b *BrandKitDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.BrandKit.Hooks()
-}
-func (b *BrandKitCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // BroadcastAuditSensitive lists the Broadcast fields whose values never reach the Audit log.
@@ -404,28 +338,6 @@ func auditChangeBroadcast(verb string, before, after *Broadcast) AuditChange {
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *BroadcastCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
-}
-func (b *BroadcastUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
-}
-func (b *BroadcastUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
-}
-func (b *BroadcastDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Broadcast.Hooks()
-}
-func (b *BroadcastCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // ContactAuditSensitive lists the Contact fields whose values never reach the Audit log (all of them: names only).
@@ -485,28 +397,6 @@ func auditChangeContact(verb string, before, after *Contact) AuditChange {
 	return change
 }
 
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *ContactCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
-}
-func (b *ContactUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
-}
-func (b *ContactUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
-}
-func (b *ContactDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Contact.Hooks()
-}
-func (b *ContactCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // CustomFieldAuditSensitive lists the CustomField fields whose values never reach the Audit log.
 var CustomFieldAuditSensitive = map[string]bool{}
 
@@ -539,28 +429,6 @@ func auditChangeCustomField(verb string, before, after *CustomField) AuditChange
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *CustomFieldCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
-}
-func (b *CustomFieldUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
-}
-func (b *CustomFieldUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
-}
-func (b *CustomFieldDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.CustomField.Hooks()
-}
-func (b *CustomFieldCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // EmailTemplateAuditSensitive lists the EmailTemplate fields whose values never reach the Audit log.
@@ -599,28 +467,6 @@ func auditChangeEmailTemplate(verb string, before, after *EmailTemplate) AuditCh
 	return change
 }
 
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *EmailTemplateCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
-}
-func (b *EmailTemplateUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
-}
-func (b *EmailTemplateUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
-}
-func (b *EmailTemplateDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.EmailTemplate.Hooks()
-}
-func (b *EmailTemplateCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // HoldAuditSensitive lists the Hold fields whose values never reach the Audit log.
 var HoldAuditSensitive = map[string]bool{}
 
@@ -656,28 +502,6 @@ func auditChangeHold(verb string, before, after *Hold) AuditChange {
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Key))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *HoldCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
-}
-func (b *HoldUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
-}
-func (b *HoldUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
-}
-func (b *HoldDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Hold.Hooks()
-}
-func (b *HoldCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // IntegrationAuditSensitive lists the Integration fields whose values never reach the Audit log.
@@ -734,28 +558,6 @@ func auditChangeIntegration(verb string, before, after *Integration) AuditChange
 	return change
 }
 
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *IntegrationCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
-}
-func (b *IntegrationUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
-}
-func (b *IntegrationUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
-}
-func (b *IntegrationDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Integration.Hooks()
-}
-func (b *IntegrationCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // JoinDomainAuditSensitive lists the JoinDomain fields whose values never reach the Audit log.
 var JoinDomainAuditSensitive = map[string]bool{
 	"token": true,
@@ -791,28 +593,6 @@ func auditChangeJoinDomain(verb string, before, after *JoinDomain) AuditChange {
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Domain))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *JoinDomainCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
-}
-func (b *JoinDomainUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
-}
-func (b *JoinDomainUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
-}
-func (b *JoinDomainDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.JoinDomain.Hooks()
-}
-func (b *JoinDomainCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // RuleAuditSensitive lists the Rule fields whose values never reach the Audit log.
@@ -852,28 +632,6 @@ func auditChangeRule(verb string, before, after *Rule) AuditChange {
 	return change
 }
 
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *RuleCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
-}
-func (b *RuleUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
-}
-func (b *RuleUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
-}
-func (b *RuleDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Rule.Hooks()
-}
-func (b *RuleCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // SegmentAuditSensitive lists the Segment fields whose values never reach the Audit log.
 var SegmentAuditSensitive = map[string]bool{}
 
@@ -906,28 +664,6 @@ func auditChangeSegment(verb string, before, after *Segment) AuditChange {
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *SegmentCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
-}
-func (b *SegmentUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
-}
-func (b *SegmentUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
-}
-func (b *SegmentDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Segment.Hooks()
-}
-func (b *SegmentCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // SendingDomainAuditSensitive lists the SendingDomain fields whose values never reach the Audit log.
@@ -973,28 +709,6 @@ func auditChangeSendingDomain(verb string, before, after *SendingDomain) AuditCh
 	return change
 }
 
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *SendingDomainCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
-}
-func (b *SendingDomainUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
-}
-func (b *SendingDomainUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
-}
-func (b *SendingDomainDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.SendingDomain.Hooks()
-}
-func (b *SendingDomainCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
-}
-
 // TagAuditSensitive lists the Tag fields whose values never reach the Audit log.
 var TagAuditSensitive = map[string]bool{}
 
@@ -1025,28 +739,6 @@ func auditChangeTag(verb string, before, after *Tag) AuditChange {
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *TagCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
-}
-func (b *TagUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
-}
-func (b *TagUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
-}
-func (b *TagDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.Tag.Hooks()
-}
-func (b *TagCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // TrackingDomainAuditSensitive lists the TrackingDomain fields whose values never reach the Audit log.
@@ -1085,28 +777,6 @@ func auditChangeTrackingDomain(verb string, before, after *TrackingDomain) Audit
 	}
 	change.TargetName = fmt.Sprint(derefAudit(target.Host))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *TrackingDomainCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
-}
-func (b *TrackingDomainUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
-}
-func (b *TrackingDomainUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
-}
-func (b *TrackingDomainDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.TrackingDomain.Hooks()
-}
-func (b *TrackingDomainCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // WebhookEndpointAuditSensitive lists the WebhookEndpoint fields whose values never reach the Audit log.
@@ -1151,28 +821,6 @@ func auditChangeWebhookEndpoint(verb string, before, after *WebhookEndpoint) Aud
 	}
 	change.TargetName = auditURLName(fmt.Sprint(derefAudit(target.URL)))
 	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *WebhookEndpointCreate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
-}
-func (b *WebhookEndpointUpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
-}
-func (b *WebhookEndpointUpdate) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
-}
-func (b *WebhookEndpointDelete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.WebhookEndpoint.Hooks()
-}
-func (b *WebhookEndpointCreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
 }
 
 // auditKeep makes an update's diff carry the field even when it did not change.

@@ -26,14 +26,14 @@ type ScopedEntity struct {
 	// Wrapper is the type of its scoped wrapper (*<Name>Scoped), whose methods the kind decides.
 	Wrapper reflect.Type
 	// AuditActions are the actions its Audit entries record (`<entity>.<verb>`, the entity being
-	// schema.Audited.Action): create, update and delete (Purge), then discard for a discardable
-	// entity, which is never restored, and archive and unarchive for an archivable one (ADR 0100).
-	// None when the entity is not audited.
+	// schema.Audited.Action, the verbs internal/entgen's Verbs gives its kind): create, update and
+	// delete (Purge), then discard for a discardable entity, which is never restored, and archive and
+	// unarchive for an archivable one (ADR 0100). None when the entity is not audited.
 	AuditActions []string
 	// IDs lists the ids of the Workspace's rows, read through the raw client.
 	IDs func(ctx context.Context, c *Client, ws int64) ([]int64, error)
 	// Get reads the row through the scoped client.
-	Get func(ctx context.Context, s *Scoped, id int64) error
+	Get func(ctx context.Context, s *Scoped, id int64) (any, error)
 	// Touch updates the row by id through the scoped client (only updated_at changes).
 	Touch func(ctx context.Context, s *Scoped, id int64) error
 	// BulkTouch is the conditional bulk update of the row; it returns the rows changed.
@@ -77,13 +77,12 @@ func ScopedEntities() []*ScopedEntity {
 			Kind: Kinds["{{ $N }}"],
 			Name: "{{ $N }}",
 			Wrapper: reflect.TypeFor[*{{ $N }}Scoped](),
-			AuditActions: []string{ {{- with auditOf $n }}"{{ .Action }}.create", "{{ .Action }}.update", "{{ .Action }}.delete"{{ if discardable $n }}, "{{ .Action }}.discard"{{ end }}{{ if archivable $n }}, "{{ .Action }}.archive", "{{ .Action }}.unarchive"{{ end }}{{ end -}} },
+			AuditActions: []string{ {{- range $v := auditVerbs $n }}"{{ (auditOf $n).Action }}.{{ $v }}", {{ end -}} },
 			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
 				return c.{{ $N }}.Query().Where({{ $P }}.WorkspaceID(ws)).Order(Asc({{ $P }}.FieldID)).IDs(ctx)
 			},
-			Get: func(ctx context.Context, s *Scoped, id int64) error {
-				_, err := s.{{ $N }}().Get(ctx, id)
-				return err
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.{{ $N }}().Get(ctx, id)
 			},
 			Touch: func(ctx context.Context, s *Scoped, id int64) error {
 				return s.{{ $N }}().UpdateOneID(id).Exec(ctx)
