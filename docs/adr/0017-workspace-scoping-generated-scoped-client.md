@@ -33,6 +33,19 @@ Every Workspace-owned entity (GLOSSARY "Workspace") is reached through a **scope
 - The time-mixin migration also set `DEFAULT CURRENT_TIMESTAMP` on the existing `created_at`/`updated_at` columns of the other tables, not only on the four added `updated_at` columns.
 - Schemas share a `WorkspaceMixin` (`workspace_id` plus the `workspace` edge) and a `TimeMixin` (`created_at`, `updated_at`, on every entity including append-only ones, for uniformity).
 
+## References agree about their owner
+
+Workspace equality is necessary but insufficient when a row names both an owner and one of its
+children. An Enrollment's version belongs to its named Automation; a Firing's version belongs to
+its Rule; an owner's live and draft pointers name its own versions. A message's recipient belongs
+to its named Broadcast, and its Enrollment belongs to its named Automation. These relationships
+are checked at the owning operation and enforced by owner-qualified foreign keys in the database,
+so individually valid ids cannot combine into a contradictory row within one Workspace.
+
+Deleting a nullable recipient or Enrollment reference still clears only that reference. The
+message keeps its permanent Broadcast or Automation provenance, as its history requires; owner
+coupling must not turn that deletion into a cascade or clear the permanent owner.
+
 ## Considered options
 
 - **ent interceptor / privacy policy reading the Workspace from `context`.** Rejected: the scope is hidden state in `ctx`, and the legitimate unscoped actors above need bypass flags that become the place bugs live. It also adds the Intercept and Privacy codegen features, which change every generated builder.

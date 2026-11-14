@@ -23,32 +23,73 @@ Sphericon's.
   Every other Event is ingested as before, and a valid order Event is stored like any Event and read
   after it is stored. A field the spec has and Sphericon does not use is kept in the Event's properties.
 - **An Order is a read model of those Events**, one per (Workspace, `order_id`), and its revenue is
-  a list of dated **movements**, never a figure that is rewritten. `Order Completed` creates it and
-  adds its `total` on the day of its Event; a repeat of the same `order_id` is a no-op. `Order Updated`
-  adds the difference between its new `total` and the one before, on the day of the update.
-  `Order Cancelled` takes back what is left, on its own day, like a refund. The spec has no `provider`,
-  so two shops feeding one Workspace must keep their order ids apart.
+  a list of dated **movements**, not a mutable counter on its Broadcast or Automation. The source
+  facts are immutable; movements are a derived report projection that can be rebuilt when late
+  facts change the source history. `Order Completed` creates the Order and adds its `total` on the
+  day of its Event; an identical repeat of the same `order_id` is a no-op and a conflicting one is
+  refused, as specified below. `Order Updated` changes its purchase
+  amount, preserving its refunds, and the movement is the resulting change in net revenue.
+  `Order Cancelled` takes back what is left on its own day. Cancellation remains in force after
+  an Update: a new purchase amount does not reopen a cancelled Order or restore its revenue.
+  The spec has no `provider`, so two shops feeding one Workspace must keep their order ids apart.
 - **An order Event that arrives before its `Order Completed`** is kept and applied, by its own time,
   once the `Order Completed` arrives. An Order that never gets one counts nothing.
-- **Revenue is `total`.** It is the one amount the spec carries on all four events and already has
-  discounts applied. `revenue` (which leaves out shipping and tax) is optional in the spec and absent
-  from refunds, so it is not read.
+- **A Completed or Updated `total` is the purchase amount before refunds**, with discounts
+  already applied. An Update changes that purchase amount; it does not replace net revenue or
+  undo earlier refunds. Completed 100, Refunded 20, Updated 130 therefore leaves revenue of 110.
+  On Refunded, `total` is instead that refund's amount, as specified below. The optional `revenue`
+  field, which leaves out shipping and tax and is absent from refunds, is not read.
 - **One `Order Refunded` Event is one refund.** Its `total` is the amount refunded, as PostHog's
   ecommerce spec and GA4's refund `value` also read it; the Segment and RudderStack specs leave the
   word open, so this is the rule Sphericon documents for senders. A shop that refunds twice sends two
   Events. Refunds are only added: an optional `refund_id` property, when present, makes a repeat of the
-  same refund of the same `order_id` a no-op, and without it each Event counts. The net revenue of an
-  Order is its total minus its refunds, never below zero: a refund that would take it under zero is
-  applied only up to what is left, and the Event stays as sent. A refund and a cancellation are movements like the rest.
+  same refund of the same `order_id` a no-op when its financial input agrees, and without it each
+  distinct Event counts. The net revenue of an
+  Order is its purchase amount minus the sum of its refunds, never below zero; a cancelled Order
+  counts nothing. Each original refund amount is kept in full even when it exceeds the current
+  purchase amount: the floor applies to the revenue projection, not to the fact. Completed 100,
+  Refunded 80, Updated 60 leaves zero; a later Update to 120 leaves 40. A refund and a cancellation
+  produce movements like the rest.
+- **A repeated financial identity must repeat the same fact.** The identity of an Event, a
+  Completion's `(Workspace, order_id)` and a refund's `(Workspace, order_id, refund_id)` each
+  resolve to the accepted fact. An identical repeat changes nothing. A different purchase or
+  refund amount, currency, kind or explicitly supplied occurrence time under that identity is
+  a conflict, not a silently ignored correction; a different Order under one Event identity is
+  a conflict too. The intake reports the conflict without replacing the accepted financial input
+  or its projection. A correction of purchase amount is a new `Order Updated`, with its own
+  Event identity. Equality concerns the normalized financial inputs, not ignored customer
+  properties or JSON formatting. A retry that omits `occurredAt` reuses its accepted time instead
+  of manufacturing a new one. This is the Orders' deduplication contract, not a change to every
+  arbitrary customer's Event. A refund without `refund_id` still uses its Event identity; distinct
+  Events without a shared refund key are distinct refunds.
 - **Money is stored as an integer in the currency's minor unit** with an ISO 4217 code. The spec sends
   plain decimal numbers, which are converted at ingest using the currency's own exponent (two places for
   USD, none for JPY); an amount with more places than the currency has is rejected, not rounded.
-- **Time is the sender's, within the rules of Backfill.** A movement is dated at its Event's
-  `occurredAt`. A live Event on the external API older than the live window is refused, so a shop's
+- **Time and order are the sender's, within the rules of Backfill.** A movement is dated at its
+  Event's `occurredAt`. Facts of one Order are interpreted by `(occurredAt, eventId)`, with the
+  stable Event identity breaking equal times deterministically; delivery order decides neither
+  the current total nor historical daily amounts. An identity assigned when the source supplies
+  none stays the same for that accepted fact. No source revision is required. The id tie-breaker
+  is an explicit convention, not a claim to recover a source sequence absent from the input.
+  A late fact rebuilds the affected movements and their Report days, even after they were shown;
+  it does not publish the source Event again or repeat its marketing reactions.
+  A live Event on the external API older than the live window is refused, so a shop's
   history is loaded as a Backfill
   ([[0044-history-arrives-as-a-backfill-and-a-live-event-never-claims-to-be-old]]): its order Events
   build Orders and trigger nothing. A Backfill credits an Order only while the click is still kept: the
   Events' retention is 400 days by default and counts from when an Event is stored (ADR 0019).
+- **The Orders module retains the minimal financial inputs for as long as the Order exists.**
+  Each versioned input contains its kind, original purchase or refund amount, interpreted currency,
+  occurrence time and stable opaque identities for the fact and, when given, the refund. A retained
+  financial fingerprint supports the repeat check; arbitrary client ids are represented by scoped
+  opaque keys, not retained as raw customer strings. These inputs belong to the Order's history,
+  not the original Event envelope or a new archive of every publication. They retain neither a
+  Contact reference, an address, arbitrary Event properties nor the original payload. They survive
+  Contact Erasure with their Order, whose existing shop `order_id` remains the key for later
+  refunds, and go with Workspace erasure. Analytical Event retention and receipt expiry do not
+  remove these inputs or their deduplication guarantee. Restatement reads them, so it still works
+  after the original Event was pruned or erased. This supplies a financial projection's own
+  rebuild inputs without expanding the journal's replay allowlist (ADR 0116).
 - **One reporting currency per Workspace** (amended below: the first Order sets it), set by the Owner or an Admin, who also set the window; both
   changes enter the audit log. Revenue is not shown until the currency is chosen, and an Order without a
   `currency` counts in it. An Order Completed that names no currency while none is chosen is kept as
@@ -71,11 +112,13 @@ Sphericon's.
   before it, credits nothing: the credit is not looked for again. Of two clicks inside the window, the later
   wins, and equal times go to the click Event stored last. An Order is placed on the Contact the Event
   resolves to by the existing identity rule; an Event for no known Contact is still an Order, counts in
-  total revenue and is credited to nothing. An Order never creates a Contact.
+  total revenue and is credited to nothing. An Order never creates a Contact. Restating financial
+  movements does not rerun this choice: late amount facts and refunds change the revenue of the
+  same credited source; late clicks and later Attribution window changes never move the Order.
 - **Broadcast and Automation revenue are sums over the Orders credited to them**, never a figure stored
   on them. Every movement of an Order goes to the Broadcast
-  or Automation the Order is credited to, on the day of the movement, so a figure already shown for a
-  past day does not change.
+  or Automation the Order is credited to, on the day of the movement. Late source facts can refine
+  a figure already shown for a past day; there is no promise of a closed accounting period.
 - **The overview and the reports say what they count.** The overview shows revenue for 7, 30 or 90 Report
   days (30 by default) in the Workspace time zone and the share of it credited to messages, labelled as the revenue of the orders the Workspace sent in, not of its
   shop. A Broadcast and an Automation show orders and revenue; the denominator of any per-recipient

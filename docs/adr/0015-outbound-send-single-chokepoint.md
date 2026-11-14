@@ -59,6 +59,13 @@ go out ends with a Failed one, recorded by Outbound send). It stores provenance
 and outcome, never rendered content (the by-reference rule of ADR 0005 and the copy rule of
 ADR 0003 are untouched — they decide which content the caller passes in).
 
+The database enforces at most one Outbound message with a non-null Broadcast recipient reference,
+and at most one with the same non-null Enrollment and Step references, within a Workspace. These
+unique keys protect logical send identity independently of the generic idempotency key's string
+format: a retry reuses its message rather than creating another under a different key. Nullable
+links can still be cleared by Erasure or retention; they do not make unrelated historical messages
+collide. Transactional sends retain their own idempotency-key contract and its retention window.
+
 The record gives `email.*` Events a uniform envelope (surface reference, Sending source, Sending
 domain, provider message id), which ADR 0011 needs and the old per-surface events could not carry.
 The Complaint/Bounce rate stays a **flow rate** with no send↔feedback correlation, as decided in
