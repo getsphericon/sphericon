@@ -8,8 +8,8 @@ const (
 	RoleRead = "read"
 	// RoleStart starts a write: it returns the builder of one, or writes at once.
 	RoleStart = "start"
-	// RoleWrite carries on a write already started: a setter, a condition, the execution.
-	RoleWrite = "write"
+	// RoleStep carries on a write already started: a setter, a condition, the execution.
+	RoleStep = "step"
 	// RoleNone reads and writes no row.
 	RoleNone = "none"
 )

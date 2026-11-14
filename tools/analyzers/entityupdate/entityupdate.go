@@ -1,4 +1,5 @@
-// Package entityupdate refuses the update of a loaded entity (ADR 0017). An entity loaded through the
+// Package entityupdate enforces rule 18 of docs/standards/review-rules.md for a loaded entity: it
+// refuses its update (ADR 0017). An entity loaded through the
 // scoped client still carries the raw client, so `tag.Update()` writes past the Workspace scope; the
 // update goes by id through the scoped client instead (`s.Tag().UpdateOneID(id)`). What is an entity
 // and which of its methods starts a write is the generator's to say: the manifest of roles of the ent
@@ -47,7 +48,7 @@ func run(pass *analysis.Pass) (any, error) {
 			return
 		}
 		entity := named.Obj().Name()
-		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(0,
+		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(18,
 			sel.Sel.Name+" on a loaded "+entity+" writes through the raw client it carries, past the Workspace scope (ADR 0017)",
 			"update it by id through the scoped client: s."+entity+"().UpdateOneID(id)"))
 	})

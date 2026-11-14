@@ -177,3 +177,11 @@ or `AGENTS.md`.
     validates, what an empty list says and how a table loads come from the document, not from the
     nearest screen. A screen that departs from a rule says so in its pull request; a rule marked
     target is followed by every new screen even where the old ones are not yet brought in line.
+
+## Isolation
+
+18. **A Workspace's data is reached only through its scope** (ADR 0017). Every read and write of a
+    Workspace-owned row goes through the scope of that Workspace, which confines the statement to it
+    and checks every reference the write sets; a path without one is a named entry of the closed list
+    in `docs/architecture/workspace-scoping.md`. A row loaded through the scope is not written through
+    the client it still carries: it is updated by id through the scope.

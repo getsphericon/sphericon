@@ -50,8 +50,8 @@ func (*TagScopedDelete) Exec(context.Context) (int, error) { return 0, nil }
 const (
 	TypeOf_TagScopedDelete       = TypeScopedDelete
 	EntityOf_TagScopedDelete     = "Tag"
-	RoleOf_TagScopedDelete_Where = RoleWrite
-	RoleOf_TagScopedDelete_Exec  = RoleWrite
+	RoleOf_TagScopedDelete_Where = RoleStep
+	RoleOf_TagScopedDelete_Exec  = RoleStep
 )
 
 type ContactScoped struct{}
@@ -72,8 +72,8 @@ func (*ContactScopedUpdateOne) Exec(context.Context) error                   { r
 const (
 	TypeOf_ContactScopedUpdateOne           = TypeScopedUpdate
 	EntityOf_ContactScopedUpdateOne         = "Contact"
-	RoleOf_ContactScopedUpdateOne_AddTagIDs = RoleWrite
-	RoleOf_ContactScopedUpdateOne_Exec      = RoleWrite
+	RoleOf_ContactScopedUpdateOne_AddTagIDs = RoleStep
+	RoleOf_ContactScopedUpdateOne_Exec      = RoleStep
 )
 
 type SegmentScoped struct{}
@@ -95,7 +95,7 @@ func (*SegmentScopedDelete) Exec(context.Context) (int, error) { return 0, nil }
 const (
 	TypeOf_SegmentScopedDelete      = TypeScopedDelete
 	EntityOf_SegmentScopedDelete    = "Segment"
-	RoleOf_SegmentScopedDelete_Exec = RoleWrite
+	RoleOf_SegmentScopedDelete_Exec = RoleStep
 )
 
 type AutomationScoped struct{}
@@ -127,5 +127,5 @@ type VersionedStore[O, V any] interface {
 const (
 	TypeOf_VersionedStore                = TypeOther
 	EntityOf_VersionedStore              = ""
-	RoleOf_VersionedStore_CompareAndSwap = RoleWrite
+	RoleOf_VersionedStore_CompareAndSwap = RoleStep
 )

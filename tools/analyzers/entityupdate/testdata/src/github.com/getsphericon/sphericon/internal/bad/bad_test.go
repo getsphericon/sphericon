@@ -9,5 +9,5 @@ import (
 
 // Test code is read too.
 func TestUpdate(t *testing.T) {
-	_ = (&ent.Tag{}).Update().Exec(context.Background()) // want `^rule 0: Update on a loaded Tag`
+	_ = (&ent.Tag{}).Update().Exec(context.Background()) // want `^rule 18: Update on a loaded Tag`
 }

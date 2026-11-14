@@ -49,13 +49,13 @@ const (
 	Read
 	// Start starts a write: it returns the builder of one, or writes at once.
 	Start
-	// Write carries on a write already started.
-	Write
+	// Step carries on a write already started: a setter, a condition, the execution.
+	Step
 	// None reads and writes no row.
 	None
 )
 
-var roles = map[string]Role{"RoleRead": Read, "RoleStart": Start, "RoleWrite": Write, "RoleNone": None}
+var roles = map[string]Role{"RoleRead": Read, "RoleStart": Start, "RoleStep": Step, "RoleNone": None}
 
 // Kind is what a type is (TypeOf_<Type>).
 type Kind int
