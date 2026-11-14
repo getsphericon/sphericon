@@ -21,7 +21,9 @@ executor, ActiveJob's `perform_enqueued_jobs`; a worker it does not know is adde
 sends, ADR 0105), so a test reads them as sent. A test that runs a real river runtime on its
 database passes that runtime a sender of its own. The harness registers a consumer of its own that
 wants every live event, so `env.QueuedEnvelopes` shows every event a test published, one no
-consumer of the application wants yet included.
+consumer of the application wants yet included. `testhelper.Queued[*events.AuditEntry](t, env,
+events.NameAuditEntry)` reads them as one type and fails on any other, so a test never asserts the
+type of a queued event itself.
 
 **Ride the transaction unless the test cannot.** A transaction costs the same however much the
 test writes, so `Setup` is the default, for a test of a hook, a refusal, a reader of the database,

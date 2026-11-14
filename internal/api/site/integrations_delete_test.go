@@ -134,11 +134,7 @@ func TestSiteIntegrationsDeleteIsAudited(t *testing.T) {
 
 	require.NoError(t, deleteIntegration(t, c, fixtures.IntegrationAcmeSesID))
 
-	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
-		entry, ok := ev.(*events.AuditEntry)
-		require.True(t, ok)
-		return entry
-	})
+	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	actions := lo.Map(entries, func(e *events.AuditEntry, _ int) string { return e.Action })
 	assert.Equal(t, []string{"integration.discard"}, actions)
 	assert.Equal(t, events.ActorUser, entries[0].Actor.Kind)

@@ -95,11 +95,11 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)
 	require.NoError(t, err)
 	assert.Equal(t, 1, report.Clicked, "the SMS report shows clicked")
-	clicks := env.QueuedEvents(t, systemevent.SmsClicked)
+	clicks := testhelper.Queued[*events.SmsClicked](t, env, systemevent.SmsClicked)
 	require.Len(t, clicks, 3)
-	assert.True(t, clicks[0].(*events.SmsClicked).Machine)
-	assert.True(t, clicks[1].(*events.SmsClicked).Machine)
-	human := clicks[2].(*events.SmsClicked)
+	assert.True(t, clicks[0].Machine)
+	assert.True(t, clicks[1].Machine)
+	human := clicks[2]
 	assert.False(t, human.Machine)
 	assert.Equal(t, id, human.BroadcastID)
 	assert.EqualValues(t, fixtures.ContactLacunaBeaID, human.ContactID)
@@ -183,8 +183,8 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	require.NoError(t, err)
 	assert.Equal(t, systemevent.SmsClicked, *run.EventAction)
 	assert.Equal(t, smsCart, run.EventProperties["url"])
-	clicks := env.QueuedEvents(t, systemevent.SmsClicked)
-	last := clicks[len(clicks)-1].(*events.SmsClicked)
+	clicks := testhelper.Queued[*events.SmsClicked](t, env, systemevent.SmsClicked)
+	last := clicks[len(clicks)-1]
 	assert.Equal(t, sender, last.AutomationID)
 }
 

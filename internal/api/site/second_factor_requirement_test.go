@@ -110,9 +110,9 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	assert.True(t, time.Time(w.SecondFactorRequirementGraceEndsAt.Value).Equal(at.Add(7*24*time.Hour)),
 		"the members there at the requirement's start have 7 days from it")
 
-	entries := env.QueuedEvents(t, events.NameAuditEntry)
+	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, entries, 1)
-	e := entries[0].(*events.AuditEntry)
+	e := entries[0]
 	assert.Equal(t, events.ActionWorkspaceUpdate, e.Action)
 	assert.Contains(t, e.Diff, "second_factor_required_at")
 

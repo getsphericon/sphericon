@@ -242,9 +242,8 @@ func TestAPersonalTokenActsAsItsUser(t *testing.T) {
 		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactVehementVicID)})
 	require.NoError(t, err)
 
-	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(e events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		entry, ok := e.(*events.AuditEntry)
-		return entry, ok && entry.Action == "contact.update"
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(entry *events.AuditEntry, _ int) bool {
+		return entry.Action == "contact.update"
 	})
 	mel := events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberPersonalTokenName}
 	require.Len(t, entries, 1)

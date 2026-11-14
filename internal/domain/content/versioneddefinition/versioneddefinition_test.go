@@ -511,9 +511,8 @@ func TestTheMovesAreAudited(t *testing.T) {
 			_, err = k.revert(ctx, s, k.live)
 			require.NoError(t, err)
 
-			entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-				e, ok := ev.(*events.AuditEntry)
-				return e, ok && e.TargetType == k.target && e.TargetID == testhelper.ID(k.live)
+			entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+				return e.TargetType == k.target && e.TargetID == testhelper.ID(k.live)
 			})
 			diffs := lo.Map(entries, func(e *events.AuditEntry, _ int) map[string]any { return e.Diff })
 

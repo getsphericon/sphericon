@@ -363,9 +363,7 @@ func TestChoosingAPresetAgainNeedsItsParamsInFull(t *testing.T) {
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_1", "a@example.com", true)).Code)
 
 	// Both changes of the Preset are in the Audit log, the secret in neither.
-	audit := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
-		e, ok := ev.(*events.AuditEntry)
-		require.Truef(t, ok, "got %T", ev)
+	audit := lo.Map(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) *events.AuditEntry {
 		raw, err := json.Marshal(e)
 		require.NoError(t, err)
 		assert.NotContains(t, string(raw), secretA)
@@ -397,11 +395,9 @@ func TestChoosingAPresetAndRotatingASecretAreAuditedWithoutTheSecret(t *testing.
 	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Params: secretParam(rotated)})
 	updateParams(t, c, id, &externalapi.UpdateIntegrationInput{Preset: externalapi.NewOptNilString("generic"), Params: secretParam(newSecret("again-0123456789"))})
 
-	entries := env.QueuedEvents(t, events.NameAuditEntry)
+	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.NotEmpty(t, entries)
-	for _, ev := range entries {
-		e, ok := ev.(*events.AuditEntry)
-		require.Truef(t, ok, "got %T", ev)
+	for _, e := range entries {
 		assert.Equal(t, "integration.update", e.Action)
 		assert.Equal(t, "changed", e.Diff["params_encrypted"], "the entry says only that the params changed")
 		raw, err := json.Marshal(e)

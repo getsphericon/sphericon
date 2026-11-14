@@ -367,9 +367,9 @@ func TestTestSendIsAuditedAsAWebhookEndpointTest(t *testing.T) {
 	_, err := moduleAllowing(t, env, rcv).TestSend(context.Background(), acting, fixtures.WebhookCodebasicsID, systemevent.EmailOpened)
 	require.NoError(t, err)
 
-	all := env.QueuedEvents(t, events.NameAuditEntry)
+	all := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, all, before+1)
-	e := all[len(all)-1].(*events.AuditEntry)
+	e := all[len(all)-1]
 	assert.Equal(t, events.ActionWebhookEndpointTest, e.Action)
 	assert.Equal(t, "webhook_endpoint", e.TargetType)
 	assert.Equal(t, "John", e.Actor.Name)
@@ -423,9 +423,7 @@ func newRecording(t *testing.T) *recording {
 // told of.
 func (r *recording) disabled() []*events.WebhookEndpointDisabled {
 	r.t.Helper()
-	return lo.Map(r.env.QueuedEvents(r.t, events.NameWebhookEndpointDisabled), func(ev events.DomainEvent, _ int) *events.WebhookEndpointDisabled {
-		return ev.(*events.WebhookEndpointDisabled)
-	})
+	return testhelper.Queued[*events.WebhookEndpointDisabled](r.t, r.env, events.NameWebhookEndpointDisabled)
 }
 
 func (r *recording) scope() *ent.Scoped { return r.env.DB.Scoped(fixtures.AcmeID) }
@@ -535,9 +533,8 @@ func TestRecordDeliveryDisablesOnGoneAndTellsTheOwnersOnce(t *testing.T) {
 	assert.Contains(t, sent[0].Text, "https://hooks.example.com")
 	assert.NotContains(t, sent[0].Text, "hidden")
 
-	entries := lo.FilterMap(r.env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		a := ev.(*events.AuditEntry)
-		return a, a.Action == "webhook_endpoint.update"
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, r.env, events.NameAuditEntry), func(a *events.AuditEntry, _ int) bool {
+		return a.Action == "webhook_endpoint.update"
 	})
 	require.Len(t, entries, 1)
 	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)

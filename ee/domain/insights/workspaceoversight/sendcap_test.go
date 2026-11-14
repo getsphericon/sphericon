@@ -56,9 +56,7 @@ func (h *harness) workspaceDetail(t *testing.T, c *staffeeapi.Client, id string)
 // sendCapChanges are the Send cap Audit entries published so far, as JSON of their diffs.
 func sendCapChanges(t *testing.T, env *testhelper.TestEnv) (entries []*events.AuditEntry, diffs []string) {
 	t.Helper()
-	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
-		e, ok := ev.(*events.AuditEntry)
-		require.True(t, ok)
+	for _, e := range testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry) {
 		if e.Action != events.ActionWorkspaceSendCapChange {
 			continue
 		}

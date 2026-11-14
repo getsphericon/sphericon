@@ -297,8 +297,8 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 
 	var seen []string
-	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
-		seen = append(seen, ev.(*events.AuditEntry).Action)
+	for _, ev := range testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry) {
+		seen = append(seen, ev.Action)
 	}
 	slices.Sort(seen)
 	seen = slices.Compact(seen)

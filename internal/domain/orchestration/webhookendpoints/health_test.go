@@ -209,9 +209,9 @@ func TestResetGenerationStaysOutOfTheConfigurationAudit(t *testing.T) {
 	_, err := r.mod.Update(t.Context(), sys, before.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, sys, before.ID), Enabled: patch.Set(true)})
 
 	require.NoError(t, err)
-	entries := r.env.QueuedEvents(t, events.NameAuditEntry)
+	entries := testhelper.Queued[*events.AuditEntry](t, r.env, events.NameAuditEntry)
 	require.Len(t, entries, 1)
-	entry := entries[0].(*events.AuditEntry)
+	entry := entries[0]
 	assert.Contains(t, entry.Diff, "consecutive_failures")
 	assert.NotContains(t, entry.Diff, "health_generation")
 }

@@ -160,11 +160,7 @@ func TestSiteAutomationsArchiveIsAudited(t *testing.T) {
 	_, err = c.SiteAutomationsUnarchive(context.Background(), siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.AutomationNotifySlackID})
 	require.NoError(t, err)
 
-	entries := lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
-		entry, ok := ev.(*events.AuditEntry)
-		require.True(t, ok)
-		return entry
-	})
+	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	actions := lo.Map(entries, func(e *events.AuditEntry, _ int) string { return e.Action })
 	assert.Equal(t, []string{"automation.archive", "automation.unarchive"}, actions)
 	assert.Equal(t, events.ActorUser, entries[0].Actor.Kind)

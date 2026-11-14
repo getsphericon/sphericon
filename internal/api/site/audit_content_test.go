@@ -39,8 +39,7 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 	require.NoError(t, err)
 
 	byAction := map[string]*events.AuditEntry{}
-	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
-		e := ev.(*events.AuditEntry)
+	for _, e := range testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry) {
 		byAction[e.Action] = e
 	}
 	require.Contains(t, byAction, "template.create")
@@ -75,9 +74,8 @@ func TestSiteContactChangesCarryNamesOnly(t *testing.T) {
 	err = c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
 
-	contactEntries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		e := ev.(*events.AuditEntry)
-		return e, e.TargetType == "contact"
+	contactEntries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.TargetType == "contact"
 	})
 	require.Len(t, contactEntries, 3)
 	assert.Equal(t, "contact.create", contactEntries[0].Action)

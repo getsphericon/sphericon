@@ -24,11 +24,7 @@ var johnActor = events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.
 // auditEntries decodes the Audit entries published so far in this test's transaction.
 func auditEntries(t *testing.T, env *testhelper.TestEnv) []*events.AuditEntry {
 	t.Helper()
-	return lo.Map(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) *events.AuditEntry {
-		entry, ok := ev.(*events.AuditEntry)
-		require.True(t, ok)
-		return entry
-	})
+	return testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 }
 
 func diffJSON(t *testing.T, e *events.AuditEntry) string {

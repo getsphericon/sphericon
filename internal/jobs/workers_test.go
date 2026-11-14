@@ -473,9 +473,8 @@ func TestDeliverWebhookWorkerDisablesOnGone(t *testing.T) {
 	}
 
 	// The Audit entry is the system actor's, and is the only one: the counter writes are not audited.
-	entries := lo.FilterMap(h.env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		a := ev.(*events.AuditEntry)
-		return a, a.Action == "webhook_endpoint.update"
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, h.env, events.NameAuditEntry), func(a *events.AuditEntry, _ int) bool {
+		return a.Action == "webhook_endpoint.update"
 	})
 	require.Len(t, entries, 1)
 	assert.Equal(t, events.ActorSystem, entries[0].Actor.Kind)

@@ -97,8 +97,7 @@ func TestExternalWebhookActionsAreAuditedAsTheAPIToken(t *testing.T) {
 	require.NoError(t, err)
 
 	actions := map[string]*events.AuditEntry{}
-	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
-		e := ev.(*events.AuditEntry)
+	for _, e := range testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry) {
 		actions[e.Action] = e
 	}
 	require.Contains(t, actions, "webhook_endpoint.update")

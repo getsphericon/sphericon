@@ -42,10 +42,9 @@ func TestAutomationOpensAndClicksAreEventsCarryingTheAutomation(t *testing.T) {
 	assert.Equal(t, linkA, resp.Header().Get("Location"))
 
 	for _, name := range []string{systemevent.EmailOpened, systemevent.EmailClicked} {
-		got := env.QueuedEvents(t, name)
+		got := testhelper.Queued[*events.EmailEngagement](t, env, name)
 		require.Len(t, got, 1, name)
-		e, ok := got[0].(*events.EmailEngagement)
-		require.True(t, ok)
+		e := got[0]
 		assert.EqualValues(t, fixtures.AutomationWelcomeSeriesID, e.AutomationID)
 		assert.EqualValues(t, fixtures.OutboundMessageAutomationTrackedID, e.OutboundMessageID)
 		assert.Zero(t, e.BroadcastID, "an Automation email belongs to no Broadcast")

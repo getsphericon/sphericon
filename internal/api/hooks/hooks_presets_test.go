@@ -62,9 +62,7 @@ func mailgunPost(t *testing.T, env *testhelper.TestEnv, key, signingKey, eventDa
 func failuresFor(t *testing.T, env *testhelper.TestEnv, email string) []events.EmailDelivery {
 	t.Helper()
 	var out []events.EmailDelivery
-	for _, ev := range env.QueuedEvents(t, deliveryNames...) {
-		f, ok := ev.(*events.EmailDelivery)
-		require.Truef(t, ok, "got %T", ev)
+	for _, f := range testhelper.Queued[*events.EmailDelivery](t, env, deliveryNames...) {
 		if f.Email == email {
 			out = append(out, *f)
 		}

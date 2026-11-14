@@ -158,9 +158,8 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 	assert.Equal(t, "Alias", renamed.Name)
 	assert.Equal(t, "plan", renamed.Key)
 	assert.Equal(t, "Nick", final.Name)
-	updates := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		e := ev.(*events.AuditEntry)
-		return e, e.Action == "custom_field.update"
+	updates := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.Action == "custom_field.update"
 	})
 	assert.Len(t, updates, 2)
 }

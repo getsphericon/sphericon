@@ -231,10 +231,10 @@ func TestAConnectionActsAsItsUser(t *testing.T) {
 		externalapi.ContactsUpdateParams{ID: externalapi.EntityId(fixtures.ContactVehementVicID)})
 	require.NoError(t, err)
 
-	got := env.QueuedEvents(t, events.NameAuditEntry)
+	got := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got, 1)
 	assert.Equal(t, events.Actor{Kind: events.ActorUser, ID: testhelper.ID(fixtures.VehementMemberMelID), Name: fixtures.VehementMemberMelName + " via " + fixtures.VehementMemberConnectionName},
-		got[0].(*events.AuditEntry).Actor)
+		got[0].Actor)
 }
 
 // Each User sees and revokes their own Connections; members:manage sees and revokes anyone's.

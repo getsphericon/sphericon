@@ -22,11 +22,9 @@ var (
 // remindedUsers are the Users of the reminders the test's sweeps claimed, in claim order.
 func remindedUsers(t *testing.T, env *testhelper.TestEnv) []int64 {
 	t.Helper()
-	reminders := env.QueuedEvents(t, events.NameMembershipSecondFactorReminderDue)
+	reminders := testhelper.Queued[*events.SecondFactorReminderDue](t, env, events.NameMembershipSecondFactorReminderDue)
 	ids := make([]int64, 0, len(reminders))
-	for _, ev := range reminders {
-		due, ok := ev.(*events.SecondFactorReminderDue)
-		require.True(t, ok)
+	for _, due := range reminders {
 		m, err := env.DB.Membership.Get(t.Context(), due.MembershipID)
 		require.NoError(t, err)
 		ids = append(ids, m.UserID)
@@ -56,10 +54,9 @@ func TestRemindDeadlinesPublishesTheDeadline(t *testing.T) {
 
 	require.NoError(t, newModule(env).RemindDeadlines(t.Context(), ritaGraceEnds.Add(-12*time.Hour)))
 
-	due := env.QueuedEvents(t, events.NameMembershipSecondFactorReminderDue)
+	due := testhelper.Queued[*events.SecondFactorReminderDue](t, env, events.NameMembershipSecondFactorReminderDue)
 	require.Len(t, due, 1)
-	reminder, ok := due[0].(*events.SecondFactorReminderDue)
-	require.True(t, ok)
+	reminder := due[0]
 	assert.True(t, ritaGraceEnds.Equal(reminder.Deadline))
 	assert.EqualValues(t, fixtures.UmbrellaID, reminder.WorkspaceID)
 }
