@@ -5,6 +5,7 @@ package e2e
 import (
 	"net/http"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -17,6 +18,7 @@ import (
 // settings of the app, where the User copies it, and verifies every delivery with it.
 func (w *Workspace) SubscribeWebhook(eventTypes ...string) *Hook {
 	w.t.Helper()
+	// The endpoint's secret exists only once the endpoint does, so the Hook gets it after.
 	hook := w.NewHook(false)
 	res, err := w.api.WebhooksCreate(w.t.Context(), &externalapi.CreateWebhookInput{URL: hook.URL, EventTypes: eventTypes})
 	ok[externalapi.WebhookResource](w.t, "create webhook", res, err)
@@ -24,19 +26,15 @@ func (w *Workspace) SubscribeWebhook(eventTypes ...string) *Hook {
 	return hook
 }
 
-// webhookSecret is the signing secret the Webhooks settings show for the endpoint at url.
-func (w *Workspace) webhookSecret(url string) string {
+// webhookSecret is the signing secret the Webhooks settings show for the endpoint at endpointURL.
+func (w *Workspace) webhookSecret(endpointURL string) string {
 	w.t.Helper()
 	listed, err := w.site.SiteWebhooksList(w.t.Context(), siteapi.SiteWebhooksListParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
 	page := ok[siteapi.SiteWebhooksListOK](w.t, "list webhooks", listed, err)
-	for i := range page.Items {
-		if endpoint := &page.Items[i]; endpoint.URL == url {
-			require.NotEmpty(w.t, endpoint.Secret, "the settings show the signing secret of %s", url)
-			return endpoint.Secret
-		}
-	}
-	require.Failf(w.t, "webhook not listed", "the settings list no endpoint at %s", url)
-	return ""
+	endpoint, found := lo.Find(page.Items, func(e siteapi.SiteWebhookEndpointResource) bool { return e.URL == endpointURL })
+	require.True(w.t, found, "the settings list the endpoint at %s", endpointURL)
+	require.NotEmpty(w.t, endpoint.Secret, "the settings show the signing secret of %s", endpointURL)
+	return endpoint.Secret
 }
 
 // ClickLink follows the first tracked link of an email the way a person's browser does and
@@ -47,5 +45,6 @@ func (w *Workspace) ClickLink(msg Message, target string) {
 	link := msg.Link("/e/c/")
 	require.NotEmpty(w.t, link, "the email %q carries a tracked link", msg.Subject)
 	destination := w.openLink(link, http.StatusFound)
-	require.Equal(w.t, target, destination.String(), "the tracked link %s leads to its destination", link)
+	got := destination.String()
+	require.Equal(w.t, target, got, "the tracked link %s leads to its destination", link)
 }

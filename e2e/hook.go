@@ -85,10 +85,12 @@ func (h *Hooks) callsAt(path string) []HookCall {
 // Hook is one test's own endpoint on the receiver. It is the only way a scenario observes
 // an HTTP step: one wait, one absence check, like the Inbox.
 type Hook struct {
-	t      testing.TB
-	hooks  *Hooks
-	path   string
-	URL    string
+	t     testing.TB
+	hooks *Hooks
+	path  string
+	URL   string
+	// Secret is what every call's signature is verified with: the suite's own for a signed HTTP
+	// step, the one the app shows for a Webhook endpoint. An empty Secret expects no signature.
 	Secret string
 }
 

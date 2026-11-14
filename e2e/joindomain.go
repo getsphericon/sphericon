@@ -75,8 +75,9 @@ func (w *Workspace) SignUpColleague(domain string) *Colleague {
 	require.NotEmpty(w.t, link, "the verify mail carries a link: %q", mail.Text)
 	page, err := url.Parse(link)
 	require.NoError(w.t, err)
+	token := w.pageToken(page, "/verify-email")
 	verified, err := anonymous.SiteAuthVerifyEmail(ctx,
-		&siteapi.SiteVerifyEmailInput{Token: w.pageToken(page, "/verify-email"), Password: siteapi.NewOptString(colleaguePassword)},
+		&siteapi.SiteVerifyEmailInput{Token: token, Password: siteapi.NewOptString(colleaguePassword)},
 		siteapi.SiteAuthVerifyEmailParams{})
 	landed := ok[siteapi.SiteVerifyEmailResultHeaders](w.t, "follow the verify link", verified, err)
 

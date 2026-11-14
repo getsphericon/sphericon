@@ -43,7 +43,9 @@ func (w *Workspace) pageToken(page *url.URL, path string) string {
 	w.t.Helper()
 	app, err := url.Parse(w.env.BaseURL)
 	require.NoError(w.t, err)
-	require.Equal(w.t, app.Scheme+"://"+app.Host, page.Scheme+"://"+page.Host, "the page %s is on the app", page)
+	appOrigin := app.Scheme + "://" + app.Host
+	pageOrigin := page.Scheme + "://" + page.Host
+	require.Equal(w.t, appOrigin, pageOrigin, "the page %s is on the app", page)
 	require.Equal(w.t, path, page.Path, "the link lands on the %s page", path)
 	token := page.Query().Get("token")
 	require.NotEmpty(w.t, token, "the page %s carries a token", page)
