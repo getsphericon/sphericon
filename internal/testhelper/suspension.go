@@ -26,3 +26,10 @@ func (env *TestEnv) UnsuspendWorkspace(ctx context.Context, id int64) {
 		ClearSuspensionReason().
 		ExecX(ctx)
 }
+
+// DeleteWorkspace puts a Workspace into deletion at `at`, as its Owner's delete does: the write goes
+// through FeedDB, whose Hooks record a Workspace's deletion, which env.DB refuses outside a
+// transaction (internal/AGENTS.md).
+func (env *TestEnv) DeleteWorkspace(ctx context.Context, id int64, at time.Time) {
+	env.FeedDB.Workspace.UpdateOneID(id).SetDiscardedAt(at).ExecX(ctx)
+}

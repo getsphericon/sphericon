@@ -543,6 +543,6 @@ func TestAHostIsServedForItsWorkspaceOnceItsDNSIsVerified(t *testing.T) {
 	assert.Zero(t, hostWorkspace(t, m, "t.unknown.example"))
 	assert.Zero(t, hostWorkspace(t, m, ""))
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(time.Now()).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.UmbrellaID, time.Now())
 	assert.Zero(t, hostWorkspace(t, m, fixtures.TrackingDomainServingHost), "nor is the host of a deleted Workspace")
 }

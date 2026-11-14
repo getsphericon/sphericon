@@ -34,7 +34,7 @@ func TestCollectKeyAuth(t *testing.T) {
 func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
+	env.DeleteWorkspace(ctx, fixtures.AcmeID, time.Now())
 
 	err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	testhelper.CollectRefusal(t, err, http.StatusUnauthorized)

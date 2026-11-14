@@ -34,7 +34,7 @@ func restoreEnv(t *testing.T) *testhelper.TestEnv {
 // deletedAgo puts Initech into deletion, deleted ago before restoredAt.
 func deletedAgo(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(restoredAt.Add(-ago)).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.InitechID, restoredAt.Add(-ago))
 }
 
 func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {

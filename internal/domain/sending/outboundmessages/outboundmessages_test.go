@@ -284,7 +284,7 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	ctx := context.Background()
 	m := newModule(env, time.Now)
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(time.Now()).ExecX(ctx)
+	env.DeleteWorkspace(ctx, fixtures.AcmeID, time.Now())
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)

@@ -33,7 +33,7 @@ import (
 // deleteUmbrella puts Umbrella into its deletion window, deleted ago before now.
 func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(now.Add(-ago)).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.UmbrellaID, now.Add(-ago))
 }
 
 // runErase is one erase at now.
@@ -180,7 +180,7 @@ func TestEraseDueRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 // messages before the Broadcast; the other Workspaces keep theirs.
 func TestEraseRemovesABroadcastThatHasSentOutboundMessages(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(now.Add(-testhelper.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.InitechID, now.Add(-testhelper.DeletionWindow-time.Hour))
 	sent := env.DB.Scoped(fixtures.InitechID).OutboundMessage().Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastInitechID)).CountX(t.Context())
 	require.NotZero(t, sent)
 	acmeBefore := rowsOf(t, env, fixtures.AcmeID)

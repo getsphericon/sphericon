@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func ask(t *testing.T, h http.Handler, domain string) int {
@@ -65,7 +66,7 @@ func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
 	host := fixtures.TrackingDomainServingHost
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).SetDiscardedAt(time.Now()).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.UmbrellaID, time.Now())
 	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDiscardedAt().ExecX(t.Context())
