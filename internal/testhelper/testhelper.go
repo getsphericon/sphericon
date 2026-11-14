@@ -291,10 +291,6 @@ type setup struct {
 	cfg        *config.Config
 	now        func() time.Time
 	unlicensed bool
-	// noStaffSecret builds the Instance without a Staff member secret (WithoutStaffSecret).
-	noStaffSecret bool
-	// volumeFloor is the Staff console's rate floor; zero is the default.
-	volumeFloor int
 	// version is the running version the Instance module judges releases against; the
 	// test build is "dev", which is no release.
 	version string
@@ -305,8 +301,6 @@ type setup struct {
 	certs preset.CertFetcher
 	// oauthFetcher downloads OAuth Client ID Metadata Documents; nil is the production fetcher.
 	oauthFetcher webhook.Doer
-	// noSystemSender builds the Instance without outbound mail.
-	noSystemSender bool
 	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
 	noSystemFrom bool
 	// txt is the TXT resolver Sending domain and Join domain verification use; nil is the
@@ -344,7 +338,9 @@ func WithOAuthFetcher(f webhook.Doer) Option { return func(s *setup) { s.oauthFe
 
 // WithoutSystemSender runs the Instance with no outbound mail, so it has no System sender
 // for a Test send to fall back to (ADR 0041).
-func WithoutSystemSender() Option { return func(s *setup) { s.noSystemSender = true } }
+func WithoutSystemSender() Option {
+	return func(s *setup) { s.cfg.SMTPHost, s.cfg.SystemEmailProvider = "", providers.SMTP }
+}
 
 // WithSystemSenderWithoutFrom gives the Instance a System sender that names no From of its own,
 // which a Test send must refuse rather than send with an empty From.
@@ -364,11 +360,11 @@ func WithoutLicense() Option { return func(s *setup) { s.unlicensed = true } }
 
 // WithoutStaffSecret builds the instance without SPHERICON_STAFF_JWT_SECRET, so the Staff
 // sign-in is off. It needs WithoutLicense: the `staff` feature refuses to start without it.
-func WithoutStaffSecret() Option { return func(s *setup) { s.noStaffSecret = true } }
+func WithoutStaffSecret() Option { return func(s *setup) { s.cfg.StaffJWTSecret = "" } }
 
 // WithStaffVolumeFloor sets the fewest sends in the Staff console's window for a
 // rate to be defined, so a test crosses the floor with a handful of fixture Events.
-func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.volumeFloor = n } }
+func WithStaffVolumeFloor(n int) Option { return func(s *setup) { s.cfg.AbuseVolumeFloor = n } }
 
 // WithMode runs the test Instance in a Mode, with every setting the Mode decides.
 func WithMode(m config.Mode) Option { return func(s *setup) { s.cfg.ApplyMode(m) } }
@@ -443,19 +439,10 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	require.NoError(t, errLoad, "init test baseline")
 
 	cfg := testConfig()
+	cfg.StaffJWTSecret = newStaffSecret()
 	st := &setup{cfg: &cfg, now: time.Now, version: buildinfo.Current().Version}
 	for _, opt := range opts {
 		opt(st)
-	}
-	cfg.StaffJWTSecret = newStaffSecret()
-	if st.noStaffSecret {
-		cfg.StaffJWTSecret = ""
-	}
-	if st.volumeFloor > 0 {
-		cfg.AbuseVolumeFloor = st.volumeFloor
-	}
-	if st.noSystemSender {
-		cfg.SMTPHost, cfg.SystemEmailProvider = "", providers.SMTP
 	}
 	lic := st.license(t)
 

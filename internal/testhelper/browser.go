@@ -5,9 +5,10 @@ import (
 	"net/http/cookiejar"
 	"testing"
 
-	siteapi "github.com/getsphericon/sphericon/gen/site"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
+
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 )
 
 // SiteBrowser returns an anonymous /site client that keeps cookies between its requests

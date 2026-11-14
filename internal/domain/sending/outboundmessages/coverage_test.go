@@ -1,11 +1,9 @@
 package outboundmessages_test
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"errors"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -40,16 +38,6 @@ func onOutboundMutation(env *testhelper.TestEnv, fn func(ctx context.Context, m 
 			return fn(ctx, om, next)
 		})
 	})
-}
-
-// captureLog routes slog.Default into a buffer for the test.
-func captureLog(t *testing.T) *bytes.Buffer {
-	t.Helper()
-	var buf bytes.Buffer
-	prev := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
-	t.Cleanup(func() { slog.SetDefault(prev) })
-	return &buf
 }
 
 // cancelingSenders resolves the sender but cancels the context on the way, so the
@@ -537,7 +525,7 @@ func TestClaimErrors(t *testing.T) {
 func TestEligibilityFailureReleasesTheClaimAndFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	logs := captureLog(t)
+	logs := testhelper.CaptureLogs(t)
 
 	// The eligibility rule runs through the Workspace's Suppression query.
 	env.DB.Suppression.Intercept(ent.InterceptFunc(func(_ ent.Querier) ent.Querier {
