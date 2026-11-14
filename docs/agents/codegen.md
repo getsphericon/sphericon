@@ -50,6 +50,20 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   on its previous output compiling. A new rule gets a schema under `internal/entgen/testdata/` that
   breaks it and a row in `TestCheckFindsEveryProblem`; `TestTheSchemaBreaksNoRule` holds the real
   schema to all of them.
+- **The scoped client keeps a write as a recipe** (`ent/template/scoped.tmpl`, ADR 0017). A wrapper
+  (`<N>ScopedCreate`, `<N>ScopedUpdateOne`, `<N>ScopedDelete`, …) holds its predicates and what its
+  setters set, and builds the ent builder only when the write runs, on the client of the scope it runs
+  on, so that client's hooks apply from the start. Every write of an entity goes through its one
+  `write<N>`: for an audited entity (ADR 0022) under an audited scope it joins or opens the
+  transaction that carries the entries, reads the rows before, runs the write on that transaction's
+  client, reads them after and records one entry per row whose audited fields changed (every row, for
+  a Versioned definition's move: an edit of its draft changes only the version rows). A template never
+  touches ent's unexported fields: an ent upgrade can neither break the build there nor move a write
+  out of its transaction (`TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens` commits on a real
+  database to catch it, for the create, updates and deletes of the registry). The verbs of an entity's writes (create, update, delete, then discard, or
+  archive and unarchive, by its kind) are `entgen.Verbs`: the wrappers and the Versioned definitions'
+  pointers name a verb through the `verb` func, which fails the generation on one the entity has not,
+  and the registry's `AuditActions` lists them, which the contract's `AuditAction` enum must match.
 - **The manifest of kinds** (`ent/kinds.go`, `ent.Kinds`): per entity, its table and whether it is
   Workspace-owned, archivable, discardable, Versioned, with a revision and a singleton. The
   migration generator reads the Workspace-owned tables from it (`internal/infra/devdb/tenantkeys.go`),

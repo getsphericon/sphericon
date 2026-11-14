@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"entgo.io/ent/entc"
+	"entgo.io/ent/entc/gen"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -108,4 +109,28 @@ func TestTheSchemaBreaksNoRule(t *testing.T) {
 	assert.Equal(t, schema.Kind{WorkspaceOwned: true}, entities["OAuthCode"].Kind)
 	assert.Equal(t, schema.Kind{Discardable: true, Revised: true}, entities["Workspace"].Kind)
 	assert.Equal(t, schema.Kind{}, entities["EventJournalEntry"].Kind)
+}
+
+// An entity's writes are named by the verbs of its kind, declared once: every Workspace-owned entity
+// creates, updates and deletes, a discardable one also discards and an archivable one archives and
+// unarchives (ADR 0100). A template that names a verb the entity does not have fails the generation.
+func TestEachKindHasTheVerbsOfItsWrites(t *testing.T) {
+	graph, err := entc.LoadGraph("./"+filepath.Join("testdata", "kinds"), entgen.Config())
+	require.NoError(t, err)
+	s, problems := entgen.Classify(graph)
+	require.Empty(t, problems)
+
+	verbs := lo.SliceToMap(s.Entities(), func(e entgen.Entity) (string, []string) { return e.Name, entgen.Verbs(e.Kind) })
+	assert.Equal(t, []string{"create", "update", "delete"}, verbs["Owned"])
+	assert.Equal(t, []string{"create", "update", "delete", "archive", "unarchive"}, verbs["Archived"])
+	assert.Equal(t, []string{"create", "update", "delete", "discard"}, verbs["Discarded"])
+
+	verb, ok := s.Funcs()["verb"].(func(*gen.Type, string) (string, error))
+	require.True(t, ok, "the templates name a verb through verb")
+	nodes := lo.SliceToMap(graph.Nodes, func(n *gen.Type) (string, *gen.Type) { return n.Name, n })
+	got, err := verb(nodes["Archived"], "archive")
+	require.NoError(t, err)
+	assert.Equal(t, "archive", got)
+	_, err = verb(nodes["Owned"], "archive")
+	assert.ErrorContains(t, err, `Owned has no verb "archive"`)
 }

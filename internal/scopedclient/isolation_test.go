@@ -95,7 +95,8 @@ func TestScopedClientIsolation(t *testing.T) {
 			require.NotEmpty(t, foreign, "add a %s fixture row to Globex", e.Name)
 
 			t.Run("own row is reachable", func(t *testing.T) {
-				require.NoError(t, e.Get(ctx, scoped, own[0]))
+				_, err := e.Get(ctx, scoped, own[0])
+				require.NoError(t, err)
 				require.NoError(t, e.Touch(ctx, scoped, own[0]))
 				n, err := e.BulkTouch(ctx, scoped, own[0])
 				require.NoError(t, err)
@@ -104,7 +105,8 @@ func TestScopedClientIsolation(t *testing.T) {
 
 			t.Run("foreign row reads as not found and cannot be changed", func(t *testing.T) {
 				id := foreign[0]
-				assert.True(t, ent.IsNotFound(e.Get(ctx, scoped, id)), "Get")
+				_, err := e.Get(ctx, scoped, id)
+				assert.True(t, ent.IsNotFound(err), "Get")
 				assert.True(t, ent.IsNotFound(e.Touch(ctx, scoped, id)), "UpdateOneID")
 				n, err := e.BulkTouch(ctx, scoped, id)
 				require.NoError(t, err)

@@ -1,8 +1,9 @@
 {{/*
 Audit capture in the scoped client (ADR 0022). The actor (kind, id) is part of
-*ent.Scoped. For an entity that opts in with schema.Audited the wrappers in scoped.tmpl
-open a transaction (or join the one the scope is already bound to), run the mutation and
-publish an audit change through the scope's AuditPublisher in it. A scope without an
+*ent.Scoped. For an entity that opts in with schema.Audited every wrapper in scoped.tmpl
+writes through the entity's one audited write (write<N>), which opens a transaction (or
+joins the one the scope is already bound to), builds and runs the mutation on that
+transaction's client and publishes an audit change through the scope's AuditPublisher in it. A scope without an
 actor, or with the `ingest` actor, takes the plain path with no transaction and no
 entry. ent cannot import internal/infra/events, so the transaction opener and the publisher
 are small interfaces that the events bus implements.
@@ -112,6 +113,17 @@ func (s *Scoped) InTx(tx *Client, pub AuditPublisher) *Scoped {
 	return &Scoped{c: tx, ws: s.ws, actor: s.actor, opener: s.opener, pub: pub}
 }
 
+// unchangedRows is what an audited write does with a row none of whose audited fields changed.
+type unchangedRows uint8
+
+const (
+	// skipUnchanged records no entry for it: the write changed nothing the log shows.
+	skipUnchanged unchangedRows = iota
+	// recordUnchanged records the write for it anyway: a Versioned definition's move, whose edit of
+	// a draft rewrites only the version rows, which are not audited.
+	recordUnchanged
+)
+
 // auditing reports whether writes of audited entities through the scope are recorded.
 func (s *Scoped) auditing() bool {
 	return s.actor.Kind != "" && s.actor.Kind != ActorIngest
@@ -208,8 +220,9 @@ func (e *{{ $N }}) auditFields() map[string]any {
 }
 
 // auditChange{{ $N }} describes a {{ $N }} create (before is nil), update or delete
-// (after is nil).
-func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChange{{ $N }}(verb string, before, after *{{ $N }}) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -219,12 +232,13 @@ func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "{{ $A.Action }}." + verb,
 		TargetType: "{{ $A.Action }}",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, {{ $N }}AuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	{{- range $name := $A.Always }}
 	auditKeep(change.Diff, b, a, "{{ $name }}")
 	{{- end }}
@@ -235,29 +249,7 @@ func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
 	change.TargetName = fmt.Sprint(derefAudit(target.{{ $A.NameField.StructField }}))
 	{{- end }}
 	{{- end }}
-	return change
-}
-
-// auditRebind points the builders at the client of the transaction that carries the
-// entry, so the mutation and the entry commit together, and runs that client's hooks: the
-// feeds' Hook of a transaction, not the Guard of the plain client the builder was made on.
-func (b *{{ $N }}Create) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}UpdateOne) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}Update) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}Delete) auditRebind(c *Client) {
-	b.config, b.mutation.config, b.hooks = c.config, c.config, c.{{ $N }}.Hooks()
-}
-func (b *{{ $N }}CreateBulk) auditRebind(c *Client) {
-	b.config = c.config
-	for _, x := range b.builders {
-		x.auditRebind(c)
-	}
+	return change, changed
 }
 {{- end }}
 {{ end }}

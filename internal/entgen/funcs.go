@@ -1,6 +1,7 @@
 package entgen
 
 import (
+	"fmt"
 	"slices"
 	"text/template"
 
@@ -43,7 +44,22 @@ func (s *Schema) Funcs() template.FuncMap {
 		"scopedEdgeMutable": scopedEdgeMutable,
 		// auditOf returns the Audited annotation of n (ADR 0022), or nil when the entity has not
 		// opted into the Audit log.
-		"auditOf":     func(n *gen.Type) *Audit { return s.entities[n].audit },
+		"auditOf": func(n *gen.Type) *Audit { return s.entities[n].audit },
+		// auditVerbs lists the verbs of the actions an audited entity's entries record (Verbs), none
+		// for an entity that has not opted into the Audit log.
+		"auditVerbs": func(n *gen.Type) []string {
+			if s.entities[n].audit == nil {
+				return nil
+			}
+			return Verbs(s.kind(n))
+		},
+		// verb names a write of n by one of its Verbs, and fails the generation on a verb n has not.
+		"verb": func(n *gen.Type, verb string) (string, error) {
+			if !slices.Contains(Verbs(s.kind(n)), verb) {
+				return "", fmt.Errorf("%s has no verb %q", n.Name, verb)
+			}
+			return verb, nil
+		},
 		"auditFields": s.auditFields,
 		// auditIsKey reports whether an audited field is a reference to another row (an edge
 		// field of int64), which the Audit log records by its public form (ADR 0142).
@@ -60,6 +76,21 @@ func (s *Schema) Funcs() template.FuncMap {
 		"scopedFieldRefs": func(n *gen.Type) []ScopedRef { return s.entities[n].refs },
 		"scopedRefTarget": s.scopedRefTarget,
 	}
+}
+
+// Verbs are the verbs of the writes of an entity of the kind, which the action of an Audit entry
+// names (`<entity>.<verb>`, ADR 0022): create, update and delete, then discard for a discardable
+// entity and archive and unarchive for an archivable one (ADR 0100). The scoped wrappers, the
+// Versioned definitions' pointers and the registry of the scoped client name their verbs from here.
+func Verbs(k schema.Kind) []string {
+	verbs := []string{"create", "update", "delete"}
+	if k.Discardable {
+		verbs = append(verbs, "discard")
+	}
+	if k.Archivable {
+		verbs = append(verbs, "archive", "unarchive")
+	}
+	return verbs
 }
 
 // kind is the kind of n.

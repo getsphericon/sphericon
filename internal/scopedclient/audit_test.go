@@ -227,9 +227,10 @@ func TestAuditDiffRedactsSensitiveFields(t *testing.T) {
 	}
 }
 
-// Every entity that opts in emits on create, update and delete (so a new annotated entity
-// cannot silently miss a wrapper). The registry is generated from the schema.
-func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
+// Every entity that opts in emits on create and delete (so a new annotated entity cannot
+// silently miss a wrapper), and an update that changes none of its audited fields records no
+// entry. The registry is generated from the schema.
+func TestEveryAuditedEntityEmitsOnCreateAndDeleteButNotOnAnUnchangedUpdate(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.Bus.Act(env.DB.Scoped(acme), johnActor)
@@ -258,12 +259,13 @@ func TestEveryAuditedEntityEmitsOnCreateUpdateAndDelete(t *testing.T) {
 		ids, err = e.IDs(ctx, env.DB, acme)
 		require.NoError(t, err)
 		planted := slices.Max(ids)
+		// Touch moves only updated_at, which no diff carries.
 		require.NoError(t, e.Touch(ctx, s, planted), e.Name)
 		require.NoError(t, e.Delete(ctx, s, planted), e.Name)
 
 		got := auditEntries(t, env)[before:]
-		require.Len(t, got, 3, e.Name)
-		for i, verb := range []string{"create", "update", "delete"} {
+		require.Len(t, got, 2, e.Name)
+		for i, verb := range []string{"create", "delete"} {
 			assert.True(t, strings.HasSuffix(got[i].Action, "."+verb), "%s: %s", e.Name, got[i].Action)
 			assert.Equal(t, johnActor, got[i].Actor, e.Name)
 		}
