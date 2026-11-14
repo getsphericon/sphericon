@@ -134,3 +134,20 @@ func TestJournalInspectionRefusesInvalidBounds(t *testing.T) {
 		require.Error(t, err)
 	}
 }
+
+// An internal fact without an Event row dates its publication by its observation too: an unsubscribe
+// counted on a message is journaled as occurring when it was observed, not when it was published.
+func TestAnUnsubscribeIsJournaledAtItsObservation(t *testing.T) {
+	at := time.Date(2026, 11, 8, 4, 0, 0, 0, time.UTC)
+	observed := at.Add(-time.Minute)
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
+	require.NoError(t, env.Bus.Publish(t.Context(), &events.MessageUnsubscribed{
+		WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID, ObservedAt: observed,
+	}))
+
+	page, err := env.Bus.WorkspaceJournal(t.Context(), fixtures.AcmeID, events.JournalQuery{Name: events.NameMessageUnsubscribed})
+	require.NoError(t, err)
+	require.Len(t, page.Entries, 1)
+	assert.WithinDuration(t, observed, page.Entries[0].OccurredAt, 0)
+	assert.WithinDuration(t, at, page.Entries[0].RecordedAt, 0)
+}
