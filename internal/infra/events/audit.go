@@ -2,6 +2,8 @@ package events
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
@@ -203,13 +205,19 @@ func (*AuditEntry) EventName() string  { return NameAuditEntry }
 func (*AuditEntry) EventVersion() int  { return 1 }
 func (e *AuditEntry) Workspace() int64 { return e.WorkspaceID }
 
-// maskStaff replaces a staff actor (a Staff member or a Service credential) with the
-// customer-facing label and drops the staff id, for every surface that leaves the
-// platform (ADR 0022). The stored entry keeps the real identity.
-func (e *AuditEntry) maskStaff() {
-	if IsStaff(e.Actor.Kind) {
-		e.Actor = Actor{Kind: ActorStaff, Name: StaffLabel}
+// webhookData is the entry an endpoint receives (optInWebhook): a staff actor (a Staff member or
+// a Service credential) masked as the customer-facing label, without the staff id, as on every
+// surface that leaves the platform (ADR 0022). The stored entry keeps the real identity.
+func (e *AuditEntry) webhookData() (json.RawMessage, error) {
+	masked := *e
+	if IsStaff(masked.Actor.Kind) {
+		masked.Actor = Actor{Kind: ActorStaff, Name: StaffLabel}
 	}
+	data, err := json.Marshal(&masked)
+	if err != nil {
+		return nil, fmt.Errorf("marshal audit entry: %w", err)
+	}
+	return data, nil
 }
 
 // RecordAudit publishes an Audit entry through pub, inside the caller's transaction

@@ -48,16 +48,10 @@ type WebhookEventArgs struct {
 
 func (WebhookEventArgs) Kind() string { return "event_webhook" }
 
-// reachesWebhooks wants every live event a Workspace's endpoints may receive: an Event (loaded
-// history is recorded, never delivered) or an Audit entry. An event of the Instance and a change
-// told only to the Owners leave the platform through no endpoint. Which endpoints receive one is
-// the job's to find.
+// reachesWebhooks wants every event a Workspace's endpoints may receive (events.ReachesWebhooks).
+// Which endpoints receive one is the job's to find.
 func reachesWebhooks(_ events.Envelope, ev events.DomainEvent) bool {
-	if _, audit := ev.(*events.AuditEntry); audit {
-		return true
-	}
-	_, projected := ev.(events.Projected)
-	return projected && !events.IsBackfill(ev)
+	return events.ReachesWebhooks(ev)
 }
 
 // WebhookEventWorker serializes an event into its public webhook body (events.WebhookDeliveryOf)
