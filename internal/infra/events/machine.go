@@ -17,10 +17,11 @@ const MachineProperty = "machine"
 // (ADR 0083): what a link report counts and what Attribution credits.
 var ClickActions = []string{systemevent.EmailClicked, systemevent.TelegramClicked, systemevent.SmsClicked}
 
+// engagementActions are the opens and the clicks, the Events a machine can make.
+var engagementActions = append([]string{systemevent.EmailOpened}, ClickActions...)
+
 // IsEngagement reports whether action is an open or a click, the Events a machine can make.
-func IsEngagement(action string) bool {
-	return action == systemevent.EmailOpened || slices.Contains(ClickActions, action)
-}
+func IsEngagement(action string) bool { return slices.Contains(engagementActions, action) }
 
 // HumanOnly narrows a query of Events to the ones not made by software, for every figure that
 // counts engagement: a machine Event stays in the log and in no count.

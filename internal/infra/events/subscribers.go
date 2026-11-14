@@ -47,7 +47,7 @@ func (p *txPublisher) claimExternal(ctx context.Context, env Envelope) (bool, er
 
 func (p *txPublisher) react(ctx context.Context, env Envelope, ev DomainEvent) error {
 	ctx = Handling(ctx, env)
-	for _, subscriber := range p.subscribers {
+	for _, subscriber := range p.bus.subscribers {
 		if subscriber.Wants(env, ev) {
 			s := p.client.Scoped(env.WorkspaceID)
 			if err := subscriber.Handle(ctx, s, p, env, ev); err != nil {

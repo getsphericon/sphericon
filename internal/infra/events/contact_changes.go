@@ -149,10 +149,11 @@ func (e *TelegramReceived) Project() Projection {
 	}
 }
 
-// TelegramSent is an Outbound send a bot's Telegram accepted (telegram.sent), recorded with the
-// Outbound message in one transaction. Destination is the Telegram user id of the first Binding
-// that accepted it; the Broadcast or Automation it came from is named when there is one.
-type TelegramSent struct {
+// messageSent is an Outbound send a Channel's provider accepted, recorded with the Outbound message
+// in one transaction. Destination is where the Channel sent it; the Broadcast or Automation it came
+// from is named when there is one. Each Channel's send is its own Event on these facts: SmsSent,
+// TelegramSent.
+type messageSent struct {
 	WorkspaceID       int64  `json:"workspaceId"`
 	ContactID         int64  `json:"contactId"`
 	Email             string `json:"email,omitempty"`
@@ -165,77 +166,42 @@ type TelegramSent struct {
 	SendingSource     string `json:"sendingSource,omitempty"`
 	DedupID           string `json:"dedupId,omitempty"`
 }
+
+// project is the send's Event row, as the action names it.
+func (e *messageSent) project(action string) Projection {
+	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
+	setNonZero(props, "integrationId", e.IntegrationID)
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "automationId", e.AutomationID)
+	setNonZero(props, "surface", e.Surface)
+	setNonZero(props, "sendingSource", e.SendingSource)
+	return Projection{
+		Subject: e.Email, Action: action, Email: e.Email, ContactID: e.ContactID,
+		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
+	}
+}
+
+// TelegramSent is an Outbound send a bot's Telegram accepted (telegram.sent). Destination is the
+// Telegram user id of the first Binding that accepted it.
+type TelegramSent messageSent
 
 func (*TelegramSent) EventName() string  { return systemevent.TelegramSent }
 func (*TelegramSent) EventVersion() int  { return 1 }
 func (e *TelegramSent) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramSent) EventID() string  { return e.DedupID }
 func (e *TelegramSent) Project() Projection {
-	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
-	if e.IntegrationID != 0 {
-		props["integrationId"] = e.IntegrationID
-	}
-	if e.BroadcastID != 0 {
-		props["broadcastId"] = e.BroadcastID
-	}
-	if e.AutomationID != 0 {
-		props["automationId"] = e.AutomationID
-	}
-	if e.Surface != "" {
-		props["surface"] = e.Surface
-	}
-	if e.SendingSource != "" {
-		props["sendingSource"] = e.SendingSource
-	}
-	return Projection{
-		Subject: e.Email, Action: systemevent.TelegramSent, Email: e.Email, ContactID: e.ContactID,
-		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
-	}
+	return (*messageSent)(e).project(systemevent.TelegramSent)
 }
 
-// SmsSent is an Outbound send the SMS provider accepted (sms.sent), recorded with the Outbound
-// message in one transaction. Destination is the number in E.164; the Broadcast or Automation it
-// came from is named when there is one.
-type SmsSent struct {
-	WorkspaceID       int64  `json:"workspaceId"`
-	ContactID         int64  `json:"contactId"`
-	Email             string `json:"email,omitempty"`
-	IntegrationID     int64  `json:"integrationId,omitempty"`
-	Destination       string `json:"destination"`
-	BroadcastID       int64  `json:"broadcastId,omitempty"`
-	AutomationID      int64  `json:"automationId,omitempty"`
-	OutboundMessageID int64  `json:"outboundMessageId"`
-	Surface           string `json:"surface,omitempty"`
-	SendingSource     string `json:"sendingSource,omitempty"`
-	DedupID           string `json:"dedupId,omitempty"`
-}
+// SmsSent is an Outbound send the SMS provider accepted (sms.sent). Destination is the number in
+// E.164.
+type SmsSent messageSent
 
-func (*SmsSent) EventName() string  { return systemevent.SmsSent }
-func (*SmsSent) EventVersion() int  { return 1 }
-func (e *SmsSent) Workspace() int64 { return e.WorkspaceID }
-func (e *SmsSent) EventID() string  { return e.DedupID }
-func (e *SmsSent) Project() Projection {
-	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
-	if e.IntegrationID != 0 {
-		props["integrationId"] = e.IntegrationID
-	}
-	if e.BroadcastID != 0 {
-		props["broadcastId"] = e.BroadcastID
-	}
-	if e.AutomationID != 0 {
-		props["automationId"] = e.AutomationID
-	}
-	if e.Surface != "" {
-		props["surface"] = e.Surface
-	}
-	if e.SendingSource != "" {
-		props["sendingSource"] = e.SendingSource
-	}
-	return Projection{
-		Subject: e.Email, Action: systemevent.SmsSent, Email: e.Email, ContactID: e.ContactID,
-		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
-	}
-}
+func (*SmsSent) EventName() string     { return systemevent.SmsSent }
+func (*SmsSent) EventVersion() int     { return 1 }
+func (e *SmsSent) Workspace() int64    { return e.WorkspaceID }
+func (e *SmsSent) EventID() string     { return e.DedupID }
+func (e *SmsSent) Project() Projection { return (*messageSent)(e).project(systemevent.SmsSent) }
 
 // SmsDelivery is the SMS provider's final report of a text it accepted (sms.delivered,
 // sms.undelivered, ADR 0079), recorded in the transaction of the Ingest request that stamped the
@@ -265,16 +231,12 @@ func (e *SmsDelivery) Workspace() int64  { return e.WorkspaceID }
 func (e *SmsDelivery) EventID() string   { return e.DedupID }
 func (e *SmsDelivery) Project() Projection {
 	props := map[string]any{"destination": e.Destination, outboundMessageIDProperty: e.OutboundMessageID}
-	for k, v := range map[string]string{"errorCode": e.ErrorCode, "surface": e.Surface, "sendingSource": e.SendingSource} {
-		if v != "" {
-			props[k] = v
-		}
-	}
-	for k, v := range map[string]int64{"integrationId": e.IntegrationID, "broadcastId": e.BroadcastID, "automationId": e.AutomationID} {
-		if v != 0 {
-			props[k] = v
-		}
-	}
+	setNonZero(props, "errorCode", e.ErrorCode)
+	setNonZero(props, "surface", e.Surface)
+	setNonZero(props, "sendingSource", e.SendingSource)
+	setNonZero(props, "integrationId", e.IntegrationID)
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "automationId", e.AutomationID)
 	return Projection{
 		Subject: e.Email, Action: e.Action, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
@@ -304,18 +266,10 @@ type LinkClick struct {
 // project is the click's Event row, as the action names it.
 func (e *LinkClick) project(action string) Projection {
 	props := map[string]any{"url": e.URL, outboundMessageIDProperty: e.OutboundMessageID}
-	if e.IntegrationID != 0 {
-		props["integrationId"] = e.IntegrationID
-	}
-	if e.BroadcastID != 0 {
-		props["broadcastId"] = e.BroadcastID
-	}
-	if e.AutomationID != 0 {
-		props["automationId"] = e.AutomationID
-	}
-	if e.Machine {
-		props[MachineProperty] = true
-	}
+	setNonZero(props, "integrationId", e.IntegrationID)
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "automationId", e.AutomationID)
+	setNonZero(props, MachineProperty, e.Machine)
 	return Projection{
 		OccurredAt: e.ObservedAt,
 		Subject:    e.Email, Action: action, Email: e.Email, ContactID: e.ContactID,
@@ -383,15 +337,9 @@ func (e *TelegramUnsubscribed) Workspace() int64 { return e.WorkspaceID }
 func (e *TelegramUnsubscribed) EventID() string  { return e.DedupID }
 func (e *TelegramUnsubscribed) Project() Projection {
 	props := map[string]any{"via": e.Via}
-	if e.IntegrationID != 0 {
-		props["integrationId"] = e.IntegrationID
-	}
-	if e.BroadcastID != 0 {
-		props["broadcastId"] = e.BroadcastID
-	}
-	if e.AutomationID != 0 {
-		props["automationId"] = e.AutomationID
-	}
+	setNonZero(props, "integrationId", e.IntegrationID)
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "automationId", e.AutomationID)
 	return Projection{
 		Subject: e.Email, Action: systemevent.TelegramUnsubscribed, Email: e.Email, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,
@@ -421,12 +369,8 @@ func (e *SmsUnsubscribed) Workspace() int64 { return e.WorkspaceID }
 func (e *SmsUnsubscribed) EventID() string  { return e.DedupID }
 func (e *SmsUnsubscribed) Project() Projection {
 	props := map[string]any{"via": e.Via}
-	if e.BroadcastID != 0 {
-		props["broadcastId"] = e.BroadcastID
-	}
-	if e.AutomationID != 0 {
-		props["automationId"] = e.AutomationID
-	}
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "automationId", e.AutomationID)
 	return Projection{
 		Subject: e.Email, Action: systemevent.SmsUnsubscribed, Email: e.Email, Phone: e.Phone, ContactID: e.ContactID,
 		AutomationID: e.AutomationID, BroadcastID: e.BroadcastID, Properties: props,

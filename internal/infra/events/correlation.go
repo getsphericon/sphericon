@@ -20,8 +20,8 @@ import (
 
 // The job metadata keys of the chain a job was queued in.
 const (
-	MetaCorrelationID = "correlation_id"
-	MetaCausationID   = "causation_id"
+	metaCorrelationID = "correlation_id"
+	metaCausationID   = "causation_id"
 )
 
 type chainKey struct{}
@@ -94,8 +94,8 @@ func (*JobChain) InsertMany(ctx context.Context, params []*rivertype.JobInsertPa
 				return nil, err
 			}
 		}
-		metadata[MetaCorrelationID] = c.Correlation
-		metadata[MetaCausationID] = c.Cause
+		metadata[metaCorrelationID] = c.Correlation
+		metadata[metaCausationID] = c.Cause
 		encoded, err := json.Marshal(metadata)
 		if err != nil {
 			return nil, err

@@ -43,19 +43,27 @@ func (b *Bus) UseJobs(q JobQueue) {
 // same transaction: a Broadcast's claim and its send job, an Enrollment's move and its next step.
 func (b *Bus) WithinScopedEnqueueTx(ctx context.Context, s *ent.Scoped, fn func(ts *ent.Scoped, pub Publisher, q Enqueuer) error) error {
 	return b.within(ctx, func(tx *ent.Client, pub *txPublisher) error {
-		return fn(s.InTx(tx, auditPublisher{pub: pub}), pub, txQueue{jobs: pub.jobs, tx: pub.tx})
+		return fn(s.InTx(tx, auditPublisher{pub: pub}), pub, pub)
 	})
 }
 
-type txQueue struct {
-	jobs JobQueue
-	tx   *sql.Tx
-}
-
-func (q txQueue) Enqueue(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) error {
-	if q.jobs == nil {
+// Enqueue inserts a job on the publisher's transaction (Enqueuer).
+func (p *txPublisher) Enqueue(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) error {
+	if p.bus.jobs == nil {
 		return ErrNoJobQueue
 	}
-	_, err := q.jobs.InsertTx(ctx, q.tx, args, opts)
+	_, err := p.bus.jobs.InsertTx(ctx, p.tx, args, opts)
+	return err
+}
+
+// insertMany inserts the jobs of params on the publisher's transaction, none when params is empty.
+func (p *txPublisher) insertMany(ctx context.Context, params []river.InsertManyParams) error {
+	if len(params) == 0 {
+		return nil // river refuses an empty insert
+	}
+	if p.bus.jobs == nil {
+		return ErrNoJobQueue
+	}
+	_, err := p.bus.jobs.InsertManyTx(ctx, p.tx, params)
 	return err
 }

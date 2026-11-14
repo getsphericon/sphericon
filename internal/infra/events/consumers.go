@@ -69,7 +69,7 @@ func (b *Bus) UseConsumers(cs ...Consumer) {
 func (p *txPublisher) journalAndQueueConsumers(ctx context.Context, env Envelope, ev DomainEvent) error {
 	var params []river.InsertManyParams
 	inputs := map[string]retainedInput{}
-	for _, c := range p.consumers {
+	for _, c := range p.bus.consumers {
 		if !c.Wants(env, ev) {
 			continue
 		}
@@ -97,12 +97,5 @@ func (p *txPublisher) journalAndQueueConsumers(ctx context.Context, env Envelope
 	if err := p.journal(ctx, env, inputs); err != nil {
 		return err
 	}
-	if len(params) == 0 {
-		return nil // river refuses an empty insert
-	}
-	if p.jobs == nil {
-		return ErrNoJobQueue
-	}
-	_, err := p.jobs.InsertManyTx(ctx, p.tx, params)
-	return err
+	return p.insertMany(ctx, params)
 }

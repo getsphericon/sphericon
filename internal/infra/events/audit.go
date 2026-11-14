@@ -203,10 +203,10 @@ func (*AuditEntry) EventName() string  { return NameAuditEntry }
 func (*AuditEntry) EventVersion() int  { return 1 }
 func (e *AuditEntry) Workspace() int64 { return e.WorkspaceID }
 
-// MaskStaff replaces a staff actor (a Staff member or a Service credential) with the
+// maskStaff replaces a staff actor (a Staff member or a Service credential) with the
 // customer-facing label and drops the staff id, for every surface that leaves the
 // platform (ADR 0022). The stored entry keeps the real identity.
-func (e *AuditEntry) MaskStaff() {
+func (e *AuditEntry) maskStaff() {
 	if IsStaff(e.Actor.Kind) {
 		e.Actor = Actor{Kind: ActorStaff, Name: StaffLabel}
 	}

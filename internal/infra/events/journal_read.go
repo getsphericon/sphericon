@@ -18,10 +18,8 @@ import (
 // Journal read limits bound operator output independently of replay and API pagination.
 const (
 	// DefaultJournalLimit bounds output when the operator omits a limit.
-	// The operator inspection default is independent of API pagination bounds.
 	DefaultJournalLimit = 100
 	// MaxJournalLimit bounds one inspection snapshot.
-	// The operator inspection cap is independent of API pagination bounds.
 	MaxJournalLimit = 1000
 )
 

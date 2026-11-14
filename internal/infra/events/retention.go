@@ -25,28 +25,17 @@ func PruneEvents(ctx context.Context, client *ent.Client, retention time.Duratio
 		return 0, nil
 	}
 	cutoff := now.Add(-retention)
-	var total int64
-	for {
-		ids, err := client.Event.Query().
-			Where(event.CreatedAtLT(cutoff), expirable()).
-			Order(event.ByCreatedAt()).
-			Limit(batchSize).
-			IDs(ctx)
-		if err != nil {
-			return total, fmt.Errorf("select expired events batch: %w", err)
-		}
-		if len(ids) == 0 {
-			return total, nil
-		}
-		n, err := client.Event.Delete().Where(event.IDIn(ids...)).Exec(ctx)
-		if err != nil {
-			return total, fmt.Errorf("delete expired events batch: %w", err)
-		}
-		total += int64(n)
-		if len(ids) < batchSize {
-			return total, nil
-		}
-	}
+	return pruneBatches(ctx, "events", batchSize,
+		func(ctx context.Context) ([]int64, error) {
+			return client.Event.Query().
+				Where(event.CreatedAtLT(cutoff), expirable()).
+				Order(event.ByCreatedAt()).
+				Limit(batchSize).
+				IDs(ctx)
+		},
+		func(ctx context.Context, ids []int64) (int, error) {
+			return client.Event.Delete().Where(event.IDIn(ids...)).Exec(ctx)
+		})
 }
 
 // expirable is schema.ExpirableEventPredicate on the generated query: the same text the
@@ -70,22 +59,36 @@ func PruneReceipts(ctx context.Context, client *ent.Client, retention time.Durat
 		return 0, nil
 	}
 	cutoff := now.Add(-retention)
+	return pruneBatches(ctx, "receipts", batchSize,
+		func(ctx context.Context) ([]int64, error) {
+			return client.EventReceipt.Query().
+				Where(eventreceipt.CreatedAtLT(cutoff)).
+				Order(eventreceipt.ByCreatedAt()).
+				Limit(batchSize).
+				IDs(ctx)
+		},
+		func(ctx context.Context, ids []int64) (int, error) {
+			return client.EventReceipt.Delete().Where(eventreceipt.IDIn(ids...)).Exec(ctx)
+		})
+}
+
+// pruneBatches deletes the rows selectIDs selects, a batch of at most batchSize at a time, until a
+// batch comes back short, and returns how many it removed. what names the rows in its errors.
+func pruneBatches(ctx context.Context, what string, batchSize int,
+	selectIDs func(context.Context) ([]int64, error), deleteIDs func(context.Context, []int64) (int, error),
+) (int64, error) {
 	var total int64
 	for {
-		ids, err := client.EventReceipt.Query().
-			Where(eventreceipt.CreatedAtLT(cutoff)).
-			Order(eventreceipt.ByCreatedAt()).
-			Limit(batchSize).
-			IDs(ctx)
+		ids, err := selectIDs(ctx)
 		if err != nil {
-			return total, fmt.Errorf("select expired receipts batch: %w", err)
+			return total, fmt.Errorf("select expired %s batch: %w", what, err)
 		}
 		if len(ids) == 0 {
 			return total, nil
 		}
-		n, err := client.EventReceipt.Delete().Where(eventreceipt.IDIn(ids...)).Exec(ctx)
+		n, err := deleteIDs(ctx, ids)
 		if err != nil {
-			return total, fmt.Errorf("delete expired receipts batch: %w", err)
+			return total, fmt.Errorf("delete expired %s batch: %w", what, err)
 		}
 		total += int64(n)
 		if len(ids) < batchSize {
