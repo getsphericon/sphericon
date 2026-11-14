@@ -21,7 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/riverqueue/river"
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -129,8 +128,8 @@ const (
 	// Skipped is an expected outcome (an Automation that is not active, a Contact already
 	// enrolled), not an error.
 	Skipped Outcome = "skipped"
-	// Pending is an Action handed to a job of its own (an http Action, which is retried for days):
-	// it has no outcome yet, and that job records it with Record.
+	// Pending is an Action handed to a job of its own (an http Action, which is retried for days,
+	// HTTPArgs): it has no outcome yet, and that job records it (ExecuteHTTP).
 	Pending Outcome = "pending"
 )
 
@@ -139,11 +138,6 @@ type Result struct {
 	Type   ActionType `json:"type"`
 	Status Outcome    `json:"status"`
 	Detail string     `json:"detail,omitempty"`
-
-	// Job is set by a Runner that hands the Action to a job (Status Pending): Record queues it, with
-	// the options its args declare, in the transaction that records the Pending result. It is
-	// never stored.
-	Job river.JobArgs `json:"-"`
 }
 
 // ActionInput is what a Runner is handed: the Action and the Firing it runs for, and the
@@ -157,8 +151,8 @@ type ActionInput struct {
 
 // Runner performs one kind of Action. It reports how it ended in the Result and never fails the
 // others: an Action that cannot be done returns a Failed Result, and only an infrastructure
-// error (the database) is returned as an error, which retries the Actions job. A Runner for an
-// Action that outlives the Actions job returns a Pending Result with the job that finishes it.
+// error (the database) is returned as an error, which retries the Actions job. The http Action
+// has no Runner: the module hands it to a job of its own (HTTPArgs).
 type Runner interface {
 	Run(ctx context.Context, s *ent.Scoped, in ActionInput) (Result, error)
 }
@@ -657,9 +651,9 @@ func (ActionsArgs) Kind() string { return ActionsKind }
 // Condition is false leaves nothing. Rules for one Event are independent: a failure on one is
 // returned after the others have been tried.
 //
-// It returns the Firings it wrote. It is queue-free apart from the enqueue inside the
+// It returns the ids of the Firings it wrote. It is queue-free apart from the enqueue inside the
 // transaction, so a test drives it directly.
-func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.RuleFiring, error) {
+func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64, error) {
 	ev.Properties = events.BoundedProperties(ev.Properties)
 	active, err := s.Rule().Query().
 		Where(
@@ -673,7 +667,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.
 	if err != nil {
 		return nil, err
 	}
-	var fired []*ent.RuleFiring
+	var fired []int64
 	var failures []error
 	for _, r := range active {
 		live := r.Edges.LiveVersion
@@ -685,13 +679,13 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]*ent.
 		if !holds {
 			continue
 		}
-		f, err := m.fire(ctx, s, live, ev)
+		id, ok, err := m.fire(ctx, s, live, ev)
 		if err != nil {
 			failures = append(failures, fmt.Errorf("rule %d: %w", r.ID, err))
 			continue
 		}
-		if f != nil {
-			fired = append(fired, f)
+		if ok {
+			fired = append(fired, id)
 		}
 	}
 	return fired, errors.Join(failures...)
@@ -721,8 +715,8 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Even
 // transaction, so a Delete, a Deactivate or a Publish may have landed since. It share-locks the
 // Rule's row and checks it again under the lock: those moves lock the row exclusively, so each has
 // either committed before the check or waits for the Firing (ADR 0098, ADR 0099).
-func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (*ent.RuleFiring, error) {
-	var fired *ent.RuleFiring
+func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (int64, bool, error) {
+	var fired int64
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		live, still, err := shareFiring(ctx, ts, v, ev)
 		if err != nil || !still {
@@ -732,12 +726,13 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev
 		if err != nil || !inserted {
 			return err
 		}
-		if fired, err = ts.RuleFiring().Get(ctx, id); err != nil {
+		if err := q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: id}, nil); err != nil {
 			return err
 		}
-		return q.Enqueue(ctx, ActionsArgs{WorkspaceID: ts.WorkspaceID(), FiringID: id}, nil)
+		fired = id
+		return nil
 	})
-	return fired, err
+	return fired, fired != 0, err
 }
 
 // firingVersion stands for a Rule share-locked to the end of the transaction while it still fires on
@@ -815,32 +810,30 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 		i := len(results)
 		a := &actions[i]
 		res := Result{Type: a.Type, Status: Failed, Detail: "no runner for this action type"}
-		if runner, ok := runners[a.Type]; ok {
+		if a.Type == ActionHTTP {
+			res = Result{Type: a.Type, Status: Pending}
+		} else if runner, ok := runners[a.Type]; ok {
 			if res, err = runner.Run(acting, s, ActionInput{Action: *a, Index: i, ContactID: f.ContactID, Firing: f}); err != nil {
 				return err
 			}
 			res.Type = a.Type
 		}
-		if results, err = m.Record(ctx, s, f.ID, i, res); err != nil {
+		if results, err = m.record(ctx, s, f.ID, i, res, len(actions)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// Record stores the Result of the index-th Action of a Firing and finishes the Firing when none
-// is left to run or Pending. It locks the Firing row, because the Actions job and the job of a
-// Pending Action write the same results. A new Result also queues the job it carries, in the
-// same transaction. A Result already recorded (a retry of the writer) changes nothing. It
-// returns the Firing's results as stored.
-func (m *Module) Record(ctx context.Context, s *ent.Scoped, firingID int64, index int, res Result) ([]Result, error) {
+// record stores the Result of the index-th of a Firing's actionCount Actions and finishes the
+// Firing when none is left to run or Pending. It locks the Firing row, because the Actions job and
+// the job of a Pending Action write the same results. A new Pending http Result also queues its
+// call's job (HTTPArgs), in the same transaction. A Result already recorded (a retry of the
+// writer) changes nothing. It returns the Firing's results as stored.
+func (m *Module) record(ctx context.Context, s *ent.Scoped, firingID int64, index int, res Result, actionCount int) ([]Result, error) {
 	var results []Result
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		f, err := ts.RuleFiring().Query().Where(rulefiring.ID(firingID)).ForUpdate().Only(ctx)
-		if err != nil {
-			return err
-		}
-		actions, err := FiringActions(ctx, ts, f)
 		if err != nil {
 			return err
 		}
@@ -850,8 +843,9 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, firingID int64, inde
 		switch {
 		case index == len(results):
 			results = append(results, res)
-			if res.Job != nil {
-				if err := q.Enqueue(ctx, res.Job, nil); err != nil {
+			if res.Type == ActionHTTP && res.Status == Pending {
+				call := HTTPArgs{WorkspaceID: ts.WorkspaceID(), FiringID: f.ID, Index: index}
+				if err := q.Enqueue(ctx, call, nil); err != nil {
 					return err
 				}
 			}
@@ -865,7 +859,7 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, firingID int64, inde
 			return err
 		}
 		update := ts.RuleFiring().UpdateOneID(f.ID).SetResults(string(encoded))
-		if len(results) == len(actions) && !slices.ContainsFunc(results, func(r Result) bool { return r.Status == Pending }) {
+		if len(results) == actionCount && !slices.ContainsFunc(results, func(r Result) bool { return r.Status == Pending }) {
 			update.SetCompletedAt(m.now())
 		}
 		return update.Exec(ctx)
@@ -933,21 +927,20 @@ func FiringActions(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring) ([]Act
 	return actions, nil
 }
 
-// pendingHTTP is the http Action at index of the Firing, and whether it still waits for its call:
-// a result already recorded, or an Action that is not an http one, leaves nothing to do.
-func pendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index int) (Action, bool, error) {
+// pendingHTTP is the Firing's Actions, and whether the one at index is an http Action that still
+// waits for its call: a result already recorded, or an Action that is not an http one, leaves
+// nothing to do.
+func pendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index int) ([]Action, bool, error) {
 	actions, err := FiringActions(ctx, s, f)
 	if err != nil {
-		return Action{}, false, err
+		return nil, false, err
 	}
 	results, err := DecodeResults(f.Results)
 	if err != nil {
-		return Action{}, false, fmt.Errorf("firing %d results: %w", f.ID, err)
+		return nil, false, fmt.Errorf("firing %d results: %w", f.ID, err)
 	}
-	if index < 0 || index >= len(actions) || index >= len(results) || results[index].Status != Pending || actions[index].Type != ActionHTTP {
-		return Action{}, false, nil
-	}
-	return actions[index], true, nil
+	pending := index >= 0 && index < len(actions) && index < len(results) && results[index].Status == Pending && actions[index].Type == ActionHTTP
+	return actions, pending, nil
 }
 
 // propertiesJSON is the Event's properties as kept on its Firing, nil when there are none. The

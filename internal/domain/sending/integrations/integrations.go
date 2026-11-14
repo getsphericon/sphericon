@@ -17,6 +17,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/riverqueue/river"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
@@ -81,6 +83,12 @@ type RefreshQuotaArgs struct {
 
 // Kind is the job's kind in the queue.
 func (RefreshQuotaArgs) Kind() string { return "integration_quota_refresh" }
+
+// InsertOpts queues one quota read of an Integration at a time (jobkind.QueuedOnce): the hourly
+// tick and a saved Integration queue none while one waits or retries.
+func (RefreshQuotaArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{UniqueOpts: jobkind.QueuedOnce()}
+}
 
 // ReleaseWebhookArgs is the job that lets the bot of a deleted Telegram Integration go of its
 // webhook (ReleaseWebhook), queued in the deletion's transaction (ADR 0145) so that it runs iff

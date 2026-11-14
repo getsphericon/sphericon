@@ -47,7 +47,8 @@ func TestAnAuthoringTokenCannotChangeWhatAnActiveRuleDoes(t *testing.T) {
 	alice, err := m.Evaluate(ctx, s, rules.Event{ContactID: fixtures.ContactAliceID, Action: "rule_vip", SourceID: "evt-748-alice", RecordedAt: time.Now()})
 	require.NoError(t, err)
 	require.Len(t, alice, 1)
-	runs, err := rules.FiringActions(ctx, s, alice[0])
+	firing := env.DB.RuleFiring.GetX(ctx, alice[0])
+	runs, err := rules.FiringActions(ctx, s, firing)
 	require.NoError(t, err)
 	assert.Equal(t, "rule-vip-seen", runs[0].Tag, "the Firing runs the live Actions")
 

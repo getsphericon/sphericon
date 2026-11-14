@@ -36,8 +36,8 @@ func fireAndRun(t *testing.T, env *testhelper.TestEnv, contactID int64, action, 
 	fired, err := m.Evaluate(ctx, s, rules.Event{ContactID: contactID, Action: action, SourceID: sourceID, RecordedAt: time.Now()})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
-	require.NoError(t, m.RunActions(ctx, s, fired[0].ID, ruleRunners(env)))
-	return env.DB.RuleFiring.GetX(ctx, fired[0].ID)
+	require.NoError(t, m.RunActions(ctx, s, fired[0], ruleRunners(env)))
+	return env.DB.RuleFiring.GetX(ctx, fired[0])
 }
 
 func tagsOf(t *testing.T, env *testhelper.TestEnv, contactID int64) []string {

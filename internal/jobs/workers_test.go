@@ -127,7 +127,7 @@ func (e *riverEnv) workCtx() context.Context {
 // on its own. It rolls back with the test.
 func (e *riverEnv) clearQueue(t *testing.T) {
 	t.Helper()
-	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, automations.QueueHTTPSteps))
+	_, err := e.queue.JobDeleteMany(context.Background(), river.NewJobDeleteManyParams().Queues(river.QueueDefault, broadcasts.Queue, jobs.QueueWebhooks, jobkind.QueueHTTPCalls))
 	require.NoError(t, err)
 }
 

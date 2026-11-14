@@ -112,9 +112,9 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = tx.Rollback() })
 	handled := events.Envelope{ID: "01JHANDLED", Name: systemevent.ContactCreated, WorkspaceID: fixtures.AcmeID, CorrelationID: "01JROOT", Data: []byte(`{}`)}
-	// The publisher of the handled event ran while handling another: the job's metadata records
-	// that chain, one link up.
-	publishing := events.Handling(ctx, events.Envelope{ID: "01JPUBLISHER", CorrelationID: "01JROOT"})
+	// Publish queues a consumer's job in the context of handling the event it publishes, so the
+	// job's metadata records that event as the cause.
+	publishing := events.Handling(ctx, handled)
 	queued, err := inserter.InsertTx(publishing, tx, chainArgs{events.EventJob{Envelope: handled}}, nil)
 	require.NoError(t, err)
 	w := rivertest.NewWorker(t, riverdatabasesql.New(sqlDB), jobs.BaseConfig(), river.WorkFunc(func(ctx context.Context, _ *river.Job[chainArgs]) error {

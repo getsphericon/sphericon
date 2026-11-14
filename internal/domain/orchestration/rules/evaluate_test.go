@@ -32,8 +32,15 @@ func evaluate(t *testing.T, env *testhelper.TestEnv, contactID int64, action, so
 		RecordedAt: time.Now(),
 	})
 	require.NoError(t, err)
-	ruleIDs := make([]int64, 0, len(fired))
-	for _, f := range fired {
+	return ruleIDsOf(t, env, fired)
+}
+
+// ruleIDsOf is the Rule of each Firing, in the order of firingIDs.
+func ruleIDsOf(t *testing.T, env *testhelper.TestEnv, firingIDs []int64) []int64 {
+	t.Helper()
+	ruleIDs := make([]int64, 0, len(firingIDs))
+	for _, id := range firingIDs {
+		f := env.DB.RuleFiring.GetX(t.Context(), id)
 		ruleIDs = append(ruleIDs, f.RuleID)
 	}
 	return ruleIDs
@@ -135,9 +142,10 @@ func TestEvaluateNeverReplaysAnEventRecordedBeforeActivation(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	afterRules := ruleIDsOf(t, env, after)
+
 	assert.Empty(t, before)
-	require.Len(t, after, 1)
-	assert.EqualValues(t, fixtures.RuleActivatedLaterID, after[0].RuleID)
+	assert.Equal(t, []int64{fixtures.RuleActivatedLaterID}, afterRules)
 }
 
 func TestEvaluateFiresNothingForAnotherWorkspacesContact(t *testing.T) {

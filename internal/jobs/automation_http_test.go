@@ -358,7 +358,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 	listed := h.JobRowsOf(t, jobkind.HTTPStep.Kind)
 	require.Len(t, listed, 1)
 	queued := listed[0]
-	assert.Equal(t, automations.QueueHTTPSteps, queued.Queue)
+	assert.Equal(t, jobkind.QueueHTTPCalls, queued.Queue)
 	assert.NotEqual(t, jobs.QueueWebhooks, queued.Queue)
 	assert.Equal(t, webhook.HookMaxAttempts(), queued.MaxAttempts)
 

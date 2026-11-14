@@ -91,13 +91,14 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	})
 	require.NoError(t, err)
 	require.Len(t, fired, 1)
-	require.NoError(t, m.RunActions(ctx, acme, fired[0].ID, ruleRunners(env)))
+	require.NoError(t, m.RunActions(ctx, acme, fired[0], ruleRunners(env)))
 	tagged := onlyEnvelope(t, env, systemevent.ContactTagged)
 	taggedEvaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
 		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == systemevent.ContactTagged })
 	aliceTags := tagsOf(t, env, fixtures.ContactAliceID)
+	firing := env.DB.RuleFiring.GetX(ctx, fired[0])
 
-	assert.EqualValues(t, fixtures.RuleEnrollmentCompletedID, fired[0].RuleID)
+	assert.EqualValues(t, fixtures.RuleEnrollmentCompletedID, firing.RuleID)
 	assert.Contains(t, aliceTags, "completed-an-automation")
 	assert.NotEmpty(t, tagged.CausedBy, "the Action's Tag carries its Rule")
 	assert.Empty(t, taggedEvaluations, "the Action's own contact.tagged queues no evaluation")

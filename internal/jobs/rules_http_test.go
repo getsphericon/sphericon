@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -67,13 +66,13 @@ func (h *httpRuleHarness) allowing() *jobs.RunRuleHTTPWorker {
 
 // attempt works the call's job as river's attempt-th try; the last one is the job's MaxAttempts.
 func (h *httpRuleHarness) attempt(w *jobs.RunRuleHTTPWorker, attempt int) error {
-	return w.Work(context.Background(), &river.Job[jobs.RunRuleHTTPArgs]{
-		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: jobs.RunRuleHTTPArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
-		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firingID},
+	return w.Work(context.Background(), &river.Job[rules.HTTPArgs]{
+		JobRow: &rivertype.JobRow{Attempt: attempt, MaxAttempts: rules.HTTPArgs{}.InsertOpts().MaxAttempts, CreatedAt: h.clock},
+		Args:   rules.HTTPArgs{FiringID: h.firingID},
 	})
 }
 
-func (h *httpRuleHarness) lastAttempt() int { return jobs.RunRuleHTTPArgs{}.InsertOpts().MaxAttempts }
+func (h *httpRuleHarness) lastAttempt() int { return rules.HTTPArgs{}.InsertOpts().MaxAttempts }
 
 func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -90,7 +89,7 @@ func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	assert.Nil(t, f.CompletedAt, "the Firing finishes when the call is recorded")
 	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactQuahogQuinnID))
 	assert.Empty(t, rcv.received(), "the Actions job makes no call")
-	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0), jobkind.WorkspaceArg: float64(fixtures.QuahogID)}}, env.JobsOf(t, jobs.RunRuleHTTPArgs{}.Kind()))
+	assert.Equal(t, []map[string]any{{"firing_id": float64(fixtures.RuleFiringQuahogHookToRunID), "index": float64(0), jobkind.WorkspaceArg: float64(fixtures.QuahogID)}}, env.JobsOf(t, rules.HTTPArgs{}.Kind()))
 }
 
 func TestAnHTTPActionPostsTheContactAndTheEventAndFinishesTheFiring(t *testing.T) {
@@ -223,9 +222,9 @@ func TestAnHTTPActionRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 	w := h.allowing()
 	h.clock = h.clock.Add(webhook.HookRetryHorizon) // the job was created a horizon ago
 
-	err := w.Work(context.Background(), &river.Job[jobs.RunRuleHTTPArgs]{
+	err := w.Work(context.Background(), &river.Job[rules.HTTPArgs]{
 		JobRow: &rivertype.JobRow{Attempt: 1, MaxAttempts: 3, CreatedAt: h.clock.Add(-webhook.HookRetryHorizon)},
-		Args:   jobs.RunRuleHTTPArgs{FiringID: h.firingID},
+		Args:   rules.HTTPArgs{FiringID: h.firingID},
 	})
 
 	require.NoError(t, err)
@@ -260,13 +259,13 @@ func TestAnHTTPActionRunsOnAQueueOfItsOwnWithTheRetryHorizonOfAHook(t *testing.T
 	h := pendingHTTPRule(t, env, fixtures.RuleFiringQuahogHookPendingID)
 
 	// The Actions job queues the call with the options its args declare.
-	opts := jobs.RunRuleHTTPArgs{}.InsertOpts()
-	assert.Equal(t, automations.QueueHTTPSteps, opts.Queue)
+	opts := rules.HTTPArgs{}.InsertOpts()
+	assert.Equal(t, jobkind.QueueHTTPCalls, opts.Queue)
 	assert.NotEqual(t, jobs.QueueWebhooks, opts.Queue)
 	assert.Equal(t, webhook.HookMaxAttempts(), opts.MaxAttempts)
 	assert.True(t, opts.UniqueOpts.ByArgs, "a redelivered Actions job does not queue the call twice")
 
-	next := h.allowing().NextRetry(&river.Job[jobs.RunRuleHTTPArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
+	next := h.allowing().NextRetry(&river.Job[rules.HTTPArgs]{JobRow: &rivertype.JobRow{Attempt: 2, AttemptedAt: &h.clock}})
 	want := h.clock.Add(54 * time.Second) // a minute less 10%
 	assert.Equal(t, want, next)
 }
