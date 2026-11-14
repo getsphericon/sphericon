@@ -80,12 +80,12 @@ func TestTrackedTransactionalSendRecordsOpenAndClickAndStaysTransactional(t *tes
 	assert.Equal(t, http.StatusFound, redirect.Code)
 	assert.Equal(t, orderLink, redirect.Header().Get("Location"))
 
-	opened := env.QueuedEvents(t, systemevent.EmailOpened)
+	opened := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, opened, 1)
-	assert.EqualValues(t, fixtures.ContactLiamID, opened[0].(*events.EmailEngagement).ContactID)
-	clicked := env.QueuedEvents(t, systemevent.EmailClicked)
+	assert.EqualValues(t, fixtures.ContactLiamID, opened[0].ContactID)
+	clicked := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailClicked)
 	require.Len(t, clicked, 1)
-	assert.Equal(t, orderLink, clicked[0].(*events.EmailEngagement).URL)
+	assert.Equal(t, orderLink, clicked[0].URL)
 }
 
 func TestTrackedTransactionalSendToAnAddressWithNoContactRecordsByAddress(t *testing.T) {
@@ -97,9 +97,9 @@ func TestTrackedTransactionalSendToAnAddressWithNoContactRecordsByAddress(t *tes
 	require.NotEmpty(t, pixel)
 	assert.Equal(t, http.StatusOK, get(t, env, pixel).Code)
 
-	opened := env.QueuedEvents(t, systemevent.EmailOpened)
+	opened := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, opened, 1)
-	got := opened[0].(*events.EmailEngagement)
+	got := opened[0]
 	assert.Zero(t, got.ContactID)
 	assert.Equal(t, dest, got.Email)
 }

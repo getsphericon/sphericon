@@ -74,6 +74,20 @@ func (env *TestEnv) QueuedEvents(t *testing.T, names ...string) []events.DomainE
 	return out
 }
 
+// Queued is QueuedEvents of one type: every queued event of names (each of them, without names)
+// must be an E, or the test fails, so a test reads their fields without asserting the type itself.
+func Queued[E events.DomainEvent](t *testing.T, env *TestEnv, names ...string) []E {
+	t.Helper()
+	queued := env.QueuedEvents(t, names...)
+	out := make([]E, 0, len(queued))
+	for _, ev := range queued {
+		e, ok := ev.(E)
+		require.Truef(t, ok, "a queued %T is not a %T", ev, *new(E))
+		out = append(out, e)
+	}
+	return out
+}
+
 // QueuedMessage is one queued event with its payload decoded generically (numbers as
 // json.Number, so ids compare exactly).
 type QueuedMessage struct {

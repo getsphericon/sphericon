@@ -111,10 +111,10 @@ func TestALinkAndAButtonOfASentTelegramMessageAreShortLinksThatRedirectAndRecord
 			"contactId": fixtures.ContactBobID, "url": target, "automationId": automationID, "integrationId": bot.Integration.ID,
 		}), target)
 	}
-	clicks := env.QueuedEvents(t, systemevent.TelegramClicked)
+	clicks := testhelper.Queued[*events.TelegramClicked](t, env, systemevent.TelegramClicked)
 	require.Len(t, clicks, 2)
-	assert.NotZero(t, clicks[0].(*events.TelegramClicked).OutboundMessageID)
-	assert.False(t, clicks[0].(*events.TelegramClicked).Machine)
+	assert.NotZero(t, clicks[0].OutboundMessageID)
+	assert.False(t, clicks[0].Machine)
 }
 
 func TestTheSameUrlOfAMessageKeepsOneShortLink(t *testing.T) {
@@ -181,11 +181,11 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	assert.Equal(t, 1, report.Clicked, "the Telegram report shows clicked")
 	assert.Nil(t, report.Opened)
 
-	clicks := env.QueuedEvents(t, systemevent.TelegramClicked)
+	clicks := testhelper.Queued[*events.TelegramClicked](t, env, systemevent.TelegramClicked)
 	require.Len(t, clicks, 2)
-	assert.True(t, clicks[0].(*events.TelegramClicked).Machine)
-	assert.False(t, clicks[1].(*events.TelegramClicked).Machine)
-	assert.Equal(t, id, clicks[1].(*events.TelegramClicked).BroadcastID)
+	assert.True(t, clicks[0].Machine)
+	assert.False(t, clicks[1].Machine)
+	assert.Equal(t, id, clicks[1].BroadcastID)
 }
 
 // telegram.clicked is a Trigger like email.clicked: a person's click enrolls the Contact, and a hit

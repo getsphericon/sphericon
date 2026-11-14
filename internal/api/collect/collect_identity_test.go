@@ -36,10 +36,9 @@ func TestCollectedEventPropertiesKeepTheirJSONValues(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	collected := env.QueuedEvents(t, events.NameCollected)
+	collected := testhelper.Queued[*events.CollectedEvent](t, env, events.NameCollected)
 	require.Len(t, collected, 1)
-	got, ok := collected[0].(*events.CollectedEvent)
-	require.Truef(t, ok, "got %T", collected[0])
+	got := collected[0]
 	assert.Equal(t, map[string]any{
 		"s": "x", "n": float64(2), "b": true, "o": map[string]any{"k": "v"}, "l": []any{float64(1)}, "z": nil,
 	}, got.Properties)
@@ -123,11 +122,9 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 	})
 	require.NoError(t, err)
 
-	collected := env.QueuedEvents(t, events.NameCollected)
+	collected := testhelper.Queued[*events.CollectedEvent](t, env, events.NameCollected)
 	require.Len(t, collected, 1, "exactly one event")
-	decoded := collected[0]
-	got, ok := decoded.(*events.CollectedEvent)
-	require.Truef(t, ok, "got %T", decoded)
+	got := collected[0]
 
 	assert.EqualValues(t, fixtures.GlobexID, got.WorkspaceID)
 	assert.Equal(t, "checkout", got.Action)

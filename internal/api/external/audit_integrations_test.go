@@ -32,13 +32,11 @@ func tokenActor(t *testing.T, env *testhelper.TestEnv) events.Actor {
 // row held) reaches an entry; a sensitive field appears in a diff only as "changed".
 func assertTokenAudited(t *testing.T, env *testhelper.TestEnv, targetID externalapi.EntityId, targetName string, wantActions, sensitiveFields, secrets []string) {
 	t.Helper()
-	got := env.QueuedEvents(t, events.NameAuditEntry)
+	got := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got, len(wantActions))
 	actor := tokenActor(t, env)
 	actions := make([]string, 0, len(got))
-	for _, ev := range got {
-		e, ok := ev.(*events.AuditEntry)
-		require.Truef(t, ok, "got %T", ev)
+	for _, e := range got {
 		actions = append(actions, e.Action)
 		assert.Equal(t, actor, e.Actor)
 		assert.Equal(t, testhelper.ID(targetID), e.TargetID)

@@ -117,11 +117,9 @@ func TestAnAcceptedInvitationKeepsNoAddress(t *testing.T) {
 	accepted := env.DB.Invitation.GetX(t.Context(), inv.ID)
 	assert.NotNil(t, accepted.AcceptedAt)
 	assert.Nil(t, accepted.Email)
-	entries := env.QueuedEvents(t, events.NameAuditEntry)
+	entries := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.NotEmpty(t, entries, "the offer and its acceptance are audited")
-	for _, e := range entries {
-		entry, ok := e.(*events.AuditEntry)
-		require.True(t, ok)
+	for _, entry := range entries {
 		assert.NotContains(t, entry.TargetName, "@", entry.Action)
 	}
 }

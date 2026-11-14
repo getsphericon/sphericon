@@ -104,8 +104,8 @@ func TestAuditARefusedLinkOrUnlinkRecordsNothing(t *testing.T) {
 	require.Equal(t, http.StatusConflict, b.Delete(t, identitiesPath+"/"+list.Items[0].ID).StatusCode, "the last way to sign in")
 
 	for _, action := range []string{events.ActionUserIdentityLink, events.ActionUserIdentityUnlink} {
-		for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
-			assert.NotEqual(t, action, ev.(*events.AuditEntry).Action)
+		for _, ev := range testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry) {
+			assert.NotEqual(t, action, ev.Action)
 		}
 	}
 }

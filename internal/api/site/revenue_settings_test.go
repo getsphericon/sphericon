@@ -136,9 +136,9 @@ func TestEveryChangeOfTheRevenueSettingsIsAuditedAndARepeatIsNot(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	published := env.QueuedEvents(t, events.NameAuditEntry)
+	published := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, published, 1)
-	entry := published[0].(*events.AuditEntry)
+	entry := published[0]
 	assert.Equal(t, events.ActionWorkspaceUpdate, entry.Action)
 	diff, err := json.Marshal(entry.Diff)
 	require.NoError(t, err)
@@ -161,9 +161,9 @@ func TestTheFirstOrderCompletedChoosesTheReportingCurrencyAsTheSystemOnce(t *tes
 	env.PerformEnqueuedJobs(t, jobs.OrderEventArgs{})
 
 	assert.Equal(t, siteapi.CurrencyCode("EUR"), revenueSettings(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).ReportingCurrency.Value)
-	published := env.QueuedEvents(t, events.NameAuditEntry)
+	published := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, published, 1)
-	entry := published[0].(*events.AuditEntry)
+	entry := published[0]
 	assert.Equal(t, events.ActionWorkspaceUpdate, entry.Action)
 	assert.Equal(t, events.ActorSystem, entry.Actor.Kind)
 	diff, err := json.Marshal(entry.Diff)

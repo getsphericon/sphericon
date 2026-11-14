@@ -49,10 +49,9 @@ func TestAnOpenPublishesTheOpenOfItsMessage(t *testing.T) {
 	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(0))
 
 	require.NoError(t, err)
-	got := env.QueuedEvents(t, systemevent.EmailOpened)
+	got := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, got, 1)
-	e, ok := got[0].(*events.EmailEngagement)
-	require.True(t, ok)
+	e := got[0]
 	assert.Equal(t, int64(fixtures.OutboundMessageTrackingSampleID), e.OutboundMessageID)
 	assert.Equal(t, int64(fixtures.AcmeID), e.WorkspaceID)
 	assert.False(t, e.Machine)
@@ -65,10 +64,9 @@ func TestAnOpenByAScannerIsAMachineOpen(t *testing.T) {
 
 	require.NoError(t, recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), hit))
 
-	got := env.QueuedEvents(t, systemevent.EmailOpened)
+	got := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, got, 1)
-	e, ok := got[0].(*events.EmailEngagement)
-	require.True(t, ok)
+	e := got[0]
 	assert.True(t, e.Machine)
 }
 
@@ -121,10 +119,9 @@ func TestAClickPublishesTheClickAndReturnsTheLinkItSigns(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "https://dest.test/a", dest)
-	got := env.QueuedEvents(t, systemevent.EmailClicked)
+	got := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailClicked)
 	require.Len(t, got, 1)
-	e, ok := got[0].(*events.EmailEngagement)
-	require.True(t, ok)
+	e := got[0]
 	assert.Equal(t, "https://dest.test/a", e.URL)
 }
 
@@ -144,10 +141,9 @@ func TestAShortLinkPublishesTheClickOfItsMessageAndReturnsItsURL(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.TrackedLinkAcmeURL, dest)
-	got := env.QueuedEvents(t, systemevent.EmailClicked)
+	got := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailClicked)
 	require.Len(t, got, 1, "the click of the link's email is published")
-	e, ok := got[0].(*events.EmailEngagement)
-	require.True(t, ok)
+	e := got[0]
 	assert.Equal(t, int64(fixtures.OutboundMessageWelcomeID), e.OutboundMessageID)
 	assert.Equal(t, fixtures.TrackedLinkAcmeURL, e.URL)
 }

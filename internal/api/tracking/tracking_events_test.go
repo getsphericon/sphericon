@@ -56,11 +56,9 @@ func TestEveryOpenIsAnEventAndTheRollupIsStampedOnce(t *testing.T) {
 		assert.Equal(t, http.StatusOK, trackingGet(t, env, path).Code)
 	}
 
-	opened := env.QueuedEvents(t, systemevent.EmailOpened)
+	opened := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, opened, 3, "one email.opened Event per open")
-	for _, e := range opened {
-		got, ok := e.(*events.EmailEngagement)
-		require.True(t, ok)
+	for _, got := range opened {
 		assert.EqualValues(t, fixtures.OutboundMessageTrackingSampleID, got.OutboundMessageID)
 		assert.EqualValues(t, fixtures.BroadcastSentUntrackedID, got.BroadcastID)
 	}
@@ -101,9 +99,9 @@ func TestEveryClickIsAnEventWithItsURLAndTheReportListsTheLinks(t *testing.T) {
 		assert.Equal(t, dest, resp.Header().Get("Location"))
 	}
 
-	clicked := env.QueuedEvents(t, systemevent.EmailClicked)
+	clicked := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailClicked)
 	require.Len(t, clicked, 3, "one email.clicked Event per click")
-	assert.Equal(t, linkA, clicked[0].(*events.EmailEngagement).URL)
+	assert.Equal(t, linkA, clicked[0].URL)
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	assert.Equal(t, 1, figures(t, env, fixtures.BroadcastSentUntrackedID).Clicked, "unique clicks count the recipient once")
 

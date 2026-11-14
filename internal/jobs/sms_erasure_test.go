@@ -136,9 +136,9 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	})
 	assert.Equal(t, []erasedMessage{{}, {}}, anonymous, "the texts keep no Contact, number or Twilio SID")
 	leadsNowhere(t, follow(t, env, paths[0], browserUA), "the short link leads nowhere")
-	erased := env.QueuedEvents(t, systemevent.ContactErased)
+	erased := testhelper.Queued[*events.ContactErased](t, env, systemevent.ContactErased)
 	require.Len(t, erased, 1)
-	hash := erased[0].(*events.ContactErased).PhoneHash
+	hash := erased[0].PhoneHash
 	sum := sha256.Sum256([]byte(number))
 	assert.Equal(t, hex.EncodeToString(sum[:]), hash, "the Erasure record holds the phone's hash, its lowercase hex SHA-256 (ADR 0045)")
 	optOut := env.DB.Unsubscribe.Query().Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.Destination(hash)).OnlyX(ctx)

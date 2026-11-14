@@ -47,8 +47,7 @@ func TestAccessAndConfigEntitiesAreAuditedWithoutSecrets(t *testing.T) {
 
 	actions := map[string]*events.AuditEntry{}
 	var all strings.Builder
-	for _, ev := range env.QueuedEvents(t, events.NameAuditEntry) {
-		e := ev.(*events.AuditEntry)
+	for _, e := range testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry) {
 		actions[e.Action] = e
 		b, merr := json.Marshal(e)
 		require.NoError(t, merr)
@@ -85,9 +84,9 @@ func TestWorkspaceSettingsChangeIsAudited(t *testing.T) {
 		siteapi.SiteWorkspacesUpdateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 
-	got := env.QueuedEvents(t, events.NameAuditEntry)
+	got := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got, 1)
-	e := got[0].(*events.AuditEntry)
+	e := got[0]
 	assert.Equal(t, events.ActionWorkspaceUpdate, e.Action)
 	assert.Equal(t, events.ActorUser, e.Actor.Kind)
 	assert.Equal(t, "Acme Renamed", e.TargetName)
@@ -105,9 +104,8 @@ func TestApiTokenRevocationIsAudited(t *testing.T) {
 	err := c.SiteTokensDelete(ctx, siteapi.SiteTokensDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.ProductionTokenID})
 	require.NoError(t, err)
 
-	updates := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		e := ev.(*events.AuditEntry)
-		return e, e.Action == "api_token.update"
+	updates := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.Action == "api_token.update"
 	})
 	require.NotEmpty(t, updates, "revocation emits api_token.update")
 	revoke := updates[len(updates)-1]

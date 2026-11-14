@@ -51,9 +51,9 @@ func TestAnOwnerSetsTheTimezoneAndItIsRecordedInTheAuditLog(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.TimeZoneName("Europe/Berlin"), list[0].Timezone)
 
-	published := env.QueuedEvents(t, events.NameAuditEntry)
+	published := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, published, 1)
-	entry := published[0].(*events.AuditEntry)
+	entry := published[0]
 	diff, err := json.Marshal(entry.Diff)
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"timezone":{"from":"UTC","to":"Europe/Berlin"}}`, string(diff))

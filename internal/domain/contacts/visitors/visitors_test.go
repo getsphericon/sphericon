@@ -20,11 +20,7 @@ import (
 // queuedCollected decodes every CollectedEvent the test published.
 func queuedCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
 	t.Helper()
-	return lo.Map(env.QueuedEvents(t, events.NameCollected), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
-		ce, ok := ev.(*events.CollectedEvent)
-		require.Truef(t, ok, "got %T", ev)
-		return ce
-	})
+	return testhelper.Queued[*events.CollectedEvent](t, env, events.NameCollected)
 }
 
 func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {

@@ -46,9 +46,9 @@ func TestAuditRetentionIsSetReadAndRecorded(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, siteapi.RetentionDays(90), got.RetentionDays.Value)
 
-	got2 := env.QueuedEvents(t, events.NameAuditEntry)
+	got2 := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got2, 1)
-	e := got2[0].(*events.AuditEntry)
+	e := got2[0]
 	assert.Equal(t, events.ActionWorkspaceUpdate, e.Action)
 	diff, err := json.Marshal(e.Diff)
 	require.NoError(t, err)

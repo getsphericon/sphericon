@@ -20,9 +20,8 @@ import (
 // auditedStatuses returns the status changes the Audit log recorded for one target, in order.
 func auditedStatuses(t *testing.T, env *testhelper.TestEnv, targetType string, id int64) []any {
 	t.Helper()
-	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		e, ok := ev.(*events.AuditEntry)
-		return e, ok && e.TargetType == targetType && e.TargetID == testhelper.ID(id)
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.TargetType == targetType && e.TargetID == testhelper.ID(id)
 	})
 	return lo.Map(entries, func(e *events.AuditEntry, _ int) any { return []any{e.Action, e.Diff["status"]} })
 }
@@ -50,9 +49,8 @@ func TestSiteAutomationPublishAndDeactivateAreAudited(t *testing.T) {
 // draft pointers changed, in order.
 func auditedVersionMoves(t *testing.T, env *testhelper.TestEnv, id int64) []any {
 	t.Helper()
-	entries := lo.FilterMap(env.QueuedEvents(t, events.NameAuditEntry), func(ev events.DomainEvent, _ int) (*events.AuditEntry, bool) {
-		e, ok := ev.(*events.AuditEntry)
-		return e, ok && e.TargetType == "automation" && e.TargetID == testhelper.ID(id)
+	entries := lo.Filter(testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry), func(e *events.AuditEntry, _ int) bool {
+		return e.TargetType == "automation" && e.TargetID == testhelper.ID(id)
 	})
 	return lo.Map(entries, func(e *events.AuditEntry, _ int) any {
 		return []any{e.Action, pointerMove(e.Diff[automation.FieldLiveVersionID]), pointerMove(e.Diff[automation.FieldDraftVersionID])}

@@ -328,9 +328,9 @@ func TestAnAnsweringProbeMakesTheHostServingAndPublishesTheChange(t *testing.T) 
 	assert.Equal(t, trackingdomain.StateServing, row.State)
 	assert.True(t, clock.Equal(*row.ServedAt))
 
-	changes := env.QueuedEvents(t, events.NameTrackingDomainChanged)
+	changes := testhelper.Queued[*events.TrackingDomainChanged](t, env, events.NameTrackingDomainChanged)
 	require.Len(t, changes, 1)
-	change := changes[0].(*events.TrackingDomainChanged)
+	change := changes[0]
 	assert.Equal(t, fixtures.TrackingDomainDNSVerifiedHost, change.Host)
 	assert.EqualValues(t, fixtures.TrackingDomainDNSVerifiedID, change.TrackingDomainID)
 	assert.Equal(t, "dns_verified", change.From)
@@ -510,10 +510,10 @@ func TestEveryEdgeOfTheStateLifecycle(t *testing.T) {
 			assert.Equal(t, c.to, got.State)
 			assert.True(t, clock.Equal(*got.StateChangedAt))
 
-			changes := env.QueuedEvents(t, events.NameTrackingDomainChanged)
+			changes := testhelper.Queued[*events.TrackingDomainChanged](t, env, events.NameTrackingDomainChanged)
 			require.Len(t, changes, 1)
-			assert.Equal(t, string(c.from), changes[0].(*events.TrackingDomainChanged).From)
-			assert.Equal(t, string(c.to), changes[0].(*events.TrackingDomainChanged).To)
+			assert.Equal(t, string(c.from), changes[0].From)
+			assert.Equal(t, string(c.to), changes[0].To)
 		})
 	}
 }

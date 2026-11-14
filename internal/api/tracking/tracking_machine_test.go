@@ -54,10 +54,9 @@ func clickPathTo(t *testing.T, env *testhelper.TestEnv, messageID int64, dest st
 
 func onlyEngagement(t *testing.T, env *testhelper.TestEnv, name string) *events.EmailEngagement {
 	t.Helper()
-	got := env.QueuedEvents(t, name)
+	got := testhelper.Queued[*events.EmailEngagement](t, env, name)
 	require.Len(t, got, 1, name)
-	e, ok := got[0].(*events.EmailEngagement)
-	require.True(t, ok)
+	e := got[0]
 	return e
 }
 
@@ -99,10 +98,10 @@ func TestAHitFromAPrivateRelayRangeIsMachine(t *testing.T) {
 		hit(t, env, openPath(t, env, fixtures.OutboundMessageTrackingSampleID), personUA, addr)
 	}
 
-	opened := env.QueuedEvents(t, systemevent.EmailOpened)
+	opened := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, opened, 2)
 	for _, o := range opened {
-		assert.True(t, o.(*events.EmailEngagement).Machine)
+		assert.True(t, o.Machine)
 	}
 	assert.Zero(t, figures(t, env, fixtures.BroadcastSentUntrackedID).Opened)
 }
@@ -216,9 +215,9 @@ func TestRefreshReplacesTheRangesAndAFailedRefreshKeepsThem(t *testing.T) {
 		t.Helper()
 		before := len(env.QueuedEvents(t, systemevent.EmailOpened))
 		hit(t, env, path, personUA, addr)
-		opened := env.QueuedEvents(t, systemevent.EmailOpened)
+		opened := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 		require.Len(t, opened, before+1)
-		return opened[before].(*events.EmailEngagement).Machine
+		return opened[before].Machine
 	}
 	require.True(t, machineHit(relayAddr), "the fixture range is listed")
 	require.False(t, machineHit(publishedAddr))

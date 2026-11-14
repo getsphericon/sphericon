@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,11 +19,7 @@ import (
 
 func queuedCollected(t *testing.T, env *testhelper.TestEnv) []*events.CollectedEvent {
 	t.Helper()
-	return lo.Map(env.QueuedEvents(t), func(ev events.DomainEvent, _ int) *events.CollectedEvent {
-		ce, ok := ev.(*events.CollectedEvent)
-		require.Truef(t, ok, "got %T", ev)
-		return ce
-	})
+	return testhelper.Queued[*events.CollectedEvent](t, env)
 }
 
 func TestRecordAttachesEventToExistingContactByAlias(t *testing.T) {

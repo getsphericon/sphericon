@@ -23,9 +23,9 @@ func TestExternalTagCreateIsAuditedUnderTheToken(t *testing.T) {
 		externalapi.TagsApplyParams{ContactId: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
-	got := env.QueuedEvents(t, events.NameAuditEntry)
+	got := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got, 1)
-	e := got[0].(*events.AuditEntry)
+	e := got[0]
 	assert.Equal(t, "tag.create", e.Action)
 	assert.Equal(t, events.Actor{Kind: events.ActorAPIToken, ID: testhelper.ID(fixtures.AnchorTokenID), Name: fixtures.AnchorTokenName}, e.Actor)
 	assert.Equal(t, "api-tag", e.TargetName)

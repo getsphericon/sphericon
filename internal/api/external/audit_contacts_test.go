@@ -28,9 +28,9 @@ func TestExternalBatchUpsertRecordsOneImportEntry(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	got := env.QueuedEvents(t, events.NameAuditEntry)
+	got := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got, 1)
-	e := got[0].(*events.AuditEntry)
+	e := got[0]
 	assert.Equal(t, events.ActionContactImport, e.Action)
 	assert.Equal(t, events.ActorAPIToken, e.Actor.Kind)
 	assert.Empty(t, e.TargetID)
@@ -56,10 +56,9 @@ func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 	err = c.ContactsDelete(ctx, externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBobID)})
 	require.NoError(t, err)
 
-	got := env.QueuedEvents(t, events.NameAuditEntry)
+	got := testhelper.Queued[*events.AuditEntry](t, env, events.NameAuditEntry)
 	require.Len(t, got, 2)
-	for _, ev := range got {
-		e := ev.(*events.AuditEntry)
+	for _, e := range got {
 		assert.Equal(t, events.ActorAPIToken, e.Actor.Kind)
 		assert.Equal(t, testhelper.ID(fixtures.ContactBobID), e.TargetID)
 		assert.Empty(t, e.TargetName)
@@ -69,5 +68,5 @@ func TestExternalContactEditIsAuditedWithNamesOnly(t *testing.T) {
 		assert.NotContains(t, string(raw), "Renamed")
 		assert.NotContains(t, string(raw), "Bob")
 	}
-	assert.Equal(t, map[string]any{"first_name": "changed"}, got[0].(*events.AuditEntry).Diff)
+	assert.Equal(t, map[string]any{"first_name": "changed"}, got[0].Diff)
 }
