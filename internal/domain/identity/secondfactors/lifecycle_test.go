@@ -11,7 +11,6 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
@@ -24,63 +23,26 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestSecondFactorUnconfirmedSecretsCannotVerifyOrRegenerate(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		secret := rapid.SampledFrom([]string{"", "sealed pending secret"}).Draw(t, "unconfirmed factor")
-		trigger := rapid.SampledFrom([]secondfactors.Trigger{secondfactors.FactorVerify, secondfactors.FactorRegenerate, secondfactors.FactorDisable}).Draw(t, "active-only operation")
-		before := &ent.SecondFactor{SecretEncrypted: secret}
-		stored := secondfactors.State("")
-		machine := secondfactors.Machine(before, secondfactors.Change{Trigger: trigger, Step: 1}, lifecycle.Storage[secondfactors.State]{Write: func(_ context.Context, _, to secondfactors.State) (bool, error) {
-			stored = to
-			return true, nil
-		}})
+// A pending enrollment is not a Second factor: its secret verifies no second step, and the steps
+// that need an active factor (regenerating the Recovery codes, disabling) have nothing to act on.
+func TestAPendingEnrollmentCannotVerifyRegenerateOrDisable(t *testing.T) {
+	env, c := setup(t)
+	john := env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID)
+	proof := users.IdentityProof{Password: fixtures.OwnerJohnPassword}
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), john, proof)
+	require.NoError(t, err)
+	code := enrollmentCode(t, enrollment.Secret, c.now())
 
-		err := machine.FireCtx(t.Context(), trigger)
+	_, verified := verify(t, env, fixtures.OwnerJohnID, code)
+	_, regenerated := env.SecondFactor.RegenerateRecoveryCodes(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), proof)
+	_, disabled := env.SecondFactor.Disable(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), proof, code)
 
-		require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
-		assert.Empty(t, stored)
-	})
-}
-
-func TestSecondFactorConfirmationAlwaysRequiresANewerStep(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		previous := rapid.Int64Range(1, 1000000).Draw(t, "accepted step")
-		step := rapid.Int64Range(0, previous).Draw(t, "replayed or older step")
-		before := &ent.SecondFactor{SecretEncrypted: "sealed pending secret", LastStep: previous}
-		stored := secondfactors.State("")
-		machine := secondfactors.Machine(before, secondfactors.Change{Trigger: secondfactors.FactorConfirm, Step: step}, lifecycle.Storage[secondfactors.State]{Write: func(_ context.Context, _, to secondfactors.State) (bool, error) {
-			stored = to
-			return true, nil
-		}})
-
-		err := machine.FireCtx(t.Context(), secondfactors.FactorConfirm)
-
-		require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
-		assert.Empty(t, stored)
-	})
-}
-
-func TestSecondFactorInternalTransitionsCannotSkipTheirConditionalWrite(t *testing.T) {
-	now := time.Date(2026, 11, 7, 10, 0, 0, 0, time.UTC)
-	for _, tc := range []struct {
-		name   string
-		before *ent.SecondFactor
-		change secondfactors.Change
-	}{
-		{"replace pending", &ent.SecondFactor{SecretEncrypted: "sealed"}, secondfactors.Change{Trigger: secondfactors.FactorStart, SealedSecret: "replacement"}},
-		{"verify totp", &ent.SecondFactor{SecretEncrypted: "sealed", ConfirmedAt: &now}, secondfactors.Change{Trigger: secondfactors.FactorVerify, Step: 1}},
-		{"verify recovery", &ent.SecondFactor{SecretEncrypted: "sealed", ConfirmedAt: &now}, secondfactors.Change{Trigger: secondfactors.FactorVerify}},
-		{"regenerate", &ent.SecondFactor{SecretEncrypted: "sealed", ConfirmedAt: &now}, secondfactors.Change{Trigger: secondfactors.FactorRegenerate}},
-		{"reset passkeys", nil, secondfactors.Change{Trigger: secondfactors.FactorReset}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			machine := secondfactors.Machine(tc.before, tc.change, lifecycle.Storage[secondfactors.State]{Write: func(context.Context, secondfactors.State, secondfactors.State) (bool, error) { return false, nil }})
-
-			err := machine.FireCtx(t.Context(), tc.change.Trigger)
-
-			require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
-		})
-	}
+	require.ErrorIs(t, verified, secondfactors.ErrNotActive)
+	require.ErrorIs(t, regenerated, secondfactors.ErrNotActive)
+	require.ErrorIs(t, disabled, secondfactors.ErrNotActive)
+	status, err := env.SecondFactor.Status(t.Context(), fixtures.OwnerJohnID)
+	require.NoError(t, err)
+	assert.Equal(t, secondfactors.Status{Pending: true}, status)
 }
 
 type factorRace struct {

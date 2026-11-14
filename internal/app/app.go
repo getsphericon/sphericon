@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -38,7 +39,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/usecase/secondfactorreset"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
@@ -395,9 +395,10 @@ func (a *App) Suspender() (*suspension.Suspender, error) {
 	return do.Invoke[*suspension.Suspender](a.injector)
 }
 
-// SecondFactorReset is the Second factor reset use case from the DI container.
-func (a *App) SecondFactorReset() (*secondfactorreset.UseCase, error) {
-	return do.Invoke[*secondfactorreset.UseCase](a.injector)
+// SecondFactors is the Second factor module from the DI container, which resets a User's Second
+// factor.
+func (a *App) SecondFactors() (*secondfactors.Module, error) {
+	return do.Invoke[*secondfactors.Module](a.injector)
 }
 
 // SignUp is the Sign-up use case from the DI container, which creates an Owner from a shell.

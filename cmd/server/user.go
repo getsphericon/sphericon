@@ -41,12 +41,12 @@ func userCommand(d deps) *cli.Command {
 			ArgsUsage: "<email>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				reset, err := c.SecondFactorReset()
+				factors, err := c.SecondFactors()
 				if err != nil {
 					return err
 				}
 				email := cmd.StringArg(flagEmail)
-				err = reset.ResetByStaff(ctx, email, "cli")
+				err = factors.ResetByStaff(ctx, email, "cli")
 				return commandline.ReportSecondFactorReset(out(cmd), email, err)
 			}),
 		},

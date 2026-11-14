@@ -102,7 +102,10 @@ context gets a package of its own by the same test.
     operation of the Workspace view, `workspaceview`, see
     [[0111-every-entry-point-is-a-driver-that-calls-one-operation-of-the-core]].)
   - The Second factor reset also removes Passkeys, above the factor (ADR 0110), and User deletion
-    becomes a use case (ADR 0110, ADR 0111, #1206) (condition 1).
+    becomes a use case (ADR 0110, ADR 0111, #1206) (condition 1). (Amended by #1355: Passkeys are
+    not above the factor, `passkeys` imports only `users` and both sit in identity, so by this
+    test the owner of the subject holds the reset: it is `secondfactors.Module.Reset` and
+    `ResetByStaff`, and it leaves this list of use cases.)
   - The License with a core module's rows: `auditlogretention`, whose windows are the Workspaces'
     (`workspaces`) and whose rows are the Audit entries' (condition 2).
   - Across contexts: `analyticsreport` (contacts and sending), `needsattentionreport` (sending,

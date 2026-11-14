@@ -95,7 +95,9 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    advisory lock, ADR 0099, and hand over the scope that stands for it, `*ent.WorkspaceLocked`,
    which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108), and `tx.Scoped(...)` inside
    `users.Module.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
-   sign-up also runs in its own transaction), re-scope a transaction's client to the same Workspace;
+   sign-up also runs in its own transaction) and inside `secondfactors.Module.Reset` (the Second
+   factor reset reads its target Membership in the reset's transaction), re-scope a transaction's
+   client to the same Workspace;
    `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from
    (acting as the system), after `joindomains` has read that Workspace off the holder's row;
    the domain-join step of the verification transaction (`applyDomainJoin` in
@@ -163,12 +165,10 @@ are its own, and a code or a refresh token is looked up by its secret before any
 and the bootstrap, whose token names no Workspace, so it scopes to the oldest live one itself;
 every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
 (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
-Workspace), the unchecked operations of those identity modules
-that join their use case's raw transaction (ADR 0110: `workspacesunchecked`, `membershipsunchecked`,
-`usersunchecked`, `passkeysunchecked` and `secondfactorsunchecked`, in the
-component `domain-identity-unchecked`, which only a use case imports), the use cases `internal/usecase/secondfactorreset` (a
-Second factor reset, ADR 0020: one transaction across the Second factor and the Passkeys, none of
-which a Workspace owns),
+Workspace; the Second factor reset, `secondfactors.Module.Reset`, clears both in one transaction),
+the unchecked operations of the identity modules that join their use case's raw transaction
+(ADR 0110: `workspacesunchecked`, `membershipsunchecked` and `usersunchecked`, in the component
+`domain-identity-unchecked`, which only a use case imports), the use cases
 `internal/usecase/workspaceview` (a Workspace created with its Owner Membership, ADR 0043: no Workspace
 exists yet; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/signup` (the steps that make a User Verified with its first
 Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/userdeletion` (User deletion,
