@@ -26,7 +26,9 @@ const eraseChunk = 10_000
 // non-personal delivery facts the complaint and bounce rates are computed from
 // (ADR 0011). Everything else a system Event carries (urls, provider and message ids,
 // provenance) is dropped, and so are the columns that copy them (url, broadcast_id,
-// automation_id); machine and captured stay, facts about the send and not the person.
+// automation_id) and the source id, which may name the destination or the provider's reference
+// (an email notice's address, an SMS report's SID); machine and captured stay, facts about the
+// send and not the person.
 var anonymousKeep = []string{"sendingDomain", systemevent.BounceKindProperty}
 
 // anonymized reports whether an Event action is a reserved system action that
@@ -79,7 +81,7 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 		return err
 	}
 
-	var doomed, reported []int64
+	var doomed []int64
 	// Anonymized Events grouped by the properties they keep, so each distinct property
 	// set is one bulk update.
 	type keptGroup struct {
@@ -91,9 +93,6 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 		if !anonymized(e.Action) {
 			doomed = append(doomed, e.ID)
 			continue
-		}
-		if e.Action == systemevent.SmsDelivered || e.Action == systemevent.SmsUndelivered {
-			reported = append(reported, e.ID)
 		}
 		props := lo.PickByKeys(e.Properties, anonymousKeep)
 		key, err := json.Marshal(props) // map keys marshal sorted: a stable group key
@@ -117,18 +116,11 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 		for _, chunk := range lo.Chunk(g.ids, eraseChunk) {
 			if _, err := s.Event().Update().Where(event.IDIn(chunk...)).
 				ClearContactID().ClearVisitorID().ClearEmail().ClearPhone().ClearSubjectID().
-				ClearURL().ClearBroadcastID().ClearAutomationID().
+				ClearURL().ClearBroadcastID().ClearAutomationID().ClearSourceID().
 				SetProperties(g.props).
 				Save(ctx); err != nil {
 				return err
 			}
-		}
-	}
-	// An SMS delivery report's source id is the provider's key of the report (callbackinterpretation.Tx.DedupKey),
-	// which names the message in Twilio's log; once the Event is anonymized it identifies no repeat.
-	for _, chunk := range lo.Chunk(reported, eraseChunk) {
-		if _, err := s.Event().Update().Where(event.IDIn(chunk...)).ClearSourceID().Save(ctx); err != nil {
-			return err
 		}
 	}
 	return nil

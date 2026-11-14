@@ -99,8 +99,8 @@ hex SHA-256 of the E.164 number that the Erasure record already keeps as its pho
 - **SMS Outbound messages** lose their destination and the provider's reference (Twilio's SID,
   which names the number and the text in Twilio's log), and the number where Twilio's words on a
   refused text quote it. A delivery report that arrives after the Erasure finds no message and
-  records nothing. An anonymized `sms.delivered` or `sms.undelivered` Event loses its source id,
-  which carries the SID. `sms.received` (the person's words) is deleted; `sms.sent`,
+  records nothing. Every anonymized Event loses its source id, which may carry the SID of an SMS
+  report or the address of an email notice. `sms.received` (the person's words) is deleted; `sms.sent`,
   `sms.delivered`, `sms.undelivered` and `sms.clicked` are anonymized like their email twins; the
   short links of the Contact's texts are deleted. A Test send's links name no message and carry
   sample data only, and a Test send keeps no number.
