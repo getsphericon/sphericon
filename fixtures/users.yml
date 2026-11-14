@@ -256,6 +256,14 @@
   email: una@passkey.test
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Rue has no password and no Linked identity, and two Passkeys (passkeys.yml): she may remove
+# either, never both (ADR 0052).
+- id: 28 # fixture: PasskeyPairRue
+  name: Rue
+  email: rue@passkey.test
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
 # Owner of Dunder (segment preview through the site API).
 - id: 5500 # fixture: DunderOwnerDwight
   name: Dwight

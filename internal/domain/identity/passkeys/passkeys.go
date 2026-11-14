@@ -222,7 +222,11 @@ func (p *Module) Remove(ctx context.Context, u *ent.User, proof users.IdentityPr
 	userID := u.ID
 	var removal Removal
 	err := p.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		held, err := tx.User.Get(ctx, userID)
+		// The User row is locked first, the order of every change of the User's Second factor and
+		// Passkeys (a Second factor reset bumps the User, then removes the Passkeys): a removal and
+		// a reset queue on it rather than deadlock, and two removals of one User's last ways to sign
+		// in check them one after the other.
+		held, err := users.LockIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}

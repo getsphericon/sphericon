@@ -35,3 +35,25 @@
   backup_state: false
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Rue's two Passkeys (ADR 0052): together her only ways to sign in. They share Pat's key pair,
+# which no test asserts with.
+- id: 4 # fixture: PasskeyRuePhone
+  user_id: 28
+  name: Rue's phone
+  credential_id: '{{passkeyCredentialID "AgECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"}}'
+  public_key: '{{passkeyPublicKey "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"}}'
+  sign_count: 0
+  backup_eligible: false
+  backup_state: false
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 5 # fixture: PasskeyRueKey
+  user_id: 28
+  name: Rue's key
+  credential_id: '{{passkeyCredentialID "AwECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"}}'
+  public_key: '{{passkeyPublicKey "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"}}'
+  sign_count: 0
+  backup_eligible: false
+  backup_state: false
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
