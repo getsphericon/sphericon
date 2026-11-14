@@ -70,8 +70,8 @@ const (
 	RoleOf_VersionedStore_Load           = RoleRead
 	RoleOf_VersionedStore_Read           = RoleRead
 	RoleOf_VersionedStore_Newest         = RoleRead
-	RoleOf_VersionedStore_CompareAndSwap = RoleWrite
-	RoleOf_VersionedStore_DeleteVersion  = RoleWrite
+	RoleOf_VersionedStore_CompareAndSwap = RoleStep
+	RoleOf_VersionedStore_DeleteVersion  = RoleStep
 )
 
 var _ VersionedStore[Automation, AutomationVersion] = (*AutomationPointers)(nil)

@@ -12,7 +12,7 @@ func (x *SendingDomainScopedUpdateOne) SetVerifiedAt(time.Time) *SendingDomainSc
 const (
 	TypeOf_SendingDomainScopedUpdateOne                  = TypeScopedUpdate
 	EntityOf_SendingDomainScopedUpdateOne                = "SendingDomain"
-	RoleOf_SendingDomainScopedUpdateOne_Where            = RoleWrite
-	RoleOf_SendingDomainScopedUpdateOne_SetVerifiedAt    = RoleWrite
+	RoleOf_SendingDomainScopedUpdateOne_Where            = RoleStep
+	RoleOf_SendingDomainScopedUpdateOne_SetVerifiedAt    = RoleStep
 	SetsState_SendingDomainScopedUpdateOne_SetVerifiedAt = "VerifiedAt"
 )

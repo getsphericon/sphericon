@@ -58,7 +58,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `internal/scopedclient` choose their entities by.
 - **The manifest of roles** (constants of `ent`, read by the analyzers of `tools/analyzers` through
   `go/types`): `TypeOf_<Type>` and `EntityOf_<Type>` for every exported type (what it is and the
-  entity it belongs to), `RoleOf_<Type>_<Method>` (`RoleRead`, `RoleStart`, `RoleWrite` or `RoleNone`)
+  entity it belongs to), `RoleOf_<Type>_<Method>` (`RoleRead`, `RoleStart`, `RoleStep` or `RoleNone`)
   for every exported method a template emits and for the reads and writes ent's own methods start, and
   `SetsState_`/`ClearsState_<Type>_<Method>` for the update and upsert methods that write a machine or
   latch field. `ent/template/roles.tmpl` declares ent's own types (`ent/roles.go`) and `stateform.tmpl`

@@ -57,7 +57,7 @@ func (a *ScopedAssign) Set(column string, v any) *ScopedAssign {
 const (
 	TypeOf_ScopedAssign   = TypeOther
 	EntityOf_ScopedAssign = ""
-	RoleOf_ScopedAssign_Set = RoleWrite
+	RoleOf_ScopedAssign_Set = RoleStep
 )
 
 // Scoped is the entry point to every Workspace-owned entity, confined to one Workspace.
@@ -288,8 +288,8 @@ func (x *{{ $N }}ScopedDeleteOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}Scope
 const (
 	TypeOf_{{ $N }}ScopedDeleteOne      = TypeScopedDelete
 	EntityOf_{{ $N }}ScopedDeleteOne    = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedDeleteOne_Where = RoleWrite
-	RoleOf_{{ $N }}ScopedDeleteOne_Exec  = RoleWrite
+	RoleOf_{{ $N }}ScopedDeleteOne_Where = RoleStep
+	RoleOf_{{ $N }}ScopedDeleteOne_Exec  = RoleStep
 )
 
 // Exec deletes the row; a missing row is a NotFoundError.
@@ -333,8 +333,8 @@ func (x *{{ $N }}ScopedDelete) Where(ps ...predicate.{{ $N }}) *{{ $N }}ScopedDe
 const (
 	TypeOf_{{ $N }}ScopedDelete      = TypeScopedDelete
 	EntityOf_{{ $N }}ScopedDelete    = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedDelete_Where = RoleWrite
-	RoleOf_{{ $N }}ScopedDelete_Exec  = RoleWrite
+	RoleOf_{{ $N }}ScopedDelete_Where = RoleStep
+	RoleOf_{{ $N }}ScopedDelete_Exec  = RoleStep
 )
 
 // Exec deletes the rows and returns how many were deleted.
@@ -388,8 +388,8 @@ func (t *{{ $N }}Scoped) Create() *{{ $N }}ScopedCreate {
 const (
 	TypeOf_{{ $N }}ScopedCreate                   = TypeScopedCreate
 	EntityOf_{{ $N }}ScopedCreate                 = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedCreate_Save              = RoleWrite
-	RoleOf_{{ $N }}ScopedCreate_Exec              = RoleWrite
+	RoleOf_{{ $N }}ScopedCreate_Save              = RoleStep
+	RoleOf_{{ $N }}ScopedCreate_Exec              = RoleStep
 	RoleOf_{{ $N }}ScopedCreate_OnConflictColumns = RoleStart
 	RoleOf_{{ $N }}ScopedCreate_OnConflictColumnsWhere = RoleStart
 )
@@ -516,8 +516,8 @@ func (b *{{ $N }}ScopedCreateBulk) Exec(ctx context.Context) error {
 const (
 	TypeOf_{{ $N }}ScopedCreateBulk                   = TypeScopedCreate
 	EntityOf_{{ $N }}ScopedCreateBulk                 = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedCreateBulk_Save              = RoleWrite
-	RoleOf_{{ $N }}ScopedCreateBulk_Exec              = RoleWrite
+	RoleOf_{{ $N }}ScopedCreateBulk_Save              = RoleStep
+	RoleOf_{{ $N }}ScopedCreateBulk_Exec              = RoleStep
 	RoleOf_{{ $N }}ScopedCreateBulk_OnConflictColumns = RoleStart
 )
 
@@ -542,7 +542,7 @@ func (u *{{ $N }}ScopedUpsert) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $N }
 	return u
 }
 
-const RoleOf_{{ $N }}ScopedUpsert_Set{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $N }}ScopedUpsert_Set{{ $f.StructField }} = RoleStep
 {{- with stateForm $f }}
 
 const SetsState_{{ $N }}ScopedUpsert_Set{{ $f.StructField }} = "{{ $f.StructField }}"
@@ -555,7 +555,7 @@ func (u *{{ $N }}ScopedUpsert) Add{{ $f.StructField }}(v {{ $f.Type }}) *{{ $N }
 	return u
 }
 
-const RoleOf_{{ $N }}ScopedUpsert_Add{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $N }}ScopedUpsert_Add{{ $f.StructField }} = RoleStep
 {{- end }}
 {{- end }}
 
@@ -565,7 +565,7 @@ func (u *{{ $N }}ScopedUpsert) Update{{ $f.StructField }}() *{{ $N }}ScopedUpser
 	return u
 }
 
-const RoleOf_{{ $N }}ScopedUpsert_Update{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $N }}ScopedUpsert_Update{{ $f.StructField }} = RoleStep
 {{- with stateForm $f }}
 
 const SetsState_{{ $N }}ScopedUpsert_Update{{ $f.StructField }} = "{{ $f.StructField }}"
@@ -578,7 +578,7 @@ func (u *{{ $N }}ScopedUpsert) Clear{{ $f.StructField }}() *{{ $N }}ScopedUpsert
 	return u
 }
 
-const RoleOf_{{ $N }}ScopedUpsert_Clear{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $N }}ScopedUpsert_Clear{{ $f.StructField }} = RoleStep
 {{- with stateForm $f }}
 
 const ClearsState_{{ $N }}ScopedUpsert_Clear{{ $f.StructField }} = "{{ $f.StructField }}"
@@ -611,13 +611,13 @@ type {{ $N }}ScopedUpsertOne struct {
 const (
 	TypeOf_{{ $N }}ScopedUpsertOne                 = TypeScopedUpsert
 	EntityOf_{{ $N }}ScopedUpsertOne               = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedUpsertOne_UpdateNewValues = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertOne_Ignore          = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertOne_DoNothing       = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertOne_Update          = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertOne_Exec            = RoleWrite
+	RoleOf_{{ $N }}ScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertOne_Update          = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertOne_Exec            = RoleStep
 	{{- if $n.HasOneFieldID }}
-	RoleOf_{{ $N }}ScopedUpsertOne_ID              = RoleWrite
+	RoleOf_{{ $N }}ScopedUpsertOne_ID              = RoleStep
 	{{- end }}
 )
 
@@ -722,11 +722,11 @@ type {{ $N }}ScopedUpsertBulk struct {
 const (
 	TypeOf_{{ $N }}ScopedUpsertBulk                 = TypeScopedUpsert
 	EntityOf_{{ $N }}ScopedUpsertBulk               = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedUpsertBulk_UpdateNewValues = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertBulk_Ignore          = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertBulk_DoNothing       = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertBulk_Update          = RoleWrite
-	RoleOf_{{ $N }}ScopedUpsertBulk_Exec            = RoleWrite
+	RoleOf_{{ $N }}ScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertBulk_Update          = RoleStep
+	RoleOf_{{ $N }}ScopedUpsertBulk_Exec            = RoleStep
 )
 
 // OnConflictColumns configures the columns as conflict target. A conflicting row of
@@ -849,9 +849,9 @@ func (x *{{ $N }}ScopedUpdateOne) Exec(ctx context.Context) error {
 const (
 	TypeOf_{{ $N }}ScopedUpdateOne       = TypeScopedUpdate
 	EntityOf_{{ $N }}ScopedUpdateOne     = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedUpdateOne_Where = RoleWrite
-	RoleOf_{{ $N }}ScopedUpdateOne_Save  = RoleWrite
-	RoleOf_{{ $N }}ScopedUpdateOne_Exec  = RoleWrite
+	RoleOf_{{ $N }}ScopedUpdateOne_Where = RoleStep
+	RoleOf_{{ $N }}ScopedUpdateOne_Save  = RoleStep
+	RoleOf_{{ $N }}ScopedUpdateOne_Exec  = RoleStep
 )
 
 {{ end }}
@@ -956,10 +956,10 @@ func (x *{{ $N }}ScopedUpdate) Exec(ctx context.Context) error {
 const (
 	TypeOf_{{ $N }}ScopedUpdate        = TypeScopedUpdate
 	EntityOf_{{ $N }}ScopedUpdate      = "{{ $N }}"
-	RoleOf_{{ $N }}ScopedUpdate_Where  = RoleWrite
-	RoleOf_{{ $N }}ScopedUpdate_Modify = RoleWrite
-	RoleOf_{{ $N }}ScopedUpdate_Save   = RoleWrite
-	RoleOf_{{ $N }}ScopedUpdate_Exec   = RoleWrite
+	RoleOf_{{ $N }}ScopedUpdate_Where  = RoleStep
+	RoleOf_{{ $N }}ScopedUpdate_Modify = RoleStep
+	RoleOf_{{ $N }}ScopedUpdate_Save   = RoleStep
+	RoleOf_{{ $N }}ScopedUpdate_Exec   = RoleStep
 )
 {{ end }}
 {{ end }}
@@ -978,7 +978,7 @@ func (x *{{ $B }}) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $B }} {
 	return x
 }
 
-const RoleOf_{{ $B }}_Set{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $B }}_Set{{ $f.StructField }} = RoleStep
 {{- if and $updater (stateForm $f) }}
 
 const SetsState_{{ $B }}_Set{{ $f.StructField }} = "{{ $f.StructField }}"
@@ -993,7 +993,7 @@ func (x *{{ $B }}) SetNillable{{ $f.StructField }}(v *{{ $f.Type }}) *{{ $B }} {
 	return x
 }
 
-const RoleOf_{{ $B }}_SetNillable{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $B }}_SetNillable{{ $f.StructField }} = RoleStep
 {{- if and $updater (stateForm $f) }}
 
 const SetsState_{{ $B }}_SetNillable{{ $f.StructField }} = "{{ $f.StructField }}"
@@ -1007,7 +1007,7 @@ func (x *{{ $B }}) {{ $f.MutationAdd }}(v {{ $f.SignedType }}) *{{ $B }} {
 	return x
 }
 
-const RoleOf_{{ $B }}_{{ $f.MutationAdd }} = RoleWrite
+const RoleOf_{{ $B }}_{{ $f.MutationAdd }} = RoleStep
 {{- end }}
 {{- if and $updater $f.SupportsMutationAppend }}
 
@@ -1017,7 +1017,7 @@ func (x *{{ $B }}) {{ $f.MutationAppend }}(v {{ $f.Type }}) *{{ $B }} {
 	return x
 }
 
-const RoleOf_{{ $B }}_{{ $f.MutationAppend }} = RoleWrite
+const RoleOf_{{ $B }}_{{ $f.MutationAppend }} = RoleStep
 {{- end }}
 {{- if and $f.Optional $updater }}
 
@@ -1027,7 +1027,7 @@ func (x *{{ $B }}) Clear{{ $f.StructField }}() *{{ $B }} {
 	return x
 }
 
-const RoleOf_{{ $B }}_Clear{{ $f.StructField }} = RoleWrite
+const RoleOf_{{ $B }}_Clear{{ $f.StructField }} = RoleStep
 {{- if stateForm $f }}
 
 const ClearsState_{{ $B }}_Clear{{ $f.StructField }} = "{{ $f.StructField }}"
@@ -1050,7 +1050,7 @@ func (x *{{ $B }}) {{ $idsFunc }}({{ if $e.Unique }}id{{ else }}ids ...{{ end }}
 	return x
 }
 
-const RoleOf_{{ $B }}_{{ $idsFunc }} = RoleWrite
+const RoleOf_{{ $B }}_{{ $idsFunc }} = RoleStep
 {{- end }}
 {{- if and $e.Unique $e.Optional $withSetter }}
 
@@ -1060,7 +1060,7 @@ func (x *{{ $B }}) SetNillable{{ $e.StructField }}ID(id *{{ $e.Type.ID.Type }}) 
 	return x
 }
 
-const RoleOf_{{ $B }}_SetNillable{{ $e.StructField }}ID = RoleWrite
+const RoleOf_{{ $B }}_SetNillable{{ $e.StructField }}ID = RoleStep
 {{- end }}
 {{- $func := print (pascal $op) $e.StructField }}
 
@@ -1070,7 +1070,7 @@ func (x *{{ $B }}) {{ $func }}(v {{ if not $e.Unique }}...{{ end }}*{{ $e.Type.N
 	return x
 }
 
-const RoleOf_{{ $B }}_{{ $func }} = RoleWrite
+const RoleOf_{{ $B }}_{{ $func }} = RoleStep
 {{- if $updater }}
 
 // {{ $e.MutationClear }} clears the "{{ $e.Name }}" edge{{ if not $e.Unique }}s{{ end }} to the {{ $e.Type.Name }} entity.
@@ -1079,7 +1079,7 @@ func (x *{{ $B }}) {{ $e.MutationClear }}() *{{ $B }} {
 	return x
 }
 
-const RoleOf_{{ $B }}_{{ $e.MutationClear }} = RoleWrite
+const RoleOf_{{ $B }}_{{ $e.MutationClear }} = RoleStep
 {{- if not $e.Unique }}
 
 // {{ $e.MutationRemove }} removes the "{{ $e.Name }}" edge to {{ $e.Type.Name }} entities by IDs.
@@ -1088,7 +1088,7 @@ func (x *{{ $B }}) {{ $e.MutationRemove }}(ids ...{{ $e.Type.ID.Type }}) *{{ $B 
 	return x
 }
 
-const RoleOf_{{ $B }}_{{ $e.MutationRemove }} = RoleWrite
+const RoleOf_{{ $B }}_{{ $e.MutationRemove }} = RoleStep
 
 // Remove{{ $e.StructField }} removes "{{ $e.Name }}" edges to {{ $e.Type.Name }} entities.
 func (x *{{ $B }}) Remove{{ $e.StructField }}(v ...*{{ $e.Type.Name }}) *{{ $B }} {
@@ -1096,7 +1096,7 @@ func (x *{{ $B }}) Remove{{ $e.StructField }}(v ...*{{ $e.Type.Name }}) *{{ $B }
 	return x
 }
 
-const RoleOf_{{ $B }}_Remove{{ $e.StructField }} = RoleWrite
+const RoleOf_{{ $B }}_Remove{{ $e.StructField }} = RoleStep
 {{- end }}
 {{- end }}
 {{ end }}

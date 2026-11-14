@@ -4,7 +4,7 @@ package ent
 const (
 	RoleRead  = "read"
 	RoleStart = "start"
-	RoleWrite = "write"
+	RoleStep  = "step"
 	RoleNone  = "none"
 )
 

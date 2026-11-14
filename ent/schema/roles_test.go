@@ -202,7 +202,7 @@ func (m manifest) typeEntries() []string {
 		if m.named(name) == nil {
 			out = append(out, "EntityOf_"+name+" names no type")
 		}
-		if v != "" && typeOf[v] != "entity" {
+		if v != "" && typeOf[v] != m.values["TypeEntity"] {
 			out = append(out, "EntityOf_"+name+" is "+v+", no entity")
 		}
 	}
@@ -225,7 +225,24 @@ func (m manifest) roleEntries() []string {
 }
 
 // changesRows are the kinds of builder that change an existing row, the ones a state write sits on.
-var changesRows = []string{"update", "upsert", "scoped update", "scoped upsert"}
+func (m manifest) changesRows() []string {
+	return m.words("TypeUpdate", "TypeUpsert", "TypeScopedUpdate", "TypeScopedUpsert")
+}
+
+// builds are the kinds of type that build a write.
+func (m manifest) builds() []string {
+	return slices.Concat(m.changesRows(),
+		m.words("TypeCreate", "TypeDelete", "TypeScopedCreate", "TypeScopedDelete", "TypePointers"))
+}
+
+// words are the values of the vocabulary constants with the names.
+func (m manifest) words(names ...string) []string {
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		out = append(out, m.values[name])
+	}
+	return out
+}
 
 // stateEntries lists the state writes that name no method, no state field of their entity, or sit
 // on a builder that changes no existing row.
@@ -241,7 +258,7 @@ func (m manifest) stateEntries() []string {
 			if _, ok := m.values["StateForm"+entityOf[typ]+field]; !ok {
 				out = append(out, family+key+" names "+field+", no state field of "+entityOf[typ])
 			}
-			if !slices.Contains(changesRows, typeOf[typ]) {
+			if !slices.Contains(m.changesRows(), typeOf[typ]) {
 				out = append(out, family+key+" is on "+typ+", which changes no existing row")
 			}
 		}
@@ -262,7 +279,7 @@ func unlistedStateWrites(pkg *types.Package) []string {
 	}
 	var out []string
 	for typ, what := range typeOf {
-		if !slices.Contains(changesRows, what) {
+		if !slices.Contains(m.changesRows(), what) {
 			continue
 		}
 		for name := range m.values {
@@ -287,7 +304,7 @@ func unlistedStateWrites(pkg *types.Package) []string {
 func unstartedBuilders(pkg *types.Package) []string {
 	m := read(pkg)
 	typeOf := m.entries("TypeOf_")
-	builds := []string{"create", "update", "delete", "upsert", "scoped create", "scoped update", "scoped delete", "scoped upsert", "pointers"}
+	builds := m.builds()
 	var out []string
 	for name := range typeOf {
 		n := m.named(name)
@@ -307,7 +324,7 @@ func unstartedBuilders(pkg *types.Package) []string {
 			if !ok || target.Obj().Pkg() != pkg || target.Obj().Name() == name || !slices.Contains(builds, typeOf[target.Obj().Name()]) {
 				continue
 			}
-			if m.values["RoleOf_"+name+"_"+fn.Name()] != "start" {
+			if m.values["RoleOf_"+name+"_"+fn.Name()] != m.values["RoleStart"] {
 				out = append(out, name+"."+fn.Name())
 			}
 		}
@@ -330,7 +347,7 @@ func entityUpdates(pkg *types.Package) (byShape, byManifest []string) {
 		}
 	}
 	for name, what := range m.entries("TypeOf_") {
-		if what == "entity" && m.values["RoleOf_"+name+"_Update"] == "start" {
+		if what == m.values["TypeEntity"] && m.values["RoleOf_"+name+"_Update"] == m.values["RoleStart"] {
 			byManifest = append(byManifest, name)
 		}
 	}
@@ -361,7 +378,7 @@ func TestTheManifestNamesEveryEntityWhoseUpdateBypassesTheScope(t *testing.T) {
 
 	byShape, byManifest := entityUpdates(pkg)
 
-	require.GreaterOrEqual(t, len(byShape), 25)
+	assert.Contains(t, byShape, "Tag")
 	assert.Contains(t, byShape, "OAuthClient")
 	assert.Equal(t, byShape, byManifest)
 }

@@ -115,7 +115,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   to the entity from any other package is a finding, as is a write to an entity the map does not name (a
   new entity names its owner in the change that adds it; a test of the analyzer fails when the map and
   `ent/schema` differ or an owner's directory is gone, so a moved package updates the map). A write is a
-  call of a method the manifest of roles (`ent/roles.go`, below) says starts one: a mutation of the raw
+  call of a method the manifest of roles says starts one: a mutation of the raw
   client, a transaction or the scoped wrappers, an upsert, a soft-delete move or a Versioned definition's
   `Pointers` and their moves, counted once per receiver chain; a generic function instantiated with a type
   whose kind builds a write writes that type's entity where it is instantiated. The one writer besides the owner is the
@@ -132,20 +132,13 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   (a `Within…` method of the events bus): the module it calls does. The wiring, the router in
   `internal/server` included, is no entry point. The helpers the analyzers share about the generated
   package are in `tools/analyzers/entx`, which reads the manifest of roles the generator declares in
-  `ent`: `TypeOf_<Type>` (what a type is: an entity, a client, a builder of a create, an update, a delete
-  or an upsert, raw or scoped, a wrapper, a Versioned definition's pointers) and `EntityOf_<Type>`
-  for every exported type, `RoleOf_<Type>_<Method>` (a read, the start of a write, a step of a write
-  already started, or none) for every exported method a template of `ent/template` emits and for the
-  methods of ent's own types that start a read or a write (`ent/template/roles.tmpl`), and the state
-  writes above. A template declares the constants beside each type and method it emits;
-  `ent/schema/roles_test.go` fails on an exported type or a template's exported method without its
-  entry, on an entry that names nothing, and on the analyzers' stand-ins of `ent` when they break the
-  same rules. A new generated method gets its role in the change that adds it, or the test fails.
-- **`entityupdate`.** A loaded entity carries the raw client, so its `Update()` writes past the
+  `ent` (what each type is and the entity it belongs to, the role of each method, the state field an
+  update writes; `docs/agents/codegen.md` says what it holds and how it is kept complete). A new
+  generated method gets its role in the change that adds it, or `ent/schema/roles_test.go` fails.
+- **Rule 18, `entityupdate`.** A loaded entity carries the raw client, so its `Update()` writes past the
   Workspace scope (ADR 0017): a method that starts a write on a type the manifest calls an entity is a
   finding in every package of the module, test code and `ent/schema` included, but the generated
-  `ent` package itself. Update by id
-  through the scoped client instead: `s.Tag().UpdateOneID(id)`.
+  `ent` package itself. Update by id through the scoped client instead: `s.Tag().UpdateOneID(id)`.
 - **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
   `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
   other than `New`, a `New` that returns anything but `*UseCase`, an exported type other than `UseCase`
