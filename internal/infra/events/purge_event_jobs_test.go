@@ -57,3 +57,23 @@ func TestPurgeEventJobsRemovesTheJobsThatNameTheContact(t *testing.T) {
 	fanOuts := lo.Map(env.EventJobs(t, jobs.WebhookEventArgs{}.Kind()), func(e events.Envelope, _ int) string { return e.SourceID() })
 	assert.ElementsMatch(t, []string{"email.bounced:other-contact", "email.bounced:other-workspace"}, fanOuts, "every event kind is purged, the webhooks fan-out included")
 }
+
+// Only an event that names a Contact is purged: an Invitation names a person the Workspace invites
+// to sign in, not a Contact, so its notice stays queued even when the invitee's address is also the
+// erased Contact's.
+func TestPurgeEventJobsLeavesAnInvitationToTheContactsAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	const address = "erasable@example.com"
+	publishAlone(t, env, &events.InvitationCreated{WorkspaceID: fixtures.InitechID, InvitationID: 1, Email: address, Token: "invite"})
+	publishAlone(t, env, &events.SmsStopObserved{WorkspaceID: fixtures.InitechID, Phone: "+14155550123", Via: events.UnsubscribedByKeyword, DedupID: "stop"})
+	publishAlone(t, env, hardBounce(fixtures.InitechID, fixtures.ContactErasableID, address, "bounce"))
+
+	scope := env.DB.Scoped(fixtures.InitechID)
+	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
+		return pub.PurgeEventJobs(ctx, fixtures.InitechID, fixtures.ContactErasableID, []string{address, "+14155550123"})
+	}))
+
+	left := lo.Uniq(lo.Map(env.QueuedEnvelopes(t), func(e events.Envelope, _ int) string { return e.Name }))
+	assert.Equal(t, []string{events.NameInvitationCreated}, left, "the bounce and the stop of the Contact's number go, the invitation stays")
+}

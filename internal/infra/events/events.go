@@ -211,6 +211,34 @@ func IsUnprojected(name string) bool {
 	return !projected
 }
 
+// namesContact is an optional DomainEvent capability of an event without an Event row that names a
+// Contact's data: its id or one of its destinations (an SMS or a Telegram observation). A Projected
+// event names its Contact through its projection. Erasure purges the queued jobs of these events
+// alone (PurgeEventJobs): an event that names no Contact (an Invitation, a change of a User's
+// account) keeps its jobs, even when an address in it is a Contact's as well.
+type namesContact interface {
+	namesContact()
+}
+
+// contactEventNames are the names of the events that name a Contact (Projected or namesContact),
+// sorted.
+var contactEventNames = slices.Sorted(func(yield func(string) bool) {
+	for name, newEvent := range registry {
+		ev := newEvent()
+		_, projected := ev.(Projected)
+		_, names := ev.(namesContact)
+		if (projected || names) && !yield(name) {
+			return
+		}
+	}
+})
+
+// NamesContact reports whether the events called name are a Contact's, so Erasure purges their jobs.
+func NamesContact(name string) bool {
+	_, found := slices.BinarySearch(contactEventNames, name)
+	return found
+}
+
 // observed is an optional DomainEvent capability of an event without an Event row: when the
 // observation it reports happened, which dates its envelope instead of the publish (a Projected
 // event says it in its Projection).

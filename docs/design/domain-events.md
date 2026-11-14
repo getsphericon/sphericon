@@ -166,7 +166,9 @@ failed work through River UI.
   come from the otelriver plugin.
 - **Erasure** (ADR 0021) deletes, in its own transaction, the event jobs that name the Contact by id,
   address or phone (`QueuePurger.PurgeEventJobs`), in any state but running, and the queued webhook
-  deliveries that name it. Anonymous report jobs survive: their measurements were accepted before
+  deliveries that name it. Only the jobs of an event that names a Contact go: a Projected event, or
+  one that says so (`namesContact`, the SMS and Telegram observations); an Invitation's or a User
+  account's keeps its jobs whatever address it carries. Anonymous report jobs survive: their measurements were accepted before
   Erasure and restore no personal fields. A running job finishes and re-checks what it refers to.
 
 ## Testing

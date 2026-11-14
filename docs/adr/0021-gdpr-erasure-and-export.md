@@ -105,7 +105,9 @@ hex SHA-256 of the E.164 number that the Erasure record already keeps as its pho
   short links of the Contact's texts are deleted. A Test send's links name no message and carry
   sample data only, and a Test send keeps no number.
 - **Queued work**: the outbox envelopes and webhook deliveries that name the number (a contact-less
-  `sms.confirmed`) are purged with those that name the Contact.
+  `sms.confirmed`) are purged with those that name the Contact. Only an event of a Contact is
+  purged: an Invitation or a change of a User's account names a person who is no Contact, and its
+  work stays queued even when the address is the erased Contact's too.
 - **Twilio's copy is not in sphericon's control.** sphericon does not delete messages in Twilio:
   Twilio's message log keeps the number and the text under the Workspace's own account, and the
   Workspace erases them there.

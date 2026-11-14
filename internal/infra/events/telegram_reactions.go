@@ -42,3 +42,6 @@ func (*TelegramResumeObserved) EventVersion() int            { return 1 }
 func (e *TelegramResumeObserved) Workspace() int64           { return e.WorkspaceID }
 func (e *TelegramResumeObserved) EventID() string            { return e.DedupID }
 func (e *TelegramResumeObserved) ObservationTime() time.Time { return e.ObservedAt }
+
+func (*TelegramStopObserved) namesContact()   {}
+func (*TelegramResumeObserved) namesContact() {}
