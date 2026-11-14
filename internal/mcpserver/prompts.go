@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
+	"sync"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -23,6 +24,9 @@ type shippedPrompt struct {
 	description string
 	body        string
 }
+
+// shippedPrompts is loadPrompts once per process: the files are embedded.
+var shippedPrompts = sync.OnceValues(loadPrompts)
 
 // loadPrompts parses the embedded prompts; the file name is the prompt name.
 func loadPrompts() ([]shippedPrompt, error) {

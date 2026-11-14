@@ -52,7 +52,7 @@ func New(spec []byte, api http.Handler, auth Authenticator, opts ...Option) (htt
 	for _, o := range opts {
 		o(&cfg)
 	}
-	ops, err := project(spec)
+	ops, err := projected(spec)
 	if err != nil {
 		return nil, fmt.Errorf("project MCP tools: %w", err)
 	}
@@ -64,7 +64,7 @@ func New(spec []byte, api http.Handler, auth Authenticator, opts ...Option) (htt
 			sendTools[op.tool.Name] = true
 		}
 	}
-	books, err := loadPrompts()
+	books, err := shippedPrompts()
 	if err != nil {
 		return nil, fmt.Errorf("load prompts: %w", err)
 	}

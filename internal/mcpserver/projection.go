@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -37,6 +38,31 @@ type operation struct {
 	response   *untrustedResponse // success schema, to mark untrusted fields in results
 	hasBody    bool
 	send       bool // send-class (x-mcp send): listed and callable only with the mcp:send scope
+}
+
+// projections holds the projection of each document New was given, by its bytes: the operations
+// depend on the document alone and nothing changes them once built, so every server (an Instance,
+// a test's) shares them and binds only its own handlers. A process sees one document.
+var (
+	projectionsMu sync.Mutex
+	projections   = map[string]projection{}
+)
+
+type projection struct {
+	ops []*operation
+	err error
+}
+
+// projected is project of spec, computed once per document.
+func projected(spec []byte) ([]*operation, error) {
+	projectionsMu.Lock()
+	defer projectionsMu.Unlock()
+	p, ok := projections[string(spec)]
+	if !ok {
+		p.ops, p.err = project(spec)
+		projections[string(spec)] = p
+	}
+	return p.ops, p.err
 }
 
 // project turns the OpenAPI document into one operation per non-hidden
