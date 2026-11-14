@@ -59,7 +59,7 @@ var erasedAt = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
 // deletedAgo puts Initech into deletion, deleted ago before erasedAt.
 func deletedAgo(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).SetDiscardedAt(erasedAt.Add(-ago)).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.InitechID, erasedAt.Add(-ago))
 }
 
 // tombstone runs TombstoneIn on Initech at erasedAt in a transaction of its own.

@@ -101,7 +101,7 @@ func TestHookOfADeletedWorkspaceIsNotFound(t *testing.T) {
 	env := setupHooks(t)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 	body := failureBody("evt_1", fixtures.ContactAliceEmail, true)
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(hookClock).ExecX(t.Context())
+	env.DeleteWorkspace(t.Context(), fixtures.AcmeID, hookClock)
 
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", body).Code)
 	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))

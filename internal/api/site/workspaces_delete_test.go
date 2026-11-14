@@ -159,8 +159,7 @@ func TestOnlyAnOwnerRestoresAndOnlyInsideTheWindow(t *testing.T) {
 	testhelper.SiteRefusal(t, err, http.StatusNotFound, "a stranger cannot tell it exists")
 
 	// Past the window the Workspace is no longer restorable.
-	env.FeedDB.Workspace.UpdateOneID(fixtures.InitechID).
-		SetDiscardedAt(time.Now().Add(-testhelper.DeletionWindow - time.Hour)).ExecX(ctx)
+	env.DeleteWorkspace(ctx, fixtures.InitechID, time.Now().Add(-testhelper.DeletionWindow-time.Hour))
 	_, err = env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesRestore(ctx, params)
 	testhelper.SiteRefusal(t, err, http.StatusConflict, "a Workspace past its window is a conflict")
 	deleted, err := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail).SiteWorkspacesListDeleted(ctx)

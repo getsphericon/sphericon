@@ -85,8 +85,9 @@ runs their Hooks, so a module that writes a Workspace's deletion, an owner chang
 record, the mailings mark, a Tracking host, or a Contact's creation with an email, its email or its
 removal outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup that
 marks a Workspace deleted, changes a User's address or deletes a Contact, or the write a test of a
-Hook makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks. A
-module under test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
+Hook makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks;
+`env.DeleteWorkspace(ctx, id, at)` is that write for a Workspace put into deletion. A module under
+test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
 
 ## Domain contexts
 

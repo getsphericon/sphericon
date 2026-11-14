@@ -164,7 +164,7 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	h := newHarness(t)
 	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
 	discardedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
-	h.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(discardedAt).ExecX(t.Context())
+	h.env.DeleteWorkspace(t.Context(), fixtures.AcmeID, discardedAt)
 
 	items := h.listHolds(t)
 	require.Len(t, items, 2)

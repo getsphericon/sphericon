@@ -310,7 +310,7 @@ func TestEveryExportStreamOfADeletedWorkspaceDoesNotAuthenticate(t *testing.T) {
 			ctx := context.Background()
 			c := exportClient(t, env, stream.workspaceID)
 			readExportStream(t, c, stream, "", 0)
-			env.FeedDB.Workspace.UpdateOneID(stream.workspaceID).SetDiscardedAt(time.Now()).ExecX(ctx)
+			env.DeleteWorkspace(ctx, stream.workspaceID, time.Now())
 
 			body, _, err := stream.call(ctx, c, exportParams{})
 
