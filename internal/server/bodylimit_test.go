@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // An oversized JSON body is cut off before the ogen decoder buffers it, on the
@@ -19,7 +20,7 @@ func TestOversizedBodiesAreRejectedThroughTheRealServer(t *testing.T) {
 	env := testhelper.Setup(t)
 	pad := func(n int) string { return `{"pad":"` + strings.Repeat("a", n) + `"}` }
 	post := func(path, body string, headers map[string]string) *httptest.ResponseRecorder {
-		return servePost(t, env, path, body, headers)
+		return postJSON(t, env, path, body, headers)
 	}
 
 	collect := post("/collect/events", pad(600<<10), map[string]string{"x-collect-key": fixtures.AcmeCollectKey})
@@ -33,19 +34,6 @@ func TestOversizedBodiesAreRejectedThroughTheRealServer(t *testing.T) {
 	// Within the cap the body is read normally (here it fails validation, not size).
 	small := post("/collect/events", pad(1<<10), map[string]string{"x-collect-key": fixtures.AcmeCollectKey})
 	assert.NotEqual(t, http.StatusRequestEntityTooLarge, small.Code)
-}
-
-// servePost sends one JSON POST through the composed server.
-func servePost(t *testing.T, env *testhelper.TestEnv, path, body string, headers map[string]string) *httptest.ResponseRecorder {
-	t.Helper()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-	rec := httptest.NewRecorder()
-	env.Server.ServeHTTP(rec, req)
-	return rec
 }
 
 // bodyCap is a small default cap, so the boundary tests below are exact and cheap.
@@ -67,7 +55,7 @@ func jsonRPCPingOfSize(t *testing.T, n int) string {
 // problem and is refused while the body is read, before any signature check.
 func TestSESHookOversizedBodyIsRejected(t *testing.T) {
 	env := testhelper.Setup(t, withSmallBodyCap())
-	rec := servePost(t, env, "/hooks/"+fixtures.IntegrationAcmeSesIngestKey, `{"Message":"`+strings.Repeat("a", bodyCap)+`"}`, nil)
+	rec := postJSON(t, env, "/hooks/"+fixtures.IntegrationAcmeSesIngestKey, `{"Message":"`+strings.Repeat("a", bodyCap)+`"}`, nil)
 	assert.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))
 }
@@ -77,7 +65,7 @@ func TestSESHookOversizedBodyIsRejected(t *testing.T) {
 func TestMCPOversizedBodyIsRejected(t *testing.T) {
 	env := testhelper.Setup(t, withSmallBodyCap())
 	post := func(body string) *httptest.ResponseRecorder {
-		return servePost(t, env, testhelper.MCPEndpoint, body, map[string]string{
+		return postJSON(t, env, testhelper.MCPEndpoint, body, map[string]string{
 			"Accept":        "application/json, text/event-stream",
 			"Authorization": "Bearer " + env.ScopedBearer(t),
 		})

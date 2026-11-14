@@ -159,10 +159,11 @@ func TestClientStartAndStop(t *testing.T) {
 func TestClientRunsAnEnqueuedWelcomeJob(t *testing.T) {
 	e := newRiverEnvWithRealQueue(t)
 	ctx := context.Background()
+	// Queued before the start, so the runtime's first fetch takes it: without a listener, a job
+	// inserted later waits for the next poll.
+	e.insert(t, jobs.SendNoticeArgs{EventID: "01RUNTIME", To: "runtime@example.com", Subject: "Welcome", Text: "Run"})
 	require.NoError(t, e.client.Start(ctx))
 	t.Cleanup(func() { cleanup.Report("stop the job client", e.client.Stop(context.Background())) })
-
-	e.insert(t, jobs.SendNoticeArgs{EventID: "01RUNTIME", To: "runtime@example.com", Subject: "Welcome", Text: "Run"})
 
 	require.Eventually(t, func() bool {
 		for _, m := range e.SystemMail.Messages() {

@@ -2,7 +2,6 @@ package tags_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -15,14 +14,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // closedClient is an ent client, and a bus, whose database is gone: every query fails.
 func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 	t.Helper()
-	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
-	require.NoError(t, err)
-	require.NoError(t, sqlDB.Close())
+	sqlDB := testhelper.ClosedDB(t)
 	return entclient.Core.New(sqlDB), events.New(sqlDB, entclient.Core.NewTx, time.Now)
 }
 

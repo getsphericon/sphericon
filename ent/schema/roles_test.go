@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,13 +49,19 @@ func emittedFiles(t *testing.T) map[string]bool {
 // generated loads the generated ent package from its source, so every declaration keeps its file.
 func generated(t *testing.T) (*token.FileSet, *types.Package) {
 	t.Helper()
-	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Dir: ".."}
-	pkgs, err := packages.Load(cfg, ".")
+	pkgs, err := loadGenerated()
 	require.NoError(t, err)
 	require.Len(t, pkgs, 1)
 	require.Empty(t, pkgs[0].Errors)
 	return pkgs[0].Fset, pkgs[0].Types
 }
+
+// loadGenerated type-checks the generated package once per process: it takes seconds, and the
+// tests only read it.
+var loadGenerated = sync.OnceValues(func() ([]*packages.Package, error) {
+	cfg := &packages.Config{Mode: packages.NeedName | packages.NeedTypes | packages.NeedSyntax | packages.NeedTypesInfo, Dir: ".."}
+	return packages.Load(cfg, ".")
+})
 
 // standIn type-checks a stand-in of the ent package that an analyzer's test data carries.
 func standIn(t *testing.T, dir string) (*token.FileSet, *types.Package) {

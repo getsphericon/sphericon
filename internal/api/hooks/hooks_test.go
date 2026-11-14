@@ -92,7 +92,7 @@ func TestHookOfAnUnknownKeyIsNotFound(t *testing.T) {
 	rec := signedPost(t, env, "omik_does_not_exist", secretA, "msg_1", failureBody("evt_1", "a@example.com", true))
 
 	assert.Equal(t, http.StatusNotFound, rec.Code)
-	assert.Empty(t, queuedNotices(t, env, "a@example.com"))
+	assert.Empty(t, failuresFor(t, env, "a@example.com"))
 }
 
 // A Workspace in its deletion window takes no new data (ADR 0043): its hook answers 404 and
@@ -104,7 +104,7 @@ func TestHookOfADeletedWorkspaceIsNotFound(t *testing.T) {
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).SetDiscardedAt(hookClock).ExecX(t.Context())
 
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", body).Code)
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 
 	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
@@ -118,13 +118,13 @@ func TestTwoIntegrationsOfAWorkspaceEachAcceptOnlyTheirOwnSecret(t *testing.T) {
 
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretA, "msg_1", body).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretB, "msg_1", body).Code)
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 
 	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericAIngestKey, secretA, "msg_1", body).Code)
 	// Another event of the provider: the same one twice would be a repeat, published once.
 	other := failureBody("evt_2", strings.ToUpper(fixtures.ContactAliceEmail), true)
 	require.Equal(t, http.StatusOK, signedPost(t, env, fixtures.IntegrationAcmeGenericBIngestKey, secretB, "msg_2", other).Code)
-	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 2)
 	for _, f := range got {
 		assert.Equal(t, systemevent.EmailBounced, f.Action)
@@ -148,7 +148,7 @@ func TestHookRefusesAnUnsignedOrUnreadableRequest(t *testing.T) {
 	// Correctly signed, but not JSON: the provider's to fix, not retried.
 	assert.Equal(t, http.StatusBadRequest, signedPost(t, env, key, secretA, "msg_1", "not json").Code)
 
-	assert.Empty(t, queuedNotices(t, env, "a@example.com"))
+	assert.Empty(t, failuresFor(t, env, "a@example.com"))
 }
 
 // A valid request with nothing the Preset handles is accepted, so the provider does not
@@ -190,7 +190,7 @@ func TestAnEmailIntegrationRecordsNothingOfADeliveryNoticeOnAnotherChannel(t *te
 	assert.Equal(t, http.StatusOK, rec.Code)
 	got := env.QueuedEvents(t, deliveryNames...)
 	require.Len(t, got, 1)
-	assert.Len(t, queuedNotices(t, env, fixtures.ContactAliceEmail), 1)
+	assert.Len(t, failuresFor(t, env, fixtures.ContactAliceEmail), 1)
 }
 
 // A malformed fact of a new kind fails the transform as a malformed Delivery notice does: the
@@ -220,7 +220,7 @@ func TestHookSuppressesAHardBounceAndOnlyRecordsASoftOne(t *testing.T) {
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_hard", "hard@example.com", true)).Code)
 	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_2", failureBody("evt_soft", "soft@example.com", false)).Code)
 
-	soft := queuedNotices(t, env, "soft@example.com")
+	soft := failuresFor(t, env, "soft@example.com")
 	require.Len(t, soft, 1)
 	assert.Equal(t, systemevent.BounceKindSoft, soft[0].BounceKind)
 
@@ -234,11 +234,11 @@ func TestHookSuppressesALiftedDestinationAgain(t *testing.T) {
 	env := setupHooks(t)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 
-	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_again", "lifted@codebasics.dev", true)).Code)
+	require.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", failureBody("evt_again", fixtures.ContactLiftedEmail, true)).Code)
 	applySuppression(t, env)
 
 	active, err := env.DB.Suppression.Query().
-		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination("lifted@codebasics.dev"), suppression.LiftedAtIsNil()).
+		Where(suppression.WorkspaceID(fixtures.AcmeID), suppression.Destination(fixtures.ContactLiftedEmail), suppression.LiftedAtIsNil()).
 		Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, active, "a new active row beside the lifted one")
@@ -303,7 +303,7 @@ func TestRotatingASecretKeepsTheOldOneValidUntilItIsRetired(t *testing.T) {
 	assert.Empty(t, retired.SecretsRetiring)
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, rotated, "msg_3", failureBody("evt_new2", "new2@example.com", true)).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, key, secretA, "msg_4", failureBody("evt_old2", "old2@example.com", true)).Code)
-	assert.Empty(t, queuedNotices(t, env, "old2@example.com"))
+	assert.Empty(t, failuresFor(t, env, "old2@example.com"))
 }
 
 // Regenerating the key invalidates the old URL; the new one works, with the same secret.

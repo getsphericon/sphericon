@@ -119,7 +119,7 @@ func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	assert.Equal(t, holdreason.WorkspacePendingDeletion, reason)
 	require.NotNil(t, st.Deletion)
 	assert.Equal(t, holds.KeyPendingDeletion, st.Deletion.Key)
-	assert.Equal(t, holds.Message(holdreason.WorkspacePendingDeletion), st.Deletion.Message)
+	assert.Equal(t, "this workspace is deleted and pending erasure", st.Deletion.Message)
 	assert.NotNil(t, st.SuspendedAt)
 	assert.Equal(t, []string{holds.KeyPendingDeletion, fixtures.HoldAcmeLapsedKey}, listed)
 }

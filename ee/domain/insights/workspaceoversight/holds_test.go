@@ -13,7 +13,6 @@ import (
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -65,7 +64,7 @@ func (h *harness) listHolds(t *testing.T) []serviceapi.HoldResource {
 func (h *harness) requireHeld(t *testing.T, to string) {
 	t.Helper()
 	held := h.refusedSendOnAPI(t, to, "a send is refused with a 4xx")
-	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.StaffHold), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: sending is on hold for this workspace", held.Detail.Value)
 }
 
 func TestAHoldFreezesSendingAndClearingItResumes(t *testing.T) {

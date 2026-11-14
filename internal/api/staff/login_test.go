@@ -75,9 +75,7 @@ func (h *harness) secondStep(t *testing.T, challenge, code string) (*staffapi.St
 // session cookie.
 func (h *harness) session(t *testing.T, email, password, secret string) *http.Cookie {
 	t.Helper()
-	res, err := h.secondStep(t, h.challenge(t, email, password).Challenge, h.code(t, secret))
-	require.NoError(t, err, "the second step starts a session")
-	return parseCookie(t, res.SetCookie)
+	return h.env.StaffSignIn(t, email, password, func() string { return h.code(t, secret) })
 }
 
 func parseCookie(t *testing.T, setCookie string) *http.Cookie {

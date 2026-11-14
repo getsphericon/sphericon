@@ -23,13 +23,3 @@ func Receive[T any](tb testing.TB, ch <-chan T, msg string) T {
 		return zero
 	}
 }
-
-// RequireClosed fails the test with msg unless ch is closed (or holds a value) right now.
-func RequireClosed[T any](tb testing.TB, ch <-chan T, msg string) {
-	tb.Helper()
-	select {
-	case <-ch:
-	default:
-		tb.Fatal(msg)
-	}
-}

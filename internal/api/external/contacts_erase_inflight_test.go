@@ -69,9 +69,9 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 	var erasedID, bystanderID int64 = fixtures.ContactErasableID, fixtures.ContactBystanderID
 	require.NoError(t, env.Bus.WithinTx(ctx, func(_ *ent.Client, pub events.Publisher) error {
 		for _, ev := range []events.DomainEvent{
-			&events.EmailEngagement{Action: systemevent.EmailSent, WorkspaceID: fixtures.InitechID, ContactID: erasedID, Email: "erin@initech.test"},
+			&events.EmailEngagement{Action: systemevent.EmailSent, WorkspaceID: fixtures.InitechID, ContactID: erasedID, Email: fixtures.ContactErasableEmail},
 			&events.ContactCreated{WorkspaceID: fixtures.InitechID, Email: "Erin@Initech.test"}, // by address only
-			&events.EmailEngagement{Action: systemevent.EmailSent, WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Email: "ben@initech.test"},
+			&events.EmailEngagement{Action: systemevent.EmailSent, WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Email: fixtures.ContactBystanderEmail},
 		} {
 			if err := pub.Publish(ctx, ev); err != nil {
 				return err

@@ -27,7 +27,7 @@ import (
 // default integration's From is on codebasics.dev (verified); news.acme.com is an
 // unverified Sending domain.
 const (
-	suppressd = "ethan.data@codebasics.dev"
+	suppressd = fixtures.ContactBouncedEmail
 )
 
 const htmlBody = `<p>Hi {{ first_name }}</p>`
@@ -210,7 +210,7 @@ func TestUnsubscribedContactIsSkippedForMarketingButNotTransactional(t *testing.
 	assert.Equal(t, eligibility.ReasonUnsubscribedSource, res.Reason)
 
 	// Bob can still receive his own transactional mail (no Sending source).
-	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:bob", "bob@example.com"))
+	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:bob", fixtures.ContactBobEmail))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)
 }

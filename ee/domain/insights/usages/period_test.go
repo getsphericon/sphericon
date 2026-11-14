@@ -16,7 +16,7 @@ import (
 func TestASendJustBeforeAndJustAfterMidnightUTCLandInDifferentPeriods(t *testing.T) {
 	env := testhelper.Setup(t)
 	// Meter has a send at 23:59 of month 20 and one at 00:01 of month 19.
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), month(19).Add(time.Hour)))
+	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), month(19).Add(time.Hour)))
 
 	january, february := figure(t, env, month(20)), figure(t, env, month(19))
 	assert.EqualValues(t, 1, january.Value)
@@ -27,7 +27,7 @@ func TestASendJustBeforeAndJustAfterMidnightUTCLandInDifferentPeriods(t *testing
 
 func TestEveryWorkspaceIsClosedWithinAnHourOfMidnightUTC(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureStaff)
+	lic := testhelper.License(t, licensekey.FeatureStaff)
 	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(6).Add(-time.Minute)), "the last run of January")
 
 	// The next scheduled tick after midnight is at most one Interval later.

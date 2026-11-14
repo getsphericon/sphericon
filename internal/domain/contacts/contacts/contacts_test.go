@@ -79,7 +79,7 @@ func TestUpdateChangesOnlyGivenAttributes(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Jones", lo.FromPtr(c.LastName))
 	assert.Equal(t, "Alice", lo.FromPtr(c.FirstName), "untouched attribute stays")
-	assert.Equal(t, "alice@example.com", lo.FromPtr(c.Email))
+	assert.Equal(t, fixtures.ContactAliceEmail, lo.FromPtr(c.Email))
 	assert.Zero(t, createdEvents(t, env, fixtures.ContactAliceID), "an update is not a creation")
 }
 
@@ -98,7 +98,7 @@ func TestUpdateConflict(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := contacts.New(env.Bus)
 
-	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set("bob@example.com")})
+	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set(fixtures.ContactBobEmail)})
 	require.ErrorIs(t, err, contacts.ErrEmailTaken)
 }
 

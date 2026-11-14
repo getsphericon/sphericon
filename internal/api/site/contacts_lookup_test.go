@@ -70,7 +70,7 @@ func TestSiteContactsLookupNeverMatchesAnotherWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	got := lookup(t, c, fixtures.AcmePublicID, "pat@globex.test")
+	got := lookup(t, c, fixtures.AcmePublicID, fixtures.ContactGlobexEmail)
 	assert.Equal(t, siteapi.SiteContactHoldings{}, *got)
 }
 
@@ -79,7 +79,7 @@ func TestSiteContactsLookupIsOwnerAndAdminOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	admin := env.SiteActor(t, fixtures.InitechAdminAdaEmail)
-	lookup(t, admin, fixtures.InitechPublicID, "erin@initech.test")
+	lookup(t, admin, fixtures.InitechPublicID, fixtures.ContactErasableEmail)
 
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	_, err := member.SiteContactsLookup(context.Background(), siteapi.SiteContactsLookupParams{

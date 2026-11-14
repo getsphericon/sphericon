@@ -51,7 +51,7 @@ func TestSendToAnErasedContactIdIsRefusedAtTheClaim(t *testing.T) {
 		contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 	before := len(env.CustomerMail.Messages())
 
-	req := transactional("tx:erased-id", "alice@example.com")
+	req := transactional("tx:erased-id", fixtures.ContactAliceEmail)
 	req.ContactID = fixtures.ContactAliceID
 	_, err := newModule(env, time.Now).Send(ctx, s, req)
 

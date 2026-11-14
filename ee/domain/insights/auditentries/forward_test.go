@@ -2,9 +2,7 @@ package auditentries_test
 
 import (
 	"context"
-	"crypto/ed25519"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 type recorder struct{ names []string }
@@ -23,19 +22,8 @@ func (r *recorder) Dispatch(_ context.Context, _ *ent.Scoped, d events.WebhookDe
 	return nil
 }
 
-func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {
-	t.Helper()
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-	key, err := licensekey.Issue(priv, nil, features...)
-	require.NoError(t, err)
-	lic, err := licensekey.Parse(key, pub, time.Now())
-	require.NoError(t, err)
-	return lic
-}
-
 func TestForwarderDeliversAuditEntriesOnlyUnderLicense(t *testing.T) {
-	unlicensed := licenseFor(t)
+	unlicensed := testhelper.License(t)
 
 	next := &recorder{}
 	require.NoError(t, auditentries.Forwarder(next, unlicensed).Dispatch(t.Context(), nil, events.WebhookDelivery{Name: events.NameAuditEntry, ID: "d1"}))
@@ -44,6 +32,6 @@ func TestForwarderDeliversAuditEntriesOnlyUnderLicense(t *testing.T) {
 	assert.Equal(t, []string{systemevent.ContactCreated}, next.names, "customer events are not gated")
 
 	next = &recorder{}
-	require.NoError(t, auditentries.Forwarder(next, licenseFor(t, licensekey.FeatureAudit)).Dispatch(t.Context(), nil, events.WebhookDelivery{Name: events.NameAuditEntry, ID: "d3"}))
+	require.NoError(t, auditentries.Forwarder(next, testhelper.License(t, licensekey.FeatureAudit)).Dispatch(t.Context(), nil, events.WebhookDelivery{Name: events.NameAuditEntry, ID: "d3"}))
 	assert.Equal(t, []string{events.NameAuditEntry}, next.names)
 }

@@ -29,11 +29,13 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 	starters := brandkits.Starters(brandedKit())
 	require.Len(t, starters, 4)
 
+	bodies := map[string]string{}
 	for _, s := range starters {
 		t.Run(s.Name, func(t *testing.T) {
 			subject := s.Subject
 			got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), &subject, s.Doc)
 			require.NoError(t, err)
+			bodies[s.Name] = got.Body
 
 			kit := brandedKit()
 			kit.Saved = true
@@ -51,12 +53,6 @@ func TestStartersCarryTheBrandKitInTheirStoredBodies(t *testing.T) {
 	}
 
 	// The two starters with a button carry the button style; the heading starters the heading font.
-	bodies := map[string]string{}
-	for _, s := range starters {
-		got, err := emailrender.FromDocument(t.Context(), testhelper.RealRenderer(), nil, s.Doc)
-		require.NoError(t, err)
-		bodies[s.Name] = got.Body
-	}
 	for _, name := range []string{"Welcome", "One button"} {
 		assert.Contains(t, bodies[name], "#ff5500", name)
 		assert.Contains(t, bodies[name], "#fefefe", name)

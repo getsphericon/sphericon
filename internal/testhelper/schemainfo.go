@@ -26,35 +26,6 @@ func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int
 	return n
 }
 
-// ColumnIsNullable reports whether the table's column allows NULL.
-func ColumnIsNullable(t *testing.T, sqlDB *sql.DB, table, column string) bool {
-	t.Helper()
-	var nullable string
-	// raw sql: reads information_schema, which is not an ent entity.
-	require.NoError(t, sqlDB.QueryRowContext(t.Context(),
-		`SELECT is_nullable FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&nullable))
-	return nullable == "YES"
-}
-
-// UnvalidatedConstraints is the names of the constraints of table that were added NOT VALID and
-// are not validated yet, sorted.
-func UnvalidatedConstraints(t *testing.T, sqlDB *sql.DB, table string) []string {
-	t.Helper()
-	// raw sql: reads pg_constraint, which is not an ent entity.
-	rows, err := sqlDB.QueryContext(t.Context(),
-		`SELECT conname FROM pg_constraint WHERE conrelid = $1::regclass AND NOT convalidated ORDER BY conname`, table)
-	require.NoError(t, err)
-	defer func() { _ = rows.Close() }()
-	var names []string
-	for rows.Next() {
-		var name string
-		require.NoError(t, rows.Scan(&name))
-		names = append(names, name)
-	}
-	require.NoError(t, rows.Err())
-	return names
-}
-
 // UniqueIndexes maps each unique index of the public schema that is no primary key, and holds no
 // primary key's columns either, to its table: such a key (the Workspace's (workspace_id, id)) can no
 // more be broken than the primary key. A unique constraint is an index too, and Postgres reports a

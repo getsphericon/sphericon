@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -38,6 +39,11 @@ func (f *fakeSender) DefaultFrom() (address, name string) {
 func (f *fakeSender) Send(_ context.Context, msg messaging.EmailMessage) (messaging.Receipt, error) {
 	f.sent = append(f.sent, msg)
 	return messaging.Receipt{}, nil
+}
+
+// recipients is the address of every message sent, in order.
+func (f *fakeSender) recipients() []string {
+	return lo.Map(f.sent, func(m messaging.EmailMessage, _ int) string { return m.To })
 }
 
 // erroringSender fails every send, to exercise the delivery-failure path.
@@ -176,10 +182,7 @@ func TestSendBroadcastSkipsSuppressed(t *testing.T) {
 	fs := &fakeSender{}
 	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastScheduledID))
 
-	got := make([]string, len(fs.sent))
-	for i, m := range fs.sent {
-		got[i] = m.To
-	}
+	got := fs.recipients()
 	assert.Contains(t, got, fixtures.ContactAliceEmail, "an unsuppressed contact still receives the broadcast")
 	assert.NotContains(t, got, *bounced.Email, "an address suppressed for a bounce must not be sent to")
 	assert.NotContains(t, got, *complained.Email, "an address suppressed for a complaint must not be sent to")
@@ -203,10 +206,7 @@ func TestSendBroadcastSkipsUnsubscribedFromEverything(t *testing.T) {
 
 	// Positive control: the eligible audience (alice + carol; bob is broadcasts-
 	// unsubscribed) is still delivered to, and the everything-opt-out is excluded.
-	got := make([]string, len(fs.sent))
-	for i, m := range fs.sent {
-		got[i] = m.To
-	}
+	got := fs.recipients()
 	assert.NotContains(t, got, *gone.Email, "everything-unsubscribed destination must not be sent to")
 	assert.Contains(t, got, fixtures.ContactAliceEmail)
 	assert.Contains(t, got, fixtures.ContactCarolEmail)
@@ -232,10 +232,7 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 	fs := &fakeSender{}
 	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastProSegmentID))
 
-	got := make([]string, len(fs.sent))
-	for i, m := range fs.sent {
-		got[i] = m.To
-	}
+	got := fs.recipients()
 	require.NotEmpty(t, got, "pro-plan contacts are in the audience")
 	assert.Contains(t, got, *liam.Email, "a pro-plan contact receives the broadcast")
 	assert.NotContains(t, got, *noah.Email, "a free-plan contact is excluded by the segment")
@@ -252,12 +249,9 @@ func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	fs := &fakeSender{}
 	require.NoError(t, env.SendBroadcastThrough(t, newMod(env, resolvingTo(fs), time.Now), fixtures.BroadcastWithoutTelegramID))
 
-	got := make([]string, len(fs.sent))
-	for i, m := range fs.sent {
-		got[i] = m.To
-	}
+	got := fs.recipients()
 	liam := env.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
-	emma := env.DB.Contact.GetX(ctx, 101)
+	emma := env.DB.Contact.GetX(ctx, fixtures.ContactEmmaID)
 	noah := env.DB.Contact.GetX(ctx, fixtures.ContactNoahID)
 	assert.Contains(t, got, *noah.Email, "a Contact with no chat is in the audience")
 	assert.NotContains(t, got, *liam.Email, "a Contact bound in person is left out")

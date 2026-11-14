@@ -73,7 +73,7 @@ func raceThePick(t *testing.T, meanwhile func(ctx context.Context, mod *automati
 	require.True(t, stillWaiting, "the Event's handler is held in the window")
 	require.NoError(t, meanwhile(ctx, mod, e.scoped))
 	release()
-	require.NoError(t, <-handled)
+	require.NoError(t, testhelper.Receive(t, handled, "the trigger is handled"))
 
 	runs, err := e.client.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationHoldDemoID), automationrun.ContactID(fixtures.ContactAliceID)).

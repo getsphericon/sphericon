@@ -1,7 +1,6 @@
 package ee_test
 
 import (
-	"crypto/ed25519"
 	"crypto/rand"
 	"testing"
 	"time"
@@ -14,18 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {
-	t.Helper()
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-	key, err := licensekey.Issue(priv, nil, features...)
-	require.NoError(t, err)
-	lic, err := licensekey.Parse(key, pub, time.Now())
-	require.NoError(t, err)
-	return lic
-}
 
 // staffSessions are the sessions of a Staff sign-in that is on.
 func staffSessions(t *testing.T) *staffmembers.Sessions {
@@ -36,17 +25,17 @@ func staffSessions(t *testing.T) *staffmembers.Sessions {
 }
 
 func TestTheStaffLicenseNeedsTheStaffSignIn(t *testing.T) {
-	_, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff)}, workspaceoversight.Config{Clock: time.Now})
+	_, err := ee.New(ee.Deps{License: testhelper.License(t, licensekey.FeatureStaff)}, workspaceoversight.Config{Clock: time.Now})
 
 	require.Error(t, err, "the Enterprise sections take the Staff member's sessions")
 }
 
 func TestOnlyTheStaffLicenseServesTheEnterpriseSections(t *testing.T) {
-	plain, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, workspaceoversight.Config{Clock: time.Now})
+	plain, err := ee.New(ee.Deps{License: testhelper.License(t, licensekey.FeatureAudit), StaffSessions: staffSessions(t)}, workspaceoversight.Config{Clock: time.Now})
 	require.NoError(t, err)
-	off, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureAudit)}, workspaceoversight.Config{Clock: time.Now})
+	off, err := ee.New(ee.Deps{License: testhelper.License(t, licensekey.FeatureAudit)}, workspaceoversight.Config{Clock: time.Now})
 	require.NoError(t, err, "an instance without the staff license needs no Staff sign-in")
-	licensed, err := ee.New(ee.Deps{License: licenseFor(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{Clock: time.Now})
+	licensed, err := ee.New(ee.Deps{License: testhelper.License(t, licensekey.FeatureStaff), StaffSessions: staffSessions(t)}, workspaceoversight.Config{Clock: time.Now})
 	require.NoError(t, err)
 
 	assert.Nil(t, plain.StaffSections())

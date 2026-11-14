@@ -1,7 +1,6 @@
 package erasures_test
 
 import (
-	"crypto/ed25519"
 	"testing"
 	"time"
 
@@ -14,17 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {
-	t.Helper()
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-	key, err := licensekey.Issue(priv, nil, features...)
-	require.NoError(t, err)
-	lic, err := licensekey.Parse(key, pub, time.Now())
-	require.NoError(t, err)
-	return lic
-}
 
 // The Event retention default (ADR 0019): the fixtures hold one Erasure 500 days old and
 // one 3 days old in Acme.
@@ -48,7 +36,7 @@ func fixtureErasedAt(t *testing.T, env *testhelper.TestEnv) time.Time {
 
 func TestPruneRemovesErasuresOlderThanTheEventRetentionWindow(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureExport)
+	lic := testhelper.License(t, licensekey.FeatureExport)
 
 	// The old row is 500 days old and the recent one 3: a clock 401 days after the old row's
 	// Erasure puts the old one just past the window and the recent one well inside it.
@@ -64,7 +52,7 @@ func TestPruneRemovesErasuresOlderThanTheEventRetentionWindow(t *testing.T) {
 
 func TestPruneKeepsEveryErasureWhenRetentionIsOff(t *testing.T) {
 	env := testhelper.Setup(t)
-	lic := licenseFor(t, licensekey.FeatureExport)
+	lic := testhelper.License(t, licensekey.FeatureExport)
 
 	now := fixtureErasedAt(t, env).AddDate(10, 0, 0)
 
@@ -80,7 +68,7 @@ func TestPruneWithoutTheExportLicenseRemovesNothing(t *testing.T) {
 
 	now := fixtureErasedAt(t, env).Add(window + 24*time.Hour)
 
-	removed, err := erasures.Prune(t.Context(), env.DB, licenseFor(t, licensekey.FeatureAudit), window, now)
+	removed, err := erasures.Prune(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureAudit), window, now)
 
 	require.NoError(t, err)
 	assert.Zero(t, removed)

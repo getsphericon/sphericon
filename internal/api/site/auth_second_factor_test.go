@@ -2,9 +2,7 @@ package site_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -56,12 +54,6 @@ func (s *twoStepEnv) code(t *testing.T) string {
 	return c
 }
 
-func (s *twoStepEnv) secondStep(t *testing.T, challenge, code string) *httptest.ResponseRecorder {
-	t.Helper()
-	return sendWithSession(t, s.env, http.MethodPost, secondStepPath, "",
-		fmt.Sprintf(`{"challenge":%q,"code":%q}`, challenge, code))
-}
-
 func TestPasswordAloneGivesAUserWithASecondFactorAChallengeAndNoSession(t *testing.T) {
 	s := newTwoStepEnv(t)
 	rec := postLogin(t, s.env, fixtures.SecondFactorSamEmail, fixtures.SecondFactorSamPassword)
@@ -75,7 +67,7 @@ func TestPasswordAloneGivesAUserWithASecondFactorAChallengeAndNoSession(t *testi
 
 func TestTheSecondStepWithATOTPCodeStartsASessionAndIsAudited(t *testing.T) {
 	s := newTwoStepEnv(t)
-	rec := s.secondStep(t, s.challenge(t), s.code(t))
+	rec := secondStepStatus(t, s.env, s.challenge(t), s.code(t))
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	assert.JSONEq(t, `{"outcome":"session"}`, rec.Body.String())
 	cookie := sessionCookie(rec.Result())
@@ -87,7 +79,7 @@ func TestTheSecondStepWithATOTPCodeStartsASessionAndIsAudited(t *testing.T) {
 
 func TestTheSecondStepRejectsAWrongCodeWithoutASession(t *testing.T) {
 	s := newTwoStepEnv(t)
-	rec := s.secondStep(t, s.challenge(t), "000000")
+	rec := secondStepStatus(t, s.env, s.challenge(t), "000000")
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	assert.Nil(t, sessionCookie(rec.Result()))
 }
@@ -95,18 +87,18 @@ func TestTheSecondStepRejectsAWrongCodeWithoutASession(t *testing.T) {
 func TestAReplayedTOTPCodeIsRejected(t *testing.T) {
 	s := newTwoStepEnv(t)
 	code := s.code(t)
-	require.Equal(t, http.StatusOK, s.secondStep(t, s.challenge(t), code).Code)
+	require.Equal(t, http.StatusOK, secondStepStatus(t, s.env, s.challenge(t), code).Code)
 
-	rec := s.secondStep(t, s.challenge(t), code)
+	rec := secondStepStatus(t, s.env, s.challenge(t), code)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 	assert.Nil(t, sessionCookie(rec.Result()))
 }
 
 func TestARecoveryCodeWorksOnceAndIsAudited(t *testing.T) {
 	s := newTwoStepEnv(t)
-	require.Equal(t, http.StatusOK, s.secondStep(t, s.challenge(t), fixtures.SecondFactorSamRecoveryCode).Code)
-	assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, s.challenge(t), fixtures.SecondFactorSamRecoveryCode).Code)
-	assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, s.challenge(t), fixtures.SecondFactorSamSpentRecoveryCode).Code)
+	require.Equal(t, http.StatusOK, secondStepStatus(t, s.env, s.challenge(t), fixtures.SecondFactorSamRecoveryCode).Code)
+	assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, s.challenge(t), fixtures.SecondFactorSamRecoveryCode).Code)
+	assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, s.challenge(t), fixtures.SecondFactorSamSpentRecoveryCode).Code)
 
 	assert.Len(t, entriesNamed(t, s.env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserRecoveryCodeUse), 1)
 }
@@ -115,28 +107,28 @@ func TestAnExpiredChallengeIsRejected(t *testing.T) {
 	s := newTwoStepEnv(t)
 	challenge := s.challenge(t)
 	s.clock.t = s.clock.t.Add(5*time.Minute + time.Second)
-	assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, challenge, s.code(t)).Code)
+	assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
 }
 
 func TestAChallengeWorksOnlyOnce(t *testing.T) {
 	t.Run("after a TOTP success", func(t *testing.T) {
 		s := newTwoStepEnv(t)
 		challenge := s.challenge(t)
-		require.Equal(t, http.StatusOK, s.secondStep(t, challenge, s.code(t)).Code)
+		require.Equal(t, http.StatusOK, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
 		s.clock.t = s.clock.t.Add(time.Minute) // a fresh, never-used code
-		assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, challenge, s.code(t)).Code)
+		assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
 	})
 	t.Run("after a Recovery code success", func(t *testing.T) {
 		s := newTwoStepEnv(t)
 		challenge := s.challenge(t)
-		require.Equal(t, http.StatusOK, s.secondStep(t, challenge, fixtures.SecondFactorSamRecoveryCode).Code)
-		assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, challenge, s.code(t)).Code)
+		require.Equal(t, http.StatusOK, secondStepStatus(t, s.env, challenge, fixtures.SecondFactorSamRecoveryCode).Code)
+		assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
 	})
 }
 
 func TestAForgedChallengeIsRejected(t *testing.T) {
 	s := newTwoStepEnv(t)
-	assert.Equal(t, http.StatusUnauthorized, s.secondStep(t, "not-a-challenge", s.code(t)).Code)
+	assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, "not-a-challenge", s.code(t)).Code)
 }
 
 func TestUsersWithoutASecondFactorKeepTheOneStepLogin(t *testing.T) {

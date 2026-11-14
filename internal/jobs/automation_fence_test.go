@@ -177,7 +177,7 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	go func() {
 		stepDone <- stepper.Step(ctx, e.scoped, runID, 0)
 	}()
-	<-bs.started
+	testhelper.Receive(t, bs.started, "the send starts")
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
 
 	exited := make(chan exitResult, 1)
@@ -188,8 +188,8 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	}()
 	bs.release()
 
-	require.NoError(t, <-stepDone)
-	got := <-exited
+	require.NoError(t, testhelper.Receive(t, stepDone, "the step finishes"))
+	got := testhelper.Receive(t, exited, "the exit finishes")
 	require.NoError(t, got.err)
 	assert.True(t, got.afterTheSend, "the exit returned only after the send had finished")
 	assert.True(t, got.ended)
@@ -241,7 +241,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 			Args:   automations.RunHTTPStepArgs{RunID: runID},
 		})
 	}()
-	<-started
+	testhelper.Receive(t, started, "the work starts")
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight call holds the Enrollment")
 
 	exited := make(chan error, 1)
@@ -252,8 +252,8 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	}()
 	release()
 
-	require.NoError(t, <-workDone)
-	require.NoError(t, <-exited)
+	require.NoError(t, testhelper.Receive(t, workDone, "the work finishes"))
+	require.NoError(t, testhelper.Receive(t, exited, "the exit finishes"))
 	assert.Equal(t, automationrun.StatusExited, e.client.AutomationRun.GetX(ctx, runID).Status)
 	assert.Len(t, rcv.received(), 1, "exactly one call for the step")
 }

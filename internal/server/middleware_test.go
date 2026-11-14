@@ -126,7 +126,7 @@ func TestReadyzIsUnavailableWhenTheDatabaseCannotBePinged(t *testing.T) {
 func TestAnUndecodableBodyIsA400ProblemThatExplainsItself(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	rec := servePost(t, env, "/api/contacts", `{`, map[string]string{"Authorization": "Bearer " + env.ScopedBearer(t, apitokens.ScopeContactsWrite)})
+	rec := postJSON(t, env, "/api/contacts", `{`, map[string]string{"Authorization": "Bearer " + env.ScopedBearer(t, apitokens.ScopeContactsWrite)})
 
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	assert.Equal(t, "application/problem+json", rec.Header().Get("Content-Type"))

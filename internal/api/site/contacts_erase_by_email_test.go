@@ -57,7 +57,7 @@ func TestSiteContactsEraseByEmailNotFound(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	nobody := eraseByEmail(t, c, fixtures.AcmePublicID, "nobody@nowhere.test")
-	foreign := eraseByEmail(t, c, fixtures.AcmePublicID, "pat@globex.test")
+	foreign := eraseByEmail(t, c, fixtures.AcmePublicID, fixtures.ContactGlobexEmail)
 
 	testhelper.SiteRefusal(t, nobody, http.StatusNotFound)
 	testhelper.SiteRefusal(t, foreign, http.StatusNotFound)

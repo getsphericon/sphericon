@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -22,9 +20,7 @@ import (
 func TestTrackingKeepsRecordingForAnArchivedBroadcast(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 
 	b := env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentUntrackedID)
 	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Broadcast().Archive(ctx, b.ID, time.Now()))
