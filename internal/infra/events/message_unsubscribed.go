@@ -16,3 +16,6 @@ type MessageUnsubscribed struct {
 func (*MessageUnsubscribed) EventName() string  { return NameMessageUnsubscribed }
 func (*MessageUnsubscribed) EventVersion() int  { return 1 }
 func (e *MessageUnsubscribed) Workspace() int64 { return e.WorkspaceID }
+
+// ObservationTime is when the unsubscribe was observed, which dates the envelope (observed).
+func (e *MessageUnsubscribed) ObservationTime() time.Time { return e.ObservedAt }
