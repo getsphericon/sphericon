@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -9,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -25,7 +25,8 @@ type DeliverWebhookArgs struct {
 	EndpointID int64  `json:"endpoint_id" river:"unique"`
 	EventName  string `json:"event_name"`
 	DeliveryID string `json:"delivery_id" river:"unique"`
-	Body       []byte `json:"body"`
+	// Body is the signed JSON payload, kept as JSON in the args, where Erasure matches inside it.
+	Body json.RawMessage `json:"body"`
 }
 
 func (DeliverWebhookArgs) Kind() string { return jobkind.DeliverWebhook.Kind }
@@ -41,10 +42,9 @@ func (DeliverWebhookArgs) InsertOpts() river.InsertOpts {
 type DeliverWebhookWorker struct {
 	hookRetries[DeliverWebhookArgs]
 
-	ent    *ent.Client
-	client webhook.Doer
-	now    func() time.Time
-	// mod keeps the endpoint's failure state and disables it, which tells the owners.
+	ent *ent.Client
+	// mod sends the delivery, keeps the endpoint's failure state and disables it, which tells the
+	// owners.
 	mod *webhookendpoints.Module
 }
 
@@ -55,17 +55,13 @@ func NewDeliverWebhookWorker(client *ent.Client, cipher *secrets.Cipher, doer we
 	return &DeliverWebhookWorker{
 		jitter: jitter,
 		ent:    client,
-		client: doer,
-		now:    now,
-		mod:    webhookendpoints.New(bus, cipher, nil, nil, now),
+		mod:    webhookendpoints.New(bus, cipher, nil, doer, now),
 	}
 }
 
 func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverWebhookArgs]) error {
 	// Job entry point: the args carry only the endpoint id, so the Workspace is not
-	// known up front and this one read uses the raw client (ADR 0017). Everything
-	// after it needs only the loaded row; a further read would build its scope from
-	// e.WorkspaceID.
+	// known up front and this one read uses the raw client (ADR 0017).
 	e, err := w.ent.WebhookEndpoint.Get(ctx, job.Args.EndpointID)
 	if ent.IsNotFound(err) {
 		return nil // endpoint deleted since enqueue; drop the delivery
@@ -73,26 +69,14 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 	if err != nil {
 		return err
 	}
-	delivery, ok, err := w.mod.DeliveryTo(e)
-	if err != nil || !ok {
-		return err // !ok: disabled since enqueue
-	}
-	sendErr := webhook.Send(ctx, w.client, delivery.URL, delivery.Secret, job.Args.EventName, job.Args.DeliveryID, job.Args.Body, w.now())
-	if err := w.mod.RecordDelivery(ctx, w.ent.Scoped(e.WorkspaceID), e, sendErr, w.now()); err != nil {
+	x, err := w.mod.Deliver(ctx, w.ent.Scoped(e.WorkspaceID), e, webhookendpoints.DeliverInput{
+		EventName: job.Args.EventName, DeliveryID: job.Args.DeliveryID, Body: job.Args.Body,
+		Attempt: hookAttempt(job.JobRow),
+	})
+	if err != nil {
 		return err
 	}
-	if sendErr == nil {
-		return nil
-	}
-	decision := httpcall.Subscription.Decide(sendErr, hookAttempt(job.JobRow), w.now())
-	switch {
-	case decision.Outcome == httpcall.Wait:
-		return river.JobSnooze(decision.Wait)
-	case decision.Outcome == httpcall.GiveUp && decision.Reason != httpcall.AttemptsExhausted:
-		return river.JobCancel(sendErr) // a receiver that never lets up ends the delivery too
-	}
-	// A retry, or the last attempt, which river ends as exhausted.
-	return sendErr
+	return executionResult(x)
 }
 
 // NewWebhookDispatcher is the dispatcher that queues the deliveries of an event through the river
@@ -106,8 +90,12 @@ type webhookDispatcher struct{}
 // Dispatch fans a domain event out to every endpoint of the workspace that receives it
 // (webhookendpoints.Subscribed), enqueuing one delivery job each, all in one insert. The scope
 // comes from the caller (the webhooks consumer, which scopes to the event's Workspace).
-func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
-	endpoints, err := webhookendpoints.Subscribed(ctx, s, eventName)
+func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, delivery events.WebhookDelivery) error {
+	endpoints, err := webhookendpoints.Subscribed(ctx, s, delivery.Name)
+	if err != nil || len(endpoints) == 0 {
+		return err
+	}
+	body, err := delivery.Body(ctx)
 	if err != nil {
 		return err
 	}
@@ -115,8 +103,8 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, eventNam
 		return DeliverWebhookArgs{
 			WorkspaceID: e.WorkspaceID,
 			EndpointID:  e.ID,
-			EventName:   eventName,
-			DeliveryID:  deliveryID,
+			EventName:   delivery.Name,
+			DeliveryID:  delivery.ID,
 			Body:        body,
 		}
 	})

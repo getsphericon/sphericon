@@ -41,8 +41,5 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[rules.HTTPA
 	if err != nil {
 		return err
 	}
-	if decision.Wait > 0 {
-		return river.JobSnooze(decision.Wait)
-	}
-	return decision.Retry
+	return executionResult(decision)
 }

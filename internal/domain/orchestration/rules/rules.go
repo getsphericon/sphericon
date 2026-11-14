@@ -679,12 +679,12 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64
 		if !holds {
 			continue
 		}
-		id, ok, err := m.fire(ctx, s, live, ev)
+		id, err := m.fire(ctx, s, live, ev)
 		if err != nil {
 			failures = append(failures, fmt.Errorf("rule %d: %w", r.ID, err))
 			continue
 		}
-		if ok {
+		if id != 0 {
 			fired = append(fired, id)
 		}
 	}
@@ -710,12 +710,12 @@ func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Even
 }
 
 // fire writes the Firing of the Rule version for the Event and queues its Actions job in the same
-// transaction. It returns nil when the Rule already fired for this Event, and when, by the time the
-// Firing is written, the Rule no longer fires on v for it: Evaluate read the Rule before this
-// transaction, so a Delete, a Deactivate or a Publish may have landed since. It share-locks the
-// Rule's row and checks it again under the lock: those moves lock the row exclusively, so each has
+// transaction, and returns its id: 0 when the Rule already fired for this Event, and when, by the
+// time the Firing is written, the Rule no longer fires on v for it: Evaluate read the Rule before
+// this transaction, so a Delete, a Deactivate or a Publish may have landed since. It share-locks
+// the Rule's row and checks it again under the lock: those moves lock the row exclusively, so each has
 // either committed before the check or waits for the Firing (ADR 0098, ADR 0099).
-func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (int64, bool, error) {
+func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev Event) (int64, error) {
 	var fired int64
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher, q events.Enqueuer) error {
 		live, still, err := shareFiring(ctx, ts, v, ev)
@@ -732,7 +732,7 @@ func (m *Module) fire(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion, ev
 		fired = id
 		return nil
 	})
-	return fired, fired != 0, err
+	return fired, err
 }
 
 // firingVersion stands for a Rule share-locked to the end of the transaction while it still fires on

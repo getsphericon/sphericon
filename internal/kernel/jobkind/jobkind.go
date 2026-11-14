@@ -71,7 +71,7 @@ var (
 )
 
 // DeliverWebhookBodyArg is the argument of a queued webhook delivery that holds the event
-// payload (stored by river as a base64 JSON string).
+// payload, as JSON.
 const DeliverWebhookBodyArg = "body"
 
 // Purged lists every kind Erasure purges.

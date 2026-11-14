@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -18,6 +19,40 @@ const (
 	DisableFailures = 20
 	DisableWindow   = 2 * time.Hour
 )
+
+// DeliverInput is one attempt at a queued delivery: what to send and the queue's attempt data.
+type DeliverInput struct {
+	EventName, DeliveryID string
+	Body                  []byte
+	Attempt               httpcall.Attempt
+}
+
+// Deliver makes one attempt at a queued delivery to e, the endpoint loaded by the job, through
+// the module's HTTP client: it sends the signed body, records the outcome on the endpoint's health
+// (RecordDelivery, which may disable it and tell its owners) and decides what the job does next by
+// the Subscription policy. A disabled endpoint receives nothing. A receiver that never lets up
+// cancels the delivery; the last attempt's failure is left to end the job as exhausted.
+func (m *Module) Deliver(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, in DeliverInput) (httpcall.Execution, error) {
+	to, ok, err := m.DeliveryTo(e)
+	if err != nil || !ok {
+		return httpcall.Execution{}, err
+	}
+	sendErr := webhook.Send(ctx, m.client, to.URL, to.Secret, in.EventName, in.DeliveryID, in.Body, m.now())
+	if err := m.RecordDelivery(ctx, s, e, sendErr, m.now()); err != nil {
+		return httpcall.Execution{}, err
+	}
+	if sendErr == nil {
+		return httpcall.Execution{}, nil
+	}
+	decision := httpcall.Subscription.Decide(sendErr, in.Attempt, m.now())
+	switch {
+	case decision.Outcome == httpcall.Wait:
+		return httpcall.Execution{Wait: decision.Wait}, nil
+	case decision.Outcome == httpcall.GiveUp && decision.Reason != httpcall.AttemptsExhausted:
+		return httpcall.Execution{Cancel: sendErr}, nil
+	}
+	return httpcall.Execution{Retry: sendErr}, nil
+}
 
 // RecordDelivery applies an outcome to the current failure run, in commit order. e is the
 // snapshot loaded before the HTTP request: only its id and reset generation are authoritative

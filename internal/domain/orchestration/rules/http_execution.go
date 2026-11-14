@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/riverqueue/river"
 
@@ -40,42 +39,35 @@ func (HTTPArgs) InsertOpts() river.InsertOpts {
 	}
 }
 
-// HTTPExecution is the next decision for an HTTP Action. A zero value means the Action is
-// decided or no longer exists. Retry leaves it Pending for an ordinary attempt; Wait leaves
-// it Pending without spending an attempt. A final failure is recorded on the Firing.
-type HTTPExecution struct {
-	Retry error
-	Wait  time.Duration
-}
-
 // ExecuteHTTP selects and executes the pending HTTP Action of a Firing through the module's
 // protected HTTP client, and records its result. The adapter supplies only the ordinary attempt
 // information. It needs no queue job, and keeps the Firing's independent Actions and completion
-// semantics.
-func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt) (HTTPExecution, error) {
+// semantics. A zero httpcall.Execution means the Action is decided or no longer exists; Retry and
+// Wait leave it Pending, and a final failure is recorded on the Firing (it never Cancels).
+func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt) (httpcall.Execution, error) {
 	f, err := s.RuleFiring().Get(ctx, firingID)
 	if ent.IsNotFound(err) {
-		return HTTPExecution{}, nil
+		return httpcall.Execution{}, nil
 	}
 	if err != nil {
-		return HTTPExecution{}, err
+		return httpcall.Execution{}, err
 	}
 	actions, pending, err := pendingHTTP(ctx, s, f, index)
 	if err != nil || !pending {
-		return HTTPExecution{}, err
+		return httpcall.Execution{}, err
 	}
 	action := actions[index]
-	record := func(res Result) (HTTPExecution, error) {
+	record := func(res Result) (httpcall.Execution, error) {
 		res.Type = ActionHTTP
 		_, err := m.record(ctx, s, f.ID, index, res, len(actions))
-		return HTTPExecution{}, err
+		return httpcall.Execution{}, err
 	}
 	c, err := s.Contact().Get(ctx, f.ContactID)
 	if ent.IsNotFound(err) {
 		return record(Result{Status: Failed, Detail: "contact not found"})
 	}
 	if err != nil {
-		return HTTPExecution{}, err
+		return httpcall.Execution{}, err
 	}
 	opened, err := m.OpenHTTP(action)
 	if err != nil {
@@ -101,10 +93,10 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64,
 	}
 	decision := httpcall.OneOff.Decide(sendErr, attempt, m.now())
 	if decision.Outcome == httpcall.Wait {
-		return HTTPExecution{Wait: decision.Wait}, nil
+		return httpcall.Execution{Wait: decision.Wait}, nil
 	}
 	if decision.Outcome == httpcall.Retry {
-		return HTTPExecution{Retry: sendErr}, nil
+		return httpcall.Execution{Retry: sendErr}, nil
 	}
 	// Whatever the reason a call is given up for, its Action is Failed and the job ends.
 	return record(Result{Status: Failed, Detail: failureDetail(sendErr)})

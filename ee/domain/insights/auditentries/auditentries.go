@@ -62,11 +62,11 @@ type forwarder struct {
 	lic  *licensekey.License
 }
 
-func (f forwarder) Dispatch(ctx context.Context, s *ent.Scoped, eventName, deliveryID string, body []byte) error {
-	if eventName == events.NameAuditEntry && !f.lic.Has(licensekey.FeatureAudit) {
+func (f forwarder) Dispatch(ctx context.Context, s *ent.Scoped, d events.WebhookDelivery) error {
+	if d.Name == events.NameAuditEntry && !f.lic.Has(licensekey.FeatureAudit) {
 		return nil
 	}
-	return f.next.Dispatch(ctx, s, eventName, deliveryID, body)
+	return f.next.Dispatch(ctx, s, d)
 }
 
 func persist(ctx context.Context, client *ent.Client, env events.Envelope, e *events.AuditEntry) error {

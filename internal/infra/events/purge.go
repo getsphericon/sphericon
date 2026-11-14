@@ -69,19 +69,19 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 	if contactID != 0 {
 		id = publicid.Encode(contactID) // the body names the Contact by its public id (ADR 0142)
 	}
-	// DeliverWebhookArgs.Body is []byte, so river stores it as a base64 JSON string; it is the
-	// JSON event payload, naming the Contact at contactId / data.contactId, the address at
-	// data.email, the phone number at data.phone.
+	// DeliverWebhookArgs.Body is the JSON event payload, kept as JSON in the args, naming the
+	// Contact at contactId / data.contactId, the address at data.email, the phone number at
+	// data.phone.
 	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Kinds(jobkind.DeliverWebhook.Kind).
 		// raw sql: an integer field of the args matched against a list; river's delete filters
 		// stop at a job's own columns.
 		Where("(args->>@purge_endpoint_arg::text)::bigint = any(@purge_endpoints::bigint[])",
 			river.NamedArgs{"purge_endpoint_arg": jobkind.DeliverWebhook.Arg, "purge_endpoints": endpointIDs}).
-		// raw sql: decodes a base64 JSON string of the args into a document and matches inside it.
-		Where("EXISTS (SELECT 1 FROM (SELECT convert_from(decode(args->>@purge_body_arg::text, 'base64'), 'UTF8')::jsonb AS body) b"+
-			" WHERE b.body->>'contactId' = @purge_contact::text OR b.body->'data'->>'contactId' = @purge_contact::text"+
-			" OR lower(b.body->'data'->>'email') = any(@purge_addresses::text[])"+
-			" OR b.body->'data'->>'phone' = any(@purge_addresses::text[]))",
+		// raw sql: the payload's fields inside the args, the address case-insensitively.
+		Where("(args->@purge_body_arg::text->>'contactId' = @purge_contact::text"+
+			" OR args->@purge_body_arg::text->'data'->>'contactId' = @purge_contact::text"+
+			" OR lower(args->@purge_body_arg::text->'data'->>'email') = any(@purge_addresses::text[])"+
+			" OR args->@purge_body_arg::text->'data'->>'phone' = any(@purge_addresses::text[]))",
 			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lowerAll(destinations)}))
 }
 
