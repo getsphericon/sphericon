@@ -3019,6 +3019,12 @@ const (
 	PasskeyOnlyPegID = 26
 	// PasskeyOnlyPegName is from fixtures/users.
 	PasskeyOnlyPegName = "Peg"
+	// PasskeyPairRueEmail is from fixtures/users.
+	PasskeyPairRueEmail = "rue@passkey.test"
+	// PasskeyPairRueID is from fixtures/users.
+	PasskeyPairRueID = 28
+	// PasskeyPairRueName is from fixtures/users.
+	PasskeyPairRueName = "Rue"
 	// PasskeyPatEmail is from fixtures/users.
 	PasskeyPatEmail = "pat@passkey.test"
 	// PasskeyPatID is from fixtures/users.
@@ -3043,6 +3049,22 @@ const (
 	PasskeyPegKeyName = "Peg's key"
 	// PasskeyPegKeyPrivateKey is from fixtures/passkeys.
 	PasskeyPegKeyPrivateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"
+	// PasskeyRueKeyCredentialID is from fixtures/passkeys.
+	PasskeyRueKeyCredentialID = "AwECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+	// PasskeyRueKeyID is from fixtures/passkeys.
+	PasskeyRueKeyID = 5
+	// PasskeyRueKeyName is from fixtures/passkeys.
+	PasskeyRueKeyName = "Rue's key"
+	// PasskeyRueKeyPrivateKey is from fixtures/passkeys.
+	PasskeyRueKeyPrivateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"
+	// PasskeyRuePhoneCredentialID is from fixtures/passkeys.
+	PasskeyRuePhoneCredentialID = "AgECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+	// PasskeyRuePhoneID is from fixtures/passkeys.
+	PasskeyRuePhoneID = 4
+	// PasskeyRuePhoneName is from fixtures/passkeys.
+	PasskeyRuePhoneName = "Rue's phone"
+	// PasskeyRuePhonePrivateKey is from fixtures/passkeys.
+	PasskeyRuePhonePrivateKey = "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguowMP4wuJ9ofK0aijK+GXVmDX4/derRRvLf8WgO1wrOhRANCAATfabl10uHErPKsk8Ao9GEtTJNeofsEXz2DLGpS58oqCc1WMieN2JR+ji0ukpyQSHewMb0/b5Bbv7rSeQeA7keK"
 	// PasskeyUnverifiedUnaEmail is from fixtures/users.
 	PasskeyUnverifiedUnaEmail = "una@passkey.test"
 	// PasskeyUnverifiedUnaID is from fixtures/users.
