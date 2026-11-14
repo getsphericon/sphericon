@@ -59,7 +59,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   client, reads them after and records one entry per row whose audited fields changed. A template never
   touches ent's unexported fields: an ent upgrade can neither break the build there nor move a write
   out of its transaction (`TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens` commits on a real
-  database to catch it). The verbs of an entity's writes (create, update, delete, then discard, or
+  database to catch it, for the create, updates and deletes of the registry). The verbs of an entity's writes (create, update, delete, then discard, or
   archive and unarchive, by its kind) are `entgen.Verbs`: the wrappers and the Versioned definitions'
   pointers name a verb through the `verb` func, which fails the generation on one the entity has not,
   and the registry's `AuditActions` lists them, which the contract's `AuditAction` enum must match.

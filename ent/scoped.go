@@ -917,25 +917,25 @@ func (s *Scoped) writeApiToken(ctx context.Context, verb string, where []predica
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*ApiToken, len(before))
+			beforeByID := make(map[int64]*ApiToken, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.ApiToken.Query().Where(apitoken.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*ApiToken, len(after))
+			afterByID := make(map[int64]*ApiToken, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeApiToken(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeApiToken(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -1280,8 +1280,8 @@ func (t *ApiTokenScoped) CreateBulk(xs ...*ApiTokenScopedCreate) *ApiTokenScoped
 	return &ApiTokenScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *ApiTokenScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ApiTokenScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("ApiToken: builder of another scope: %w", ErrNotInWorkspace)
@@ -1307,7 +1307,7 @@ func (b *ApiTokenScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ApiTo
 
 // Save verifies every builder's references, then creates the ApiToken entities.
 func (b *ApiTokenScopedCreateBulk) Save(ctx context.Context) ([]*ApiToken, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*ApiToken
@@ -1669,7 +1669,7 @@ func (u *ApiTokenScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeApiToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -2517,8 +2517,8 @@ func (t *AuditEntryScoped) CreateBulk(xs ...*AuditEntryScopedCreate) *AuditEntry
 	return &AuditEntryScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *AuditEntryScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AuditEntryScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("AuditEntry: builder of another scope: %w", ErrNotInWorkspace)
@@ -2544,7 +2544,7 @@ func (b *AuditEntryScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Aud
 
 // Save verifies every builder's references, then creates the AuditEntry entities.
 func (b *AuditEntryScopedCreateBulk) Save(ctx context.Context) ([]*AuditEntry, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*AuditEntry
@@ -2816,7 +2816,7 @@ func (u *AuditEntryScopedUpsertBulk) Update(set func(*AuditEntryScopedUpsert)) *
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *AuditEntryScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeAuditEntry(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -3165,25 +3165,25 @@ func (s *Scoped) writeAutomation(ctx context.Context, verb string, where []predi
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Automation, len(before))
+			beforeByID := make(map[int64]*Automation, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Automation.Query().Where(automation.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Automation, len(after))
+			afterByID := make(map[int64]*Automation, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeAutomation(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeAutomation(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -3609,8 +3609,8 @@ func (t *AutomationScoped) CreateBulk(xs ...*AutomationScopedCreate) *Automation
 	return &AutomationScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *AutomationScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Automation: builder of another scope: %w", ErrNotInWorkspace)
@@ -3636,7 +3636,7 @@ func (b *AutomationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Aut
 
 // Save verifies every builder's references, then creates the Automation entities.
 func (b *AutomationScopedCreateBulk) Save(ctx context.Context) ([]*Automation, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Automation
@@ -4018,7 +4018,7 @@ func (u *AutomationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeAutomation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -5137,8 +5137,8 @@ func (t *AutomationFigureScoped) CreateBulk(xs ...*AutomationFigureScopedCreate)
 	return &AutomationFigureScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *AutomationFigureScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationFigureScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("AutomationFigure: builder of another scope: %w", ErrNotInWorkspace)
@@ -5164,7 +5164,7 @@ func (b *AutomationFigureScopedCreateBulk) build(ctx context.Context, s *Scoped)
 
 // Save verifies every builder's references, then creates the AutomationFigure entities.
 func (b *AutomationFigureScopedCreateBulk) Save(ctx context.Context) ([]*AutomationFigure, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*AutomationFigure
@@ -5532,7 +5532,7 @@ func (u *AutomationFigureScopedUpsertBulk) Update(set func(*AutomationFigureScop
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *AutomationFigureScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeAutomationFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -6491,8 +6491,8 @@ func (t *AutomationRunScoped) CreateBulk(xs ...*AutomationRunScopedCreate) *Auto
 	return &AutomationRunScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *AutomationRunScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationRunScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("AutomationRun: builder of another scope: %w", ErrNotInWorkspace)
@@ -6518,7 +6518,7 @@ func (b *AutomationRunScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 
 // Save verifies every builder's references, then creates the AutomationRun entities.
 func (b *AutomationRunScopedCreateBulk) Save(ctx context.Context) ([]*AutomationRun, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*AutomationRun
@@ -6938,7 +6938,7 @@ func (u *AutomationRunScopedUpsertBulk) Update(set func(*AutomationRunScopedUpse
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *AutomationRunScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeAutomationRun(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -8026,8 +8026,8 @@ func (t *AutomationVersionScoped) CreateBulk(xs ...*AutomationVersionScopedCreat
 	return &AutomationVersionScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *AutomationVersionScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *AutomationVersionScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("AutomationVersion: builder of another scope: %w", ErrNotInWorkspace)
@@ -8053,7 +8053,7 @@ func (b *AutomationVersionScopedCreateBulk) build(ctx context.Context, s *Scoped
 
 // Save verifies every builder's references, then creates the AutomationVersion entities.
 func (b *AutomationVersionScopedCreateBulk) Save(ctx context.Context) ([]*AutomationVersion, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*AutomationVersion
@@ -8357,7 +8357,7 @@ func (u *AutomationVersionScopedUpsertBulk) Update(set func(*AutomationVersionSc
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *AutomationVersionScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeAutomationVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -9208,8 +9208,8 @@ func (t *BindingScoped) CreateBulk(xs ...*BindingScopedCreate) *BindingScopedCre
 	return &BindingScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *BindingScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *BindingScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Binding: builder of another scope: %w", ErrNotInWorkspace)
@@ -9235,7 +9235,7 @@ func (b *BindingScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Bindin
 
 // Save verifies every builder's references, then creates the Binding entities.
 func (b *BindingScopedCreateBulk) Save(ctx context.Context) ([]*Binding, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Binding
@@ -9539,7 +9539,7 @@ func (u *BindingScopedUpsertBulk) Update(set func(*BindingScopedUpsert)) *Bindin
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *BindingScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeBinding(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -10044,25 +10044,25 @@ func (s *Scoped) writeBrandKit(ctx context.Context, verb string, where []predica
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*BrandKit, len(before))
+			beforeByID := make(map[int64]*BrandKit, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.BrandKit.Query().Where(brandkit.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*BrandKit, len(after))
+			afterByID := make(map[int64]*BrandKit, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeBrandKit(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeBrandKit(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -10370,8 +10370,8 @@ func (t *BrandKitScoped) CreateBulk(xs ...*BrandKitScopedCreate) *BrandKitScoped
 	return &BrandKitScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *BrandKitScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *BrandKitScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("BrandKit: builder of another scope: %w", ErrNotInWorkspace)
@@ -10397,7 +10397,7 @@ func (b *BrandKitScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Brand
 
 // Save verifies every builder's references, then creates the BrandKit entities.
 func (b *BrandKitScopedCreateBulk) Save(ctx context.Context) ([]*BrandKit, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*BrandKit
@@ -10809,7 +10809,7 @@ func (u *BrandKitScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeBrandKit(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -11446,25 +11446,25 @@ func (s *Scoped) writeBroadcast(ctx context.Context, verb string, where []predic
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Broadcast, len(before))
+			beforeByID := make(map[int64]*Broadcast, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Broadcast.Query().Where(broadcast.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Broadcast, len(after))
+			afterByID := make(map[int64]*Broadcast, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeBroadcast(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeBroadcast(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -12184,8 +12184,8 @@ func (t *BroadcastScoped) CreateBulk(xs ...*BroadcastScopedCreate) *BroadcastSco
 	return &BroadcastScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *BroadcastScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *BroadcastScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Broadcast: builder of another scope: %w", ErrNotInWorkspace)
@@ -12211,7 +12211,7 @@ func (b *BroadcastScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Broa
 
 // Save verifies every builder's references, then creates the Broadcast entities.
 func (b *BroadcastScopedCreateBulk) Save(ctx context.Context) ([]*Broadcast, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Broadcast
@@ -12985,7 +12985,7 @@ func (u *BroadcastScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeBroadcast(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -14954,8 +14954,8 @@ func (t *BroadcastFigureScoped) CreateBulk(xs ...*BroadcastFigureScopedCreate) *
 	return &BroadcastFigureScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *BroadcastFigureScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *BroadcastFigureScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("BroadcastFigure: builder of another scope: %w", ErrNotInWorkspace)
@@ -14981,7 +14981,7 @@ func (b *BroadcastFigureScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 
 // Save verifies every builder's references, then creates the BroadcastFigure entities.
 func (b *BroadcastFigureScopedCreateBulk) Save(ctx context.Context) ([]*BroadcastFigure, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*BroadcastFigure
@@ -15235,7 +15235,7 @@ func (u *BroadcastFigureScopedUpsertBulk) Update(set func(*BroadcastFigureScoped
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *BroadcastFigureScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeBroadcastFigure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -15799,8 +15799,8 @@ func (t *BroadcastRecipientScoped) CreateBulk(xs ...*BroadcastRecipientScopedCre
 	return &BroadcastRecipientScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *BroadcastRecipientScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *BroadcastRecipientScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("BroadcastRecipient: builder of another scope: %w", ErrNotInWorkspace)
@@ -15826,7 +15826,7 @@ func (b *BroadcastRecipientScopedCreateBulk) build(ctx context.Context, s *Scope
 
 // Save verifies every builder's references, then creates the BroadcastRecipient entities.
 func (b *BroadcastRecipientScopedCreateBulk) Save(ctx context.Context) ([]*BroadcastRecipient, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*BroadcastRecipient
@@ -16122,7 +16122,7 @@ func (u *BroadcastRecipientScopedUpsertBulk) Update(set func(*BroadcastRecipient
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *BroadcastRecipientScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeBroadcastRecipient(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -16958,8 +16958,8 @@ func (t *CapturedMessageScoped) CreateBulk(xs ...*CapturedMessageScopedCreate) *
 	return &CapturedMessageScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *CapturedMessageScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *CapturedMessageScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("CapturedMessage: builder of another scope: %w", ErrNotInWorkspace)
@@ -16985,7 +16985,7 @@ func (b *CapturedMessageScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 
 // Save verifies every builder's references, then creates the CapturedMessage entities.
 func (b *CapturedMessageScopedCreateBulk) Save(ctx context.Context) ([]*CapturedMessage, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*CapturedMessage
@@ -17225,7 +17225,7 @@ func (u *CapturedMessageScopedUpsertBulk) Update(set func(*CapturedMessageScoped
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *CapturedMessageScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeCapturedMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -17834,8 +17834,8 @@ func (t *ConfirmationScoped) CreateBulk(xs ...*ConfirmationScopedCreate) *Confir
 	return &ConfirmationScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *ConfirmationScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ConfirmationScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Confirmation: builder of another scope: %w", ErrNotInWorkspace)
@@ -17861,7 +17861,7 @@ func (b *ConfirmationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*C
 
 // Save verifies every builder's references, then creates the Confirmation entities.
 func (b *ConfirmationScopedCreateBulk) Save(ctx context.Context) ([]*Confirmation, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Confirmation
@@ -18221,7 +18221,7 @@ func (u *ConfirmationScopedUpsertBulk) Update(set func(*ConfirmationScopedUpsert
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *ConfirmationScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeConfirmation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -18798,25 +18798,25 @@ func (s *Scoped) writeContact(ctx context.Context, verb string, where []predicat
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Contact, len(before))
+			beforeByID := make(map[int64]*Contact, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Contact.Query().Where(contact.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Contact, len(after))
+			afterByID := make(map[int64]*Contact, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeContact(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeContact(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -19381,8 +19381,8 @@ func (t *ContactScoped) CreateBulk(xs ...*ContactScopedCreate) *ContactScopedCre
 	return &ContactScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *ContactScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ContactScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Contact: builder of another scope: %w", ErrNotInWorkspace)
@@ -19408,7 +19408,7 @@ func (b *ContactScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Contac
 
 // Save verifies every builder's references, then creates the Contact entities.
 func (b *ContactScopedCreateBulk) Save(ctx context.Context) ([]*Contact, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Contact
@@ -19956,7 +19956,7 @@ func (u *ContactScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeContact(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -21386,8 +21386,8 @@ func (t *ContactTagScoped) CreateBulk(xs ...*ContactTagScopedCreate) *ContactTag
 	return &ContactTagScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *ContactTagScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ContactTagScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("ContactTag: builder of another scope: %w", ErrNotInWorkspace)
@@ -21413,7 +21413,7 @@ func (b *ContactTagScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Con
 
 // Save verifies every builder's references, then creates the ContactTag entities.
 func (b *ContactTagScopedCreateBulk) Save(ctx context.Context) ([]*ContactTag, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*ContactTag
@@ -21622,7 +21622,7 @@ func (u *ContactTagScopedUpsertBulk) Update(set func(*ContactTagScopedUpsert)) *
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *ContactTagScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeContactTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -21840,25 +21840,25 @@ func (s *Scoped) writeCustomField(ctx context.Context, verb string, where []pred
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*CustomField, len(before))
+			beforeByID := make(map[int64]*CustomField, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.CustomField.Query().Where(customfield.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*CustomField, len(after))
+			afterByID := make(map[int64]*CustomField, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeCustomField(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeCustomField(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -22108,8 +22108,8 @@ func (t *CustomFieldScoped) CreateBulk(xs ...*CustomFieldScopedCreate) *CustomFi
 	return &CustomFieldScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *CustomFieldScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *CustomFieldScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("CustomField: builder of another scope: %w", ErrNotInWorkspace)
@@ -22135,7 +22135,7 @@ func (b *CustomFieldScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Cu
 
 // Save verifies every builder's references, then creates the CustomField entities.
 func (b *CustomFieldScopedCreateBulk) Save(ctx context.Context) ([]*CustomField, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*CustomField
@@ -22427,7 +22427,7 @@ func (u *CustomFieldScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeCustomField(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -22780,25 +22780,25 @@ func (s *Scoped) writeEmailTemplate(ctx context.Context, verb string, where []pr
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*EmailTemplate, len(before))
+			beforeByID := make(map[int64]*EmailTemplate, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.EmailTemplate.Query().Where(emailtemplate.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*EmailTemplate, len(after))
+			afterByID := make(map[int64]*EmailTemplate, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeEmailTemplate(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeEmailTemplate(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -23084,8 +23084,8 @@ func (t *EmailTemplateScoped) CreateBulk(xs ...*EmailTemplateScopedCreate) *Emai
 	return &EmailTemplateScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *EmailTemplateScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *EmailTemplateScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("EmailTemplate: builder of another scope: %w", ErrNotInWorkspace)
@@ -23111,7 +23111,7 @@ func (b *EmailTemplateScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 
 // Save verifies every builder's references, then creates the EmailTemplate entities.
 func (b *EmailTemplateScopedCreateBulk) Save(ctx context.Context) ([]*EmailTemplate, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*EmailTemplate
@@ -23467,7 +23467,7 @@ func (u *EmailTemplateScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeEmailTemplate(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -24225,8 +24225,8 @@ func (t *ErasureScoped) CreateBulk(xs ...*ErasureScopedCreate) *ErasureScopedCre
 	return &ErasureScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *ErasureScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ErasureScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Erasure: builder of another scope: %w", ErrNotInWorkspace)
@@ -24252,7 +24252,7 @@ func (b *ErasureScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Erasur
 
 // Save verifies every builder's references, then creates the Erasure entities.
 func (b *ErasureScopedCreateBulk) Save(ctx context.Context) ([]*Erasure, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Erasure
@@ -24524,7 +24524,7 @@ func (u *ErasureScopedUpsertBulk) Update(set func(*ErasureScopedUpsert)) *Erasur
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *ErasureScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeErasure(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -25331,8 +25331,8 @@ func (t *EventScoped) CreateBulk(xs ...*EventScopedCreate) *EventScopedCreateBul
 	return &EventScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *EventScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *EventScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Event: builder of another scope: %w", ErrNotInWorkspace)
@@ -25358,7 +25358,7 @@ func (b *EventScopedCreateBulk) build(ctx context.Context, s *Scoped) (*EventCre
 
 // Save verifies every builder's references, then creates the Event entities.
 func (b *EventScopedCreateBulk) Save(ctx context.Context) ([]*Event, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Event
@@ -25798,7 +25798,7 @@ func (u *EventScopedUpsertBulk) Update(set func(*EventScopedUpsert)) *EventScope
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *EventScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -26836,8 +26836,8 @@ func (t *HeldOrderEventScoped) CreateBulk(xs ...*HeldOrderEventScopedCreate) *He
 	return &HeldOrderEventScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *HeldOrderEventScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *HeldOrderEventScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("HeldOrderEvent: builder of another scope: %w", ErrNotInWorkspace)
@@ -26863,7 +26863,7 @@ func (b *HeldOrderEventScopedCreateBulk) build(ctx context.Context, s *Scoped) (
 
 // Save verifies every builder's references, then creates the HeldOrderEvent entities.
 func (b *HeldOrderEventScopedCreateBulk) Save(ctx context.Context) ([]*HeldOrderEvent, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*HeldOrderEvent
@@ -27087,7 +27087,7 @@ func (u *HeldOrderEventScopedUpsertBulk) Update(set func(*HeldOrderEventScopedUp
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *HeldOrderEventScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeHeldOrderEvent(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -27316,25 +27316,25 @@ func (s *Scoped) writeHold(ctx context.Context, verb string, where []predicate.H
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Hold, len(before))
+			beforeByID := make(map[int64]*Hold, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Hold.Query().Where(hold.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Hold, len(after))
+			afterByID := make(map[int64]*Hold, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeHold(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeHold(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -27590,8 +27590,8 @@ func (t *HoldScoped) CreateBulk(xs ...*HoldScopedCreate) *HoldScopedCreateBulk {
 	return &HoldScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *HoldScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *HoldScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Hold: builder of another scope: %w", ErrNotInWorkspace)
@@ -27617,7 +27617,7 @@ func (b *HoldScopedCreateBulk) build(ctx context.Context, s *Scoped) (*HoldCreat
 
 // Save verifies every builder's references, then creates the Hold entities.
 func (b *HoldScopedCreateBulk) Save(ctx context.Context) ([]*Hold, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Hold
@@ -27941,7 +27941,7 @@ func (u *HoldScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeHold(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -28374,25 +28374,25 @@ func (s *Scoped) writeIntegration(ctx context.Context, verb string, where []pred
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Integration, len(before))
+			beforeByID := make(map[int64]*Integration, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Integration.Query().Where(integration.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Integration, len(after))
+			afterByID := make(map[int64]*Integration, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeIntegration(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeIntegration(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -29022,8 +29022,8 @@ func (t *IntegrationScoped) CreateBulk(xs ...*IntegrationScopedCreate) *Integrat
 	return &IntegrationScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *IntegrationScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *IntegrationScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Integration: builder of another scope: %w", ErrNotInWorkspace)
@@ -29049,7 +29049,7 @@ func (b *IntegrationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*In
 
 // Save verifies every builder's references, then creates the Integration entities.
 func (b *IntegrationScopedCreateBulk) Save(ctx context.Context) ([]*Integration, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Integration
@@ -29745,7 +29745,7 @@ func (u *IntegrationScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeIntegration(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -31575,8 +31575,8 @@ func (t *InvitationScoped) CreateBulk(xs ...*InvitationScopedCreate) *Invitation
 	return &InvitationScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *InvitationScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *InvitationScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Invitation: builder of another scope: %w", ErrNotInWorkspace)
@@ -31602,7 +31602,7 @@ func (b *InvitationScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Inv
 
 // Save verifies every builder's references, then creates the Invitation entities.
 func (b *InvitationScopedCreateBulk) Save(ctx context.Context) ([]*Invitation, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Invitation
@@ -31952,7 +31952,7 @@ func (u *InvitationScopedUpsertBulk) Update(set func(*InvitationScopedUpsert)) *
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *InvitationScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeInvitation(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -32605,25 +32605,25 @@ func (s *Scoped) writeJoinDomain(ctx context.Context, verb string, where []predi
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*JoinDomain, len(before))
+			beforeByID := make(map[int64]*JoinDomain, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.JoinDomain.Query().Where(joindomain.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*JoinDomain, len(after))
+			afterByID := make(map[int64]*JoinDomain, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeJoinDomain(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeJoinDomain(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -32873,8 +32873,8 @@ func (t *JoinDomainScoped) CreateBulk(xs ...*JoinDomainScopedCreate) *JoinDomain
 	return &JoinDomainScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *JoinDomainScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *JoinDomainScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("JoinDomain: builder of another scope: %w", ErrNotInWorkspace)
@@ -32900,7 +32900,7 @@ func (b *JoinDomainScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Joi
 
 // Save verifies every builder's references, then creates the JoinDomain entities.
 func (b *JoinDomainScopedCreateBulk) Save(ctx context.Context) ([]*JoinDomain, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*JoinDomain
@@ -33222,7 +33222,7 @@ func (u *JoinDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeJoinDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -33922,8 +33922,8 @@ func (t *MembershipScoped) CreateBulk(xs ...*MembershipScopedCreate) *Membership
 	return &MembershipScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *MembershipScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *MembershipScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Membership: builder of another scope: %w", ErrNotInWorkspace)
@@ -33949,7 +33949,7 @@ func (b *MembershipScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Mem
 
 // Save verifies every builder's references, then creates the Membership entities.
 func (b *MembershipScopedCreateBulk) Save(ctx context.Context) ([]*Membership, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Membership
@@ -34253,7 +34253,7 @@ func (u *MembershipScopedUpsertBulk) Update(set func(*MembershipScopedUpsert)) *
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *MembershipScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeMembership(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -35122,8 +35122,8 @@ func (t *OAuthCodeScoped) CreateBulk(xs ...*OAuthCodeScopedCreate) *OAuthCodeSco
 	return &OAuthCodeScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *OAuthCodeScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *OAuthCodeScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("OAuthCode: builder of another scope: %w", ErrNotInWorkspace)
@@ -35149,7 +35149,7 @@ func (b *OAuthCodeScopedCreateBulk) build(ctx context.Context, s *Scoped) (*OAut
 
 // Save verifies every builder's references, then creates the OAuthCode entities.
 func (b *OAuthCodeScopedCreateBulk) Save(ctx context.Context) ([]*OAuthCode, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*OAuthCode
@@ -35459,7 +35459,7 @@ func (u *OAuthCodeScopedUpsertBulk) Update(set func(*OAuthCodeScopedUpsert)) *OA
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *OAuthCodeScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeOAuthCode(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -36293,8 +36293,8 @@ func (t *OrderScoped) CreateBulk(xs ...*OrderScopedCreate) *OrderScopedCreateBul
 	return &OrderScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *OrderScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *OrderScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Order: builder of another scope: %w", ErrNotInWorkspace)
@@ -36320,7 +36320,7 @@ func (b *OrderScopedCreateBulk) build(ctx context.Context, s *Scoped) (*OrderCre
 
 // Save verifies every builder's references, then creates the Order entities.
 func (b *OrderScopedCreateBulk) Save(ctx context.Context) ([]*Order, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Order
@@ -36560,7 +36560,7 @@ func (u *OrderScopedUpsertBulk) Update(set func(*OrderScopedUpsert)) *OrderScope
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *OrderScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeOrder(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -37211,8 +37211,8 @@ func (t *OrderMovementScoped) CreateBulk(xs ...*OrderMovementScopedCreate) *Orde
 	return &OrderMovementScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *OrderMovementScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *OrderMovementScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("OrderMovement: builder of another scope: %w", ErrNotInWorkspace)
@@ -37238,7 +37238,7 @@ func (b *OrderMovementScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 
 // Save verifies every builder's references, then creates the OrderMovement entities.
 func (b *OrderMovementScopedCreateBulk) Save(ctx context.Context) ([]*OrderMovement, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*OrderMovement
@@ -37462,7 +37462,7 @@ func (u *OrderMovementScopedUpsertBulk) Update(set func(*OrderMovementScopedUpse
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *OrderMovementScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeOrderMovement(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -38528,8 +38528,8 @@ func (t *OutboundMessageScoped) CreateBulk(xs ...*OutboundMessageScopedCreate) *
 	return &OutboundMessageScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *OutboundMessageScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *OutboundMessageScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("OutboundMessage: builder of another scope: %w", ErrNotInWorkspace)
@@ -38555,7 +38555,7 @@ func (b *OutboundMessageScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 
 // Save verifies every builder's references, then creates the OutboundMessage entities.
 func (b *OutboundMessageScopedCreateBulk) Save(ctx context.Context) ([]*OutboundMessage, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*OutboundMessage
@@ -39357,7 +39357,7 @@ func (u *OutboundMessageScopedUpsertBulk) Update(set func(*OutboundMessageScoped
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *OutboundMessageScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeOutboundMessage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -41488,8 +41488,8 @@ func (t *ProviderLimiterScoped) CreateBulk(xs ...*ProviderLimiterScopedCreate) *
 	return &ProviderLimiterScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *ProviderLimiterScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ProviderLimiterScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("ProviderLimiter: builder of another scope: %w", ErrNotInWorkspace)
@@ -41515,7 +41515,7 @@ func (b *ProviderLimiterScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 
 // Save verifies every builder's references, then creates the ProviderLimiter entities.
 func (b *ProviderLimiterScopedCreateBulk) Save(ctx context.Context) ([]*ProviderLimiter, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*ProviderLimiter
@@ -41803,7 +41803,7 @@ func (u *ProviderLimiterScopedUpsertBulk) Update(set func(*ProviderLimiterScoped
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *ProviderLimiterScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeProviderLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -42180,25 +42180,25 @@ func (s *Scoped) writeRule(ctx context.Context, verb string, where []predicate.R
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Rule, len(before))
+			beforeByID := make(map[int64]*Rule, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Rule.Query().Where(rule.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Rule, len(after))
+			afterByID := make(map[int64]*Rule, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeRule(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeRule(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -42607,8 +42607,8 @@ func (t *RuleScoped) CreateBulk(xs ...*RuleScopedCreate) *RuleScopedCreateBulk {
 	return &RuleScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *RuleScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *RuleScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Rule: builder of another scope: %w", ErrNotInWorkspace)
@@ -42634,7 +42634,7 @@ func (b *RuleScopedCreateBulk) build(ctx context.Context, s *Scoped) (*RuleCreat
 
 // Save verifies every builder's references, then creates the Rule entities.
 func (b *RuleScopedCreateBulk) Save(ctx context.Context) ([]*Rule, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Rule
@@ -43016,7 +43016,7 @@ func (u *RuleScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeRule(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -44139,8 +44139,8 @@ func (t *RuleFiringScoped) CreateBulk(xs ...*RuleFiringScopedCreate) *RuleFiring
 	return &RuleFiringScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *RuleFiringScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *RuleFiringScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("RuleFiring: builder of another scope: %w", ErrNotInWorkspace)
@@ -44166,7 +44166,7 @@ func (b *RuleFiringScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Rul
 
 // Save verifies every builder's references, then creates the RuleFiring entities.
 func (b *RuleFiringScopedCreateBulk) Save(ctx context.Context) ([]*RuleFiring, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*RuleFiring
@@ -44510,7 +44510,7 @@ func (u *RuleFiringScopedUpsertBulk) Update(set func(*RuleFiringScopedUpsert)) *
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *RuleFiringScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeRuleFiring(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -45447,8 +45447,8 @@ func (t *RuleVersionScoped) CreateBulk(xs ...*RuleVersionScopedCreate) *RuleVers
 	return &RuleVersionScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *RuleVersionScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *RuleVersionScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("RuleVersion: builder of another scope: %w", ErrNotInWorkspace)
@@ -45474,7 +45474,7 @@ func (b *RuleVersionScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Ru
 
 // Save verifies every builder's references, then creates the RuleVersion entities.
 func (b *RuleVersionScopedCreateBulk) Save(ctx context.Context) ([]*RuleVersion, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*RuleVersion
@@ -45746,7 +45746,7 @@ func (u *RuleVersionScopedUpsertBulk) Update(set func(*RuleVersionScopedUpsert))
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *RuleVersionScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeRuleVersion(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -46499,8 +46499,8 @@ func (t *RuleVersionTriggerScoped) CreateBulk(xs ...*RuleVersionTriggerScopedCre
 	return &RuleVersionTriggerScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *RuleVersionTriggerScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *RuleVersionTriggerScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("RuleVersionTrigger: builder of another scope: %w", ErrNotInWorkspace)
@@ -46526,7 +46526,7 @@ func (b *RuleVersionTriggerScopedCreateBulk) build(ctx context.Context, s *Scope
 
 // Save verifies every builder's references, then creates the RuleVersionTrigger entities.
 func (b *RuleVersionTriggerScopedCreateBulk) Save(ctx context.Context) ([]*RuleVersionTrigger, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*RuleVersionTrigger
@@ -46774,7 +46774,7 @@ func (u *RuleVersionTriggerScopedUpsertBulk) Update(set func(*RuleVersionTrigger
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *RuleVersionTriggerScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeRuleVersionTrigger(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -47123,25 +47123,25 @@ func (s *Scoped) writeSegment(ctx context.Context, verb string, where []predicat
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Segment, len(before))
+			beforeByID := make(map[int64]*Segment, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Segment.Query().Where(segment.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Segment, len(after))
+			afterByID := make(map[int64]*Segment, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeSegment(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeSegment(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -47429,8 +47429,8 @@ func (t *SegmentScoped) CreateBulk(xs ...*SegmentScopedCreate) *SegmentScopedCre
 	return &SegmentScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *SegmentScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *SegmentScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Segment: builder of another scope: %w", ErrNotInWorkspace)
@@ -47456,7 +47456,7 @@ func (b *SegmentScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Segmen
 
 // Save verifies every builder's references, then creates the Segment entities.
 func (b *SegmentScopedCreateBulk) Save(ctx context.Context) ([]*Segment, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Segment
@@ -47786,7 +47786,7 @@ func (u *SegmentScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeSegment(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -48408,8 +48408,8 @@ func (t *SendCapLimiterScoped) CreateBulk(xs ...*SendCapLimiterScopedCreate) *Se
 	return &SendCapLimiterScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *SendCapLimiterScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *SendCapLimiterScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("SendCapLimiter: builder of another scope: %w", ErrNotInWorkspace)
@@ -48435,7 +48435,7 @@ func (b *SendCapLimiterScopedCreateBulk) build(ctx context.Context, s *Scoped) (
 
 // Save verifies every builder's references, then creates the SendCapLimiter entities.
 func (b *SendCapLimiterScopedCreateBulk) Save(ctx context.Context) ([]*SendCapLimiter, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*SendCapLimiter
@@ -48699,7 +48699,7 @@ func (u *SendCapLimiterScopedUpsertBulk) Update(set func(*SendCapLimiterScopedUp
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *SendCapLimiterScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeSendCapLimiter(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -49024,25 +49024,25 @@ func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []pr
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*SendingDomain, len(before))
+			beforeByID := make(map[int64]*SendingDomain, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.SendingDomain.Query().Where(sendingdomain.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*SendingDomain, len(after))
+			afterByID := make(map[int64]*SendingDomain, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeSendingDomain(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeSendingDomain(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -49391,8 +49391,8 @@ func (t *SendingDomainScoped) CreateBulk(xs ...*SendingDomainScopedCreate) *Send
 	return &SendingDomainScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *SendingDomainScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *SendingDomainScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("SendingDomain: builder of another scope: %w", ErrNotInWorkspace)
@@ -49418,7 +49418,7 @@ func (b *SendingDomainScopedCreateBulk) build(ctx context.Context, s *Scoped) (*
 
 // Save verifies every builder's references, then creates the SendingDomain entities.
 func (b *SendingDomainScopedCreateBulk) Save(ctx context.Context) ([]*SendingDomain, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*SendingDomain
@@ -49880,7 +49880,7 @@ func (u *SendingDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeSendingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -50903,8 +50903,8 @@ func (t *StartTokenScoped) CreateBulk(xs ...*StartTokenScopedCreate) *StartToken
 	return &StartTokenScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *StartTokenScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *StartTokenScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("StartToken: builder of another scope: %w", ErrNotInWorkspace)
@@ -50930,7 +50930,7 @@ func (b *StartTokenScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Sta
 
 // Save verifies every builder's references, then creates the StartToken entities.
 func (b *StartTokenScopedCreateBulk) Save(ctx context.Context) ([]*StartToken, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*StartToken
@@ -51184,7 +51184,7 @@ func (u *StartTokenScopedUpsertBulk) Update(set func(*StartTokenScopedUpsert)) *
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *StartTokenScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeStartToken(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -51747,8 +51747,8 @@ func (t *SuppressionScoped) CreateBulk(xs ...*SuppressionScopedCreate) *Suppress
 	return &SuppressionScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *SuppressionScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *SuppressionScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Suppression: builder of another scope: %w", ErrNotInWorkspace)
@@ -51774,7 +51774,7 @@ func (b *SuppressionScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Su
 
 // Save verifies every builder's references, then creates the Suppression entities.
 func (b *SuppressionScopedCreateBulk) Save(ctx context.Context) ([]*Suppression, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Suppression
@@ -52092,7 +52092,7 @@ func (u *SuppressionScopedUpsertBulk) Update(set func(*SuppressionScopedUpsert))
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *SuppressionScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeSuppression(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -52577,25 +52577,25 @@ func (s *Scoped) writeTag(ctx context.Context, verb string, where []predicate.Ta
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*Tag, len(before))
+			beforeByID := make(map[int64]*Tag, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.Tag.Query().Where(tag.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*Tag, len(after))
+			afterByID := make(map[int64]*Tag, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeTag(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeTag(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -52809,8 +52809,8 @@ func (t *TagScoped) CreateBulk(xs ...*TagScopedCreate) *TagScopedCreateBulk {
 	return &TagScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *TagScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *TagScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Tag: builder of another scope: %w", ErrNotInWorkspace)
@@ -52836,7 +52836,7 @@ func (b *TagScopedCreateBulk) build(ctx context.Context, s *Scoped) (*TagCreateB
 
 // Save verifies every builder's references, then creates the Tag entities.
 func (b *TagScopedCreateBulk) Save(ctx context.Context) ([]*Tag, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Tag
@@ -53088,7 +53088,7 @@ func (u *TagScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeTag(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -53577,8 +53577,8 @@ func (t *TrackedLinkScoped) CreateBulk(xs ...*TrackedLinkScopedCreate) *TrackedL
 	return &TrackedLinkScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *TrackedLinkScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *TrackedLinkScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("TrackedLink: builder of another scope: %w", ErrNotInWorkspace)
@@ -53604,7 +53604,7 @@ func (b *TrackedLinkScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Tr
 
 // Save verifies every builder's references, then creates the TrackedLink entities.
 func (b *TrackedLinkScopedCreateBulk) Save(ctx context.Context) ([]*TrackedLink, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*TrackedLink
@@ -53828,7 +53828,7 @@ func (u *TrackedLinkScopedUpsertBulk) Update(set func(*TrackedLinkScopedUpsert))
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *TrackedLinkScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeTrackedLink(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -54057,25 +54057,25 @@ func (s *Scoped) writeTrackingDomain(ctx context.Context, verb string, where []p
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*TrackingDomain, len(before))
+			beforeByID := make(map[int64]*TrackingDomain, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.TrackingDomain.Query().Where(trackingdomain.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*TrackingDomain, len(after))
+			afterByID := make(map[int64]*TrackingDomain, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeTrackingDomain(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeTrackingDomain(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -54379,8 +54379,8 @@ func (t *TrackingDomainScoped) CreateBulk(xs ...*TrackingDomainScopedCreate) *Tr
 	return &TrackingDomainScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *TrackingDomainScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *TrackingDomainScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("TrackingDomain: builder of another scope: %w", ErrNotInWorkspace)
@@ -54406,7 +54406,7 @@ func (b *TrackingDomainScopedCreateBulk) build(ctx context.Context, s *Scoped) (
 
 // Save verifies every builder's references, then creates the TrackingDomain entities.
 func (b *TrackingDomainScopedCreateBulk) Save(ctx context.Context) ([]*TrackingDomain, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*TrackingDomain
@@ -54778,7 +54778,7 @@ func (u *TrackingDomainScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeTrackingDomain(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -55563,8 +55563,8 @@ func (t *UnsubscribeScoped) CreateBulk(xs ...*UnsubscribeScopedCreate) *Unsubscr
 	return &UnsubscribeScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *UnsubscribeScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *UnsubscribeScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Unsubscribe: builder of another scope: %w", ErrNotInWorkspace)
@@ -55590,7 +55590,7 @@ func (b *UnsubscribeScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Un
 
 // Save verifies every builder's references, then creates the Unsubscribe entities.
 func (b *UnsubscribeScopedCreateBulk) Save(ctx context.Context) ([]*Unsubscribe, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Unsubscribe
@@ -55902,7 +55902,7 @@ func (u *UnsubscribeScopedUpsertBulk) Update(set func(*UnsubscribeScopedUpsert))
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *UnsubscribeScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeUnsubscribe(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -56608,8 +56608,8 @@ func (t *UsageScoped) CreateBulk(xs ...*UsageScopedCreate) *UsageScopedCreateBul
 	return &UsageScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *UsageScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *UsageScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Usage: builder of another scope: %w", ErrNotInWorkspace)
@@ -56635,7 +56635,7 @@ func (b *UsageScopedCreateBulk) build(ctx context.Context, s *Scoped) (*UsageCre
 
 // Save verifies every builder's references, then creates the Usage entities.
 func (b *UsageScopedCreateBulk) Save(ctx context.Context) ([]*Usage, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Usage
@@ -56929,7 +56929,7 @@ func (u *UsageScopedUpsertBulk) Update(set func(*UsageScopedUpsert)) *UsageScope
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *UsageScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeUsage(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -57594,8 +57594,8 @@ func (t *VisitorScoped) CreateBulk(xs ...*VisitorScopedCreate) *VisitorScopedCre
 	return &VisitorScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *VisitorScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *VisitorScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("Visitor: builder of another scope: %w", ErrNotInWorkspace)
@@ -57621,7 +57621,7 @@ func (b *VisitorScopedCreateBulk) build(ctx context.Context, s *Scoped) (*Visito
 
 // Save verifies every builder's references, then creates the Visitor entities.
 func (b *VisitorScopedCreateBulk) Save(ctx context.Context) ([]*Visitor, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*Visitor
@@ -57893,7 +57893,7 @@ func (u *VisitorScopedUpsertBulk) Update(set func(*VisitorScopedUpsert)) *Visito
 
 // Exec verifies every builder's references, then executes the upsert.
 func (u *VisitorScopedUpsertBulk) Exec(ctx context.Context) error {
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeVisitor(ctx, "create", nil, func(s *Scoped) ([]int64, error) {
@@ -58438,25 +58438,25 @@ func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*WebhookEndpoint, len(before))
+			beforeByID := make(map[int64]*WebhookEndpoint, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.WebhookEndpoint.Query().Where(webhookendpoint.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*WebhookEndpoint, len(after))
+			afterByID := make(map[int64]*WebhookEndpoint, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChangeWebhookEndpoint(verb, was[id], now[id]); changed {
+				if change, changed := auditChangeWebhookEndpoint(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -58840,8 +58840,8 @@ func (t *WebhookEndpointScoped) CreateBulk(xs ...*WebhookEndpointScopedCreate) *
 	return &WebhookEndpointScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *WebhookEndpointScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *WebhookEndpointScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("WebhookEndpoint: builder of another scope: %w", ErrNotInWorkspace)
@@ -58867,7 +58867,7 @@ func (b *WebhookEndpointScopedCreateBulk) build(ctx context.Context, s *Scoped) 
 
 // Save verifies every builder's references, then creates the WebhookEndpoint entities.
 func (b *WebhookEndpointScopedCreateBulk) Save(ctx context.Context) ([]*WebhookEndpoint, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*WebhookEndpoint
@@ -59405,7 +59405,7 @@ func (u *WebhookEndpointScopedUpsertBulk) Exec(ctx context.Context) error {
 	if u.b.s.auditing() {
 		return ErrAuditUpsert
 	}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.writeWebhookEndpoint(ctx, "create", nil, func(s *Scoped) ([]int64, error) {

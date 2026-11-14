@@ -68,7 +68,8 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 			after, err := e.IDs(ctx, c, acme)
 			require.NoError(t, err)
 			assert.Equal(t, ids, after, "a rolled-back create leaves no row")
-			assert.Equal(t, recorded, entries(), "a rolled-back create leaves no entry")
+			left := entries()
+			assert.Equal(t, recorded, left, "a rolled-back create leaves no entry")
 
 			_, err = e.Replant(ctx, committing, foreign[0], remap)
 			require.NoError(t, err)
@@ -92,10 +93,13 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 				"delete by id": func() error { return e.Delete(ctx, failing, id) },
 				"delete":       func() error { _, err := e.BulkDelete(ctx, failing, id); return err },
 			} {
-				require.ErrorIs(t, write(), errAfterWrite, name)
-				assert.JSONEq(t, row, read(), "a rolled-back %s leaves the row as it was", name)
+				err := write()
+				require.ErrorIs(t, err, errAfterWrite, name)
+				now := read()
+				assert.JSONEq(t, row, now, "a rolled-back %s leaves the row as it was", name)
 			}
-			assert.Equal(t, recorded, entries(), "a rolled-back write leaves no entry")
+			left = entries()
+			assert.Equal(t, recorded, left, "a rolled-back write leaves no entry")
 		})
 	}
 }

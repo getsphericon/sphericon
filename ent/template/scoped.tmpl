@@ -219,25 +219,25 @@ func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predica
 				return err
 			}
 			ids := make([]int64, 0, len(before)+len(created))
-			was := make(map[int64]*{{ $N }}, len(before))
+			beforeByID := make(map[int64]*{{ $N }}, len(before))
 			for _, row := range before {
 				ids = append(ids, row.ID)
-				was[row.ID] = row
+				beforeByID[row.ID] = row
 			}
 			ids = append(ids, created...)
 			after, err := ts.c.{{ $N }}.Query().Where({{ $P }}.IDIn(ids...)).All(ctx)
 			if err != nil {
 				return err
 			}
-			now := make(map[int64]*{{ $N }}, len(after))
+			afterByID := make(map[int64]*{{ $N }}, len(after))
 			for _, row := range after {
-				now[row.ID] = row
+				afterByID[row.ID] = row
 			}
 			for _, id := range ids {
-				if was[id] == nil && now[id] == nil {
+				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChange{{ $N }}(verb, was[id], now[id]); changed {
+				if change, changed := auditChange{{ $N }}(verb, beforeByID[id], afterByID[id]); changed {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -477,8 +477,8 @@ func (t *{{ $N }}Scoped) CreateBulk(xs ...*{{ $N }}ScopedCreate) *{{ $N }}Scoped
 	return &{{ $N }}ScopedCreateBulk{s: t.s, xs: xs}
 }
 
-// foreign refuses a create started on another Workspace's scope.
-func (b *{{ $N }}ScopedCreateBulk) foreign() error {
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *{{ $N }}ScopedCreateBulk) refuseForeign() error {
 	for _, x := range b.xs {
 		if x.s.ws != b.s.ws {
 			return fmt.Errorf("{{ $N }}: builder of another scope: %w", ErrNotInWorkspace)
@@ -504,7 +504,7 @@ func (b *{{ $N }}ScopedCreateBulk) build(ctx context.Context, s *Scoped) (*{{ $N
 
 // Save verifies every builder's references, then creates the {{ $N }} entities.
 func (b *{{ $N }}ScopedCreateBulk) Save(ctx context.Context) ([]*{{ $N }}, error) {
-	if err := b.foreign(); err != nil {
+	if err := b.refuseForeign(); err != nil {
 		return nil, err
 	}
 	var created []*{{ $N }}
@@ -799,7 +799,7 @@ func (u *{{ $N }}ScopedUpsertBulk) Exec(ctx context.Context) error {
 		return ErrAuditUpsert
 	}
 	{{- end }}
-	if err := u.b.foreign(); err != nil {
+	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
 	return u.b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, func(s *Scoped) ([]int64, error) {
