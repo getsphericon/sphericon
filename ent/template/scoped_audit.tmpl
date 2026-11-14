@@ -113,6 +113,17 @@ func (s *Scoped) InTx(tx *Client, pub AuditPublisher) *Scoped {
 	return &Scoped{c: tx, ws: s.ws, actor: s.actor, opener: s.opener, pub: pub}
 }
 
+// unchangedRows is what an audited write does with a row none of whose audited fields changed.
+type unchangedRows uint8
+
+const (
+	// skipUnchanged records no entry for it: the write changed nothing the log shows.
+	skipUnchanged unchangedRows = iota
+	// recordUnchanged records the write for it anyway: a Versioned definition's move, whose edit of
+	// a draft rewrites only the version rows, which are not audited.
+	recordUnchanged
+)
+
 // auditing reports whether writes of audited entities through the scope are recorded.
 func (s *Scoped) auditing() bool {
 	return s.actor.Kind != "" && s.actor.Kind != ActorIngest

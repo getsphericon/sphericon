@@ -247,7 +247,7 @@ func (p *{{ $N }}Pointers) CompareAndSwap(ctx context.Context, before VersionSta
         verb = "{{ verb $n "discard" }}"
     }
     {{- end }}
-    _, err := u.save(ctx, verb, true)
+    _, err := u.move(ctx, verb)
     if IsNotFound(err) {
         return false, nil
     }

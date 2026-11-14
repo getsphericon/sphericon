@@ -201,10 +201,9 @@ func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
 // run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed, or for each of them when keepUnchanged (a Versioned definition's move, whose edit of a
-// draft changes only the version rows, which are not audited). Through any other scope{{ else }}The
+// changed, or for every one of them when unchanged is recordUnchanged. Through any other scope{{ else }}The
 // entity is not audited, so{{ end }} run gets the scope itself.
-func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predicate.{{ $N }}, keepUnchanged bool, run func(s *Scoped) ([]int64, error)) error {
+func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predicate.{{ $N }}, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
 	{{- if $A }}
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -238,7 +237,7 @@ func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predica
 				if beforeByID[id] == nil && afterByID[id] == nil {
 					continue
 				}
-				if change, changed := auditChange{{ $N }}(verb, beforeByID[id], afterByID[id]); changed || keepUnchanged {
+				if change, changed := auditChange{{ $N }}(verb, beforeByID[id], afterByID[id]); changed || unchanged == recordUnchanged {
 					if err := ts.record(ctx, change); err != nil {
 						return err
 					}
@@ -248,7 +247,7 @@ func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predica
 		})
 	}
 	{{- else }}
-	_, _, _ = verb, where, keepUnchanged
+	_, _, _ = verb, where, unchanged
 	{{- end }}
 	_, err := run(s)
 	return err
@@ -304,7 +303,7 @@ func (t *{{ $N }}Scoped) Unarchive(ctx context.Context, id int64) error {
 }
 
 func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []predicate.{{ $N }}, verb string, set func(*{{ $N }}UpdateOne)) error {
-	return t.s.write{{ $N }}(ctx, verb, where, false, func(s *Scoped) ([]int64, error) {
+	return t.s.write{{ $N }}(ctx, verb, where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		u := s.c.{{ $N }}.UpdateOneID(id).Where(where...)
 		set(u)
 		_, err := u.Save(ctx)
@@ -318,7 +317,7 @@ func (t *{{ $N }}Scoped) setArchived(ctx context.Context, id int64, where []pred
 // row is never brought back (ADR 0100): the generated client has no Undiscard.
 func (t *{{ $N }}Scoped) Discard(ctx context.Context, id int64, at time.Time, ps ...predicate.{{ $N }}) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.ID(id), {{ $P }}.WorkspaceID(t.s.ws), {{ $P }}.DiscardedAtIsNil()}, ps...)
-	return t.s.write{{ $N }}(ctx, "{{ verb $n "discard" }}", where, false, func(s *Scoped) ([]int64, error) {
+	return t.s.write{{ $N }}(ctx, "{{ verb $n "discard" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		_, err := s.c.{{ $N }}.UpdateOneID(id).Where(where...).SetDiscardedAt(at){{ range $f := discardClears $n }}.Set{{ $f.StructField }}(false){{ end }}.Save(ctx)
 		return nil, err
 	})
@@ -355,7 +354,7 @@ const (
 // Exec deletes the row; a missing row is a NotFoundError.
 func (x *{{ $N }}ScopedDeleteOne) Exec(ctx context.Context) error {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
-	return x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), false, func(s *Scoped) ([]int64, error) {
+	return x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
 		return nil, s.c.{{ $N }}.DeleteOneID(x.id).Where(where...).Exec(ctx)
 	})
 }
@@ -390,7 +389,7 @@ const (
 func (x *{{ $N }}ScopedDelete) Exec(ctx context.Context) (int, error) {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", where, false, func(s *Scoped) ([]int64, error) {
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "delete" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		var err error
 		n, err = s.c.{{ $N }}.Delete().Where(where...).Exec(ctx)
 		return nil, err
@@ -438,7 +437,7 @@ const (
 // Save verifies the references against the Workspace, then creates the {{ $N }}.
 func (x *{{ $N }}ScopedCreate) Save(ctx context.Context) (*{{ $N }}, error) {
 	var created *{{ $N }}
-	err := x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, false, func(s *Scoped) ([]int64, error) {
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		b := x.build(s)
 		if err := s.check{{ $N }}(ctx, b.Mutation()); err != nil {
 			return nil, err
@@ -509,7 +508,7 @@ func (b *{{ $N }}ScopedCreateBulk) Save(ctx context.Context) ([]*{{ $N }}, error
 		return nil, err
 	}
 	var created []*{{ $N }}
-	err := b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, false, func(s *Scoped) ([]int64, error) {
+	err := b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		raw, err := b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -717,7 +716,7 @@ func (u *{{ $N }}ScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	}
 	{{- end }}
 	var id int64
-	err := u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, false, func(s *Scoped) ([]int64, error) {
+	err := u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -732,7 +731,7 @@ func (u *{{ $N }}ScopedUpsertOne) ID(ctx context.Context) (int64, error) {
 	}
 	return id, nil
 	{{- else }}
-	return u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, false, func(s *Scoped) ([]int64, error) {
+	return u.x.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		r, err := u.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -803,7 +802,7 @@ func (u *{{ $N }}ScopedUpsertBulk) Exec(ctx context.Context) error {
 	if err := u.b.refuseForeign(); err != nil {
 		return err
 	}
-	return u.b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, false, func(s *Scoped) ([]int64, error) {
+	return u.b.s.write{{ $N }}(ctx, "{{ verb $n "create" }}", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		raw, err := u.b.build(ctx, s)
 		if err != nil {
 			return nil, err
@@ -846,16 +845,23 @@ func (x *{{ $N }}ScopedUpdateOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}Scope
 
 // Save verifies the references against the Workspace, then updates the {{ $N }}.
 func (x *{{ $N }}ScopedUpdateOne) Save(ctx context.Context) (*{{ $N }}, error) {
-	return x.save(ctx, "{{ verb $n "update" }}", false)
+	return x.save(ctx, "{{ verb $n "update" }}", skipUnchanged)
 }
+{{- if versioned $n }}
 
-// save is Save under the verb of the write it is: a Versioned definition's pointers archive,
-// unarchive or discard through it, and record their move even when no audited field changed
-// (keepUnchanged).
-func (x *{{ $N }}ScopedUpdateOne) save(ctx context.Context, verb string, keepUnchanged bool) (*{{ $N }}, error) {
+// move writes the {{ $N }}'s position for its pointers (scoped_versioned.tmpl) under the verb of the
+// move, and records its update even when no audited field of the row changed: an edit of the draft
+// rewrites only the version rows, which are not audited, so the update is the one trace of it.
+func (x *{{ $N }}ScopedUpdateOne) move(ctx context.Context, verb string) (*{{ $N }}, error) {
+	return x.save(ctx, verb, recordUnchanged)
+}
+{{- end }}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *{{ $N }}ScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*{{ $N }}, error) {
 	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
 	var updated *{{ $N }}
-	err := x.s.write{{ $N }}(ctx, verb, append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), keepUnchanged, func(s *Scoped) ([]int64, error) {
+	err := x.s.write{{ $N }}(ctx, verb, append([]predicate.{{ $N }}{ {{ $P }}.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.{{ $N }}.UpdateOneID(x.id).Where(where...)
 		for _, set := range x.set {
 			set(b)
@@ -940,7 +946,7 @@ func (x *{{ $N }}ScopedUpdate) Save(ctx context.Context) (int, error) {
 	}
 	where := append([]predicate.{{ $N }}{ {{ $P }}.WorkspaceID(x.s.ws)}, x.where...)
 	var n int
-	err := x.s.write{{ $N }}(ctx, "{{ verb $n "update" }}", where, false, func(s *Scoped) ([]int64, error) {
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "update" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
 		b := s.c.{{ $N }}.Update().Where(where...)
 		for _, set := range x.set {
 			set(b)
