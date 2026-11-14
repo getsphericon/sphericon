@@ -80,3 +80,9 @@ func (*SmsSuppressionRecorded) EventName() string            { return NameSmsSup
 func (*SmsSuppressionRecorded) EventVersion() int            { return 1 }
 func (e *SmsSuppressionRecorded) Workspace() int64           { return e.WorkspaceID }
 func (e *SmsSuppressionRecorded) ObservationTime() time.Time { return e.ObservedAt }
+
+func (*SmsStopObserved) namesContact()           {}
+func (*SmsStartObserved) namesContact()          {}
+func (*SmsDestinationUnreachable) namesContact() {}
+func (*SmsOptOutRecorded) namesContact()         {}
+func (*SmsSuppressionRecorded) namesContact()    {}

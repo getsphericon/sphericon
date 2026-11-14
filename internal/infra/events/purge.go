@@ -90,9 +90,12 @@ func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID
 	if contactID != 0 {
 		id = strconv.FormatInt(contactID, 10) // an event job keeps the envelope, which holds the key
 	}
-	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event at
-	// data, which names the Contact as contactId, the address as email and the phone as phone.
+	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event's name
+	// at name, the event at data, which names the Contact as contactId, the address as email and the
+	// phone as phone. Only an event that names a Contact is matched (namesContact).
 	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Queues(QueueEvents), workspaceID).
+		// raw sql: the event's name inside the args; river's delete filters stop at a job's own columns.
+		Where("args->>'name' = any(@purge_event_names::text[])", river.NamedArgs{"purge_event_names": contactEventNames}).
 		// raw sql: the event's fields inside the args, the address case-insensitively.
 		Where("(args->'data'->>'contactId' = @purge_event_contact::text"+
 			" OR lower(args->'data'->>'email') = any(@purge_event_addresses::text[])"+
