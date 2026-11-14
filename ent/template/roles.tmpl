@@ -1,0 +1,106 @@
+{{/*
+The manifest of roles: what every type of the package is and the entity it belongs to, and the role of
+the methods the analyzers of tools/analyzers ask about (entrywrite, statemoment, entityupdate), which
+read these constants through go/types instead of guessing from a name. This file declares the types ent
+generates and the roles of their methods that start a read or a write; every template of ent/template
+declares the types and the methods it emits beside them, and the state fields an update writes are in
+stateform.tmpl. ent/schema/roles_test.go holds the manifest complete: an exported type without its entry,
+an exported method a template emits without its role, and an entry with nothing it names all fail it.
+*/}}
+{{ define "roles" }}
+{{ template "header" $ }}
+
+// The role of a method (RoleOf_<Type>_<Method>).
+const (
+	// RoleRead starts a read of rows.
+	RoleRead = "read"
+	// RoleStart starts a write: it returns the builder of one, or writes at once.
+	RoleStart = "start"
+	// RoleWrite carries on a write already started: a setter, a condition, the execution.
+	RoleWrite = "write"
+	// RoleNone reads and writes no row.
+	RoleNone = "none"
+)
+
+// What a type is (TypeOf_<Type>); EntityOf_<Type> names the entity it belongs to, "" for none.
+const (
+	TypeEntity       = "entity"
+	TypeClient       = "client"
+	TypeQuery        = "query"
+	TypeCreate       = "create"
+	TypeUpdate       = "update"
+	TypeDelete       = "delete"
+	TypeUpsert       = "upsert"
+	TypeWrapper      = "wrapper"
+	TypeScopedCreate = "scoped create"
+	TypeScopedUpdate = "scoped update"
+	TypeScopedDelete = "scoped delete"
+	TypeScopedUpsert = "scoped upsert"
+	TypePointers     = "pointers"
+	TypeOther        = "other"
+)
+
+// The types ent generates that belong to no entity.
+const (
+{{- range $t := list "Client" "Tx" "Option" "AggregateFunc" "OrderFunc" "CommitFunc" "CommitHook" "Committer" "RollbackFunc" "RollbackHook" "Rollbacker" "ValidationError" "NotFoundError" "NotSingularError" "NotLoadedError" "ConstraintError" }}
+	TypeOf_{{ $t }}   = TypeOther
+	EntityOf_{{ $t }} = ""
+{{- end }}
+)
+
+{{ range $n := $.Nodes }}
+{{- $N := $n.Name }}
+// The types ent generates for {{ $N }}.
+const (
+	TypeOf_{{ $N }} = TypeEntity
+	TypeOf_{{ plural $N }} = TypeOther
+	{{- if $n.Edges }}
+	TypeOf_{{ $N }}Edges = TypeOther
+	EntityOf_{{ $N }}Edges = "{{ $N }}"
+	{{- end }}
+	TypeOf_{{ $N }}Mutation = TypeOther
+	TypeOf_{{ $N }}Client = TypeClient
+	TypeOf_{{ $N }}Query = TypeQuery
+	TypeOf_{{ $N }}Select = TypeQuery
+	TypeOf_{{ $N }}GroupBy = TypeQuery
+	TypeOf_{{ $N }}Create = TypeCreate
+	TypeOf_{{ $N }}CreateBulk = TypeCreate
+	TypeOf_{{ $N }}Update = TypeUpdate
+	TypeOf_{{ $N }}UpdateOne = TypeUpdate
+	TypeOf_{{ $N }}Delete = TypeDelete
+	TypeOf_{{ $N }}DeleteOne = TypeDelete
+	TypeOf_{{ $N }}Upsert = TypeUpsert
+	TypeOf_{{ $N }}UpsertOne = TypeUpsert
+	TypeOf_{{ $N }}UpsertBulk = TypeUpsert
+	EntityOf_{{ plural $N }} = "{{ $N }}"
+	{{- range $t := list "" "Mutation" "Client" "Query" "Select" "GroupBy" "Create" "CreateBulk" "Update" "UpdateOne" "Delete" "DeleteOne" "Upsert" "UpsertOne" "UpsertBulk" }}
+	EntityOf_{{ $N }}{{ $t }} = "{{ $N }}"
+	{{- end }}
+)
+
+// The reads and the writes ent's methods for {{ $N }} start.
+const (
+	{{- range $m := list "Create" "CreateBulk" "MapCreateBulk" "Update" "UpdateOne" "Delete" }}
+	RoleOf_{{ $N }}Client_{{ $m }} = RoleStart
+	{{- end }}
+	RoleOf_{{ $N }}Client_Query = RoleRead
+	{{- if $n.HasOneFieldID }}
+	{{- range $m := list "UpdateOneID" "DeleteOne" "DeleteOneID" }}
+	RoleOf_{{ $N }}Client_{{ $m }} = RoleStart
+	{{- end }}
+	RoleOf_{{ $N }}Client_Get = RoleRead
+	RoleOf_{{ $N }}Client_GetX = RoleRead
+	{{- end }}
+	{{- range $e := $n.Edges }}
+	RoleOf_{{ $N }}Client_Query{{ pascal $e.Name }} = RoleRead
+	RoleOf_{{ $N }}_Query{{ pascal $e.Name }} = RoleRead
+	RoleOf_{{ $N }}Query_Query{{ pascal $e.Name }} = RoleRead
+	{{- end }}
+	RoleOf_{{ $N }}_Update = RoleStart
+	RoleOf_{{ $N }}Create_OnConflict = RoleStart
+	RoleOf_{{ $N }}Create_OnConflictColumns = RoleStart
+	RoleOf_{{ $N }}CreateBulk_OnConflict = RoleStart
+	RoleOf_{{ $N }}CreateBulk_OnConflictColumns = RoleStart
+)
+{{ end }}
+{{ end }}

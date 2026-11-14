@@ -1,8 +1,10 @@
 {{/*
-The form of every state field the schema declares a machine or a latch (schema.State, ADR 0109).
-The statemoment analyzer (tools/analyzers/statemoment) looks these constants up by the entity and
-the field a builder method writes, and refuses the write outside the lifecycle primitives. An
-attribute is not listed: nothing restricts its writes.
+The form of every state field the schema declares a machine or a latch (schema.State, ADR 0109), and
+the methods of the builders that change an existing row (an update, the update side of an upsert) that
+set or clear it. The statemoment analyzer (tools/analyzers/statemoment) looks up the method a call names
+and the form of the field it writes, and refuses the write outside the lifecycle primitives. An
+attribute is not listed: nothing restricts its writes. The scoped builders declare theirs beside their
+setters (scoped.tmpl); a create makes no move and declares none.
 */}}
 {{ define "stateform" }}
 {{ template "header" $ }}
@@ -14,6 +16,33 @@ const (
 	{{- range $f := $n.Fields }}
 		{{- with stateForm $f }}
 	StateForm{{ $n.Name }}{{ $f.StructField }} = "{{ . }}"
+		{{- end }}
+	{{- end }}
+{{- end }}
+)
+
+// SetsState_<Type>_<Method> and ClearsState_<Type>_<Method> name the machine or latch field a method
+// of an update or upsert builder sets or clears.
+const (
+{{- range $n := $.Nodes }}
+	{{- range $f := $n.MutableFields }}
+		{{- if stateForm $f }}
+			{{- range $b := list "Update" "UpdateOne" }}
+	SetsState_{{ $n.Name }}{{ $b }}_Set{{ $f.StructField }} = "{{ $f.StructField }}"
+				{{- if and (not $f.Type.Nillable) (not $f.UpdateDefault) }}
+	SetsState_{{ $n.Name }}{{ $b }}_SetNillable{{ $f.StructField }} = "{{ $f.StructField }}"
+				{{- end }}
+				{{- if $f.Optional }}
+	ClearsState_{{ $n.Name }}{{ $b }}_Clear{{ $f.StructField }} = "{{ $f.StructField }}"
+				{{- end }}
+			{{- end }}
+			{{- range $b := list "Upsert" "UpsertOne" "UpsertBulk" }}
+	SetsState_{{ $n.Name }}{{ $b }}_Set{{ $f.StructField }} = "{{ $f.StructField }}"
+	SetsState_{{ $n.Name }}{{ $b }}_Update{{ $f.StructField }} = "{{ $f.StructField }}"
+				{{- if $f.Optional }}
+	ClearsState_{{ $n.Name }}{{ $b }}_Clear{{ $f.StructField }} = "{{ $f.StructField }}"
+				{{- end }}
+			{{- end }}
 		{{- end }}
 	{{- end }}
 {{- end }}

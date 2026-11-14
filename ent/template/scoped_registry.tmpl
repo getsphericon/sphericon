@@ -61,6 +61,13 @@ type ScopedRef struct {
 	Set func(ctx context.Context, s *Scoped, id, target int64) error
 }
 
+const (
+	TypeOf_ScopedEntity   = TypeOther
+	EntityOf_ScopedEntity = ""
+	TypeOf_ScopedRef      = TypeOther
+	EntityOf_ScopedRef    = ""
+)
+
 // ScopedEntities lists every Workspace-owned entity.
 func ScopedEntities() []*ScopedEntity {
 	return []*ScopedEntity{

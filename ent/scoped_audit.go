@@ -59,6 +59,23 @@ type AuditOpener interface {
 	WithinAuditTx(ctx context.Context, s *Scoped, fn func(ts *Scoped) error) error
 }
 
+const (
+	TypeOf_Actor            = TypeOther
+	EntityOf_Actor          = ""
+	TypeOf_AuditChange      = TypeOther
+	EntityOf_AuditChange    = ""
+	TypeOf_AuditPublisher   = TypeOther
+	EntityOf_AuditPublisher = ""
+	// PublishAudit records the entry of a write the scope already started.
+	RoleOf_AuditPublisher_PublishAudit = RoleWrite
+	TypeOf_AuditOpener                 = TypeOther
+	EntityOf_AuditOpener               = ""
+	RoleOf_AuditOpener_WithinAuditTx   = RoleNone
+	RoleOf_Scoped_As                   = RoleNone
+	RoleOf_Scoped_Actor                = RoleNone
+	RoleOf_Scoped_InTx                 = RoleNone
+)
+
 var (
 	// ErrAuditUnavailable: the scope has an actor that is audited but no way to open the
 	// transaction that carries the entry. Set both with Scoped.As.

@@ -16,6 +16,14 @@ type WorkspaceLocked struct {
 	*lockedScope
 }
 
+// The scope that holds the lock belongs to its Workspace, as the scope does.
+const (
+	TypeOf_WorkspaceLocked       = TypeOther
+	EntityOf_WorkspaceLocked     = "Workspace"
+	RoleOf_WorkspaceLocked_Scope = RoleNone
+	RoleOf_Scoped_LockWorkspace  = RoleNone
+)
+
 // Scope returns the transaction's scope, for a call that needs no lock of its own (the lock stays
 // held to the end of the transaction either way).
 func (l *WorkspaceLocked) Scope() *Scoped { return l.lockedScope }

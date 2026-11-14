@@ -17,6 +17,16 @@ type PreCommitter interface {
 	BeforeCommit(key any, mk func() PreCommit) PreCommit
 }
 
+const (
+	TypeOf_PreCommit                 = TypeOther
+	EntityOf_PreCommit               = ""
+	RoleOf_PreCommit_Run             = RoleNone
+	TypeOf_PreCommitter              = TypeOther
+	EntityOf_PreCommitter            = ""
+	RoleOf_PreCommitter_BeforeCommit = RoleNone
+	RoleOf_Client_BeforeCommit       = RoleNone
+)
+
 // BeforeCommit returns the work the client's transaction runs right before it commits under key,
 // registering what mk makes when there is none yet, so a transaction that changes many rows does
 // the work once. ok is false for a client whose transaction runs no such work: one on the pool,

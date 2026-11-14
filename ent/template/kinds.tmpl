@@ -18,6 +18,11 @@ type Kind struct {
 	Table string
 }
 
+const (
+	TypeOf_Kind   = TypeOther
+	EntityOf_Kind = ""
+)
+
 // Kinds is the Kind of every entity, by its schema name.
 var Kinds = map[string]Kind{
 {{- range $e := entities }}

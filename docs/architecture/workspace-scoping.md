@@ -245,6 +245,9 @@ claims it through the scope of the Workspace it names (construction point 6).
 
 ## Lint
 
-**Lint:** `forbidigo` (`.golangci.yml`) bans entity-level `entity.Update()` repo-wide,
-because a loaded entity still carries the raw client. Update by id instead:
-`s.Tag().UpdateOneID(id)`. There are no exclusions.
+**Lint:** the analyzer `entityupdate` (`tools/analyzers`) refuses `entity.Update()` repo-wide, test
+code included, because a loaded entity still carries the raw client. Update by id instead:
+`s.Tag().UpdateOneID(id)`. There are no exclusions. It knows an entity, and the method that starts
+its write, from the manifest of roles the generator declares in `ent` (`TypeOf_<Type>`,
+`RoleOf_<Type>_<Method>`), not from a type's name, so an entity whose name ends in `Client` or `One`
+is caught like any other.

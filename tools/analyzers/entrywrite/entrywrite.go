@@ -3,15 +3,16 @@
 // Only the owner writes a table (ADR 0102): `owners` names, for each ent entity, the package that
 // owns its table, and a write to the entity from any other package of the module is a finding. A
 // write to an entity the map does not name is a finding too, so a new entity names its owner in the
-// change that adds it (a test checks the map against ent/schema). A write is a call that starts an
-// ent mutation (Create, CreateBulk, MapCreateBulk, Update, UpdateOne, UpdateOneID, Delete, DeleteOne,
-// DeleteOneID), an upsert (OnConflict, OnConflictColumns, OnConflictColumnsWhere), a move of the
-// soft-delete mixins (Archive, Unarchive, Discard, Purge, PurgeOneID) or of a Versioned definition's
-// pointers (Pointers and the moves on them), on a type of the ent package: the raw client, a
-// transaction and the generated scoped wrappers. A generic function instantiated with an ent write
-// builder (`stepOf[*ent.TagScopedDelete]`) writes that builder's entity where it is instantiated. The
-// moves of `ent.VersionedStore` are not read: the store is the owner's Pointers, bound by the owner
-// (counted there) and handed to the lifecycle in internal/domain/content/versioneddefinition.
+// change that adds it (a test checks the map against ent/schema). What a call does is the generator's
+// to say, not a name's: the manifest of roles of the ent package (ent/template/roles.tmpl, read
+// through entx) gives every method the analyzer asks about its role and every type its kind and
+// entity. A write is a call of a method whose role starts a write (a create, an update, a delete, an
+// upsert, a move of the soft-delete mixins or of a Versioned definition's pointers), counted once
+// per receiver chain: `Create().OnConflictColumns(...)` is one write. A generic function instantiated
+// with a type whose kind builds a write (`stepOf[*ent.TagScopedDelete]`) writes that type's entity
+// where it is instantiated. The moves of `ent.VersionedStore` carry on a write already started: the
+// store is the owner's Pointers, bound by the owner (counted there) and handed to the lifecycle in
+// internal/domain/content/versioneddefinition.
 // Generated code (ent/) and test code are not read: test files, the test harness
 // (internal/testhelper, which only tests import) and the end-to-end suite (e2e/, behind its build
 // tag).
@@ -19,15 +20,16 @@
 // The Workspace erase (ADR 0110) is the one writer of a Workspace-owned table besides its owner: the
 // rows of a Workspace past its deletion window have no rule of an owner left to keep, so
 // internal/usecase/workspacedeletion deletes them directly. It may only remove, and only through the
-// scoped wrappers, which exist for the Workspace-owned entities alone: a Delete or Purge (or their
-// One and OneID forms) on one, or a generic function instantiated with its delete builder.
+// scoped wrappers, which exist for the Workspace-owned entities alone: a method of a wrapper that
+// starts a scoped delete (Delete, Purge and their OneID forms), or a generic function instantiated
+// with a scoped delete builder.
 //
 // An entry point is a driver of the statement of the tiers (tools/analyzers/tier): a handler of any
 // surface, an MCP tool, a job or an event subscriber, a command. It receives input and calls a domain
 // module or a use case; it owns no table, so every write there is a finding, worded for the entry
-// point. The HTTP handlers (tier.IsHandler) do not read through ent either: a call that starts a read
-// (Get, GetX, a Query method, or Workspace on the scoped client) on a type of the ent package is a
-// finding there, and the read goes into the module that owns the entity. The other entry points may
+// point. The HTTP handlers (tier.IsHandler) do not read through ent either: a call of a method whose
+// role starts a read (Get, a Query method, the scoped client's Workspace) is a finding there, and the
+// read goes into the module that owns the entity. The other entry points may
 // read. Nor does such a handler open a transaction (a Within… method of the events bus): the module
 // does. The wiring (the router in internal/server included) is no entry point: a write there is any
 // other package's, refused unless the package owns the table.
@@ -139,9 +141,6 @@ func Owners() map[string]string { return maps.Clone(owners) }
 // eraser is the Workspace erase, which removes a Workspace-owned table's rows whoever owns it (ADR 0110).
 const eraser = "internal/usecase/workspacedeletion"
 
-// removals are the methods of a scoped wrapper that start a delete: what the erase may call.
-var removals = map[string]bool{"Delete": true, "DeleteOne": true, "DeleteOneID": true, "Purge": true, "PurgeOneID": true}
-
 // unread are the packages of the module the analyzer does not read: the generated ent package, and
 // the test code outside `_test.go` files: the test harness, which only tests import, and the
 // end-to-end suite behind its build tag.
@@ -155,39 +154,12 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
-var starters = map[string]bool{
-	"Create": true, "CreateBulk": true, "MapCreateBulk": true,
-	"Update": true, "UpdateOne": true, "UpdateOneID": true,
-	"Delete": true, "DeleteOne": true, "DeleteOneID": true,
-	// The soft-delete mixins (ADR 0100).
-	"Archive": true, "Unarchive": true, "Discard": true, "Purge": true, "PurgeOneID": true,
-	// A Versioned definition's pointers (ADR 0065): the handle and its moves.
-	"Pointers": true, "CompareAndSwap": true, "DeleteVersion": true,
-}
-
-// builders are the suffixes of an ent write builder's type after its entity: a generic function
-// instantiated with one writes that entity.
-var builders = map[string]bool{
-	"Create": true, "CreateBulk": true, "Update": true, "UpdateOne": true, "Delete": true, "DeleteOne": true,
-	"Upsert": true, "UpsertOne": true, "UpsertBulk": true, "Pointers": true,
-}
-
-var upserts = map[string]bool{"OnConflict": true, "OnConflictColumns": true, "OnConflictColumnsWhere": true}
-
 func isIn(path, pkg string) bool {
 	return path == tier.Module+pkg || strings.HasPrefix(path, tier.Module+pkg+"/")
 }
 
 func isRead(path string) bool {
 	return strings.HasPrefix(path, tier.Module) && !slices.ContainsFunc(unread, func(p string) bool { return isIn(path, p) })
-}
-
-// startsRead reports whether a method of the ent package named name starts a read: the generated
-// Get and GetX, a query (Query, QueryWithDiscarded, QueryArchived, an edge's QueryX) and the scoped
-// client's Workspace.
-func startsRead(name, named string) bool {
-	return name == "Get" || name == "GetX" || strings.HasPrefix(name, "Query") ||
-		(name == "Workspace" && named == "Scoped")
 }
 
 // checker holds what a package's findings depend on: its path, whether it is an entry point and
@@ -235,28 +207,26 @@ func (c checker) call(call *ast.CallExpr) {
 			"move the transaction and what runs in it into the domain module and call that module from here"))
 		return
 	}
-	_, named, ok := entx.Method(c.pass.TypesInfo, sel)
+	fn, named, ok := entx.Method(c.pass.TypesInfo, sel)
 	if !ok {
 		return
 	}
-	if c.reads && startsRead(sel.Sel.Name, named.Obj().Name()) {
-		entity := entx.Entity(named)
-		if entity == "Scoped" {
-			entity = "Workspace"
+	role := entx.RoleOf(named, sel.Sel.Name)
+	entity := entx.EntityOf(named)
+	if c.reads && role == entx.Read {
+		what := entity
+		if what == "" {
+			what = named.Obj().Name()
 		}
 		c.pass.Reportf(call.Pos(), "%s", rule.Message(5,
-			"a handler reads through ent ("+sel.Sel.Name+" on "+entity+") instead of asking a domain module",
+			"a handler reads through ent ("+sel.Sel.Name+" on "+what+") instead of asking a domain module",
 			"give the domain module that owns the read a function for it (a Get or the operation's own read) and call that from here"))
 		return
 	}
-	if (!starters[sel.Sel.Name] && !upserts[sel.Sel.Name]) || chainStartsWrite(sel.X) {
+	if role != entx.Start || chainStartsWrite(c.pass.TypesInfo, sel.X) {
 		return
 	}
-	if named.Obj().Name() == "VersionedStore" {
-		return
-	}
-	entity := entx.Entity(named)
-	if c.erase && named.Obj().Name() == entity+"Scoped" && removals[sel.Sel.Name] {
+	if c.erase && entx.KindOf(named) == entx.Wrapper && removes(fn) {
 		return
 	}
 	c.write(call.Pos(), sel.Sel.Name+" on "+entity, entity)
@@ -270,22 +240,14 @@ func (c checker) instance(id *ast.Ident) {
 		return
 	}
 	for t := range inst.TypeArgs.Types() {
-		if p, ok := t.(*types.Pointer); ok {
-			t = p.Elem()
-		}
-		named, ok := t.(*types.Named)
-		if !ok || named.Obj().Pkg() == nil || named.Obj().Pkg().Path() != entx.Path {
+		named, ok := entx.Named(t)
+		if !ok || !entx.KindOf(named).Builds() {
 			continue
 		}
-		entity := entx.Entity(named)
-		suffix := strings.TrimPrefix(strings.TrimPrefix(named.Obj().Name(), entity), "Scoped")
-		if entity == named.Obj().Name() || !builders[suffix] {
-			continue
-		}
-		if c.erase && (named.Obj().Name() == entity+"ScopedDelete" || named.Obj().Name() == entity+"ScopedDeleteOne") {
+		if c.erase && entx.KindOf(named) == entx.ScopedDelete {
 			return
 		}
-		c.write(id.Pos(), id.Name+" with "+named.Obj().Name(), entity)
+		c.write(id.Pos(), id.Name+" with "+named.Obj().Name(), entx.EntityOf(named))
 		return
 	}
 }
@@ -323,10 +285,20 @@ func opensTx(info *types.Info, sel *ast.SelectorExpr) bool {
 	return strings.HasPrefix(fn.Name(), "Within")
 }
 
+// removes reports whether a method returns a scoped delete builder: the Delete or Purge of a wrapper.
+func removes(fn *types.Func) bool {
+	res := fn.Signature().Results()
+	if res.Len() == 0 {
+		return false
+	}
+	named, ok := entx.Named(res.At(0).Type())
+	return ok && entx.KindOf(named) == entx.ScopedDelete
+}
+
 // chainStartsWrite reports whether the receiver chain already holds a call that starts a write, so
 // that `Create().OnConflict...` and `Pointers().CompareAndSwap(...)` are one finding each, and an upsert on
 // a builder variable is another.
-func chainStartsWrite(e ast.Expr) bool {
+func chainStartsWrite(info *types.Info, e ast.Expr) bool {
 	for {
 		call, ok := e.(*ast.CallExpr)
 		if !ok {
@@ -336,7 +308,7 @@ func chainStartsWrite(e ast.Expr) bool {
 		if !ok {
 			return false
 		}
-		if starters[sel.Sel.Name] {
+		if _, named, ok := entx.Method(info, sel); ok && entx.RoleOf(named, sel.Sel.Name) == entx.Start {
 			return true
 		}
 		e = sel.X

@@ -13,6 +13,14 @@ type TxBound interface {
 	TxBound()
 }
 
+const (
+	TypeOf_TxBound          = TypeOther
+	EntityOf_TxBound        = ""
+	RoleOf_TxBound_TxBound  = RoleNone
+	RoleOf_Client_Savepoint = RoleNone
+	RoleOf_Scoped_Savepoint = RoleNone
+)
+
 // savepoint is the name of the savepoint a write runs under. ROLLBACK TO and RELEASE name the most
 // recent savepoint of that name, so a nested one is safe.
 const savepoint = "refusable"
