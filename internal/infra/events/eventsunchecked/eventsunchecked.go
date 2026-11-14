@@ -82,8 +82,11 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 	var doomed, reported []int64
 	// Anonymized Events grouped by the properties they keep, so each distinct property
 	// set is one bulk update.
-	keptBy := map[string][]int64{}
-	kept := map[string]map[string]any{}
+	type keptGroup struct {
+		props map[string]any
+		ids   []int64
+	}
+	kept := map[string]*keptGroup{}
 	for _, e := range rows {
 		if !anonymized(e.Action) {
 			doomed = append(doomed, e.ID)
@@ -92,18 +95,17 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 		if e.Action == systemevent.SmsDelivered || e.Action == systemevent.SmsUndelivered {
 			reported = append(reported, e.ID)
 		}
-		props := map[string]any{}
-		for _, k := range anonymousKeep {
-			if v, ok := e.Properties[k]; ok {
-				props[k] = v
-			}
-		}
+		props := lo.PickByKeys(e.Properties, anonymousKeep)
 		key, err := json.Marshal(props) // map keys marshal sorted: a stable group key
 		if err != nil {
 			return err
 		}
-		keptBy[string(key)] = append(keptBy[string(key)], e.ID)
-		kept[string(key)] = props
+		g, ok := kept[string(key)]
+		if !ok {
+			g = &keptGroup{props: props}
+			kept[string(key)] = g
+		}
+		g.ids = append(g.ids, e.ID)
 	}
 
 	for _, ids := range lo.Chunk(doomed, eraseChunk) {
@@ -111,12 +113,12 @@ func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, phone str
 			return err
 		}
 	}
-	for key, ids := range keptBy {
-		for _, chunk := range lo.Chunk(ids, eraseChunk) {
+	for _, g := range kept {
+		for _, chunk := range lo.Chunk(g.ids, eraseChunk) {
 			if _, err := s.Event().Update().Where(event.IDIn(chunk...)).
 				ClearContactID().ClearVisitorID().ClearEmail().ClearPhone().ClearSubjectID().
 				ClearURL().ClearBroadcastID().ClearAutomationID().
-				SetProperties(kept[key]).
+				SetProperties(g.props).
 				Save(ctx); err != nil {
 				return err
 			}

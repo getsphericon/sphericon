@@ -92,11 +92,7 @@ func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID
 	}
 	// An event job's args are its envelope (EventJob): the Workspace at workspaceId, the event at
 	// data, which names the Contact as contactId, the address as email and the phone as phone.
-	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Queues(QueueEvents).
-		// raw sql: a field of the args matched by containment, as PurgeWorkspaceJobs does; river's
-		// delete filters stop at a job's own columns.
-		Where("args @> jsonb_build_object(@purge_workspace_arg::text, @purge_workspace_id::bigint)",
-			river.NamedArgs{"purge_workspace_arg": jobkind.WorkspaceArg, "purge_workspace_id": workspaceID}).
+	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Queues(QueueEvents), workspaceID).
 		// raw sql: the event's fields inside the args, the address case-insensitively.
 		Where("(args->'data'->>'contactId' = @purge_event_contact::text"+
 			" OR lower(args->'data'->>'email') = any(@purge_event_addresses::text[])"+
@@ -109,12 +105,12 @@ func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID
 // locked (a fetch about to start it): either is left to finish, and what its worker does then is
 // for each purge to say (QueuePurger, WorkspacePurger).
 func (p *txPublisher) deleteJobs(ctx context.Context, params *river.JobDeleteManyParams) error {
-	if p.jobs == nil {
+	if p.bus.jobs == nil {
 		return ErrNoJobQueue
 	}
 	params = params.First(purgeBatch)
 	for {
-		res, err := p.jobs.JobDeleteManyTx(ctx, p.tx, params)
+		res, err := p.bus.jobs.JobDeleteManyTx(ctx, p.tx, params)
 		if err != nil {
 			return err
 		}
@@ -168,11 +164,16 @@ func (p *txPublisher) PurgeWorkspaceJobs(ctx context.Context, workspaceID int64)
 	if _, err := p.client.EventJournalEntry.Delete().Where(eventjournalentry.WorkspaceID(workspaceID)).Exec(ctx); err != nil {
 		return err
 	}
-	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().
-		// raw sql: a field of the args matched by containment, which river's GIN index on args
-		// serves; river's delete filters stop at a job's own columns.
-		Where("args @> jsonb_build_object(@purge_workspace_arg::text, @purge_workspace_id::bigint)",
-			river.NamedArgs{"purge_workspace_arg": jobkind.WorkspaceArg, "purge_workspace_id": workspaceID}))
+	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams(), workspaceID))
+}
+
+// ofWorkspace narrows params to the jobs of the Workspace: the args' top-level
+// jobkind.WorkspaceArg names it.
+func ofWorkspace(params *river.JobDeleteManyParams, workspaceID int64) *river.JobDeleteManyParams {
+	// raw sql: a field of the args matched by containment, which river's GIN index on args serves;
+	// river's delete filters stop at a job's own columns.
+	return params.Where("args @> jsonb_build_object(@purge_workspace_arg::text, @purge_workspace_id::bigint)",
+		river.NamedArgs{"purge_workspace_arg": jobkind.WorkspaceArg, "purge_workspace_id": workspaceID})
 }
 
 var _ WorkspacePurger = (*txPublisher)(nil)

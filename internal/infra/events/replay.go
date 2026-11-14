@@ -17,8 +17,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
-// MaxReplayEntries bounds one atomic replay. A larger selection is refused in full.
-// The internal replay batch cap is independent of API pagination bounds.
+// MaxReplayEntries bounds one atomic replay, independently of API pagination. A larger selection is
+// refused in full.
 const MaxReplayEntries = 1000
 
 var (
@@ -110,10 +110,7 @@ func (b *Bus) Replay(ctx context.Context, workspaceID int64, in ReplayRequest) (
 		if in.DryRun || len(params) == 0 {
 			return nil
 		}
-		if pub.jobs == nil {
-			return ErrNoJobQueue
-		}
-		if _, err := pub.jobs.InsertManyTx(ctx, pub.tx, params); err != nil {
+		if err := pub.insertMany(ctx, params); err != nil {
 			return fmt.Errorf("queue replay: %w", err)
 		}
 		result.Enqueued = len(params)

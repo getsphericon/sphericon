@@ -20,13 +20,7 @@ import (
 // (a Rule firing, an Enrollment) never takes it: it locks the row it acts on and checks it again
 // under that lock.
 func (b *Bus) WithinWorkspaceLockTx(ctx context.Context, s *ent.Scoped, fn func(l *ent.WorkspaceLocked, pub Publisher) error) error {
-	return b.within(ctx, func(tx *ent.Client, pub *txPublisher) error {
-		l, err := s.InTx(tx, auditPublisher{pub: pub}).LockWorkspace(ctx, lockWorkspace)
-		if err != nil {
-			return err
-		}
-		return fn(l, pub)
-	})
+	return b.WithinWorkspaceLockEnqueueTx(ctx, s, func(l *ent.WorkspaceLocked, pub Publisher, _ Enqueuer) error { return fn(l, pub) })
 }
 
 // WithinWorkspaceLockEnqueueTx is WithinWorkspaceLockTx for a caller that also queues a job in the
@@ -38,7 +32,7 @@ func (b *Bus) WithinWorkspaceLockEnqueueTx(ctx context.Context, s *ent.Scoped, f
 		if err != nil {
 			return err
 		}
-		return fn(l, pub, txQueue{jobs: pub.jobs, tx: pub.tx})
+		return fn(l, pub, pub)
 	})
 }
 

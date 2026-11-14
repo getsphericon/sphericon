@@ -105,7 +105,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	txClient := b.newTxClient(drv)
 	txClient.Use(b.hooks...)
 
-	pub := &txPublisher{tx: sqlTx, client: txClient, jobs: b.jobs, consumers: b.consumers, subscribers: b.subscribers, stored: b.stored, now: b.now}
+	pub := &txPublisher{bus: b, tx: sqlTx, client: txClient}
 	err = fn(txClient, pub)
 	if err == nil {
 		err = pub.failed
@@ -214,24 +214,16 @@ type nopTx struct {
 func (nopTx) Commit() error   { return nil }
 func (nopTx) Rollback() error { return nil }
 
-// txPublisher stamps a DomainEvent's Envelope and writes what publishing it means, all on tx.
+// txPublisher stamps a DomainEvent's Envelope and writes what publishing it means, all on tx,
+// with the consumers, subscribers, job queue and clock of its bus.
 type txPublisher struct {
-	tx *sql.Tx
+	bus *Bus
+	tx  *sql.Tx
 	// client is the ent client bound to tx, which the Event rows are written with.
 	client *ent.Client
-	// jobs is the bus's job queue (nil when it was given none); the event jobs are inserted and
-	// a purge of the queue runs on tx.
-	jobs JobQueue
-	// consumers are the bus's consumers, whose jobs Publish inserts on tx.
-	consumers   []Consumer
-	subscribers []Subscriber
-	failed      error
-	// stored are the bus's OnStored functions, run for a newly stored Event after the commit.
-	stored []func(context.Context, DomainEvent)
+	failed error
 	// committed runs once tx has committed, in order.
 	committed []func()
-	// now is the bus's clock.
-	now func() time.Time
 }
 
 // Publish claims an external identity, writes the optional Event row, runs mandatory reactions
@@ -248,10 +240,10 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
-	recorded := p.now().UTC()
+	recorded := p.bus.now().UTC()
 	projection, projected := ProjectionOf(ev)
 	occurred := projection.OccurredAt
-	if observation, ok := ev.(interface{ ObservationTime() time.Time }); ok {
+	if observation, ok := ev.(observed); ok {
 		occurred = observation.ObservationTime()
 	}
 	if occurred.IsZero() {
@@ -268,7 +260,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 		ID:          ulid.Make().String(),
 		Name:        ev.EventName(),
 		Version:     ev.EventVersion(),
-		WorkspaceID: WorkspaceOf(ev),
+		WorkspaceID: workspaceOf(ev),
 		OccurredAt:  occurred,
 		RecordedAt:  recorded,
 		Data:        data,
@@ -288,7 +280,7 @@ func (p *txPublisher) Publish(ctx context.Context, ev DomainEvent) (err error) {
 		if !first {
 			return nil // a repeat: published when it first arrived
 		}
-		for _, f := range p.stored {
+		for _, f := range p.bus.stored {
 			p.committed = append(p.committed, func() { f(context.WithoutCancel(ctx), ev) })
 		}
 	}

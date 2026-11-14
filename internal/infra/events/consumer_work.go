@@ -73,7 +73,7 @@ func webhookBody(env Envelope, ev DomainEvent, p Projection, name, id, workspace
 	data := env.Data
 	if entry, ok := ev.(*AuditEntry); ok {
 		// The staff identity never reaches a customer's endpoint (ADR 0022).
-		entry.MaskStaff()
+		entry.maskStaff()
 		var err error
 		if data, err = json.Marshal(entry); err != nil {
 			return nil, fmt.Errorf("marshal audit entry: %w", err)

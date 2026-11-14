@@ -7,7 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
-	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
 // The reads of the Event log (GLOSSARY): the bus owns the Events (ADR 0102), so the app and the
@@ -43,7 +42,7 @@ func ListLog(ctx context.Context, s *ent.Scoped, f LogFilter, p pagination.Param
 	if !f.IncludeMachine {
 		// The flag belongs to opens and clicks only: a customer's own Event may carry a
 		// property of that name.
-		q = q.Where(event.Or(event.ActionNotIn(append([]string{systemevent.EmailOpened}, ClickActions...)...), HumanOnly()))
+		q = q.Where(event.Or(event.ActionNotIn(engagementActions...), HumanOnly()))
 	}
 	return pagination.List(ctx, p, q.Order(ent.Desc(event.FieldCreatedAt), ent.Desc(event.FieldID)))
 }

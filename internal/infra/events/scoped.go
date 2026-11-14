@@ -12,9 +12,7 @@ import (
 // scope keeps its actor, and an audited write through it joins this transaction (its
 // entry is published here) instead of opening another one (ADR 0022).
 func (b *Bus) WithinScopedTx(ctx context.Context, s *ent.Scoped, fn func(ts *ent.Scoped, pub Publisher) error) error {
-	return b.WithinTx(ctx, func(tx *ent.Client, pub Publisher) error {
-		return fn(s.InTx(tx, auditPublisher{pub: pub}), pub)
-	})
+	return b.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub Publisher, _ Enqueuer) error { return fn(ts, pub) })
 }
 
 // WithinHandOverTx is WithinScopedTx for a hand-over between two Workspaces (a Join

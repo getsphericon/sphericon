@@ -175,8 +175,8 @@ type Projected interface {
 	Project() Projection // how this event maps to the Event row + trigger
 }
 
-// WorkspaceOf is the Workspace ev belongs to, 0 for an event of the Instance.
-func WorkspaceOf(ev DomainEvent) int64 {
+// workspaceOf is the Workspace ev belongs to, 0 for an event of the Instance.
+func workspaceOf(ev DomainEvent) int64 {
 	if w, ok := ev.(WorkspaceEvent); ok {
 		return w.Workspace()
 	}
@@ -191,6 +191,15 @@ func ProjectionOf(ev DomainEvent) (p Projection, ok bool) {
 	return Projection{}, false
 }
 
+// setNonZero sets props[key] to v unless v is its type's zero value: a property an event does not
+// have is left out of its Event row, never written as 0, "" or false.
+func setNonZero[T comparable](props map[string]any, key string, v T) {
+	var zero T
+	if v != zero {
+		props[key] = v
+	}
+}
+
 // IsUnprojected reports whether name is the bus type of events that are not Projected (an Audit
 // entry): a name that is no bus type (a customer's action, a System event's action) is not.
 func IsUnprojected(name string) bool {
@@ -200,6 +209,13 @@ func IsUnprojected(name string) bool {
 	}
 	_, projected := newEvent().(Projected)
 	return !projected
+}
+
+// observed is an optional DomainEvent capability of an event without an Event row: when the
+// observation it reports happened, which dates its envelope instead of the publish (a Projected
+// event says it in its Projection).
+type observed interface {
+	ObservationTime() time.Time
 }
 
 // identifiable is an optional DomainEvent capability: an event with a stable
@@ -402,34 +418,16 @@ func (e *EmailEngagement) Project() Projection {
 	props := map[string]any{}
 	// Automation sends carry no broadcast, so omit broadcastId rather than write 0 —
 	// otherwise a "broadcastId = 0" segment filter would select every automation send.
-	if e.BroadcastID != 0 {
-		props["broadcastId"] = e.BroadcastID
-	}
-	if e.URL != "" {
-		props["url"] = e.URL
-	}
-	for k, v := range map[string]string{
-		"surface":           e.Surface,
-		"sendingSource":     e.SendingSource,
-		"sendingDomain":     e.SendingDomain,
-		"providerMessageId": e.ProviderMessageID,
-	} {
-		if v != "" {
-			props[k] = v
-		}
-	}
-	if e.AutomationID != 0 {
-		props["automationId"] = e.AutomationID
-	}
-	if e.OutboundMessageID != 0 {
-		props[outboundMessageIDProperty] = e.OutboundMessageID
-	}
-	if e.Captured {
-		props[CapturedProperty] = true
-	}
-	if e.Machine {
-		props[MachineProperty] = true
-	}
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "url", e.URL)
+	setNonZero(props, "surface", e.Surface)
+	setNonZero(props, "sendingSource", e.SendingSource)
+	setNonZero(props, "sendingDomain", e.SendingDomain)
+	setNonZero(props, "providerMessageId", e.ProviderMessageID)
+	setNonZero(props, "automationId", e.AutomationID)
+	setNonZero(props, outboundMessageIDProperty, e.OutboundMessageID)
+	setNonZero(props, CapturedProperty, e.Captured)
+	setNonZero(props, MachineProperty, e.Machine)
 	return Projection{
 		OccurredAt: e.ObservedAt,
 		Subject:    e.Email, Action: e.Action, Email: e.Email, Properties: props, ContactID: e.ContactID,
@@ -479,31 +477,17 @@ func (e *EmailDelivery) Workspace() int64  { return e.WorkspaceID }
 func (e *EmailDelivery) EventID() string   { return e.DedupID }
 func (e *EmailDelivery) Project() Projection {
 	props := map[string]any{}
-	for k, v := range map[string]string{
-		systemevent.BounceKindProperty: e.BounceKind,
-		"provider":                     e.Provider,
-		"sendingDomain":                e.SendingDomain,
-		"reason":                       e.Reason,
-		"providerMessageId":            e.ProviderMessageID,
-		"surface":                      e.Surface,
-		"sendingSource":                e.SendingSource,
-	} {
-		if v != "" {
-			props[k] = v
-		}
-	}
-	for k, v := range map[string]int64{
-		outboundMessageIDProperty: e.OutboundMessageID,
-		"broadcastId":             e.BroadcastID,
-		"automationId":            e.AutomationID,
-	} {
-		if v != 0 {
-			props[k] = v
-		}
-	}
-	if e.Captured {
-		props[CapturedProperty] = true
-	}
+	setNonZero(props, systemevent.BounceKindProperty, e.BounceKind)
+	setNonZero(props, "provider", e.Provider)
+	setNonZero(props, "sendingDomain", e.SendingDomain)
+	setNonZero(props, "reason", e.Reason)
+	setNonZero(props, "providerMessageId", e.ProviderMessageID)
+	setNonZero(props, "surface", e.Surface)
+	setNonZero(props, "sendingSource", e.SendingSource)
+	setNonZero(props, outboundMessageIDProperty, e.OutboundMessageID)
+	setNonZero(props, "broadcastId", e.BroadcastID)
+	setNonZero(props, "automationId", e.AutomationID)
+	setNonZero(props, CapturedProperty, e.Captured)
 	// A notice of delivery is never a trigger nor an end of an Automation (ADR 0053), so its
 	// AutomationID only marks whose email it was.
 	return Projection{
@@ -533,12 +517,8 @@ func (*MarketingConfirmed) EventVersion() int  { return 1 }
 func (e *MarketingConfirmed) Workspace() int64 { return e.WorkspaceID }
 func (e *MarketingConfirmed) Project() Projection {
 	props := map[string]any{}
-	if e.Provenance != "" {
-		props["provenance"] = e.Provenance
-	}
-	if e.IP != "" {
-		props["ip"] = e.IP
-	}
+	setNonZero(props, "provenance", e.Provenance)
+	setNonZero(props, "ip", e.IP)
 	return Projection{Subject: e.Email, Action: systemevent.MarketingConfirmed, Email: e.Email, Properties: props, ContactID: e.ContactID}
 }
 
@@ -565,11 +545,10 @@ func (*SmsConfirmed) EventVersion() int  { return 1 }
 func (e *SmsConfirmed) Workspace() int64 { return e.WorkspaceID }
 func (e *SmsConfirmed) Project() Projection {
 	props := map[string]any{}
-	for k, v := range map[string]string{"provenance": e.Provenance, "wording": e.Wording, "source": e.Source, "brand": e.Brand} {
-		if v != "" {
-			props[k] = v
-		}
-	}
+	setNonZero(props, "provenance", e.Provenance)
+	setNonZero(props, "wording", e.Wording)
+	setNonZero(props, "source", e.Source)
+	setNonZero(props, "brand", e.Brand)
 	return Projection{Action: systemevent.SmsConfirmed, Phone: e.Phone, Properties: props, ContactID: e.ContactID}
 }
 

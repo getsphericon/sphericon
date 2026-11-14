@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/urfave/cli/v3"
@@ -15,6 +14,7 @@ import (
 // the Instance retained, and `replay` queues one report consumer's jobs again for the events a
 // Workspace recorded in a bounded interval.
 func eventsCommand(d deps) *cli.Command {
+	recorded := cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}
 	return group("events", "inspect publication metadata and reapply retained report inputs",
 		&cli.Command{
 			Name:  "list",
@@ -29,8 +29,8 @@ func eventsCommand(d deps) *cli.Command {
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: flagName, Usage: "exact domain-event name"},
 				&cli.StringFlag{Name: flagEventID, Usage: "exact journal event id"},
-				&cli.TimestampFlag{Name: flagFrom, Usage: "inclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
-				&cli.TimestampFlag{Name: flagBefore, Usage: "exclusive recorded time, RFC3339", Config: cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}},
+				&cli.TimestampFlag{Name: flagFrom, Usage: "inclusive recorded time, RFC3339", Config: recorded},
+				&cli.TimestampFlag{Name: flagBefore, Usage: "exclusive recorded time, RFC3339", Config: recorded},
 				&cli.IntFlag{Name: flagLimit, Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
@@ -52,26 +52,18 @@ func eventsCommand(d deps) *cli.Command {
 			Flags: []cli.Flag{
 				&cli.StringFlag{Name: flagWorkspace, Required: true, Usage: "Workspace public id"},
 				&cli.StringFlag{Name: flagConsumer, Required: true, Usage: "event_message_observation or event_broadcast_unsubscribe"},
-				&cli.StringFlag{Name: flagFrom, Required: true, Usage: "inclusive recorded time, RFC3339"},
-				&cli.StringFlag{Name: flagBefore, Required: true, Usage: "exclusive recorded time, RFC3339"},
+				&cli.TimestampFlag{Name: flagFrom, Required: true, Usage: "inclusive recorded time, RFC3339", Config: recorded},
+				&cli.TimestampFlag{Name: flagBefore, Required: true, Usage: "exclusive recorded time, RFC3339", Config: recorded},
 				&cli.IntFlag{Name: flagLimit, Value: events.MaxReplayEntries, Usage: "refuse the whole selection when it exceeds this bound"},
 				&cli.BoolFlag{Name: flagDryRun, Usage: "validate and count without queuing jobs"},
 			},
 			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
-				from, err := time.Parse(time.RFC3339Nano, cmd.String(flagFrom))
-				if err != nil {
-					return fmt.Errorf("--from: %w", err)
-				}
-				before, err := time.Parse(time.RFC3339Nano, cmd.String(flagBefore))
-				if err != nil {
-					return fmt.Errorf("--before: %w", err)
-				}
 				history, err := eventHistory(c)
 				if err != nil {
 					return err
 				}
 				return history.Replay(ctx, out(cmd), cmd.String(flagWorkspace), events.ReplayRequest{
-					Consumer: cmd.String(flagConsumer), From: from, Before: before,
+					Consumer: cmd.String(flagConsumer), From: cmd.Timestamp(flagFrom), Before: cmd.Timestamp(flagBefore),
 					Limit: cmd.Int(flagLimit), DryRun: cmd.Bool(flagDryRun),
 				})
 			}),
