@@ -209,8 +209,9 @@ func (e *{{ $N }}) auditFields() map[string]any {
 }
 
 // auditChange{{ $N }} describes a {{ $N }} create (before is nil), update or delete
-// (after is nil).
-func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChange{{ $N }}(verb string, before, after *{{ $N }}) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -220,12 +221,13 @@ func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "{{ $A.Action }}." + verb,
 		TargetType: "{{ $A.Action }}",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, {{ $N }}AuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	{{- range $name := $A.Always }}
 	auditKeep(change.Diff, b, a, "{{ $name }}")
 	{{- end }}
@@ -236,7 +238,7 @@ func auditChange{{ $N }}(verb string, before, after *{{ $N }}) AuditChange {
 	change.TargetName = fmt.Sprint(derefAudit(target.{{ $A.NameField.StructField }}))
 	{{- end }}
 	{{- end }}
-	return change
+	return change, changed
 }
 {{- end }}
 {{ end }}

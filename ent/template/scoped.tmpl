@@ -200,7 +200,8 @@ func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
 // given and executes it, and reaches no other client. {{ if $A }}Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope{{ else }}The
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope{{ else }}The
 // entity is not audited, so{{ end }} run gets the scope itself.
 func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predicate.{{ $N }}, run func(s *Scoped) ([]int64, error)) error {
 	{{- if $A }}
@@ -236,8 +237,10 @@ func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predica
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChange{{ $N }}(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChange{{ $N }}(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil

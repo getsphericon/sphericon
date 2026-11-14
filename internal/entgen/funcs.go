@@ -44,7 +44,7 @@ func (s *Schema) Funcs() template.FuncMap {
 		"scopedEdgeMutable": scopedEdgeMutable,
 		// auditOf returns the Audited annotation of n (ADR 0022), or nil when the entity has not
 		// opted into the Audit log.
-		"auditOf":     func(n *gen.Type) *Audit { return s.entities[n].audit },
+		"auditOf": func(n *gen.Type) *Audit { return s.entities[n].audit },
 		// auditVerbs lists the verbs of the actions an audited entity's entries record (Verbs), none
 		// for an entity that has not opted into the Audit log.
 		"auditVerbs": func(n *gen.Type) []string {

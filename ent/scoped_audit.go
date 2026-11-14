@@ -188,8 +188,9 @@ func (e *ApiToken) auditFields() map[string]any {
 }
 
 // auditChangeApiToken describes a ApiToken create (before is nil), update or delete
-// (after is nil).
-func auditChangeApiToken(verb string, before, after *ApiToken) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeApiToken(verb string, before, after *ApiToken) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -199,14 +200,15 @@ func auditChangeApiToken(verb string, before, after *ApiToken) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "api_token." + verb,
 		TargetType: "api_token",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, ApiTokenAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // AutomationAuditSensitive lists the Automation fields whose values never reach the Audit log.
@@ -225,8 +227,9 @@ func (e *Automation) auditFields() map[string]any {
 }
 
 // auditChangeAutomation describes a Automation create (before is nil), update or delete
-// (after is nil).
-func auditChangeAutomation(verb string, before, after *Automation) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeAutomation(verb string, before, after *Automation) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -236,14 +239,15 @@ func auditChangeAutomation(verb string, before, after *Automation) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "automation." + verb,
 		TargetType: "automation",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, AutomationAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // BrandKitAuditSensitive lists the BrandKit fields whose values never reach the Audit log.
@@ -265,8 +269,9 @@ func (e *BrandKit) auditFields() map[string]any {
 }
 
 // auditChangeBrandKit describes a BrandKit create (before is nil), update or delete
-// (after is nil).
-func auditChangeBrandKit(verb string, before, after *BrandKit) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeBrandKit(verb string, before, after *BrandKit) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -276,13 +281,14 @@ func auditChangeBrandKit(verb string, before, after *BrandKit) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "brand_kit." + verb,
 		TargetType: "brand_kit",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, BrandKitAuditSensitive),
 	}
-	return change
+	changed = len(change.Diff) > 0
+	return change, changed
 }
 
 // BroadcastAuditSensitive lists the Broadcast fields whose values never reach the Audit log.
@@ -319,8 +325,9 @@ func (e *Broadcast) auditFields() map[string]any {
 }
 
 // auditChangeBroadcast describes a Broadcast create (before is nil), update or delete
-// (after is nil).
-func auditChangeBroadcast(verb string, before, after *Broadcast) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeBroadcast(verb string, before, after *Broadcast) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -330,14 +337,15 @@ func auditChangeBroadcast(verb string, before, after *Broadcast) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "broadcast." + verb,
 		TargetType: "broadcast",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, BroadcastAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // ContactAuditSensitive lists the Contact fields whose values never reach the Audit log (all of them: names only).
@@ -377,8 +385,9 @@ func (e *Contact) auditFields() map[string]any {
 }
 
 // auditChangeContact describes a Contact create (before is nil), update or delete
-// (after is nil).
-func auditChangeContact(verb string, before, after *Contact) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeContact(verb string, before, after *Contact) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -388,13 +397,14 @@ func auditChangeContact(verb string, before, after *Contact) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "contact." + verb,
 		TargetType: "contact",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, ContactAuditSensitive),
 	}
-	return change
+	changed = len(change.Diff) > 0
+	return change, changed
 }
 
 // CustomFieldAuditSensitive lists the CustomField fields whose values never reach the Audit log.
@@ -410,8 +420,9 @@ func (e *CustomField) auditFields() map[string]any {
 }
 
 // auditChangeCustomField describes a CustomField create (before is nil), update or delete
-// (after is nil).
-func auditChangeCustomField(verb string, before, after *CustomField) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeCustomField(verb string, before, after *CustomField) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -421,14 +432,15 @@ func auditChangeCustomField(verb string, before, after *CustomField) AuditChange
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "custom_field." + verb,
 		TargetType: "custom_field",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, CustomFieldAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // EmailTemplateAuditSensitive lists the EmailTemplate fields whose values never reach the Audit log.
@@ -446,8 +458,9 @@ func (e *EmailTemplate) auditFields() map[string]any {
 }
 
 // auditChangeEmailTemplate describes a EmailTemplate create (before is nil), update or delete
-// (after is nil).
-func auditChangeEmailTemplate(verb string, before, after *EmailTemplate) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeEmailTemplate(verb string, before, after *EmailTemplate) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -457,14 +470,15 @@ func auditChangeEmailTemplate(verb string, before, after *EmailTemplate) AuditCh
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "template." + verb,
 		TargetType: "template",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, EmailTemplateAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // HoldAuditSensitive lists the Hold fields whose values never reach the Audit log.
@@ -483,8 +497,9 @@ func (e *Hold) auditFields() map[string]any {
 }
 
 // auditChangeHold describes a Hold create (before is nil), update or delete
-// (after is nil).
-func auditChangeHold(verb string, before, after *Hold) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeHold(verb string, before, after *Hold) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -494,14 +509,15 @@ func auditChangeHold(verb string, before, after *Hold) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "hold." + verb,
 		TargetType: "hold",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, HoldAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Key))
-	return change
+	return change, changed
 }
 
 // IntegrationAuditSensitive lists the Integration fields whose values never reach the Audit log.
@@ -537,8 +553,9 @@ func (e *Integration) auditFields() map[string]any {
 }
 
 // auditChangeIntegration describes a Integration create (before is nil), update or delete
-// (after is nil).
-func auditChangeIntegration(verb string, before, after *Integration) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeIntegration(verb string, before, after *Integration) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -548,14 +565,15 @@ func auditChangeIntegration(verb string, before, after *Integration) AuditChange
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "integration." + verb,
 		TargetType: "integration",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, IntegrationAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // JoinDomainAuditSensitive lists the JoinDomain fields whose values never reach the Audit log.
@@ -574,8 +592,9 @@ func (e *JoinDomain) auditFields() map[string]any {
 }
 
 // auditChangeJoinDomain describes a JoinDomain create (before is nil), update or delete
-// (after is nil).
-func auditChangeJoinDomain(verb string, before, after *JoinDomain) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeJoinDomain(verb string, before, after *JoinDomain) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -585,14 +604,15 @@ func auditChangeJoinDomain(verb string, before, after *JoinDomain) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "join_domain." + verb,
 		TargetType: "join_domain",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, JoinDomainAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Domain))
-	return change
+	return change, changed
 }
 
 // RuleAuditSensitive lists the Rule fields whose values never reach the Audit log.
@@ -611,8 +631,9 @@ func (e *Rule) auditFields() map[string]any {
 }
 
 // auditChangeRule describes a Rule create (before is nil), update or delete
-// (after is nil).
-func auditChangeRule(verb string, before, after *Rule) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeRule(verb string, before, after *Rule) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -622,14 +643,15 @@ func auditChangeRule(verb string, before, after *Rule) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "rule." + verb,
 		TargetType: "rule",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, RuleAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // SegmentAuditSensitive lists the Segment fields whose values never reach the Audit log.
@@ -645,8 +667,9 @@ func (e *Segment) auditFields() map[string]any {
 }
 
 // auditChangeSegment describes a Segment create (before is nil), update or delete
-// (after is nil).
-func auditChangeSegment(verb string, before, after *Segment) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeSegment(verb string, before, after *Segment) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -656,14 +679,15 @@ func auditChangeSegment(verb string, before, after *Segment) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "segment." + verb,
 		TargetType: "segment",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, SegmentAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // SendingDomainAuditSensitive lists the SendingDomain fields whose values never reach the Audit log.
@@ -688,8 +712,9 @@ func (e *SendingDomain) auditFields() map[string]any {
 }
 
 // auditChangeSendingDomain describes a SendingDomain create (before is nil), update or delete
-// (after is nil).
-func auditChangeSendingDomain(verb string, before, after *SendingDomain) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeSendingDomain(verb string, before, after *SendingDomain) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -699,14 +724,15 @@ func auditChangeSendingDomain(verb string, before, after *SendingDomain) AuditCh
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "sending_domain." + verb,
 		TargetType: "sending_domain",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, SendingDomainAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Domain))
-	return change
+	return change, changed
 }
 
 // TagAuditSensitive lists the Tag fields whose values never reach the Audit log.
@@ -720,8 +746,9 @@ func (e *Tag) auditFields() map[string]any {
 }
 
 // auditChangeTag describes a Tag create (before is nil), update or delete
-// (after is nil).
-func auditChangeTag(verb string, before, after *Tag) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeTag(verb string, before, after *Tag) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -731,14 +758,15 @@ func auditChangeTag(verb string, before, after *Tag) AuditChange {
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "tag." + verb,
 		TargetType: "tag",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, TagAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Name))
-	return change
+	return change, changed
 }
 
 // TrackingDomainAuditSensitive lists the TrackingDomain fields whose values never reach the Audit log.
@@ -758,8 +786,9 @@ func (e *TrackingDomain) auditFields() map[string]any {
 }
 
 // auditChangeTrackingDomain describes a TrackingDomain create (before is nil), update or delete
-// (after is nil).
-func auditChangeTrackingDomain(verb string, before, after *TrackingDomain) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeTrackingDomain(verb string, before, after *TrackingDomain) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -769,14 +798,15 @@ func auditChangeTrackingDomain(verb string, before, after *TrackingDomain) Audit
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "tracking_domain." + verb,
 		TargetType: "tracking_domain",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, TrackingDomainAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = fmt.Sprint(derefAudit(target.Host))
-	return change
+	return change, changed
 }
 
 // WebhookEndpointAuditSensitive lists the WebhookEndpoint fields whose values never reach the Audit log.
@@ -802,8 +832,9 @@ func (e *WebhookEndpoint) auditFields() map[string]any {
 }
 
 // auditChangeWebhookEndpoint describes a WebhookEndpoint create (before is nil), update or delete
-// (after is nil).
-func auditChangeWebhookEndpoint(verb string, before, after *WebhookEndpoint) AuditChange {
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeWebhookEndpoint(verb string, before, after *WebhookEndpoint) (change AuditChange, changed bool) {
 	var b, a map[string]any
 	target := before
 	if before != nil {
@@ -813,14 +844,15 @@ func auditChangeWebhookEndpoint(verb string, before, after *WebhookEndpoint) Aud
 		a = after.auditFields()
 		target = after
 	}
-	change := AuditChange{
+	change = AuditChange{
 		Action:     "webhook_endpoint." + verb,
 		TargetType: "webhook_endpoint",
 		TargetID:   auditID(target.ID),
 		Diff:       AuditDiff(b, a, WebhookEndpointAuditSensitive),
 	}
+	changed = len(change.Diff) > 0
 	change.TargetName = auditURLName(fmt.Sprint(derefAudit(target.URL)))
-	return change
+	return change, changed
 }
 
 // auditKeep makes an update's diff carry the field even when it did not change.

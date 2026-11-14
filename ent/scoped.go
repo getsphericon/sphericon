@@ -900,7 +900,8 @@ func (t *ApiTokenScoped) Get(ctx context.Context, id int64) (*ApiToken, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeApiToken(ctx context.Context, verb string, where []predicate.ApiToken, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -934,8 +935,10 @@ func (s *Scoped) writeApiToken(ctx context.Context, verb string, where []predica
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeApiToken(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeApiToken(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -3145,7 +3148,8 @@ func (t *AutomationScoped) Get(ctx context.Context, id int64) (*Automation, erro
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeAutomation(ctx context.Context, verb string, where []predicate.Automation, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -3179,8 +3183,10 @@ func (s *Scoped) writeAutomation(ctx context.Context, verb string, where []predi
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeAutomation(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeAutomation(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -10021,7 +10027,8 @@ func (t *BrandKitScoped) Get(ctx context.Context, id int64) (*BrandKit, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeBrandKit(ctx context.Context, verb string, where []predicate.BrandKit, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -10055,8 +10062,10 @@ func (s *Scoped) writeBrandKit(ctx context.Context, verb string, where []predica
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeBrandKit(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeBrandKit(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -11420,7 +11429,8 @@ func (t *BroadcastScoped) Get(ctx context.Context, id int64) (*Broadcast, error)
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeBroadcast(ctx context.Context, verb string, where []predicate.Broadcast, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -11454,8 +11464,10 @@ func (s *Scoped) writeBroadcast(ctx context.Context, verb string, where []predic
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeBroadcast(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeBroadcast(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -18769,7 +18781,8 @@ func (t *ContactScoped) Get(ctx context.Context, id int64) (*Contact, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeContact(ctx context.Context, verb string, where []predicate.Contact, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -18803,8 +18816,10 @@ func (s *Scoped) writeContact(ctx context.Context, verb string, where []predicat
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeContact(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeContact(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -21808,7 +21823,8 @@ func (t *CustomFieldScoped) Get(ctx context.Context, id int64) (*CustomField, er
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeCustomField(ctx context.Context, verb string, where []predicate.CustomField, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -21842,8 +21858,10 @@ func (s *Scoped) writeCustomField(ctx context.Context, verb string, where []pred
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeCustomField(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeCustomField(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -22745,7 +22763,8 @@ func (t *EmailTemplateScoped) Get(ctx context.Context, id int64) (*EmailTemplate
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeEmailTemplate(ctx context.Context, verb string, where []predicate.EmailTemplate, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -22779,8 +22798,10 @@ func (s *Scoped) writeEmailTemplate(ctx context.Context, verb string, where []pr
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeEmailTemplate(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeEmailTemplate(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -27278,7 +27299,8 @@ func (t *HoldScoped) Get(ctx context.Context, id int64) (*Hold, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeHold(ctx context.Context, verb string, where []predicate.Hold, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -27312,8 +27334,10 @@ func (s *Scoped) writeHold(ctx context.Context, verb string, where []predicate.H
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeHold(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeHold(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -28333,7 +28357,8 @@ func (t *IntegrationScoped) Get(ctx context.Context, id int64) (*Integration, er
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeIntegration(ctx context.Context, verb string, where []predicate.Integration, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -28367,8 +28392,10 @@ func (s *Scoped) writeIntegration(ctx context.Context, verb string, where []pred
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeIntegration(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeIntegration(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -32561,7 +32588,8 @@ func (t *JoinDomainScoped) Get(ctx context.Context, id int64) (*JoinDomain, erro
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeJoinDomain(ctx context.Context, verb string, where []predicate.JoinDomain, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -32595,8 +32623,10 @@ func (s *Scoped) writeJoinDomain(ctx context.Context, verb string, where []predi
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeJoinDomain(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeJoinDomain(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -42133,7 +42163,8 @@ func (t *RuleScoped) Get(ctx context.Context, id int64) (*Rule, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeRule(ctx context.Context, verb string, where []predicate.Rule, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -42167,8 +42198,10 @@ func (s *Scoped) writeRule(ctx context.Context, verb string, where []predicate.R
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeRule(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeRule(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -47073,7 +47106,8 @@ func (t *SegmentScoped) Get(ctx context.Context, id int64) (*Segment, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeSegment(ctx context.Context, verb string, where []predicate.Segment, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -47107,8 +47141,10 @@ func (s *Scoped) writeSegment(ctx context.Context, verb string, where []predicat
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeSegment(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeSegment(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -48971,7 +49007,8 @@ func (t *SendingDomainScoped) Get(ctx context.Context, id int64) (*SendingDomain
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []predicate.SendingDomain, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -49005,8 +49042,10 @@ func (s *Scoped) writeSendingDomain(ctx context.Context, verb string, where []pr
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeSendingDomain(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeSendingDomain(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -52521,7 +52560,8 @@ func (t *TagScoped) Get(ctx context.Context, id int64) (*Tag, error) {
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeTag(ctx context.Context, verb string, where []predicate.Tag, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -52555,8 +52595,10 @@ func (s *Scoped) writeTag(ctx context.Context, verb string, where []predicate.Ta
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeTag(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeTag(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -53998,7 +54040,8 @@ func (t *TrackingDomainScoped) Get(ctx context.Context, id int64) (*TrackingDoma
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeTrackingDomain(ctx context.Context, verb string, where []predicate.TrackingDomain, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -54032,8 +54075,10 @@ func (s *Scoped) writeTrackingDomain(ctx context.Context, verb string, where []p
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeTrackingDomain(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeTrackingDomain(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
@@ -58376,7 +58421,8 @@ func (t *WebhookEndpointScoped) Get(ctx context.Context, id int64) (*WebhookEndp
 // given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
 // that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
 // joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them. Through any other scope run gets the scope itself.
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed. Through any other scope run gets the scope itself.
 func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []predicate.WebhookEndpoint, run func(s *Scoped) ([]int64, error)) error {
 	if s.auditing() {
 		return s.audited(ctx, func(ts *Scoped) error {
@@ -58410,8 +58456,10 @@ func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []
 				if was[id] == nil && now[id] == nil {
 					continue
 				}
-				if err := ts.record(ctx, auditChangeWebhookEndpoint(verb, was[id], now[id])); err != nil {
-					return err
+				if change, changed := auditChangeWebhookEndpoint(verb, was[id], now[id]); changed {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
 				}
 			}
 			return nil

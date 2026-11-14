@@ -68,6 +68,7 @@ func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 			after, err := e.IDs(ctx, c, acme)
 			require.NoError(t, err)
 			assert.Equal(t, ids, after, "a rolled-back create leaves no row")
+			assert.Equal(t, recorded, entries(), "a rolled-back create leaves no entry")
 
 			_, err = e.Replant(ctx, committing, foreign[0], remap)
 			require.NoError(t, err)
