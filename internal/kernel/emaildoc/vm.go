@@ -38,7 +38,7 @@ func startVM() (*vm, error) {
 }
 
 // vm is one goja runtime with the bundle loaded. goja runtimes are not safe for concurrent use: a
-// vm serves one call at a time (the Renderer's slots see to that).
+// vm serves one call at a time (the Renderer's pool sees to that).
 type vm struct {
 	rt        *goja.Runtime
 	check     func(goja.Value, ...goja.Value) (goja.Value, error)
