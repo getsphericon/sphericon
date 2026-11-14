@@ -42,9 +42,9 @@ func Named(t types.Type) (*types.Named, bool) {
 type Role int
 
 const (
-	// NoRole: the manifest names no role for the method (a method of ent's own types that starts
+	// Unlisted: the manifest names no role for the method (a method of ent's own types that starts
 	// neither a read nor a write).
-	NoRole Role = iota
+	Unlisted Role = iota
 	// Read starts a read of rows.
 	Read
 	// Start starts a write: it returns the builder of one, or writes at once.
