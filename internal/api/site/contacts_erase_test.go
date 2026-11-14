@@ -39,7 +39,7 @@ func TestSiteContactsDeleteByOwnerErases(t *testing.T) {
 	err := c.SiteContactsDelete(ctx, siteapi.SiteContactsDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.ContactLiamID)})
 	require.NoError(t, err)
 
-	msg, err := env.DB.OutboundMessage.Get(ctx, 100)
+	msg, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageWelcomeID)
 	require.NoError(t, err)
 	assert.Empty(t, msg.Destination, "the delivery record no longer carries the address")
 	assert.Nil(t, msg.ContactID)

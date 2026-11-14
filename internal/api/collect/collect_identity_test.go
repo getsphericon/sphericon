@@ -2,7 +2,6 @@ package collect_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -140,12 +139,10 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 // A storage outage is an error to the caller (so the tracker retries), never an
 // acknowledged ingest.
 func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
-	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
-	require.NoError(t, err)
-	require.NoError(t, sqlDB.Close())
+	sqlDB := testhelper.ClosedDB(t)
 	h := collect.NewHandlers(events.New(sqlDB, entclient.Core.NewTx, time.Now), nil, nil, time.Now)
 
-	err = h.CollectEventsCreate(
+	err := h.CollectEventsCreate(
 		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: entclient.Core.New(sqlDB).Scoped(fixtures.AcmeID)}),
 		&collectapi.CollectEventsInput{Events: []collectapi.CollectEventInput{{VisitorId: "dev", Action: "x"}}},
 	)

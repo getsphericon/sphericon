@@ -1,7 +1,6 @@
 package oauthclients_test
 
 import (
-	"database/sql"
 	"net/url"
 	"strings"
 	"testing"
@@ -14,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
@@ -47,14 +45,6 @@ func TestScopesThatStayTokenOnlyAreNotOAuthScopes(t *testing.T) {
 	}
 }
 
-func closedClient(t *testing.T) *ent.Client {
-	t.Helper()
-	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
-	require.NoError(t, err)
-	require.NoError(t, sqlDB.Close())
-	return entclient.Core.New(sqlDB)
-}
-
 func TestDescribeValidatesClientRedirectAndScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := newModule(env, env.DB)
@@ -70,7 +60,7 @@ func TestDescribeValidatesClientRedirectAndScope(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, req.Scopes, "no scope asked means the default grant")
 
-	_, err = newModule(env, closedClient(t)).Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
+	_, err = newModule(env, testhelper.ClosedClient(t)).Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
 	require.Error(t, err)
 	assert.NotErrorIs(t, err, oauthclients.ErrUnknownClient, "an outage is not an unknown client")
 }
@@ -134,7 +124,7 @@ func TestDecideRecordsOnlyWellFormedApprovals(t *testing.T) {
 	assert.WithinDuration(t, time.Now().Add(5*time.Minute), stored.ExpiresAt, 10*time.Second)
 	assert.NotContains(t, target, stored.CodeHash, "only the hash is stored")
 
-	_, err = newModule(env, closedClient(t)).Decide(t.Context(), good)
+	_, err = newModule(env, testhelper.ClosedClient(t)).Decide(t.Context(), good)
 	require.Error(t, err)
 	assert.NotErrorIs(t, err, oauthclients.ErrUnknownClient)
 }

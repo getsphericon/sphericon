@@ -181,7 +181,7 @@ func TestExportEventsReadsTheWholeHistoryFromAnEmptyCursor(t *testing.T) {
 	custom := page.row(fixtures.EventErasableCustomID)
 	require.NotNil(t, custom)
 	assert.Equal(t, fixtures.EventErasableCustomAction, custom["action"])
-	assert.Equal(t, "erin@initech.test", custom["email"])
+	assert.Equal(t, fixtures.ContactErasableEmail, custom["email"])
 	anonymous := page.row(fixtures.EventErasableAnonymousID)
 	require.NotNil(t, anonymous)
 	assert.Nil(t, anonymous["contact_id"])

@@ -11,9 +11,7 @@ import (
 
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -46,7 +44,7 @@ func TestLiftingAHoldLeavesTheSuspensionInForce(t *testing.T) {
 	assert.True(t, h.clearHold(t, fixtures.HoldAcmeLapsedKey))
 
 	held := h.refusedSendOnAPI(t, "still-held@example.com", "the suspension still refuses sends")
-	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: sending is suspended for this workspace", held.Detail.Value)
 	assert.NotNil(t, h.env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).SuspendedAt)
 }
 

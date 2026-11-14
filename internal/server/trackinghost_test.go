@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"strings"
 	"testing"
-	"time"
 
 	"entgo.io/ent"
 	"github.com/stretchr/testify/assert"
@@ -62,9 +61,7 @@ func hostReq(env *testhelper.TestEnv, method, host, path string) *httptest.Respo
 func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 	host := fixtures.TrackingDomainServingHost
 
 	unsubFor := func(ws int64) string {
@@ -81,7 +78,7 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	// The page link redirects to the Instance's own host with the same token.
 	resp := hostReq(env, http.MethodGet, host, own)
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
-	assert.Equal(t, cfg.AppURL+"/unsubscribe?token="+strings.TrimPrefix(own, "/e/u/"), strings.SplitN(resp.Header().Get("Location"), "&", 2)[0])
+	assert.Equal(t, env.AppURL+"/unsubscribe?token="+strings.TrimPrefix(own, "/e/u/"), strings.SplitN(resp.Header().Get("Location"), "&", 2)[0])
 
 	// The one-click POST opts the destination out in the host's Workspace.
 	resp = hostReq(env, http.MethodPost, host, own)
@@ -104,7 +101,7 @@ func TestTrackingHostScopesLinkPathsToItsWorkspace(t *testing.T) {
 	_, ctoken, _ := strings.Cut(confirmURL, "/e/confirm/")
 	resp = hostReq(env, http.MethodGet, host, "/e/confirm/"+ctoken)
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
-	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/confirm?token="))
+	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), env.AppURL+"/confirm?token="))
 
 	// Open and click of a recipient of another Workspace are a 404.
 	rtoken, err := tr.Token(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID))
@@ -262,9 +259,7 @@ func TestAShortLinkIsServedOnlyToItsOwnWorkspacesHosts(t *testing.T) {
 // nothing.
 func TestAnEmailLinkOfADeletedMessageStillRedirects(t *testing.T) {
 	env := testhelper.Setup(t)
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 	link, err := tr.ClickURL(messagetoken.Message{WorkspaceID: fixtures.UmbrellaID, ID: 999999}, "https://example.com/old")
 	require.NoError(t, err)
 	_, token, _ := strings.Cut(link, "/e/c/")

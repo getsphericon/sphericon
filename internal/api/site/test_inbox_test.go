@@ -19,7 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -263,7 +262,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 
 	assert.Equal(t, externalapi.TransactionalSendStatusSuppressed, suppressedResult.Status)
 	heldResult := testhelper.ExternalRefusal(t, frozen, http.StatusUnprocessableEntity)
-	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), heldResult.Detail.Value)
+	assert.Equal(t, "the message was not sent: sending is suspended for this workspace", heldResult.Detail.Value)
 	after := env.DB.CapturedMessage.Query().Where(capturedmessage.WorkspaceID(fixtures.GlobexID)).CountX(ctx)
 	assert.Equal(t, before, after, "neither message reached the inbox")
 }

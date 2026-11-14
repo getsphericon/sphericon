@@ -38,7 +38,7 @@ func TestSiteContactsUpdateNullClearsAbsentKeeps(t *testing.T) {
 	got := res
 	assert.Empty(t, got.FirstName.Or(""), "first name cleared by explicit null")
 	assert.Equal(t, "Smith", got.LastName.Or(""), "absent last name kept")
-	assert.Equal(t, "alice@example.com", string(got.Email.Or("")), "absent email kept")
+	assert.Equal(t, fixtures.ContactAliceEmail, string(got.Email.Or("")), "absent email kept")
 
 	// The clear is persisted, not just echoed.
 	fetched, err := c.SiteContactsGet(ctx, siteapi.SiteContactsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: 1})
@@ -94,10 +94,10 @@ func TestSiteContactsListFiltersByEmail(t *testing.T) {
 		return out
 	}
 
-	assert.Equal(t, []string{"alice@example.com"}, emails("ALICE@Example"), "a hit, whatever the case")
-	assert.Equal(t, []string{"bob@example.com"}, emails("bob@"), "a part of the address")
+	assert.Equal(t, []string{fixtures.ContactAliceEmail}, emails("ALICE@Example"), "a hit, whatever the case")
+	assert.Equal(t, []string{fixtures.ContactBobEmail}, emails("bob@"), "a part of the address")
 	assert.Empty(t, emails("nobody"), "a miss")
-	assert.Empty(t, emails("pat@globex.test"), "another Workspace's contact is never returned")
+	assert.Empty(t, emails(fixtures.ContactGlobexEmail), "another Workspace's contact is never returned")
 }
 
 // Duff's three Contacts at @filter.test: two VIPs (one also in beta), in GB and DE, and a plain one

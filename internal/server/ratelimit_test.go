@@ -32,6 +32,7 @@ var humanEndpoints = map[string]string{
 	"consent confirm": "/site/confirmations/some-token",
 }
 
+// postJSON sends one JSON POST through the composed server.
 func postJSON(t *testing.T, env *testhelper.TestEnv, path, body string, headers map[string]string) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path, strings.NewReader(body))

@@ -69,7 +69,7 @@ func deleteContact(t *testing.T, env *testhelper.TestEnv, id int64) {
 
 func refreshAt(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, licenseFor(t, licensekey.FeatureStaff), now))
+	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), now))
 }
 
 func TestContactsIsThePeakReachedAndSurvivesLaterDeletions(t *testing.T) {

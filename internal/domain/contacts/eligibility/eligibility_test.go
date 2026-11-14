@@ -59,7 +59,7 @@ func TestCheckSuppressed(t *testing.T) {
 func TestLiftedSuppressionDoesNotBlock(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	d := decide(t, env, fixtures.AcmeID, "lifted@codebasics.dev", eligibility.SourceBroadcasts)
+	d := decide(t, env, fixtures.AcmeID, fixtures.ContactLiftedEmail, eligibility.SourceBroadcasts)
 	assert.True(t, d.Eligible, "the fixture's lifted destination is mailable")
 	assert.True(t, inAudience(t, env, fixtures.AcmeID, fixtures.ContactLiftedID, eligibility.SourceBroadcasts),
 		"an audience keeps the contact of a lifted destination")

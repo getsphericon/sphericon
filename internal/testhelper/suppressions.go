@@ -38,13 +38,3 @@ func (env *TestEnv) UnsubscribeFromBroadcasts(ctx context.Context, destination s
 		panic(err)
 	}
 }
-
-// UnsubscribeTelegramFromBroadcasts is UnsubscribeFromBroadcasts for a Telegram user id: the
-// person's stop, which silences every bot of the Workspace for them.
-func (env *TestEnv) UnsubscribeTelegramFromBroadcasts(ctx context.Context, userID string) {
-	err := env.DB.Scoped(fixtures.AcmeID).Unsubscribe().UpdateOneID(fixtures.UnsubscribeAutomationLeoID).
-		SetChannel(channels.Telegram).SetDestination(userID).SetSendingSource(eligibility.SourceBroadcasts).Exec(ctx)
-	if err != nil {
-		panic(err)
-	}
-}

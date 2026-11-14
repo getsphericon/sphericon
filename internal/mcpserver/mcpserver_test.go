@@ -272,7 +272,7 @@ func TestMCPToolCallReturnsTheAPIResult(t *testing.T) {
 	require.False(t, res.IsError, text(t, res))
 	var contact map[string]any
 	require.NoError(t, json.Unmarshal([]byte(text(t, res)), &contact))
-	assert.Equal(t, "alice@example.com", contact["email"], "fixture contact 1")
+	assert.Equal(t, fixtures.ContactAliceEmail, contact["email"], "fixture contact 1")
 
 	// Query parameters.
 	res = call(t, s, "contacts_list", map[string]any{"pageSize": 2})
@@ -424,7 +424,7 @@ func TestMCPCallsAreIsolatedToTheTokensWorkspace(t *testing.T) {
 
 	res = call(t, s, "contacts_list", nil)
 	require.False(t, res.IsError, text(t, res))
-	assert.NotContains(t, text(t, res), "alice@example.com")
+	assert.NotContains(t, text(t, res), fixtures.ContactAliceEmail)
 }
 
 // Consent only narrows through the agent (ADR 0016): MCP can add a Suppression or
@@ -449,11 +449,11 @@ func TestMCPConsentOnlyNarrows(t *testing.T) {
 		assert.False(t, *tool.Annotations.DestructiveHint)
 	}
 
-	res := call(t, s, "unsubscribes_create", map[string]any{"destination": "alice@example.com"})
+	res := call(t, s, "unsubscribes_create", map[string]any{"destination": fixtures.ContactAliceEmail})
 	require.False(t, res.IsError, text(t, res))
 	assert.Contains(t, text(t, res), `"sendingSource":"broadcasts"`)
 
-	res = call(t, s, "suppressions_create", map[string]any{"destination": "alice@example.com"})
+	res = call(t, s, "suppressions_create", map[string]any{"destination": fixtures.ContactAliceEmail})
 	require.False(t, res.IsError, text(t, res))
 	assert.Contains(t, text(t, res), `"reason":"manual"`)
 }

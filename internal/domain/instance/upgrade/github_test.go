@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/instance/upgrade"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 const repo = "getsphericon/sphericon"
@@ -187,5 +188,5 @@ func TestGitHubHonoursTheProxyVariables(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, "9.9.9", v)
-	assert.Equal(t, "/repos/"+repo+"/releases/latest", <-hit)
+	assert.Equal(t, "/repos/"+repo+"/releases/latest", testhelper.Receive(t, hit, "the release source is called"))
 }

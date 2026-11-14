@@ -35,7 +35,7 @@ func TestExportContactsRowCarriesColumnsCustomFieldsAndTags(t *testing.T) {
 
 	alice := page.row(fixtures.ContactAliceID)
 	require.NotNil(t, alice)
-	assert.Equal(t, "alice@example.com", alice["email"])
+	assert.Equal(t, fixtures.ContactAliceEmail, alice["email"])
 	assert.Equal(t, "Alice", alice["first_name"])
 	assert.Nil(t, alice["phone"])
 	assert.Equal(t, []any{"newsletter", "vip"}, alice["tags"])

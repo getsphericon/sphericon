@@ -15,7 +15,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -195,7 +194,7 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 	s := env.DB.Scoped(fixtures.AcmeID)
 	m := outboundmessages.New(
 		env.Bus,
-		holds.New(func() bool { return false }, time.Now),
+		env.CoreHolds(),
 		senders{sender: env.CustomerMail},
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,
@@ -732,7 +731,7 @@ func TestSendBroadcastTestRefusesEveryOutcomeButSent(t *testing.T) {
 		env.SuspendWorkspace(ctx, fixtures.AcmeID, time.Now())
 		_, err := newModule(env, time.Now).SendBroadcastTest(ctx, env.DB.Scoped(fixtures.AcmeID), broadcast("s", htmlBody), outboundmessages.TestAddress{Email: "me@example.com"})
 		require.ErrorIs(t, err, outboundmessages.ErrHeld)
-		assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), validation.Message(err))
+		assert.Equal(t, "the message was not sent: sending is suspended for this workspace", validation.Message(err))
 	})
 
 	t.Run("send error", func(t *testing.T) {

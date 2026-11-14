@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Fixture automation 104 applies "engaged" then removes "vip"; run 1100 enrolls
@@ -32,5 +33,5 @@ func TestAutomationTagSteps(t *testing.T) {
 		Strings(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"engaged", "newsletter"}, names)
-	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, 1100).Status)
+	assert.Equal(t, automationrun.StatusCompleted, env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunTagOnEngagementAliceID).Status)
 }

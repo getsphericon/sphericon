@@ -52,7 +52,7 @@ func TestSESDeliveryNoticeLinksAndStampsTheMessage(t *testing.T) {
 
 	postNotice(t, env, "delivery")
 
-	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
 	assert.Equal(t, systemevent.EmailDelivered, got[0].Action)
 	assert.EqualValues(t, fixtures.OutboundMessageSesAliceID, got[0].OutboundMessageID)
@@ -96,7 +96,7 @@ func TestSESDelayAndDropAreEventsWithAReasonAndStampNothing(t *testing.T) {
 	postNotice(t, env, "drop")
 
 	byAction := map[string]events.EmailDelivery{}
-	for _, ev := range queuedNotices(t, env, fixtures.ContactAliceEmail) {
+	for _, ev := range failuresFor(t, env, fixtures.ContactAliceEmail) {
 		byAction[ev.Action] = ev
 	}
 	require.Len(t, byAction, 2)
@@ -120,7 +120,7 @@ func TestSESNoticeWithoutAMatchingMessageStaysAtTheAddress(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 2)
 	for _, ev := range got {
 		assert.Zero(t, ev.OutboundMessageID)
@@ -142,7 +142,7 @@ func TestSESBounceAndComplaintStampTheirKindAndSuppress(t *testing.T) {
 	require.NotNil(t, m.BouncedAt)
 	assert.Nil(t, m.ComplainedAt)
 	assert.Nil(t, m.DeliveredAt)
-	bounces := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	bounces := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, bounces, 1)
 	assert.Equal(t, "smtp; 550 5.1.1 user unknown", bounces[0].Reason)
 	assert.Equal(t, systemevent.BounceKindHard, bounces[0].BounceKind)

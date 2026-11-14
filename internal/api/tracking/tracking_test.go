@@ -9,13 +9,11 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
@@ -59,9 +57,7 @@ func confirmPath(t *testing.T, tr *messagetoken.Tracker, target linktarget.Confi
 func TestConfirmEndpoint(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)
@@ -93,7 +89,7 @@ func TestConfirmEndpoint(t *testing.T) {
 	// GET is safe: 303 to the SPA confirm page, records nothing.
 	resp := get(cPath)
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
-	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/confirm?token="))
+	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), env.AppURL+"/confirm?token="))
 	assert.False(t, confirmed(), "GET records nothing")
 
 	// The state change is not reachable through /e/confirm any more: POST there is
@@ -129,9 +125,7 @@ func TestConfirmEndpoint(t *testing.T) {
 func TestUnsubscribeEverythingInvalidatesConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 
 	post := func(path string) {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -170,9 +164,7 @@ func TestTrackingEndpoints(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 
 	// A recipient in fixture workspace Acme. Alice is not already
 	// unsubscribed from broadcasts (bob is, in the fixtures).
@@ -238,7 +230,7 @@ func TestTrackingEndpoints(t *testing.T) {
 
 	resp = get(uPath)
 	assert.Equal(t, http.StatusSeeOther, resp.Code)
-	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), cfg.AppURL+"/unsubscribe?"))
+	assert.True(t, strings.HasPrefix(resp.Header().Get("Location"), env.AppURL+"/unsubscribe?"))
 	assert.False(t, optedOut(), "GET records nothing")
 	assert.Equal(t, 0, figures(t, env, b.ID).Unsubscribed)
 
@@ -271,9 +263,7 @@ func TestTrackingEndpoints(t *testing.T) {
 func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 	c := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 	target := linktarget.Unsubscribe{
 		Channel: channels.Email, Source: eligibility.SourceBroadcasts, Destination: *c.Email,
@@ -299,9 +289,7 @@ func TestUnsubscribeEventNamesTheEmailTheLinkWasIn(t *testing.T) {
 func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 
 	post := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodPost, path, nil)
@@ -341,9 +329,7 @@ func TestUnsubscribeAutomationExitsEnrollment(t *testing.T) {
 func TestUnsubscribeEverythingEscalation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, time.Now)
+	tr := env.Tracker
 
 	get := func(path string) *httptest.ResponseRecorder {
 		req := httptest.NewRequestWithContext(ctx, http.MethodGet, path, nil)

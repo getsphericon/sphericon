@@ -13,10 +13,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -146,5 +144,5 @@ func TestAWorkspaceFrozenByTheDetectorRefusesSendsOnTheAPI(t *testing.T) {
 	}, externalapi.EmailsSendParams{})
 
 	held := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "a send is refused with a 4xx")
-	assert.Equal(t, "the message was not sent: "+outboundmessages.HoldDetail(holdreason.WorkspaceSuspended), held.Detail.Value)
+	assert.Equal(t, "the message was not sent: sending is suspended for this workspace", held.Detail.Value)
 }

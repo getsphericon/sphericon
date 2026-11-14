@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -30,6 +31,6 @@ func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
 	_, err = client.Workspace.Create().SetName("Plain").SetPublicID(workspaceid.New()).Save(t.Context())
 	require.ErrorIs(t, err, workspacefeed.ErrNeedsTransaction)
 
-	err = client.User.UpdateOneID(1).SetEmail("moved@plain.test").Exec(t.Context())
+	err = client.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("moved@plain.test").Exec(t.Context())
 	require.ErrorIs(t, err, workspacefeed.ErrNeedsTransaction)
 }

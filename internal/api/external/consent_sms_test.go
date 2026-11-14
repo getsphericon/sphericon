@@ -94,7 +94,7 @@ func TestAnImportedSMSConfirmationReplacesAGrandfatheredOne(t *testing.T) {
 func TestAnSMSConfirmationIsRefusedOffSMSWithoutACountryCodeOrWithoutEvidence(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
-	onEmail := smsConsent("texter@example.com")
+	onEmail := smsConsent(fixtures.ContactTexterEmail)
 	onEmail.Channel = externalapi.ConsentChannelEmail
 	blankBrand := smsConsent(fixtures.ContactTexterPhone)
 	blankBrand.Brand = "  "

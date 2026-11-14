@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -19,9 +17,7 @@ import (
 func TestTrackingRecordsItsFactBeforeTheReportProjection(t *testing.T) {
 	at := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	tr := messagetoken.New(cfg.JWTSecret, cfg.AppURL, func() time.Time { return at })
+	tr := env.Tracker
 	token, err := tr.Token(env.Tracked(t, fixtures.OutboundMessageTrackingSampleID))
 	require.NoError(t, err)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/e/o/"+token, nil)

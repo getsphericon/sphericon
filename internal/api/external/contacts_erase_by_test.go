@@ -34,7 +34,7 @@ func TestExternalContactsEraseByEmailAppliesTheRulesOfById(t *testing.T) {
 	sent := eventByID(t, env, fixtures.EventErasableSentID)
 	assert.Nil(t, sent.ContactID)
 	assert.Nil(t, sent.Email)
-	unsub, err := env.DB.Unsubscribe.Get(ctx, 300)
+	unsub, err := env.DB.Unsubscribe.Get(ctx, fixtures.UnsubscribeErasableID)
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactErasableEmail, unsub.Destination)
 	assert.Nil(t, unsub.ContactID)
@@ -43,7 +43,7 @@ func TestExternalContactsEraseByEmailAppliesTheRulesOfById(t *testing.T) {
 	assert.Empty(t, m.Destination)
 	b, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageBystanderID)
 	require.NoError(t, err)
-	assert.Equal(t, "ben@initech.test", b.Destination)
+	assert.Equal(t, fixtures.ContactBystanderEmail, b.Destination)
 }
 
 func TestExternalContactsEraseByEmailAnonymizesContactlessTransactionalSends(t *testing.T) {
@@ -61,7 +61,7 @@ func TestExternalContactsEraseByEmailAnonymizesContactlessTransactionalSends(t *
 	assert.Equal(t, outboundmessage.StatusSent, m.Status, "the row stays for the totals")
 	other, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageBystanderID)
 	require.NoError(t, err)
-	assert.Equal(t, "ben@initech.test", other.Destination)
+	assert.Equal(t, fixtures.ContactBystanderEmail, other.Destination)
 }
 
 func TestExternalContactsEraseByVisitorWithoutContact(t *testing.T) {

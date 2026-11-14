@@ -16,7 +16,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -136,7 +135,7 @@ func TestBroadcastTestSendOfAnIntegrationThatCannotSendIsHeldNotSentThroughTheDe
 			_, err := broadcastTestVia(env, via, id)
 
 			require.ErrorIs(t, err, outboundmessages.ErrHeld)
-			require.ErrorContains(t, err, outboundmessages.HoldDetail(holdreason.NoIntegration))
+			require.ErrorContains(t, err, "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default")
 			assert.Empty(t, env.CustomerMail.Messages())
 			assert.Empty(t, env.SystemMail.Messages())
 		})
@@ -178,6 +177,6 @@ func TestBroadcastTestSendWithoutAVerifiedDomainDoesNotFallBackToTheSystemSender
 	_, err := globexBroadcastTestVia(env, fixtures.OwnerJaneEmail, perIntegration{}, idOf(missingIntegrationID))
 
 	require.ErrorIs(t, err, outboundmessages.ErrHeld)
-	require.ErrorContains(t, err, outboundmessages.HoldDetail(holdreason.NoIntegration))
+	require.ErrorContains(t, err, "no integration of the channel can send: the one named is disabled, archived or of another channel, or the channel has no default")
 	assert.Empty(t, env.SystemMail.Messages())
 }

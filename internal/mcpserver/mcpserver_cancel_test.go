@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/mcpserver"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // blockingAPI holds every call until the call's context ends, and reports whether it ended or
@@ -55,5 +56,5 @@ func TestAToolCallEndsWithItsRequest(t *testing.T) {
 
 	h.ServeHTTP(httptest.NewRecorder(), req)
 
-	assert.True(t, <-api.ended, "the /api call is cancelled with the request")
+	assert.True(t, testhelper.Receive(t, api.ended, "the /api call ends"), "the /api call is cancelled with the request")
 }

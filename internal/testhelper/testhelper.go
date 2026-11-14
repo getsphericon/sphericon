@@ -393,20 +393,6 @@ func WithRateLimits(limits config.RateLimits) Option {
 // and its own, never the site's.
 func newStaffSecret() string { return rand.Text() + rand.Text() }
 
-// testLicense mints, once per process, an EE license key signed by a throwaway key
-// pair and verified through the same Parse the production composition root uses.
-var testLicense = sync.OnceValues(func() (*licensekey.License, error) {
-	pub, priv, err := ed25519.GenerateKey(nil)
-	if err != nil {
-		return nil, err
-	}
-	key, err := licensekey.Issue(priv, nil, licensekey.FeatureAudit, licensekey.FeatureRetention, licensekey.FeatureStaff, licensekey.FeatureExport)
-	if err != nil {
-		return nil, err
-	}
-	return licensekey.Parse(key, pub, time.Now())
-})
-
 // WithLicenseKey builds the instance as the composition root does for SPHERICON_LICENSE_KEY: the
 // key is loaded through licensekey.Load against pub, so a lapsed key boots as the core and a
 // forged one fails the test's setup (ADR 0035).

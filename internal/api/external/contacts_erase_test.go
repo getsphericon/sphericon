@@ -133,11 +133,11 @@ func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
 	assert.Empty(t, eventByID(t, env, fixtures.EventErasableCreatedID).Properties)
 
 	// The refusal survives by Destination, detached from the Contact.
-	unsub, err := env.DB.Unsubscribe.Get(ctx, 300)
+	unsub, err := env.DB.Unsubscribe.Get(ctx, fixtures.UnsubscribeErasableID)
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactErasableEmail, unsub.Destination)
 	assert.Nil(t, unsub.ContactID)
-	supp, err := env.DB.Suppression.Get(ctx, 300)
+	supp, err := env.DB.Suppression.Get(ctx, fixtures.SuppressionErasableID)
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.ContactErasableEmail, supp.Destination)
 	assert.Nil(t, supp.ContactID)
@@ -174,15 +174,15 @@ func TestExternalContactsEraseLeavesOtherContactsAlone(t *testing.T) {
 
 	b, err := env.DB.Contact.Get(ctx, fixtures.ContactBystanderID)
 	require.NoError(t, err)
-	assert.Equal(t, "ben@initech.test", *b.Email)
+	assert.Equal(t, fixtures.ContactBystanderEmail, *b.Email)
 	for _, id := range []int64{fixtures.EventBystanderCustomID, fixtures.EventBystanderSentID} {
 		e := eventByID(t, env, id)
 		assert.EqualValues(t, fixtures.ContactBystanderID, *e.ContactID)
-		assert.Equal(t, "ben@initech.test", *e.Email)
+		assert.Equal(t, fixtures.ContactBystanderEmail, *e.Email)
 	}
 	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageBystanderID)
 	require.NoError(t, err)
-	assert.Equal(t, "ben@initech.test", m.Destination)
+	assert.Equal(t, fixtures.ContactBystanderEmail, m.Destination)
 	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientBystanderID)
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.ContactBystanderID, r.ContactID)
@@ -253,13 +253,13 @@ func TestExternalContactsEraseIsAtomic(t *testing.T) {
 
 	sent := eventByID(t, env, fixtures.EventErasableSentID)
 	require.NotNil(t, sent.ContactID)
-	assert.Equal(t, "erin@initech.test", *sent.Email)
+	assert.Equal(t, fixtures.ContactErasableEmail, *sent.Email)
 	assert.True(t, eventExists(t, env, fixtures.EventErasableCustomID))
 	assert.True(t, eventExists(t, env, fixtures.EventErasableConfirmedID))
 	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageErasableBroadcastID)
 	require.NoError(t, err)
-	assert.Equal(t, "erin@initech.test", m.Destination)
-	unsub, err := env.DB.Unsubscribe.Get(ctx, 300)
+	assert.Equal(t, fixtures.ContactErasableEmail, m.Destination)
+	unsub, err := env.DB.Unsubscribe.Get(ctx, fixtures.UnsubscribeErasableID)
 	require.NoError(t, err)
 	assert.NotNil(t, unsub.ContactID)
 	n, err := env.DB.Visitor.Query().Where(visitor.ID(300)).Count(ctx)
@@ -288,7 +288,7 @@ func TestExternalContactsEraseIsWorkspaceScoped(t *testing.T) {
 	still, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.True(t, still)
-	assert.Equal(t, "erin@initech.test", *eventByID(t, env, fixtures.EventErasableSentID).Email)
+	assert.Equal(t, fixtures.ContactErasableEmail, *eventByID(t, env, fixtures.EventErasableSentID).Email)
 }
 
 // An erased person who reappears is a new Contact, and the surviving opt-out still binds

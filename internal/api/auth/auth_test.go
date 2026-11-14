@@ -2,7 +2,6 @@ package auth_test
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -18,21 +17,11 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-// closedClient is an ent client whose database is gone: every query fails.
-func closedClient(t *testing.T) *ent.Client {
-	t.Helper()
-	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
-	require.NoError(t, err)
-	require.NoError(t, sqlDB.Close())
-	return entclient.Core.New(sqlDB)
-}
 
 func TestHasScopeAndWorkspaceIDOfTheTokenContext(t *testing.T) {
 	a := &auth.TokenAuth{TokenID: 7, WorkspaceID: 3, Scopes: []string{"contacts:read", "events:write"}}
@@ -153,7 +142,7 @@ func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 }
 
 func TestBearerAuthStorageFailureIsNotAnUnauthorizedAnswer(t *testing.T) {
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: closedClient(t)})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: testhelper.ClosedClient(t)})
 	_, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
 	})
@@ -177,7 +166,7 @@ func TestCollectKeyResolvesTheOwningWorkspace(t *testing.T) {
 		assert.Zero(t, collectWorkspaceID(ctx), name)
 	}
 
-	_, err := auth.NewCollectSecurityHandler(closedClient(t)).HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: fixtures.AcmeCollectKey})
+	_, err := auth.NewCollectSecurityHandler(testhelper.ClosedClient(t)).HandleApiKeyAuth(context.Background(), "", collectapi.ApiKeyAuth{APIKey: fixtures.AcmeCollectKey})
 	require.Error(t, err)
 	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }
@@ -235,7 +224,7 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 		assert.Nil(t, auth.GetSiteAuth(ctx), name)
 	}
 
-	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, closedClient(t), time.Now).HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: good})
+	_, err = auth.NewSiteSecurityHandler(cfg.JWTSecret, testhelper.ClosedClient(t), time.Now).HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: good})
 	require.Error(t, err)
 	require.NotErrorIs(t, err, auth.ErrUnauthorized)
 }

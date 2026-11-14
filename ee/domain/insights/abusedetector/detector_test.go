@@ -2,7 +2,6 @@ package abusedetector_test
 
 import (
 	"context"
-	"crypto/ed25519"
 	"slices"
 	"testing"
 	"time"
@@ -22,17 +21,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func licenseFor(t *testing.T, features ...licensekey.Feature) *licensekey.License {
-	t.Helper()
-	pub, priv, err := ed25519.GenerateKey(nil)
-	require.NoError(t, err)
-	key, err := licensekey.Issue(priv, nil, features...)
-	require.NoError(t, err)
-	lic, err := licensekey.Parse(key, pub, time.Now())
-	require.NoError(t, err)
-	return lic
-}
-
 // support is the Instance's support contact the notices give an owner to appeal to.
 const support = "support@sphericon.test"
 
@@ -41,7 +29,7 @@ var withSupport = testhelper.WithConfig(func(c *config.Config) { c.SupportEmail 
 
 func detector(t *testing.T, env *testhelper.TestEnv) *pass {
 	t.Helper()
-	return newDetector(env, licenseFor(t, licensekey.FeatureStaff), limits)
+	return newDetector(env, testhelper.License(t, licensekey.FeatureStaff), limits)
 }
 
 // pass runs the detector at a moment a test picks: the detector reads the clock it was built
@@ -118,7 +106,7 @@ func recipients(env *testhelper.TestEnv) []string {
 func TestNothingRunsWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	for _, lic := range []*licensekey.License{nil, licenseFor(t), licenseFor(t, licensekey.FeatureRetention)} {
+	for _, lic := range []*licensekey.License{nil, testhelper.License(t), testhelper.License(t, licensekey.FeatureRetention)} {
 		d := newDetector(env, lic, limits)
 		summary, err := d.Run(t.Context(), at(overDay))
 		require.NoError(t, err)
@@ -179,7 +167,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 	d := detector(t, env)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := abusedetector.NewWatch(licenseFor(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
+	breach, err := abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
 	require.NoError(t, err)
 	summary, err := d.Run(t.Context(), at(noDeliveryDay))
 
@@ -361,7 +349,7 @@ func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := abusedetector.NewWatch(licenseFor(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
+	breach, err := abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
 
 	require.NoError(t, err)
 	assert.Equal(t, abusedetector.TierWarn, breach.Tier)

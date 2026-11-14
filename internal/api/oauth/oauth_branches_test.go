@@ -1,7 +1,6 @@
 package oauth_test
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -13,25 +12,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	"github.com/getsphericon/sphericon/internal/api/oauth"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-func closedClient(t *testing.T) *ent.Client {
-	t.Helper()
-	sqlDB, err := sql.Open("pgx", "postgres://closed.invalid/none")
-	require.NoError(t, err)
-	require.NoError(t, sqlDB.Close())
-	return entclient.Core.New(sqlDB)
-}
 
 func errorOf(t *testing.T, rec *httptest.ResponseRecorder) string {
 	t.Helper()
@@ -133,7 +122,7 @@ func TestRegistrationNamesAndBoundsClients(t *testing.T) {
 // A storage outage is a server_error, never a client error or a silent success.
 func TestStorageFailureIsAServerError(t *testing.T) {
 	mux := http.NewServeMux()
-	closed := closedClient(t)
+	closed := testhelper.ClosedClient(t)
 	clients := oauthclients.New(closed, oauthclients.NewFetcher(webhook.Allowlist{}), nil, time.Now)
 	oauth.New(apitokens.New(closed, nil, "", time.Now), clients, "https://app.test", "https://app.test").Mount(mux)
 	do := func(req *http.Request) *httptest.ResponseRecorder {

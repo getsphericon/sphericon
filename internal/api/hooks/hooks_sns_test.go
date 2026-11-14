@@ -17,7 +17,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/testhelper/metricstest"
@@ -46,20 +45,6 @@ func postSNS(t *testing.T, env *testhelper.TestEnv, key, body string) *httptest.
 	return rec
 }
 
-// queuedNotices returns the published delivery-failure events for an address.
-func queuedNotices(t *testing.T, env *testhelper.TestEnv, email string) []events.EmailDelivery {
-	t.Helper()
-	var out []events.EmailDelivery
-	for _, ev := range env.QueuedEvents(t, deliveryNames...) {
-		f, ok := ev.(*events.EmailDelivery)
-		require.Truef(t, ok, "got %T", ev)
-		if f.Email == email {
-			out = append(out, *f)
-		}
-	}
-	return out
-}
-
 // A hard bounce for a known Contact publishes one failure linked to it, keyed by the
 // SNS message id plus the recipient, with the From domain echoed, and suppresses it.
 func TestSESHookSuppressesAHardBounce(t *testing.T) {
@@ -68,7 +53,7 @@ func TestSESHookSuppressesAHardBounce(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
 	assert.Equal(t, systemevent.EmailBounced, got[0].Action)
 	assert.Equal(t, systemevent.BounceKindHard, got[0].BounceKind)
@@ -87,7 +72,7 @@ func TestSESHookRecordsASoftBounceWithoutSuppressing(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "soft-bounce")).Code)
 
-	got := queuedNotices(t, env, "soft@example.com")
+	got := failuresFor(t, env, "soft@example.com")
 	require.Len(t, got, 1)
 	assert.Equal(t, systemevent.BounceKindSoft, got[0].BounceKind)
 	applySuppression(t, env)
@@ -101,7 +86,7 @@ func TestSESHookSuppressesAComplaintForAnUnknownAddress(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "complaint")).Code)
 
-	got := queuedNotices(t, env, "stranger@example.com")
+	got := failuresFor(t, env, "stranger@example.com")
 	require.Len(t, got, 1)
 	assert.Equal(t, systemevent.EmailComplained, got[0].Action)
 	assert.Zero(t, got[0].ContactID)
@@ -117,7 +102,7 @@ func TestSESHookRefusesANotificationFromAnotherTopic(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "other-topic"))
 
 	assert.Equal(t, http.StatusForbidden, rec.Code)
-	assert.Empty(t, queuedNotices(t, env, "victim@example.com"))
+	assert.Empty(t, failuresFor(t, env, "victim@example.com"))
 	applySuppression(t, env)
 	assert.False(t, suppressed(t, env, "victim@example.com"))
 }
@@ -130,7 +115,7 @@ func TestSESHookFailsClosedWithoutATopic(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationGlobexSesNoTopicIngestKey, snsNotification(t, "hard-bounce"))
 
 	assert.Equal(t, http.StatusForbidden, rec.Code)
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 }
 
 // A notification that is not signed by AWS, or is not SNS at all, changes nothing.
@@ -146,7 +131,7 @@ func TestSESHookRefusesAnUnsignedOrUnreadableRequest(t *testing.T) {
 	assert.Equal(t, http.StatusForbidden, postSNS(t, env, key, string(forged)).Code)
 	assert.Equal(t, http.StatusBadRequest, postSNS(t, env, key, "not json").Code)
 
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 }
 
 // A subscription confirmation is performed; one that fails is a 5xx so SNS resends it.
@@ -190,7 +175,7 @@ func TestSESHookIsImpliedForAnSESIntegrationWithNoPreset(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesImpliedIngestKey, snsNotification(t, "hard-bounce"))
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	got := queuedNotices(t, env, fixtures.ContactAliceEmail)
+	got := failuresFor(t, env, fixtures.ContactAliceEmail)
 	require.Len(t, got, 1)
 	assert.Equal(t, "ses", got[0].Provider)
 }
@@ -205,7 +190,7 @@ func TestSESHookAnswers5xxWhenTheCertificateIsUnavailable(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 
 	assert.Equal(t, http.StatusBadGateway, rec.Code)
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 }
 
 // A signing certificate on a host that is not Amazon's is the sender's fault: 4xx, and the
@@ -223,7 +208,7 @@ func TestSESHookRefusesACertificateOnAnotherHost(t *testing.T) {
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, string(forged))
 
 	assert.Equal(t, http.StatusForbidden, rec.Code)
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 }
 
 // A callback authentic for one Preset is refused at an Integration of the other, both ways.
@@ -234,9 +219,9 @@ func TestSESAndGenericIntegrationsRefuseEachOthersCallbacks(t *testing.T) {
 
 	assert.Equal(t, http.StatusForbidden, postSNS(t, env, generic, snsNotification(t, "hard-bounce")).Code)
 	assert.Equal(t, http.StatusForbidden, signedPost(t, env, ses, secretA, "msg_1", failureBody("evt_1", fixtures.ContactAliceEmail, true)).Code)
-	assert.Empty(t, queuedNotices(t, env, fixtures.ContactAliceEmail))
+	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 
 	require.Equal(t, http.StatusOK, postSNS(t, env, ses, snsNotification(t, "hard-bounce")).Code)
 	require.Equal(t, http.StatusOK, signedPost(t, env, generic, secretA, "msg_2", failureBody("evt_2", fixtures.ContactAliceEmail, true)).Code)
-	assert.Len(t, queuedNotices(t, env, fixtures.ContactAliceEmail), 2)
+	assert.Len(t, failuresFor(t, env, fixtures.ContactAliceEmail), 2)
 }

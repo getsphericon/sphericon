@@ -79,7 +79,7 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	go func() {
 		enrolled <- e.enrollments(enrolling).OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}})
 	}()
-	<-hold.reached
+	testhelper.Receive(t, hold.reached, "the held write is reached")
 	stored(t, e, &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: paid,
 	})
@@ -94,8 +94,8 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 		return settled(endDone) || (err == nil && waiting > 0)
 	}, 10*time.Second, 5*time.Millisecond, "the payment's evaluation finished or waits for the Enrollment")
 	hold.release()
-	require.NoError(t, <-enrolled)
-	require.NoError(t, <-ended)
+	require.NoError(t, testhelper.Receive(t, enrolled, "the enrollment finishes"))
+	require.NoError(t, testhelper.Receive(t, ended, "the ending finishes"))
 
 	run, err := e.client.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationPaymentRecoveryID), automationrun.ContactID(fixtures.ContactAliceID)).

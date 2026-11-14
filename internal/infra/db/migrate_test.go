@@ -137,7 +137,7 @@ func TestMigrateFSRetriesALockWaitWithoutStallingTheTablesQueries(t *testing.T) 
 	require.NoError(t, err)
 
 	commit()
-	require.NoError(t, <-done)
+	require.NoError(t, testhelper.Receive(t, done, "the migration finishes"))
 	assert.Equal(t, 1, testhelper.ColumnsOf(t, sqlDB, "busy", "note"))
 }
 
@@ -170,7 +170,7 @@ func TestMigrateFSLetsANoTransactionMigrationWaitForOlderTransactions(t *testing
 		"the build still waits past the limit a transaction's wait has")
 	commit()
 
-	require.NoError(t, <-done)
+	require.NoError(t, testhelper.Receive(t, done, "the migration finishes"))
 	assert.True(t, testhelper.IndexIsValid(t, sqlDB, "busy_id"))
 }
 
@@ -191,7 +191,7 @@ func TestMigrateFSReportsWhoHoldsTheMigrationLockWhileItWaits(t *testing.T) {
 	assert.NotContains(t, waiting, "took the migration lock")
 
 	release()
-	err := <-done
+	err := testhelper.Receive(t, done, "the migration finishes")
 	require.NoError(t, err)
 	taken := logs.String()
 	assert.Contains(t, taken, "took the migration lock")
