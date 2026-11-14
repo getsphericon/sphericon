@@ -4,15 +4,11 @@ import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
-
-func visitorOf(contactID int64) predicate.Visitor { return visitor.ContactID(contactID) }
 
 // detachOptOuts keeps the Unsubscribe and active Suppression rows, which are keyed by
 // Destination and keep honoring the refusal; their Contact reference is cleared by its foreign key

@@ -50,7 +50,7 @@ func (m *UseCase) OpensByHour(ctx context.Context, s *ent.Scoped, w Window) (*Op
 					b.WriteString("EXTRACT(" + field + " FROM " + happened + " AT TIME ZONE ").Arg(days.Loc.String()).WriteString(")::int")
 				})
 			}
-			sel.Select(sql.As("COUNT(*)", "opens")).
+			sel.Select(sql.As(sql.Count("*"), "opens")).
 				AppendSelectExprAs(local("ISODOW"), "weekday").
 				AppendSelectExprAs(local("HOUR"), "hour").
 				GroupBy("weekday", "hour")

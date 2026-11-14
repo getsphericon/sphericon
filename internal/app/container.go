@@ -903,7 +903,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return needsattentionreport.New(watch, do.MustInvoke[providerlimit.SendCaps](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
+		return needsattentionreport.New(watch, do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Workspace view: the Workspace summary and the operations of a member that answer with it
 	// (a use case, ADR 0111), creating a Verified User's Workspace among them: on an Instance that

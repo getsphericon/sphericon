@@ -136,41 +136,50 @@ func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) (
 
 // erasePass runs every step once, each in batches, and returns how many rows it removed.
 func (m *UseCase) erasePass(ctx context.Context, id int64) (int, error) {
-	total := 0
 	// The bus's journal also holds Instance facts, so it has no required Workspace mixin
 	// or scoped table wrapper. Its owner drains this Workspace's history in bounded transactions.
-	for {
-		removed, err := m.bus.EraseWorkspaceJournalBatch(ctx, m.client.Scoped(id), m.batch)
-		if err != nil {
-			return total, err
-		}
-		total += removed
-		if removed < m.batch {
-			break
-		}
+	total, err := drain(func() (int, error) {
+		return m.bus.EraseWorkspaceJournalBatch(ctx, m.client.Scoped(id), eraseBatch)
+	})
+	if err != nil {
+		return total, err
 	}
-	for _, step := range m.steps {
-		for {
+	for _, step := range eraseSteps() {
+		removed, err := drain(func() (int, error) {
 			removed := 0
 			err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 				s := tx.Scoped(id)
-				rows, err := step.ids(ctx, s, m.batch)
+				rows, err := step.ids(ctx, s, eraseBatch)
 				if err != nil || len(rows) == 0 {
 					return err
 				}
 				removed = len(rows)
 				return step.remove(ctx, s, rows)
 			})
-			if err != nil {
-				return total, err
-			}
-			total += removed
-			if removed < m.batch {
-				break
-			}
+			return removed, err
+		})
+		total += removed
+		if err != nil {
+			return total, err
 		}
 	}
 	return total, nil
+}
+
+// drain runs batch until one removes less than a full batch, and returns how many rows they
+// removed.
+func drain(batch func() (int, error)) (int, error) {
+	total := 0
+	for {
+		removed, err := batch()
+		if err != nil {
+			return total, err
+		}
+		total += removed
+		if removed < eraseBatch {
+			return total, nil
+		}
+	}
 }
 
 // eraseStep removes one kind of Workspace-owned row, a batch at a time: ids names up

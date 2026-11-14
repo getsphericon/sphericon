@@ -278,7 +278,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 	if c == nil {
 		return resolveContactless(ctx, s, id)
 	}
-	seen, err := s.Visitor().Query().Where(visitorOf(c.ID)).All(ctx)
+	seen, err := s.Visitor().Query().Where(visitor.ContactID(c.ID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}

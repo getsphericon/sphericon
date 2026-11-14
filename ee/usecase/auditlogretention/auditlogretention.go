@@ -47,11 +47,11 @@ func New(client *ent.Client, lic *licensekey.License, now func() time.Time) *Use
 // occurred before now minus that window, and returns how many it removed. A Workspace
 // with no window keeps everything. Without the retention license it removes nothing.
 func (u *UseCase) Prune(ctx context.Context) (int, error) {
-	client, now := u.client, u.now()
 	if !u.lic.Has(licensekey.FeatureRetention) {
 		return 0, nil
 	}
-	live, err := client.Workspace.Query().
+	now := u.now()
+	live, err := u.client.Workspace.Query().
 		Where(workspace.RetentionDaysNotNil(), workspaces.Live()).
 		Select(workspace.FieldID, workspace.FieldRetentionDays).
 		All(ctx)
@@ -61,7 +61,7 @@ func (u *UseCase) Prune(ctx context.Context) (int, error) {
 	var total int
 	for _, ws := range live {
 		cutoff := now.AddDate(0, 0, -*ws.RetentionDays)
-		n, err := auditentries.PruneBefore(ctx, client.Scoped(ws.ID), cutoff)
+		n, err := auditentries.PruneBefore(ctx, u.client.Scoped(ws.ID), cutoff)
 		if err != nil {
 			return total, fmt.Errorf("prune audit entries of workspace %d: %w", ws.ID, err)
 		}

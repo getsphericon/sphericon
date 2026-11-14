@@ -7,8 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -35,11 +33,7 @@ func (m *UseCase) SubscribedPeople(ctx context.Context, s *ent.Scoped, w Window)
 	if err != nil {
 		return nil, err
 	}
-	total, err := s.Contact().Query().Count(ctx)
-	if err != nil {
-		return nil, err
-	}
-	optedOut, err := s.Contact().Query().Where(eligibility.GloballyOptedOut(channels.Email)).Count(ctx)
+	contacts, err := contactCounts(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +41,7 @@ func (m *UseCase) SubscribedPeople(ctx context.Context, s *ent.Scoped, w Window)
 	if err != nil {
 		return nil, err
 	}
-	return &SubscribedPeople{Current: total - optedOut, Series: series}, nil
+	return &SubscribedPeople{Current: contacts.Active, Series: series}, nil
 }
 
 // subscriptionSeries buckets the subscription Events by the Report day they happened on
@@ -80,11 +74,5 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 	for _, r := range rows {
 		byDay[r.Day] = SubscribedPoint{Date: r.Day, Subscribed: r.Subscribed, Unsubscribed: r.Unsubscribed, Net: r.Subscribed - r.Unsubscribed}
 	}
-	points := make([]SubscribedPoint, 0, len(days.Dates))
-	for _, day := range days.Dates {
-		p := byDay[day]
-		p.Date = day
-		points = append(points, p)
-	}
-	return points, nil
+	return zeroFilled(days, byDay, func(p *SubscribedPoint, day string) { p.Date = day }), nil
 }

@@ -84,14 +84,16 @@ func ownerNames(ctx context.Context, s *ent.Scoped, rows []linkclick.OwnerClicks
 		}
 	}
 	names := map[ownerKey]string{}
-	broadcasts, err := s.Broadcast().QueryWithArchived().Where(broadcast.IDIn(broadcastIDs...)).All(ctx)
+	broadcasts, err := s.Broadcast().QueryWithArchived().Where(broadcast.IDIn(broadcastIDs...)).
+		Select(broadcast.FieldID, broadcast.FieldName).All(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, b := range broadcasts {
 		names[ownerKey{OwnerBroadcast, b.ID}] = b.Name
 	}
-	automations, err := s.Automation().QueryWithArchived().Where(automation.IDIn(automationIDs...)).All(ctx)
+	automations, err := s.Automation().QueryWithArchived().Where(automation.IDIn(automationIDs...)).
+		Select(automation.FieldID, automation.FieldName).All(ctx)
 	if err != nil {
 		return nil, err
 	}

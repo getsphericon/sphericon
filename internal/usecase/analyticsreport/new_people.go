@@ -38,7 +38,7 @@ func (m *UseCase) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewP
 	err = s.Contact().Query().
 		Where(contact.CreatedAtGTE(days.Since), contact.CreatedAtLT(days.Until)).
 		Modify(func(sel *sql.Selector) {
-			sel.Select(sel.C(contact.FieldSource), sql.As("COUNT(*)", "count")).
+			sel.Select(sel.C(contact.FieldSource), sql.As(sql.Count("*"), "count")).
 				AppendSelectExprAs(reportday.Label(sel.C(contact.FieldCreatedAt), days.Loc), "day").
 				GroupBy("day", sel.C(contact.FieldSource))
 		}).
@@ -63,11 +63,6 @@ func (m *UseCase) NewPeople(ctx context.Context, s *ent.Scoped, w Window) (*NewP
 		byDay[r.Day] = p
 		report.Total += r.Count
 	}
-	report.Series = make([]NewPeoplePoint, 0, len(days.Dates))
-	for _, day := range days.Dates {
-		p := byDay[day]
-		p.Date = day
-		report.Series = append(report.Series, p)
-	}
+	report.Series = zeroFilled(days, byDay, func(p *NewPeoplePoint, day string) { p.Date = day })
 	return report, nil
 }
