@@ -60,6 +60,9 @@ type ContactTag func(*sql.Selector)
 // CustomField is the predicate function for customfield builders.
 type CustomField func(*sql.Selector)
 
+// DefaultSendCap is the predicate function for defaultsendcap builders.
+type DefaultSendCap func(*sql.Selector)
+
 // EmailTemplate is the predicate function for emailtemplate builders.
 type EmailTemplate func(*sql.Selector)
 

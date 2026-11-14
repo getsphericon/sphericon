@@ -1279,6 +1279,63 @@ const (
 	RoleOf_CustomFieldCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for DefaultSendCap.
+const (
+	TypeOf_DefaultSendCap             = TypeEntity
+	TypeOf_DefaultSendCaps            = TypeOther
+	TypeOf_DefaultSendCapMutation     = TypeOther
+	TypeOf_DefaultSendCapClient       = TypeClient
+	TypeOf_DefaultSendCapQuery        = TypeQuery
+	TypeOf_DefaultSendCapSelect       = TypeQuery
+	TypeOf_DefaultSendCapGroupBy      = TypeQuery
+	TypeOf_DefaultSendCapCreate       = TypeCreate
+	TypeOf_DefaultSendCapCreateBulk   = TypeCreate
+	TypeOf_DefaultSendCapUpdate       = TypeUpdate
+	TypeOf_DefaultSendCapUpdateOne    = TypeUpdate
+	TypeOf_DefaultSendCapDelete       = TypeDelete
+	TypeOf_DefaultSendCapDeleteOne    = TypeDelete
+	TypeOf_DefaultSendCapUpsert       = TypeUpsert
+	TypeOf_DefaultSendCapUpsertOne    = TypeUpsert
+	TypeOf_DefaultSendCapUpsertBulk   = TypeUpsert
+	EntityOf_DefaultSendCaps          = "DefaultSendCap"
+	EntityOf_DefaultSendCap           = "DefaultSendCap"
+	EntityOf_DefaultSendCapMutation   = "DefaultSendCap"
+	EntityOf_DefaultSendCapClient     = "DefaultSendCap"
+	EntityOf_DefaultSendCapQuery      = "DefaultSendCap"
+	EntityOf_DefaultSendCapSelect     = "DefaultSendCap"
+	EntityOf_DefaultSendCapGroupBy    = "DefaultSendCap"
+	EntityOf_DefaultSendCapCreate     = "DefaultSendCap"
+	EntityOf_DefaultSendCapCreateBulk = "DefaultSendCap"
+	EntityOf_DefaultSendCapUpdate     = "DefaultSendCap"
+	EntityOf_DefaultSendCapUpdateOne  = "DefaultSendCap"
+	EntityOf_DefaultSendCapDelete     = "DefaultSendCap"
+	EntityOf_DefaultSendCapDeleteOne  = "DefaultSendCap"
+	EntityOf_DefaultSendCapUpsert     = "DefaultSendCap"
+	EntityOf_DefaultSendCapUpsertOne  = "DefaultSendCap"
+	EntityOf_DefaultSendCapUpsertBulk = "DefaultSendCap"
+)
+
+// The reads and the writes ent's methods for DefaultSendCap start.
+const (
+	RoleOf_DefaultSendCapClient_Create                = RoleStart
+	RoleOf_DefaultSendCapClient_CreateBulk            = RoleStart
+	RoleOf_DefaultSendCapClient_MapCreateBulk         = RoleStart
+	RoleOf_DefaultSendCapClient_Update                = RoleStart
+	RoleOf_DefaultSendCapClient_UpdateOne             = RoleStart
+	RoleOf_DefaultSendCapClient_Delete                = RoleStart
+	RoleOf_DefaultSendCapClient_Query                 = RoleRead
+	RoleOf_DefaultSendCapClient_UpdateOneID           = RoleStart
+	RoleOf_DefaultSendCapClient_DeleteOne             = RoleStart
+	RoleOf_DefaultSendCapClient_DeleteOneID           = RoleStart
+	RoleOf_DefaultSendCapClient_Get                   = RoleRead
+	RoleOf_DefaultSendCapClient_GetX                  = RoleRead
+	RoleOf_DefaultSendCap_Update                      = RoleStart
+	RoleOf_DefaultSendCapCreate_OnConflict            = RoleStart
+	RoleOf_DefaultSendCapCreate_OnConflictColumns     = RoleStart
+	RoleOf_DefaultSendCapCreateBulk_OnConflict        = RoleStart
+	RoleOf_DefaultSendCapCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for EmailTemplate.
 const (
 	TypeOf_EmailTemplate             = TypeEntity

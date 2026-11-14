@@ -21,9 +21,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
-	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
@@ -37,8 +37,8 @@ type UseCase struct {
 	passwords *credentials.Hasher
 	// newPublicID draws a Workspace id (workspaceid.New).
 	newPublicID func() string
-	// states gives the Send cap a first Workspace starts with; nil gives none.
-	states *instancestates.Module
+	// defaultSendCap gives the Send cap a first Workspace starts with; nil gives none.
+	defaultSendCap *suspension.DefaultSendCap
 	// signUp is what a Sign-up needs besides the users module.
 	signUp SignUpConfig
 	// providers is what a sign-in through a Sign-in provider needs besides the users module.
@@ -49,16 +49,16 @@ type UseCase struct {
 
 // New builds the use case: the bus opens its transactions, the users module writes the User's
 // part of each step, links reads the verification and reset links, passwords hashes the
-// password of an Owner made from a shell, states says the Send cap a Workspace starts with
-// (instancestates.Module.StartingSendCapIn, ADR 0067; nil, as in a test, gives a first Workspace
-// none), cfg is what a Sign-up needs (ADR 0030, ADR 0031), signIn what a sign-in through a
+// password of an Owner made from a shell, defaultSendCap says the Send cap a Workspace starts with
+// (suspension.DefaultSendCap.StartingIn, ADR 0067, ADR 0146; nil, as in a test, gives a first
+// Workspace none), cfg is what a Sign-up needs (ADR 0030, ADR 0031), signIn what a sign-in through a
 // Sign-in provider needs (ADR 0048) and now is the Instance clock.
 func New(bus *events.Bus, usersModule *users.Module, links *users.Links, passwords *credentials.Hasher,
-	states *instancestates.Module, cfg SignUpConfig, signIn SignInConfig, now func() time.Time,
+	defaultSendCap *suspension.DefaultSendCap, cfg SignUpConfig, signIn SignInConfig, now func() time.Time,
 ) *UseCase {
 	u := &UseCase{
 		bus: bus, users: usersModule, links: links, passwords: passwords, newPublicID: workspaceid.New,
-		states: states, providers: signIn, now: now,
+		defaultSendCap: defaultSendCap, providers: signIn, now: now,
 	}
 	if cfg.Lookup == nil {
 		cfg.Lookup = u.lookupUser
@@ -71,9 +71,9 @@ func New(bus *events.Bus, usersModule *users.Module, links *users.Links, passwor
 // owner Membership on tx, with a fresh Workspace id and the Send cap a new Workspace starts with.
 func (u *UseCase) firstWorkspaceIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.Workspace, error) {
 	var sendCap *int
-	if u.states != nil {
+	if u.defaultSendCap != nil {
 		var err error
-		if sendCap, err = u.states.StartingSendCapIn(ctx, tx); err != nil {
+		if sendCap, err = u.defaultSendCap.StartingIn(ctx, tx); err != nil {
 			return nil, err
 		}
 	}

@@ -29,8 +29,6 @@ const (
 	FieldLatestRelease = "latest_release"
 	// FieldLatestReleaseCheckedAt holds the string denoting the latest_release_checked_at field in the database.
 	FieldLatestReleaseCheckedAt = "latest_release_checked_at"
-	// FieldDefaultSendCap holds the string denoting the default_send_cap field in the database.
-	FieldDefaultSendCap = "default_send_cap"
 	// FieldIDKey holds the string denoting the id_key field in the database.
 	FieldIDKey = "id_key"
 	// Table holds the table name of the instancestate in the database.
@@ -48,7 +46,6 @@ var Columns = []string{
 	FieldLastReportSentAt,
 	FieldLatestRelease,
 	FieldLatestReleaseCheckedAt,
-	FieldDefaultSendCap,
 	FieldIDKey,
 }
 
@@ -73,8 +70,6 @@ var (
 	DefaultInstanceID func() string
 	// DefaultTelemetryEnabled holds the default value on creation for the "telemetry_enabled" field.
 	DefaultTelemetryEnabled bool
-	// DefaultSendCapValidator is a validator for the "default_send_cap" field. It is called by the builders before save.
-	DefaultSendCapValidator func(int) error
 	// DefaultIDKey holds the default value on creation for the "id_key" field.
 	DefaultIDKey func() []byte
 )
@@ -125,9 +120,4 @@ func ByLatestRelease(opts ...sql.OrderTermOption) OrderOption {
 // ByLatestReleaseCheckedAt orders the results by the latest_release_checked_at field.
 func ByLatestReleaseCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLatestReleaseCheckedAt, opts...).ToFunc()
-}
-
-// ByDefaultSendCap orders the results by the default_send_cap field.
-func ByDefaultSendCap(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDefaultSendCap, opts...).ToFunc()
 }

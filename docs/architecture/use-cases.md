@@ -56,7 +56,7 @@ ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with ev
 job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; and the
 Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace, writing it through
 `workspacesunchecked.CreateIn` and its Owner Membership through `membershipsunchecked.AddCreatorIn` with the Send cap it
-starts with (`instancestates.DefaultSendCapIn`, ADR 0067), and moves a deleted one back through
+starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146), and moves a deleted one back through
 `workspacesunchecked.RestoreIn`; and the Sign-up
 (`internal/usecase/signup`), which composes the same two modules for the User's first Workspace in
 every step that makes a User Verified, each on its own transaction: the verification and reset

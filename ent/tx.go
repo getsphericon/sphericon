@@ -50,6 +50,8 @@ type Tx struct {
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
 	CustomField *CustomFieldClient
+	// DefaultSendCap is the client for interacting with the DefaultSendCap builders.
+	DefaultSendCap *DefaultSendCapClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
 	// Erasure is the client for interacting with the Erasure builders.
@@ -307,6 +309,7 @@ func (tx *Tx) init() {
 	tx.Contact = NewContactClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)
+	tx.DefaultSendCap = NewDefaultSendCapClient(tx.config)
 	tx.EmailTemplate = NewEmailTemplateClient(tx.config)
 	tx.Erasure = NewErasureClient(tx.config)
 	tx.Event = NewEventClient(tx.config)

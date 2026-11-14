@@ -51,7 +51,7 @@ func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
 // createIn creates the Workspace and its owner Membership on tx, with a fresh Workspace id and
 // the Send cap a new Workspace starts with.
 func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
-	sendCap, err := u.states.StartingSendCapIn(ctx, tx)
+	sendCap, err := u.defaultSendCap.StartingIn(ctx, tx)
 	if err != nil {
 		return nil, err
 	}

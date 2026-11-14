@@ -12,8 +12,9 @@ import (
 // InstanceState is the one row an Instance keeps about itself (ADR 0032): its random
 // Instance id, the Owner's telemetry setting, whether the Telemetry report notice was
 // acknowledged, when a report was last sent, the newest release the Release check
-// found and the default Send cap of new Workspaces. It belongs to the Instance, not a Workspace (no Workspace edge, no scoped
-// wrapper). Row id 1 is created at first start by internal/instancestates.
+// found and the key that seals public ids. It belongs to the Instance, not a Workspace (no
+// Workspace edge, no scoped wrapper); the default Send cap is suspension's (DefaultSendCap). Row
+// id 1 is created at first start by internal/instancestates.
 type InstanceState struct {
 	ent.Schema
 }
@@ -61,14 +62,6 @@ func (InstanceState) Fields() []ent.Field {
 			Annotations(Attribute(reasonLatest)).
 			Optional().
 			Nillable(),
-		// DefaultSendCap is the Send cap every new Workspace starts with (ADR 0067), as a Staff
-		// member set it: messages per rolling 24 hours, copied onto the Workspace at its creation.
-		// NULL: new Workspaces get no Send cap. It applies only on an Instance that has Send caps;
-		// elsewhere a stored value is ignored. Its bounds are declared in the contract.
-		field.Int("default_send_cap").
-			Optional().
-			Nillable().
-			Positive(),
 		// IDKey seals the primary keys the APIs show (internal/kernel/publicid, ADR 0142): 16 random
 		// bytes, made with the row and never changed, since a new key would change every id a
 		// client holds. It lives here, not in the environment, so a restored database keeps its ids.

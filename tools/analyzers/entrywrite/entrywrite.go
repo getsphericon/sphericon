@@ -79,6 +79,7 @@ var owners = map[string]string{
 	"Contact":              "internal/domain/contacts/contacts",
 	"ContactTag":           "internal/domain/contacts/contacts",
 	"CustomField":          "internal/domain/contacts/contacts",
+	"DefaultSendCap":       "internal/domain/identity/suspension",
 	"EmailTemplate":        "internal/domain/content/emailtemplates",
 	"Erasure":              "ee/domain/insights/erasures",
 	"Event":                "internal/infra/events",

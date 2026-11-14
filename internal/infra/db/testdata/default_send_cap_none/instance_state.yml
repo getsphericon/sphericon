@@ -1,0 +1,8 @@
+# The Instance state row of the schema before the default Send cap moved to suspension (ADR 0146),
+# with no default stored.
+- id: 1
+  instance_id: instance-without-default-send-cap
+  telemetry_enabled: true
+  id_key: '\x00112233445566778899aabbccddeeff'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -132,6 +133,8 @@ type Client struct {
 	ContactTag *ContactTagClient
 	// CustomField is the client for interacting with the CustomField builders.
 	CustomField *CustomFieldClient
+	// DefaultSendCap is the client for interacting with the DefaultSendCap builders.
+	DefaultSendCap *DefaultSendCapClient
 	// EmailTemplate is the client for interacting with the EmailTemplate builders.
 	EmailTemplate *EmailTemplateClient
 	// Erasure is the client for interacting with the Erasure builders.
@@ -269,6 +272,7 @@ func (c *Client) init() {
 	c.Contact = NewContactClient(c.config)
 	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
+	c.DefaultSendCap = NewDefaultSendCapClient(c.config)
 	c.EmailTemplate = NewEmailTemplateClient(c.config)
 	c.Erasure = NewErasureClient(c.config)
 	c.Event = NewEventClient(c.config)
@@ -433,6 +437,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
 		CustomField:          NewCustomFieldClient(cfg),
+		DefaultSendCap:       NewDefaultSendCapClient(cfg),
 		EmailTemplate:        NewEmailTemplateClient(cfg),
 		Erasure:              NewErasureClient(cfg),
 		Event:                NewEventClient(cfg),
@@ -524,6 +529,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
 		CustomField:          NewCustomFieldClient(cfg),
+		DefaultSendCap:       NewDefaultSendCapClient(cfg),
 		EmailTemplate:        NewEmailTemplateClient(cfg),
 		Erasure:              NewErasureClient(cfg),
 		Event:                NewEventClient(cfg),
@@ -610,19 +616,19 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
 		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
 		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
-		c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent,
-		c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
+		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
+		c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.Invitation, c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order,
+		c.OrderMovement, c.OutboundMessage, c.Passkey, c.PasskeyChallenge,
+		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
+		c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState,
+		c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -635,19 +641,19 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
 		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
 		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.EmailTemplate,
-		c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt, c.HeldOrderEvent,
-		c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
+		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
+		c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.Invitation, c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion,
+		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order,
+		c.OrderMovement, c.OutboundMessage, c.Passkey, c.PasskeyChallenge,
+		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
+		c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState,
+		c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -692,6 +698,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ContactTag.mutate(ctx, m)
 	case *CustomFieldMutation:
 		return c.CustomField.mutate(ctx, m)
+	case *DefaultSendCapMutation:
+		return c.DefaultSendCap.mutate(ctx, m)
 	case *EmailTemplateMutation:
 		return c.EmailTemplate.mutate(ctx, m)
 	case *ErasureMutation:
@@ -3970,6 +3978,139 @@ func (c *CustomFieldClient) mutate(ctx context.Context, m *CustomFieldMutation) 
 		return (&CustomFieldDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown CustomField mutation op: %q", m.Op())
+	}
+}
+
+// DefaultSendCapClient is a client for the DefaultSendCap schema.
+type DefaultSendCapClient struct {
+	config
+}
+
+// NewDefaultSendCapClient returns a client for the DefaultSendCap from the given config.
+func NewDefaultSendCapClient(c config) *DefaultSendCapClient {
+	return &DefaultSendCapClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `defaultsendcap.Hooks(f(g(h())))`.
+func (c *DefaultSendCapClient) Use(hooks ...Hook) {
+	c.hooks.DefaultSendCap = append(c.hooks.DefaultSendCap, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `defaultsendcap.Intercept(f(g(h())))`.
+func (c *DefaultSendCapClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DefaultSendCap = append(c.inters.DefaultSendCap, interceptors...)
+}
+
+// Create returns a builder for creating a DefaultSendCap entity.
+func (c *DefaultSendCapClient) Create() *DefaultSendCapCreate {
+	mutation := newDefaultSendCapMutation(c.config, OpCreate)
+	return &DefaultSendCapCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DefaultSendCap entities.
+func (c *DefaultSendCapClient) CreateBulk(builders ...*DefaultSendCapCreate) *DefaultSendCapCreateBulk {
+	return &DefaultSendCapCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DefaultSendCapClient) MapCreateBulk(slice any, setFunc func(*DefaultSendCapCreate, int)) *DefaultSendCapCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DefaultSendCapCreateBulk{err: fmt.Errorf("calling to DefaultSendCapClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DefaultSendCapCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DefaultSendCapCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DefaultSendCap.
+func (c *DefaultSendCapClient) Update() *DefaultSendCapUpdate {
+	mutation := newDefaultSendCapMutation(c.config, OpUpdate)
+	return &DefaultSendCapUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DefaultSendCapClient) UpdateOne(_m *DefaultSendCap) *DefaultSendCapUpdateOne {
+	mutation := newDefaultSendCapMutation(c.config, OpUpdateOne, withDefaultSendCap(_m))
+	return &DefaultSendCapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DefaultSendCapClient) UpdateOneID(id int64) *DefaultSendCapUpdateOne {
+	mutation := newDefaultSendCapMutation(c.config, OpUpdateOne, withDefaultSendCapID(id))
+	return &DefaultSendCapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DefaultSendCap.
+func (c *DefaultSendCapClient) Delete() *DefaultSendCapDelete {
+	mutation := newDefaultSendCapMutation(c.config, OpDelete)
+	return &DefaultSendCapDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DefaultSendCapClient) DeleteOne(_m *DefaultSendCap) *DefaultSendCapDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DefaultSendCapClient) DeleteOneID(id int64) *DefaultSendCapDeleteOne {
+	builder := c.Delete().Where(defaultsendcap.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DefaultSendCapDeleteOne{builder}
+}
+
+// Query returns a query builder for DefaultSendCap.
+func (c *DefaultSendCapClient) Query() *DefaultSendCapQuery {
+	return &DefaultSendCapQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDefaultSendCap},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DefaultSendCap entity by its id.
+func (c *DefaultSendCapClient) Get(ctx context.Context, id int64) (*DefaultSendCap, error) {
+	return c.Query().Where(defaultsendcap.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DefaultSendCapClient) GetX(ctx context.Context, id int64) *DefaultSendCap {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *DefaultSendCapClient) Hooks() []Hook {
+	return c.hooks.DefaultSendCap
+}
+
+// Interceptors returns the client interceptors.
+func (c *DefaultSendCapClient) Interceptors() []Interceptor {
+	return c.inters.DefaultSendCap
+}
+
+func (c *DefaultSendCapClient) mutate(ctx context.Context, m *DefaultSendCapMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DefaultSendCapCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DefaultSendCapUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DefaultSendCapUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DefaultSendCapDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DefaultSendCap mutation op: %q", m.Op())
 	}
 }
 
@@ -13625,33 +13766,33 @@ type (
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
 		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
-		ContactTag, CustomField, EmailTemplate, Erasure, Event, EventJournalEntry,
-		EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
-		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Hook
+		ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure, Event,
+		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry,
+		InstanceState, Integration, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
 		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
-		ContactTag, CustomField, EmailTemplate, Erasure, Event, EventJournalEntry,
-		EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry, InstanceState,
-		Integration, Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion,
-		Membership, OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
-		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
-		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
-		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
-		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
-		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
-		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
-		Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure, Event,
+		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry,
+		InstanceState, Integration, Invitation, JoinDomain, LegalDocumentDraft,
+		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
+		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
+		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
+		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
+		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
+		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
+		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
+		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
 	}
 )
 

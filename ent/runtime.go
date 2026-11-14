@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/ent/defaultsendcap"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
 	"github.com/getsphericon/sphericon/ent/erasure"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -588,6 +589,25 @@ func init() {
 	customfieldDescName := customfieldFields[2].Descriptor()
 	// customfield.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	customfield.NameValidator = customfieldDescName.Validators[0].(func(string) error)
+	defaultsendcapMixin := schema.DefaultSendCap{}.Mixin()
+	defaultsendcapMixinFields0 := defaultsendcapMixin[0].Fields()
+	_ = defaultsendcapMixinFields0
+	defaultsendcapFields := schema.DefaultSendCap{}.Fields()
+	_ = defaultsendcapFields
+	// defaultsendcapDescCreatedAt is the schema descriptor for created_at field.
+	defaultsendcapDescCreatedAt := defaultsendcapMixinFields0[0].Descriptor()
+	// defaultsendcap.DefaultCreatedAt holds the default value on creation for the created_at field.
+	defaultsendcap.DefaultCreatedAt = defaultsendcapDescCreatedAt.Default.(func() time.Time)
+	// defaultsendcapDescUpdatedAt is the schema descriptor for updated_at field.
+	defaultsendcapDescUpdatedAt := defaultsendcapMixinFields0[1].Descriptor()
+	// defaultsendcap.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	defaultsendcap.DefaultUpdatedAt = defaultsendcapDescUpdatedAt.Default.(func() time.Time)
+	// defaultsendcap.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	defaultsendcap.UpdateDefaultUpdatedAt = defaultsendcapDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// defaultsendcapDescPerDay is the schema descriptor for per_day field.
+	defaultsendcapDescPerDay := defaultsendcapFields[1].Descriptor()
+	// defaultsendcap.PerDayValidator is a validator for the "per_day" field. It is called by the builders before save.
+	defaultsendcap.PerDayValidator = defaultsendcapDescPerDay.Validators[0].(func(int) error)
 	emailtemplateMixin := schema.EmailTemplate{}.Mixin()
 	emailtemplateMixinFields0 := emailtemplateMixin[0].Fields()
 	_ = emailtemplateMixinFields0
@@ -823,12 +843,8 @@ func init() {
 	instancestateDescTelemetryEnabled := instancestateFields[2].Descriptor()
 	// instancestate.DefaultTelemetryEnabled holds the default value on creation for the telemetry_enabled field.
 	instancestate.DefaultTelemetryEnabled = instancestateDescTelemetryEnabled.Default.(bool)
-	// instancestateDescDefaultSendCap is the schema descriptor for default_send_cap field.
-	instancestateDescDefaultSendCap := instancestateFields[7].Descriptor()
-	// instancestate.DefaultSendCapValidator is a validator for the "default_send_cap" field. It is called by the builders before save.
-	instancestate.DefaultSendCapValidator = instancestateDescDefaultSendCap.Validators[0].(func(int) error)
 	// instancestateDescIDKey is the schema descriptor for id_key field.
-	instancestateDescIDKey := instancestateFields[8].Descriptor()
+	instancestateDescIDKey := instancestateFields[7].Descriptor()
 	// instancestate.DefaultIDKey holds the default value on creation for the id_key field.
 	instancestate.DefaultIDKey = instancestateDescIDKey.Default.(func() []byte)
 	integrationMixin := schema.Integration{}.Mixin()
