@@ -69,3 +69,17 @@ func TestMessageImageReadsTheSrc(t *testing.T) {
 	assert.Equal(t, "https://app.test/e/o/tok", m.Image("/e/o/"))
 	assert.Empty(t, m.Link("/e/o/"), "an <img> is not a link")
 }
+
+// A text part has no markup: a mail client links each URL it finds in the text, and so does this.
+func TestMessageTextLinkReadsAURLOutOfThePlainText(t *testing.T) {
+	t.Parallel()
+	m := Message{Text: "Confirm your address:\n\nhttps://example.com/help\nhttps://app.test/verify-email?token=a%2Bb.c\n\nThanks\n"}
+	assert.Equal(t, "https://app.test/verify-email?token=a%2Bb.c", m.TextLink("/verify-email"))
+	assert.Equal(t, "https://example.com/help", m.TextLink("/help"))
+}
+
+func TestMessageTextLinkIsEmptyWithoutAMatchingURL(t *testing.T) {
+	t.Parallel()
+	assert.Empty(t, Message{Text: "see /verify-email?token=x or mailto:x@app.test/verify-email"}.TextLink("/verify-email"))
+	assert.Empty(t, Message{}.TextLink("/verify-email"))
+}

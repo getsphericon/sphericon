@@ -90,9 +90,6 @@ type Hook struct {
 	path   string
 	URL    string
 	Secret string
-	// signedBySomeone is set for a Webhook endpoint's Hook, whose secret the test never sees:
-	// a call must be signed, by a secret the test cannot check.
-	signedBySomeone bool
 }
 
 // NewHook gives the test an endpoint of its own. A signed one verifies every call's
@@ -118,10 +115,6 @@ func (hk *Hook) Wait() HookCall {
 	}, HookTimeout, 100*time.Millisecond, "no call to %s", hk.path)
 	call := calls[0]
 	signature := call.Header.Get(standardwebhooks.HeaderWebhookSignature)
-	if hk.signedBySomeone {
-		assert.NotEmpty(hk.t, signature, "a webhook delivery is signed")
-		return call
-	}
 	if hk.Secret == "" {
 		assert.Empty(hk.t, signature, "an HTTP step without a secret sends no signature")
 		return call

@@ -13,7 +13,8 @@ import (
 )
 
 // A tracked click reaches the Workspace's Webhook endpoint: the tracker publishes email.clicked,
-// whose webhooks job queues the delivery the receiver gets, with the public body.
+// whose webhooks job queues the delivery the receiver gets, with the public body, signed with the
+// secret the Webhooks settings show; the click itself leads to the link's destination.
 func TestATrackedClickReachesAWebhook(t *testing.T) {
 	t.Parallel()
 	w := env.NewWorkspace(t).Ready()
@@ -26,7 +27,7 @@ func TestATrackedClickReachesAWebhook(t *testing.T) {
 	})
 	msg := w.Inbox.Wait(Match{To: to})
 
-	w.ClickLink(msg)
+	w.ClickLink(msg, "https://example.com/offer")
 
 	call := hook.Wait()
 	var body struct {

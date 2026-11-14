@@ -36,3 +36,25 @@ func TestOneClickUnsubscribeStopsTheNextBroadcast(t *testing.T) {
 	w.Inbox.RequireNone(Match{To: urlEncodedLeaver, Subject: second})
 	assert.NotEmpty(t, toMultipart.Header("List-Unsubscribe"))
 }
+
+// The unsubscribe link in a Broadcast's footer, pressed and confirmed on the page it opens, opts
+// its recipient out: the next Broadcast reaches everyone else, not them.
+func TestFooterUnsubscribeLinkStopsTheNextBroadcast(t *testing.T) {
+	t.Parallel()
+	w := env.NewWorkspace(t).Ready()
+	leaver, stayer := w.NewRecipient(), w.NewRecipient()
+	w.ImportContacts(leaver, stayer)
+
+	first := "First " + uniq()
+	w.SendBroadcast(Broadcast{Subject: first, Body: HTML("First issue")})
+	toLeaver := w.Inbox.Wait(Match{To: leaver, Subject: first})
+	w.Inbox.Wait(Match{To: stayer, Subject: first})
+
+	w.UnsubscribeFromFooter(toLeaver)
+	w.RequireUnsubscribed(leaver)
+
+	second := "Second " + uniq()
+	w.SendBroadcast(Broadcast{Subject: second, Body: HTML("Second issue")})
+	w.Inbox.Wait(Match{To: stayer, Subject: second})
+	w.Inbox.RequireNone(Match{To: leaver, Subject: second})
+}

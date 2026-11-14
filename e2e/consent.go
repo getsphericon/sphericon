@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 )
 
@@ -81,6 +82,19 @@ func (w *Workspace) PrefetchUnsubscribe(msg Message) {
 		require.NoError(w.t, res.Body.Close())
 		require.Less(w.t, res.StatusCode, http.StatusBadRequest, "%s %s answered %d", method, target, res.StatusCode)
 	}
+}
+
+// UnsubscribeFromFooter is the recipient pressing the unsubscribe link in the email's footer: the
+// link answers 303 to the confirmation page, which reads its token from its own address, and the
+// page's Confirm button performs the opt-out through the site API, as a visitor who is not signed in.
+func (w *Workspace) UnsubscribeFromFooter(msg Message) {
+	w.t.Helper()
+	link := msg.Link("/e/u/")
+	require.NotEmpty(w.t, link, "the email %q carries an unsubscribe link in its footer", msg.Subject)
+	page := w.openLink(link, http.StatusSeeOther)
+	token := w.pageToken(page, "/unsubscribe")
+	err := w.anonymousSite().SitePublicUnsubscribesPerform(w.t.Context(), siteapi.SitePublicUnsubscribesPerformParams{Token: token})
+	require.NoError(w.t, err, "the confirmation page's Confirm")
 }
 
 // RequireUnsubscribed asserts, through the external API, that the Contact with this

@@ -65,6 +65,19 @@ func (m Message) OneClickBody() string {
 // app writes in another one reads as missing, or as a URL no client would request.
 func (m Message) Link(pathPart string) string { return m.urlIn("a", "href", pathPart) }
 
+// TextLink is the first http(s) URL of the email's text part whose path holds pathPart, or ""
+// when there is none. A text part has no markup, so it is read the way a mail client links it:
+// each whitespace-separated word that parses as an absolute http(s) URL is a link.
+func (m Message) TextLink(pathPart string) string {
+	for word := range strings.FieldsSeq(m.Text) {
+		u, err := url.Parse(word)
+		if err == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" && strings.Contains(u.Path, pathPart) {
+			return word
+		}
+	}
+	return ""
+}
+
 // Image is Link for an <img src>.
 func (m Message) Image(pathPart string) string { return m.urlIn("img", "src", pathPart) }
 
