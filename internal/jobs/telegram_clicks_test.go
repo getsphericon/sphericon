@@ -160,7 +160,7 @@ func TestTelegramsLinkPreviewFetcherIsMachineEngagementAndAPersonSetsTheRollupAn
 	ctx := t.Context()
 	env.LacunaTelegram(t)
 	id := int64(fixtures.BroadcastLacunaTelegramClicksID)
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 	text, buttons := shortPaths(t, env, benChat)
 	clicked := func() bool {
 		return env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLacunaBenID)).OnlyX(ctx).ClickedAt != nil

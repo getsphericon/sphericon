@@ -4,18 +4,22 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/riverdriver"
 	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
+	"github.com/riverqueue/river/rivertest"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -27,13 +31,30 @@ import (
 // river's own insert-only client over the test's connection (the same txdb connection the
 // ent client rides), so nothing here touches the river table directly.
 
+// kindsOf is the kind of each args.
+func kindsOf(args []river.JobArgs) []string {
+	kinds := make([]string, len(args))
+	for i, a := range args {
+		kinds[i] = a.Kind()
+	}
+	return kinds
+}
+
 // maxQueuedJobs bounds a JobsOf read; a test queues a handful.
 // A test helper read bound; not in the contract.
 const maxQueuedJobs = 1000
 
 func (env *TestEnv) riverClient(tb testing.TB) *river.Client[*sql.Tx] {
 	tb.Helper()
-	rc, err := river.NewClient(riverdatabasesql.New(env.SQLDB), &river.Config{})
+	return RiverClientOn(tb, env.SQLDB)
+}
+
+// RiverClientOn is river's insert-only client over sqlDB with no middleware, for a test that
+// queues or reads jobs on a database of its own (RealDB): it queues even a job a production
+// client would refuse, such as one of a Workspace that names none.
+func RiverClientOn(tb testing.TB, sqlDB *sql.DB) *river.Client[*sql.Tx] {
+	tb.Helper()
+	rc, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
 	require.NoError(tb, err)
 	return rc
 }
@@ -131,31 +152,89 @@ func listArgs(t *testing.T, rc *river.Client[*sql.Tx], params *river.JobListPara
 	return out
 }
 
-// DeliverQueuedBroadcasts runs the send of every Broadcast that has a send job waiting in the
-// queue, the way a worker would (synchronously, ignoring the schedule), and returns once each
-// has been planned and its recipients sent. Nothing works the queue under txdb, so a test that
-// sends a Broadcast and then needs it delivered calls this.
+// ErrBroadcastWaits is what TryDeliverQueuedBroadcasts returns when a Broadcast's job waits
+// instead of ending: a Hold (the Broadcast records its reason), a Deferral or a live claim.
+var ErrBroadcastWaits = errors.New("testhelper: a Broadcast job waits")
+
+// maxBroadcastJobRuns bounds a delivery: every recipient's job runs at most its attempts.
+const maxBroadcastJobRuns = maxQueuedJobs * broadcasts.RecipientAttempts
+
+// DeliverQueuedBroadcasts works the send jobs of the Broadcasts waiting in the queue through the
+// Instance's Outbound module (DeliverQueuedBroadcastsThrough) and fails the test unless each ended.
+// Nothing works the queue under txdb, so a test that sends a Broadcast and then needs it
+// delivered calls this.
 func (env *TestEnv) DeliverQueuedBroadcasts(t *testing.T) {
 	t.Helper()
 	require.NoError(t, env.TryDeliverQueuedBroadcasts(t))
 }
 
-// TryDeliverQueuedBroadcasts is DeliverQueuedBroadcasts for a test that expects the send to be
-// refused (a Hold): it returns the first error a send returns instead of failing the test.
+// TryDeliverQueuedBroadcasts is DeliverQueuedBroadcasts for a test that expects the send to wait
+// (a Hold): it returns ErrBroadcastWaits, or a plan job's error, instead of failing the test.
 func (env *TestEnv) TryDeliverQueuedBroadcasts(t *testing.T) error {
 	t.Helper()
-	ids := map[int64]bool{}
-	for _, args := range env.JobsOf(t, broadcasts.SendArgs{}.Kind()) {
-		id, ok := args["broadcast_id"].(float64)
-		require.True(t, ok, "a send job names its Broadcast")
-		ids[int64(id)] = true // a schedule and a later send queue two jobs for one Broadcast
-	}
-	for id := range ids {
-		if err := jobs.SendBroadcast(t.Context(), env.DB, env.sender, id); err != nil {
-			return err
+	return env.DeliverQueuedBroadcastsThrough(t, env.sender)
+}
+
+// DeliverQueuedBroadcastsThrough works the queued plan jobs of the Broadcasts and the recipients'
+// jobs they queue through mod, by their real workers, oldest first and whatever their schedule
+// says, so a paced recipient is sent at once. A failed send is retried until its attempts run out
+// and the recipient is given up, as river would. It stops at the first job that waits
+// (ErrBroadcastWaits) and at a plan job's error.
+func (env *TestEnv) DeliverQueuedBroadcastsThrough(t *testing.T, mod *outboundmessages.Module) error {
+	t.Helper()
+	plan := broadcastWorker(t, env, jobs.NewSendBroadcastWorker(env.DB, mod))
+	send := broadcastWorker(t, env, jobs.NewSendRecipientWorker(env.DB, mod))
+	workers := map[string]performFunc{broadcasts.SendArgs{}.Kind(): plan, jobs.SendRecipientArgs{}.Kind(): send}
+	params := river.NewJobListParams().Kinds(broadcasts.SendArgs{}.Kind(), jobs.SendRecipientArgs{}.Kind()).
+		States(rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable).
+		OrderBy(river.JobListOrderByID, river.SortOrderAsc).First(1)
+	rc := env.riverClient(t)
+	for range maxBroadcastJobRuns {
+		res, err := rc.JobList(t.Context(), params)
+		require.NoError(t, err)
+		if len(res.Jobs) == 0 {
+			return nil
+		}
+		job := res.Jobs[0]
+		worked, workErr := env.performOne(t, workers[job.Kind], job)
+		if worked != nil && worked.EventKind == river.EventKindJobSnoozed {
+			return ErrBroadcastWaits
+		}
+		if workErr != nil && job.Kind == (broadcasts.SendArgs{}).Kind() {
+			return workErr
 		}
 	}
+	require.FailNow(t, "the Broadcast jobs did not run out")
 	return nil
+}
+
+// broadcastWorker is the performFunc of worker, run with the worker client's configuration.
+func broadcastWorker[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Worker[T]) performFunc {
+	t.Helper()
+	return rivertest.NewWorker(t, riverdatabasesql.New(env.SQLDB), jobs.WorkerConfig(env.DB), worker).WorkJob
+}
+
+// SendBroadcastThrough sends Broadcast id as a person's Send does (broadcasts.Module.Send, which
+// claims it and queues its plan job) and delivers it through mod (DeliverQueuedBroadcastsThrough).
+// A Broadcast already sending, which no Send claims again, gets the plan job its claim queued.
+func (env *TestEnv) SendBroadcastThrough(t *testing.T, mod *outboundmessages.Module, id int64) error {
+	t.Helper()
+	ctx := t.Context()
+	b := env.DB.Broadcast.GetX(ctx, id)
+	env.claimBroadcast(t, b)
+	return env.DeliverQueuedBroadcastsThrough(t, mod)
+}
+
+// claimBroadcast queues the plan job of b: through the Broadcasts module's Send, or, for a
+// Broadcast already sending, directly.
+func (env *TestEnv) claimBroadcast(t *testing.T, b *ent.Broadcast) {
+	t.Helper()
+	if b.Status == broadcast.StatusSending {
+		env.EnqueueJob(t, broadcasts.SendArgs{WorkspaceID: b.WorkspaceID, BroadcastID: b.ID})
+		return
+	}
+	_, err := broadcasts.New(env.Bus, nil, env.sender).Send(t.Context(), env.DB.Scoped(b.WorkspaceID), b.ID, b.Revision)
+	require.NoError(t, err)
 }
 
 // CancelPendingFor runs an owner's CancelPending for a Contact of the Initech Workspace the

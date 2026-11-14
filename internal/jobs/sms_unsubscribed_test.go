@@ -84,7 +84,7 @@ func TestAnSMSBroadcastsLinkNamesTheBroadcastAndCountsOnce(t *testing.T) {
 	ctx := t.Context()
 	env.LacunaTwilio(t)
 	id := int64(fixtures.BroadcastLacunaSmsLinksID)
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 	token := unsubscribeLink(t, env)
 
 	err := env.SiteAnonymous(t).SitePublicUnsubscribesPerform(ctx, siteapi.SitePublicUnsubscribesPerformParams{Token: token})

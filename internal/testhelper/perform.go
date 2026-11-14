@@ -86,11 +86,7 @@ func (env *TestEnv) performEnqueuedJobsInOrder(tb testing.TB, mustSucceed bool, 
 	params := river.NewJobListParams().States(rivertype.JobStateAvailable).
 		OrderBy(river.JobListOrderByID, order).First(maxQueuedJobs)
 	if len(only) > 0 {
-		kinds := make([]string, len(only))
-		for i, args := range only {
-			kinds[i] = args.Kind()
-		}
-		params = params.Kinds(kinds...)
+		params = params.Kinds(kindsOf(only)...)
 	}
 	rc := env.riverClient(tb)
 	workers := env.performers(tb)
@@ -124,11 +120,27 @@ func (env *TestEnv) performEnqueuedJobsInOrder(tb testing.TB, mustSucceed bool, 
 // included, as river does when a job ends.
 func (env *TestEnv) perform(ctx context.Context, tb testing.TB, perform performFunc, job *rivertype.JobRow, mustSucceed bool) {
 	tb.Helper()
-	tx, err := env.SQLDB.BeginTx(ctx, nil)
-	require.NoError(tb, err)
-	_, workErr := perform(ctx, tb, tx, job)
-	require.NoError(tb, tx.Commit())
+	_, workErr := env.performIn(ctx, tb, perform, job)
 	if mustSucceed {
 		require.NoError(tb, workErr, job.Kind)
 	}
+}
+
+// performOne is perform for one job outside PerformEnqueuedJobs: it opens the second connection
+// the work needs and returns what the job did and the worker's error.
+func (env *TestEnv) performOne(tb testing.TB, perform performFunc, job *rivertype.JobRow) (*rivertest.WorkResult, error) {
+	tb.Helper()
+	env.SQLDB.SetMaxOpenConns(2)
+	defer env.SQLDB.SetMaxOpenConns(1)
+	return env.performIn(tb.Context(), tb, perform, job)
+}
+
+// performIn works job in a transaction of its own and commits what it did.
+func (env *TestEnv) performIn(ctx context.Context, tb testing.TB, perform performFunc, job *rivertype.JobRow) (*rivertest.WorkResult, error) {
+	tb.Helper()
+	tx, err := env.SQLDB.BeginTx(ctx, nil)
+	require.NoError(tb, err)
+	res, workErr := perform(ctx, tb, tx, job)
+	require.NoError(tb, tx.Commit())
+	return res, workErr
 }

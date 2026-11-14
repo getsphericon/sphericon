@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -22,7 +20,7 @@ func TestThePurgeRemovesLapsedAndUsedStartTokensAndKeepsOpenOnes(t *testing.T) {
 	ctx := t.Context()
 	w := jobs.NewPruneStartTokensWorker(env.DB, time.Now)
 
-	require.NoError(t, w.Work(ctx, &river.Job[jobs.PruneStartTokensArgs]{JobRow: &rivertype.JobRow{}}))
+	require.NoError(t, w.Work(ctx, job(jobs.PruneStartTokensArgs{})))
 
 	left := env.DB.StartToken.Query().Where(starttoken.IDIn(
 		fixtures.StartTokenAcmeUsedID, fixtures.StartTokenGlobexUsedID, fixtures.StartTokenAcmeOpenID,

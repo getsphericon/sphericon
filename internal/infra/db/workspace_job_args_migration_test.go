@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -20,8 +19,7 @@ import (
 // queuedArgs is every job left in the queue, by its id, with its args, read through river.
 func queuedArgs(t *testing.T, sqlDB *sql.DB) map[int64]map[string]any {
 	t.Helper()
-	rc, err := river.NewClient(riverdatabasesql.New(sqlDB), &river.Config{})
-	require.NoError(t, err)
+	rc := testhelper.RiverClientOn(t, sqlDB)
 	res, err := rc.JobList(t.Context(), river.NewJobListParams().First(100))
 	require.NoError(t, err)
 	return lo.SliceToMap(res.Jobs, func(job *rivertype.JobRow) (int64, map[string]any) {

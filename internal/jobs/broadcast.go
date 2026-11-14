@@ -127,20 +127,6 @@ func riverResult(out broadcasts.Outcome) error {
 	return out.Err
 }
 
-// SendBroadcast runs a Broadcast's delivery sequence synchronously (broadcasts.Delivery.RunInline):
-// the module plans and paces it exactly as production does and sends each recipient in order at
-// once. It is the queue-free adapter for tests.
-//
-// Audience = workspace contacts with an email address (optionally narrowed by a
-// segment) minus the ineligible (suppressed / unsubscribed, derived per ADR 0001).
-func SendBroadcast(ctx context.Context, client *ent.Client, mod *outboundmessages.Module, broadcastID int64) error {
-	s, err := broadcastScope(ctx, client, broadcastID)
-	if err != nil {
-		return err
-	}
-	return broadcasts.NewDelivery(mod).RunInline(ctx, s, broadcastID)
-}
-
 // broadcastScope loads the Broadcast row that names the Workspace and scopes to it (the job
 // entry point, ADR 0017).
 func broadcastScope(ctx context.Context, client *ent.Client, broadcastID int64) (*ent.Scoped, error) {

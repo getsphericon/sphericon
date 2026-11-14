@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -26,7 +24,7 @@ func TestErasureJobTriggersTheModuleAtItsClock(t *testing.T) {
 	clock := func() time.Time { return now }
 	w := jobs.NewEraseWorkspacesWorker(workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock))
 
-	require.NoError(t, w.Work(context.Background(), &river.Job[jobs.EraseWorkspacesArgs]{JobRow: &rivertype.JobRow{}}))
+	require.NoError(t, w.Work(context.Background(), job(jobs.EraseWorkspacesArgs{})))
 
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.UmbrellaID)
 	require.NotNil(t, ws.ErasedAt)

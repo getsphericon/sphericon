@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
-	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -60,7 +59,7 @@ func TestATelegramBroadcastFreezesOnlyBoundContactsAndSendsOncePerBinding(t *tes
 	env.LacunaTelegram(t)
 	id := int64(fixtures.BroadcastLacunaTelegramHelloID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	recipients := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).Order(broadcastrecipient.ByContactID()).AllX(ctx)
 	assert.Equal(t, []int64{fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaByVisitorID, fixtures.ContactLacunaFayID},
@@ -160,7 +159,7 @@ func TestATelegramBroadcastToASegmentFreezesOnlyItsBoundContacts(t *testing.T) {
 	env.LacunaTelegram(t)
 	id := int64(fixtures.BroadcastLacunaTelegramChathamID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	recipients := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).AllX(ctx)
 	assert.ElementsMatch(t, []int64{fixtures.ContactLacunaBenID, fixtures.ContactLacunaByVisitorID, fixtures.ContactLacunaFayID},
@@ -192,8 +191,8 @@ func TestATelegramBroadcastSendsItsImageButtonsAndUnsubscribeButton(t *testing.T
 	id := int64(fixtures.BroadcastLacunaTelegramRichID)
 	textOnly := int64(fixtures.BroadcastLacunaTelegramNoPreviewID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), textOnly))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), textOnly))
 
 	photos := requestsTo(env.Telegram.RequestsOf(telegramtest.SendPhoto), benChat)
 	require.Len(t, photos, 1)
@@ -217,7 +216,7 @@ func TestATelegramBroadcastCaptionOverTheCaptionLimitFailsThatMessage(t *testing
 	env.DB.Contact.UpdateOneID(fixtures.ContactLacunaBenID).SetFirstName(fmt.Sprintf("%0100d", 0)).ExecX(ctx)
 	id := int64(fixtures.BroadcastLacunaTelegramLongCaptionID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	assert.Empty(t, requestsTo(env.Telegram.RequestsOf(telegramtest.SendPhoto), benChat))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id), outboundmessage.ContactID(fixtures.ContactLacunaBenID)).OnlyX(ctx)
@@ -232,7 +231,7 @@ func TestATelegramBroadcastsUnsubscribeLinkAndButtonOptTheChatOutOfBroadcasts(t 
 	ctx := t.Context()
 	env.LacunaTelegram(t)
 	id := int64(fixtures.BroadcastLacunaTelegramUnsubscribeID)
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 	sends := requestsTo(env.Telegram.RequestsOf(telegramtest.SendMessage), benChat)
 	require.Len(t, sends, 1)
 	link := regexp.MustCompile(`/e/u/([^"]+)"`).FindStringSubmatch(sends[0].String("text"))

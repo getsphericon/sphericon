@@ -57,7 +57,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	env.LacunaTwilio(t)
 	id := int64(fixtures.BroadcastLacunaSmsLinksID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	sent := env.Twilio.Messages()
 	body := sent[0].Body
@@ -114,7 +114,7 @@ func TestAnSMSBroadcastWithLinkTrackingOffGoesOutAsWritten(t *testing.T) {
 	env.LacunaTwilio(t)
 	id := int64(fixtures.BroadcastLacunaSmsUntrackedID)
 
-	require.NoError(t, jobs.SendBroadcast(ctx, env.DB, env.OutboundModule(), id))
+	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	sent := env.Twilio.Messages()
 	require.Len(t, sent, 1)

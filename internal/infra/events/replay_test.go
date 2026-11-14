@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/riverdriver/riverdatabasesql"
 	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,8 +44,7 @@ func TestReplayQueueFailureRollsBackEvenAnInsertedPrefix(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, env.Bus.Publish(t.Context(), &events.EmailEngagement{Action: systemevent.EmailOpened, WorkspaceID: fixtures.AcmeID, OutboundMessageID: fixtures.OutboundMessageTrackingSampleID}))
 	removeReportJobs(t, env.Bus, s, jobs.MessageObservationArgs{})
-	queue, err := river.NewClient(riverdatabasesql.New(env.SQLDB), &river.Config{})
-	require.NoError(t, err)
+	queue := testhelper.RiverClientOn(t, env.SQLDB)
 	boom := errors.New("queue failed after inserting")
 	env.Bus.UseJobs(failAfterReplayInsert{JobQueue: queue, failure: boom})
 	result, err := env.Bus.Replay(t.Context(), fixtures.AcmeID, events.ReplayRequest{Consumer: jobs.MessageObservationArgs{}.Kind(), From: at, Before: at.Add(time.Minute)})
