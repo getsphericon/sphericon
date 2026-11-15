@@ -48,7 +48,9 @@ func NewFlowCodec(secret string, now func() time.Time) *FlowCodec {
 	}
 	key, err := hkdf.Key(sha256.New, []byte(secret), nil, "signin_flow", sha256.Size)
 	if err != nil {
-		// HKDF refuses only a key longer than 255 hashes; one hash's length never is.
+		// HKDF refuses a key longer than 255 hashes, which one hash's length never is, and, in FIPS
+		// 140-only mode, a secret shorter than 112 bits, which the configuration refuses outside
+		// development.
 		panic("signinprovider: " + err.Error())
 	}
 	return &FlowCodec{key: key, now: now}
