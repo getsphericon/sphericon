@@ -166,7 +166,7 @@ const (
 // they are never carried. Failures and Window are the run of failures that disables an endpoint
 // (at least Failures in a row over more than Window), as they were when this one was disabled, so
 // a threshold changed since words an old disable as it happened. Version 1 carried neither: one
-// still queued decodes with both zero.
+// still queued decodes with both zero, and Measured says so.
 type WebhookEndpointDisabled struct {
 	WorkspaceID int64                 `json:"workspaceId"`
 	EndpointID  int64                 `json:"endpointId"`
@@ -179,3 +179,7 @@ type WebhookEndpointDisabled struct {
 func (*WebhookEndpointDisabled) EventName() string  { return NameWebhookEndpointDisabled }
 func (*WebhookEndpointDisabled) EventVersion() int  { return 2 }
 func (e *WebhookEndpointDisabled) Workspace() int64 { return e.WorkspaceID }
+
+// Measured reports whether the event carries the run of failures that disabled the endpoint: a
+// version 1 event carries none. The delivery never disables on a run of no failures.
+func (e *WebhookEndpointDisabled) Measured() bool { return e.Failures > 0 && e.Window > 0 }

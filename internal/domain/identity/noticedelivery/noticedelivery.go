@@ -431,8 +431,7 @@ func (u *Module) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Noti
 			"Window":    e.Window.String(),
 		}
 		reason := disabledReasons[e.Reason]
-		if e.Reason == events.WebhookDisabledPersistentFailure && e.Failures == 0 {
-			// A version 1 event carries no run of failures: it is worded without one.
+		if e.Reason == events.WebhookDisabledPersistentFailure && !e.Measured() {
 			reason = i18n.EmailWebhookDisabledReasonPersistentFailureUnmeasured
 		}
 		data["Reason"] = i18n.T(reason, data)
