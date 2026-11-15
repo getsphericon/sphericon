@@ -1,8 +1,8 @@
 import { identify, initTracking, track, trackPageView } from '@sphericon/analytics'
+import { hc } from 'hono/client'
 import type { DataRouter, Location } from 'react-router'
 
-import { ENROLL_PATH } from '../server/enroll.ts'
-import type { EnrollRequest } from '../server/enroll.ts'
+import type { StorefrontApp } from '../server/app.ts'
 
 // The tracker posts to the `collect.` host (SPHERICON_COLLECT_HOST), not to the `api.` host: Caddy rewrites
 // every path there to /api/*, so /collect would resolve to /api/collect.
@@ -60,12 +60,8 @@ export async function signUp(email: string): Promise<void> {
 export async function enroll(email: string, courses: readonly string[]): Promise<void> {
   const subjectId = subjectIdFor(email)
   await identify({ email, subjectId })
-  const body: EnrollRequest = { email, subjectId, courses: [...courses] }
-  const response = await fetch(ENROLL_PATH, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  })
+  const server = hc<StorefrontApp>(location.origin)
+  const response = await server.enroll.$post({ json: { email, subjectId, courses: [...courses] } })
   if (!response.ok) {
     throw new Error(`Enroll failed: ${response.status}`)
   }

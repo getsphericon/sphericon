@@ -1,7 +1,7 @@
 import { Button, Card, SimpleGrid, Text, Title } from '@mantine/core'
 
 import { useCart } from '../cartContext.ts'
-import { COURSES } from '../courses.ts'
+import { COURSES, formatDollars } from '../courses.ts'
 import { addedToCart } from '../tracking.ts'
 
 export function CoursesPage() {
@@ -23,7 +23,7 @@ export function CoursesPage() {
                 {course.blurb}
               </Text>
               <Text fw={700} mb="md">
-                ${course.price}
+                {formatDollars(course.price)}
               </Text>
               <Button
                 disabled={inCart}

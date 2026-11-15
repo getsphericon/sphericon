@@ -1,3 +1,4 @@
+import { zValidator } from '@hono/zod-validator'
 import { contactsBatchUpsert, eventsCreate } from '@sphericon/node'
 import { Hono } from 'hono'
 
@@ -5,16 +6,10 @@ import { COURSES, totalPrice } from '../src/courses.ts'
 import { ENROLL_PATH, enrollSchema } from './enroll.ts'
 
 // "Enroll" is a fake checkout: there is no payment provider, so the server only tells the
-// platform what happened, through the generated SDK.
-export function createApp(): Hono {
-  const app = new Hono()
-
-  app.post(ENROLL_PATH, async (c) => {
-    const parsed = enrollSchema.safeParse(await c.req.json())
-    if (!parsed.success) {
-      return c.json({ error: parsed.error.message }, 400)
-    }
-    const { email, subjectId, courses } = parsed.data
+// platform what happened, through the generated SDK. A request the schema refuses is answered 400.
+export function createApp() {
+  return new Hono().post(ENROLL_PATH, zValidator('json', enrollSchema), async (c) => {
+    const { email, subjectId, courses } = c.req.valid('json')
 
     const bought = COURSES.filter((course) => courses.includes(course.slug))
     if (bought.length !== courses.length) {
@@ -45,6 +40,7 @@ export function createApp(): Hono {
 
     return c.json({ enrolled: courses })
   })
-
-  return app
 }
+
+// The storefront's routes as the browser's typed client sees them.
+export type StorefrontApp = ReturnType<typeof createApp>
