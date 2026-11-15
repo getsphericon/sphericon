@@ -251,8 +251,8 @@ func takeIntegration(ctx context.Context, s *ent.Scoped, integrationID int64, l 
 			Modify(func(u *ent.ScopedAssign) { assignSpent(u, bs, providerlimiter.FieldRefilledAt, now) }).
 			Save(ctx)
 	}
-	ensure := func() error {
-		return ignoreConflict(s.ProviderLimiter().Create().
+	ensure := func() (bool, error) {
+		return db.Inserted(s.ProviderLimiter().Create().
 			SetIntegrationID(integrationID).
 			SetSecondFill(1).
 			SetDayFill(1).
@@ -261,7 +261,7 @@ func takeIntegration(ctx context.Context, s *ent.Scoped, integrationID int64, l 
 			DoNothing().
 			Exec(ctx))
 	}
-	return takeOrCreate(update, ensure)
+	return takeOrCreate(update, ensure, guarded)
 }
 
 // takeWorkspace is takeIntegration for the Workspace's Send cap bucket.
@@ -277,25 +277,30 @@ func takeWorkspace(ctx context.Context, s *ent.Scoped, sendCap int, now time.Tim
 			Modify(func(u *ent.ScopedAssign) { assignSpent(u, bs, sendcaplimiter.FieldRefilledAt, now) }).
 			Save(ctx)
 	}
-	ensure := func() error {
-		return ignoreConflict(s.SendCapLimiter().Create().
+	ensure := func() (bool, error) {
+		return db.Inserted(s.SendCapLimiter().Create().
 			SetDayFill(1).
 			SetRefilledAt(now).
 			OnConflictColumns(sendcaplimiter.FieldWorkspaceID).
 			DoNothing().
 			Exec(ctx))
 	}
-	return takeOrCreate(update, ensure)
+	return takeOrCreate(update, ensure, guarded)
 }
 
-// takeOrCreate runs update; when it touched no row (either there is none yet or a bucket is
-// short) it makes sure the row exists with full buckets and runs update once more.
-func takeOrCreate(update func() (int, error), ensure func() error) (bool, error) {
+// takeOrCreate runs update; when it touched no row, either there is none yet or (guarded) a
+// bucket is short. ensure creates the row with full buckets when there is none, and update runs
+// once more. A guarded take whose row was already there was short, the common way here, so its
+// denial costs no second UPDATE; a row another worker created between the two then reads as short
+// once, and the reservation is retried after the Shortfall's wait. An unguarded take always runs
+// it, so a spend is never lost.
+func takeOrCreate(update func() (int, error), ensure func() (bool, error), guarded bool) (bool, error) {
 	n, err := update()
 	if err != nil || n > 0 {
 		return n > 0, err
 	}
-	if err := ensure(); err != nil {
+	created, err := ensure()
+	if err != nil || (guarded && !created) {
 		return false, err
 	}
 	n, err = update()
@@ -307,13 +312,6 @@ var _ = db.Declare(
 	db.Fault("provider_limiters_integration_id_key", "a limiter is written with ON CONFLICT DO NOTHING, then taken from"),
 	db.Fault("sendcaplimiter_workspace_id", "a limiter is written with ON CONFLICT DO NOTHING, then taken from"),
 )
-
-// ignoreConflict treats an insert that did nothing on conflict as done: someone else created the
-// row.
-func ignoreConflict(err error) error {
-	_, err = db.Inserted(err)
-	return err
-}
 
 // shortfall reads the buckets of r and computes how long until each holds one token, reporting
 // the longest wait and its limit. It is informational (the reservation itself
