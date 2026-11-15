@@ -60,6 +60,11 @@ type statement struct {
 	ignored bool
 }
 
+// lineComment is a `--` comment inside a statement, which the scanner leaves in its text: the
+// allowlist must not read `-- not concurrently` as CONCURRENTLY. A `--` inside a string literal is
+// cut too, which only removes text, so a statement can fail the allowlist by it but never pass.
+var lineComment = regexp.MustCompile(`--[^\n]*`)
+
 // statements splits a goose Up section as Postgres reads it, with atlas's scanner of the Postgres
 // driver: at every semicolon outside a string literal, a quoted identifier, a dollar-quoted body or
 // parentheses. Splitting at line ends instead would let a statement after a trailing comment, or a
@@ -74,7 +79,7 @@ func statements(up string) ([]statement, error) {
 	out := make([]statement, 0, len(stmts))
 	for _, st := range stmts {
 		out = append(out, statement{
-			text:    strings.TrimSuffix(st.Text, ";"),
+			text:    strings.TrimSpace(lineComment.ReplaceAllString(strings.TrimSuffix(st.Text, ";"), "")),
 			ignored: slices.ContainsFunc(st.Comments, ignores),
 		})
 	}
