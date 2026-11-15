@@ -423,8 +423,10 @@ func validDomain(d string) bool {
 	return true
 }
 
-// gojqValue converts a body decoded with json.Number to the numbers gojq accepts,
-// keeping integers exact (int or *big.Int, else float64).
+// gojqValue gives the program each number of a body decoded with json.Number by its value:
+// integers exact (int or *big.Int), else float64. gojq takes a json.Number as it is too, but
+// keeps its spelling, so `1.0 | tostring` would be "1.0" and `1e2 | tostring` "1e2" (the
+// chat test Preset pins this).
 func gojqValue(v any) any {
 	switch x := v.(type) {
 	case json.Number:

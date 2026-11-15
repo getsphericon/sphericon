@@ -78,3 +78,18 @@ tests:
     params: *params
     request: { headers: { X-Token: wrong }, body: '{"events":[]}' }
     expect: { refused: unauthentic }
+  - name: a number reads as its value, not its spelling, and an integer past 2^53 stays exact
+    params: *params
+    request:
+      headers: *headers
+      body: '{"events":[{"type":"message","event_id":"13","from":12345678901234567890,"chat":1.0,"message":1e2,"text":"hi"}]}'
+    expect:
+      inbound_messages:
+        - {
+            id: '13',
+            channel: telegram,
+            destination: '12345678901234567890',
+            chat_id: '1',
+            message_id: '100',
+            text: hi,
+          }
