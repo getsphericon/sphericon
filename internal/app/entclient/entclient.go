@@ -66,10 +66,26 @@ func (c Clients) NewTx(drv dialect.Driver) *ent.Client {
 // forget it: an editor's write names
 // the revision it was made on, and any other write in between makes it stale. An update that writes
 // Bookkeeping columns alone (ent.Bookkeeping) leaves it: no editor shows them, so a background job
-// that keeps them does not refuse a person's save.
+// that keeps them does not refuse a person's save. An update of one row that changes nothing
+// (ent.Unchanged, read by the row's id and the update's predicates) is not written at all: it
+// returns the row, and neither the revision nor updated_at moves. It runs outermost, so the hooks
+// after it see no write. A bulk update is always written: a state move is conditioned on the state
+// it leaves (ADR 0109), and an edit of one row goes by id.
 func Revision(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-		if ent.Kinds[m.Type()].Revised && m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) && !bookkeepingOnly(m) {
+		if !ent.Kinds[m.Type()].Revised {
+			return next.Mutate(ctx, m)
+		}
+		if m.Op().Is(ent.OpUpdateOne) {
+			row, unchanged, err := ent.Unchanged(ctx, m)
+			if err != nil {
+				return nil, fmt.Errorf("comparing an update of %s with its row: %w", m.Type(), err)
+			}
+			if unchanged {
+				return row, nil
+			}
+		}
+		if m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) && !bookkeepingOnly(m) {
 			if err := m.AddField(schema.RevisionColumn, int64(1)); err != nil {
 				return nil, fmt.Errorf("moving the revision of %s: %w", m.Type(), err)
 			}

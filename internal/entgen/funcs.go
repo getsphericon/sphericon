@@ -30,6 +30,12 @@ func (s *Schema) Funcs() template.FuncMap {
 		// versioned reports whether n is a Versioned definition (ADR 0065): its scoped wrapper gets
 		// the pointer operations (<N>Pointers) that internal/drafts runs the lifecycle on.
 		"versioned": func(n *gen.Type) bool { return s.kind(n).Versioned },
+		// unchangedNodes lists the types with a revision whose update that changes nothing writes
+		// nothing (ADR 0119): all but the Versioned definitions, whose compare-and-swap names the
+		// revision with the rest of their position.
+		"unchangedNodes": func() []*gen.Type {
+			return s.nodes(func(k schema.Kind) bool { return k.Revised && !k.Versioned })
+		},
 		// versionedNodes lists the Versioned definitions.
 		"versionedNodes": func() []*gen.Type { return s.nodes(func(k schema.Kind) bool { return k.Versioned }) },
 		// versionOf returns the version entity of a Versioned definition.
