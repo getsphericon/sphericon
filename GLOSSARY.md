@@ -1786,6 +1786,14 @@ sends still in flight. It is what lets a reader notice a limit being approached 
 closes; the Usage snapshot remains the only final figure.
 _Avoid_: Current usage, real-time usage
 
+**Local-time schedule**:
+A Broadcast's schedule for a date and a time of day reached in each Recipient's time zone (the
+Contact's, else the Workspace's), so each gets it at the same local hour; it runs from the first zone
+to the last, and cannot be armed once the moment has passed in any zone. Not for a Split test or a
+Broadcast series.
+_Avoid_: Timewarp, time zone sending, send-time optimization (choosing a moment per person, which the
+app does not do)
+
 **Sending window**:
 The hours and days of the week, in the recipient's local time, in which a Workspace's marketing SMS
 may go out (8:00 to 20:00 every day unless it changes it, with windows of its own for countries).
