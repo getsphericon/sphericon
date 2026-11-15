@@ -841,9 +841,9 @@ rules:
     forbid_external: *no-container
     because: a tool package reads files and contracts, never the application's modules; what it needs from the application is the kernel
   testsupport:
-    may_depend_on: [domain-identity-raw]
+    may_depend_on: []
     forbid_external: *no-container
-    because: test support loads the committed fixtures through the modules' own functions where one exists (an Invitation's token) and knows no driver
+    because: test support loads the committed fixtures with the kernel's own functions (a secret's hash) and knows no driver
   usecase:
     forbid_external: *no-container
     because: a use case composes the domain modules (ADR 0102); a piece two use cases share moves down into the domain module that owns it, and the kernel, the infrastructure and ent are open to it (common)

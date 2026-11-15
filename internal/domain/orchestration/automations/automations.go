@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
@@ -362,14 +363,7 @@ func validateEvents(def definition) error {
 // normalizeExits turns a list of exit events into its stored form: each trimmed, the first of a
 // repeat kept, never nil.
 func normalizeExits(actions []string) []string {
-	out := make([]string, 0, len(actions))
-	for _, e := range actions {
-		e = strings.TrimSpace(e)
-		if !slices.Contains(out, e) {
-			out = append(out, e)
-		}
-	}
-	return out
+	return lo.Uniq(lo.Map(actions, func(e string, _ int) string { return strings.TrimSpace(e) }))
 }
 
 // normalizeGoal turns a goal event into its stored form: trimmed, nil for none.
@@ -573,7 +567,7 @@ func canonical(v *ent.AutomationVersion) (definition, error) {
 
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
 	held, err := canonical(v)
-	return err == nil && held.trigger == def.trigger && slices.Equal(held.exits, def.exits) && samePtr(held.goal, def.goal) &&
+	return err == nil && held.trigger == def.trigger && slices.Equal(held.exits, def.exits) && optional.Equal(held.goal, def.goal) &&
 		held.steps == def.steps
 }
 
@@ -704,14 +698,6 @@ func (versioned) Archivable(ctx context.Context, l *ent.WorkspaceLocked, a *ent.
 		return &liveuse.Error{What: liveuse.SubjectAutomation, Users: []liveuse.User{liveuse.Enrollments(a.ID, a.Name, active)}}
 	}
 	return nil
-}
-
-// samePtr reports whether two optional values are both absent or both present and equal.
-func samePtr[T comparable](a, b *T) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-	return *a == *b
 }
 
 // checkIntegration refuses an Integration that is missing or archived, the rule a Broadcast

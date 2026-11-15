@@ -10,8 +10,10 @@
 package emailrender
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"slices"
 	"strings"
 
@@ -30,11 +32,26 @@ var ErrInvalidContent = errors.New("message content cannot be rendered")
 // engine renders the subject and any other plain-text template: no escaping. bodyEngine
 // renders the HTML body: the value of every {{ }} is HTML-escaped as it is written, and
 // {{ value | safe }} is the explicit raw output (for a Transactional variable that carries
-// HTML on purpose). Both are safe for concurrent ParseAndRender calls.
+// HTML on purpose). jsonEngine renders a JSON body (an HTTP call's, ADR 0039): the value of every
+// {{ }} is written as the inside of a JSON string, so a value holding quotes cannot change the
+// structure, and {{ value | safe }} is the explicit raw output (a {% capture %} block, whose
+// values were escaped when it was captured). All are safe for concurrent ParseAndRender calls.
 var (
-	engine     = newEngine(false)
-	bodyEngine = newEngine(true)
+	engine     = newEngine(nil)
+	bodyEngine = newEngine(render.HtmlEscaper)
+	jsonEngine = newEngine(jsonStringEscaper{})
 )
+
+// jsonStringEscaper writes a value as encoding/json writes it inside a JSON string.
+type jsonStringEscaper struct{}
+
+func (jsonStringEscaper) WriteString(w io.Writer, s string) (int, error) {
+	quoted, err := json.Marshal(s)
+	if err != nil {
+		return 0, err
+	}
+	return w.Write(quoted[1 : len(quoted)-1])
+}
 
 // errFileTags is what {% include %} and {% render %} fail with: template authors
 // are workspace members and API clients, never trusted with the server's files.
@@ -47,11 +64,13 @@ type noFiles struct{}
 
 func (noFiles) ReadTemplate(string) ([]byte, error) { return nil, errFileTags }
 
-func newEngine(escapeHTML bool) *liquid.Engine {
+// newEngine is a Liquid engine with no file tags that escapes each value it writes with escaper,
+// or writes it as it is when escaper is nil.
+func newEngine(escaper render.Replacer) *liquid.Engine {
 	e := liquid.NewEngine()
 	e.RegisterTemplateStore(noFiles{})
-	if escapeHTML {
-		e.SetAutoEscapeReplacer(render.HtmlEscaper)
+	if escaper != nil {
+		e.SetAutoEscapeReplacer(escaper)
 	}
 	return e
 }
@@ -94,6 +113,12 @@ func renderBoth(subject, body string, bindings map[string]any) (renderedSubject,
 // is written, as in an email body. Another Channel's markup text (Telegram's) renders through it.
 func RenderBody(tmpl string, bindings map[string]any) (string, error) {
 	return bodyEngine.ParseAndRenderString(tmpl, bindings)
+}
+
+// RenderJSON renders a Liquid template as JSON text: the value of every {{ }} is written as the
+// inside of a JSON string, so the template places it between quotes (or bare, for a number).
+func RenderJSON(tmpl string, bindings map[string]any) (string, error) {
+	return jsonEngine.ParseAndRenderString(tmpl, bindings)
 }
 
 // Render renders a Liquid template with the given bindings. On a template error

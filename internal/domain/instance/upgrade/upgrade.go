@@ -19,9 +19,12 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"golang.org/x/mod/semver"
+
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -242,16 +245,13 @@ func chooseVersion(ctx context.Context, o Options) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	newest := ""
-	for _, v := range versions {
-		if semver.IsValid(buildinfo.Semver(v)) && (newest == "" || semver.Compare(buildinfo.Semver(v), buildinfo.Semver(newest)) > 0) {
-			newest = v
-		}
-	}
-	if newest == "" {
+	valid := lo.Filter(versions, func(v string, _ int) bool { return semver.IsValid(buildinfo.Semver(v)) })
+	if len(valid) == 0 {
 		return "", fmt.Errorf("no release for %s/%s found", o.Platform.OS, o.Platform.Arch)
 	}
-	return newest, nil
+	return slices.MaxFunc(valid, func(a, b string) int {
+		return semver.Compare(buildinfo.Semver(a), buildinfo.Semver(b))
+	}), nil
 }
 
 // verify checks the archive's sha256 against its line in checksums.txt.

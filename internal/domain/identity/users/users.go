@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"golang.org/x/text/language"
@@ -483,10 +485,7 @@ func RecordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publishe
 	if err != nil {
 		return err
 	}
-	ids := make([]int64, len(held))
-	for i, m := range held {
-		ids[i] = m.WorkspaceID
-	}
+	ids := lo.Map(held, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID })
 	return RecordActionOnUserIn(ctx, pub, actor, u, action, diff, ids...)
 }
 

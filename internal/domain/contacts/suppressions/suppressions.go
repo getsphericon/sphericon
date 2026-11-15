@@ -68,9 +68,6 @@ type Entry struct {
 // telegramUserID is what a Telegram Destination is: the user's numeric id.
 var telegramUserID = regexp.MustCompile(`^\d{1,20}$`)
 
-// e164 is what an SMS Destination is: a phone number in E.164.
-var e164 = regexp.MustCompile(`^\+[1-9]\d{6,14}$`)
-
 // ValidDestination reports whether dest, already normalized, can be a Destination on the Channel:
 // anything non-empty on email (the contract checks the address), a Telegram user id on Telegram, a
 // number in E.164 on SMS.
@@ -79,7 +76,7 @@ func ValidDestination(channel channels.Channel, dest string) bool {
 	case channels.Telegram:
 		return telegramUserID.MatchString(dest)
 	case channels.SMS:
-		return e164.MatchString(dest)
+		return phone.IsE164(dest)
 	case channels.Email:
 		return dest != ""
 	}
@@ -196,7 +193,7 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 		return err
 	}
 	lifted := entsuppression.ID(row.ID)
-	if row.Channel == channels.SMS && e164.MatchString(row.Destination) {
+	if row.Channel == channels.SMS && phone.IsE164(row.Destination) {
 		lifted = entsuppression.Or(lifted, entsuppression.And(
 			entsuppression.ChannelEQ(channels.SMS), entsuppression.DestinationEQ(phone.Hash(row.Destination))))
 	}

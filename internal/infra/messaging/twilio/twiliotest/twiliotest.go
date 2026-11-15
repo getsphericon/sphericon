@@ -16,6 +16,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -252,17 +253,12 @@ func (s *Server) Messages() []Message {
 
 // Sign is the X-Twilio-Signature Twilio sends with a callback it posts to rawURL with form, signed
 // with the account's Auth Token: the base64 HMAC-SHA1 of the URL followed by each POST parameter's
-// name and value, sorted by name.
+// name and value, sorted by name and, for a repeated parameter, by value.
 func Sign(authToken, rawURL string, form url.Values) string {
 	var b strings.Builder
 	b.WriteString(rawURL)
-	names := make([]string, 0, len(form))
-	for name := range form {
-		names = append(names, name)
-	}
-	slices.Sort(names)
-	for _, name := range names {
-		for _, v := range form[name] {
+	for _, name := range slices.Sorted(maps.Keys(form)) {
+		for _, v := range slices.Sorted(slices.Values(form[name])) {
 			b.WriteString(name)
 			b.WriteString(v)
 		}

@@ -207,7 +207,7 @@ func (m *Module) Current(ctx context.Context, userID int64) ([]Record, error) {
 		records[i] = Record{
 			Key: r.Edges.Version.Edges.Item.Key, Version: r.Edges.Version.Label,
 			Decision: r.Decision, Source: r.Source, DecidedAt: r.CreatedAt,
-			IP: deref(r.IP), UserAgent: deref(r.UserAgent),
+			IP: lo.FromPtr(r.IP), UserAgent: lo.FromPtr(r.UserAgent),
 		}
 	}
 	return records, nil
@@ -253,11 +253,4 @@ func sortedByForm(rows []*ent.ConsentRecord) []*ent.ConsentRecord {
 		return cmp.Or(cmp.Compare(ia.Position, ib.Position), cmp.Compare(ia.ID, ib.ID))
 	})
 	return rows
-}
-
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }

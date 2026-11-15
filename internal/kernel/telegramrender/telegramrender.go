@@ -19,6 +19,8 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 )
@@ -306,7 +308,7 @@ func VisibleLength(markup string) int {
 
 // WrittenLength is the length of text as written, in UTF-16 code units, the way an editor counts
 // it. A text longer than MaxText is refused where a send is armed.
-func WrittenLength(text string) int { return len(utf16.Encode([]rune(text))) }
+func WrittenLength(text string) int { return lo.SumBy([]rune(text), utf16.RuneLen) }
 
 // RewriteLinks returns the sanitized markup with the href of every `a` replaced by what rewrite
 // returns for it, and the rest untouched: the Outbound send turns the links into short tracked ones

@@ -47,6 +47,10 @@ tests:
 			files: map[string]string{"bad.yaml": "version: 1\nname: [\n"},
 			want:  []string{"bad.yaml:"},
 		},
+		"a syntax error names its line": {
+			files: map[string]string{"bad.yaml": "version: 1\nname: ok\n params: {}\n"},
+			want:  []string{"bad.yaml:3"},
+		},
 		"schema violation names the line": {
 			files: map[string]string{"bad.yaml": "version: 1\nname: ok\nparams: {type: object}\nverify:\n  kind: token\n  secret: s\n  header: Not A Header\ntransform: '[]'\ntests:\n  - {name: t, request: {body: '{}'}, expect: {refused: unauthentic}}\n"},
 			want:  []string{"bad.yaml:7"},

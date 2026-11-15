@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -83,8 +84,8 @@ func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 		inv, token, err := invites.Invite(ctx, s, actor, in)
 		require.NoError(t, err)
 
-		assert.Len(t, token, 48)
-		assert.Equal(t, invitations.HashInviteToken(token), inv.TokenHash)
+		assert.Regexp(t, `^[A-Za-z0-9_-]+$`, token, "it travels in a link as it is")
+		assert.Equal(t, credentials.HashSecret(token), inv.TokenHash)
 		assert.Len(t, inv.TokenHash, 64, "sha-256 hex")
 		assert.NotContains(t, inv.TokenHash, token)
 		assert.WithinDuration(t, before.Add(invitations.InviteTokenTTL), inv.ExpiresAt, 5*time.Second)

@@ -24,6 +24,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 )
@@ -64,7 +65,6 @@ var (
 	accountSIDFormat = regexp.MustCompile(`^AC[0-9a-fA-F]{32}$`)
 	apiKeySIDFormat  = regexp.MustCompile(`^SK[0-9a-fA-F]{32}$`)
 	serviceSIDFormat = regexp.MustCompile(`^MG[0-9a-fA-F]{32}$`)
-	numberFormat     = regexp.MustCompile(`^\+[1-9]\d{6,14}$`)
 	// An alphanumeric sender ID is up to 11 letters, digits and spaces, with at least one letter.
 	alphanumericFormat = regexp.MustCompile(`^[A-Za-z0-9 ]{1,11}$`)
 	hasLetter          = regexp.MustCompile(`[A-Za-z]`)
@@ -94,7 +94,7 @@ func FromKind(from string) (messaging.SMSFromKind, bool) {
 	switch {
 	case serviceSIDFormat.MatchString(from):
 		return messaging.SMSFromMessagingService, true
-	case numberFormat.MatchString(from):
+	case phone.IsE164(from):
 		return messaging.SMSFromNumber, true
 	case alphanumericFormat.MatchString(from) && hasLetter.MatchString(from):
 		return messaging.SMSFromAlphanumeric, true

@@ -16,9 +16,7 @@ package oauthclients
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/hex"
 	"errors"
 	"maps"
 	"net"
@@ -29,6 +27,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/ent/oauthcode"
@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -198,7 +199,7 @@ func (s *Module) Decide(ctx context.Context, d Decision) (string, error) {
 
 	code := rand.Text()
 	_, err = admitted.Scoped.OAuthCode().Create().
-		SetCodeHash(hashSecret(code)).
+		SetCodeHash(credentials.HashSecret(code)).
 		SetClientID(client.ID).
 		SetMembershipID(member.ID).
 		SetRedirectURI(d.RedirectURI).
@@ -267,11 +268,6 @@ func ValidPKCE(s string) bool {
 	return true
 }
 
-func hashSecret(secret string) string {
-	sum := sha256.Sum256([]byte(secret))
-	return hex.EncodeToString(sum[:])
-}
-
 // The refusals of a registration's redirect URIs (RFC 7591 invalid_redirect_uri).
 
 // The OAuth words of the one client kind this server registers (ADR 0016): a public client, which
@@ -315,7 +311,7 @@ func (s *Module) Register(ctx context.Context, name string, redirectURIs []strin
 	}
 	return s.ent.OAuthClient.Create().
 		SetClientID(rand.Text()).
-		SetName(truncate(name, maxClientName)).
+		SetName(lo.Substring(name, 0, maxClientName)).
 		SetRedirectUris(redirectURIs).
 		Save(ctx)
 }
@@ -338,7 +334,7 @@ type CodeClaim struct {
 // used code, one a concurrent request claimed first, or a request it was not issued for.
 func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time) (*ent.OAuthCode, error) {
 	grant, err := tx.OAuthCode.Query().
-		Where(oauthcode.CodeHash(hashSecret(c.Code))).
+		Where(oauthcode.CodeHash(credentials.HashSecret(c.Code))).
 		WithClient().
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -398,12 +394,4 @@ func IsLoopback(raw string) bool {
 	host := u.Hostname()
 	ip := net.ParseIP(host)
 	return host == "localhost" || ip != nil && ip.IsLoopback()
-}
-
-func truncate(s string, n int) string {
-	r := []rune(s)
-	if len(r) <= n {
-		return s
-	}
-	return string(r[:n])
 }

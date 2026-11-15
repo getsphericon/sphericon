@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/schema"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/drain"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -119,25 +120,25 @@ func Purge(ctx context.Context, client *ent.Client, retention time.Duration, bat
 		return 0, nil
 	}
 	cutoff := now.Add(-retention)
-	var total int64
-	for {
+	total, err := drain.Batches(batch, func() (int, error) {
 		ids, err := client.CapturedMessage.Query().
 			Where(capturedmessage.CreatedAtLT(cutoff)).
 			Order(capturedmessage.ByID()).
 			Limit(batch).
 			IDs(ctx)
 		if err != nil {
-			return total, fmt.Errorf("capturedmessages: find expired: %w", err)
+			return 0, fmt.Errorf("capturedmessages: find expired: %w", err)
 		}
 		if len(ids) == 0 {
-			return total, nil
+			return 0, nil
 		}
 		n, err := client.CapturedMessage.Delete().Where(capturedmessage.IDIn(ids...)).Exec(ctx)
 		if err != nil {
-			return total, fmt.Errorf("capturedmessages: purge expired: %w", err)
+			return 0, fmt.Errorf("capturedmessages: purge expired: %w", err)
 		}
-		total += int64(n)
-	}
+		return n, nil
+	})
+	return int64(total), err
 }
 
 // ErrNotFound reports a Captured message that does not exist in the Workspace.

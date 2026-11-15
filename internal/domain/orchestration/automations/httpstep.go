@@ -45,8 +45,8 @@ type DryRunResult struct {
 // renderBody renders an HTTP step's Liquid body for a Contact (nil: no Contact bindings) and an
 // Enrollment run (nil: an empty `event`), and checks the result is valid JSON within the size
 // limit. It binds the Contact's fields and `event`, the copy of the Event the Enrollment began on
-// (#752), as a Rule's http Action binds the Event it fired on. Their strings are JSON-escaped in
-// the bindings themselves, so a value holding quotes cannot change the structure.
+// (#752), as a Rule's http Action binds the Event it fired on. Every value the body writes is
+// JSON-escaped as it is written, so a value holding quotes cannot change the structure.
 func renderBody(body string, c *ent.Contact, run *ent.AutomationRun) (string, error) {
 	return httpcall.RenderBody(body, outboundmessages.Bindings(c, outboundmessages.EnrollmentVariables(run)))
 }

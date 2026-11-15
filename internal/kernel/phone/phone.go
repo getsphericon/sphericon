@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"regexp"
 	"strings"
 
 	"github.com/nyaruka/phonenumbers"
@@ -25,6 +26,12 @@ var (
 // and at most fifteen digits in all (ITU-T E.164). The database checks a stored phone against it
 // (ent/schema/contact.go), so a write that skipped Normalize fails.
 const E164Pattern = `^\+[1-9]\d{1,14}$`
+
+var e164 = regexp.MustCompile(E164Pattern)
+
+// IsE164 reports whether s has the form E164Pattern states: the one test of a number already in
+// E.164, such as a stored Destination or a sender number, beside the one the database runs.
+func IsE164(s string) bool { return e164.MatchString(s) }
 
 // internationalPrefix is the ITU's international call prefix, used in most countries; a number
 // written with it ("0049 30 …") is read as international whatever the Contact's country.

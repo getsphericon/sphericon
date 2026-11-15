@@ -3,8 +3,10 @@ package events
 import (
 	"context"
 	"strconv"
-	"strings"
 
+	"github.com/samber/lo"
+
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/riverqueue/river"
@@ -82,7 +84,7 @@ func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contact
 			" OR args->@purge_body_arg::text->'data'->>'contactId' = @purge_contact::text"+
 			" OR lower(args->@purge_body_arg::text->'data'->>'email') = any(@purge_addresses::text[])"+
 			" OR args->@purge_body_arg::text->'data'->>'phone' = any(@purge_addresses::text[]))",
-			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lowerAll(destinations)}))
+			river.NamedArgs{"purge_body_arg": jobkind.DeliverWebhookBodyArg, "purge_contact": id, "purge_addresses": lo.Map(destinations, inEmailCase)}))
 }
 
 func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
@@ -100,7 +102,7 @@ func (p *txPublisher) PurgeEventJobs(ctx context.Context, workspaceID, contactID
 		Where("(args->'data'->>'contactId' = @purge_event_contact::text"+
 			" OR lower(args->'data'->>'email') = any(@purge_event_addresses::text[])"+
 			" OR args->'data'->>'phone' = any(@purge_event_addresses::text[]))",
-			river.NamedArgs{"purge_event_contact": id, "purge_event_addresses": lowerAll(destinations)}))
+			river.NamedArgs{"purge_event_contact": id, "purge_event_addresses": lo.Map(destinations, inEmailCase)}))
 }
 
 // deleteJobs deletes the jobs params selects through river, on the purge's transaction, a batch
@@ -123,13 +125,8 @@ func (p *txPublisher) deleteJobs(ctx context.Context, params *river.JobDeleteMan
 	}
 }
 
-func lowerAll(in []string) []string {
-	out := make([]string, len(in))
-	for i, d := range in {
-		out[i] = strings.ToLower(strings.TrimSpace(d))
-	}
-	return out
-}
+// inEmailCase is a Destination in the Email case it is stored in (lo.Map's iteratee).
+func inEmailCase(d string, _ int) string { return emailcase.Of(d) }
 
 var _ QueuePurger = (*txPublisher)(nil)
 

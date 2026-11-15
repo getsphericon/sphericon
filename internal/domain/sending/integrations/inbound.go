@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/paths"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -157,7 +158,7 @@ func (m *Module) sealInbound(row *ent.Integration, in inboundChange) (inbound, e
 		prevName = row.Preset
 	}
 	name := in.preset.Over(prevName)
-	changed := !samePreset(prevName, name)
+	changed := !optional.Equal(prevName, name)
 	if row != nil && !changed && in.params == nil && !in.retireSecrets {
 		return inbound{}, nil
 	}
@@ -269,13 +270,6 @@ func secretSet(p *preset.Preset) map[string]bool {
 		out[s] = true
 	}
 	return out
-}
-
-func samePreset(a, b *string) bool {
-	if a == nil || b == nil {
-		return a == nil && b == nil
-	}
-	return *a == *b
 }
 
 // RegenerateKey gives the Integration a new hook key and answers its View: the old hook URL

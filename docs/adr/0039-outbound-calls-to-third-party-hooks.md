@@ -4,6 +4,10 @@ status: accepted
 
 # Outbound calls to third-party hooks
 
+> **Amended by #1421:** the HTTP step's body renders through the email renderer's JSON engine:
+> each value a `{{ }}` writes is escaped as the inside of a JSON string, after its filters, so a
+> value cannot change the structure; `safe` writes a value raw (a captured block, already escaped).
+
 Sphericon calls other services' URLs from two places: a Webhook endpoint (domain events to a URL)
 and the HTTP step of an Automation. Both go through the one hardened client (`webhook.NewClient`);
 a second caller never builds its own, because the one prior-art project whose campaign action did

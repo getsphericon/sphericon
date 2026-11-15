@@ -431,11 +431,12 @@ func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now ti
 // by the first of them; an archived Automation asks for no attention (ADR 0099), as an archived
 // Broadcast does not.
 func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
-	var groups []struct {
+	type failedGroup struct {
 		AutomationID int64     `json:"automation_id"`
 		Count        int       `json:"count"`
 		Since        time.Time `json:"min"`
 	}
+	var groups []failedGroup
 	err := s.AutomationRun().Query().
 		Where(
 			automationrun.StatusEQ(automationrun.StatusFailed),
@@ -448,10 +449,7 @@ func failedRuns(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, erro
 	if err != nil || len(groups) == 0 {
 		return nil, err
 	}
-	ids := make([]int64, len(groups))
-	for i, g := range groups {
-		ids[i] = g.AutomationID
-	}
+	ids := lo.Map(groups, func(g failedGroup, _ int) int64 { return g.AutomationID })
 	kept, err := s.Automation().Query().
 		Where(automation.IDIn(ids...)).
 		Select(automation.FieldID, automation.FieldName).

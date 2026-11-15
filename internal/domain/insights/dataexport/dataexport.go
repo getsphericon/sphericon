@@ -16,7 +16,6 @@ import (
 	"errors"
 	"iter"
 	"strconv"
-	"strings"
 
 	"github.com/samber/lo"
 
@@ -120,7 +119,7 @@ func export(ctx context.Context, s *ent.Scoped, m Mapper, sw *streamWriter, c *e
 	// earlier person with the number) refuses this Contact's texts.
 	var destinations []string
 	if c.Email != nil {
-		destinations = append(destinations, strings.ToLower(*c.Email))
+		destinations = append(destinations, emailcase.Of(*c.Email))
 	}
 	if c.Phone != nil {
 		destinations = append(destinations, *c.Phone, phone.Hash(*c.Phone))

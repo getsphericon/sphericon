@@ -69,10 +69,10 @@ var reservedHeaders = map[string]bool{
 }
 
 // RenderBody renders a Liquid JSON body against bindings and checks the result is valid JSON
-// within the size limit. The bindings' strings are JSON-escaped, so a value holding quotes
-// cannot change the structure.
+// within the size limit. Every value it writes is JSON-escaped (emailrender.RenderJSON), so a value
+// holding quotes cannot change the structure.
 func RenderBody(body string, bindings map[string]any) (string, error) {
-	out, err := emailrender.Render(body, escapeBindings(bindings))
+	out, err := emailrender.RenderJSON(body, bindings)
 	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrInvalidBody, err)
 	}
@@ -88,35 +88,6 @@ func RenderBody(body string, bindings map[string]any) (string, error) {
 // BodyDetail is the reason of a RenderBody error, without its prefix.
 func BodyDetail(err error) string {
 	return strings.TrimPrefix(err.Error(), ErrInvalidBody.Error()+": ")
-}
-
-func escapeBindings(b map[string]any) map[string]any {
-	out := make(map[string]any, len(b))
-	for k, v := range b {
-		out[k] = escapeValue(v)
-	}
-	return out
-}
-
-func escapeValue(v any) any {
-	switch t := v.(type) {
-	case string:
-		quoted, err := json.Marshal(t)
-		if err != nil {
-			panic("httpcall: a string always marshals: " + err.Error())
-		}
-		return string(quoted[1 : len(quoted)-1])
-	case map[string]any:
-		return escapeBindings(t)
-	case []any:
-		out := make([]any, len(t))
-		for i, e := range t {
-			out[i] = escapeValue(e)
-		}
-		return out
-	default:
-		return v
-	}
 }
 
 // Open decrypts a stored call's URL, header values and secret.

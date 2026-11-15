@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/oauthclient"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
@@ -80,7 +82,7 @@ func (s *Module) metadataClient(ctx context.Context, clientID string) (*ent.OAut
 	if err != nil {
 		return nil, err
 	}
-	name := truncate(strings.TrimSpace(doc.ClientName), maxClientName)
+	name := lo.Substring(strings.TrimSpace(doc.ClientName), 0, maxClientName)
 	if name == "" {
 		name = defaultClient
 	}

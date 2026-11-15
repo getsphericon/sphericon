@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jpillora/backoff"
 	"github.com/pressly/goose/v3"
 )
 
@@ -39,7 +40,7 @@ var setLockTimeout = fmt.Sprintf("SET LOCAL lock_timeout = '%dms';", lockTimeout
 // gives up waiting for a lock, and reports how many it applied in all.
 func upWithLockRetries(ctx context.Context, provider *goose.Provider) (int, error) {
 	applied := 0
-	pause := lockRetryFirst
+	pauses := backoff.Backoff{Min: lockRetryFirst, Max: lockRetryMax, Factor: 2}
 	for {
 		results, err := provider.Up(ctx)
 		applied += len(results)
@@ -49,6 +50,7 @@ func upWithLockRetries(ctx context.Context, provider *goose.Provider) (int, erro
 		}
 		applied += len(partial.Applied)
 		name := path.Base(partial.Failed.Source.Path)
+		pause := pauses.Duration()
 		slog.WarnContext(ctx, "a migration waited for a lock past its limit and is retried",
 			"migration", name, "lock_timeout", lockTimeout, "retry_in", pause)
 		select {
@@ -56,7 +58,6 @@ func upWithLockRetries(ctx context.Context, provider *goose.Provider) (int, erro
 			return applied, fmt.Errorf("migration %s found its lock taken until %w: %w", name, ctx.Err(), err)
 		case <-time.After(pause):
 		}
-		pause = min(2*pause, lockRetryMax)
 	}
 }
 
