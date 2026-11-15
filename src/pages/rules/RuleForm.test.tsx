@@ -1,3 +1,4 @@
+import { Button } from '@mantine/core'
 import { HttpResponse } from 'msw'
 import { expect, test } from 'vitest'
 import { userEvent } from 'vitest/browser'
@@ -11,6 +12,7 @@ import {
   handleSiteRulesUpdate,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteEventResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
+import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -18,6 +20,8 @@ import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { RuleEditPage } from './resource.tsx'
+import { editedRule, ruleSchema } from './ruleEditor.ts'
+import { RuleForm } from './RuleForm.tsx'
 
 const EDIT_ROUTE = routeMount(rulesEditRoute, { workspaceId: 'TestWs01', ruleId: testId(7) })
 
@@ -92,9 +96,12 @@ test('removing the last trigger event is refused before anything is sent', async
   await expect.element(screen.getByLabelText('Name', { exact: false })).toHaveValue('Tag signups')
   await screen.getByRole('combobox', { name: 'Trigger events' }).click()
   await userEvent.keyboard('{Backspace}')
+  // Leaving the field shows its error, which moves the button down: a click must not chase it.
+  await userEvent.tab()
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
   await screen.getByRole('button', { name: 'Save' }).click()
 
-  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  await expect.element(screen.getByRole('combobox', { name: 'Trigger events' })).toHaveFocus()
   expect(bodies).toEqual([])
 })
 
@@ -152,4 +159,58 @@ test('the add header button disappears at the limit of five headers', async () =
 
   await expect.element(screen.getByLabelText('Header name').first()).toBeInTheDocument()
   await expect.element(screen.getByRole('button', { name: 'Add header' })).not.toBeInTheDocument()
+})
+
+const refuseLabel = 'Refuse'
+
+// RefusedRuleForm is the rule form over a stored rule, with a button that hands it a refusal
+// naming fields, the way a page places a server's refusal on its form.
+function RefusedRuleForm({ rule, refusal }: { rule: SiteRuleResource; refusal: unknown }) {
+  const form = useSchemaForm(ruleSchema.update, ruleSchema.toValues(editedRule(rule)))
+  return (
+    <>
+      <RuleForm form={form} isPending={false} onSubmit={() => undefined} />
+      <Button
+        onClick={() => {
+          form.showFieldErrors(refusal)
+        }}
+      >
+        {refuseLabel}
+      </Button>
+    </>
+  )
+}
+
+test("a refusal of an action's fields shows under them and focuses the first", async () => {
+  const rule: SiteRuleResource = {
+    ...STORED,
+    draft: {
+      number: 1,
+      triggerEvents: ['signed_up'],
+      actions: [
+        { type: 'apply_tag', tag: 'new' },
+        { type: 'http', id: HTTP_ID, headers: [{ name: 'X-One' }] },
+      ],
+    },
+  }
+  serve(rule)
+  const refusal = {
+    status: 422,
+    errors: {
+      'actions.0.tag': ['Tag is too long.'],
+      'actions.1.headers.0.name': ['Header name is not valid.'],
+    },
+  }
+
+  const { screen } = await renderWithRouter(
+    <RefusedRuleForm rule={rule} refusal={refusal} />,
+    EDIT_ROUTE,
+  )
+  await screen.getByRole('button', { name: refuseLabel }).click()
+
+  await expect.element(screen.getByLabelText('Tag')).toHaveAccessibleDescription('Tag is too long.')
+  await expect.element(screen.getByLabelText('Tag')).toHaveFocus()
+  await expect
+    .element(screen.getByLabelText('Header name'))
+    .toHaveAccessibleDescription('Header name is not valid.')
 })
