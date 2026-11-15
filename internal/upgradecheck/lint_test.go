@@ -227,13 +227,14 @@ ALTER TABLE t ADD COLUMN IF NOT EXISTS a bigint NULL;`})
 
 // Statements are split as Postgres reads them, so a statement whose wait queues queries cannot
 // hide behind another one's head: after a trailing comment, on the same line, or as a second action
-// of an ALTER TABLE that validates a constraint. A semicolon or a `--` inside a literal splits
-// nothing.
+// of an ALTER TABLE that validates a constraint, or in a comment inside the statement. A semicolon
+// or a `--` inside a literal splits nothing.
 func TestAStatementCannotHideBehindAnotherOnesHead(t *testing.T) {
 	for name, sql := range map[string]string{
 		"after a trailing comment": "CREATE INDEX CONCURRENTLY t_a ON t (a); -- the clearing reads it\nALTER TABLE t ADD COLUMN b bigint NULL;",
 		"on the same line":         "UPDATE t SET a = 1; ALTER TABLE t ALTER COLUMN a DROP NOT NULL;",
 		"a second action":          "ALTER TABLE t VALIDATE CONSTRAINT t_c, DROP CONSTRAINT t_d;",
+		"a comment inside it":      "REINDEX TABLE t -- not concurrently\n;",
 	} {
 		t.Run(name, func(t *testing.T) {
 			findings := lint(t, map[string]string{"20260117000000_no_tx.sql": "-- +goose NO TRANSACTION\n" + sql})
@@ -246,4 +247,15 @@ func TestAStatementCannotHideBehindAnotherOnesHead(t *testing.T) {
 UPDATE t SET a = 'x; -- it''s
 ALTER TABLE t DROP NOT NULL';`})
 	assert.NotContains(t, codesOf(findings), upgradecheck.UnboundedWaitRule)
+}
+
+// A NO TRANSACTION migration whose statements cannot be split (a quote left open) fails the check
+// and names the file, rather than letting what follows the quote pass unread.
+func TestAnUnclosedQuoteInANoTransactionMigrationIsAnError(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "20260119000000_no_tx.sql")
+	require.NoError(t, os.WriteFile(path, []byte("-- +goose Up\n-- +goose NO TRANSACTION\nUPDATE t SET a = 'x;\nALTER TABLE t DROP NOT NULL;\n"), 0o600))
+
+	_, err := upgradecheck.LintFiles(t.Context(), []string{path})
+
+	require.ErrorContains(t, err, "20260119000000_no_tx.sql")
 }

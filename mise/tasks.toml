@@ -185,6 +185,18 @@ run = "go run ./cmd/server genkey"
 
 ["land"]
 description = "Open the pull request for the work of this worktree: rebase onto origin/main, the title and body checks, push the branch, gh pr create. `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>] [<issue>...]`; a branch with a clean tree"
+# The flags are parsed and checked here; the script reads them from the usage_* variables.
+usage = '''
+flag "--door <door>" required=#true help="the template's Merge Danger door" {
+  choices "one-way" "two-way"
+}
+flag "--blast <blast>" required=#true help="a one-word description of the blast radius"
+flag "--ai <ai>" default="wrote" help="how an AI tool was used" {
+  choices "none" "helped" "wrote"
+}
+flag "--title <title>" help="the pull request title, a Conventional Commit (the subject of the only commit by default)"
+arg "[issue]" var=#true help="the issues the work closes"
+'''
 run = "node mise/scripts/land.ts"
 
 # worktrees:prune, worktrees:rm and worktrees:gc drop databases on the one shared Postgres, prune the
@@ -238,10 +250,7 @@ branch=$(git -C "$path" branch --show-current)
 
 # The names come from the worktree's own mise environment (the long ones are shortened there), so
 # they are read before the directory goes. When they cannot be read the databases stay for worktrees:gc.
-names=""
-if out=$(mise -C "$path" env 2>/dev/null); then
-  names=$(printf '%s\n' "$out" | sed -n "s/^export SPHERICON_DB_NAMES=//p" | tr -d "'")
-fi
+names=$(mise -C "$path" env --json 2>/dev/null | jq -r '.SPHERICON_DB_NAMES // empty') || names=""
 mise -C "$path" daemons stop caddy backend frontend demo mailpit dns >/dev/null 2>&1 || true
 
 if [ -z "$names" ]; then
@@ -299,10 +308,10 @@ while IFS=$'\t' read -r path prunable; do
     if [ "$prunable" = 1 ]; then echo "gone    $path (deleted worktree)"; continue; fi
     refuse="$refuse; $path is missing but git does not mark it prunable"; continue
   fi
-  if ! out=$(mise -C "$path" env 2>/dev/null); then
+  if ! out=$(mise -C "$path" env --json 2>/dev/null); then
     refuse="$refuse; cannot read the mise environment of $path (mise trust it?)"; continue
   fi
-  names=$(printf '%s\n' "$out" | sed -n "s/^export SPHERICON_DB_NAMES=//p" | tr -d "'")
+  names=$(printf '%s\n' "$out" | jq -r '.SPHERICON_DB_NAMES // empty') || names=""
   if [ -z "$names" ]; then refuse="$refuse; $path exports no SPHERICON_DB_NAMES (merge main into it)"; continue; fi
   printf '%s\n' $names >> "$keep"
   echo "live    $path -> ${names%% *}"

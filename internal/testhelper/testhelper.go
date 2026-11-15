@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -71,17 +70,15 @@ import (
 )
 
 // Every test process (one per package) leases a database of its own, cloned from a
-// schema-only template (see initBaseline), so packages run in parallel without sharing
+// schema-only template (see process), so packages run in parallel without sharing
 // rows or locks. Each test then asks the cleaner for a database: a real transaction that is
 // rolled back when the test ends (dbcleaner's Transaction strategy, go-txdb underneath), so
 // tests are fully isolated and the DB stays at the fixture state. No hand-rolled
 // transaction plumbing.
-var (
-	once    sync.Once
-	baseCfg *config.Config
-	cleaner *dbcleaner.Cleaner
-	errLoad error
-)
+type testProcess struct {
+	cfg     *config.Config     // the configuration every test's is copied from
+	cleaner *dbcleaner.Cleaner // the leased database, kept for as long as the process runs
+}
 
 // FixtureIDKey is the id key of the fixtures' Instance row (fixtures/instance_state.yml), which a
 // test process seals and opens the public ids with (internal/kernel/publicid), as the server does
@@ -100,58 +97,50 @@ var _ = func() bool {
 // ID is the public form of a key, as the APIs show it and a raw request's path names it.
 func ID[N ~int64 | ~int](key N) string { return publicid.Encode(int64(key)) }
 
-func initBaseline() {
-	once.Do(func() {
-		_, file, _, _ := runtime.Caller(0)
-		projectRoot := filepath.Join(filepath.Dir(file), "..", "..")
-
-		cfg, err := config.Load(config.EnvTest)
-		if err != nil {
-			errLoad = err
-			return
-		}
-		// Read the shared URL before SPHERICON_DATABASE_URL is pointed at this process's own database.
-		if _, err := sharedDatabaseURL(); err != nil {
-			errLoad = err
-			return
-		}
-		version, err := schemaHash()
-		if err != nil {
-			errLoad = err
-			return
-		}
-		// Every process leases a database of its own, cloned from a schema-only template
-		// (dbcleaner.WithTemplate), so packages run in parallel without sharing rows or
-		// locks. The fixtures go in at the start of every process, not into the template:
-		// their relative dates must be relative to now.
-		cleaner = dbcleaner.New(cfg.DatabaseURL,
-			dbcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
-				return migrateSchema(ctx, sqlDB)
-			}),
-			dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
-				return loadFixtures(ctx, sqlDB, cfg, projectRoot)
-			}),
-		)
-		url, err := cleaner.URL(context.Background())
-		if err != nil {
-			errLoad = err
-			return
-		}
-		// A test that loads the config itself (to open a pool of its own) must reach this
-		// process's database, not the shared one.
-		cfg.DatabaseURL = url
-		if err := os.Setenv("SPHERICON_DATABASE_URL", url); err != nil {
-			errLoad = err
-			return
-		}
-		// A developer's own .env may enable Sign-in providers; no test starts from them, each one
-		// enables what it needs (WithSignin, WithSigninGitHub).
-		cfg.Signin = nil
-		// The dev stack serves the tracker on its own host; a test starts on the app origin.
-		cfg.TrackerURL = ""
-		baseCfg = cfg
-	})
-}
+// process leases this process's database, on the first call of the process, and points
+// SPHERICON_DATABASE_URL at it.
+var process = sync.OnceValues(func() (testProcess, error) {
+	cfg, err := config.Load(config.EnvTest)
+	if err != nil {
+		return testProcess{}, err
+	}
+	// Read the shared URL before SPHERICON_DATABASE_URL is pointed at this process's own database.
+	if _, err := sharedDatabaseURL(); err != nil {
+		return testProcess{}, err
+	}
+	version, err := schemaHash()
+	if err != nil {
+		return testProcess{}, err
+	}
+	// Every process leases a database of its own, cloned from a schema-only template
+	// (dbcleaner.WithTemplate), so packages run in parallel without sharing rows or
+	// locks. The fixtures go in at the start of every process, not into the template:
+	// their relative dates must be relative to now.
+	cleaner := dbcleaner.New(cfg.DatabaseURL,
+		dbcleaner.WithTemplate(version, func(ctx context.Context, sqlDB *sql.DB, _ string) error {
+			return migrateSchema(ctx, sqlDB)
+		}),
+		dbcleaner.WithSetup(func(ctx context.Context, sqlDB *sql.DB) error {
+			return loadFixtures(ctx, sqlDB, cfg, projectRoot())
+		}),
+	)
+	url, err := cleaner.URL(context.Background())
+	if err != nil {
+		return testProcess{}, err
+	}
+	// A test that loads the config itself (to open a pool of its own) must reach this
+	// process's database, not the shared one.
+	cfg.DatabaseURL = url
+	if err := os.Setenv("SPHERICON_DATABASE_URL", url); err != nil {
+		return testProcess{}, err
+	}
+	// A developer's own .env may enable Sign-in providers; no test starts from them, each one
+	// enables what it needs (WithSignin, WithSigninGitHub).
+	cfg.Signin = nil
+	// The dev stack serves the tracker on its own host; a test starts on the app origin.
+	cfg.TrackerURL = ""
+	return testProcess{cfg: cfg, cleaner: cleaner}, nil
+})
 
 type TestEnv struct {
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
@@ -377,8 +366,8 @@ func (s *setup) license(t *testing.T) *licensekey.License {
 // testConfig is a private copy of the baseline config for one test. The test License carries every
 // feature, so the harness runs in the saas Mode and the existing tests keep the gates the SaaS has
 // on (verification, the Sign-up survey); a test of selfhosted says so with WithMode (ADR 0060).
-func testConfig() config.Config {
-	cfg := *baseCfg
+func testConfig(base *config.Config) config.Config {
+	cfg := *base
 	cfg.ApplyMode(config.ModeSaaS)
 	cfg.RateLimits = config.RateLimits{}
 	cfg.TrackingCNAMETarget = TrackingCNAMETarget
@@ -393,10 +382,10 @@ func testConfig() config.Config {
 // Sign-in providers.
 func Setup(t *testing.T, opts ...Option) *TestEnv {
 	t.Helper()
-	initBaseline()
-	require.NoError(t, errLoad, "init test baseline")
+	proc, err := process()
+	require.NoError(t, err, "init test baseline")
 
-	cfg := testConfig()
+	cfg := testConfig(proc.cfg)
 	cfg.StaffJWTSecret = newStaffSecret()
 	st := &setup{cfg: &cfg, now: time.Now, version: buildinfo.Current().Version}
 	for _, opt := range opts {
@@ -411,10 +400,9 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// of its own instead, dropped when the test ends, whose pool lets transactions meet.
 	var txDB *sql.DB
 	if st.database == nil {
-		txDB = cleaner.DB(t)
+		txDB = proc.cleaner.DB(t)
 	} else {
 		cfg.DatabaseURL = st.database(t)
-		var err error
 		txDB, err = sql.Open("pgx", cfg.DatabaseURL)
 		require.NoError(t, err)
 		t.Cleanup(func() { cleanup.Close(txDB, "committed env") })
@@ -662,7 +650,7 @@ func (c injectClient) Do(r *http.Request) (*http.Response, error) {
 // migrateSchema applies the embedded migrations to an empty database: the same files, the same
 // way (goose), that production gets, so the app schema and river's tables
 // come from them. The worker databases are cloned from a template that has just
-// this (see initBaseline).
+// this (see process).
 func migrateSchema(ctx context.Context, sqlDB *sql.DB) error {
 	_, err := db.Migrate(ctx, sqlDB)
 	return err

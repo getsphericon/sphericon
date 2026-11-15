@@ -3,14 +3,10 @@ package testhelper
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"fmt"
 	"hash/fnv"
-	"io/fs"
 	"net/url"
-	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -21,6 +17,7 @@ import (
 	"github.com/mokevnin/dbcleaner"
 	dbcleanerpg "github.com/mokevnin/dbcleaner/postgres"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/mod/sumdb/dirhash"
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -99,10 +96,8 @@ func AbsentDBURL(t *testing.T, name string) string {
 }
 
 var (
-	baselineOnce sync.Once
-	baseline     baselineHandle
-	cloneMu      sync.Mutex
-	cloneSeq     atomic.Int64
+	cloneMu  sync.Mutex
+	cloneSeq atomic.Int64
 )
 
 // baselineHandle is this process's baseline database: the one every RealDB is cloned from.
@@ -114,7 +109,6 @@ type baselineHandle struct {
 	// the lease, and a session nothing refers to is closed by the garbage collector, which would
 	// give the worker to another process while this one still clones from it.
 	lease *dbcleaner.Cleaner
-	err   error
 }
 
 // baselineDB leases, on the first call of the process, a database of its own (a dbcleaner
@@ -127,24 +121,27 @@ type baselineHandle struct {
 // same worker.
 func baselineDB(t *testing.T) baselineHandle {
 	t.Helper()
-	baselineOnce.Do(func() { baseline = openBaseline() })
-	require.NoError(t, baseline.err, "open the baseline database")
-	return baseline
+	base, err := baseline()
+	require.NoError(t, err, "open the baseline database")
+	return base
 }
 
-func openBaseline() baselineHandle {
+// baseline is openBaseline, once per process: the handle it keeps holds the lease.
+var baseline = sync.OnceValues(openBaseline)
+
+func openBaseline() (baselineHandle, error) {
 	ctx := context.Background()
 	shared, err := sharedDatabaseURL()
 	if err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
 	cfg, err := config.Load(config.EnvTest)
 	if err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
 	version, err := schemaHash()
 	if err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
 	// The Null strategy: nothing is undone between tests, a test only ever gets a clone.
 	leased := dbcleaner.New(shared,
@@ -158,23 +155,23 @@ func openBaseline() baselineHandle {
 	)
 	dsn, err := leased.URL(ctx)
 	if err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
 	u, err := url.Parse(dsn)
 	if err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
 	name := u.Path[1:]
 
 	admin, err := sql.Open("pgx", shared)
 	if err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
 	defer cleanup.Close(admin, "baseline admin")
 	if err := dropClones(ctx, admin, name); err != nil {
-		return baselineHandle{err: err}
+		return baselineHandle{}, err
 	}
-	return baselineHandle{name: name, url: dsn, shared: shared, lease: leased}
+	return baselineHandle{name: name, url: dsn, shared: shared, lease: leased}, nil
 }
 
 // BaselineLeaseHeld tells whether this process still holds the lease of the worker its RealDB
@@ -269,7 +266,7 @@ func Listeners(ctx context.Context, db *sql.DB) (int, error) {
 }
 
 // sharedDatabaseURL is the test database every process and every checkout run shares, as
-// SPHERICON_DATABASE_URL names it before initBaseline points the process at its own leased database.
+// SPHERICON_DATABASE_URL names it before process points the process at its own leased database.
 // It is read once, so it never depends on whether a test in the process has called Setup yet.
 var sharedDatabaseURL = sync.OnceValues(func() (string, error) {
 	cfg, err := config.Load(config.EnvTest)
@@ -289,35 +286,8 @@ func projectRoot() string {
 
 // schemaHash digests everything that decides the schema a template holds: the migrations, which
 // are the only thing that creates it (an ent/schema edit shows up here once `mise run
-// db:generate` has written its migration).
+// db:generate` has written its migration). The names are hashed relative to the directory, so a
+// checkout's location does not matter.
 func schemaHash() (string, error) {
-	return hashTrees(projectRoot(), "migrations")
-}
-
-// hashTrees digests the names (relative to root, so a checkout's location does not
-// matter) and contents of the given files and directories.
-func hashTrees(root string, paths ...string) (string, error) {
-	h := sha256.New()
-	for _, rel := range paths {
-		err := filepath.WalkDir(filepath.Join(root, rel), func(path string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return err
-			}
-			data, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			name, err := filepath.Rel(root, path)
-			if err != nil {
-				return err
-			}
-			h.Write([]byte(name))
-			h.Write(data)
-			return nil
-		})
-		if err != nil {
-			return "", err
-		}
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
+	return dirhash.HashDir(filepath.Join(projectRoot(), "migrations"), "migrations", dirhash.Hash1)
 }

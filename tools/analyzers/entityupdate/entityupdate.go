@@ -38,19 +38,15 @@ func run(pass *analysis.Pass) (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
-	insp.Preorder([]ast.Node{(*ast.SelectorExpr)(nil)}, func(n ast.Node) {
-		sel, isSel := n.(*ast.SelectorExpr)
-		if !isSel {
-			return
-		}
+	for sel := range inspector.All[*ast.SelectorExpr](insp) {
 		_, named, ok := entx.Method(pass.TypesInfo, sel)
 		if !ok || entx.KindOf(named) != entx.Entity || entx.RoleOf(named, sel.Sel.Name) != entx.Start {
-			return
+			continue
 		}
 		entity := named.Obj().Name()
 		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(18,
 			sel.Sel.Name+" on a loaded "+entity+" writes through the raw client it carries, past the Workspace scope (ADR 0017)",
 			"update it by id through the scoped client: s."+entity+"().UpdateOneID(id)"))
-	})
+	}
 	return nil, nil
 }

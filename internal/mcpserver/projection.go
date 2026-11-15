@@ -11,12 +11,12 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 const (
 	schemaRefPrefix = "#/components/schemas/"
-	paramRefPrefix  = "#/components/parameters/"
 	defsRefPrefix   = "#/$defs/"
 	bodyArgument    = "body"
 )
@@ -33,9 +33,9 @@ type operation struct {
 	method     string
 	path       string
 	params     []parameter
-	bodyFields map[string]bool    // top-level body properties exposed as arguments
-	bodyWhole  bool               // the body is not an object: it is passed as the `body` argument
-	response   *untrustedResponse // success schema, to mark untrusted fields in results
+	bodyFields map[string]bool     // top-level body properties exposed as arguments
+	bodyWhole  bool                // the body is not an object: it is passed as the `body` argument
+	response   *openapi3.SchemaRef // success schema, to mark untrusted fields in results
 	hasBody    bool
 	send       bool // send-class (x-mcp send): listed and callable only with the mcp:send scope
 }
@@ -69,50 +69,67 @@ func projected(spec []byte) ([]*operation, error) {
 // operation, in a stable order. Tool names come from `x-mcp.name` or, by
 // default, the operation id in snake_case (`Contacts_list` -> `contacts_list`).
 func project(spec []byte) ([]*operation, error) {
-	var doc map[string]any
-	if err := json.Unmarshal(spec, &doc); err != nil {
+	doc, err := openapi3.NewLoader().LoadFromData(spec)
+	if err != nil {
 		return nil, fmt.Errorf("parse OpenAPI document: %w", err)
 	}
-	components, _ := doc["components"].(map[string]any)
-	schemas, _ := components["schemas"].(map[string]any)
-	parameters, _ := components["parameters"].(map[string]any)
-	paths, _ := doc["paths"].(map[string]any)
+	schemas, err := componentSchemas(doc)
+	if err != nil {
+		return nil, err
+	}
 
 	var ops []*operation
 	seen := map[string]string{}
+	paths := doc.Paths.Map()
 	for _, path := range slices.Sorted(maps.Keys(paths)) {
-		item, _ := paths[path].(map[string]any)
-		for _, method := range []string{"get", "post", "put", "patch", "delete"} {
-			raw, ok := item[method].(map[string]any)
-			if !ok {
+		for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete} {
+			raw := paths[path].GetOperation(method)
+			if raw == nil {
 				continue
 			}
-			ext, _ := raw["x-mcp"].(map[string]any)
+			lower := strings.ToLower(method)
+			ext, _ := raw.Extensions["x-mcp"].(map[string]any)
 			if hidden, _ := ext["hidden"].(bool); hidden {
 				continue
 			}
-			opID, _ := raw["operationId"].(string)
 			name, _ := ext["name"].(string)
 			if name == "" {
-				name = defaultToolName(opID)
+				name = defaultToolName(raw.OperationID)
 			}
 			if name == "" {
-				return nil, fmt.Errorf("%s %s: no operationId or x-mcp name", method, path)
+				return nil, fmt.Errorf("%s %s: no operationId or x-mcp name", lower, path)
 			}
 			if prev, dup := seen[name]; dup {
-				return nil, fmt.Errorf("tool name %q is used by both %s and %s %s", name, prev, method, path)
+				return nil, fmt.Errorf("tool name %q is used by both %s and %s %s", name, prev, lower, path)
 			}
-			seen[name] = method + " " + path
+			seen[name] = lower + " " + path
 
-			op, err := buildOperation(name, strings.ToUpper(method), path, raw, schemas, parameters)
+			op, err := buildOperation(name, method, path, raw, schemas)
 			if err != nil {
-				return nil, fmt.Errorf("%s %s: %w", method, path, err)
+				return nil, fmt.Errorf("%s %s: %w", lower, path, err)
 			}
 			op.send, _ = ext["send"].(bool)
 			ops = append(ops, op)
 		}
 	}
 	return ops, nil
+}
+
+// componentSchemas is the JSON of each component schema by its name, the source of the `$defs` of
+// the input schemas.
+func componentSchemas(doc *openapi3.T) (map[string]any, error) {
+	schemas := map[string]any{}
+	if doc.Components == nil {
+		return schemas, nil
+	}
+	for name, ref := range doc.Components.Schemas {
+		schema, err := schemaJSON(ref)
+		if err != nil {
+			return nil, fmt.Errorf("component schema %s: %w", name, err)
+		}
+		schemas[name] = schema
+	}
+	return schemas, nil
 }
 
 // arguments collects the properties of one tool's input schema: the operation's parameters and the
@@ -147,21 +164,21 @@ func (a *arguments) inputSchema(schemas map[string]any) map[string]any {
 	return input
 }
 
-func buildOperation(name, method, path string, raw, schemas, parameters map[string]any) (*operation, error) {
-	op := &operation{method: method, path: path, bodyFields: map[string]bool{}, response: responseSchema(raw, schemas)}
+func buildOperation(name, method, path string, raw *openapi3.Operation, schemas map[string]any) (*operation, error) {
+	op := &operation{method: method, path: path, bodyFields: map[string]bool{}, response: responseSchema(raw)}
 	args := &arguments{props: map[string]any{}}
-	if err := addParameters(op, args, raw, parameters); err != nil {
+	if err := addParameters(op, args, raw.Parameters); err != nil {
 		return nil, err
 	}
-	if body, ok := raw["requestBody"].(map[string]any); ok {
-		if err := addBody(op, args, body, schemas); err != nil {
+	if raw.RequestBody != nil {
+		if err := addBody(op, args, raw.RequestBody.Value); err != nil {
 			return nil, err
 		}
 	}
 
-	desc, _ := raw["description"].(string)
+	desc := raw.Description
 	if desc == "" {
-		desc, _ = raw["summary"].(string)
+		desc = raw.Summary
 	}
 	op.tool = &mcp.Tool{
 		Name:        name,
@@ -172,74 +189,59 @@ func buildOperation(name, method, path string, raw, schemas, parameters map[stri
 	return op, nil
 }
 
-// addParameters makes an argument of each parameter of the operation, resolving references into
-// the shared parameters.
-func addParameters(op *operation, args *arguments, raw, parameters map[string]any) error {
-	rawParams, _ := raw["parameters"].([]any)
-	for _, p := range rawParams {
-		param, _ := p.(map[string]any)
-		if ref, ok := param["$ref"].(string); ok {
-			resolved, ok := parameters[strings.TrimPrefix(ref, paramRefPrefix)].(map[string]any)
-			if !ok {
-				return fmt.Errorf("unresolved parameter %s", ref)
-			}
-			param = resolved
+// addParameters makes an argument of each parameter of the operation.
+func addParameters(op *operation, args *arguments, params openapi3.Parameters) error {
+	for _, ref := range params {
+		param := ref.Value
+		if param == nil {
+			return fmt.Errorf("unresolved parameter %s", ref.Ref)
 		}
-		pname, _ := param["name"].(string)
-		in, _ := param["in"].(string)
-		schema, _ := param["schema"].(map[string]any)
-		schema = copySchema(schema)
-		if desc, ok := param["description"].(string); ok {
-			schema["description"] = desc
+		schema, err := copySchema(param.Schema)
+		if err != nil {
+			return fmt.Errorf("parameter %s: %w", param.Name, err)
 		}
-		isRequired, _ := param["required"].(bool)
-		if err := args.add(pname, schema, isRequired || in == "path"); err != nil {
+		if param.Description != "" {
+			schema["description"] = param.Description
+		}
+		if err := args.add(param.Name, schema, param.Required || param.In == openapi3.ParameterInPath); err != nil {
 			return err
 		}
-		op.params = append(op.params, parameter{name: pname, in: in})
+		op.params = append(op.params, parameter{name: param.Name, in: param.In})
 	}
 	return nil
 }
 
 // addBody makes an argument of each field of a JSON request body, or one argument for a body that
 // is not an object.
-func addBody(op *operation, args *arguments, body, schemas map[string]any) error {
-	content, _ := body["content"].(map[string]any)
-	media, _ := content["application/json"].(map[string]any)
-	schema, _ := media["schema"].(map[string]any)
-	if schema == nil {
+func addBody(op *operation, args *arguments, body *openapi3.RequestBody) error {
+	var media *openapi3.MediaType
+	if body != nil {
+		media = body.Content["application/json"]
+	}
+	if media == nil || media.Schema == nil {
 		return errors.New("request body is not application/json")
 	}
 	op.hasBody = true
-	resolved := schema
-	if ref, ok := schema["$ref"].(string); ok {
-		resolved, _ = schemas[strings.TrimPrefix(ref, schemaRefPrefix)].(map[string]any)
-	}
-	bodyProps, isObject := resolved["properties"].(map[string]any)
-	if !isObject {
+	resolved := media.Schema.Value
+	if resolved == nil || resolved.Properties == nil {
 		op.bodyWhole = true
-		return args.add(bodyArgument, copySchema(schema), isRequiredBody(body))
-	}
-	bodyRequired, _ := resolved["required"].([]any)
-	requiredSet := map[string]bool{}
-	for _, r := range bodyRequired {
-		if s, ok := r.(string); ok {
-			requiredSet[s] = true
+		schema, err := copySchema(media.Schema)
+		if err != nil {
+			return fmt.Errorf("request body: %w", err)
 		}
+		return args.add(bodyArgument, schema, body.Required)
 	}
-	for _, field := range slices.Sorted(maps.Keys(bodyProps)) {
-		fieldSchema, _ := bodyProps[field].(map[string]any)
-		if err := args.add(field, copySchema(fieldSchema), requiredSet[field]); err != nil {
+	for _, field := range slices.Sorted(maps.Keys(resolved.Properties)) {
+		schema, err := copySchema(resolved.Properties[field])
+		if err != nil {
+			return fmt.Errorf("body field %s: %w", field, err)
+		}
+		if err := args.add(field, schema, slices.Contains(resolved.Required, field)); err != nil {
 			return err
 		}
 		op.bodyFields[field] = true
 	}
 	return nil
-}
-
-func isRequiredBody(body map[string]any) bool {
-	r, _ := body["required"].(bool)
-	return r
 }
 
 // annotationsFor derives the MCP behavior hints from the HTTP method: GET reads;
@@ -278,12 +280,33 @@ func defaultToolName(operationID string) string {
 	return b.String()
 }
 
-// copySchema deep-copies a schema, rewriting component refs to local `$defs` and
-// OpenAPI 3.0 `nullable` to the JSON Schema `type: [t, "null"]` form.
-func copySchema(in map[string]any) map[string]any {
-	if in == nil {
-		return map[string]any{}
+// schemaJSON is a schema as its JSON reads, a reference left as one.
+func schemaJSON(ref *openapi3.SchemaRef) (map[string]any, error) {
+	if ref == nil {
+		return map[string]any{}, nil
 	}
+	data, err := json.Marshal(ref)
+	if err != nil {
+		return nil, fmt.Errorf("encode schema: %w", err)
+	}
+	var schema map[string]any
+	if err := json.Unmarshal(data, &schema); err != nil {
+		return nil, fmt.Errorf("decode schema: %w", err)
+	}
+	return schema, nil
+}
+
+// copySchema is the JSON of a schema for a tool's input, with component refs rewritten to local
+// `$defs` and OpenAPI 3.0 `nullable` to the JSON Schema `type: [t, "null"]` form.
+func copySchema(ref *openapi3.SchemaRef) (map[string]any, error) {
+	schema, err := schemaJSON(ref)
+	if err != nil {
+		return nil, err
+	}
+	return rewriteSchema(schema), nil
+}
+
+func rewriteSchema(in map[string]any) map[string]any {
 	out, _ := rewrite(in).(map[string]any)
 	return out
 }
@@ -331,7 +354,7 @@ func collectDefs(input, schemas map[string]any) map[string]any {
 				name := strings.TrimPrefix(ref, defsRefPrefix)
 				if _, done := defs[name]; !done {
 					if src, ok := schemas[name].(map[string]any); ok {
-						rewritten := copySchema(src)
+						rewritten := rewriteSchema(src)
 						defs[name] = rewritten
 						visit(rewritten)
 					}

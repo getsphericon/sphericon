@@ -86,8 +86,8 @@ func TestTheShellCarriesTheSentryDSN(t *testing.T) {
 }
 
 func TestTheShellEscapesTheSentryDSNForAScriptString(t *testing.T) {
-	got := shellOf(t, `<script>window.__SENTRY_DSN__ = '{{SENTRY_DSN}}'</script>`, spa.Settings{SentryDSN: `x'</script><b>\`})
+	got := shellOf(t, `<script>window.__SENTRY_DSN__ = '{{SENTRY_DSN}}'</script>`, spa.Settings{SentryDSN: "x'</script><b>\\\u2028\u2029"})
 
 	assert.NotContains(t, got, "</script><b>", "the value ended the script element")
-	assert.Contains(t, got, `__SENTRY_DSN__ = 'x\'\x3c/script\x3e\x3cb\x3e\\'`)
+	assert.Contains(t, got, `__SENTRY_DSN__ = 'x\'\u003C/script\u003E\u003Cb\u003E\\\u2028\u2029'`)
 }

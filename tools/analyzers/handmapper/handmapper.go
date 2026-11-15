@@ -63,33 +63,29 @@ func run(pass *analysis.Pass) (any, error) {
 		reportInputLiterals(pass, insp)
 	}
 	reported := map[*ast.FuncDecl]bool{}
-	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
-		fn, isNode := n.(*ast.FuncDecl)
-		if !isNode {
-			return
-		}
-		if strings.HasSuffix(pass.Fset.File(fn.Pos()).Name(), "_test.go") || generated(pass, fn) || registered[fn.Name.Name] {
-			return
+	for fn := range inspector.All[*ast.FuncDecl](insp) {
+		if skippedFile(pass, fn.Pos()) || registered[fn.Name.Name] {
+			continue
 		}
 		obj, ok := pass.TypesInfo.Defs[fn.Name].(*types.Func)
 		if !ok {
-			return
+			continue
 		}
 		sig, isSig := obj.Type().(*types.Signature)
 		if !isSig {
-			return
+			continue
 		}
 		if !anyType(sig.Params(), isEntity) || !anyType(sig.Results(), isResource) {
-			return
+			continue
 		}
 		if via[obj] {
-			return
+			continue
 		}
 		reported[fn] = true
 		pass.Reportf(fn.Name.Pos(), "%s", rule.Message(1,
 			fn.Name.Name+" maps an ent entity to an API resource by hand",
 			"add a method to the surface's goverter Converter (or register a goverter:extend helper) and call it"))
-	})
+	}
 	if isLiteralPackage(pass.Pkg.Path()) {
 		reportEntityLiterals(pass, insp, func(fn *ast.FuncDecl) bool {
 			return reported[fn] || registered[fn.Name.Name]
@@ -235,20 +231,19 @@ func isHandlerPackage(path string) bool {
 
 // reportInputLiterals reports each struct literal of a module input type in a handler package.
 func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector) {
-	insp.Preorder([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node) {
-		lit, isLit := n.(*ast.CompositeLit)
-		if !isLit || skippedFile(pass, lit.Pos()) {
-			return
+	for lit := range inspector.All[*ast.CompositeLit](insp) {
+		if skippedFile(pass, lit.Pos()) {
+			continue
 		}
 		named, ok := types.Unalias(pass.TypesInfo.TypeOf(lit)).(*types.Named)
 		if !ok || !isModuleInput(pass.Pkg, named) {
-			return
+			continue
 		}
 		name := named.Obj().Pkg().Name() + "." + named.Obj().Name()
 		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
 			name+" is built by hand from the request",
 			"add a method to the surface's goverter Inputs (resources/inputs.go), call it, and assign after it only the fields it ignores"))
-	})
+	}
 }
 
 // isModuleInput is a module's input: a struct type named ...Input declared in a package under
@@ -288,14 +283,10 @@ func skippedFile(pass *analysis.Pass, pos token.Pos) bool {
 func viaConverter(pass *analysis.Pass, insp *inspector.Inspector) map[types.Object]bool {
 	calls := map[types.Object][]types.Object{}
 	via := map[types.Object]bool{}
-	insp.Preorder([]ast.Node{(*ast.FuncDecl)(nil)}, func(n ast.Node) {
-		fn, isNode := n.(*ast.FuncDecl)
-		if !isNode {
-			return
-		}
+	for fn := range inspector.All[*ast.FuncDecl](insp) {
 		self := pass.TypesInfo.Defs[fn.Name]
 		if fn.Body == nil || self == nil {
-			return
+			continue
 		}
 		ast.Inspect(fn.Body, func(n ast.Node) bool {
 			call, ok := n.(*ast.CallExpr)
@@ -317,7 +308,7 @@ func viaConverter(pass *analysis.Pass, insp *inspector.Inspector) map[types.Obje
 			}
 			return true
 		})
-	})
+	}
 	for changed := true; changed; {
 		changed = false
 		for fn, callees := range calls {
@@ -367,21 +358,6 @@ func registeredHelpers(pass *analysis.Pass) map[string]bool {
 		}
 	}
 	return names
-}
-
-func generated(pass *analysis.Pass, fn *ast.FuncDecl) bool {
-	for _, f := range pass.Files {
-		if f.Pos() <= fn.Pos() && fn.Pos() < f.End() {
-			for _, cg := range f.Comments {
-				for _, c := range cg.List {
-					if strings.HasPrefix(c.Text, "// Code generated") && strings.HasSuffix(c.Text, "DO NOT EDIT.") {
-						return true
-					}
-				}
-			}
-		}
-	}
-	return false
 }
 
 func anyType(t *types.Tuple, pred func(*types.Named) bool) bool {
