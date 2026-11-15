@@ -387,8 +387,6 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeTemplatesWrite
 	case ApiTokenScopeWebhooksRead:
 		*s = ApiTokenScopeWebhooksRead
-	case ApiTokenScopeWebhooksWrite:
-		*s = ApiTokenScopeWebhooksWrite
 	case ApiTokenScopeWebhooksRegenerate:
 		*s = ApiTokenScopeWebhooksRegenerate
 	case ApiTokenScopeWebhooksTest:
@@ -417,6 +415,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeTrackingDomainsWrite
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+	case ApiTokenScopeWebhooksWrite:
+		*s = ApiTokenScopeWebhooksWrite
 	case ApiTokenScopeContactsErase:
 		*s = ApiTokenScopeContactsErase
 	case ApiTokenScopeCapturedMessagesRead:

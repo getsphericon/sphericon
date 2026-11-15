@@ -347,6 +347,8 @@ var (
 	ErrorsTemplateNotFound                                = ID{key: "errors.template_not_found"}
 	ErrorsTemplateRevisionChanged                         = ID{key: "errors.template_revision_changed"}
 	ErrorsTestSendEmailRequired                           = ID{key: "errors.test_send_email_required"}
+	ErrorsTestSendNoPhoneWithoutSend                      = ID{key: "errors.test_send_no_phone_without_send"}
+	ErrorsTestSendOwnAddressOnly                          = ID{key: "errors.test_send_own_address_only"}
 	ErrorsTestSendRefused                                 = ID{key: "errors.test_send_refused"}
 	ErrorsTimezoneUnknown                                 = ID{key: "errors.timezone_unknown"}
 	ErrorsTokenNotFound                                   = ID{key: "errors.token_not_found"}

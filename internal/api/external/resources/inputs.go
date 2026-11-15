@@ -203,7 +203,9 @@ type Inputs interface {
 	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
 	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) confirmations.Evidence
 	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
-	// Where a Broadcast's Test send goes: the address on email, the number on sms.
+	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
+	// handler's to set.
+	// goverter:ignore OnlyTo
 	TestAddress(source *externalapi.TestSendBroadcastInput) outboundmessages.TestAddress
 }
 

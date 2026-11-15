@@ -23,7 +23,6 @@ export const zApiTokenScope = z.enum([
   'templates:read',
   'templates:write',
   'webhooks:read',
-  'webhooks:write',
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
@@ -38,6 +37,7 @@ export const zApiTokenScope = z.enum([
   'sending_domains:write',
   'tracking_domains:write',
   'integrations:write',
+  'webhooks:write',
   'contacts:erase',
   'captured_messages:read',
   'captured_messages:write',
@@ -275,7 +275,6 @@ export const zGrantableScope = z.enum([
   'templates:read',
   'templates:write',
   'webhooks:read',
-  'webhooks:write',
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
@@ -464,7 +463,6 @@ export const zPersonalScope = z.enum([
   'templates:read',
   'templates:write',
   'webhooks:read',
-  'webhooks:write',
   'webhooks:regenerate',
   'webhooks:test',
   'custom_fields:read',
@@ -478,7 +476,8 @@ export const zPersonalScope = z.enum([
   'mcp:send',
   'sending_domains:write',
   'tracking_domains:write',
-  'integrations:write'
+  'integrations:write',
+  'webhooks:write'
 ]);
 
 /**
@@ -568,14 +567,16 @@ export const zSetTrackingDomainInput = z.object({
 /**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
  * authenticates, the Tracking domain its links are on, the Integrations and the provider
- * credentials they hold). An OAuth client
+ * credentials they hold) or open a standing way out for its data (a Webhook endpoint's URL and
+ * the Events it receives, ADR 0132). An OAuth client
  * gets them only when it asked for them and the user ticks a box of their own for them,
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */
 export const zSetupScope = z.enum([
   'sending_domains:write',
   'tracking_domains:write',
-  'integrations:write'
+  'integrations:write',
+  'webhooks:write'
 ]);
 
 /**

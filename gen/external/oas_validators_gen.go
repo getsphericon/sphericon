@@ -123,8 +123,6 @@ func (s ApiTokenScope) Validate() error {
 		return nil
 	case "webhooks:read":
 		return nil
-	case "webhooks:write":
-		return nil
 	case "webhooks:regenerate":
 		return nil
 	case "webhooks:test":
@@ -152,6 +150,8 @@ func (s ApiTokenScope) Validate() error {
 	case "tracking_domains:write":
 		return nil
 	case "integrations:write":
+		return nil
+	case "webhooks:write":
 		return nil
 	case "contacts:erase":
 		return nil

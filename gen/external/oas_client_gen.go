@@ -198,7 +198,8 @@ type Invoker interface {
 	// Send a rendered preview with sample merge data to a single address: an email broadcast to the
 	// `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
 	// sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
-	// a Telegram broadcast is a 422.
+	// a Telegram broadcast is a 422. Through a Connection without mcp:send, only to the email address of
+	// the User the Connection acts for, and never to a phone (ADR 0132).
 	//
 	// POST /broadcasts/{id}/test-send
 	BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) error
@@ -4348,7 +4349,8 @@ func (c *Client) sendBroadcastsSetSegment(ctx context.Context, request *SetBroad
 // Send a rendered preview with sample merge data to a single address: an email broadcast to the
 // `email` given, an SMS broadcast to the `phone` given, through the broadcast's Integration. Never
 // sends to the audience, and leaves no message and no figure. Telegram has no Test send (ADR 0080), so
-// a Telegram broadcast is a 422.
+// a Telegram broadcast is a 422. Through a Connection without mcp:send, only to the email address of
+// the User the Connection acts for, and never to a phone (ADR 0132).
 //
 // POST /broadcasts/{id}/test-send
 func (c *Client) BroadcastsTestSend(ctx context.Context, request *TestSendBroadcastInput, params BroadcastsTestSendParams) error {

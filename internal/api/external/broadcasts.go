@@ -123,9 +123,14 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 
 // BroadcastsTestSend renders the broadcast with sample merge data and sends it to
 // one address: no recipient rows, no tracking, never the audience. A token is no User, so the
-// Test send never goes from the System sender.
+// Test send never goes from the System sender. A Connection without mcp:send sends it only to its
+// User's address (ADR 0132): the test is for the author to see the mail, not a way past the send lock.
 func (h *Handlers) BroadcastsTestSend(ctx context.Context, req *externalapi.TestSendBroadcastInput, params externalapi.BroadcastsTestSendParams) error {
-	_, err := h.broadcasts.SendTest(ctx, auth.TokenScoped(ctx), int64(params.ID), inputs.TestAddress(req))
+	to := inputs.TestAddress(req)
+	if a := auth.GetTokenAuth(ctx); auth.SendLocked(a) {
+		to.OnlyTo = a.Membership.Edges.User.Email
+	}
+	_, err := h.broadcasts.SendTest(ctx, auth.TokenScoped(ctx), int64(params.ID), to)
 	return err
 }
 

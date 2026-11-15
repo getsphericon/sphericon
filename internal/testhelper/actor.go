@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/user"
@@ -106,6 +107,29 @@ func (env *TestEnv) ScopedBearerFor(t *testing.T, workspaceID int64, scopes ...a
 	_, err := env.DB.ApiToken.Create().
 		SetName("actor-token").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopeStrings(scopes)).
 		SetWorkspaceID(workspaceID).
+		Save(t.Context())
+	require.NoError(t, err)
+	return credentials.TokenValue(prefix, secret)
+}
+
+// fixtureOAuthClientID is the anchor OAuth client of fixtures/oauth_clients.yml.
+const fixtureOAuthClientID = 1
+
+// ConnectionBearer returns the raw bearer value of a fresh Connection (ADR 0061): a token the
+// fixture OAuth client was issued for the Acme Membership of the User with email, with exactly the
+// given scopes.
+func (env *TestEnv) ConnectionBearer(t *testing.T, email string, scopes ...apitokens.Scope) string {
+	t.Helper()
+	m, err := env.DB.Membership.Query().
+		Where(membership.WorkspaceID(fixtures.AcmeID), membership.HasUserWith(user.EmailEqualFold(email))).
+		Only(t.Context())
+	require.NoError(t, err)
+	prefix := credentials.GenerateTokenPrefix()
+	secret := credentials.GenerateTokenSecret()
+	// test writes: as ScopedBearerFor, a Connection of exactly the scopes the caller names.
+	_, err = env.DB.ApiToken.Create().
+		SetName("Fixture Connector").SetPrefix(prefix).SetSecretHash(credentials.HashSecret(secret)).SetScopes(scopeStrings(scopes)).
+		SetWorkspaceID(fixtures.AcmeID).SetMembershipID(m.ID).SetOauthClientID(fixtureOAuthClientID).
 		Save(t.Context())
 	require.NoError(t, err)
 	return credentials.TokenValue(prefix, secret)

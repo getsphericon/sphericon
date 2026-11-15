@@ -24,7 +24,6 @@ const (
 	ScopeTemplatesRead         Scope = "templates:read"
 	ScopeTemplatesWrite        Scope = "templates:write"
 	ScopeWebhooksRead          Scope = "webhooks:read"
-	ScopeWebhooksWrite         Scope = "webhooks:write"
 	ScopeWebhooksRegenerate    Scope = "webhooks:regenerate"
 	ScopeWebhooksTest          Scope = "webhooks:test"
 	ScopeCustomFieldsRead      Scope = "custom_fields:read"
@@ -39,6 +38,7 @@ const (
 	ScopeSendingDomainsWrite   Scope = "sending_domains:write"
 	ScopeTrackingDomainsWrite  Scope = "tracking_domains:write"
 	ScopeIntegrationsWrite     Scope = "integrations:write"
+	ScopeWebhooksWrite         Scope = "webhooks:write"
 	ScopeContactsErase         Scope = "contacts:erase"
 	ScopeCapturedMessagesRead  Scope = "captured_messages:read"
 	ScopeCapturedMessagesWrite Scope = "captured_messages:write"
@@ -66,7 +66,6 @@ var Scopes = []Scope{
 	ScopeTemplatesRead,
 	ScopeTemplatesWrite,
 	ScopeWebhooksRead,
-	ScopeWebhooksWrite,
 	ScopeWebhooksRegenerate,
 	ScopeWebhooksTest,
 	ScopeCustomFieldsRead,
@@ -81,6 +80,7 @@ var Scopes = []Scope{
 	ScopeSendingDomainsWrite,
 	ScopeTrackingDomainsWrite,
 	ScopeIntegrationsWrite,
+	ScopeWebhooksWrite,
 	ScopeContactsErase,
 	ScopeCapturedMessagesRead,
 	ScopeCapturedMessagesWrite,

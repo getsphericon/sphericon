@@ -346,6 +346,8 @@
   "errors.bootstrap_token_invalid": "invalid bootstrap token",
   "errors.sending_held": "the message was not sent",
   "errors.send_route_held": "the email integration it sends through cannot send: enable it, choose another one or set a default",
+  "errors.test_send_no_phone_without_send": "an app connected without permission to send can send a test only to your own email address, not to a phone",
+  "errors.test_send_own_address_only": "an app connected without permission to send can send a test only to your own email address",
   "errors.test_send_refused": "the test send was not sent",
   "errors.destination_empty": "destination must not be empty",
   "errors.sending_source_telegram": "sendingSource on telegram must be everything",

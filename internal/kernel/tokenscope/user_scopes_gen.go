@@ -23,7 +23,6 @@ const (
 	GrantableScopeTemplatesRead       GrantableScope = "templates:read"
 	GrantableScopeTemplatesWrite      GrantableScope = "templates:write"
 	GrantableScopeWebhooksRead        GrantableScope = "webhooks:read"
-	GrantableScopeWebhooksWrite       GrantableScope = "webhooks:write"
 	GrantableScopeWebhooksRegenerate  GrantableScope = "webhooks:regenerate"
 	GrantableScopeWebhooksTest        GrantableScope = "webhooks:test"
 	GrantableScopeCustomFieldsRead    GrantableScope = "custom_fields:read"
@@ -51,7 +50,6 @@ var GrantableScopes = []GrantableScope{
 	GrantableScopeTemplatesRead,
 	GrantableScopeTemplatesWrite,
 	GrantableScopeWebhooksRead,
-	GrantableScopeWebhooksWrite,
 	GrantableScopeWebhooksRegenerate,
 	GrantableScopeWebhooksTest,
 	GrantableScopeCustomFieldsRead,
@@ -89,6 +87,7 @@ const (
 	SetupScopeSendingDomainsWrite  SetupScope = "sending_domains:write"
 	SetupScopeTrackingDomainsWrite SetupScope = "tracking_domains:write"
 	SetupScopeIntegrationsWrite    SetupScope = "integrations:write"
+	SetupScopeWebhooksWrite        SetupScope = "webhooks:write"
 )
 
 // SetupScopes is every SetupScope, in the contract's order.
@@ -96,6 +95,7 @@ var SetupScopes = []SetupScope{
 	SetupScopeSendingDomainsWrite,
 	SetupScopeTrackingDomainsWrite,
 	SetupScopeIntegrationsWrite,
+	SetupScopeWebhooksWrite,
 }
 
 // PersonalScope is a scope a User may give a credential of their own: a Connection by
@@ -120,7 +120,6 @@ const (
 	PersonalScopeTemplatesRead        PersonalScope = "templates:read"
 	PersonalScopeTemplatesWrite       PersonalScope = "templates:write"
 	PersonalScopeWebhooksRead         PersonalScope = "webhooks:read"
-	PersonalScopeWebhooksWrite        PersonalScope = "webhooks:write"
 	PersonalScopeWebhooksRegenerate   PersonalScope = "webhooks:regenerate"
 	PersonalScopeWebhooksTest         PersonalScope = "webhooks:test"
 	PersonalScopeCustomFieldsRead     PersonalScope = "custom_fields:read"
@@ -135,6 +134,7 @@ const (
 	PersonalScopeSendingDomainsWrite  PersonalScope = "sending_domains:write"
 	PersonalScopeTrackingDomainsWrite PersonalScope = "tracking_domains:write"
 	PersonalScopeIntegrationsWrite    PersonalScope = "integrations:write"
+	PersonalScopeWebhooksWrite        PersonalScope = "webhooks:write"
 )
 
 // PersonalScopes is every PersonalScope, in the contract's order.
@@ -155,7 +155,6 @@ var PersonalScopes = []PersonalScope{
 	PersonalScopeTemplatesRead,
 	PersonalScopeTemplatesWrite,
 	PersonalScopeWebhooksRead,
-	PersonalScopeWebhooksWrite,
 	PersonalScopeWebhooksRegenerate,
 	PersonalScopeWebhooksTest,
 	PersonalScopeCustomFieldsRead,
@@ -170,4 +169,5 @@ var PersonalScopes = []PersonalScope{
 	PersonalScopeSendingDomainsWrite,
 	PersonalScopeTrackingDomainsWrite,
 	PersonalScopeIntegrationsWrite,
+	PersonalScopeWebhooksWrite,
 }

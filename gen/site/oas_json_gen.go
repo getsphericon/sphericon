@@ -62,8 +62,6 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeTemplatesWrite
 	case ApiTokenScopeWebhooksRead:
 		*s = ApiTokenScopeWebhooksRead
-	case ApiTokenScopeWebhooksWrite:
-		*s = ApiTokenScopeWebhooksWrite
 	case ApiTokenScopeWebhooksRegenerate:
 		*s = ApiTokenScopeWebhooksRegenerate
 	case ApiTokenScopeWebhooksTest:
@@ -92,6 +90,8 @@ func (s *ApiTokenScope) Decode(d *jx.Decoder) error {
 		*s = ApiTokenScopeTrackingDomainsWrite
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+	case ApiTokenScopeWebhooksWrite:
+		*s = ApiTokenScopeWebhooksWrite
 	case ApiTokenScopeContactsErase:
 		*s = ApiTokenScopeContactsErase
 	case ApiTokenScopeCapturedMessagesRead:
@@ -5030,8 +5030,6 @@ func (s *GrantableScope) Decode(d *jx.Decoder) error {
 		*s = GrantableScopeTemplatesWrite
 	case GrantableScopeWebhooksRead:
 		*s = GrantableScopeWebhooksRead
-	case GrantableScopeWebhooksWrite:
-		*s = GrantableScopeWebhooksWrite
 	case GrantableScopeWebhooksRegenerate:
 		*s = GrantableScopeWebhooksRegenerate
 	case GrantableScopeWebhooksTest:
@@ -9396,8 +9394,6 @@ func (s *PersonalScope) Decode(d *jx.Decoder) error {
 		*s = PersonalScopeTemplatesWrite
 	case PersonalScopeWebhooksRead:
 		*s = PersonalScopeWebhooksRead
-	case PersonalScopeWebhooksWrite:
-		*s = PersonalScopeWebhooksWrite
 	case PersonalScopeWebhooksRegenerate:
 		*s = PersonalScopeWebhooksRegenerate
 	case PersonalScopeWebhooksTest:
@@ -9426,6 +9422,8 @@ func (s *PersonalScope) Decode(d *jx.Decoder) error {
 		*s = PersonalScopeTrackingDomainsWrite
 	case PersonalScopeIntegrationsWrite:
 		*s = PersonalScopeIntegrationsWrite
+	case PersonalScopeWebhooksWrite:
+		*s = PersonalScopeWebhooksWrite
 	default:
 		*s = PersonalScope(v)
 	}
@@ -10788,6 +10786,8 @@ func (s *SetupScope) Decode(d *jx.Decoder) error {
 		*s = SetupScopeTrackingDomainsWrite
 	case SetupScopeIntegrationsWrite:
 		*s = SetupScopeIntegrationsWrite
+	case SetupScopeWebhooksWrite:
+		*s = SetupScopeWebhooksWrite
 	default:
 		*s = SetupScope(v)
 	}
