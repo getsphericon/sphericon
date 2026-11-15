@@ -7,6 +7,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	entbinding "github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
@@ -168,14 +170,10 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 
 	// Create one pending row per recipient, batched. OnConflict-ignore makes a
 	// re-planned (retried) job converge instead of tripping the unique index.
-	for i := 0; i < len(contactIDs); i += recipientInsertChunk {
-		end := min(i+recipientInsertChunk, len(contactIDs))
-		builders := make([]*ent.BroadcastRecipientScopedCreate, 0, end-i)
-		for _, cid := range contactIDs[i:end] {
-			builders = append(builders, s.BroadcastRecipient().Create().
-				SetBroadcastID(b.ID).
-				SetContactID(cid))
-		}
+	for chunk := range slices.Chunk(contactIDs, recipientInsertChunk) {
+		builders := lo.Map(chunk, func(cid int64, _ int) *ent.BroadcastRecipientScopedCreate {
+			return s.BroadcastRecipient().Create().SetBroadcastID(b.ID).SetContactID(cid)
+		})
 		if err := s.BroadcastRecipient().CreateBulk(builders...).
 			OnConflictColumns("workspace_id", "broadcast_id", "contact_id").
 			Ignore().

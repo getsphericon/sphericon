@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 )
@@ -49,10 +51,7 @@ func TakeExpired(ctx context.Context, s *ent.Scoped, kind outboundmessage.Kind, 
 	if err != nil || len(msgs) == 0 {
 		return nil, err
 	}
-	ids := make([]int64, len(msgs))
-	for i, m := range msgs {
-		ids[i] = m.ID
-	}
+	ids := lo.Map(msgs, func(m *ent.OutboundMessage, _ int) int64 { return m.ID })
 	if _, err := s.OutboundMessage().Delete().Where(outboundmessage.IDIn(ids...)).Exec(ctx); err != nil {
 		return nil, err
 	}

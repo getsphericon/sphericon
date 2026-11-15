@@ -9,10 +9,11 @@
 package i18n
 
 import (
+	"cmp"
 	"embed"
 	"encoding/json"
 	"slices"
-	"sync"
+	"sync/atomic"
 
 	goi18n "github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -26,11 +27,12 @@ var localesFS embed.FS
 var supported = []string{"en"}
 
 var (
-	bundle = newBundle()
-	mu     sync.RWMutex
-	// active is English until Configure runs. This keeps tests (which never set
-	// SPHERICON_APP_LOCALE) asserting the English strings, and makes T safe before boot.
-	active = goi18n.NewLocalizer(bundle, "en")
+	bundle  = newBundle()
+	english = goi18n.NewLocalizer(bundle, "en")
+	// configured is the localizer Configure set, nil until it runs: T reads English then. This
+	// keeps tests (which never set SPHERICON_APP_LOCALE) asserting the English strings, and makes
+	// T safe before boot.
+	configured atomic.Pointer[goi18n.Localizer]
 )
 
 func newBundle() *goi18n.Bundle {
@@ -67,9 +69,7 @@ func Normalize(locale string) string {
 // catalog still renders — missing keys come through in English.
 func Configure(locale string) {
 	l := Normalize(locale)
-	mu.Lock()
-	active = goi18n.NewLocalizer(bundle, l, "en")
-	mu.Unlock()
+	configured.Store(goi18n.NewLocalizer(bundle, l, "en"))
 }
 
 // ID names a message of the catalog. Only the generated ids (ids_gen.go, from locales/en.json)
@@ -83,10 +83,7 @@ func (id ID) Key() string { return id.key }
 // T localizes a message, interpolating data (Go text/template syntax, e.g. {{.Name}}) when
 // provided. A message the active locale lacks comes through in English.
 func T(id ID, data map[string]any) string {
-	mu.RLock()
-	loc := active
-	mu.RUnlock()
-	msg, err := loc.Localize(&goi18n.LocalizeConfig{MessageID: id.key, TemplateData: data})
+	msg, err := cmp.Or(configured.Load(), english).Localize(&goi18n.LocalizeConfig{MessageID: id.key, TemplateData: data})
 	if err != nil {
 		return id.key
 	}

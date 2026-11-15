@@ -8,6 +8,8 @@ package pagination
 import (
 	"context"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 )
 
@@ -134,21 +136,15 @@ func List[Q Query[Q, T], T any](ctx context.Context, p Params, q Q) (Page[T], er
 // Map is the page with each item passed through f: the handler's own mapping of the items (an
 // extra a Converter cannot attach), before the page goes to the Converter. Items is never nil.
 func Map[T, U any](p Page[T], f func(T) U) Page[U] {
-	items := make([]U, len(p.Items))
-	for i, item := range p.Items {
-		items[i] = f(item)
-	}
+	items := lo.Map(p.Items, func(item T, _ int) U { return f(item) })
 	return Page[U]{Items: items, Page: p.Page, PageSize: p.PageSize, TotalItems: p.TotalItems, TotalPages: p.TotalPages}
 }
 
 // MapErr is Map with a mapping that can fail: the first error is returned and no page.
 func MapErr[T, U any](p Page[T], f func(T) (U, error)) (Page[U], error) {
-	items := make([]U, len(p.Items))
-	for i, item := range p.Items {
-		var err error
-		if items[i], err = f(item); err != nil {
-			return Page[U]{}, err
-		}
+	items, err := lo.MapErr(p.Items, func(item T, _ int) (U, error) { return f(item) })
+	if err != nil {
+		return Page[U]{}, err
 	}
 	return Page[U]{Items: items, Page: p.Page, PageSize: p.PageSize, TotalItems: p.TotalItems, TotalPages: p.TotalPages}, nil
 }
@@ -188,10 +184,7 @@ func Cursor[T any](rows []T, limit int, requested string, cursorOf func(T) strin
 // MapCursor is Map for a CursorPage: the cursor kept, each item passed through f (an extra a
 // Converter cannot attach). Items is never nil.
 func MapCursor[T, U any](p CursorPage[T], f func(T) U) CursorPage[U] {
-	items := make([]U, len(p.Items))
-	for i, item := range p.Items {
-		items[i] = f(item)
-	}
+	items := lo.Map(p.Items, func(item T, _ int) U { return f(item) })
 	return CursorPage[U]{Items: items, NextCursor: p.NextCursor, HasMore: p.HasMore}
 }
 

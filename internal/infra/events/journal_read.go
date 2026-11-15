@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"time"
 
@@ -106,10 +107,8 @@ func (b *Bus) readJournal(ctx context.Context, where predicate.EventJournalEntry
 					return fmt.Errorf("read journal metadata of %s: %w", row.EventID, err)
 				}
 			}
-			consumers := make([]string, 0, len(inputs))
-			for kind := range inputs {
-				consumers = append(consumers, kind)
-			}
+			// Never nil, so an entry with no consumer lists none rather than null.
+			consumers := slices.AppendSeq(make([]string, 0, len(inputs)), maps.Keys(inputs))
 			slices.Sort(consumers)
 			page.Entries = append(page.Entries, JournalEntry{
 				EventID: row.EventID, Name: row.Name, Version: row.Version,

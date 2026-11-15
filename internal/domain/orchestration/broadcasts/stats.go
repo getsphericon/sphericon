@@ -168,10 +168,7 @@ func PendingOfSending(ctx context.Context, s *ent.Scoped) (int, error) {
 
 // StatsFor is StatsOf for the given Broadcasts, each figure set carrying its Broadcast's Channel.
 func StatsFor(ctx context.Context, s *ent.Scoped, bs ...*ent.Broadcast) (map[int64]Stats, error) {
-	ids := make([]int64, len(bs))
-	for i, b := range bs {
-		ids[i] = b.ID
-	}
+	ids := lo.Map(bs, func(b *ent.Broadcast, _ int) int64 { return b.ID })
 	out, err := StatsOf(ctx, s, ids...)
 	if err != nil {
 		return nil, err

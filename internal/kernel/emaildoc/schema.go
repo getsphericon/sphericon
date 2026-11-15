@@ -44,30 +44,24 @@ type SchemaType struct {
 	Attrs map[string]any `json:"attrs"`
 }
 
-var (
-	schemaOnce   sync.Once
-	loadedSchema Schema
-)
-
-// EditorSchema returns the editor's schema listing.
-func EditorSchema() Schema {
-	schemaOnce.Do(func() {
-		if err := json.Unmarshal(schemaJSON, &loadedSchema); err != nil {
-			panic(fmt.Sprintf("emaildoc: the embedded schema.json is not valid: %v", err))
+// EditorSchema returns the editor's schema listing, read from the embedded file once.
+var EditorSchema = sync.OnceValue(func() Schema {
+	var loaded Schema
+	if err := json.Unmarshal(schemaJSON, &loaded); err != nil {
+		panic(fmt.Sprintf("emaildoc: the embedded schema.json is not valid: %v", err))
+	}
+	// The rules name these types; an editor update that renames one must fail here, not let
+	// a rule match nothing.
+	for _, node := range []string{nodeDoc, nodeText, nodeHeading, nodeButton, nodeImage, nodeOrderedList, nodeCodeBlock} {
+		if _, ok := loaded.Nodes[node]; !ok {
+			panic(fmt.Sprintf("emaildoc: the editor's schema has no %q node the rules name", node))
 		}
-		// The rules name these types; an editor update that renames one must fail here, not let
-		// a rule match nothing.
-		for _, node := range []string{nodeDoc, nodeText, nodeHeading, nodeButton, nodeImage, nodeOrderedList, nodeCodeBlock} {
-			if _, ok := loadedSchema.Nodes[node]; !ok {
-				panic(fmt.Sprintf("emaildoc: the editor's schema has no %q node the rules name", node))
-			}
-		}
-		if _, ok := loadedSchema.Marks[markLink]; !ok {
-			panic(fmt.Sprintf("emaildoc: the editor's schema has no %q mark the rules name", markLink))
-		}
-	})
-	return loadedSchema
-}
+	}
+	if _, ok := loaded.Marks[markLink]; !ok {
+		panic(fmt.Sprintf("emaildoc: the editor's schema has no %q mark the rules name", markLink))
+	}
+	return loaded
+})
 
 // Listing is the schema as compact text for an agent: one line per node and mark.
 func (s Schema) Listing() string {

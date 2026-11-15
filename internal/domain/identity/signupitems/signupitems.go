@@ -319,10 +319,7 @@ func (m *Module) Asked(ctx context.Context) (bool, error) {
 // published, the later id deciding between two published at the same moment. It is the one
 // definition of "the current version".
 func (m *Module) currentVersions(ctx context.Context, items []*ent.SignupItem) (map[int64]*ent.LegalDocumentVersion, error) {
-	ids := make([]int64, len(items))
-	for i, it := range items {
-		ids[i] = it.ID
-	}
+	ids := lo.Map(items, func(it *ent.SignupItem, _ int) int64 { return it.ID })
 	versions, err := m.ent.LegalDocumentVersion.Query().
 		Where(legaldocumentversion.ItemIDIn(ids...)).
 		WithPublishedBy().

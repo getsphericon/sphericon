@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-faster/jx"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -119,11 +120,7 @@ func StringsPatch[S ~[]E, E ~string](list S) patch.Field[[]string] {
 	if list == nil {
 		return patch.Keep[[]string]()
 	}
-	out := make([]string, len(list))
-	for i, v := range list {
-		out[i] = string(v)
-	}
-	return patch.Set(out)
+	return patch.Set(lo.Map(list, func(v E, _ int) string { return string(v) }))
 }
 
 // DocPatch is an opaque editor-document field as a patch field of the JSON the modules render: an

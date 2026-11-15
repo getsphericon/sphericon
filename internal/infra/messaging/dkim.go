@@ -89,9 +89,6 @@ func HasVerifiedSendingDomain(ctx context.Context, s *ent.Scoped, fromEmail stri
 // DomainOf returns the lower-cased domain of an email address, or "" when there
 // is no single "@".
 func DomainOf(email string) string {
-	at := strings.LastIndex(email, "@")
-	if at < 0 || at == len(email)-1 {
-		return ""
-	}
-	return strings.ToLower(email[at+1:])
+	_, domain, _ := strings.CutLast(email, "@")
+	return strings.ToLower(domain)
 }

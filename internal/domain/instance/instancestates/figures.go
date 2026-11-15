@@ -1,6 +1,7 @@
 package instancestates
 
 import (
+	"cmp"
 	"context"
 	"time"
 
@@ -91,18 +92,11 @@ func (m *Module) readFigures(ctx context.Context, since time.Time) (figures, err
 type figureQueries struct{ err error }
 
 func (q *figureQueries) count(n int, err error) int {
-	q.err = firstErr(q.err, err)
+	q.err = cmp.Or(q.err, err)
 	return n
 }
 
 func (q *figureQueries) exists(ok bool, err error) bool {
-	q.err = firstErr(q.err, err)
+	q.err = cmp.Or(q.err, err)
 	return ok
-}
-
-func firstErr(first, next error) error {
-	if first != nil {
-		return first
-	}
-	return next
 }

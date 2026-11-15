@@ -1,6 +1,11 @@
 package smsrender
 
-import "fmt"
+import (
+	"fmt"
+	"unicode/utf16"
+
+	"github.com/samber/lo"
+)
 
 // Encoding is the alphabet a text goes out in, which sets how many characters a part holds.
 type Encoding string
@@ -58,13 +63,7 @@ func Measure(text string) Size {
 	if gsm {
 		return Size{Encoding: GSM7, Characters: septets, Parts: parts(septets, 160, 153)}
 	}
-	units := 0
-	for _, r := range text {
-		units++
-		if r > 0xFFFF {
-			units++
-		}
-	}
+	units := lo.SumBy([]rune(text), utf16.RuneLen)
 	return Size{Encoding: UCS2, Characters: units, Parts: parts(units, 70, 67)}
 }
 

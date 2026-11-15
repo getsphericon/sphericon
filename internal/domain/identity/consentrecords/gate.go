@@ -3,6 +3,8 @@ package consentrecords
 import (
 	"context"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/ent/signupitem"
@@ -39,10 +41,7 @@ func (m *Module) Pending(ctx context.Context, userID int64) ([]signupitems.Docum
 	if err != nil || len(required) == 0 {
 		return nil, err
 	}
-	versionIDs := make([]int64, len(required))
-	for i, d := range required {
-		versionIDs[i] = d.VersionID
-	}
+	versionIDs := lo.Map(required, func(d signupitems.Document, _ int) int64 { return d.VersionID })
 	accepted, err := m.ent.ConsentRecord.Query().
 		Where(
 			consentrecord.UserID(userID),

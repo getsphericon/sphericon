@@ -22,6 +22,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -232,10 +234,7 @@ func (u *UseCase) withGrace(ctx context.Context, views []View, strongSession boo
 	if strongSession || len(views) == 0 {
 		return nil
 	}
-	ms := make([]*ent.Membership, len(views))
-	for i, v := range views {
-		ms[i] = v.Membership
-	}
+	ms := lo.Map(views, func(v View, _ int) *ent.Membership { return v.Membership })
 	ends, err := u.secondFactors.Deadlines(ctx, ms)
 	if err != nil {
 		return err
