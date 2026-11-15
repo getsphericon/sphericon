@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/doctor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -24,7 +25,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 // core is what the staff member commands call: the domain modules and use cases of the program
@@ -33,7 +33,7 @@ import (
 type core interface {
 	Suspender() (*suspension.Suspender, error)
 	SecondFactors() (*secondfactors.Module, error)
-	SignUp() (*signup.UseCase, error)
+	SignUp() (*signup.Module, error)
 	StaffMembers() (*staffmembers.Module, error)
 	ServiceCredentials() (*servicecredentials.Module, error)
 	SecretReencryption() (app.SecretReencryption, error)

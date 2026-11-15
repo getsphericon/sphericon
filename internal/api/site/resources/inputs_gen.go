@@ -19,6 +19,7 @@ import (
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	secondfactors "github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	signup "github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
@@ -34,7 +35,6 @@ import (
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
-	signup "github.com/getsphericon/sphericon/internal/usecase/signup"
 	workspaceview "github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 

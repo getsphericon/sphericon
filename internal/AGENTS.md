@@ -151,15 +151,18 @@ not exercised, and the server's own is `Module[*instancestates.Module](env)`. Th
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Workspace view's `Module[*workspaceview.UseCase](env)`
 (`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
-creation is `workspaces.CreateIn`'s, tested with an id generator that collides), the Sign-up's `Module[*signup.UseCase](env)` (`internal/usecase/signup`, which also makes a User
-Verified with its first Workspace and an Owner from a shell), User deletion's `Module[*userdeletion.UseCase](env)`
+creation is `workspaces.CreateIn`'s, tested with an id generator that collides), User deletion's `Module[*userdeletion.UseCase](env)`
 (`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
 deleting themselves at once; a test of the race builds it with `New` on a real database), the Workspace deletion cycle's
 restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
 of an OAuth grant (`apitokens.Module`, which holds the raw client too) is driven through the
 server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests.
-The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
-of a race on a new address gives it a `Lookup` whose first lookup misses.
+The Sign-up (`internal/domain/identity/signup`, a domain module of identity without a table that
+holds the raw client, since neither a User nor its first Workspace exists when a step starts) is
+`Module[*signup.Module](env)`, which also makes a User Verified with its first Workspace and an
+Owner from a shell; a test of `SignUp` builds it with `New` and a `signup.SignUpConfig`, and its
+test of a race on a new address, on a database of its own, replaces the lookup of the address
+with one whose first lookup misses (`SetLookup`, the one `export_test.go`, review rule 11).
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment
 builds it with a clock it controls: `testhelper.NewClock(at)`, moved with `Set` and `Advance`
 and handed over as `clock.Now` (to `WithClock` for the Instance).

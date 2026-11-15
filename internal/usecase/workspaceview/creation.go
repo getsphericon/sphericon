@@ -22,7 +22,7 @@ type CreateInput struct {
 // Owner Membership, the Send cap it starts with and its `workspace.create` Audit entry are
 // memberships' (memberships.CreateWorkspaceIn); the use case refuses an Unverified User first
 // (users.ErrEmailNotVerified) and answers the View. A User's first Workspace, created by the step
-// that makes it Verified, is the Sign-up's (internal/usecase/signup).
+// that makes it Verified, is the Sign-up's (internal/domain/identity/signup).
 func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
 	var ws *ent.Workspace
 	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {

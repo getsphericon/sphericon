@@ -92,8 +92,8 @@ type ProviderSignInResult struct {
 // A refusal is a *users.SigninRefusedError naming the Reason the person is shown: the provider's
 // answer is not usable, the Invitation is no longer pending, the link flow's session is not live,
 // or the decision refused.
-func (u *UseCase) SignInWithProvider(ctx context.Context, in ProviderSignInInput) (*ProviderSignInResult, error) {
-	cfg := u.providers
+func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput) (*ProviderSignInResult, error) {
+	cfg := m.providers
 	flow := in.Flow
 	profile, err := cfg.Providers.Complete(ctx, flow, in.Code)
 	if err != nil {
@@ -101,9 +101,9 @@ func (u *UseCase) SignInWithProvider(ctx context.Context, in ProviderSignInInput
 		slog.WarnContext(ctx, "signin: the provider's answer was not usable", "provider", flow.Provider, "error", err)
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonProviderError}
 	}
-	at := u.now()
+	at := m.now()
 	if flow.LinkUserID != 0 {
-		return u.linkIdentity(ctx, flow, in.Session, profile.Subject, at)
+		return m.linkIdentity(ctx, flow, in.Session, profile.Subject, at)
 	}
 
 	var invite *ent.Invitation
@@ -120,14 +120,14 @@ func (u *UseCase) SignInWithProvider(ctx context.Context, in ProviderSignInInput
 	if err != nil {
 		return nil, err
 	}
-	signedIn, err := u.signInWithIdentity(ctx, users.ProviderLogin{
+	signedIn, err := m.signInWithIdentity(ctx, users.ProviderLogin{
 		Provider:            flow.Provider,
 		Subject:             profile.Subject,
 		Email:               profile.Email,
 		Name:                profile.Name,
 		TrustFailure:        cfg.Providers.Trust(flow.Provider, profile),
 		Invitation:          invite,
-		SurveyDue:           u.signUp.SurveyDue != nil && u.signUp.SurveyDue(),
+		SurveyDue:           m.surveyDue(),
 		SignupItemsInEffect: asked,
 		Now:                 at,
 	})
@@ -152,7 +152,7 @@ func (u *UseCase) SignInWithProvider(ctx context.Context, in ProviderSignInInput
 		}
 		return &ProviderSignInResult{Outcome: SecondFactorDue, User: usr, ChallengeBinding: binding, At: at}, nil
 	}
-	if err := u.users.RecordLogin(ctx, usr, flow.Provider); err != nil {
+	if err := m.users.RecordLogin(ctx, usr, flow.Provider); err != nil {
 		slog.ErrorContext(ctx, "audit: login not recorded", "error", err)
 	}
 	return &ProviderSignInResult{Outcome: SignedIn, User: usr, At: at}, nil
@@ -161,18 +161,18 @@ func (u *UseCase) SignInWithProvider(ctx context.Context, in ProviderSignInInput
 // linkIdentity finishes a link flow: only the browser whose live session is the User's the flow
 // names adds the provider's subject to that User (ADR 0048). A session of another User, or one a
 // later session epoch ended, is ReasonInvalidState; a subject of another User ReasonIdentityInUse.
-func (u *UseCase) linkIdentity(ctx context.Context, flow signinprovider.Flow, session SessionHolder, subject string, at time.Time) (*ProviderSignInResult, error) {
+func (m *Module) linkIdentity(ctx context.Context, flow signinprovider.Flow, session SessionHolder, subject string, at time.Time) (*ProviderSignInResult, error) {
 	if session.UserID != flow.LinkUserID {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvalidState}
 	}
-	holder, err := u.users.User(ctx, session.UserID)
+	holder, err := m.users.User(ctx, session.UserID)
 	if err != nil {
 		return nil, err
 	}
 	if holder.SessionEpoch != session.Epoch {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvalidState}
 	}
-	linked, added, err := u.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, subject)
+	linked, added, err := m.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, subject)
 	if errors.Is(err, users.ErrIdentityInUse) {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonIdentityInUse}
 	}
@@ -192,9 +192,9 @@ func (u *UseCase) linkIdentity(ctx context.Context, flow signinprovider.Flow, se
 // also clears the password and ends its sessions, so whoever proves the address is the
 // one who controls it. An Unverified User's address is taken over: the provider's proof
 // wins, the User becomes Verified, the pending password goes, a pending Invitation stays.
-func (u *UseCase) signInWithIdentity(ctx context.Context, in users.ProviderLogin) (*users.ProviderSignin, error) {
+func (m *Module) signInWithIdentity(ctx context.Context, in users.ProviderLogin) (*users.ProviderSignin, error) {
 	if in.Invitation == nil {
-		return u.signIn(ctx, in)
+		return m.signIn(ctx, in)
 	}
 	// An Invitation is for one address: a provider that vouches for another one creates and
 	// links nothing, before the decision can. A provider whose proof of the email is not
@@ -204,7 +204,7 @@ func (u *UseCase) signInWithIdentity(ctx context.Context, in users.ProviderLogin
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvitationEmailMismatch}
 	}
 	in.SurveyDue = false
-	signedIn, err := u.signIn(ctx, in)
+	signedIn, err := m.signIn(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -218,16 +218,16 @@ func (u *UseCase) signInWithIdentity(ctx context.Context, in users.ProviderLogin
 	}
 	// The provider's proof of the address is the session proof AcceptInvitation asks of a
 	// Verified User.
-	if err := u.users.AcceptInvitation(ctx, in.Invitation, users.InvitationAcceptance{SessionEmail: signedIn.User.Email}); err != nil {
+	if err := m.users.AcceptInvitation(ctx, in.Invitation, users.InvitationAcceptance{SessionEmail: signedIn.User.Email}); err != nil {
 		return nil, err
 	}
 	return signedIn, nil
 }
 
 // signIn is signInWithIdentity without an Invitation.
-func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.ProviderSignin, error) {
+func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.ProviderSignin, error) {
 	for attempt := 0; ; attempt++ {
-		decision, known, holder, err := u.users.DecideSigninFor(ctx, in)
+		decision, known, holder, err := m.users.DecideSigninFor(ctx, in)
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +235,7 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 		case users.SigninKnown:
 			return &users.ProviderSignin{User: known}, nil
 		case users.SigninCreate:
-			created, err := u.createFromProvider(ctx, in)
+			created, err := m.createFromProvider(ctx, in)
 			if lostRace(err) && attempt == 0 {
 				// Two sign-ins of one person raced: read the facts again, where the winner's
 				// User and identity are now visible.
@@ -246,13 +246,13 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 			}
 			return &users.ProviderSignin{User: created, Created: true}, nil
 		case users.SigninPending:
-			held, err := u.users.HoldPending(ctx, in)
+			held, err := m.users.HoldPending(ctx, in)
 			if err != nil {
 				return nil, err
 			}
 			return &users.ProviderSignin{Pending: held}, nil
 		case users.SigninLink:
-			linked, identityID, err := u.users.LinkToHolder(ctx, holder.ID, in)
+			linked, identityID, err := m.users.LinkToHolder(ctx, holder.ID, in)
 			if lostRace(err) && attempt == 0 {
 				continue // the same sign-in raced itself: read the facts again
 			}
@@ -261,7 +261,7 @@ func (u *UseCase) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pr
 			}
 			return &users.ProviderSignin{User: linked, LinkedIdentityID: identityID}, nil
 		case users.SigninTakeOver:
-			taken, err := u.takeOver(ctx, holder.ID, in)
+			taken, err := m.takeOver(ctx, holder.ID, in)
 			if (errors.Is(err, users.ErrAlreadyVerified) || lostRace(err)) && attempt == 0 {
 				// The person who signed up verified the address first (it is a Verified User now), or
 				// the sign-in raced itself: read the facts again.
@@ -287,9 +287,9 @@ func lostRace(err error) bool {
 // identity, its first Workspace and `user.email_verify`, in one transaction, as a
 // Sign-up does when its link is followed (ADR 0030). The User has no password: the
 // provider proved the address, so no mail is sent. Its email is proven now.
-func (u *UseCase) createFromProvider(ctx context.Context, in users.ProviderLogin) (*ent.User, error) {
-	created, _, err := u.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.CreateProviderUserIn(ctx, tx, in, u.now())
+func (m *Module) createFromProvider(ctx context.Context, in users.ProviderLogin) (*ent.User, error) {
+	created, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		return users.CreateProviderUserIn(ctx, tx, in, m.now())
 	})
 	return created, err
 }
@@ -299,9 +299,9 @@ func (u *UseCase) createFromProvider(ctx context.Context, in users.ProviderLogin
 // sessions end, and it gets the identity and its first Workspace, as a verify link would
 // give it. A pending Invitation to the address is not touched. users.ErrAlreadyVerified when the
 // User is no longer Unverified.
-func (u *UseCase) takeOver(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, error) {
-	taken, _, err := u.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.TakeOverIn(ctx, tx, holderID, in, u.now())
+func (m *Module) takeOver(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, error) {
+	taken, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		return users.TakeOverIn(ctx, tx, holderID, in, m.now())
 	})
 	return taken, err
 }
@@ -309,7 +309,7 @@ func (u *UseCase) takeOver(ctx context.Context, holderID int64, in users.Provide
 // CompletePendingSignup is the person's answers to the Sign-up items completing the pending
 // sign-up a signed reference names (ADR 0062, users.Links.PendingSignup). A reference that names
 // nothing open is users.ErrPendingSignupGone. The answers are checked next, as the provider screen's
-// (SignUpConfig.Consents), and a refused one is the *validation.FieldsError that names it, with
+// (consentrecords.Module.Check), and a refused one is the *validation.FieldsError that names it, with
 // nothing written and the pending sign-up still open. Then, in one transaction, it takes the
 // pending sign-up (open at now), creates the Verified User with the provider's address and name, or
 // takes over the Unverified User that holds the address, as a provider sign-in without items does,
@@ -321,28 +321,28 @@ func (u *UseCase) takeOver(ctx context.Context, holderID int64, in users.Provide
 // is logged and does not undo the sign-up. It returns the User and the pending sign-up it came
 // from. users.ErrPendingSignupGone when the pending sign-up is no longer open, its Invitation no
 // longer pending, or its address or provider account was taken meanwhile; nothing is written then.
-func (u *UseCase) CompletePendingSignup(ctx context.Context, reference string, answers []consentrecords.Answer) (*SignupCompleted, error) {
-	pending, err := u.links.PendingSignup(ctx, reference)
+func (m *Module) CompletePendingSignup(ctx context.Context, reference string, answers []consentrecords.Answer) (*SignupCompleted, error) {
+	pending, err := m.links.PendingSignup(ctx, reference)
 	if err != nil {
 		return nil, err
 	}
 	id := pending.ID
-	consents, err := u.signUp.Consents.Check(ctx, answers, consentrecord.SourceProviderScreen)
+	consents, err := m.consents.Check(ctx, answers, consentrecord.SourceProviderScreen)
 	if err != nil {
 		return nil, err
 	}
-	surveyDue := u.signUp.SurveyDue != nil && u.signUp.SurveyDue()
-	now := u.now()
+	surveyDue := m.surveyDue()
+	now := m.now()
 	var taken *ent.PendingSignup
-	completed, _, err := u.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, p, err := u.users.CompletePendingSignupIn(ctx, tx, pub, id, consents, surveyDue, now)
+	completed, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
+		usr, p, err := m.users.CompletePendingSignupIn(ctx, tx, pub, id, consents, surveyDue, now)
 		taken = p
 		return usr, err
 	})
 	if err != nil {
 		return nil, err
 	}
-	if err := u.users.RecordLogin(ctx, completed, taken.Provider); err != nil {
+	if err := m.users.RecordLogin(ctx, completed, taken.Provider); err != nil {
 		slog.ErrorContext(ctx, "audit: login not recorded", "error", err)
 	}
 	return &SignupCompleted{User: completed, PendingSignup: taken}, nil

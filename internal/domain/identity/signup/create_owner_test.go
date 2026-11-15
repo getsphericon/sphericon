@@ -6,18 +6,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
 
-	_, err := testhelper.Module[*signup.UseCase](env).CreateOwner(t.Context(), "not-an-email", "Ada")
+	_, err := testhelper.Module[*signup.Module](env).CreateOwner(t.Context(), "not-an-email", "Ada")
 
 	require.ErrorIs(t, err, validation.ErrEmailInvalid)
 	taken, err := acc.EmailTaken(t.Context(), "not-an-email")
@@ -29,7 +29,7 @@ func TestCreateOwnerMakesTheUserAndReturnsItsOneTimePassword(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
 
-	password, err := testhelper.Module[*signup.UseCase](env).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
+	password, err := testhelper.Module[*signup.Module](env).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 
 	require.NoError(t, err)
 	assert.NotEmpty(t, password)
@@ -41,7 +41,7 @@ func TestCreateOwnerMakesTheUserAndReturnsItsOneTimePassword(t *testing.T) {
 func TestCreateOwnerOfATakenEmailIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	password, err := testhelper.Module[*signup.UseCase](env).CreateOwner(t.Context(), fixtures.OwnerJohnEmail, "John")
+	password, err := testhelper.Module[*signup.Module](env).CreateOwner(t.Context(), fixtures.OwnerJohnEmail, "John")
 
 	require.ErrorIs(t, err, users.ErrEmailTaken)
 	assert.Empty(t, password)
@@ -51,7 +51,7 @@ func TestCreateOwnerRefusesANameEmptyToTheEye(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
 
-	password, err := testhelper.Module[*signup.UseCase](env).CreateOwner(t.Context(), "ada@example.com", "   ")
+	password, err := testhelper.Module[*signup.Module](env).CreateOwner(t.Context(), "ada@example.com", "   ")
 
 	require.ErrorIs(t, err, validation.ErrUserNameRequired)
 	assert.Empty(t, password)

@@ -8,7 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 )
 
-// NewUser is a User a Sign-up creates (internal/usecase/signup), with the Consent
+// NewUser is a User a Sign-up creates (internal/domain/identity/signup), with the Consent
 // records its answers make, written in the transaction that creates the User.
 type NewUser struct {
 	Name         string

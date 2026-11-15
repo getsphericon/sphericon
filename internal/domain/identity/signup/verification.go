@@ -34,10 +34,10 @@ const (
 // (memberships.CreateWorkspaceIn), and `user.email_verify` recorded in its Audit log, all in one
 // transaction. landing is the Workspace the User goes to next: the one joined by domain, else the
 // first.
-func (u *UseCase) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
+func (m *Module) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
 	var verified *ent.User
 	var landing *ent.Workspace
-	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		usr, err := write(tx, pub)
 		if err != nil {
 			return err
@@ -48,7 +48,7 @@ func (u *UseCase) verified(ctx context.Context, proven bool, write func(tx *ent.
 				return err
 			}
 		}
-		first, err := memberships.CreateWorkspaceIn(ctx, tx, pub, u.defaultSendCap, usr, users.FirstWorkspaceName)
+		first, err := memberships.CreateWorkspaceIn(ctx, tx, pub, m.defaultSendCap, usr, users.FirstWorkspaceName)
 		if err != nil {
 			return err
 		}
@@ -100,9 +100,9 @@ type PasswordReset struct {
 // created. The Sign-up is complete, so it publishes events.UserSignedUp, which welcomes the
 // User. Landing is where the User goes next: the joined Workspace, else the first one.
 // users.ErrAlreadyVerified when the User is no longer Unverified (a used link).
-func (u *UseCase) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verified, error) {
-	verified, landing, err := u.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, err := users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, u.now())
+func (m *Module) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verified, error) {
+	verified, landing, err := m.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
+		usr, err := users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, m.now())
 		if err != nil {
 			return nil, err
 		}
@@ -117,12 +117,12 @@ func (u *UseCase) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verifi
 // VerifyEmailLink completes a Sign-up from its verification link: the link is read first
 // (users.Links.Verification, with its refusals), then VerifyEmail, whose User and landing it
 // returns. A link that loses the race to another one is users.ErrVerifyLinkUsed.
-func (u *UseCase) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) (*Verified, error) {
-	uid, hash, err := u.links.Verification(ctx, in.Token, in.Browser, in.Password)
+func (m *Module) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) (*Verified, error) {
+	uid, hash, err := m.links.Verification(ctx, in.Token, in.Browser, in.Password)
 	if err != nil {
 		return nil, err
 	}
-	verified, err := u.VerifyEmail(ctx, VerifyEmailInput{UserID: uid, PasswordHash: hash})
+	verified, err := m.VerifyEmail(ctx, VerifyEmailInput{UserID: uid, PasswordHash: hash})
 	return verified, users.LinkUsed(err)
 }
 
@@ -133,17 +133,17 @@ func (u *UseCase) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) 
 // Workspace, `user.email_verify`, the welcome) and reports CompletedSignUp with the User. For a
 // Verified User it is only a password change, recorded like
 // users.Module.ChangeProfile. Either way every earlier session ends.
-func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string) (*PasswordReset, error) {
-	id, passwordHash, err := u.links.PasswordReset(ctx, token, password)
+func (m *Module) ResetPasswordLink(ctx context.Context, token, password string) (*PasswordReset, error) {
+	id, passwordHash, err := m.links.PasswordReset(ctx, token, password)
 	if err != nil {
 		return nil, err
 	}
-	stored, err := u.users.User(ctx, id)
+	stored, err := m.users.User(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if stored.EmailVerifiedAt == nil {
-		verified, err := u.VerifyEmail(ctx, VerifyEmailInput{UserID: id, PasswordHash: &passwordHash})
+		verified, err := m.VerifyEmail(ctx, VerifyEmailInput{UserID: id, PasswordHash: &passwordHash})
 		if err == nil {
 			return &PasswordReset{User: verified.User, CompletedSignUp: true}, nil
 		}
@@ -152,7 +152,7 @@ func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string)
 		}
 		// A concurrent link verified the User first: this is now a plain password change.
 	}
-	reset, err := u.users.ResetVerifiedPassword(ctx, id, passwordHash)
+	reset, err := m.users.ResetVerifiedPassword(ctx, id, passwordHash)
 	if err != nil {
 		return nil, err
 	}
@@ -164,15 +164,15 @@ func (u *UseCase) ResetPasswordLink(ctx context.Context, token, password string)
 // Consent records of its answers (ADR 0062), and the first Workspace (users.FirstWorkspaceName),
 // exactly as VerifyEmail does. A taken address is users.ErrEmailTaken. SurveyDue marks the User as
 // owing the Sign-up survey.
-func (u *UseCase) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
-	return u.createVerified(ctx, n, signedUp)
+func (m *Module) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.User, error) {
+	return m.createVerified(ctx, n, signedUp)
 }
 
 // createVerified is SignUpVerified; welcome says whether the User completed a Sign-up (signedUp,
 // which publishes events.UserSignedUp) or was made by the operator (madeByOperator).
-func (u *UseCase) createVerified(ctx context.Context, n users.NewUser, welcome bool) (*ent.User, error) {
-	created, _, err := u.verified(ctx, noJoin, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, err := users.CreateVerifiedIn(ctx, tx, n, u.now())
+func (m *Module) createVerified(ctx context.Context, n users.NewUser, welcome bool) (*ent.User, error) {
+	created, _, err := m.verified(ctx, noJoin, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
+		usr, err := users.CreateVerifiedIn(ctx, tx, n, m.now())
 		if err != nil || !welcome {
 			return usr, err
 		}
@@ -191,13 +191,13 @@ func signUpCompleted(usr *ent.User) *events.UserSignedUp {
 // users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once.
 // The name and the address are checked by the rules of a User's (users.CreateVerifiedIn), and a
 // taken address is users.ErrEmailTaken.
-func (u *UseCase) CreateOwner(ctx context.Context, email, name string) (string, error) {
+func (m *Module) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	password := rand.Text()
-	hash, err := u.passwords.Hash(password)
+	hash, err := m.passwords.Hash(password)
 	if err != nil {
 		return "", err
 	}
-	if _, err := u.createVerified(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash}, madeByOperator); err != nil {
+	if _, err := m.createVerified(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash}, madeByOperator); err != nil {
 		return "", err
 	}
 	return password, nil

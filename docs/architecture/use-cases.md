@@ -27,7 +27,18 @@ Event's Contact through `contacts`, checks an order Event through `orders` and p
 batch on the bus, which owns the Events and the Event log's reads; the Callback interpretation
 (`internal/domain/sending/callbackinterpretation`) opens the Ingest hook request's transaction,
 stamps Outbound messages and changes Bindings through their modules, and publishes the rest as
-System events. The use
+System events; the Sign-up (`internal/domain/identity/signup`, which holds the raw client, since
+neither the User nor its first Workspace exists when a step starts) creates the User's first
+Workspace through `memberships.CreateWorkspaceIn` in every step that makes a User Verified, each on its own transaction: the verification and reset
+links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
+completion of a pending sign-up, calling the `users` functions for the User's part
+(`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
+`Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`; the completion of a pending sign-up also
+resolves its signed reference through `users.Links`, checks the answers and records `user.login`), the sign-in through a Sign-in provider
+being its `SignInWithProvider` whole (ADR 0111: the provider's answer, the Invitation, the Sign-up
+items, the decision, the link of a link flow, the Second factor and `user.login`; it returns what
+happened, signed in, a Second factor due, a Pending sign-up or an identity linked, and the callback
+turns that into a cookie or a redirect). The use
 case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
 states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
 `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
@@ -53,23 +64,12 @@ table at a time, each batch of listed ids deleted by itself through `*ent.Scoped
 Workspace row on through
 `TombstoneIn` (deleting one checks only its typed name, so it is `workspaces.Module.Delete`,
 ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with every
-job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; and the
+job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; the
 Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace for a Verified User
 through `memberships.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
 starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146) and its `workspace.create`
 Audit entry, and moves a deleted one back through
-`workspacesunchecked.RestoreIn`; and the Sign-up
-(`internal/usecase/signup`), which creates the User's first Workspace the same way in
-every step that makes a User Verified, each on its own transaction: the verification and reset
-links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
-completion of a pending sign-up, calling the `users` functions for the User's part
-(`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
-`Module.CompletePendingSignupIn`, `ApplyDomainJoinIn`; the completion of a pending sign-up also
-resolves its signed reference through `users.Links`, checks the answers and records `user.login`), the sign-in through a Sign-in provider
-being its `SignInWithProvider` whole (ADR 0111: the provider's answer, the Invitation, the Sign-up
-items, the decision, the link of a link flow, the Second factor and `user.login`; it returns what
-happened, signed in, a Second factor due, a Pending sign-up or an identity linked, and the callback
-turns that into a cookie or a redirect); and User deletion
+`workspacesunchecked.RestoreIn`; and User deletion
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
 `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),

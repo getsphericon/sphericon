@@ -10,8 +10,8 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 // The pages the callback sends the browser to. The SPA owns both routes.
@@ -56,7 +56,7 @@ func (h *Handlers) SiteAuthSigninStart(_ context.Context, params siteapi.SiteAut
 // answers with a redirect: to the page the flow began from with the session cookie, or to
 // the login page with the Reason, which the SPA renders. A callback that is not for a flow
 // this browser began (no cookie, another state) is refused before the provider is asked
-// anything. The sign-in itself is the use case's (signup.UseCase.SignInWithProvider); what it
+// anything. The sign-in itself is the Sign-up module's (signup.Module.SignInWithProvider); what it
 // did becomes the cookie or the redirect here.
 func (h *Handlers) SiteAuthSigninCallback(ctx context.Context, params siteapi.SiteAuthSigninCallbackParams) (*siteapi.SiteAuthSigninCallbackFound, error) {
 	if !h.signin.Has(params.Provider) {

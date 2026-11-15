@@ -13,12 +13,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 )
 
@@ -127,7 +127,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	acc := testhelper.Module[*users.Module](h.env)
 	_, saved := usersFrom(t, c, "")
 
-	created, err := testhelper.Module[*signup.UseCase](h.env).SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
+	created, err := testhelper.Module[*signup.Module](h.env).SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
 	require.NoError(t, err)
 	got, saved := usersFrom(t, c, saved)
 	require.Equal(t, []int64{created.ID}, userIDs(got))
@@ -191,7 +191,7 @@ func TestASignUpThatAcceptsTheMailingsIsOneEntryWithTheConsent(t *testing.T) {
 		consentrecord.SourceSignUpForm)
 	require.NoError(t, err)
 
-	created, err := testhelper.Module[*signup.UseCase](h.env).
+	created, err := testhelper.Module[*signup.Module](h.env).
 		SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!", Consents: consents})
 	require.NoError(t, err)
 

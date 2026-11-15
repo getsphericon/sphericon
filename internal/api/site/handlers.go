@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/userlogin"
@@ -55,7 +56,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
@@ -115,7 +115,7 @@ type Handlers struct {
 	sessions              *auth.Sessions
 	secondFactor          *secondfactors.Module
 	admission             *admission.Module
-	signUp                *signup.UseCase
+	signUp                *signup.Module
 	userDeletion          *userdeletion.UseCase
 	passkeys              *passkeys.Module
 	now                   func() time.Time
@@ -217,9 +217,9 @@ type Deps struct {
 	// UserLogin is the User's Login: signing in by password, Second factor or Passkey (ADR 0020).
 	UserLogin *userlogin.Module
 	// SignUp is the Sign-up and every step that makes a User Verified with its first Workspace (a
-	// use case, ADR 0102): the verification and reset links, a Sign-up without verification and
+	// domain module of identity, ADR 0102): the verification and reset links, a Sign-up without verification and
 	// the provider sign-in.
-	SignUp *signup.UseCase
+	SignUp *signup.Module
 	// UserDeletion is a User's deletion of themself (a use case, ADR 0050, ADR 0111).
 	UserDeletion *userdeletion.UseCase
 	// Passkeys registers a User's Passkeys (ADR 0052).

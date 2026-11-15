@@ -121,7 +121,10 @@ or `AGENTS.md`.
     An expected value is not computed by the code under test, and a test does not assert against the
     constant it protects; what the app sends out is tested as delivered (ADR 0024).
     A test is black-box: it sits in the package's `_test` package and goes through what the package
-    exports, and no `export_test.go` opens the package's insides to it. A command (`cmd/*`) is a
+    exports, and no `export_test.go` opens the package's insides to it. The one exception is a race
+    that only a hook can replay and that no production caller may reach: the Sign-up's lookup of an
+    address (`internal/domain/identity/signup/export_test.go`), which the race test of two Sign-ups of
+    one new address replaces. A command (`cmd/*`) is a
     handler like an HTTP one: its logic lives in an internal package, which is tested, and the
     command has no tests.
 12. **Tests cover our logic only.** A test exercises a decision the code makes and checks what came
