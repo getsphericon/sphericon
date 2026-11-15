@@ -10,5 +10,3 @@ export const enrollSchema = z.object({
   subjectId: z.string().min(1),
   courses: z.array(z.string()).min(1),
 })
-
-export type EnrollRequest = z.infer<typeof enrollSchema>

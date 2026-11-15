@@ -133,20 +133,13 @@ type Row = [SiteAttentionItem, ...SiteAttentionItem[]]
 // rowsOf groups the items into rows: one per grouped kind (and hold reason), one per item of any
 // other kind. A row stands where its first item stood, so the most urgent and the oldest still
 // come first.
-function rowsOf(items: SiteAttentionItem[]): Map<string, Row> {
-  const rows = new Map<string, Row>()
-  for (const [index, item] of items.entries()) {
-    const key = isGrouped(item.kind)
-      ? `${item.kind}:${item.holdReason ?? ''}`
-      : `${item.kind}#${index}`
-    const row = rows.get(key)
-    if (row === undefined) {
-      rows.set(key, [item])
-    } else {
-      row.push(item)
-    }
-  }
-  return rows
+function rowsOf(items: SiteAttentionItem[]): [string, Row][] {
+  const groups = Map.groupBy(items, (item, index) =>
+    isGrouped(item.kind) ? `${item.kind}:${item.holdReason ?? ''}` : `${item.kind}#${index}`,
+  )
+  return [...groups].flatMap(([key, [first, ...rest]]) =>
+    first === undefined ? [] : [[key, [first, ...rest]]],
+  )
 }
 
 interface ActionProps {
@@ -320,7 +313,7 @@ function AttentionItems({ workspaceId }: { workspaceId: string }) {
     <Card withBorder padding="lg">
       <Stack gap="sm">
         <Title order={4}>{t(($) => $.overview.attention.title)}</Title>
-        {[...rowsOf(items)].map(([key, row]) => (
+        {rowsOf(items).map(([key, row]) => (
           <AttentionRow key={key} items={row} workspaceId={workspaceId} />
         ))}
       </Stack>

@@ -1,4 +1,5 @@
 import type { ErrorSchema, RJSFSchema, UiSchema } from '@rjsf/utils'
+import { omitBy } from 'es-toolkit'
 import * as z from 'zod'
 
 import type { SitePresetResource } from '../../generated/site/types.gen.ts'
@@ -48,13 +49,13 @@ const SECRET_MASK = '********'
 // unmasked is the stored params without their masked secrets: what a save sends when nothing was
 // typed, so a kept secret is left out rather than echoed.
 export function unmasked(params: PresetParams): PresetParams {
-  return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== SECRET_MASK))
+  return omitBy(params, (value) => value === SECRET_MASK)
 }
 
 // The form's starting values: the stored params without the secrets, which are never filled in.
 export function formValues(preset: SitePresetResource, params: PresetParams): PresetParams {
   const secrets = secretsOf(preset)
-  return Object.fromEntries(Object.entries(params).filter(([name]) => !secrets.has(name)))
+  return omitBy(params, (_value, name) => secrets.has(name))
 }
 
 // The schema the form validates by: the Preset's own, except that a secret with a stored value is
@@ -89,11 +90,7 @@ export function formUi(
 // The params to save: a blank secret is left out, so the stored one is kept.
 export function paramsToSave(preset: SitePresetResource, values: PresetParams): PresetParams {
   const secrets = secretsOf(preset)
-  return Object.fromEntries(
-    Object.entries(values).filter(
-      ([name, value]) => !(secrets.has(name) && (value === undefined || value === '')),
-    ),
-  )
+  return omitBy(values, (value, name) => secrets.has(name) && (value === undefined || value === ''))
 }
 
 // The prefix of a refused param's field in a problem's `errors`.

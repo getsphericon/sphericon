@@ -1,4 +1,5 @@
 import { schemaResolver, useForm } from '@mantine/form'
+import { omit } from 'es-toolkit'
 import { useId } from 'react'
 import * as z from 'zod'
 
@@ -15,6 +16,7 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
   'validate' | 'validateField' | 'isValid'
 > & {
   showFieldErrors: (error: unknown) => FieldErrors | undefined
+  validateFields: (paths: string[]) => boolean
 }
 
 // useSchemaForm is a form validated by a zod schema built from the generated (TypeSpec) ones, so
@@ -30,6 +32,10 @@ export type SchemaForm<TValues extends object, TOutput> = Omit<
 // focuses the first of them in the page's order. It hands back what it could not place: the
 // messages of paths the form does not render, or an empty object when the problem names no field,
 // so the page decides how they show. Undefined means every refusal shows under its field.
+//
+// validateFields checks a part of the form as a submit checks the whole (a step of a form shown
+// one screen at a time): it shows the errors of the paths given, focuses the first of them in the
+// page's order and answers whether they are all valid.
 export function useSchemaForm<TValues extends object, TOutput>(
   schema: z.ZodType<TOutput, TValues>,
   initialValues: TValues,
@@ -74,13 +80,21 @@ export function useSchemaForm<TValues extends object, TOutput>(
       form.setFieldError(path, fieldErrors[path]?.[0])
     }
     focusFirstInvalid(form.getInputNode, placed)
-    const unplaced = Object.fromEntries(
-      Object.entries(fieldErrors).filter(([path]) => !placed.includes(path)),
-    )
+    const unplaced = omit(fieldErrors, placed)
     return placed.length > 0 && Object.keys(unplaced).length === 0 ? undefined : unplaced
   }
 
-  return { ...form, onSubmit, showFieldErrors }
+  const validateFields = (paths: string[]) => {
+    const invalid = paths.filter((path) => {
+      const result = form.validateField(path)
+      // The resolver is synchronous: no result is a promise.
+      return result instanceof Promise || result.hasError
+    })
+    focusFirstInvalid(form.getInputNode, invalid)
+    return invalid.length === 0
+  }
+
+  return { ...form, onSubmit, showFieldErrors, validateFields }
 }
 
 // focusFirstInvalid focuses the field, among the invalid ones, that comes first in the document:

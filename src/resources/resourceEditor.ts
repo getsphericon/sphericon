@@ -1,3 +1,5 @@
+import { hashKey } from '@tanstack/react-query'
+
 import type { EditorAdapter, EditorOperation, EditorReceipt } from '../editing/editorSession.ts'
 import type { ResourceFormSchema, ResourceValues } from './resourceFormSchema.ts'
 
@@ -58,13 +60,10 @@ export interface ResourceSubmission<TPayload> {
   fingerprint: string
 }
 
-// The form's values as text, whatever their keys' order; invalid values have one too.
+// The form's values as text, whatever their keys' order (TanStack Query's own hash of a query
+// key); invalid values have one too.
 function valuesFingerprint(values: object): string {
-  return JSON.stringify(values, (_key, value: unknown) =>
-    value !== null && typeof value === 'object' && !Array.isArray(value)
-      ? Object.fromEntries(Object.entries(value).toSorted(([a], [b]) => a.localeCompare(b)))
-      : value,
-  )
+  return hashKey([values])
 }
 
 // The schema-form adapter of the editor session (src/editing/editorSession.ts): the content is the

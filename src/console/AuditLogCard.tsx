@@ -1,13 +1,17 @@
-import { Button, Card, EmptyState, Stack, Table, Title } from '@mantine/core'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { Card, EmptyState, Stack, Table, Title } from '@mantine/core'
+import { useSuspenseInfiniteQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { AuditActionName } from '../components/AuditActionName.tsx'
+import { LoadMore } from '../components/LoadMore.tsx'
 import { QueryBoundary } from '../components/QueryBoundary.tsx'
 import { BlockSkeleton } from '../components/Skeletons.tsx'
-import { staffWorkspaceAuditListOptions } from '../generated/staffee/@tanstack/react-query.gen.ts'
+import {
+  staffWorkspaceAuditListInfiniteOptions,
+  staffWorkspaceAuditListQueryKey,
+} from '../generated/staffee/@tanstack/react-query.gen.ts'
 import type { StaffAuditEntryResource } from '../generated/staffee/types.gen.ts'
+import { suspenseInfinite } from '../utils/suspenseInfinite.ts'
 import { formatDateTime } from './format.ts'
 
 const PAGE_SIZE = 25
@@ -30,40 +34,23 @@ function targetLabel({ target }: StaffAuditEntryResource) {
   return detail ? `${target.type} ${detail}` : target.type
 }
 
-interface AuditPageProps {
-  workspaceId: string
-  cursor?: string
-  first: boolean
-}
-
-// One page of the log behind its own boundary, so the next page loads, or fails, beneath the
-// rows already shown.
-function AuditPage(props: AuditPageProps) {
+// The log's entries, read a page at a time: the first under the card's boundary, each next one
+// beneath the rows already shown.
+function AuditRows({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation()
-  return (
-    <QueryBoundary
-      fallback={<BlockSkeleton />}
-      errorTitle={t(($) => $.console.workspace.auditLog.loadError)}
-    >
-      <AuditRows {...props} />
-    </QueryBoundary>
-  )
-}
+  const options = { path: { workspaceId }, query: { limit: PAGE_SIZE } }
+  const query = useSuspenseInfiniteQuery({
+    ...suspenseInfinite(
+      staffWorkspaceAuditListInfiniteOptions(options),
+      staffWorkspaceAuditListQueryKey(options),
+    ),
+    // The empty cursor is the log's start.
+    initialPageParam: '',
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+  })
+  const items = query.data.pages.flatMap((page) => page.items)
 
-// The rows of one page; while more exist, a button mounts the next page beneath them, so the
-// list grows without holding every page in one state.
-function AuditRows({ workspaceId, cursor, first }: AuditPageProps) {
-  const { t } = useTranslation()
-  const [showNext, setShowNext] = useState(false)
-  const { items, nextCursor } = useSuspenseQuery(
-    staffWorkspaceAuditListOptions({
-      path: { workspaceId },
-      query: { limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
-    }),
-  ).data
-
-  const next = nextCursor ?? undefined
-  if (first && items.length === 0) {
+  if (items.length === 0) {
     return <EmptyState title={t(($) => $.console.workspace.auditLog.empty)} />
   }
 
@@ -71,16 +58,14 @@ function AuditRows({ workspaceId, cursor, first }: AuditPageProps) {
     <>
       <Table.ScrollContainer minWidth={560}>
         <Table withTableBorder>
-          {first ? (
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t(($) => $.console.workspace.auditLog.time)}</Table.Th>
-                <Table.Th>{t(($) => $.console.workspace.auditLog.actor)}</Table.Th>
-                <Table.Th>{t(($) => $.console.workspace.auditLog.action)}</Table.Th>
-                <Table.Th>{t(($) => $.console.workspace.auditLog.target)}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-          ) : null}
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t(($) => $.console.workspace.auditLog.time)}</Table.Th>
+              <Table.Th>{t(($) => $.console.workspace.auditLog.actor)}</Table.Th>
+              <Table.Th>{t(($) => $.console.workspace.auditLog.action)}</Table.Th>
+              <Table.Th>{t(($) => $.console.workspace.auditLog.target)}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
           <Table.Tbody>
             {items.map((entry) => (
               <Table.Tr key={entry.id}>
@@ -97,14 +82,11 @@ function AuditRows({ workspaceId, cursor, first }: AuditPageProps) {
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
-      {next && !showNext ? (
-        <Button variant="light" onClick={() => setShowNext(true)}>
-          {t(($) => $.console.workspace.auditLog.loadMore)}
-        </Button>
-      ) : null}
-      {next && showNext ? (
-        <AuditPage workspaceId={workspaceId} cursor={next} first={false} />
-      ) : null}
+      <LoadMore
+        query={query}
+        label={t(($) => $.console.workspace.auditLog.loadMore)}
+        errorTitle={t(($) => $.console.workspace.auditLog.loadError)}
+      />
     </>
   )
 }
@@ -118,7 +100,12 @@ export function AuditLogCard({ workspaceId }: { workspaceId: string }) {
     <Card withBorder>
       <Stack>
         <Title order={4}>{t(($) => $.console.workspace.auditLog.title)}</Title>
-        <AuditPage workspaceId={workspaceId} first />
+        <QueryBoundary
+          fallback={<BlockSkeleton />}
+          errorTitle={t(($) => $.console.workspace.auditLog.loadError)}
+        >
+          <AuditRows workspaceId={workspaceId} />
+        </QueryBoundary>
       </Stack>
     </Card>
   )

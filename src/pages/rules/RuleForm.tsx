@@ -21,7 +21,7 @@ import {
   siteAutomationsListOptions,
   siteEventsActionsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteCreateRuleInput, SiteRuleAction } from '../../generated/site/types.gen.ts'
+import type { SiteCreateRuleInput } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationsListQuery } from '../../generated/site/zod.gen.ts'
 import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
@@ -51,7 +51,7 @@ export function RuleForm({
   const actionFilter = useEventActionFilter()
   const { workspaceId } = workspaceRoute.useParams()
 
-  const { triggerEvents, actions } = form.values
+  const { actions } = form.values
 
   const knownEvents = useQuery(siteEventsActionsOptions({ path: { workspaceId } }))
   // The automations an enroll action can pick from; read only once an action needs them.
@@ -66,10 +66,6 @@ export function RuleForm({
     value: automation.id,
     label: automation.name,
   }))
-  const setActions = (next: SiteRuleAction[]) => form.setFieldValue('actions', next)
-  const changeAction = (index: number, change: Partial<SiteRuleAction>) =>
-    setActions(actions.map((action, at) => (at === index ? { ...action, ...change } : action)))
-
   return (
     <form onSubmit={form.onSubmit(onSubmit)}>
       <Stack>
@@ -86,9 +82,7 @@ export function RuleForm({
           data={knownEvents.data?.actions ?? []}
           renderOption={({ option }) => <EventActionOption action={option.value} />}
           filter={actionFilter}
-          value={triggerEvents}
-          onChange={(next) => form.setFieldValue('triggerEvents', next)}
-          error={form.errors.triggerEvents}
+          {...form.getInputProps('triggerEvents')}
         />
         <Input.Wrapper
           label={t(($) => $.rules.conditionLabel)}
@@ -107,7 +101,7 @@ export function RuleForm({
         >
           <Stack gap="xs" mt="xs">
             {actions.map((action, index) => (
-              <Stack key={index} gap="xs">
+              <Stack key={form.key(`actions.${index}`)} gap="xs">
                 <Group align="flex-end" wrap="nowrap">
                   <Select
                     label={t(($) => $.rules.actionTypeLabel)}
@@ -116,39 +110,30 @@ export function RuleForm({
                       value: type,
                       label: t(($) => $.rules.actionType[type]),
                     }))}
-                    value={action.type}
-                    onChange={(next) => {
-                      const type = ruleActionKinds.find((kind) => kind === next)
-                      if (type) {
-                        changeAction(index, { type })
-                      }
-                    }}
+                    {...form.getInputProps(`actions.${index}.type`)}
                   />
                   {takesTag(action.type) ? (
                     <TextInput
                       label={t(($) => $.rules.actionTagLabel)}
+                      {...form.getInputProps(`actions.${index}.tag`)}
                       value={action.tag ?? ''}
-                      onChange={(event) => changeAction(index, { tag: event.currentTarget.value })}
                     />
                   ) : null}
                   {takesAutomation(action.type) ? (
                     <Select
                       label={t(($) => $.rules.actionAutomationLabel)}
                       searchable
+                      allowDeselect={false}
                       data={automationOptions}
+                      {...form.getInputProps(`actions.${index}.automationId`)}
                       value={action.automationId ?? null}
-                      onChange={(next) => {
-                        if (next) {
-                          changeAction(index, { automationId: next })
-                        }
-                      }}
                     />
                   ) : null}
                   <ActionIcon
                     variant="subtle"
                     color="red"
                     aria-label={t(($) => $.rules.actionRemove)}
-                    onClick={() => setActions(actions.filter((_, at) => at !== index))}
+                    onClick={() => form.removeListItem('actions', index)}
                   >
                     <IconTrash size={16} />
                   </ActionIcon>
@@ -156,7 +141,7 @@ export function RuleForm({
                 {takesCall(action.type) ? (
                   <HttpActionFields
                     action={action}
-                    onChange={(change) => changeAction(index, change)}
+                    inputProps={(field) => form.getInputProps(`actions.${index}.${field}`)}
                   />
                 ) : null}
               </Stack>
@@ -165,7 +150,7 @@ export function RuleForm({
               <Button
                 variant="light"
                 size="compact-sm"
-                onClick={() => setActions([...actions, newAction()])}
+                onClick={() => form.insertListItem('actions', newAction())}
               >
                 {t(($) => $.rules.addAction)}
               </Button>

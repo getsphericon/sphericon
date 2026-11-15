@@ -1,4 +1,5 @@
 import { ActionIcon, Button, Group, Stack, TextInput } from '@mantine/core'
+import type { GetInputPropsReturnType } from '@mantine/form'
 import { IconTrash } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
@@ -18,11 +19,14 @@ interface HttpHeaderRowsProps {
   // Whether the headers were saved before: a header with no value then keeps its stored one.
   saved: boolean
   onChange: (headers: SiteAutomationHttpHeader[]) => void
+  // In a form: the form's props of a header's field (`0.name`, `0.value`), which bring its error
+  // and its path, so a refusal shows under the field and a failed submit focuses it.
+  inputProps?: (field: string) => GetInputPropsReturnType
 }
 
 // The request headers of an outgoing HTTP call as rows of name and value, added up to the limit
 // and removed one by one. A value is a secret (an API key, a bearer token), so it is masked.
-export function HttpHeaderRows({ headers, saved, onChange }: HttpHeaderRowsProps) {
+export function HttpHeaderRows({ headers, saved, onChange, inputProps }: HttpHeaderRowsProps) {
   const { t } = useTranslation()
   const change = (index: number, edit: Partial<SiteAutomationHttpHeader>) =>
     onChange(headers.map((header, at) => (at === index ? { ...header, ...edit } : header)))
@@ -33,14 +37,16 @@ export function HttpHeaderRows({ headers, saved, onChange }: HttpHeaderRowsProps
         <Group key={index} align="flex-end" wrap="nowrap">
           <TextInput
             label={t(($) => $.httpHeaders.nameLabel)}
-            value={header.name}
             onChange={(event) => change(index, { name: event.currentTarget.value })}
+            {...inputProps?.(`${index}.name`)}
+            value={header.name}
           />
           <PasswordField
             label={t(($) => $.httpHeaders.valueLabel)}
             description={saved && !header.value ? t(($) => $.httpHeaders.keepHint) : undefined}
-            value={header.value ?? ''}
             onChange={(event) => change(index, { value: event.currentTarget.value })}
+            {...inputProps?.(`${index}.value`)}
+            value={header.value ?? ''}
           />
           <ActionIcon
             variant="subtle"

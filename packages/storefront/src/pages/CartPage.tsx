@@ -2,7 +2,7 @@ import { Alert, Button, Group, Stack, Text, Title } from '@mantine/core'
 import { useState } from 'react'
 
 import { useCart } from '../cartContext.ts'
-import { totalPrice } from '../courses.ts'
+import { formatDollars, totalPrice } from '../courses.ts'
 import { EmailForm } from '../EmailForm.tsx'
 import { enroll } from '../tracking.ts'
 
@@ -36,7 +36,7 @@ export function CartPage() {
             <Group key={item.slug} justify="space-between">
               <Text>{item.title}</Text>
               <Group>
-                <Text fw={700}>${item.price}</Text>
+                <Text fw={700}>{formatDollars(item.price)}</Text>
                 <Button
                   size="xs"
                   variant="subtle"
@@ -52,7 +52,7 @@ export function CartPage() {
           ))}
           <Group justify="space-between">
             <Text fw={700}>Total</Text>
-            <Text fw={700}>${total}</Text>
+            <Text fw={700}>{formatDollars(total)}</Text>
           </Group>
           <EmailForm submitLabel="Enroll" onSubmit={submit}>
             {status === 'done' && <Alert color="green">You are enrolled.</Alert>}

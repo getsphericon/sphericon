@@ -33,6 +33,18 @@ export const COURSES: readonly Course[] = [
   },
 ]
 
+// An amount as the storefront shows it: in US dollars, without cents.
+const dollars = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
+export function formatDollars(amount: number): string {
+  return dollars.format(amount)
+}
+
 // The one price sum: the cart shows it and the server records it with the purchase.
 export function totalPrice(courses: readonly Course[]): number {
   return courses.reduce((sum, course) => sum + course.price, 0)

@@ -1,7 +1,8 @@
 import { Button, Card, Group, Progress, Radio, Stack, Text, TextInput, Title } from '@mantine/core'
+import { useCounter } from '@mantine/hooks'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import type { SubmitEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../../components/CenteredLayout.tsx'
@@ -15,14 +16,13 @@ import {
   SiteSignupRole,
   SiteSignupSource,
 } from '../../generated/site/types.gen.ts'
-import type { SiteSignupSurveyInput } from '../../generated/site/types.gen.ts'
 import { zSiteSignupSurveyInput } from '../../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
+import { useSchemaForm } from '../../resources/schemaForm.ts'
 import { Route as indexRoute } from '../../routes/index.tsx'
 import { hasErrorStatus } from '../../utils/apiErrors.ts'
-
-// A question is a field of the input that is not an `…Other` text.
-type Question = Exclude<keyof SiteSignupSurveyInput, `${string}Other`>
+import { blankSurvey, OTHER, signupSurveySchema } from './signupSurveySchema.ts'
+import type { Question } from './signupSurveySchema.ts'
 
 interface Step {
   question: Question
@@ -30,8 +30,6 @@ interface Step {
   title: string
   options: { value: string; label: string }[]
 }
-
-type Answers = Partial<Record<Question, string>>
 
 // The longest a question's "Other" text may be (the contract's limit).
 function otherMaxLength(question: Question) {
@@ -44,39 +42,13 @@ function choices<T extends string>(values: Record<string, T>, labels: Record<T, 
   return Object.values(values).map((value) => ({ value, label: labels[value] }))
 }
 
-// The `other` choice every question offers, which asks for a text of its own.
-const OTHER: SiteSignupRole & SiteSignupCompanySize & SiteSignupGoal & SiteSignupSource = 'other'
-
-// The answers as the contract takes them: an `…Other` text is sent only with its `other` choice,
-// and an unanswered optional question is left out.
-function toInput(answers: Answers, others: Answers): SiteSignupSurveyInput {
-  const withOther = (question: Question) => {
-    const answer = answers[question]
-    if (answer === undefined || answer === '') {
-      return {}
-    }
-    return {
-      [question]: answer,
-      ...(answer === OTHER ? { [`${question}Other`]: (others[question] ?? '').trim() } : {}),
-    }
-  }
-  return zSiteSignupSurveyInput.parse({
-    ...withOther('role'),
-    ...withOther('companySize'),
-    ...withOther('mainGoal'),
-    ...withOther('heardFrom'),
-  })
-}
-
 // The Sign-up survey: four screens, one question each, answers sent once after the last.
 // Nothing is kept before that, so a closed tab starts the survey again at the next sign-in.
 export function SignupSurveyPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [index, setIndex] = useState(0)
-  const [answers, setAnswers] = useState<Answers>({})
-  const [others, setOthers] = useState<Answers>({})
+  const form = useSchemaForm(signupSurveySchema, blankSurvey)
 
   const steps: Step[] = [
     {
@@ -150,73 +122,70 @@ export function SignupSurveyPage() {
     },
   })
 
+  const [index, { increment, decrement }] = useCounter(0, { min: 0, max: steps.length - 1 })
   const step = steps[index]
   if (!step) {
     return null
   }
-  const answer = answers[step.question]
-  const otherText = others[step.question] ?? ''
   const isLast = index === steps.length - 1
-  const complete =
-    answer === undefined ? !step.required : answer !== OTHER || otherText.trim().length > 0
+  const otherField = `${step.question}Other` as const
 
-  const next = () => {
-    if (isLast) {
-      submit.mutate({ body: toInput(answers, others) })
-    } else {
-      setIndex(index + 1)
+  // Next checks the screen's question before the following one shows; Finish checks them all and
+  // sends the answers.
+  const next = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (form.validateFields([step.question, otherField])) {
+      increment()
     }
   }
 
   return (
     <CenteredLayout maw={520}>
       <Card withBorder padding="xl">
-        <Stack>
-          <Progress value={((index + 1) / steps.length) * 100} aria-hidden />
-          <Text size="sm" c="dimmed">
-            {t(($) => $.signupSurvey.progress, { current: index + 1, total: steps.length })}
-          </Text>
-          <Title order={3}>{step.title}</Title>
-          <Radio.Group
-            key={step.question}
-            aria-label={step.title}
-            value={answer ?? ''}
-            onChange={(value) => setAnswers({ ...answers, [step.question]: value })}
-          >
-            <Stack gap="xs">
-              {step.options.map((option) => (
-                <Radio key={option.value} value={option.value} label={option.label} />
-              ))}
-            </Stack>
-          </Radio.Group>
-          {answer === OTHER && (
-            <TextInput
-              label={t(($) => $.signupSurvey.otherLabel)}
-              maxLength={otherMaxLength(step.question)}
-              value={otherText}
-              onChange={(event) =>
-                setOthers({ ...others, [step.question]: event.currentTarget.value })
-              }
-            />
-          )}
-          {!step.required && (
+        <form onSubmit={isLast ? form.onSubmit((body) => submit.mutate({ body })) : next}>
+          <Stack>
+            <Progress value={((index + 1) / steps.length) * 100} aria-hidden />
             <Text size="sm" c="dimmed">
-              {t(($) => $.signupSurvey.optional)}
+              {t(($) => $.signupSurvey.progress, { current: index + 1, total: steps.length })}
             </Text>
-          )}
-          <Group justify="space-between">
-            <Button
-              variant="default"
-              disabled={index === 0 || submit.isPending}
-              onClick={() => setIndex(index - 1)}
+            <Title order={3}>{step.title}</Title>
+            <Radio.Group
+              key={step.question}
+              aria-label={step.title}
+              {...form.getInputProps(step.question)}
             >
-              {t(($) => $.signupSurvey.back)}
-            </Button>
-            <Button disabled={!complete} loading={submit.isPending} onClick={next}>
-              {isLast ? t(($) => $.signupSurvey.finish) : t(($) => $.signupSurvey.next)}
-            </Button>
-          </Group>
-        </Stack>
+              <Stack gap="xs">
+                {step.options.map((option) => (
+                  <Radio key={option.value} value={option.value} label={option.label} />
+                ))}
+              </Stack>
+            </Radio.Group>
+            {form.values[step.question] === OTHER && (
+              <TextInput
+                label={t(($) => $.signupSurvey.otherLabel)}
+                maxLength={otherMaxLength(step.question)}
+                {...form.getInputProps(otherField)}
+              />
+            )}
+            {!step.required && (
+              <Text size="sm" c="dimmed">
+                {t(($) => $.signupSurvey.optional)}
+              </Text>
+            )}
+            <Group justify="space-between">
+              <Button
+                variant="default"
+                disabled={index === 0 || submit.isPending}
+                onClick={decrement}
+              >
+                {t(($) => $.signupSurvey.back)}
+              </Button>
+              <Button type="submit" loading={submit.isPending}>
+                {isLast ? t(($) => $.signupSurvey.finish) : t(($) => $.signupSurvey.next)}
+              </Button>
+            </Group>
+          </Stack>
+        </form>
       </Card>
     </CenteredLayout>
   )

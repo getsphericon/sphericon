@@ -41,21 +41,30 @@ async function answerRequired(screen: Screen) {
 test('a required question does not let the User on without an answer', async () => {
   const { screen } = await renderSurvey()
 
-  await expect.element(screen.getByText('What do you do?')).toBeInTheDocument()
-  await expect.element(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  await screen.getByRole('button', { name: 'Next' }).click()
+  await expect.element(screen.getByText('This field is required')).toBeInTheDocument()
+  await expect.element(screen.getByText('What do you do?')).toBeVisible()
+
   await screen.getByLabelText('Founder').click()
-  await expect.element(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+  await expect.element(screen.getByText('This field is required')).not.toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Next' }).click()
+  await expect.element(screen.getByText('How many people work at your company?')).toBeVisible()
 })
 
 test('the Other choice needs its text before the User can go on', async () => {
   const { screen } = await renderSurvey()
 
   await screen.getByLabelText('Other').click()
-  await expect.element(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
   await screen.getByLabelText('Tell us more').fill('   ')
-  await expect.element(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  await screen.getByRole('button', { name: 'Next' }).click()
+  await expect
+    .element(screen.getByLabelText('Tell us more'))
+    .toHaveAccessibleDescription('This field is required')
+  await expect.element(screen.getByLabelText('Tell us more')).toHaveFocus()
+
   await screen.getByLabelText('Tell us more').fill('Designer')
-  await expect.element(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+  await screen.getByRole('button', { name: 'Next' }).click()
+  await expect.element(screen.getByText('How many people work at your company?')).toBeVisible()
 })
 
 test('no screen has a Skip button', async () => {

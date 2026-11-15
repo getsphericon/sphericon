@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit'
 import { z } from 'zod'
 
 import type { SiteAuditActor } from '../generated/site/types.gen.ts'
@@ -65,7 +66,7 @@ export function filterActorValue(filter: AuditFilter) {
 // withActor narrows the filter to the actor of a "By" select value, or, for none or a value
 // it cannot read, to every actor.
 export function withActor(filter: AuditFilter, value: string | null): AuditFilter {
-  const { actorKind: _kind, actorId: _id, ...rest } = filter
+  const rest = omit(filter, ['actorKind', 'actorId'])
   const separator = value?.indexOf(':') ?? -1
   const kind = zSiteAuditActorKind.safeParse(separator < 0 ? value : value?.slice(0, separator))
   if (!kind.success) {
@@ -81,7 +82,7 @@ export function withPeriod(
   filter: AuditFilter,
   [from, to]: [string | null, string | null],
 ): AuditFilter | undefined {
-  const { from: _from, to: _to, ...rest } = filter
+  const rest = omit(filter, ['from', 'to'])
   if (from && to) {
     return { ...rest, from, to }
   }
@@ -107,7 +108,7 @@ export function filterChips(filter: AuditFilter) {
 // withAction narrows the filter to the action of the action select's value, or, for none or
 // a value the contract does not know, to every action.
 export function withAction(filter: AuditFilter, value: string | null): AuditFilter {
-  const { action: _old, ...rest } = filter
+  const rest = omit(filter, ['action'])
   const action = zAuditAction.safeParse(value)
   return action.success ? { ...rest, action: action.data } : rest
 }
@@ -118,6 +119,6 @@ export function withValue(
   field: 'targetType' | AuditChipField,
   value: string | null | undefined,
 ): AuditFilter {
-  const { [field]: _old, ...rest } = filter
+  const rest = omit(filter, [field])
   return value ? { ...rest, [field]: value } : rest
 }
