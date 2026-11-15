@@ -12,11 +12,10 @@ import (
 	"path"
 	"slices"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // Schema is the JSON Schema of the Preset file (draft 2020-12), published for editors
@@ -216,15 +215,10 @@ func lineOf(n *yaml.Node, keys []string) int {
 	return line
 }
 
-// yamlErrorLine pulls the line out of a yaml.v3 syntax error ("yaml: line 3: ...").
+// yamlErrorLine is the line a YAML syntax error marks, or 1 when it marks none.
 func yamlErrorLine(err error) int {
-	_, rest, ok := strings.Cut(err.Error(), "line ")
-	if !ok {
-		return 1
-	}
-	num, _, _ := strings.Cut(rest, ":")
-	if n, err := strconv.Atoi(num); err == nil {
-		return n
+	if le, ok := errors.AsType[*yaml.LoadError](err); ok && le.Mark.Line > 0 {
+		return le.Mark.Line
 	}
 	return 1
 }
