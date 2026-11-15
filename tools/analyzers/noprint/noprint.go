@@ -29,22 +29,18 @@ func run(pass *analysis.Pass) (any, error) {
 	if !ok {
 		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
 	}
-	insp.Preorder([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node) {
-		call, isNode := n.(*ast.CallExpr)
-		if !isNode {
-			return
-		}
+	for call := range inspector.All[*ast.CallExpr](insp) {
 		id, ok := call.Fun.(*ast.Ident)
 		if !ok {
-			return
+			continue
 		}
 		b, ok := pass.TypesInfo.Uses[id].(*types.Builtin)
 		if !ok || (b.Name() != "print" && b.Name() != "println") {
-			return
+			continue
 		}
 		pass.Reportf(call.Pos(), "%s", rule.Message(0,
 			"the builtin "+b.Name()+" writes to stderr past the logger",
 			"log through log/slog"))
-	})
+	}
 	return nil, nil
 }

@@ -8,15 +8,13 @@ package rawsql
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 	"go/types"
-	"slices"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/reason"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
@@ -58,7 +56,7 @@ func run(pass *analysis.Pass) (any, error) {
 		if kind == "" {
 			return true
 		}
-		if hasReason(pass, call, stack) {
+		if reason.Given(pass.Fset, stack, marker) {
 			return true
 		}
 		pass.Reportf(call.Pos(), "%s", rule.Message(4,
@@ -101,43 +99,4 @@ func hasQueryString(sig *types.Signature, i int) bool {
 	}
 	b, ok := sig.Params().At(i).Type().Underlying().(*types.Basic)
 	return ok && b.Kind() == types.String
-}
-
-// hasReason finds a `raw sql: <reason>` comment on the call's line, or ending on the line above the
-// call or above the statement that holds it.
-func hasReason(pass *analysis.Pass, call *ast.CallExpr, stack []ast.Node) bool {
-	file := enclosingFile(pass, call.Pos())
-	if file == nil {
-		return false
-	}
-	lines := map[int]bool{pass.Fset.Position(call.Pos()).Line: true}
-	for _, node := range slices.Backward(stack) {
-		if stmt, ok := node.(ast.Stmt); ok {
-			lines[pass.Fset.Position(stmt.Pos()).Line] = true
-			break
-		}
-	}
-	for _, cg := range file.Comments {
-		text := cg.Text()
-		_, reason, found := strings.Cut(text, marker)
-		if !found || strings.TrimSpace(reason) == "" {
-			continue
-		}
-		start, end := pass.Fset.Position(cg.Pos()).Line, pass.Fset.Position(cg.End()).Line
-		for l := range lines {
-			if end == l-1 || (start <= l && l <= end) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func enclosingFile(pass *analysis.Pass, pos token.Pos) *ast.File {
-	for _, f := range pass.Files {
-		if f.FileStart <= pos && pos <= f.FileEnd {
-			return f
-		}
-	}
-	return nil
 }
