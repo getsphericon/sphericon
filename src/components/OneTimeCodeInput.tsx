@@ -1,7 +1,6 @@
 import { Anchor, Input, PinInput, TextInput } from '@mantine/core'
-import { useId } from '@mantine/hooks'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // CODE_LENGTH is the length of an authenticator app's code (internal/kernel/totp).
