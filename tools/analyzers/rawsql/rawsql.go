@@ -1,14 +1,19 @@
 // Package rawsql enforces rule 4 of docs/standards/review-rules.md for raw SQL: a statement run as text
 // (ExecContext, QueryContext, QueryRowContext and database/sql's Exec, Query, QueryRow) or a raw
-// fragment spliced into an ent query (entgo.io/ent/dialect/sql's P, ExprFunc, Expr, ExprP, Raw) must
-// carry a comment `// raw sql: <why ent cannot express it>` on the line above the statement or call, or
-// trailing on its line. Migrations are not Go code and are not checked here.
+// fragment spliced into an ent query (entgo.io/ent/dialect/sql's P, ExprFunc, Expr, ExprP, Raw, or
+// SQL text glued from a string literal and handed to any other function or method of that package,
+// such as sql.As or Selector.Select) must carry a comment `// raw sql: <why ent cannot express it>`
+// on the line above the statement or call, or trailing on its line. A Builder's own methods are
+// left out: they write inside a P or ExprFunc, which is reported itself. Migrations are not Go code
+// and are not checked here.
 package rawsql
 
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"go/types"
+	"slices"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -66,7 +71,7 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil
 }
 
-// classify returns "statement" or "fragment" for a raw SQL call, "" otherwise.
+// classify returns "statement", "fragment" or "text" for a raw SQL call, "" otherwise.
 func classify(pass *analysis.Pass, call *ast.CallExpr) string {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok {
@@ -77,10 +82,14 @@ func classify(pass *analysis.Pass, call *ast.CallExpr) string {
 		return ""
 	}
 	sig := fn.Signature()
+	inEntSQL := fn.Pkg() != nil && fn.Pkg().Path() == entSQLPath
+	if sig.Recv() == nil && inEntSQL && fragmentFuncs[fn.Name()] {
+		return "fragment"
+	}
+	if inEntSQL && !isBuilder(sig.Recv()) && gluesText(call.Args) {
+		return "text"
+	}
 	if sig.Recv() == nil {
-		if fn.Pkg() != nil && fn.Pkg().Path() == entSQLPath && fragmentFuncs[fn.Name()] {
-			return "fragment"
-		}
 		return ""
 	}
 	if contextMethods[fn.Name()] && hasQueryString(sig, 1) {
@@ -99,4 +108,36 @@ func hasQueryString(sig *types.Signature, i int) bool {
 	}
 	b, ok := sig.Params().At(i).Type().Underlying().(*types.Basic)
 	return ok && b.Kind() == types.String
+}
+
+// isBuilder reports whether recv is the receiver of a *sql.Builder method.
+func isBuilder(recv *types.Var) bool {
+	if recv == nil {
+		return false
+	}
+	t := recv.Type()
+	if p, ok := t.(*types.Pointer); ok {
+		t = p.Elem()
+	}
+	named, ok := t.(*types.Named)
+	return ok && named.Obj().Name() == "Builder"
+}
+
+// gluesText reports whether an argument is SQL text glued together with + from a string literal
+// ("COUNT(*) FILTER (WHERE " + column + ")").
+func gluesText(args []ast.Expr) bool {
+	return slices.ContainsFunc(args, glued)
+}
+
+func glued(e ast.Expr) bool {
+	bin, ok := ast.Unparen(e).(*ast.BinaryExpr)
+	if !ok || bin.Op != token.ADD {
+		return false
+	}
+	return literal(bin.X) || literal(bin.Y) || glued(bin.X) || glued(bin.Y)
+}
+
+func literal(e ast.Expr) bool {
+	lit, ok := ast.Unparen(e).(*ast.BasicLit)
+	return ok && lit.Kind == token.STRING
 }

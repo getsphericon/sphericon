@@ -221,9 +221,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 
 - **Raw SQL needs its reason (rule 4, analyzer `rawsql`).** A statement run as text (`ExecContext`,
   `QueryContext`, `QueryRowContext`, `Exec`, `Query`, `QueryRow` on `database/sql`) or a raw fragment
-  in an ent query (`sql.P`, `ExprFunc`, `Expr`, `ExprP`, `Raw`) carries `// raw sql: <why ent cannot
-  express it>` on the line above it or its statement, or trailing. The advisory lock and the Postgres
-  version are written once, in `internal/infra/postgres` (`LockTx`, `ServerMajor`); call those.
+  in an ent query (`sql.P`, `ExprFunc`, `Expr`, `ExprP`, `Raw`, or SQL text glued with `+` from a
+  string literal and handed to `sql.As`, `Selector.Select` or another function of ent's `sql`
+  package) carries `// raw sql: <why ent cannot express it>` on the line above it or its statement,
+  or trailing. The advisory lock and the Postgres version are written once, in
+  `internal/infra/postgres` (`LockTx`, `ServerMajor`); call those. A filtered count is
+  `aggregates.CountTrue` or `CountEQ`.
 - **Plain tables only: no database functions, triggers, stored procedures or views.** The schema is
   tables, columns, constraints and indexes. Logic that must run on every write (a change log, a
   counter, a derived row) lives in Go: an ent hook (like `internal/domain/identity/workspacefeed` or

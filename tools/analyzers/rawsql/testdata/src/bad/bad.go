@@ -26,3 +26,8 @@ func fragments() {
 	_ = entsql.Expr("1")                                            // want `^rule 4: raw SQL fragment`
 	_ = entsql.Raw("1")                                             // want `^rule 4: raw SQL fragment`
 }
+
+func text(sel *entsql.Selector) {
+	_ = entsql.As("COUNT(*) FILTER (WHERE "+sel.C("ok")+")", "n") // want `^rule 4: raw SQL text`
+	sel.Select("lower(" + sel.C("email") + ")")                   // want `^rule 4: raw SQL text`
+}

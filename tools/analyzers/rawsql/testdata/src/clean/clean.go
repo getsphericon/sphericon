@@ -27,6 +27,17 @@ func fragments() {
 	_ = entsql.EQ("a", 1)
 }
 
+func text(sel *entsql.Selector, alias string) {
+	// raw sql: a filtered count ent has no aggregate for.
+	_ = entsql.As("COUNT(*) FILTER (WHERE "+sel.C("ok")+")", "n")
+
+	// Names joined without a literal, and a Builder writing inside a reported P, are not text.
+	_ = entsql.As(sel.C("a"), alias)
+	sel.Select(sel.C("a"), sel.C("b"))
+	// raw sql: the operator ent lacks.
+	_ = entsql.P(func(b *entsql.Builder) { b.WriteString("(" + sel.C("a") + ")") })
+}
+
 // runner has a method that merely shares a name with a statement call.
 type runner struct{}
 
