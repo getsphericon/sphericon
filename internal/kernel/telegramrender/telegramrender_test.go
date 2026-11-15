@@ -33,6 +33,7 @@ func TestRenderTable(t *testing.T) {
 		"relative link":                {`<a href="/path">go</a>`, "go"},
 		"other attributes dropped":     {`<b onclick="x()" style="color:red">b</b>`, "<b>b</b>"},
 		"line break becomes newline":   {"a<br>b", "a\nb"},
+		"carriage return is a newline": {"a&#13;b&#13;&#10;c\r\nd", "a\nb\nc\nd"},
 		"nothing inside code":          {"<code>a <b>b</b></code>", "<code>a b</code>"},
 		"pre keeps its text":           {"<pre>x < y</pre>", "<pre>x &lt; y</pre>"},
 		"quote":                        {"<blockquote>q</blockquote>", "<blockquote>q</blockquote>"},

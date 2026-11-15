@@ -216,10 +216,15 @@ func Sanitize(markup string) string {
 
 type renderState struct{ flat, linked bool }
 
+// newlines turns a carriage return into a newline, as the HTML parser does with one written as is:
+// one written as a character reference (&#13;) reaches the text node unchanged, and the parser that
+// reads the output would turn it into a newline, so the output would not be what it reads.
+var newlines = strings.NewReplacer("\r\n", "\n", "\r", "\n")
+
 func write(b *strings.Builder, n *html.Node, state renderState) {
 	switch n.Type {
 	case html.TextNode:
-		b.WriteString(stdhtml.EscapeString(n.Data))
+		b.WriteString(stdhtml.EscapeString(newlines.Replace(n.Data)))
 	case html.ElementNode:
 		element(b, n, state)
 	case html.ErrorNode, html.DocumentNode, html.CommentNode, html.DoctypeNode, html.RawNode:
