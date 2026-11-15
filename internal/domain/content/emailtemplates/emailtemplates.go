@@ -179,8 +179,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if err != nil {
 		return nil, err
 	}
-	update := s.EmailTemplate().UpdateOneID(id).
-		Where(emailtemplate.Revision(in.Revision)).
+	update := s.EmailTemplate().EditAt(id, in.Revision).
 		SetNillableName(in.Name.Ptr()).
 		SetNillableSubject(in.Subject.Ptr()).
 		SetNillableBody(c.Body)
@@ -191,23 +190,10 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		update.ClearDoc().ClearEditorVersion()
 	}
 	tpl, err := update.Save(ctx)
-	if ent.IsNotFound(err) {
-		return nil, missOn(ctx, s, id)
+	if miss, ok := errors.AsType[*ent.EmailTemplateMiss](err); ok {
+		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged)
 	}
 	return tpl, err
-}
-
-// missOn tells why an update conditional on its revision found no row: the Template is gone, or
-// it is there at another revision.
-func missOn(ctx context.Context, s *ent.Scoped, id int64) error {
-	exists, err := s.EmailTemplate().Query().Where(emailtemplate.ID(id)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return ErrRevisionChanged
-	}
-	return ErrNotFound
 }
 
 // Delete removes a Template.

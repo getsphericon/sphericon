@@ -254,7 +254,7 @@ func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req 
 		n := int(d)
 		days = &n
 	}
-	w, err := h.workspaces.SetRevenueSettings(ctx, s, h.actor(ctx), int64(req.Revision), code, days)
+	w, err := h.workspaces.SetRevenueSettings(ctx, s, int64(req.Revision), code, days)
 	if err != nil {
 		return nil, err
 	}

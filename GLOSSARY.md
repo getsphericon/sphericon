@@ -22,6 +22,14 @@ The short opaque identifier of a Workspace that appears in its URLs and in the A
 once at creation and never changed; it is the only address a Workspace has.
 _Avoid_: slug
 
+**Revision**:
+The number on the row of a resource a person edits (a Template, a Contact, a Segment, the Workspace's
+settings, …) that every write of the row moves by one, except a write of its bookkeeping alone and a
+write that changes nothing. An edit names the revision it was made on, and is refused when the row
+has moved past it: someone wrote it since it was read. A version of a Versioned definition is not a
+revision.
+_Avoid_: version, ETag
+
 **Workspace summary**:
 The read of a Workspace as its members and agents see it, built once for every surface: the
 Workspace with its settings, the Holds on its sending, its **Send cap** with the sends of the last

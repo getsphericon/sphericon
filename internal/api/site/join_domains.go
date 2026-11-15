@@ -68,7 +68,7 @@ func (h *Handlers) SiteDomainJoinGet(ctx context.Context, _ siteapi.SiteDomainJo
 func (h *Handlers) SiteDomainJoinSet(ctx context.Context, req *siteapi.SiteSetDomainJoinInput, _ siteapi.SiteDomainJoinSetParams) (*siteapi.SiteDomainJoinResource, error) {
 	s := workspaceScope(ctx)
 
-	w, err := h.workspaces.SetDomainJoin(ctx, s, h.actor(ctx), int64(req.Revision), req.Enabled)
+	w, err := h.workspaces.SetDomainJoin(ctx, s, int64(req.Revision), req.Enabled)
 	if err != nil {
 		return nil, err
 	}

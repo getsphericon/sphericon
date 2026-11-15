@@ -275,7 +275,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return Endpoint{}, err
 	}
 	build := func() *ent.WebhookEndpointScopedUpdateOne {
-		upd := s.WebhookEndpoint().UpdateOneID(id).Where(webhookendpoint.Revision(in.Revision))
+		upd := s.WebhookEndpoint().EditAt(id, in.Revision)
 		patch.ApplySet(in.URL, upd.SetURL)
 		patch.ApplySet(in.EventTypes, upd.SetEventTypes)
 		return upd
@@ -283,8 +283,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	enabled, toggles := in.Enabled.Get()
 	if !toggles {
 		e, err := build().Save(ctx)
-		if ent.IsNotFound(err) {
-			return Endpoint{}, m.missOn(ctx, s, id)
+		if miss, ok := errors.AsType[*ent.WebhookEndpointMiss](err); ok {
+			return Endpoint{}, miss.Refuse(ErrNotFound, ErrRevisionChanged)
 		}
 		if err != nil {
 			return Endpoint{}, err
@@ -297,19 +297,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // Delete removes the endpoint. An unknown id is ErrNotFound.
 func (m *Module) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return missing(s.WebhookEndpoint().DeleteOneID(id).Exec(ctx))
-}
-
-// missOn tells why an update conditional on its revision found no row: the endpoint is gone, or it
-// is there at another revision.
-func (m *Module) missOn(ctx context.Context, s *ent.Scoped, id int64) error {
-	exists, err := s.WebhookEndpoint().Query().Where(webhookendpoint.ID(id)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return ErrRevisionChanged
-	}
-	return ErrNotFound
 }
 
 // missing turns the store's miss into ErrNotFound.

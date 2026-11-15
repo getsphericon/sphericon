@@ -1,0 +1,94 @@
+{{/*
+The scope's own tenant row: the Workspace is the tenant root, not a Workspace-owned entity, so it has
+no wrapper of its own, and its settings are edited through the scope as the edit of the row the scope
+is confined to (Scoped.EditWorkspaceAt, ADR 0119). The edit writes through the Workspace's one write
+(write<N>, scoped.tmpl), which records it as an Audit entry when the Workspace is schema.Audited.
+*/}}
+{{ define "scoped_tenant" }}
+{{ template "header" $ }}
+{{ with tenant }}
+{{ $n := . }}
+{{ $N := $n.Name }}
+{{ $P := $n.Package }}
+
+import (
+	"context"
+	"fmt"
+
+	"{{ $.Config.Package }}/predicate"
+	"{{ $.Config.Package }}/{{ $P }}"
+)
+
+{{ template "helper/write" $n }}
+
+// {{ $N }}ScopedUpdateOne is an update of the scope's own {{ $N }} row: it keeps what its setters
+// set, and the revision of an edit, and builds the ent update on the client the update runs on.
+type {{ $N }}ScopedUpdateOne struct {
+	s   *Scoped
+	set []func(*{{ $N }}UpdateOne)
+	// at is the revision an edit was made on (EditWorkspaceAt), nil for an update alone.
+	at *int64
+}
+
+const (
+	TypeOf_{{ $N }}ScopedUpdateOne      = TypeScopedUpdate
+	EntityOf_{{ $N }}ScopedUpdateOne    = "{{ $N }}"
+	RoleOf_{{ $N }}ScopedUpdateOne_Save = RoleStep
+	RoleOf_{{ $N }}ScopedUpdateOne_Exec = RoleStep
+	RoleOf_Scoped_Edit{{ $N }}At        = RoleStart
+	RoleOf_Scoped_Update{{ $N }}        = RoleStart
+)
+
+// Edit{{ $N }}At is the edit of the scope's {{ $N }} made on revision (ADR 0119): it writes only
+// while the row is at that revision, and the write moves the revision unless it changes nothing.
+// When it matches no row, Save re-reads the row in the same transaction and returns a *{{ $N }}Miss
+// carrying it, whose Refuse tells the owner's refusal.
+func (s *Scoped) Edit{{ $N }}At(revision int64) *{{ $N }}ScopedUpdateOne {
+	return &{{ $N }}ScopedUpdateOne{s: s, at: &revision}
+}
+
+// Update{{ $N }} is an update of the scope's {{ $N }} that names no revision, for a write that
+// writes over nothing an editor shows: lifting the Two-factor requirement takes a demand away.
+func (s *Scoped) Update{{ $N }}() *{{ $N }}ScopedUpdateOne {
+	return &{{ $N }}ScopedUpdateOne{s: s}
+}
+
+{{ with extend $n "Node" $n "Builder" (print $N "ScopedUpdateOne") "Raw" (print $N "UpdateOne") "Mode" "update" "NoEdges" true }}
+	{{ template "helper/scopedsetters" . }}
+{{ end }}
+
+// Save updates the {{ $N }}{{ with auditOf $n }}, recorded as its {{ .Action }}.update Audit entry when its audited fields change{{ end }}.
+func (x *{{ $N }}ScopedUpdateOne) Save(ctx context.Context) (*{{ $N }}, error) {
+	where := []predicate.{{ $N }}{ {{ $P }}.ID(x.s.ws)}
+	if x.at != nil {
+		where = append(where, {{ $P }}.Revision(*x.at))
+	}
+	var updated *{{ $N }}
+	err := x.s.write{{ $N }}(ctx, "{{ verb $n "update" }}", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b := s.c.{{ $N }}.UpdateOneID(s.ws).Where(where...)
+		for _, set := range x.set {
+			set(b)
+		}
+		var err error
+		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.c.{{ $N }}.Get(ctx, s.ws)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &{{ $N }}Miss{Row: now}
+		}
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *{{ $N }}ScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+{{ template "helper/miss" $n }}
+{{ end }}
+{{ end }}

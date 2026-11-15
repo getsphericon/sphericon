@@ -87,8 +87,26 @@ func TestAnEditThatKeepsTheTypeIsNoRetype(t *testing.T) {
 	}
 }
 
-// The edit is opened on a revision (ADR 0119) and with a name the name rule takes, or it is
-// refused before the use case's check runs, and nothing is written.
+// The edit is written on the revision it was made on (ADR 0119): a field that has moved past it is
+// refused by the write itself, with no check of the use case's run before, and nothing is written.
+func TestAnEditAtARevisionTheFieldMovedPastIsRefusedByItsWrite(t *testing.T) {
+	env := testhelper.Setup(t)
+	before := plan(t, env)
+	in := contacts.CustomFieldUpdateInput{Revision: before.Revision - 1, Name: patch.Set("Pricing plan")}
+
+	err := update(t, env, fixtures.CustomFieldAcmePlanID, in, func(ctx context.Context, edit *contactsunchecked.CustomFieldUpdate) error {
+		_, err := edit.Apply(ctx)
+		return err
+	})
+
+	require.ErrorIs(t, err, contacts.ErrCustomFieldRevisionChanged)
+	after := plan(t, env)
+	assert.Equal(t, before.Name, after.Name)
+	assert.Equal(t, before.Revision, after.Revision)
+}
+
+// The edit is opened with a name the name rule takes, or it is refused before the use case's check
+// runs, and nothing is written.
 func TestOpeningAnEditRefusesWhatTheFieldsOwnRulesRefuse(t *testing.T) {
 	env := testhelper.Setup(t)
 	before := plan(t, env)
@@ -97,7 +115,6 @@ func TestOpeningAnEditRefusesWhatTheFieldsOwnRulesRefuse(t *testing.T) {
 		in      contacts.CustomFieldUpdateInput
 		refusal error
 	}{
-		{"a revision the field has moved past", contacts.CustomFieldUpdateInput{Revision: before.Revision - 1, Name: patch.Set("Pricing plan")}, contacts.ErrCustomFieldRevisionChanged},
 		{"a blank name", contacts.CustomFieldUpdateInput{Revision: before.Revision, Name: patch.Set("  ")}, validation.ErrNameBlank},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

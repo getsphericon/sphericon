@@ -113,15 +113,6 @@ func missing(err error) error {
 	return err
 }
 
-// missOn tells why an edit conditional on its revision found no row: the Integration is gone or
-// deleted (ErrNotFound), or it is there at another revision.
-func (m *Module) missOn(ctx context.Context, s *ent.Scoped, id int64) error {
-	if _, err := m.editable(ctx, s, id); err != nil {
-		return err
-	}
-	return ErrRevisionChanged
-}
-
 // Get returns one Integration of the Workspace. An unknown id is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
 	row, err := s.Integration().Get(ctx, id)
@@ -138,8 +129,8 @@ func (m *Module) editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.In
 	if err != nil {
 		return nil, err
 	}
-	if row.DiscardedAt != nil {
-		return nil, ErrNotFound
+	if err := refuseDiscarded(row); err != nil {
+		return nil, err
 	}
 	return row, nil
 }
@@ -410,8 +401,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	promote, _ := in.IsDefault.Get()
 	err = m.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
 		var err error
-		updated, err = saveEdit(ctx, wl, row, promote, func(upd *ent.IntegrationScopedUpdateOne) {
-			upd.Where(integration.Revision(in.Revision))
+		updated, err = saveEdit(ctx, wl, row, in.Revision, promote, func(upd *ent.IntegrationScopedUpdateOne) {
 			applyEdit(upd, in, name, sealed, inb)
 			if tg.connected {
 				upd.SetProviderMaxPerSecond(telegramPerSecond)
@@ -430,9 +420,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		// New credentials or endpoint: what the provider allows may have changed.
 		return m.discoverQuota(ctx, q, updated)
 	})
-	if ent.IsNotFound(err) {
-		return View{}, m.missOn(ctx, s, id)
-	}
 	if err != nil {
 		return View{}, err
 	}
@@ -445,21 +432,34 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // saveEdit writes an Update to the Integration row: apply sets what it changes and promote makes it
 // its Channel's default. A promotion and a new config move Live use, so it takes the Workspace's
 // lock (ADR 0108). A promotion clears the channel's current default first, in the same transaction.
-// A Delete that landed meanwhile leaves no row to edit (ent's not found).
-func saveEdit(ctx context.Context, wl *ent.WorkspaceLocked, row *ent.Integration, promote bool, apply func(*ent.IntegrationScopedUpdateOne)) (*ent.Integration, error) {
+// The write is made on revision (ADR 0119), and its miss is told at the write: a Delete that landed
+// meanwhile leaves no row to edit (ErrNotFound), and a write since the edit was read is
+// ErrRevisionChanged.
+func saveEdit(ctx context.Context, wl *ent.WorkspaceLocked, row *ent.Integration, revision int64, promote bool, apply func(*ent.IntegrationScopedUpdateOne)) (*ent.Integration, error) {
 	if promote {
 		if err := clearDefault(ctx, wl, row.Channel, row.ID); err != nil {
 			return nil, err
 		}
 	}
-	upd := wl.Integration().UpdateOneID(row.ID).Where(integration.DiscardedAtIsNil())
+	upd := wl.Integration().EditAt(row.ID, revision).Where(integration.DiscardedAtIsNil())
 	apply(upd)
 	var updated *ent.Integration
 	err := constraints.Write(ctx, wl, func() (err error) {
 		updated, err = upd.Save(ctx)
 		return err
 	})
+	if miss, ok := errors.AsType[*ent.IntegrationMiss](err); ok {
+		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged, refuseDiscarded)
+	}
 	return updated, err
+}
+
+// refuseDiscarded is ErrNotFound for a deleted Integration, which is discarded and kept (ADR 0049).
+func refuseDiscarded(row *ent.Integration) error {
+	if row.DiscardedAt != nil {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // sealEditedConfig validates an edited provider config and seals it, nil when the edit sends

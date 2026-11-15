@@ -4,6 +4,7 @@ package segments
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/samber/lo"
@@ -149,23 +150,22 @@ func (s *Module) updateIn(ctx context.Context, wl *ent.WorkspaceLocked, id int64
 			return nil, err
 		}
 	}
-	q := wl.Segment().UpdateOneID(id).Where(segment.ArchivedAtIsNil(), segment.Revision(in.Revision))
+	q := wl.Segment().EditAt(id, in.Revision).Where(segment.ArchivedAtIsNil())
 	patch.ApplySet(in.Name, q.SetName)
 	patch.ApplySet(in.Condition, q.SetCondition)
 	seg, err := q.Save(ctx)
-	if !ent.IsNotFound(err) {
-		return seg, err
+	if miss, ok := errors.AsType[*ent.SegmentMiss](err); ok {
+		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged, refuseArchived)
 	}
-	// The update missed: the Segment is archived, at another revision, or the Workspace has none
-	// of this id.
-	stored, err := wl.Segment().Get(ctx, id)
-	if err != nil {
-		return nil, err
+	return seg, err
+}
+
+// refuseArchived is ErrArchived for an archived Segment, which is read-only until it is unarchived.
+func refuseArchived(s *ent.Segment) error {
+	if s.ArchivedAt != nil {
+		return ErrArchived
 	}
-	if stored.ArchivedAt != nil {
-		return nil, ErrArchived
-	}
-	return nil, ErrRevisionChanged
+	return nil
 }
 
 // PreviewInput is an unsaved Condition to preview, nil for every Contact, and the Channel of a

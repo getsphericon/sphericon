@@ -13,7 +13,18 @@ one row per Workspace (a unique `workspace_id`): `brand_kits`, and `send_cap_lim
 cap's 24-hour bucket (ADR 0067). It is scoped, erased with its Workspace and seeded by fixtures
 like any other; the generation reads it from its unique index (`ent.Kinds`, `Singleton`), and the
 isolation test clears the Workspace's own row before it plants a copy. `Scoped.Workspace(ctx)` loads the
-tenant row itself (the Workspace is the tenant root, so it has no wrapper). A Versioned definition
+tenant row itself (the Workspace is the tenant root, so it has no wrapper), and the scope edits that
+row as its own (`ent/template/scoped_tenant.tmpl`): `Scoped.EditWorkspaceAt(revision)` is the edit of a
+setting made on a revision (ADR 0119), `Scoped.UpdateWorkspace()` one that names none (lifting the
+Two-factor requirement). Both write through the Workspace's one write, which records a change of its
+audited fields as a `workspace.update` Audit entry of the scope's actor, as every audited entity's
+write does. The Workspace's lifecycle (creation, deletion, erasure, suspension) and its bookkeeping
+stay the `workspaces` module's writes over the raw client. Every Workspace-owned type with a revision
+but a Versioned definition gets `EditAt(id, revision)` (ADR 0119): an update by id conditional on
+the revision, whose miss is a typed `<N>Miss` read again in the same transaction; its `Refuse`
+gives the owner's refusal, gone, then the owner's state guards, then stale. The scoped update
+wrappers have no `SetRevision` or `AddRevision`: only `entclient.Revision` moves a revision on an
+update. A Versioned definition
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)
 also gets `<N>Pointers` (`ent/template/scoped_versioned.tmpl`, `ent.VersionedStore`), the moves of its
 live and draft pointers and its status. `internal/domain/content/versioneddefinition` declares their

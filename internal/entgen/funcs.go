@@ -30,6 +30,12 @@ func (s *Schema) Funcs() template.FuncMap {
 		// versioned reports whether n is a Versioned definition (ADR 0065): its scoped wrapper gets
 		// the pointer operations (<N>Pointers) that internal/drafts runs the lifecycle on.
 		"versioned": func(n *gen.Type) bool { return s.kind(n).Versioned },
+		// unchangedNodes lists the types with a revision whose update that changes nothing writes
+		// nothing (ADR 0119): all but the Versioned definitions, whose compare-and-swap names the
+		// revision with the rest of their position.
+		"unchangedNodes": func() []*gen.Type {
+			return s.nodes(func(k schema.Kind) bool { return k.Revised && !k.Versioned })
+		},
 		// versionedNodes lists the Versioned definitions.
 		"versionedNodes": func() []*gen.Type { return s.nodes(func(k schema.Kind) bool { return k.Versioned }) },
 		// versionOf returns the version entity of a Versioned definition.
@@ -38,13 +44,37 @@ func (s *Schema) Funcs() template.FuncMap {
 		"versionOwnerField": func(n *gen.Type) *gen.Field { return s.entities[n].versionOwner },
 		// isWorkspaceField reports whether f is the Workspace column of a Workspace-owned entity,
 		// which the scoped client sets itself and never exposes a setter for.
-		"isWorkspaceField":  s.isWorkspaceField,
+		"isWorkspaceField": s.isWorkspaceField,
+		// isRevisionField reports whether f is the revision of a type with one (ADR 0119), which only
+		// internal/app/entclient's Revision hook moves on an update: a scoped update has no setter of it.
+		"isRevisionField": s.isRevisionField,
+		// revisionNoiseField reports whether f is written by an update whatever it changes: the
+		// revision, which the hook moves, or a moment of TimeMixin (updated_at, which its default sets),
+		// so ent.Unchanged does not compare it.
+		"revisionNoiseField": func(f *gen.Field) bool {
+			return s.isRevisionField(f) || slices.ContainsFunc(s.graph.Nodes, func(n *gen.Type) bool {
+				return slices.Contains(s.entities[n].timestamps, f)
+			})
+		},
 		"replantFields":     s.replantFields,
 		"scopedEdges":       s.scopedEdges,
 		"scopedEdgeMutable": scopedEdgeMutable,
 		// auditOf returns the Audited annotation of n (ADR 0022), or nil when the entity has not
 		// opted into the Audit log.
 		"auditOf": func(n *gen.Type) *Audit { return s.entities[n].audit },
+		// tenant is the Workspace, the tenant root every Workspace-owned entity belongs to: the scoped
+		// client edits its own row of it (scoped_tenant.tmpl).
+		"tenant": s.tenant,
+		// auditedNodes lists the entities the scoped client records in the Audit log: the audited
+		// Workspace-owned ones, then the tenant when it is audited.
+		"auditedNodes": func() []*gen.Type {
+			out := s.nodes(func(k schema.Kind) bool { return k.WorkspaceOwned })
+			out = slices.DeleteFunc(out, func(n *gen.Type) bool { return s.entities[n].audit == nil })
+			if t := s.tenant(); t != nil && s.entities[t].audit != nil {
+				out = append(out, t)
+			}
+			return out
+		},
 		// auditVerbs lists the verbs of the actions an audited entity's entries record (Verbs), none
 		// for an entity that has not opted into the Audit log.
 		"auditVerbs": func(n *gen.Type) []string {
@@ -126,6 +156,29 @@ func (s *Schema) fieldsOf(n *gen.Type, match func(*fieldAnnotations) bool) []*ge
 func (s *Schema) isWorkspaceField(f *gen.Field) bool {
 	for _, e := range s.entities {
 		if e.workspace == f {
+			return true
+		}
+	}
+	return false
+}
+
+// tenant is the entity the Workspace column of every Workspace-owned entity references: the type of
+// the edge that column belongs to. Nil in a schema that has none.
+func (s *Schema) tenant() *gen.Type {
+	for _, n := range s.graph.Nodes {
+		e := s.entities[n]
+		for _, edge := range n.Edges {
+			if e.workspace != nil && edge.Field() == e.workspace {
+				return edge.Type
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Schema) isRevisionField(f *gen.Field) bool {
+	for _, e := range s.entities {
+		if e.revision == f {
 			return true
 		}
 	}

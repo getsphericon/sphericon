@@ -18,6 +18,9 @@ type Workspace struct {
 func (Workspace) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		workspaceTable(),
+		// Its settings are edited through the scope's own tenant edit (Scoped.EditWorkspaceAt), which
+		// records them as workspace.update.
+		Audited{Action: "workspace", NameField: NameColumn},
 	}
 }
 
@@ -45,7 +48,7 @@ func (Workspace) Fields() []ent.Field {
 			NotEmpty().
 			Unique().
 			Sensitive().
-			Annotations(UniqueOverAll{Reason: "a collect key names one Workspace for ever, and a discarded Workspace keeps it to be restored"}),
+			Annotations(Sensitive{}, UniqueOverAll{Reason: "a collect key names one Workspace for ever, and a discarded Workspace keeps it to be restored"}),
 		// Confirmed opt-in policy (ADR 0013). When true, marketing sends require a
 		// Confirmation for the destination (double opt-in); when false (the default),
 		// the subtractive single-opt-in model applies unchanged. Forward-looking:

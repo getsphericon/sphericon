@@ -83,7 +83,7 @@ func (s *Scoped) WorkspaceID() int64 { return s.ws }
 
 // Workspace loads the Workspace row the client is confined to. The Workspace is the
 // tenant root, not a Workspace-owned entity, so it has no wrapper of its own: this
-// read is the one way in (writes live in the accounts package).
+// read is the one way in, and EditWorkspaceAt the edit of its settings (scoped_tenant.tmpl).
 func (s *Scoped) Workspace(ctx context.Context) (*Workspace, error) {
 	return s.c.Workspace.Get(ctx, s.ws)
 }
@@ -140,6 +140,7 @@ func (s *Scoped) verify{{ $n.Name }}(ctx context.Context, ids []int64) error {
 {{ $R := archivable $n }}
 {{ $Aside := (kindOf $n).PutAside }}
 {{ $Del := "Delete" }}{{ if $Aside }}{{ $Del = "Purge" }}{{ end }}
+{{ $Edit := and (kindOf $n).Revised (not (versioned $n)) }}
 
 // {{ $N }}Scoped reaches {{ $N }} entities of one Workspace.
 type {{ $N }}Scoped struct{ s *Scoped }
@@ -166,6 +167,9 @@ const (
 	RoleOf_{{ $N }}Scoped_Get = RoleRead
 	RoleOf_{{ $N }}Scoped_{{ $Del }}OneID = RoleStart
 	RoleOf_{{ $N }}Scoped_UpdateOneID = RoleStart
+	{{- if $Edit }}
+	RoleOf_{{ $N }}Scoped_EditAt = RoleStart
+	{{- end }}
 	{{- end }}
 	RoleOf_{{ $N }}Scoped_{{ $Del }} = RoleStart
 	RoleOf_{{ $N }}Scoped_Create = RoleStart
@@ -210,62 +214,7 @@ func (t *{{ $N }}Scoped) Get(ctx context.Context, id int64) (*{{ $N }}, error) {
 }
 {{ end }}
 
-// write{{ $N }} runs a write of {{ $N }} rows: run builds it on the client of the scope it is
-// given and executes it, and reaches no other client. {{ if $A }}Through an audited scope (Scoped.As)
-// that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
-// joins or opens: the rows where matches are read before the write, then the same rows and the ones
-// run reports it created after it, and verb is recorded for each of them whose audited fields
-// changed, or for every one of them when unchanged is recordUnchanged. Through any other scope{{ else }}The
-// entity is not audited, so{{ end }} run gets the scope itself.
-func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predicate.{{ $N }}, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
-	{{- if $A }}
-	if s.auditing() {
-		return s.audited(ctx, func(ts *Scoped) error {
-			var before []*{{ $N }}
-			if where != nil {
-				var err error
-				if before, err = ts.c.{{ $N }}.Query().Where(where...).All(ctx); err != nil {
-					return err
-				}
-			}
-			created, err := run(ts)
-			if err != nil {
-				return err
-			}
-			ids := make([]int64, 0, len(before)+len(created))
-			beforeByID := make(map[int64]*{{ $N }}, len(before))
-			for _, row := range before {
-				ids = append(ids, row.ID)
-				beforeByID[row.ID] = row
-			}
-			ids = append(ids, created...)
-			after, err := ts.c.{{ $N }}.Query().Where({{ $P }}.IDIn(ids...)).All(ctx)
-			if err != nil {
-				return err
-			}
-			afterByID := make(map[int64]*{{ $N }}, len(after))
-			for _, row := range after {
-				afterByID[row.ID] = row
-			}
-			for _, id := range ids {
-				if beforeByID[id] == nil && afterByID[id] == nil {
-					continue
-				}
-				if change, changed := auditChange{{ $N }}(verb, beforeByID[id], afterByID[id]); changed || unchanged == recordUnchanged {
-					if err := ts.record(ctx, change); err != nil {
-						return err
-					}
-				}
-			}
-			return nil
-		})
-	}
-	{{- else }}
-	_, _, _ = verb, where, unchanged
-	{{- end }}
-	_, err := run(s)
-	return err
-}
+{{ template "helper/write" $n }}
 
 // check{{ $N }} verifies every reference the mutations set against the Workspace of s, one query per
 // reference for all of them.
@@ -837,12 +786,29 @@ type {{ $N }}ScopedUpdateOne struct {
 	id    int64
 	where []predicate.{{ $N }}
 	set   []func(*{{ $N }}UpdateOne)
+	{{- if $Edit }}
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
+	{{- end }}
 }
 
 // UpdateOneID updates the {{ $N }} with the id; a row of another Workspace is not found.
 func (t *{{ $N }}Scoped) UpdateOneID(id int64) *{{ $N }}ScopedUpdateOne {
 	return &{{ $N }}ScopedUpdateOne{s: t.s, id: id}
 }
+{{- if $Edit }}
+
+// EditAt is the edit of the {{ $N }} with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *{{ $N }}Miss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *{{ $N }}Scoped) EditAt(id, revision int64) *{{ $N }}ScopedUpdateOne {
+	return &{{ $N }}ScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+{{ template "helper/miss" $n }}
+{{- end }}
 
 // Where appends predicates the row must also match (fencing).
 func (x *{{ $N }}ScopedUpdateOne) Where(ps ...predicate.{{ $N }}) *{{ $N }}ScopedUpdateOne {
@@ -871,6 +837,11 @@ func (x *{{ $N }}ScopedUpdateOne) move(ctx context.Context, verb string) (*{{ $N
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *{{ $N }}ScopedUpdateOne) build(ctx context.Context, s *Scoped) (*{{ $N }}UpdateOne, error) {
 	b := s.c.{{ $N }}.UpdateOneID(x.id).Where(s.in{{ $N }}(x.where...)...)
+	{{- if $Edit }}
+	if x.at != nil {
+		b.Where({{ $P }}.Revision(*x.at))
+	}
+	{{- end }}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -887,6 +858,15 @@ func (x *{{ $N }}ScopedUpdateOne) save(ctx context.Context, verb string, unchang
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		{{- if $Edit }}
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.{{ $N }}().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &{{ $N }}Miss{Row: now}
+		}
+		{{- end }}
 		return nil, err
 	})
 	return written(updated, err)
@@ -1005,7 +985,8 @@ const (
 {{- $updater := eq $.Scope.Mode "update" }}
 {{- $fields := $.Fields }}{{ if $updater }}{{ $fields = $.MutableFields }}{{ end }}
 {{ range $f := $fields }}
-{{- if not (isWorkspaceField $f) }}
+{{- /* The revision of an update is the hook's to move (internal/app/entclient's Revision). */}}
+{{- if not (or (isWorkspaceField $f) (and $updater (isRevisionField $f))) }}
 // Set{{ $f.StructField }} sets the "{{ $f.Name }}" field.
 func (x *{{ $B }}) Set{{ $f.StructField }}(v {{ $f.Type }}) *{{ $B }} {
 	x.set = append(x.set, func(b *{{ $Raw }}) { b.Set{{ $f.StructField }}(v) })
@@ -1072,7 +1053,8 @@ const ClearsState_{{ $B }}_Clear{{ $f.StructField }} = "{{ $f.StructField }}"
 {{ end }}
 {{ end }}
 
-{{ range $e := $.EdgesWithID }}
+{{- /* The tenant edit of the Workspace (NoEdges) sets no edge: its edges are the rows it owns. */}}
+{{ if not $.Scope.NoEdges }}{{ range $e := $.EdgesWithID }}
 {{- /* A many-to-many edge through a Workspace-owned edge table has no setter: its rows carry
        workspace_id, which ent's edge setters cannot fill, so they are written as rows of their own. */}}
 {{- if and (ne $e.Type.Name "Workspace") (not (and $e.Through (scopedIs $e.Through))) }}
@@ -1139,5 +1121,115 @@ const RoleOf_{{ $B }}_Remove{{ $e.StructField }} = RoleStep
 {{- end }}
 {{ end }}
 {{ end }}
+{{ end }}{{ end }}
 {{ end }}
+
+
+{{/* The one write of an entity's rows (write<N>), which an audited entity records: every wrapper
+     of the entity, and the tenant edit of the Workspace (scoped_tenant.tmpl), writes through it. */}}
+{{ define "helper/write" }}
+{{- $n := . }}
+{{- $N := $n.Name }}
+{{- $P := $n.Package }}
+{{- $A := auditOf $n }}
+// write{{ $N }} runs a write of {{ $N }} rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. {{ if $A }}Through an audited scope (Scoped.As)
+// that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
+// joins or opens: the rows where matches are read before the write, then the same rows and the ones
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed, or for every one of them when unchanged is recordUnchanged. Through any other scope{{ else }}The
+// entity is not audited, so{{ end }} run gets the scope itself.
+func (s *Scoped) write{{ $N }}(ctx context.Context, verb string, where []predicate.{{ $N }}, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	{{- if $A }}
+	if s.auditing() {
+		return s.audited(ctx, func(ts *Scoped) error {
+			var before []*{{ $N }}
+			if where != nil {
+				var err error
+				if before, err = ts.c.{{ $N }}.Query().Where(where...).All(ctx); err != nil {
+					return err
+				}
+			}
+			created, err := run(ts)
+			if err != nil {
+				return err
+			}
+			ids := make([]int64, 0, len(before)+len(created))
+			beforeByID := make(map[int64]*{{ $N }}, len(before))
+			for _, row := range before {
+				ids = append(ids, row.ID)
+				beforeByID[row.ID] = row
+			}
+			ids = append(ids, created...)
+			after, err := ts.c.{{ $N }}.Query().Where({{ $P }}.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			afterByID := make(map[int64]*{{ $N }}, len(after))
+			for _, row := range after {
+				afterByID[row.ID] = row
+			}
+			for _, id := range ids {
+				if beforeByID[id] == nil && afterByID[id] == nil {
+					continue
+				}
+				if change, changed := auditChange{{ $N }}(verb, beforeByID[id], afterByID[id]); changed || unchanged == recordUnchanged {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+	}
+	{{- else }}
+	_, _, _ = verb, where, unchanged
+	{{- end }}
+	_, err := run(s)
+	return err
+}
+{{ end }}
+
+{{/* The miss of an edit at a revision (EditAt, Scoped.EditWorkspaceAt): the row as it is now, and
+     the owner's refusal of it in the order of ADR 0119. */}}
+{{ define "helper/miss" }}
+{{- $n := . }}
+{{- $N := $n.Name }}
+{{- $D := discardable $n }}
+{{- $R := archivable $n }}
+// {{ $N }}Miss is an edit at a revision (EditAt) that matched no row. Row is the {{ $N }} as it is
+// now, read in the edit's transaction{{ if $D }}, discarded or not{{ end }}{{ if $R }}, archived or not{{ end }}; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type {{ $N }}Miss struct {
+	Row *{{ $N }}
+}
+
+const (
+	TypeOf_{{ $N }}Miss        = TypeOther
+	EntityOf_{{ $N }}Miss      = "{{ $N }}"
+	RoleOf_{{ $N }}Miss_Error  = RoleNone
+	RoleOf_{{ $N }}Miss_Refuse = RoleNone
+)
+
+func (m *{{ $N }}Miss) Error() string {
+	if m.Row == nil {
+		return "ent: {{ $N }} not found"
+	}
+	return fmt.Sprintf("ent: {{ $N }} %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *{{ $N }}Miss) Refuse(gone, stale error, guards ...func(*{{ $N }}) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
+}
 {{ end }}

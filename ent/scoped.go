@@ -125,7 +125,7 @@ func (s *Scoped) WorkspaceID() int64 { return s.ws }
 
 // Workspace loads the Workspace row the client is confined to. The Workspace is the
 // tenant root, not a Workspace-owned entity, so it has no wrapper of its own: this
-// read is the one way in (writes live in the accounts package).
+// read is the one way in, and EditWorkspaceAt the edit of its settings (scoped_tenant.tmpl).
 func (s *Scoped) Workspace(ctx context.Context) (*Workspace, error) {
 	return s.c.Workspace.Get(ctx, s.ws)
 }
@@ -4222,32 +4222,6 @@ func (x *AutomationScopedUpdateOne) ClearDraftVersionID() *AutomationScopedUpdat
 
 const RoleOf_AutomationScopedUpdateOne_ClearDraftVersionID = RoleStep
 
-// SetRevision sets the "revision" field.
-func (x *AutomationScopedUpdateOne) SetRevision(v int64) *AutomationScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_AutomationScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *AutomationScopedUpdateOne) SetNillableRevision(v *int64) *AutomationScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_AutomationScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *AutomationScopedUpdateOne) AddRevision(v int64) *AutomationScopedUpdateOne {
-	x.set = append(x.set, func(b *AutomationUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_AutomationScopedUpdateOne_AddRevision = RoleStep
-
 // SetName sets the "name" field.
 func (x *AutomationScopedUpdateOne) SetName(v string) *AutomationScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationUpdateOne) { b.SetName(v) })
@@ -4607,32 +4581,6 @@ func (x *AutomationScopedUpdate) ClearDraftVersionID() *AutomationScopedUpdate {
 }
 
 const RoleOf_AutomationScopedUpdate_ClearDraftVersionID = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *AutomationScopedUpdate) SetRevision(v int64) *AutomationScopedUpdate {
-	x.set = append(x.set, func(b *AutomationUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_AutomationScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *AutomationScopedUpdate) SetNillableRevision(v *int64) *AutomationScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_AutomationScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *AutomationScopedUpdate) AddRevision(v int64) *AutomationScopedUpdate {
-	x.set = append(x.set, func(b *AutomationUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_AutomationScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *AutomationScopedUpdate) SetName(v string) *AutomationScopedUpdate {
@@ -10066,6 +10014,7 @@ const (
 	RoleOf_BrandKitScoped_Get         = RoleRead
 	RoleOf_BrandKitScoped_DeleteOneID = RoleStart
 	RoleOf_BrandKitScoped_UpdateOneID = RoleStart
+	RoleOf_BrandKitScoped_EditAt      = RoleStart
 	RoleOf_BrandKitScoped_Delete      = RoleStart
 	RoleOf_BrandKitScoped_Create      = RoleStart
 	RoleOf_BrandKitScoped_CreateBulk  = RoleStart
@@ -10897,11 +10846,58 @@ type BrandKitScopedUpdateOne struct {
 	id    int64
 	where []predicate.BrandKit
 	set   []func(*BrandKitUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the BrandKit with the id; a row of another Workspace is not found.
 func (t *BrandKitScoped) UpdateOneID(id int64) *BrandKitScopedUpdateOne {
 	return &BrandKitScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the BrandKit with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *BrandKitMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *BrandKitScoped) EditAt(id, revision int64) *BrandKitScopedUpdateOne {
+	return &BrandKitScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// BrandKitMiss is an edit at a revision (EditAt) that matched no row. Row is the BrandKit as it is
+// now, read in the edit's transaction; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type BrandKitMiss struct {
+	Row *BrandKit
+}
+
+const (
+	TypeOf_BrandKitMiss        = TypeOther
+	EntityOf_BrandKitMiss      = "BrandKit"
+	RoleOf_BrandKitMiss_Error  = RoleNone
+	RoleOf_BrandKitMiss_Refuse = RoleNone
+)
+
+func (m *BrandKitMiss) Error() string {
+	if m.Row == nil {
+		return "ent: BrandKit not found"
+	}
+	return fmt.Sprintf("ent: BrandKit %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *BrandKitMiss) Refuse(gone, stale error, guards ...func(*BrandKit) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -10917,32 +10913,6 @@ func (x *BrandKitScopedUpdateOne) SetUpdatedAt(v time.Time) *BrandKitScopedUpdat
 }
 
 const RoleOf_BrandKitScopedUpdateOne_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *BrandKitScopedUpdateOne) SetRevision(v int64) *BrandKitScopedUpdateOne {
-	x.set = append(x.set, func(b *BrandKitUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_BrandKitScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *BrandKitScopedUpdateOne) SetNillableRevision(v *int64) *BrandKitScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_BrandKitScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *BrandKitScopedUpdateOne) AddRevision(v int64) *BrandKitScopedUpdateOne {
-	x.set = append(x.set, func(b *BrandKitUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_BrandKitScopedUpdateOne_AddRevision = RoleStep
 
 // SetAccentColor sets the "accent_color" field.
 func (x *BrandKitScopedUpdateOne) SetAccentColor(v string) *BrandKitScopedUpdateOne {
@@ -11122,6 +11092,9 @@ func (x *BrandKitScopedUpdateOne) Save(ctx context.Context) (*BrandKit, error) {
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *BrandKitScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BrandKitUpdateOne, error) {
 	b := s.c.BrandKit.UpdateOneID(x.id).Where(s.inBrandKit(x.where...)...)
+	if x.at != nil {
+		b.Where(brandkit.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -11138,6 +11111,13 @@ func (x *BrandKitScopedUpdateOne) save(ctx context.Context, verb string, unchang
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.BrandKit().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &BrandKitMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -11204,32 +11184,6 @@ func (x *BrandKitScopedUpdate) SetUpdatedAt(v time.Time) *BrandKitScopedUpdate {
 }
 
 const RoleOf_BrandKitScopedUpdate_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *BrandKitScopedUpdate) SetRevision(v int64) *BrandKitScopedUpdate {
-	x.set = append(x.set, func(b *BrandKitUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_BrandKitScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *BrandKitScopedUpdate) SetNillableRevision(v *int64) *BrandKitScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_BrandKitScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *BrandKitScopedUpdate) AddRevision(v int64) *BrandKitScopedUpdate {
-	x.set = append(x.set, func(b *BrandKitUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_BrandKitScopedUpdate_AddRevision = RoleStep
 
 // SetAccentColor sets the "accent_color" field.
 func (x *BrandKitScopedUpdate) SetAccentColor(v string) *BrandKitScopedUpdate {
@@ -11462,6 +11416,7 @@ const (
 	RoleOf_BroadcastScoped_Get               = RoleRead
 	RoleOf_BroadcastScoped_PurgeOneID        = RoleStart
 	RoleOf_BroadcastScoped_UpdateOneID       = RoleStart
+	RoleOf_BroadcastScoped_EditAt            = RoleStart
 	RoleOf_BroadcastScoped_Purge             = RoleStart
 	RoleOf_BroadcastScoped_Create            = RoleStart
 	RoleOf_BroadcastScoped_CreateBulk        = RoleStart
@@ -13079,11 +13034,58 @@ type BroadcastScopedUpdateOne struct {
 	id    int64
 	where []predicate.Broadcast
 	set   []func(*BroadcastUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the Broadcast with the id; a row of another Workspace is not found.
 func (t *BroadcastScoped) UpdateOneID(id int64) *BroadcastScopedUpdateOne {
 	return &BroadcastScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the Broadcast with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *BroadcastMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *BroadcastScoped) EditAt(id, revision int64) *BroadcastScopedUpdateOne {
+	return &BroadcastScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// BroadcastMiss is an edit at a revision (EditAt) that matched no row. Row is the Broadcast as it is
+// now, read in the edit's transaction, archived or not; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type BroadcastMiss struct {
+	Row *Broadcast
+}
+
+const (
+	TypeOf_BroadcastMiss        = TypeOther
+	EntityOf_BroadcastMiss      = "Broadcast"
+	RoleOf_BroadcastMiss_Error  = RoleNone
+	RoleOf_BroadcastMiss_Refuse = RoleNone
+)
+
+func (m *BroadcastMiss) Error() string {
+	if m.Row == nil {
+		return "ent: Broadcast not found"
+	}
+	return fmt.Sprintf("ent: Broadcast %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *BroadcastMiss) Refuse(gone, stale error, guards ...func(*Broadcast) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -13131,32 +13133,6 @@ func (x *BroadcastScopedUpdateOne) ClearArchivedAt() *BroadcastScopedUpdateOne {
 const RoleOf_BroadcastScopedUpdateOne_ClearArchivedAt = RoleStep
 
 const ClearsState_BroadcastScopedUpdateOne_ClearArchivedAt = "ArchivedAt"
-
-// SetRevision sets the "revision" field.
-func (x *BroadcastScopedUpdateOne) SetRevision(v int64) *BroadcastScopedUpdateOne {
-	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableRevision(v *int64) *BroadcastScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *BroadcastScopedUpdateOne) AddRevision(v int64) *BroadcastScopedUpdateOne {
-	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdateOne_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *BroadcastScopedUpdateOne) SetName(v string) *BroadcastScopedUpdateOne {
@@ -13818,6 +13794,9 @@ func (x *BroadcastScopedUpdateOne) Save(ctx context.Context) (*Broadcast, error)
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *BroadcastScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BroadcastUpdateOne, error) {
 	b := s.c.Broadcast.UpdateOneID(x.id).Where(s.inBroadcast(x.where...)...)
+	if x.at != nil {
+		b.Where(broadcast.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -13834,6 +13813,13 @@ func (x *BroadcastScopedUpdateOne) save(ctx context.Context, verb string, unchan
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.Broadcast().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &BroadcastMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -13932,32 +13918,6 @@ func (x *BroadcastScopedUpdate) ClearArchivedAt() *BroadcastScopedUpdate {
 const RoleOf_BroadcastScopedUpdate_ClearArchivedAt = RoleStep
 
 const ClearsState_BroadcastScopedUpdate_ClearArchivedAt = "ArchivedAt"
-
-// SetRevision sets the "revision" field.
-func (x *BroadcastScopedUpdate) SetRevision(v int64) *BroadcastScopedUpdate {
-	x.set = append(x.set, func(b *BroadcastUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableRevision(v *int64) *BroadcastScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *BroadcastScopedUpdate) AddRevision(v int64) *BroadcastScopedUpdate {
-	x.set = append(x.set, func(b *BroadcastUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *BroadcastScopedUpdate) SetName(v string) *BroadcastScopedUpdate {
@@ -18856,6 +18816,7 @@ const (
 	RoleOf_ContactScoped_Get         = RoleRead
 	RoleOf_ContactScoped_DeleteOneID = RoleStart
 	RoleOf_ContactScoped_UpdateOneID = RoleStart
+	RoleOf_ContactScoped_EditAt      = RoleStart
 	RoleOf_ContactScoped_Delete      = RoleStart
 	RoleOf_ContactScoped_Create      = RoleStart
 	RoleOf_ContactScoped_CreateBulk  = RoleStart
@@ -20080,11 +20041,58 @@ type ContactScopedUpdateOne struct {
 	id    int64
 	where []predicate.Contact
 	set   []func(*ContactUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the Contact with the id; a row of another Workspace is not found.
 func (t *ContactScoped) UpdateOneID(id int64) *ContactScopedUpdateOne {
 	return &ContactScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the Contact with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *ContactMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *ContactScoped) EditAt(id, revision int64) *ContactScopedUpdateOne {
+	return &ContactScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// ContactMiss is an edit at a revision (EditAt) that matched no row. Row is the Contact as it is
+// now, read in the edit's transaction; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type ContactMiss struct {
+	Row *Contact
+}
+
+const (
+	TypeOf_ContactMiss        = TypeOther
+	EntityOf_ContactMiss      = "Contact"
+	RoleOf_ContactMiss_Error  = RoleNone
+	RoleOf_ContactMiss_Refuse = RoleNone
+)
+
+func (m *ContactMiss) Error() string {
+	if m.Row == nil {
+		return "ent: Contact not found"
+	}
+	return fmt.Sprintf("ent: Contact %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *ContactMiss) Refuse(gone, stale error, guards ...func(*Contact) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -20100,32 +20108,6 @@ func (x *ContactScopedUpdateOne) SetUpdatedAt(v time.Time) *ContactScopedUpdateO
 }
 
 const RoleOf_ContactScopedUpdateOne_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *ContactScopedUpdateOne) SetRevision(v int64) *ContactScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *ContactScopedUpdateOne) SetNillableRevision(v *int64) *ContactScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *ContactScopedUpdateOne) AddRevision(v int64) *ContactScopedUpdateOne {
-	x.set = append(x.set, func(b *ContactUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdateOne_AddRevision = RoleStep
 
 // SetSubjectID sets the "subject_id" field.
 func (x *ContactScopedUpdateOne) SetSubjectID(v string) *ContactScopedUpdateOne {
@@ -20637,6 +20619,9 @@ func (x *ContactScopedUpdateOne) Save(ctx context.Context) (*Contact, error) {
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *ContactScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ContactUpdateOne, error) {
 	b := s.c.Contact.UpdateOneID(x.id).Where(s.inContact(x.where...)...)
+	if x.at != nil {
+		b.Where(contact.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -20653,6 +20638,13 @@ func (x *ContactScopedUpdateOne) save(ctx context.Context, verb string, unchange
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.Contact().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &ContactMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -20719,32 +20711,6 @@ func (x *ContactScopedUpdate) SetUpdatedAt(v time.Time) *ContactScopedUpdate {
 }
 
 const RoleOf_ContactScopedUpdate_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *ContactScopedUpdate) SetRevision(v int64) *ContactScopedUpdate {
-	x.set = append(x.set, func(b *ContactUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *ContactScopedUpdate) SetNillableRevision(v *int64) *ContactScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_ContactScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *ContactScopedUpdate) AddRevision(v int64) *ContactScopedUpdate {
-	x.set = append(x.set, func(b *ContactUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_ContactScopedUpdate_AddRevision = RoleStep
 
 // SetSubjectID sets the "subject_id" field.
 func (x *ContactScopedUpdate) SetSubjectID(v string) *ContactScopedUpdate {
@@ -21912,6 +21878,7 @@ const (
 	RoleOf_CustomFieldScoped_Get         = RoleRead
 	RoleOf_CustomFieldScoped_DeleteOneID = RoleStart
 	RoleOf_CustomFieldScoped_UpdateOneID = RoleStart
+	RoleOf_CustomFieldScoped_EditAt      = RoleStart
 	RoleOf_CustomFieldScoped_Delete      = RoleStart
 	RoleOf_CustomFieldScoped_Create      = RoleStart
 	RoleOf_CustomFieldScoped_CreateBulk  = RoleStart
@@ -22565,11 +22532,58 @@ type CustomFieldScopedUpdateOne struct {
 	id    int64
 	where []predicate.CustomField
 	set   []func(*CustomFieldUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the CustomField with the id; a row of another Workspace is not found.
 func (t *CustomFieldScoped) UpdateOneID(id int64) *CustomFieldScopedUpdateOne {
 	return &CustomFieldScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the CustomField with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *CustomFieldMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *CustomFieldScoped) EditAt(id, revision int64) *CustomFieldScopedUpdateOne {
+	return &CustomFieldScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// CustomFieldMiss is an edit at a revision (EditAt) that matched no row. Row is the CustomField as it is
+// now, read in the edit's transaction; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type CustomFieldMiss struct {
+	Row *CustomField
+}
+
+const (
+	TypeOf_CustomFieldMiss        = TypeOther
+	EntityOf_CustomFieldMiss      = "CustomField"
+	RoleOf_CustomFieldMiss_Error  = RoleNone
+	RoleOf_CustomFieldMiss_Refuse = RoleNone
+)
+
+func (m *CustomFieldMiss) Error() string {
+	if m.Row == nil {
+		return "ent: CustomField not found"
+	}
+	return fmt.Sprintf("ent: CustomField %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *CustomFieldMiss) Refuse(gone, stale error, guards ...func(*CustomField) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -22585,32 +22599,6 @@ func (x *CustomFieldScopedUpdateOne) SetUpdatedAt(v time.Time) *CustomFieldScope
 }
 
 const RoleOf_CustomFieldScopedUpdateOne_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *CustomFieldScopedUpdateOne) SetRevision(v int64) *CustomFieldScopedUpdateOne {
-	x.set = append(x.set, func(b *CustomFieldUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_CustomFieldScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *CustomFieldScopedUpdateOne) SetNillableRevision(v *int64) *CustomFieldScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_CustomFieldScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *CustomFieldScopedUpdateOne) AddRevision(v int64) *CustomFieldScopedUpdateOne {
-	x.set = append(x.set, func(b *CustomFieldUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_CustomFieldScopedUpdateOne_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *CustomFieldScopedUpdateOne) SetName(v string) *CustomFieldScopedUpdateOne {
@@ -22656,6 +22644,9 @@ func (x *CustomFieldScopedUpdateOne) Save(ctx context.Context) (*CustomField, er
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *CustomFieldScopedUpdateOne) build(ctx context.Context, s *Scoped) (*CustomFieldUpdateOne, error) {
 	b := s.c.CustomField.UpdateOneID(x.id).Where(s.inCustomField(x.where...)...)
+	if x.at != nil {
+		b.Where(customfield.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -22672,6 +22663,13 @@ func (x *CustomFieldScopedUpdateOne) save(ctx context.Context, verb string, unch
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.CustomField().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &CustomFieldMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -22738,32 +22736,6 @@ func (x *CustomFieldScopedUpdate) SetUpdatedAt(v time.Time) *CustomFieldScopedUp
 }
 
 const RoleOf_CustomFieldScopedUpdate_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *CustomFieldScopedUpdate) SetRevision(v int64) *CustomFieldScopedUpdate {
-	x.set = append(x.set, func(b *CustomFieldUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_CustomFieldScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *CustomFieldScopedUpdate) SetNillableRevision(v *int64) *CustomFieldScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_CustomFieldScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *CustomFieldScopedUpdate) AddRevision(v int64) *CustomFieldScopedUpdate {
-	x.set = append(x.set, func(b *CustomFieldUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_CustomFieldScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *CustomFieldScopedUpdate) SetName(v string) *CustomFieldScopedUpdate {
@@ -22858,6 +22830,7 @@ const (
 	RoleOf_EmailTemplateScoped_Get         = RoleRead
 	RoleOf_EmailTemplateScoped_DeleteOneID = RoleStart
 	RoleOf_EmailTemplateScoped_UpdateOneID = RoleStart
+	RoleOf_EmailTemplateScoped_EditAt      = RoleStart
 	RoleOf_EmailTemplateScoped_Delete      = RoleStart
 	RoleOf_EmailTemplateScoped_Create      = RoleStart
 	RoleOf_EmailTemplateScoped_CreateBulk  = RoleStart
@@ -23611,11 +23584,58 @@ type EmailTemplateScopedUpdateOne struct {
 	id    int64
 	where []predicate.EmailTemplate
 	set   []func(*EmailTemplateUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the EmailTemplate with the id; a row of another Workspace is not found.
 func (t *EmailTemplateScoped) UpdateOneID(id int64) *EmailTemplateScopedUpdateOne {
 	return &EmailTemplateScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the EmailTemplate with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *EmailTemplateMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *EmailTemplateScoped) EditAt(id, revision int64) *EmailTemplateScopedUpdateOne {
+	return &EmailTemplateScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// EmailTemplateMiss is an edit at a revision (EditAt) that matched no row. Row is the EmailTemplate as it is
+// now, read in the edit's transaction; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type EmailTemplateMiss struct {
+	Row *EmailTemplate
+}
+
+const (
+	TypeOf_EmailTemplateMiss        = TypeOther
+	EntityOf_EmailTemplateMiss      = "EmailTemplate"
+	RoleOf_EmailTemplateMiss_Error  = RoleNone
+	RoleOf_EmailTemplateMiss_Refuse = RoleNone
+)
+
+func (m *EmailTemplateMiss) Error() string {
+	if m.Row == nil {
+		return "ent: EmailTemplate not found"
+	}
+	return fmt.Sprintf("ent: EmailTemplate %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *EmailTemplateMiss) Refuse(gone, stale error, guards ...func(*EmailTemplate) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -23631,32 +23651,6 @@ func (x *EmailTemplateScopedUpdateOne) SetUpdatedAt(v time.Time) *EmailTemplateS
 }
 
 const RoleOf_EmailTemplateScopedUpdateOne_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *EmailTemplateScopedUpdateOne) SetRevision(v int64) *EmailTemplateScopedUpdateOne {
-	x.set = append(x.set, func(b *EmailTemplateUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_EmailTemplateScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *EmailTemplateScopedUpdateOne) SetNillableRevision(v *int64) *EmailTemplateScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_EmailTemplateScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *EmailTemplateScopedUpdateOne) AddRevision(v int64) *EmailTemplateScopedUpdateOne {
-	x.set = append(x.set, func(b *EmailTemplateUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_EmailTemplateScopedUpdateOne_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *EmailTemplateScopedUpdateOne) SetName(v string) *EmailTemplateScopedUpdateOne {
@@ -23770,6 +23764,9 @@ func (x *EmailTemplateScopedUpdateOne) Save(ctx context.Context) (*EmailTemplate
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *EmailTemplateScopedUpdateOne) build(ctx context.Context, s *Scoped) (*EmailTemplateUpdateOne, error) {
 	b := s.c.EmailTemplate.UpdateOneID(x.id).Where(s.inEmailTemplate(x.where...)...)
+	if x.at != nil {
+		b.Where(emailtemplate.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -23786,6 +23783,13 @@ func (x *EmailTemplateScopedUpdateOne) save(ctx context.Context, verb string, un
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.EmailTemplate().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &EmailTemplateMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -23852,32 +23856,6 @@ func (x *EmailTemplateScopedUpdate) SetUpdatedAt(v time.Time) *EmailTemplateScop
 }
 
 const RoleOf_EmailTemplateScopedUpdate_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *EmailTemplateScopedUpdate) SetRevision(v int64) *EmailTemplateScopedUpdate {
-	x.set = append(x.set, func(b *EmailTemplateUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_EmailTemplateScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *EmailTemplateScopedUpdate) SetNillableRevision(v *int64) *EmailTemplateScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_EmailTemplateScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *EmailTemplateScopedUpdate) AddRevision(v int64) *EmailTemplateScopedUpdate {
-	x.set = append(x.set, func(b *EmailTemplateUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_EmailTemplateScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *EmailTemplateScopedUpdate) SetName(v string) *EmailTemplateScopedUpdate {
@@ -28476,6 +28454,7 @@ const (
 	RoleOf_IntegrationScoped_Get                = RoleRead
 	RoleOf_IntegrationScoped_PurgeOneID         = RoleStart
 	RoleOf_IntegrationScoped_UpdateOneID        = RoleStart
+	RoleOf_IntegrationScoped_EditAt             = RoleStart
 	RoleOf_IntegrationScoped_Purge              = RoleStart
 	RoleOf_IntegrationScoped_Create             = RoleStart
 	RoleOf_IntegrationScoped_CreateBulk         = RoleStart
@@ -29919,11 +29898,58 @@ type IntegrationScopedUpdateOne struct {
 	id    int64
 	where []predicate.Integration
 	set   []func(*IntegrationUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the Integration with the id; a row of another Workspace is not found.
 func (t *IntegrationScoped) UpdateOneID(id int64) *IntegrationScopedUpdateOne {
 	return &IntegrationScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the Integration with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *IntegrationMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *IntegrationScoped) EditAt(id, revision int64) *IntegrationScopedUpdateOne {
+	return &IntegrationScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// IntegrationMiss is an edit at a revision (EditAt) that matched no row. Row is the Integration as it is
+// now, read in the edit's transaction, discarded or not; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type IntegrationMiss struct {
+	Row *Integration
+}
+
+const (
+	TypeOf_IntegrationMiss        = TypeOther
+	EntityOf_IntegrationMiss      = "Integration"
+	RoleOf_IntegrationMiss_Error  = RoleNone
+	RoleOf_IntegrationMiss_Refuse = RoleNone
+)
+
+func (m *IntegrationMiss) Error() string {
+	if m.Row == nil {
+		return "ent: Integration not found"
+	}
+	return fmt.Sprintf("ent: Integration %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *IntegrationMiss) Refuse(gone, stale error, guards ...func(*Integration) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -29971,32 +29997,6 @@ func (x *IntegrationScopedUpdateOne) ClearDiscardedAt() *IntegrationScopedUpdate
 const RoleOf_IntegrationScopedUpdateOne_ClearDiscardedAt = RoleStep
 
 const ClearsState_IntegrationScopedUpdateOne_ClearDiscardedAt = "DiscardedAt"
-
-// SetRevision sets the "revision" field.
-func (x *IntegrationScopedUpdateOne) SetRevision(v int64) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableRevision(v *int64) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *IntegrationScopedUpdateOne) AddRevision(v int64) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *IntegrationScopedUpdateOne) SetName(v string) *IntegrationScopedUpdateOne {
@@ -30602,6 +30602,9 @@ func (x *IntegrationScopedUpdateOne) Save(ctx context.Context) (*Integration, er
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *IntegrationScopedUpdateOne) build(ctx context.Context, s *Scoped) (*IntegrationUpdateOne, error) {
 	b := s.c.Integration.UpdateOneID(x.id).Where(s.inIntegration(x.where...)...)
+	if x.at != nil {
+		b.Where(integration.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -30618,6 +30621,13 @@ func (x *IntegrationScopedUpdateOne) save(ctx context.Context, verb string, unch
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.Integration().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &IntegrationMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -30716,32 +30726,6 @@ func (x *IntegrationScopedUpdate) ClearDiscardedAt() *IntegrationScopedUpdate {
 const RoleOf_IntegrationScopedUpdate_ClearDiscardedAt = RoleStep
 
 const ClearsState_IntegrationScopedUpdate_ClearDiscardedAt = "DiscardedAt"
-
-// SetRevision sets the "revision" field.
-func (x *IntegrationScopedUpdate) SetRevision(v int64) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableRevision(v *int64) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *IntegrationScopedUpdate) AddRevision(v int64) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *IntegrationScopedUpdate) SetName(v string) *IntegrationScopedUpdate {
@@ -43397,32 +43381,6 @@ func (x *RuleScopedUpdateOne) ClearDraftVersionID() *RuleScopedUpdateOne {
 
 const RoleOf_RuleScopedUpdateOne_ClearDraftVersionID = RoleStep
 
-// SetRevision sets the "revision" field.
-func (x *RuleScopedUpdateOne) SetRevision(v int64) *RuleScopedUpdateOne {
-	x.set = append(x.set, func(b *RuleUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_RuleScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *RuleScopedUpdateOne) SetNillableRevision(v *int64) *RuleScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_RuleScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *RuleScopedUpdateOne) AddRevision(v int64) *RuleScopedUpdateOne {
-	x.set = append(x.set, func(b *RuleUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_RuleScopedUpdateOne_AddRevision = RoleStep
-
 // SetName sets the "name" field.
 func (x *RuleScopedUpdateOne) SetName(v string) *RuleScopedUpdateOne {
 	x.set = append(x.set, func(b *RuleUpdateOne) { b.SetName(v) })
@@ -43782,32 +43740,6 @@ func (x *RuleScopedUpdate) ClearDraftVersionID() *RuleScopedUpdate {
 }
 
 const RoleOf_RuleScopedUpdate_ClearDraftVersionID = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *RuleScopedUpdate) SetRevision(v int64) *RuleScopedUpdate {
-	x.set = append(x.set, func(b *RuleUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_RuleScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *RuleScopedUpdate) SetNillableRevision(v *int64) *RuleScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_RuleScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *RuleScopedUpdate) AddRevision(v int64) *RuleScopedUpdate {
-	x.set = append(x.set, func(b *RuleUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_RuleScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *RuleScopedUpdate) SetName(v string) *RuleScopedUpdate {
@@ -47304,6 +47236,7 @@ const (
 	RoleOf_SegmentScoped_Get               = RoleRead
 	RoleOf_SegmentScoped_PurgeOneID        = RoleStart
 	RoleOf_SegmentScoped_UpdateOneID       = RoleStart
+	RoleOf_SegmentScoped_EditAt            = RoleStart
 	RoleOf_SegmentScoped_Purge             = RoleStart
 	RoleOf_SegmentScoped_Create            = RoleStart
 	RoleOf_SegmentScoped_CreateBulk        = RoleStart
@@ -48045,11 +47978,58 @@ type SegmentScopedUpdateOne struct {
 	id    int64
 	where []predicate.Segment
 	set   []func(*SegmentUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the Segment with the id; a row of another Workspace is not found.
 func (t *SegmentScoped) UpdateOneID(id int64) *SegmentScopedUpdateOne {
 	return &SegmentScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the Segment with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *SegmentMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *SegmentScoped) EditAt(id, revision int64) *SegmentScopedUpdateOne {
+	return &SegmentScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// SegmentMiss is an edit at a revision (EditAt) that matched no row. Row is the Segment as it is
+// now, read in the edit's transaction, archived or not; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type SegmentMiss struct {
+	Row *Segment
+}
+
+const (
+	TypeOf_SegmentMiss        = TypeOther
+	EntityOf_SegmentMiss      = "Segment"
+	RoleOf_SegmentMiss_Error  = RoleNone
+	RoleOf_SegmentMiss_Refuse = RoleNone
+)
+
+func (m *SegmentMiss) Error() string {
+	if m.Row == nil {
+		return "ent: Segment not found"
+	}
+	return fmt.Sprintf("ent: Segment %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *SegmentMiss) Refuse(gone, stale error, guards ...func(*Segment) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -48097,32 +48077,6 @@ func (x *SegmentScopedUpdateOne) ClearArchivedAt() *SegmentScopedUpdateOne {
 const RoleOf_SegmentScopedUpdateOne_ClearArchivedAt = RoleStep
 
 const ClearsState_SegmentScopedUpdateOne_ClearArchivedAt = "ArchivedAt"
-
-// SetRevision sets the "revision" field.
-func (x *SegmentScopedUpdateOne) SetRevision(v int64) *SegmentScopedUpdateOne {
-	x.set = append(x.set, func(b *SegmentUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_SegmentScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *SegmentScopedUpdateOne) SetNillableRevision(v *int64) *SegmentScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_SegmentScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *SegmentScopedUpdateOne) AddRevision(v int64) *SegmentScopedUpdateOne {
-	x.set = append(x.set, func(b *SegmentUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_SegmentScopedUpdateOne_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *SegmentScopedUpdateOne) SetName(v string) *SegmentScopedUpdateOne {
@@ -48176,6 +48130,9 @@ func (x *SegmentScopedUpdateOne) Save(ctx context.Context) (*Segment, error) {
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *SegmentScopedUpdateOne) build(ctx context.Context, s *Scoped) (*SegmentUpdateOne, error) {
 	b := s.c.Segment.UpdateOneID(x.id).Where(s.inSegment(x.where...)...)
+	if x.at != nil {
+		b.Where(segment.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -48192,6 +48149,13 @@ func (x *SegmentScopedUpdateOne) save(ctx context.Context, verb string, unchange
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.Segment().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &SegmentMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -48290,32 +48254,6 @@ func (x *SegmentScopedUpdate) ClearArchivedAt() *SegmentScopedUpdate {
 const RoleOf_SegmentScopedUpdate_ClearArchivedAt = RoleStep
 
 const ClearsState_SegmentScopedUpdate_ClearArchivedAt = "ArchivedAt"
-
-// SetRevision sets the "revision" field.
-func (x *SegmentScopedUpdate) SetRevision(v int64) *SegmentScopedUpdate {
-	x.set = append(x.set, func(b *SegmentUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_SegmentScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *SegmentScopedUpdate) SetNillableRevision(v *int64) *SegmentScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_SegmentScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *SegmentScopedUpdate) AddRevision(v int64) *SegmentScopedUpdate {
-	x.set = append(x.set, func(b *SegmentUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_SegmentScopedUpdate_AddRevision = RoleStep
 
 // SetName sets the "name" field.
 func (x *SegmentScopedUpdate) SetName(v string) *SegmentScopedUpdate {
@@ -58697,6 +58635,7 @@ const (
 	RoleOf_WebhookEndpointScoped_Get         = RoleRead
 	RoleOf_WebhookEndpointScoped_DeleteOneID = RoleStart
 	RoleOf_WebhookEndpointScoped_UpdateOneID = RoleStart
+	RoleOf_WebhookEndpointScoped_EditAt      = RoleStart
 	RoleOf_WebhookEndpointScoped_Delete      = RoleStart
 	RoleOf_WebhookEndpointScoped_Create      = RoleStart
 	RoleOf_WebhookEndpointScoped_CreateBulk  = RoleStart
@@ -59730,11 +59669,58 @@ type WebhookEndpointScopedUpdateOne struct {
 	id    int64
 	where []predicate.WebhookEndpoint
 	set   []func(*WebhookEndpointUpdateOne)
+	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
+	at *int64
 }
 
 // UpdateOneID updates the WebhookEndpoint with the id; a row of another Workspace is not found.
 func (t *WebhookEndpointScoped) UpdateOneID(id int64) *WebhookEndpointScopedUpdateOne {
 	return &WebhookEndpointScopedUpdateOne{s: t.s, id: id}
+}
+
+// EditAt is the edit of the WebhookEndpoint with the id made on revision (ADR 0119): it writes only while
+// the row is at that revision and matches the predicates Where adds, and the write moves the
+// revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
+// transaction and returns a *WebhookEndpointMiss carrying it, or none when it is gone, whose Refuse tells
+// the owner's refusal; a row of another Workspace is gone.
+func (t *WebhookEndpointScoped) EditAt(id, revision int64) *WebhookEndpointScopedUpdateOne {
+	return &WebhookEndpointScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// WebhookEndpointMiss is an edit at a revision (EditAt) that matched no row. Row is the WebhookEndpoint as it is
+// now, read in the edit's transaction; nil when it is gone. It is not a
+// NotFoundError: a miss is told at the write, never from what else a transaction failed to find.
+type WebhookEndpointMiss struct {
+	Row *WebhookEndpoint
+}
+
+const (
+	TypeOf_WebhookEndpointMiss        = TypeOther
+	EntityOf_WebhookEndpointMiss      = "WebhookEndpoint"
+	RoleOf_WebhookEndpointMiss_Error  = RoleNone
+	RoleOf_WebhookEndpointMiss_Refuse = RoleNone
+)
+
+func (m *WebhookEndpointMiss) Error() string {
+	if m.Row == nil {
+		return "ent: WebhookEndpoint not found"
+	}
+	return fmt.Sprintf("ent: WebhookEndpoint %d is at revision %d, or a predicate of the edit excludes it", m.Row.ID, m.Row.Revision)
+}
+
+// Refuse is the owner's refusal of the edit, in the order of ADR 0119: gone when the row is gone,
+// then the first of the owner's state guards (archived, not a draft, ...) that refuses the row as
+// it is now, then stale. The refusals are the owner's (ADR 0106).
+func (m *WebhookEndpointMiss) Refuse(gone, stale error, guards ...func(*WebhookEndpoint) error) error {
+	if m.Row == nil {
+		return gone
+	}
+	for _, guard := range guards {
+		if err := guard(m.Row); err != nil {
+			return err
+		}
+	}
+	return stale
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -59750,32 +59736,6 @@ func (x *WebhookEndpointScopedUpdateOne) SetUpdatedAt(v time.Time) *WebhookEndpo
 }
 
 const RoleOf_WebhookEndpointScopedUpdateOne_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *WebhookEndpointScopedUpdateOne) SetRevision(v int64) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableRevision(v *int64) *WebhookEndpointScopedUpdateOne {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *WebhookEndpointScopedUpdateOne) AddRevision(v int64) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_AddRevision = RoleStep
 
 // SetURL sets the "url" field.
 func (x *WebhookEndpointScopedUpdateOne) SetURL(v string) *WebhookEndpointScopedUpdateOne {
@@ -60083,6 +60043,9 @@ func (x *WebhookEndpointScopedUpdateOne) Save(ctx context.Context) (*WebhookEndp
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *WebhookEndpointScopedUpdateOne) build(ctx context.Context, s *Scoped) (*WebhookEndpointUpdateOne, error) {
 	b := s.c.WebhookEndpoint.UpdateOneID(x.id).Where(s.inWebhookEndpoint(x.where...)...)
+	if x.at != nil {
+		b.Where(webhookendpoint.Revision(*x.at))
+	}
 	for _, set := range x.set {
 		set(b)
 	}
@@ -60099,6 +60062,13 @@ func (x *WebhookEndpointScopedUpdateOne) save(ctx context.Context, verb string, 
 			return nil, err
 		}
 		updated, err = b.Save(ctx)
+		if x.at != nil && IsNotFound(err) {
+			now, getErr := s.WebhookEndpoint().Get(ctx, x.id)
+			if getErr != nil && !IsNotFound(getErr) {
+				return nil, getErr
+			}
+			return nil, &WebhookEndpointMiss{Row: now}
+		}
 		return nil, err
 	})
 	return written(updated, err)
@@ -60165,32 +60135,6 @@ func (x *WebhookEndpointScopedUpdate) SetUpdatedAt(v time.Time) *WebhookEndpoint
 }
 
 const RoleOf_WebhookEndpointScopedUpdate_SetUpdatedAt = RoleStep
-
-// SetRevision sets the "revision" field.
-func (x *WebhookEndpointScopedUpdate) SetRevision(v int64) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetRevision(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetRevision = RoleStep
-
-// SetNillableRevision sets the "revision" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableRevision(v *int64) *WebhookEndpointScopedUpdate {
-	if v != nil {
-		x.SetRevision(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetNillableRevision = RoleStep
-
-// AddRevision adds value to the "revision" field.
-func (x *WebhookEndpointScopedUpdate) AddRevision(v int64) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.AddRevision(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_AddRevision = RoleStep
 
 // SetURL sets the "url" field.
 func (x *WebhookEndpointScopedUpdate) SetURL(v string) *WebhookEndpointScopedUpdate {

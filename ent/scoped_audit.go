@@ -866,6 +866,65 @@ func auditChangeWebhookEndpoint(verb string, before, after *WebhookEndpoint) (ch
 	return change, changed
 }
 
+// WorkspaceAuditSensitive lists the Workspace fields whose values never reach the Audit log.
+var WorkspaceAuditSensitive = map[string]bool{
+	"collect_key": true,
+}
+
+// auditFields maps every audited field of the Workspace to its value.
+func (e *Workspace) auditFields() map[string]any {
+	return map[string]any{
+		"discarded_at":              derefAudit(e.DiscardedAt),
+		"name":                      e.Name,
+		"public_id":                 e.PublicID,
+		"collect_key":               e.CollectKey,
+		"require_confirmed_opt_in":  e.RequireConfirmedOptIn,
+		"postal_address":            e.PostalAddress,
+		"retention_days":            derefAudit(e.RetentionDays),
+		"timezone":                  derefAudit(e.Timezone),
+		"setup_completed_at":        derefAudit(e.SetupCompletedAt),
+		"reporting_currency":        derefAudit(e.ReportingCurrency),
+		"attribution_window_days":   e.AttributionWindowDays,
+		"send_cap":                  derefAudit(e.SendCap),
+		"domain_join_enabled":       e.DomainJoinEnabled,
+		"second_factor_required_at": derefAudit(e.SecondFactorRequiredAt),
+		"feed_position":             e.FeedPosition,
+		"erased_at":                 derefAudit(e.ErasedAt),
+		"suspended_at":              derefAudit(e.SuspendedAt),
+		"suspended_by_kind":         derefAudit(e.SuspendedByKind),
+		"suspended_by_id":           derefAudit(e.SuspendedByID),
+		"suspension_reason":         derefAudit(e.SuspensionReason),
+		"cleared_at":                derefAudit(e.ClearedAt),
+		"abuse_exempt":              e.AbuseExempt,
+		"abuse_warning_notified_at": derefAudit(e.AbuseWarningNotifiedAt),
+		"abuse_freeze_notified_at":  derefAudit(e.AbuseFreezeNotifiedAt),
+	}
+}
+
+// auditChangeWorkspace describes a Workspace create (before is nil), update or delete
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeWorkspace(verb string, before, after *Workspace) (change AuditChange, changed bool) {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change = AuditChange{
+		Action:     "workspace." + verb,
+		TargetType: "workspace",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, WorkspaceAuditSensitive),
+	}
+	changed = len(change.Diff) > 0
+	change.TargetName = fmt.Sprint(derefAudit(target.Name))
+	return change, changed
+}
+
 // auditKeep makes an update's diff carry the field even when it did not change.
 func auditKeep(diff, before, after map[string]any, name string) {
 	if before == nil || after == nil {

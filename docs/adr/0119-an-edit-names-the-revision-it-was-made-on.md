@@ -43,7 +43,17 @@ overwrite a person, and a person overwrites them, the same way.
   and imports (`contacts` enrichment), a Rule's Tag action, an Automation's Tag step, the Tag
   endpoints of both surfaces, `PUT /broadcasts/{id}/segment`. Each of these changes what an editor of the row shows, so a save made
   over it is a real conflict. A write that changes nothing writes nothing: it moves neither
-  `revision` nor `updated_at`.
+  `revision` nor `updated_at`. The hook enforces it for every writer, before it moves the revision:
+  on an update of one row of a type with a revision (`UpdateOne`), it asks a generated comparison
+  (`ent.Unchanged`) that reads the row by its id and the update's own predicates and compares every
+  column the update writes, and when nothing differs it returns the row and does not write, so the
+  hooks after it see nothing. The predicates come first: a no-op over a stale revision, or over a
+  row a state predicate excludes, is refused like any other write. A JSON column compares by value
+  (jsonb reorders keys), a time at the microseconds Postgres keeps; an edge change, an added number
+  and a sealed column (its ciphertext is new each time) are changes, as is an update that names no
+  column (a touch); in doubt, a change. A bulk `Update` is outside the rule: a state move is
+  conditioned on the state it leaves (ADR 0109). A Versioned definition is outside it too: its
+  compare-and-swap names the revision with the rest of its position.
 - **Bookkeeping does not move it.** A column the system keeps for itself, which no editor shows or
   sends, is marked `schema.Bookkeeping`: a webhook endpoint's failure record (its consecutive
   failures, when they began, the last error), a provider's reading of an Integration, a notice's
@@ -56,9 +66,15 @@ overwrite a person, and a person overwrites them, the same way.
   generated set (`ent.Bookkeeping`), so a writer cannot opt out at a call site.
 - **The resource returns it, and its update takes it back.** The resource's `revision` is the one
   of the state it shows; an update's body names the `revision` the edit was made on, and the write
-  is conditional on it (`UPDATE … WHERE id = ? AND revision = ?`, or the comparison inside the
-  transaction that already reads the row). The answer to a successful update carries the new
-  `revision`.
+  is conditional on it (`UPDATE … WHERE id = ? AND revision = ?`). The answer to a successful
+  update carries the new `revision`. The edit at a revision is generated, not written per module:
+  the scoped client's `EditAt(id, revision)` for every Workspace-owned type with one, and
+  `Scoped.EditWorkspaceAt(revision)` for the scope's own Workspace. An edit of one row goes by id,
+  never through a bulk update. A miss is classified at the write: the same client reads the row
+  again in the edit's transaction and returns a typed miss carrying it, or none when it is gone,
+  whose `Refuse` applies the order of refusals (gone, then the owner's state guards in order, such
+  as archived or not a draft, then stale) with the owner's own sentinels (ADR 0106). A not found
+  from anything else the transaction does is never a stale revision.
 - **The `revision` is required on every surface**: `/site`, `/api` and so MCP. An update without
   one is the lost update itself, whoever sends it, and there is no client to keep: a script or an
   agent reads the resource before it writes, as the console does. A contract check fails an update
@@ -98,8 +114,9 @@ overwrite a person, and a person overwrites them, the same way.
   the MCP tools' descriptions included, reads the resource first.
 - The editor session gains the base revision and the "changed since it was opened" state;
   `docs/standards/ui.md` says how the console handles it instead of "not merged".
-- Machine writers that rewrite unchanged values (Identify's enrichment does an update even when no
-  field changes) must skip the write, or an active Contact refuses every console save.
+- A writer that rewrites unchanged values (Identify's enrichment, a save from the API or MCP that
+  sends what is stored) writes nothing, by the hook, so an active Contact or an unchanged save never
+  makes an open editor stale.
 - The resources: Automation, Rule, Email template, Contact, Segment, Broadcast; then every other
   resource the console edits with a form (Brand kit, Custom field, Webhook, Integration, Workspace
   settings).
