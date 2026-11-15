@@ -1,7 +1,8 @@
 // Package memberships owns the Membership of a User in a Workspace (ADR 0061, ADR 0102): the
 // lookup that turns a /w/{id} into the Workspace's scope, the Roles and the Permissions they
-// hold, the Owners of a Workspace with the one notice to them, and the changes of a Role,
-// removal and Leaving under the Owner invariant. It sits low in identity, above workspaces, so
+// hold, the Owners of a Workspace with the one notice to them, the creation of a Workspace with
+// its creator as Owner (CreateWorkspaceIn), and the changes of a Role, removal and Leaving under
+// the Owner invariant. It sits low in identity, above workspaces, so
 // every module can ask a Permission or tell the Owners something.
 //
 // The module takes the raw client: a User's Memberships span Workspaces (the lookup before any

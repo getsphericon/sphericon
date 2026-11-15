@@ -151,7 +151,7 @@ not exercised, and the server's own is `Module[*instancestates.Module](env)`. Th
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Workspace view's `Module[*workspaceview.UseCase](env)`
 (`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
-creation is `workspacesunchecked.CreateIn`'s, tested with an id generator that collides), the Sign-up's `Module[*signup.UseCase](env)` (`internal/usecase/signup`, which also makes a User
+creation is `workspaces.CreateIn`'s, tested with an id generator that collides), the Sign-up's `Module[*signup.UseCase](env)` (`internal/usecase/signup`, which also makes a User
 Verified with its first Workspace and an Owner from a shell), User deletion's `Module[*userdeletion.UseCase](env)`
 (`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
 deleting themselves at once; a test of the race builds it with `New` on a real database), the Workspace deletion cycle's

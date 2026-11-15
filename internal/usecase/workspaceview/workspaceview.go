@@ -112,7 +112,6 @@ type UseCase struct {
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
 	defaultSendCap  *suspension.DefaultSendCap
-	newPublicID     func() string
 	now             func() time.Time
 }
 
@@ -130,13 +129,13 @@ type Modules struct {
 }
 
 // New builds the use case over the bus whose transactions create and restore a Workspace and the
-// modules it reads and changes; newPublicID draws a Workspace id (workspaceid.New), and now is the
-// Instance clock a Two-factor requirement starts at and a deletion window is measured on.
-func New(bus *events.Bus, mods Modules, newPublicID func() string, now func() time.Time) *UseCase {
+// modules it reads and changes; now is the Instance clock a Two-factor requirement starts at and a
+// deletion window is measured on.
+func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, defaultSendCap: mods.DefaultSendCap,
-		newPublicID: newPublicID, now: now,
+		now: now,
 	}
 }
 

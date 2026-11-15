@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -117,7 +118,7 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 		o(acc, &cfg)
 	}
 	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
-	module := signup.New(bus, acc, links, testhelper.Passwords(), nil, cfg, signup.SignInConfig{}, time.Now)
+	module := signup.New(bus, acc, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false), cfg, signup.SignInConfig{}, time.Now)
 	return rig{db: client, queue: q, module: module, consents: consents, links: links}
 }
 

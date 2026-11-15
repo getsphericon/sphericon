@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/signup"
@@ -17,7 +18,7 @@ import (
 func TestVerifyEmailLandsOnlyOnAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	creation := signup.New(env.Bus, acc, nil, testhelper.Passwords(), nil, signup.SignUpConfig{}, signup.SignInConfig{}, time.Now)
+	creation := signup.New(env.Bus, acc, nil, testhelper.Passwords(), testhelper.Module[*suspension.DefaultSendCap](env), signup.SignUpConfig{}, signup.SignInConfig{}, time.Now)
 	u, err := acc.CreateUnverified(t.Context(), users.NewUser{Name: "Grace", Email: "grace@example.com", PasswordHash: "signed-up-hash"})
 	require.NoError(t, err)
 
