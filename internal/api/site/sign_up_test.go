@@ -262,6 +262,20 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	assert.Equal(t, "user", got[0].Target.Type)
 }
 
+// A User's first Workspace is created like any later one: its creation is in its own Audit log.
+func TestTheFirstWorkspaceCreationIsRecordedInItsAuditLog(t *testing.T) {
+	env := testhelper.Setup(t)
+	signUpAndVerify(t, env, "Grace Hopper", "grace@example.com", "grace-password-1")
+	first := firstWorkspaceID(t, env, "grace@example.com")
+
+	got := entriesNamed(t, env, "grace@example.com", first, events.ActionWorkspaceCreate)
+
+	require.Len(t, got, 1)
+	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, "Grace Hopper", got[0].Actor.Name.Value)
+	assert.Equal(t, "workspace", got[0].Target.Type)
+}
+
 // signUpWithPassword drives the Sign-up of an install with the gate off.
 func signUpWithPassword(t *testing.T, env *testhelper.TestEnv, name, email, password string) *siteapi.SiteAuthSignUpAccepted {
 	t.Helper()

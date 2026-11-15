@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -29,9 +30,10 @@ const (
 // verified is what makes a User Verified, shared by VerifyEmail, SignUpVerified and the
 // provider sign-in: write stores the User's verified state (and whatever else its step writes,
 // on the same publisher); then, when proven (the step stamped email_proven_at from empty), the
-// domain-join step runs; then the User's first Workspace is created and `user.email_verify`
-// recorded in its Audit log, all in one transaction. landing is the Workspace the User goes to
-// next: the one joined by domain, else the first.
+// domain-join step runs; then the User's first Workspace is created, with `workspace.create`
+// (memberships.CreateWorkspaceIn), and `user.email_verify` recorded in its Audit log, all in one
+// transaction. landing is the Workspace the User goes to next: the one joined by domain, else the
+// first.
 func (u *UseCase) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
 	var verified *ent.User
 	var landing *ent.Workspace
@@ -46,7 +48,7 @@ func (u *UseCase) verified(ctx context.Context, proven bool, write func(tx *ent.
 				return err
 			}
 		}
-		first, err := u.firstWorkspaceIn(ctx, tx, usr.ID)
+		first, err := memberships.CreateWorkspaceIn(ctx, tx, pub, u.defaultSendCap, usr, users.FirstWorkspaceName)
 		if err != nil {
 			return err
 		}
@@ -92,7 +94,7 @@ type PasswordReset struct {
 // sets the password hash to *in.PasswordHash (nil keeps the one stored at Sign-up), bumps the
 // session epoch (ending every session issued before, as a password change does) and creates the
 // User's first Workspace, named users.FirstWorkspaceName, with the User as owner. It records
-// `user.email_verify` in that Workspace's Audit log and returns the User. The address was just
+// `workspace.create` and `user.email_verify` in that Workspace's Audit log and returns the User. The address was just
 // proven, so it is a domain-join step (ADR 0051): a verified Join domain equal to its domain,
 // with the switch on, makes the User a `member` of that Workspace before the first Workspace is
 // created. The Sign-up is complete, so it publishes events.UserSignedUp, which welcomes the

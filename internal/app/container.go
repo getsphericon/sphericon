@@ -108,7 +108,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
-	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -919,7 +918,7 @@ var contentPackage = do.Package(
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
 			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i),
-		}, workspaceid.New, do.MustInvoke[Clock](i)), nil
+		}, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
 		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil

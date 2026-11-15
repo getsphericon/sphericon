@@ -1,34 +1,17 @@
-// Package membershipsunchecked holds the memberships module's unchecked operations (ADR 0110): the
-// creator's Owner Membership, written only with its new Workspace once the creator is known to be
-// Verified, and the leave of the only Owner of a Workspace in its deletion window, which only User
-// deletion makes after it has refused a User who solely owns a live Workspace (ADR 0050). Their
-// checks are the use cases' (internal/usecase/workspaceview, internal/usecase/signup and
-// internal/usecase/userdeletion); only a use case may import this package. The memberships module
-// does not import it.
+// Package membershipsunchecked holds the memberships module's unchecked operation (ADR 0110): the
+// leave of the only Owner of a Workspace in its deletion window, which only User deletion makes
+// after it has refused a User who solely owns a live Workspace (ADR 0050). Its check is the use
+// case's (internal/usecase/userdeletion); only a use case may import this package. The memberships
+// module does not import it.
 package membershipsunchecked
 
 import (
 	"context"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
-
-// AddCreatorIn writes, in tx, the Owner Membership of the User who creates the Workspace
-// workspaceID (source creator, ADR 0043), on the transaction that creates the Workspace
-// (workspacesunchecked.CreateIn): the use cases internal/usecase/workspaceview and
-// internal/usecase/signup, which refuse an Unverified User first (ADR 0030).
-func AddCreatorIn(ctx context.Context, tx *ent.Client, userID, workspaceID int64) error {
-	_, err := tx.Membership.Create().
-		SetUserID(userID).
-		SetWorkspaceID(workspaceID).
-		SetRole(membership.RoleOwner).
-		SetSource(membership.SourceCreator).
-		Save(ctx)
-	return err
-}
 
 // LeaveDoomedWorkspaceIn removes User userID's own Membership like memberships.LeaveIn but lets the
 // only Owner go too, for User deletion of a Workspace that is in its deletion window (ADR 0050):

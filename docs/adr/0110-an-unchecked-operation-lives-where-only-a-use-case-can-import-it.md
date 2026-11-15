@@ -124,6 +124,10 @@ Two facts about easement 0.5.1 bear on the fix:
     `memberships.LeaveDoomedWorkspaceIn`, and the removal of the factor and of the Passkeys in a
     Second factor reset. (Amended by #1355: the reset is an operation of `secondfactors`, so its
     two removals leave this list, and `secondfactorsunchecked` and `passkeysunchecked` go.)
+    (Amended by #1359: the creation of a Workspace with its Owner is an operation of `memberships`,
+    `memberships.CreateWorkspaceIn`, which refuses an Unverified creator itself, and
+    `workspaces.CreateIn` an ordinary function it calls, so both leave this list and `AddCreatorIn`
+    goes.)
 - **What only the wiring may use keeps a short `forbid_symbol`**, written once with its own
   `because`: `ent.Client`, the ent hooks and guards, the upgrade boundaries and river's workers.
   Its reason is who builds the program, not a check.

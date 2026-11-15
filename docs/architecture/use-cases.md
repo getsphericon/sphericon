@@ -54,11 +54,12 @@ Workspace row on through
 `TombstoneIn` (deleting one checks only its typed name, so it is `workspaces.Module.Delete`,
 ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with every
 job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; and the
-Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace, writing it through
-`workspacesunchecked.CreateIn` and its Owner Membership through `membershipsunchecked.AddCreatorIn` with the Send cap it
-starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146), and moves a deleted one back through
+Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace for a Verified User
+through `memberships.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
+starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146) and its `workspace.create`
+Audit entry, and moves a deleted one back through
 `workspacesunchecked.RestoreIn`; and the Sign-up
-(`internal/usecase/signup`), which composes the same two modules for the User's first Workspace in
+(`internal/usecase/signup`), which creates the User's first Workspace the same way in
 every step that makes a User Verified, each on its own transaction: the verification and reset
 links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
 completion of a pending sign-up, calling the `users` functions for the User's part
@@ -106,7 +107,7 @@ applied, ADR 0145), User deletion's removals
 deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
 Removal writes), the restore and the tombstone of a Workspace's deletion cycle
 (`workspacesunchecked.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
-0110, so no owner's removal of them has a name), the creation of a Workspace with its creator's Membership (`workspacesunchecked.CreateIn`, `membershipsunchecked.AddCreatorIn`) and each owner's step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
+0110, so no owner's removal of them has a name) and each owner's step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
 the bus, `suppressionsunchecked.EraseContact` and the others
 `internal/usecase/contacterasure`
 sequences, with the Contact row last, `contactsunchecked.DeleteIn`; the purge of its queued jobs is a method of the bus's publisher). A new fence for any other caller has the same form: a

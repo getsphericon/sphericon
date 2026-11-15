@@ -3,12 +3,9 @@ package workspaceview
 import (
 	"context"
 
-	"github.com/getsphericon/sphericon/internal/kernel/publicid"
-
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships/membershipsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -21,48 +18,25 @@ type CreateInput struct {
 }
 
 // Create creates a Workspace named in.Name for a Verified User, who becomes its Owner (ADR 0043),
-// and answers its View for them. Names are free text and need not be unique. The Workspace, the
-// Owner Membership with the Send cap it starts with (ADR 0067) and the `workspace.create` Audit
-// entry are written atomically: a Workspace is reached through Memberships, so one without its
-// owner row would be inaccessible. An Unverified User gets users.ErrEmailNotVerified. The name is
-// held to the name rule by the Workspace's own write (workspacesunchecked.CreateIn). A User's first
-// Workspace, created by the step that makes it Verified, is the Sign-up's (internal/usecase/signup),
-// which composes the same two modules on that step's transaction.
+// and answers its View for them. Names are free text and need not be unique. The Workspace, its
+// Owner Membership, the Send cap it starts with and its `workspace.create` Audit entry are
+// memberships' (memberships.CreateWorkspaceIn); the use case refuses an Unverified User first
+// (users.ErrEmailNotVerified) and answers the View. A User's first Workspace, created by the step
+// that makes it Verified, is the Sign-up's (internal/usecase/signup).
 func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
-	name := in.Name
 	var ws *ent.Workspace
 	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		usr, err := users.VerifiedIn(ctx, tx, in.UserID)
 		if err != nil {
 			return err
 		}
-		if ws, err = u.createIn(ctx, tx, in.UserID, name); err != nil {
-			return err
-		}
-		actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(usr.ID), Name: usr.Name}
-		return events.RecordAudit(ctx, pub, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil))
+		ws, err = memberships.CreateWorkspaceIn(ctx, tx, pub, u.defaultSendCap, usr, in.Name)
+		return err
 	})
 	if err != nil {
 		return View{}, err
 	}
 	return u.memberView(ctx, in.UserID, ws.PublicID, events.Actor{}, in.StrongSession)
-}
-
-// createIn creates the Workspace and its owner Membership on tx, with a fresh Workspace id and
-// the Send cap a new Workspace starts with.
-func (u *UseCase) createIn(ctx context.Context, tx *ent.Client, userID int64, name string) (*ent.Workspace, error) {
-	sendCap, err := u.defaultSendCap.StartingIn(ctx, tx)
-	if err != nil {
-		return nil, err
-	}
-	ws, err := workspacesunchecked.CreateIn(ctx, tx, name, u.newPublicID, sendCap)
-	if err != nil {
-		return nil, err
-	}
-	if err := membershipsunchecked.AddCreatorIn(ctx, tx, userID, ws.ID); err != nil {
-		return nil, err
-	}
-	return ws, nil
 }
 
 // memberView is the View of the live Workspace publicID for its member userID, whose Membership
