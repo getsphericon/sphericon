@@ -4,6 +4,9 @@ status: accepted
 
 # Marketing email is always HTML; its text part is derived from the final HTML
 
+> **Amended by [[0156-marketing-email-is-armed-only-with-a-postal-address]]:** marketing email is
+> armed only with a postal address, so the footer never prints an empty one.
+
 A Broadcast or Automation email is always Message content, HTML authored in the editor
 ([[0040-email-content-is-html-authored-in-an-embedded-editor]]). A "plain" letter is that same
 content written without design, not a second format. The `text/plain` part of a send is derived

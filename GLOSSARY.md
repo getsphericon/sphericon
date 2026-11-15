@@ -1144,10 +1144,17 @@ _Avoid_: Reputation (Gmail no longer reports it), Gmail stats
 
 **Content check**:
 A fixed rule an email is checked against before it is sent (clipped size, images without text, a
-link or image off `https`, a URL shortener, an image without `alt`, a merge tag that renders empty),
+link or image off `https`, a URL shortener, an image without `alt`, a merge tag that renders empty,
+the Workspace's missing **Postal address**),
 shown as a warning in the editor, at Schedule and Publish and when a Template is saved; it never
 blocks and is never a score.
 _Avoid_: Spam score, spam check, lint
+
+**Postal address**:
+The Workspace's physical mailing address (a PO box or a virtual office will do) that the footer of every
+marketing email carries. Marketing email is not armed without one, and while some is armed it can be
+changed but not cleared. Only a person sets it.
+_Avoid_: Physical address (unqualified), company address, sender address (that is the From)
 
 **Complaint rate**:
 The reputation-monitoring ratio `complaints / delivered`, per (Workspace, **Sending domain**), over a
