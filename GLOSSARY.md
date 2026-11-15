@@ -108,6 +108,13 @@ Destinations of Suppressions and Unsubscribes), so one address is one row whatev
 in, and it matches the same address wherever it is stored.
 _Avoid_: Case folding, normalization (unqualified)
 
+**Link identity token**:
+A signed token added to a link of a tracked message, when the Workspace has turned it on, for a
+destination on one of the Workspace's listed sites: the tracker there reads it, removes it from the
+address, and binds the anonymous Visitor to the recipient's Contact. It never moves a Visitor that
+belongs to another Contact, carries no personal data, and is ignored 7 days after the message was sent.
+_Avoid_: Magic link (that signs a person in), auto-login, click identity
+
 **Tracker consent**:
 Whether the tracker may store and send what it keeps in a visitor's browser: `granted`, `pending`
 (waiting for the site's consent banner) or `denied`. Until it is granted the tracker keeps no
