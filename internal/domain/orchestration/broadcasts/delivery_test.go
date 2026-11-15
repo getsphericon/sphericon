@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -65,7 +66,7 @@ func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Op
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outboundmessages.New(env.Bus, env.Holds, res, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
 	return &delivery{
 		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),

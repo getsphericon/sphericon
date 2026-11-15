@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -33,7 +34,7 @@ func TestOwnerResetsAMembersSecondFactorAndEndsTheirSessions(t *testing.T) {
 	assert.Empty(t, reissued(t, res), "the acting session belongs to someone else: nothing to reissue")
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, env, jane), "the acting session continues")
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, sam), "the member's sessions end")
-	st, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.False(t, st.Enabled)
 	assert.Zero(t, st.RecoveryCodesRemaining)
@@ -59,7 +60,7 @@ func TestMemberCannotResetASecondFactor(t *testing.T) {
 	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
 
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
-	st, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.True(t, st.Enabled)
 }

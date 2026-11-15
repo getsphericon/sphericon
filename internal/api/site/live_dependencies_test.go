@@ -15,6 +15,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
@@ -158,12 +160,12 @@ func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
 		SetSteps(`[{"type":"wait","seconds":"soon"}]`).Exec(ctx) // JSON, as the database requires, but no Step
 	require.NoError(t, err)
 
-	err = integrationdeletion.New(env.Bus, env.RemovalCheck, time.Now).Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	err = integrationdeletion.New(env.Bus, testhelper.Module[*removalcheck.Module](env), time.Now).Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
 
 	require.Error(t, err, "an unreadable definition cannot prove the Integration unused")
 	var used *liveuse.Error
 	assert.NotErrorAs(t, err, &used, "propagate the read failure, rather than claiming known use")
-	kept, err := env.Integrations.Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
+	kept, err := testhelper.Module[*integrations.Module](env).Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
 	require.NoError(t, err)
 	assert.Nil(t, kept.DiscardedAt)
 }
@@ -208,9 +210,9 @@ func TestDraftOnlyAndStoppedSendingDoNotPreventIntegrationRemoval(t *testing.T) 
 			s := env.DB.Scoped(fixtures.MeridianID)
 			ctx := t.Context()
 
-			require.NoError(t, integrationdeletion.New(env.Bus, env.RemovalCheck, time.Now).Delete(ctx, s, tc.integration))
+			require.NoError(t, integrationdeletion.New(env.Bus, testhelper.Module[*removalcheck.Module](env), time.Now).Delete(ctx, s, tc.integration))
 
-			deleted, err := env.Integrations.Get(ctx, s, tc.integration)
+			deleted, err := testhelper.Module[*integrations.Module](env).Get(ctx, s, tc.integration)
 			require.NoError(t, err)
 			assert.NotNil(t, deleted.DiscardedAt)
 		})

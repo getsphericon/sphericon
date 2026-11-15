@@ -40,7 +40,7 @@ func statusOf(t *testing.T, env *testhelper.TestEnv, runID int64) automationrun.
 func handEvent(t *testing.T, env *testhelper.TestEnv, contactID int64, action string, at time.Time) {
 	t.Helper()
 	in := automations.OnEventInput{ContactID: contactID, Event: automations.Event{Action: action, OccurredAt: at}}
-	require.NoError(t, env.StepExecution.OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
 }
 
 // runsOf is the Contact's Enrollments in the Automation.
@@ -81,7 +81,7 @@ func TestTheGoalEventEndsTheEnrollmentAsGoalReached(t *testing.T) {
 	handEvent(t, env, contactID, recoveryGoal, time.Now())
 	ended, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
-	require.NoError(t, env.StepExecution.Step(ctx, s, runID, ended.CurrentStep))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, ended.CurrentStep))
 
 	status := statusOf(t, env, runID)
 	assert.Equal(t, automationrun.StatusGoalReached, status)
@@ -286,7 +286,7 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	earliest := time.Now().Add(-time.Microsecond) // began_at is kept to the microsecond
 
-	enrolled, err := env.StepExecution.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
+	enrolled, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{
 		AutomationID: fixtures.AutomationPaymentRecoveryID, ContactID: fixtures.ContactPaidBeforeEnrolledID, SourceID: "evt-not-stored",
 	})
 	require.NoError(t, err)

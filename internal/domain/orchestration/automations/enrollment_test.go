@@ -35,7 +35,7 @@ func enrollable(t *testing.T, s *ent.Scoped, nth int) *ent.Contact {
 // the Enrollment begins now and no Event began it. It reports whether one was made.
 func enrollNow(t *testing.T, env *testhelper.TestEnv, s *ent.Scoped, automationID, contactID int64) (bool, error) {
 	t.Helper()
-	return env.StepExecution.EnrollOnRule(context.Background(), s, automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID})
+	return testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), s, automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID})
 }
 
 // runOf is the Contact's one Enrollment in the Automation.
@@ -126,8 +126,8 @@ func TestAStepOfAnExitedEnrollmentLeavesItExited(t *testing.T) {
 	_, err = automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, waiting.ContactID, time.Now())
 	require.NoError(t, err)
 
-	require.NoError(t, env.StepExecution.Step(ctx, s, runID, waiting.CurrentStep))
-	require.NoError(t, env.StepExecution.Step(ctx, s, runID, waiting.CurrentStep+1))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, waiting.CurrentStep))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, waiting.CurrentStep+1))
 
 	run, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestAStepJobForAnotherStepLeavesTheEnrollmentWhereItStands(t *testing.T) {
 	before, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
 
-	require.NoError(t, env.StepExecution.Step(ctx, s, runID, before.CurrentStep+4))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, before.CurrentStep+4))
 
 	after, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)

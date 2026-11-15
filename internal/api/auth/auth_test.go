@@ -17,6 +17,7 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -61,7 +62,7 @@ func TestAuthContextsRoundTrip(t *testing.T) {
 
 func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: testhelper.Module[*admission.Module](env)})
 
 	ctx, err := h.Authenticate(context.Background(), externalapi.BearerAuth{
 		Token: credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret),
@@ -83,7 +84,7 @@ func TestBearerAuthResolvesAValidTokenToItsWorkspaceAndScopes(t *testing.T) {
 
 func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: testhelper.Module[*admission.Module](env)})
 	ctx := context.Background()
 	valid := credentials.TokenValue(fixtures.AnchorTokenPrefix, fixtures.AnchorTokenSecret)
 
@@ -122,7 +123,7 @@ func TestBearerAuthRejectsEveryUnusableToken(t *testing.T) {
 // unauthorized credential.
 func TestBearerAuthLetsATokenCallOnlyWhatItsScopesCover(t *testing.T) {
 	env := testhelper.Setup(t)
-	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: env.Admission})
+	h := auth.NewExternalSecurityHandler(auth.ExternalSecurityDeps{Clock: time.Now, Ent: env.DB, Bus: env.Bus, Admission: testhelper.Module[*admission.Module](env)})
 	reader := externalapi.BearerAuth{Token: env.ScopedBearer(t, apitokens.ScopeContactsRead)}
 
 	ctx, err := h.HandleBearerAuth(t.Context(), externalapi.ContactsListOperation, reader)

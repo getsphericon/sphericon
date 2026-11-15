@@ -57,7 +57,7 @@ func TestAnEditWithoutThePublishScopeChangesNothingThatSends(t *testing.T) {
 	ctx := t.Context()
 	editGreeting(t, env.ExternalScoped(t, apitokens.ScopeAutomationsRead, apitokens.ScopeAutomationsWrite))
 
-	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
 	assert.Empty(t, enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID), "the draft's Trigger enrolls nobody")
 	runID := enrollVia(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactAliceID)
 	run, err := env.DB.AutomationRun.Get(ctx, runID)
@@ -84,7 +84,7 @@ func TestAfterPublishTheNextEnrollmentFollowsTheNewVersion(t *testing.T) {
 	_, err := publisher.AutomationsPublish(ctx, &externalapi.RevisionInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(externalapi.EntityId(fixtures.AutomationJobsGreetingID))))}, externalapi.AutomationsPublishParams{ID: externalapi.EntityId(fixtures.AutomationJobsGreetingID)})
 	require.NoError(t, err)
 
-	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactBobID, Event: automations.Event{Action: "job_hijacked", OccurredAt: time.Now()}}))
 	next := enrollmentsOf(t, env, fixtures.AutomationJobsGreetingID, fixtures.ContactBobID)
 	require.Len(t, next, 1, "the published Trigger enrolls")
 

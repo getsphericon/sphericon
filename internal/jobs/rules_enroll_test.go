@@ -60,7 +60,7 @@ func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T)
 		Deactivate(ctx, s, fixtures.AutomationJobsGreetingID)
 	require.NoError(t, err)
 
-	made, err := env.StepExecution.EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{AutomationID: fixtures.AutomationJobsGreetingID, ContactID: fixtures.ContactBobID, SourceID: "evt-deactivated"})
+	made, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(ctx, s, automations.EnrollOnRuleInput{AutomationID: fixtures.AutomationJobsGreetingID, ContactID: fixtures.ContactBobID, SourceID: "evt-deactivated"})
 
 	require.ErrorIs(t, err, automations.ErrInactive)
 	assert.False(t, made)

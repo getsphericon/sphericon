@@ -20,7 +20,7 @@ func TestOfReadsTheWorkspaceWithItsHolds(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, time.Now().Add(time.Hour))
 
-	sum, err := env.WorkspaceView.Of(t.Context(), env.DB.Scoped(fixtures.AcmeID))
+	sum, err := testhelper.Module[*workspaceview.UseCase](env).Of(t.Context(), env.DB.Scoped(fixtures.AcmeID))
 
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.AcmeID), sum.Workspace.ID)
@@ -33,7 +33,7 @@ func TestOfReadsTheWorkspaceWithItsHolds(t *testing.T) {
 func TestOfMembersSummarizesEveryWorkspaceOfTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	views, err := env.WorkspaceView.OfMembers(t.Context(), fixtures.OwnerJohnID, false)
+	views, err := testhelper.Module[*workspaceview.UseCase](env).OfMembers(t.Context(), fixtures.OwnerJohnID, false)
 
 	require.NoError(t, err)
 	require.Len(t, views, 1, "John is a member of Acme alone")
@@ -61,7 +61,7 @@ func graceOf(t *testing.T, views []workspaceview.View, workspaceID int64) *time.
 func TestOfMembersCarriesTheGraceUnderTheRequirement(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	views, err := env.WorkspaceView.OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, false)
+	views, err := testhelper.Module[*workspaceview.UseCase](env).OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, false)
 
 	require.NoError(t, err)
 	umbrella := graceOf(t, views, fixtures.UmbrellaID)
@@ -75,7 +75,7 @@ func TestOfMembersCarriesTheGraceUnderTheRequirement(t *testing.T) {
 func TestOfMembersGivesAStrongSessionNoGrace(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	views, err := env.WorkspaceView.OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, true)
+	views, err := testhelper.Module[*workspaceview.UseCase](env).OfMembers(t.Context(), fixtures.UmbrellaOwnerRitaID, true)
 
 	require.NoError(t, err)
 	assert.Nil(t, graceOf(t, views, fixtures.UmbrellaID))
@@ -91,7 +91,7 @@ func TestSwitchingTheRequirementOnStartsTheCallersGrace(t *testing.T) {
 	require.NoError(t, err)
 
 	revision := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID).Revision
-	v, err := env.WorkspaceView.SetSecondFactorRequirement(t.Context(), s, workspaceview.Caller{Membership: m},
+	v, err := testhelper.Module[*workspaceview.UseCase](env).SetSecondFactorRequirement(t.Context(), s, workspaceview.Caller{Membership: m},
 		workspaceview.SetSecondFactorRequirementInput{Revision: &revision, Required: true})
 
 	require.NoError(t, err)

@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -219,7 +220,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := callbackinterpretation.New(env.DB, env.Bus, env.Integrations, time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
+	err := callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))

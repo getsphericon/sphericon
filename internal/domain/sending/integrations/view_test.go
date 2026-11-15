@@ -19,7 +19,7 @@ import (
 func TestViewShowsTheIntegrationWithoutASecret(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	v, err := env.Integrations.View(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.IntegrationAcmeSesID)
+	v, err := testhelper.Module[*integrations.Module](env).View(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.IntegrationAcmeSesID)
 
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.IntegrationAcmeSesID), v.Row.ID)
@@ -36,7 +36,7 @@ func TestViewShowsTheIntegrationWithoutASecret(t *testing.T) {
 func TestViewOfAnotherWorkspacesIntegrationIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.Integrations.View(t.Context(), env.DB.Scoped(fixtures.GlobexID), fixtures.IntegrationAcmeSesID)
+	_, err := testhelper.Module[*integrations.Module](env).View(t.Context(), env.DB.Scoped(fixtures.GlobexID), fixtures.IntegrationAcmeSesID)
 
 	require.ErrorIs(t, err, integrations.ErrNotFound)
 }
@@ -46,9 +46,9 @@ func TestListAndAllShowEveryIntegrationAsItsView(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	all, err := env.Integrations.All(t.Context(), s)
+	all, err := testhelper.Module[*integrations.Module](env).All(t.Context(), s)
 	require.NoError(t, err)
-	page, err := env.Integrations.List(t.Context(), s, pagination.Params{Page: 1, PageSize: 100})
+	page, err := testhelper.Module[*integrations.Module](env).List(t.Context(), s, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 
 	byID := lo.KeyBy(all, func(v integrations.View) int64 { return v.Row.ID })

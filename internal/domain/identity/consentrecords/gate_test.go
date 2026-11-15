@@ -16,11 +16,11 @@ import (
 func TestAcceptingThePendingAcceptancesAnswersWithNothingLeftPending(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	before, err := env.ConsentRecords.Pending(t.Context(), fixtures.MemberMaryID)
+	before, err := testhelper.Module[*consentrecords.Module](env).Pending(t.Context(), fixtures.MemberMaryID)
 	require.NoError(t, err)
 	require.Len(t, before, 1)
 
-	left, err := env.ConsentRecords.AcceptPending(t.Context(), fixtures.MemberMaryID,
+	left, err := testhelper.Module[*consentrecords.Module](env).AcceptPending(t.Context(), fixtures.MemberMaryID,
 		[]consentrecords.ReAcceptance{{Key: fixtures.ServiceTermsKey, Version: fixtures.ServiceTermsCurrentLabel}})
 
 	require.NoError(t, err)

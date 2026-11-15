@@ -18,7 +18,7 @@ import (
 func TestCreateRefusesASecondTestInbox(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.Integrations.Create(t.Context(), env.DB.Scoped(fixtures.GlobexID), integrations.CreateInput{
+	_, err := testhelper.Module[*integrations.Module](env).Create(t.Context(), env.DB.Scoped(fixtures.GlobexID), integrations.CreateInput{
 		Name:   "Another inbox",
 		Config: integrations.ConfigInput{Inbox: &integrations.InboxConfig{}},
 	})
@@ -32,7 +32,7 @@ func TestCreateRefusesADefaultSavedMeanwhile(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.Bus.Use(defaultSavedJustBefore())
 
-	_, err := env.Integrations.Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), integrations.CreateInput{
+	_, err := testhelper.Module[*integrations.Module](env).Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), integrations.CreateInput{
 		Name:      "New default",
 		IsDefault: true,
 		Config: integrations.ConfigInput{SMTP: &integrations.SMTPConfig{

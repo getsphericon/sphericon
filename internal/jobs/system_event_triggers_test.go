@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -59,7 +60,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	onlyEnvelope(t, env, systemevent.ContactTagged)
 	triggers := triggersOn(t, env, systemevent.ContactTagged)
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Module[*automations.StepExecution](env)).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnContactTaggedID), automationrun.ContactID(fixtures.ContactLiamID)).
@@ -115,7 +116,7 @@ func (r *triggerRouter) deliver(t *testing.T) []string {
 	triggers := queuedArgs[jobs.EvaluateTriggerArgs](t, r.env, jobs.EvaluateTriggerArgs{}.Kind())
 	actions := make([]string, 0, len(triggers)-r.evaluated)
 	for _, args := range triggers[r.evaluated:] {
-		require.NoError(t, jobs.NewEvaluateTriggerWorker(r.env.DB, r.env.StepExecution).Work(t.Context(), job(args)))
+		require.NoError(t, jobs.NewEvaluateTriggerWorker(r.env.DB, testhelper.Module[*automations.StepExecution](r.env)).Work(t.Context(), job(args)))
 		actions = append(actions, args.Action)
 	}
 	r.evaluated = len(triggers)

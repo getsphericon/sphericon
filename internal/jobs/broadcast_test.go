@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -330,7 +331,7 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
 func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func() time.Time, opts ...outboundmessages.Option) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, env.Holds, resolver, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolver, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
 }
 
 // A Send delivered by the real workers runs the production sequence: the module plans, paces and settles

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -55,7 +56,7 @@ type profileRig struct {
 func newProfileRig(t *testing.T, prove users.Prover) profileRig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now, users.WithProver(prove))
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), time.Now, users.WithProver(prove))
 	john, err := acc.User(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	return profileRig{env: env, acc: acc, john: john}

@@ -35,7 +35,7 @@ func samCode(t *testing.T, c *testhelper.Clock) string {
 // verify is a second step under the User's current challenge binding.
 func verify(t *testing.T, env *testhelper.TestEnv, userID int64, code string) (secondfactors.Method, error) {
 	t.Helper()
-	return env.SecondFactor.Verify(t.Context(), pending(userID, binding(t, env, userID)), code)
+	return testhelper.Module[*secondfactors.Module](env).Verify(t.Context(), pending(userID, binding(t, env, userID)), code)
 }
 
 // pending is the sign-in of the User waiting for its second step under binding.
@@ -48,7 +48,7 @@ func binding(t *testing.T, env *testhelper.TestEnv, userID int64) string {
 	t.Helper()
 	u, err := env.DB.User.Get(t.Context(), userID)
 	require.NoError(t, err)
-	b, err := env.SecondFactor.ChallengeBinding(t.Context(), u)
+	b, err := testhelper.Module[*secondfactors.Module](env).ChallengeBinding(t.Context(), u)
 	if errors.Is(err, secondfactors.ErrNotActive) {
 		return ""
 	}
@@ -58,7 +58,7 @@ func binding(t *testing.T, env *testhelper.TestEnv, userID int64) string {
 
 func TestTheFixtureUserHasAnActiveSecondFactor(t *testing.T) {
 	env, _ := setup(t)
-	st, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.Equal(t, secondfactors.Status{Enabled: true, RecoveryCodesRemaining: 1}, st)
 }
@@ -98,7 +98,7 @@ func TestVerifyAcceptsEachRecoveryCodeOnceAndRecordsItsUse(t *testing.T) {
 	_, err = verify(t, env, fixtures.SecondFactorSamID, fixtures.SecondFactorSamRecoveryCode)
 	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "a code works once")
 
-	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.Equal(t, 0, st.RecoveryCodesRemaining)
 
@@ -121,9 +121,9 @@ func TestVerifyRefusesABindingAnotherSecondStepMoved(t *testing.T) {
 	ctx := t.Context()
 	challenged := binding(t, env, fixtures.SecondFactorSamID)
 
-	_, err := env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), fixtures.SecondFactorSamRecoveryCode)
+	_, err := testhelper.Module[*secondfactors.Module](env).Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), fixtures.SecondFactorSamRecoveryCode)
 	require.NoError(t, err)
-	_, err = env.SecondFactor.Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), samCode(t, c))
+	_, err = testhelper.Module[*secondfactors.Module](env).Verify(ctx, pending(fixtures.SecondFactorSamID, challenged), samCode(t, c))
 	require.ErrorIs(t, err, secondfactors.ErrBindingMoved)
 
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
@@ -144,17 +144,17 @@ func TestTheUsersOwnStepsAreRefusedWithoutTheirPassword(t *testing.T) {
 	sam := env.DB.User.GetX(t.Context(), fixtures.SecondFactorSamID)
 	wrong := users.IdentityProof{Password: "wrong"}
 
-	_, start := env.SecondFactor.StartEnrollment(t.Context(), john, wrong)
-	_, regenerate := env.SecondFactor.RegenerateRecoveryCodes(t.Context(), sam, wrong)
-	_, disable := env.SecondFactor.Disable(t.Context(), sam, wrong, samCode(t, c))
+	_, start := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), john, wrong)
+	_, regenerate := testhelper.Module[*secondfactors.Module](env).RegenerateRecoveryCodes(t.Context(), sam, wrong)
+	_, disable := testhelper.Module[*secondfactors.Module](env).Disable(t.Context(), sam, wrong, samCode(t, c))
 
 	require.ErrorIs(t, start, login.ErrPasswordIncorrect)
 	require.ErrorIs(t, regenerate, login.ErrPasswordIncorrect)
 	require.ErrorIs(t, disable, login.ErrPasswordIncorrect)
-	johns, err := env.SecondFactor.Status(t.Context(), fixtures.OwnerJohnID)
+	johns, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	assert.False(t, johns.Pending, "nothing was enrolled")
-	sams, err := env.SecondFactor.Status(t.Context(), fixtures.SecondFactorSamID)
+	sams, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.True(t, sams.Enabled, "nothing was disabled")
 	assert.Equal(t, sam.SessionEpoch, env.DB.User.GetX(t.Context(), fixtures.SecondFactorSamID).SessionEpoch)
@@ -165,8 +165,8 @@ func TestAUserWithNoPasswordEnrollsOnlyWithAFreshSessionProof(t *testing.T) {
 	env, c := setup(t)
 	pia := env.DB.User.GetX(t.Context(), fixtures.ProviderOnlyPiaID)
 
-	_, stale := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{})
-	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: c.Now()})
+	_, stale := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), pia, users.IdentityProof{})
+	enrollment, err := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: c.Now()})
 
 	require.ErrorIs(t, stale, users.ErrIdentityProofRequired)
 	require.NoError(t, err)

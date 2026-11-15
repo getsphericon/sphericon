@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/privaterelayrange"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -18,7 +19,7 @@ import (
 // fetch fails the job (river retries it) and leaves the stored ranges as they were (ADR 0053).
 func TestRefreshPrivateRelayJobReplacesTheRangesAndKeepsThemOnFailure(t *testing.T) {
 	env := testhelper.Setup(t)
-	w := jobs.NewRefreshPrivateRelayWorker(env.Machine)
+	w := jobs.NewRefreshPrivateRelayWorker(testhelper.Module[*privaterelayranges.Detector](env))
 	job := &river.Job[jobs.RefreshPrivateRelayArgs]{JobRow: &rivertype.JobRow{}}
 	stored := func() []string {
 		t.Helper()

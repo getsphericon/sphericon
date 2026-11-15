@@ -19,7 +19,7 @@ import (
 func TestCreateAnswersTheWorkspaceItsOwnerReads(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	v, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: " Fresh "})
+	v, err := testhelper.Module[*workspaceview.UseCase](env).Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: " Fresh "})
 	require.NoError(t, err)
 
 	assert.Regexp(t, workspaceid.Pattern, v.Summary.Workspace.PublicID)
@@ -32,7 +32,7 @@ func TestCreateAnswersTheWorkspaceItsOwnerReads(t *testing.T) {
 func TestCreateRefusesAnEmptyName(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "  "})
+	_, err := testhelper.Module[*workspaceview.UseCase](env).Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "  "})
 
 	require.ErrorIs(t, err, validation.ErrNameBlank)
 }
@@ -40,7 +40,7 @@ func TestCreateRefusesAnEmptyName(t *testing.T) {
 func TestCreateRefusesAnUnverifiedUser(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.FreshUnverifiedUserID, Name: "Fresh"})
+	_, err := testhelper.Module[*workspaceview.UseCase](env).Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.FreshUnverifiedUserID, Name: "Fresh"})
 
 	require.ErrorIs(t, err, users.ErrEmailNotVerified)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -20,7 +21,7 @@ func requests(env *testhelper.TestEnv) *users.Requests {
 	attempts := throttle.NewAttempts(env.DB, time.Now,
 		throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(1)),
 		throttle.WithRule(throttle.KindEmailChange, throttle.ResetRule(1)))
-	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now, users.WithProver(proveByHash{})), attempts)
+	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), time.Now, users.WithProver(proveByHash{})), attempts)
 }
 
 // published are the account's events the test's requests published, oldest first.

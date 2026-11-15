@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -177,7 +178,7 @@ func TestAnSMSStepsLinkClickRecordsTheAutomationAndTriggersAnother(t *testing.T)
 	follow(t, env, paths[0], browserUA)
 	triggers := consume()
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Module[*automations.StepExecution](env)).Work(ctx, job(triggers[0])))
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnSmsClickedID), automationrun.ContactID(fixtures.ContactTexterConfirmedID)).Only(ctx)
 	require.NoError(t, err)

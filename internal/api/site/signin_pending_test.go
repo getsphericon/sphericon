@@ -61,7 +61,7 @@ func readPending(t *testing.T, b *testhelper.RedirectBrowser, token string) test
 // providerScreenAnswers is the User's current answers, each as its key, decision and source.
 func providerScreenAnswers(t *testing.T, env *testhelper.TestEnv, email string) []string {
 	t.Helper()
-	records, err := env.ConsentRecords.Current(t.Context(), userByEmail(t, env, email).ID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), userByEmail(t, env, email).ID)
 	require.NoError(t, err)
 	return lo.Map(records, func(r consentrecords.Record, _ int) string {
 		return r.Key + ": " + string(r.Decision) + " (" + string(r.Source) + ")"

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -23,7 +24,7 @@ import (
 func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outboundmessages.Result, error) {
 	m := outboundmessages.New(
 		env.Bus,
-		env.Holds,
+		testhelper.Module[*holds.Holds](env),
 		via,
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,
@@ -89,7 +90,7 @@ func (spentBudget) TakeTestSend(context.Context, int64, int64) (ratelimit.Refusa
 // the Test send is not made.
 func TestTestSendFromTheSystemSenderPastItsCapIsRefusedWithAWait(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider},
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider},
 		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
 		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
@@ -111,7 +112,7 @@ func TestTestSendFromTheSystemSenderPastItsCapIsRefusedWithAWait(t *testing.T) {
 // sender: the Workspace's Sending-domain gate holds it.
 func TestTestSendOfATokenNeverGoesFromTheSystemSender(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider},
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider},
 		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
 		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)))

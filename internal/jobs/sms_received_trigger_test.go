@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -36,7 +37,7 @@ func TestAnAutomationTriggeredByATextEnrollsItsSender(t *testing.T) {
 	onlyEnvelope(t, env, systemevent.SmsReceived)
 	triggers := triggersOn(t, env, systemevent.SmsReceived)
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Module[*automations.StepExecution](env)).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnSmsReceivedID), automationrun.ContactID(int64(texter.ID))).

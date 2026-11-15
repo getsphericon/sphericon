@@ -27,7 +27,7 @@ func TestATriggeredEnrollmentCopiesItsEventsActionAndProperties(t *testing.T) {
 	ev := eventOf(t, env, fixtures.EventPaymentFailedID)
 	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	require.NoError(t, env.StepExecution.OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
 
 	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
 	require.Len(t, runs, 1)
@@ -43,7 +43,7 @@ func TestAnEventOverTheBoundGivesNoPropertiesToCopy(t *testing.T) {
 		SourceID: eventOf(t, env, fixtures.EventRuleUrlOversizedID).SourceID,
 	}
 
-	_, err := env.StepExecution.EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID), in)
+	_, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(context.Background(), env.DB.Scoped(fixtures.AcmeID), in)
 
 	require.NoError(t, err)
 	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
@@ -60,7 +60,7 @@ func TestATriggerWithoutASourceIDGivesNoProperties(t *testing.T) {
 	ev.SourceID = ""
 	in := automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}
 
-	require.NoError(t, env.StepExecution.OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(context.Background(), env.DB.Scoped(fixtures.AcmeID), in))
 
 	runs := runsOf(t, env, fixtures.AutomationPaymentRecoveryID, fixtures.ContactPaymentFailedID)
 	require.Len(t, runs, 1)

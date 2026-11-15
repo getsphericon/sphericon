@@ -39,7 +39,7 @@ func samRequest() userdeletion.Request {
 func TestDeleteRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	before, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	before, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	// The password goes right after the deletion read the User it proves the password of.
 	var removed atomic.Bool
@@ -53,12 +53,12 @@ func TestDeleteRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 		})
 	}))
 
-	err = env.UserDeletion.Delete(ctx, samRequest())
+	err = testhelper.Module[*userdeletion.UseCase](env).Delete(ctx, samRequest())
 
 	require.ErrorIs(t, err, users.ErrProofStale)
 	_, err = env.DB.User.Get(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err, "the User is not deleted")
-	after, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	after, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.Equal(t, before.RecoveryCodesRemaining, after.RecoveryCodesRemaining, "the code is not spent")
 }
@@ -68,7 +68,7 @@ func TestDeleteSpendsTheCodeOfAProofThatStillFits(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	err := env.UserDeletion.Delete(ctx, samRequest())
+	err := testhelper.Module[*userdeletion.UseCase](env).Delete(ctx, samRequest())
 
 	require.NoError(t, err)
 	_, err = env.DB.User.Get(ctx, fixtures.SecondFactorSamID)
@@ -82,7 +82,7 @@ func TestDeleteRefusesAWrongCode(t *testing.T) {
 	req := samRequest()
 	req.Code = fixtures.SecondFactorSamSpentRecoveryCode
 
-	err := env.UserDeletion.Delete(ctx, req)
+	err := testhelper.Module[*userdeletion.UseCase](env).Delete(ctx, req)
 
 	require.ErrorIs(t, err, secondfactors.ErrDeletionCodeInvalid)
 	_, err = env.DB.User.Get(ctx, fixtures.SecondFactorSamID)

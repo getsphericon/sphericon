@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -58,7 +59,7 @@ func TestAnExpiredLicenseKeyBootsAsTheCore(t *testing.T) {
 
 	_, err := john.SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusPaymentRequired, "the Audit log is dark without its feature")
-	report, err := env.Instance.TelemetryReport(t.Context())
+	report, err := testhelper.Module[*instancestates.Module](env).TelemetryReport(t.Context())
 	require.NoError(t, err)
 
 	assert.Equal(t, telemetryapi.TelemetryEditionCore, report.Edition, "a lapsed key reports the core")

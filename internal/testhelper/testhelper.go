@@ -35,15 +35,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
-	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
-	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
-	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
-	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
-	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -66,9 +59,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
-	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
-	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -164,9 +154,6 @@ func initBaseline() {
 }
 
 type TestEnv struct {
-	// Instance is the Instance state module the server shares: run its Release check with
-	// CheckRelease; the preview of its Telemetry report is TelemetryReport.
-	Instance *instancestates.Module
 	// DB is the plain client the modules under test get, transaction-bound and rolled back when
 	// the test finishes. Like production's (internal/app/entclient) it refuses a change the Workspace
 	// feed, the User feed, the Tracking host log or, with the `staff` license, the Usage peak would
@@ -188,30 +175,10 @@ type TestEnv struct {
 	Tracker *messagetoken.Tracker
 	// Cipher is the instance the server seals with, for modules a test builds directly.
 	Cipher *secrets.Cipher
-	// Integrations is the module the server serves Integrations and their hooks with.
-	Integrations *integrations.Module
-	// RemovalCheck is the Removal check the server's removals run (ADR 0049, ADR 0099), over the
-	// server's resolver: for a test of the check, or one that builds a removal use case with New.
-	RemovalCheck *removalcheck.Module
-	// ConsentRecords is the module the server records the Users' decisions on the Sign-up items
-	// with (ADR 0062): read a User's current answers with Current.
-	ConsentRecords *consentrecords.Module
 
 	// AppURL is SPHERICON_APP_URL of the env: the origin and relying party id of a Passkey
 	// ceremony (ADR 0051).
 	AppURL string
-
-	// WorkspaceView reads the Workspace summary the surfaces map, and makes the changes of a
-	// Workspace that answer with it, creating and restoring one among them (ADR 0111).
-	WorkspaceView *workspaceview.UseCase
-
-	// Holds is the module the sender's freeze check reads, for a test that builds its own
-	// Outbound module.
-	Holds *holds.Holds
-
-	// Orders is the orders consumer's module, which the orders jobs drive, for a test that hands
-	// it an order Event itself.
-	Orders *orders.Module
 
 	edition *ee.Edition // the EE parts, built like the composition root builds them
 	// license is the Instance's License, which the Edition's consumers check (EditionJobs).
@@ -241,34 +208,10 @@ type TestEnv struct {
 	// (SPHERICON_TWILIO_API_URL points at it): add accounts, keys and senders, read the calls.
 	Twilio *twiliotest.Server
 
-	// Machine is the detector the tracking endpoints judge hits by, fed by PrivateRelay, the
-	// scripted source of the published Private Relay list: Refresh replaces the stored ranges.
-	Machine      *privaterelayranges.Detector
 	PrivateRelay *FakeRelayRanges
 
 	// Confirmations records the subscription URLs a Preset's confirm action fetched.
 	Confirmations *Confirmations
-
-	// SecondFactor is the module the server enrolls, verifies, resets and reads Second factors
-	// with, on the env's clock (ADR 0020).
-	SecondFactor *secondfactors.Module
-	// Admission admits a request on a User's own credential, a token of theirs included (ADR 0061).
-	Admission *admission.Module
-	// UserDeletion is the use case the server deletes a User with at their own ask (ADR 0050).
-	UserDeletion *userdeletion.UseCase
-
-	// SignUp is the use case the server signs Users up with and makes them Verified with their
-	// first Workspace, an Owner made from a shell among them (ADR 0102).
-	SignUp *signup.UseCase
-	// StepExecution is the Automations module's Step execution the Instance runs an Enrollment's
-	// steps with, on the env's clock (ADR 0112). A test that drives an Automation over senders of its
-	// own builds one with automations.NewStepExecution instead. A test hands it an Event (OnEvent)
-	// or a Rule's enrollment (EnrollOnRule) too.
-	StepExecution *automations.StepExecution
-
-	// StaffMembers is the core Staff member module the server signs staff in with (ADR 0026,
-	// ADR 0063), on every env.
-	StaffMembers *staffmembers.Module
 
 	// StaffEnterprise is the module of the Staff console's Enterprise sections and of the
 	// service endpoints; it refuses every call on an unlicensed env.
@@ -552,7 +495,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 
 	env := &TestEnv{
-		Instance:        do.MustInvoke[*instancestates.Module](injector),
 		AppURL:          cfg.AppURL,
 		DB:              do.MustInvoke[*ent.Client](injector),
 		FeedDB:          feedClient,
@@ -562,12 +504,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		Internal:        internal.Handler,
 		Tracker:         do.MustInvoke[*messagetoken.Tracker](injector),
 		Cipher:          do.MustInvoke[*secrets.Cipher](injector),
-		Integrations:    do.MustInvoke[*integrations.Module](injector),
-		RemovalCheck:    do.MustInvoke[*removalcheck.Module](injector),
-		ConsentRecords:  do.MustInvoke[*consentrecords.Module](injector),
-		Holds:           do.MustInvoke[*holds.Holds](injector),
-		WorkspaceView:   do.MustInvoke[*workspaceview.UseCase](injector),
-		Orders:          do.MustInvoke[*orders.Module](injector),
 		edition:         edition,
 		license:         lic,
 		performers:      workers,
@@ -580,15 +516,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		SES:             fakeSES,
 		Telegram:        botAPI,
 		Twilio:          twilioAPI,
-		Machine:         do.MustInvoke[*privaterelayranges.Detector](injector),
 		PrivateRelay:    relay,
 		Confirmations:   confirmations,
-		SecondFactor:    do.MustInvoke[*secondfactors.Module](injector),
-		Admission:       do.MustInvoke[*admission.Module](injector),
-		UserDeletion:    do.MustInvoke[*userdeletion.UseCase](injector),
-		SignUp:          do.MustInvoke[*signup.UseCase](injector),
-		StepExecution:   do.MustInvoke[*automations.StepExecution](injector),
-		StaffMembers:    do.MustInvoke[*staffmembers.Module](injector),
 		StaffEnterprise: edition.Staff,
 
 		ServiceCredentials: edition.ServiceCredentials,

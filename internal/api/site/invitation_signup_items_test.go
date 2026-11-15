@@ -131,7 +131,7 @@ func TestAJoinDomainAdmissionAsksNothing(t *testing.T) {
 // answerSources is where each of the User's current answers was made.
 func answerSources(t *testing.T, env *testhelper.TestEnv, userID int64) []consentrecord.Source {
 	t.Helper()
-	records, err := env.ConsentRecords.Current(t.Context(), userID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), userID)
 	require.NoError(t, err)
 	return lo.Map(records, func(r consentrecords.Record, _ int) consentrecord.Source { return r.Source })
 }

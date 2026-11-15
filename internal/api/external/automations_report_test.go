@@ -10,6 +10,7 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -33,8 +34,8 @@ func TestExternalAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *t
 	before := automationReport(t, c, params)
 
 	// The Enrollment walks its two tag steps and completes.
-	require.NoError(t, env.StepExecution.Step(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, 0))
-	env.RunQueuedSteps(t, env.StepExecution)
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationRunTagOnEngagementAliceID, 0))
+	env.RunQueuedSteps(t, testhelper.Module[*automations.StepExecution](env))
 	after := automationReport(t, c, params)
 
 	assert.Equal(t, externalapi.AutomationReportPeriod14d, after.Results.Period)

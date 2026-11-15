@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -48,7 +49,7 @@ func globexBroadcastTestVia(env *testhelper.TestEnv, to string, via perIntegrati
 func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string, via perIntegration, integrationID *int64) (outboundmessages.Result, error) {
 	m := outboundmessages.New(
 		env.Bus,
-		env.Holds,
+		testhelper.Module[*holds.Holds](env),
 		via,
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,

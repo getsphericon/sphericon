@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -25,7 +26,7 @@ func TestAnAutomationTriggeredByATelegramMessageEnrollsItsSender(t *testing.T) {
 	onlyEnvelope(t, env, systemevent.TelegramReceived)
 	triggers := triggersOn(t, env, systemevent.TelegramReceived)
 	require.Len(t, triggers, 1)
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, env.StepExecution).Work(ctx, job(triggers[0])))
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(env.DB, testhelper.Module[*automations.StepExecution](env)).Work(ctx, job(triggers[0])))
 
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationOnTelegramReceivedID), automationrun.ContactID(fixtures.ContactLiamID)).

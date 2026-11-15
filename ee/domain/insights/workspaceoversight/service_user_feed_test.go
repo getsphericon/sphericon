@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 )
 
@@ -126,7 +127,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	acc := testhelper.Module[*users.Module](h.env)
 	_, saved := usersFrom(t, c, "")
 
-	created, err := h.env.SignUp.SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
+	created, err := testhelper.Module[*signup.UseCase](h.env).SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
 	require.NoError(t, err)
 	got, saved := usersFrom(t, c, saved)
 	require.Equal(t, []int64{created.ID}, userIDs(got))
@@ -185,12 +186,12 @@ func TestASignUpThatAcceptsTheMailingsIsOneEntryWithTheConsent(t *testing.T) {
 	c := controlPlane(t, h)
 	markMailings(t, h)
 	_, saved := usersFrom(t, c, "")
-	consents, err := h.env.ConsentRecords.Check(t.Context(),
+	consents, err := testhelper.Module[*consentrecords.Module](h.env).Check(t.Context(),
 		[]consentrecords.Answer{{Key: fixtures.OperatorNewsKey, Version: fixtures.OperatorNewsCurrentLabel, Accepted: true}},
 		consentrecord.SourceSignUpForm)
 	require.NoError(t, err)
 
-	created, err := h.env.SignUp.
+	created, err := testhelper.Module[*signup.UseCase](h.env).
 		SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!", Consents: consents})
 	require.NoError(t, err)
 
@@ -246,7 +247,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
+	err := testhelper.Module[*userdeletion.UseCase](h.env).Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
 
 	got, saved := usersFrom(t, c, saved)
@@ -269,7 +270,7 @@ func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	c := controlPlane(t, h)
 	acc := testhelper.Module[*users.Module](h.env)
 	_, saved := usersFrom(t, c, "")
-	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
+	err := testhelper.Module[*userdeletion.UseCase](h.env).Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
 	john, err := h.env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -26,7 +27,7 @@ func setup(t *testing.T) (*testhelper.TestEnv, *passkeys.Module) {
 	prover := login.New(login.Config[*ent.User]{
 		Throttle: throttle.NewAttempts(env.DB, time.Now).For(throttle.KindLogin), Passwords: testhelper.Passwords(),
 	})
-	identity := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now, users.WithProver(prover))
+	identity := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), time.Now, users.WithProver(prover))
 	// The ceremony secret only seals the cookies this module opens again.
 	m, err := passkeys.New(env.DB, env.Bus, identity, env.AppURL, "passkeys-test-ceremony-secret", time.Now)
 	require.NoError(t, err)

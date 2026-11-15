@@ -119,7 +119,7 @@ its assertions (`internal/usecase/tagdeletion` holds the Tag deletion's race wit
 Removal check reads under the Workspace lock, `internal/usecase/customfieldretyping` a Custom field
 edit's, `internal/usecase/integrationdeletion` the Integration's and
 `internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
-tested in `internal/domain/orchestration/removalcheck` against `env.RemovalCheck`,
+tested in `internal/domain/orchestration/removalcheck` against `Module[*removalcheck.Module](env)`,
 `internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
 `internal/usecase/visitoridentification` what Identify binds and stitches). An operation that is
 only a driver's work leaves the tier with its tests (#1361): `internal/commandline` holds the tests of
@@ -131,9 +131,9 @@ into the module that owns its subject (ADR 0112) takes its tests to that module'
 (`SendTransactional`), `internal/domain/instance/instancestates` the Release check and the
 Telemetry report, `internal/domain/contacts/eventrecording` what the Event recording refuses and
 publishes, `internal/domain/sending/callbackinterpretation` what the Callback interpretation makes of
-an Ingest hook's facts (built with `New` over `env.Integrations`), `internal/domain/orchestration/automations` the steps of an Enrollment
+an Ingest hook's facts (built with `New` over `Module[*integrations.Module](env)`), `internal/domain/orchestration/automations` the steps of an Enrollment
 (`StepExecution`), and `internal/domain/identity/secondfactors` the Second factor reset (`Reset`,
-`ResetByStaff`, on `env.SecondFactor`, with the races of a reset against the factor's other
+`ResetByStaff`, on `Module[*secondfactors.Module](env)`, with the races of a reset against the factor's other
 changes). A check that needs nothing above its owner moves into the owner the same way
 (ADR 0110): `internal/domain/sending/sendingdomains` holds the Sending domain checks (`Verify`,
 `Recheck`). `internal/domain/identity/workspaces` holds the check of the typed name when
@@ -141,18 +141,18 @@ it deletes a Workspace (`Module.Delete`). The use case is built from the contain
 module, so the API tests reach it through the actors; a direct test builds it with
 `New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
 Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
-execution is `env.StepExecution`, for a test of how the Instance builds it (its clock) and for a test
+execution is `Module[*automations.StepExecution](env)`, for a test of how the Instance builds it (its clock) and for a test
 that hands it an Event (`OnEvent`), a Rule's enrollment (`EnrollOnRule`) or a step; a test that
 drives an Automation over senders, a fence or a clock of its own builds one with
 `automations.NewStepExecution`. The Release check and
 the Telemetry report are the Instance state module's: a test builds it with `instancestates.New(env.DB,
 …)`, passing its stub of the release source or the receiver's client, or nil where the operation is
-not exercised, and the server's own is `env.Instance`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
+not exercised, and the server's own is `Module[*instancestates.Module](env)`. The re-encryption is built over each owner's `SecretSweeps` on `env.DB`
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
-owns holds the raw client: the Workspace view's `env.WorkspaceView`
+owns holds the raw client: the Workspace view's `Module[*workspaceview.UseCase](env)`
 (`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
-creation is `workspacesunchecked.CreateIn`'s, tested with an id generator that collides), the Sign-up's `env.SignUp` (`internal/usecase/signup`, which also makes a User
-Verified with its first Workspace and an Owner from a shell), User deletion's `env.UserDeletion`
+creation is `workspacesunchecked.CreateIn`'s, tested with an id generator that collides), the Sign-up's `Module[*signup.UseCase](env)` (`internal/usecase/signup`, which also makes a User
+Verified with its first Workspace and an Owner from a shell), User deletion's `Module[*userdeletion.UseCase](env)`
 (`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
 deleting themselves at once; a test of the race builds it with `New` on a real database), the Workspace deletion cycle's
 restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
