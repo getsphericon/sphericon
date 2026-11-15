@@ -1,3 +1,4 @@
+import { omit } from 'es-toolkit'
 import { assign, enqueueActions, fromPromise, setup } from 'xstate'
 
 import { draftState } from '../components/draftState.ts'
@@ -406,8 +407,11 @@ export function defineEditorSession<
                 enqueue(() => editor?.write(folded.content))
               }
               enqueue(() => effects?.accepted('SAVE'))
-              const { fingerprint: _fingerprint, ...details } = receipt
-              enqueue.emit({ type: 'accepted', operation: 'SAVE', ...details })
+              enqueue.emit({
+                type: 'accepted',
+                operation: 'SAVE',
+                ...omit(receipt, ['fingerprint']),
+              })
             }),
           },
           onError: { target: 'idle', actions: 'fail' },

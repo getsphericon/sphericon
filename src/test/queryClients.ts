@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
+import { sumBy } from 'es-toolkit'
 import { vi } from 'vitest'
 
 // The QueryClients rendered by the current test, so the end of a test can wait for what the page
@@ -26,7 +27,7 @@ function fetching() {
 }
 
 function mutating() {
-  return [...rendered].reduce((count, client) => count + client.isMutating(), 0)
+  return sumBy([...rendered], (client) => client.isMutating())
 }
 
 // settled resolves once every change has finished and every read it set off has too. A read

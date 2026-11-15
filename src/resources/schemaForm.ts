@@ -1,4 +1,5 @@
 import { schemaResolver, useForm } from '@mantine/form'
+import { omit } from 'es-toolkit'
 import { useId } from 'react'
 import * as z from 'zod'
 
@@ -79,9 +80,7 @@ export function useSchemaForm<TValues extends object, TOutput>(
       form.setFieldError(path, fieldErrors[path]?.[0])
     }
     focusFirstInvalid(form.getInputNode, placed)
-    const unplaced = Object.fromEntries(
-      Object.entries(fieldErrors).filter(([path]) => !placed.includes(path)),
-    )
+    const unplaced = omit(fieldErrors, placed)
     return placed.length > 0 && Object.keys(unplaced).length === 0 ? undefined : unplaced
   }
 
