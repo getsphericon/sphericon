@@ -2,6 +2,9 @@
 status: accepted
 ---
 
+> **Amended by [[0155-a-whatsapp-user-id-is-a-second-key-of-the-phone-destination]]:** turning
+> marketing messages off inside WhatsApp is a Channel stop, and on again lifts it.
+
 # Consent on the new Channels
 
 > **Amended by [[0138-contacts-come-in-by-a-mapped-csv-import-and-leave-by-a-streamed-csv-export]]:**

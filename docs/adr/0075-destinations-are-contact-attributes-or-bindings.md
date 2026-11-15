@@ -4,6 +4,10 @@ status: accepted
 
 # Destinations are the Contact's own attributes, or Bindings
 
+> **Amended by [[0155-a-whatsapp-user-id-is-a-second-key-of-the-phone-destination]]:** the
+> business-scoped user id is a second key of the WhatsApp phone Destination, and an inbound message
+> carrying only it is resolved through that key.
+
 ADR 0074 fixed six Channels and said that on most new ones a Destination is reachable only through
 the Integration that obtained it. It left open where each Destination lives. A Contact has three
 alias keys (subject_id, email, phone), and the phone was only trimmed, so `+7 999 123-45-67` and
