@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // annotation matches `# fixture: Name` in a line comment.
@@ -163,7 +163,7 @@ func annotatedRows(raw []byte) (map[string]*yaml.Node, error) {
 		if row.Kind != yaml.MappingNode || len(row.Content) < 2 {
 			continue
 		}
-		// yaml.v3 attaches `- id: 1 # x` to the first value, or to the key/mapping.
+		// go-yaml attaches `- id: 1 # x` to the first value, or to the key/mapping.
 		for _, n := range []*yaml.Node{row.Content[1], row.Content[0], row} {
 			if name, ok := annotationName(n.LineComment); ok {
 				if _, dup := rows[name]; dup {
@@ -194,9 +194,9 @@ var credentialColumns = []struct{ column, suffix, table string }{
 }
 
 // credentialCall matches a quoted-string hashing or sealing call:
-// {{argonHash "plaintext"}}, {{encrypt "secret"}}, {{recoveryCodeHash "code"}}, {{inviteHash "token"}},
+// {{argonHash "plaintext"}}, {{encrypt "secret"}}, {{recoveryCodeHash "code"}},
 // {{passkeyCredentialID "id"}}, {{passkeyPublicKey "key"}}.
-var credentialCall = regexp.MustCompile(`^\{\{\s*(?:argonHash|secretHash|encrypt|recoveryCodeHash|inviteHash|passkeyCredentialID|passkeyPublicKey)\s+("(?:[^"\\]|\\.)*")\s*\}\}$`)
+var credentialCall = regexp.MustCompile(`^\{\{\s*(?:argonHash|secretHash|encrypt|recoveryCodeHash|passkeyCredentialID|passkeyPublicKey)\s+("(?:[^"\\]|\\.)*")\s*\}\}$`)
 
 // annotationName extracts the fixture name from a line or line comment.
 func annotationName(text string) (string, bool) {

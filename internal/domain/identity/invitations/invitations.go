@@ -9,12 +9,9 @@ package invitations
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/samber/lo"
@@ -43,9 +40,6 @@ var _ = db.Declare(
 
 // InviteTokenTTL is how long an invitation link stays valid.
 const InviteTokenTTL = 7 * 24 * time.Hour
-
-// inviteTokenBytes of entropy encode to a 48-character URL-safe token.
-const inviteTokenBytes = 36
 
 var (
 	// ErrEmailEmpty means the invited email is blank.
@@ -93,7 +87,7 @@ func (m *Module) PendingInvitation(ctx context.Context, token string) (*ent.Invi
 // Invitation (users.Module.AcceptInvitationLink).
 func PendingByToken(ctx context.Context, client *ent.Client, token string, at time.Time) (*ent.Invitation, error) {
 	inv, err := client.Invitation.Query().
-		Where(invitation.TokenHash(HashInviteToken(token)), PendingAt(at)).
+		Where(invitation.TokenHash(credentials.HashSecret(token)), PendingAt(at)).
 		WithWorkspace().
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -146,11 +140,9 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 	if err != nil {
 		return nil, "", err
 	}
-	token, err := generateInviteToken()
-	if err != nil {
-		return nil, "", err
-	}
-	tokenHash := HashInviteToken(token)
+	// The raw token travels in the invite link and is never stored.
+	token := credentials.GenerateTokenSecret()
+	tokenHash := credentials.HashSecret(token)
 	expiresAt := m.now().Add(InviteTokenTTL)
 
 	var inv *ent.Invitation
@@ -226,23 +218,4 @@ func (m *Module) RevokeInvitation(ctx context.Context, s *ent.Scoped, actor even
 			TargetID:    publicid.Encode(id),
 		})
 	})
-}
-
-// generateInviteToken returns a random, URL-safe invitation token: the raw value
-// that travels in the invite link and is never stored.
-func generateInviteToken() (string, error) {
-	b := make([]byte, inviteTokenBytes)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-// HashInviteToken returns the deterministic SHA-256 hex of a raw invite token. It
-// is what the Invitation stores, so a presented token can be looked up by hash.
-// SHA-256 (not bcrypt) is right here: the token is high-entropy random, so no slow
-// hashing is needed and deterministic lookup is required.
-func HashInviteToken(token string) string {
-	sum := sha256.Sum256([]byte(token))
-	return hex.EncodeToString(sum[:])
 }

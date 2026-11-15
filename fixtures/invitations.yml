@@ -6,7 +6,7 @@
   workspace_id: 1
   email: invited@acme.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -17,7 +17,7 @@
   workspace_id: 1
   email: expired@acme.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_expired" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_expired" }}'
   invited_by: 1
   expires_at: '{{daysAgo 1}}'
   created_at: '{{daysAgo 8}}'
@@ -28,7 +28,7 @@
   workspace_id: 2
   email: invited@globex.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_globex" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_globex" }}'
   invited_by: 2
   expires_at: '{{daysAhead 7}}'
   created_at: '2026-01-01 00:00:00'
@@ -39,7 +39,7 @@
   workspace_id: 2
   email: stale@unverified.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_stale_unverified" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_stale_unverified" }}'
   invited_by: 2
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -50,7 +50,7 @@
   workspace_id: 1
   email: invited-by-alice@acme.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_sent_by_alice" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_sent_by_alice" }}'
   invited_by: 19
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -64,7 +64,7 @@
   workspace_id: 1
   email: mary@acme.test
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_mary_admin" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_mary_admin" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -73,7 +73,7 @@
   workspace_id: 1
   email: alice@acme.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_alice_member" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_alice_member" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -82,7 +82,7 @@
   workspace_id: 1
   email: info@getsphericon.com
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_john_admin" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_john_admin" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -96,7 +96,7 @@
   workspace_id: 1
   email: oscar@nowhere.test
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_oscar" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_oscar" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -105,7 +105,7 @@
   workspace_id: 1
   email: newcomer@example.com
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_newcomer" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_newcomer" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -114,7 +114,7 @@
   workspace_id: 1
   email: victim@gmail.com
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_victim_gmail" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_victim_gmail" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -123,7 +123,7 @@
   workspace_id: 1
   email: fresh@unverified.test
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_fresh_unverified" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_fresh_unverified" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -132,7 +132,7 @@
   workspace_id: 1
   email: nina@gmail.com
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_nina" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_nina" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -141,7 +141,7 @@
   workspace_id: 1
   email: invited@example.com
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_elsewhere" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_elsewhere" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -150,7 +150,7 @@
   workspace_id: 1
   email: newcomer@survey.example
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_survey" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_survey" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -160,7 +160,7 @@
   workspace_id: 1
   email: colleague@acme.com
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_acme_colleague" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_acme_colleague" }}'
   invited_by: 1
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -169,7 +169,7 @@
   workspace_id: 2
   email: colleague@acme.com
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_globex_colleague" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_globex_colleague" }}'
   invited_by: 2
   expires_at: '{{daysAhead 7}}'
   created_at: '{{daysAgo 1}}'
@@ -180,7 +180,7 @@
   workspace_id: 20
   email: new.mentor@brightpath.example
   role: admin
-  token_hash: '{{ inviteHash "inv_fixture_token_brightpath_mentor" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_brightpath_mentor" }}'
   invited_by: 20000
   expires_at: '{{daysAhead 5}}'
   created_at: '{{daysAgo 2}}'
@@ -189,7 +189,7 @@
   workspace_id: 20
   email: lapsed.guest@brightpath.example
   role: member
-  token_hash: '{{ inviteHash "inv_fixture_token_brightpath_guest" }}'
+  token_hash: '{{ secretHash "inv_fixture_token_brightpath_guest" }}'
   invited_by: 20001
   expires_at: '{{daysAgo 3}}'
   created_at: '{{daysAgo 10}}'

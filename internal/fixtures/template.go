@@ -8,7 +8,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -68,9 +67,6 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 			return start.AddDate(0, 0, dayOfMonth-1).Add(time.Duration(hour)*time.Hour + time.Duration(minute)*time.Minute).Format(timeLayout)
 		},
 		"encrypt": func(s string) (string, error) { return cipher.Encrypt([]byte(s)) },
-		// Invitation tokens are stored only as a SHA-256 hash; fixtures express the
-		// raw token and hash it at load time so tests can present the raw value.
-		"inviteHash": invitations.HashInviteToken,
 		// Recovery codes are stored only as a hash (ADR 0020); the fixture states the
 		// code and the generator lifts it into the catalog (fixtures.<Name>Code).
 		"recoveryCodeHash": credentials.HashRecoveryCode,
@@ -80,8 +76,9 @@ func TemplateFuncs(cipher *secrets.Cipher, now time.Time) template.FuncMap {
 		// A password hashes at minimum cost: the production verify code reads the cost
 		// back from the stored hash, so verification still works and loading stays fast.
 		"argonHash": credentials.NewMinimumCostHasher().Hash,
-		// An API token's or a Service credential's secret is stored as the SHA-256 the
-		// production code computes when it issues one (credentials.HashSecret).
+		// An API token's or a Service credential's secret, and an Invitation's link token, is
+		// stored as the SHA-256 the production code computes when it issues one
+		// (credentials.HashSecret); the fixture states the raw value so a test can present it.
 		"secretHash": credentials.HashSecret,
 		// A fixture Passkey states its credential id (base64url) and its private key (base64
 		// PKCS8); the columns hold the raw id and the derived COSE public key.

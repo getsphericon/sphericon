@@ -136,11 +136,7 @@ func (l *shortLinks) ofMessage() predicate.TrackedLink {
 
 func (l *shortLinks) create(ctx context.Context, url string) (*ent.TrackedLink, error) {
 	for range tokenAttempts {
-		token, err := newShortToken()
-		if err != nil {
-			return nil, err
-		}
-		create := l.s.TrackedLink().Create().SetToken(token).SetURL(url)
+		create := l.s.TrackedLink().Create().SetToken(newShortToken()).SetURL(url)
 		if l.messageID != 0 {
 			create.SetOutboundMessageID(l.messageID)
 		}
@@ -158,11 +154,10 @@ func (l *shortLinks) create(ctx context.Context, url string) (*ent.TrackedLink, 
 	return nil, errTokensTaken
 }
 
-// newShortToken is 8 random bytes in URL-safe base64 without padding: 11 characters.
-func newShortToken() (string, error) {
+// newShortToken is 8 random bytes in URL-safe base64 without padding: 11 characters. It returns
+// no error: crypto/rand.Read never fails (the runtime aborts if the system source does).
+func newShortToken() string {
 	b := make([]byte, 8)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("generate short token: %w", err)
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
+	_, _ = rand.Read(b)
+	return base64.RawURLEncoding.EncodeToString(b)
 }

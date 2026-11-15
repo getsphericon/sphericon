@@ -6,10 +6,6 @@ package bindings
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
@@ -30,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -118,14 +115,11 @@ func (m *Module) issue(ctx context.Context, s *ent.Scoped, integrationID *int64,
 	if err != nil || cfg.Telegram == nil {
 		return StartLink{}, fmt.Errorf("open the bot of integration %d: %w", row.ID, err)
 	}
-	token, err := newToken()
-	if err != nil {
-		return StartLink{}, err
-	}
+	token := credentials.GenerateTokenSecret()
 	expires := m.now().Add(TokenTTL)
 	create := s.StartToken().Create().
 		SetIntegrationID(row.ID).
-		SetTokenHash(hashOf(token)).
+		SetTokenHash(credentials.HashSecret(token)).
 		SetExpiresAt(expires)
 	own(create)
 	if err := create.Exec(ctx); err != nil {
@@ -162,19 +156,6 @@ func (m *Module) bot(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integr
 
 // newToken is 32 random bytes in URL-safe base64 without padding: 43 characters of
 // [A-Za-z0-9_-].
-func newToken() (string, error) {
-	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		return "", fmt.Errorf("generate start token: %w", err)
-	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-func hashOf(token string) string {
-	sum := sha256.Sum256([]byte(token))
-	return hex.EncodeToString(sum[:])
-}
-
 // Chat is a Binding as the Contact's card shows it: the bot and since when.
 type Chat struct {
 	ID              int64
@@ -236,7 +217,7 @@ func Redeem(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 		return nil
 	}
 	tok, err := s.StartToken().Query().
-		Where(starttoken.TokenHash(hashOf(token)), starttoken.IntegrationID(bot.ID), starttoken.UsedAtIsNil(), starttoken.ExpiresAtGT(now)).
+		Where(starttoken.TokenHash(credentials.HashSecret(token)), starttoken.IntegrationID(bot.ID), starttoken.UsedAtIsNil(), starttoken.ExpiresAtGT(now)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil

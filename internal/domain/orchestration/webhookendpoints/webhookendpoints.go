@@ -112,11 +112,7 @@ var ErrInvalidEventType = validation.RefuseField(fieldname.EventType, "webhooks:
 // with the next delivery. The row update is audited by the scoped client
 // (secret_encrypted is a sensitive field, so the entry only says it changed).
 func (m *Module) RegenerateSecret(ctx context.Context, s *ent.Scoped, id int64) (Endpoint, error) {
-	secret, err := generateSecret()
-	if err != nil {
-		return Endpoint{}, err
-	}
-	sealed, err := m.cipher.Encrypt([]byte(secret))
+	sealed, err := m.cipher.Encrypt([]byte(generateSecret()))
 	if err != nil {
 		return Endpoint{}, err
 	}
@@ -242,11 +238,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 	if err := m.checkTypes(in.EventTypes); err != nil {
 		return Endpoint{}, err
 	}
-	secret, err := generateSecret()
-	if err != nil {
-		return Endpoint{}, err
-	}
-	sealed, err := m.cipher.Encrypt([]byte(secret))
+	sealed, err := m.cipher.Encrypt([]byte(generateSecret()))
 	if err != nil {
 		return Endpoint{}, err
 	}
@@ -323,13 +315,12 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 }
 
 // generateSecret returns a Standard Webhooks signing secret: the "whsec_" prefix
-// plus base64 random bytes, the format the standard-webhooks library expects.
-func generateSecret() (string, error) {
+// plus base64 random bytes, the format the standard-webhooks library expects. It returns no
+// error: crypto/rand.Read never fails (the runtime aborts if the system source does).
+func generateSecret() string {
 	b := make([]byte, 24)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return "whsec_" + base64.StdEncoding.EncodeToString(b), nil
+	_, _ = rand.Read(b)
+	return "whsec_" + base64.StdEncoding.EncodeToString(b)
 }
 
 // validURL accepts only absolute http(s) URLs. (Network-level SSRF defenses live

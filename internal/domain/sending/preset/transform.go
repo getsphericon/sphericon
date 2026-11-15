@@ -19,6 +19,7 @@ import (
 	"github.com/samber/lo"
 
 	kernelchannels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
 const (
@@ -251,7 +252,7 @@ func validateNotice(raw []byte) (DeliveryNotice, error) {
 		if !utf8.ValidString(*r.Reason) {
 			return DeliveryNotice{}, errors.New("reason is not valid UTF-8")
 		}
-		f.Reason = truncateChars(strings.TrimSpace(*r.Reason), MaxReasonChars)
+		f.Reason = lo.Substring(strings.TrimSpace(*r.Reason), 0, MaxReasonChars)
 	}
 	return f, nil
 }
@@ -269,7 +270,7 @@ func noticeDestination(ch Channel, d string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("destination is not an address: %w", err)
 	}
-	return strings.ToLower(strings.TrimSpace(addr.Address)), nil
+	return emailcase.Of(addr.Address), nil
 }
 
 // rawInbound is an Inbound message as the program returns it.
@@ -390,23 +391,16 @@ func validDestination(d string) (string, error) {
 	return d, nil
 }
 
-// optionalText checks free text a person wrote: valid UTF-8, cut at limit characters.
-func optionalText(name string, v *string, limit int) (string, error) {
+// optionalText checks free text a person wrote: valid UTF-8, cut at limit characters (and with no
+// NUL byte, which no text column holds).
+func optionalText(name string, v *string, limit uint) (string, error) {
 	if v == nil {
 		return "", nil
 	}
 	if !utf8.ValidString(*v) {
 		return "", fmt.Errorf("%s is not valid UTF-8", name)
 	}
-	return truncateChars(*v, limit), nil
-}
-
-// truncateChars cuts s to at most n characters.
-func truncateChars(s string, n int) string {
-	if utf8.RuneCountInString(s) <= n {
-		return s
-	}
-	return string([]rune(s)[:n])
+	return lo.Substring(*v, 0, limit), nil
 }
 
 func validDomain(d string) bool {
