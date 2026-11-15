@@ -571,8 +571,8 @@ _Avoid_: A/B test (as a synonym), experiment, campaign test, Split (that is an A
 
 **Winner**:
 The Variant of a Split test that goes to the rest of its Recipients: picked when the test ends by the
-winner metric, the better one even when the difference is not significant (the report says so), or
-picked by hand before.
+winner metric, or by hand before. The leader goes to the rest even below 95% confidence, but the
+report then names no Winner.
 _Avoid_: Champion, best variant
 
 **Broadcast recipient**:

@@ -31,7 +31,7 @@ on small lists to test only large differences (the sender's name, the offer, the
   model, so nothing asks whether a Broadcast is tested before it reads its content. Channel,
   Integration, audience and send time are the Broadcast's and never vary.
 - **More than one Variant makes a Split test**, with three settings fixed before the Broadcast is
-  armed: the **test share** of the audience (10 to 100%), the **winner metric** and the **test
+  armed: the **test share** of the audience (10 to 100%, 20 by default), the **winner metric** and the **test
   duration**.
 - **Only a hand-made Broadcast can be tested.** A Broadcast series issue (its content comes from the
   series, ADR 0135) and a Retry (ADR 0151) have one Variant. A Retry of a tested Broadcast copies the
@@ -46,7 +46,8 @@ on small lists to test only large differences (the sender's name, the offer, the
 - **The rest go out after the test with the Winner**, each Recipient passing Send-eligibility and the
   Frequency cap when it is sent, so someone who unsubscribed during the test is Skipped. At a test
   share of 100% there is no rest: the test is for learning, and the report marks the Winner.
-- **The test lasts a fixed time, from 1 to 72 hours, 4 by default**, counted from when the last
+- **The test lasts a fixed time, from 1 to 72 hours**, by default 4 on the click rate and 24 on
+  revenue, which needs a full day of Orders to settle, counted from when the last
   message of the test share went out, so a Deferral does not shorten any Variant's window. The cap
   keeps the rest close to the Broadcast's moment, the reason ADR 0137 does not defer Broadcast
   Recipients.
@@ -57,11 +58,14 @@ on small lists to test only large differences (the sender's name, the offer, the
   the revenue per Recipient credited to the Broadcast within the Attribution window, each over the
   Variant's tracked messages. A message sent untracked (ADR 0120) counts in neither the numerator nor
   the denominator. The click rate is the default. Every Channel with tracked links can be tested.
-- **The better Variant wins even when the difference is not significant**, and the report says so,
-  so no one learns a lesson from noise. An exact tie goes to the first Variant.
+- **The leading Variant goes to the rest even when the difference is not significant**: something has
+  to be sent, and the leader is no worse on average. Below 95% confidence the report names no Winner
+  but "no significant winner", so no one learns a lesson from noise. An exact tie goes to the first
+  Variant.
 - **The sample size is a warning, not a gate.** Before Schedule the console shows the group size per
   Variant against the size needed to see a 20% lift on the Workspace's recent click rate (two-sided
-  alpha 0.05, power 0.8), and below it advises testing large differences only.
+  alpha 0.05, power 0.8), and below it advises testing large differences only. More than two Variants on an audience under
+  100,000 is warned against too: each added Variant thins every group.
 
 ### The rest of the Broadcast stays as it is
 
