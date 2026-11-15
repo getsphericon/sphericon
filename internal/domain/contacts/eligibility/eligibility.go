@@ -380,17 +380,19 @@ func match(r ref, st store, channel channels.Channel, extra ...string) *sql.Sele
 	return sub.Where(sql.And(conds...))
 }
 
-// requireConfirmed is true when the referenced workspace has confirmed opt-in on.
+// requireConfirmed is true when the referenced workspace has confirmed opt-in on. It is an EXISTS,
+// not a scalar subquery: Postgres runs an EXISTS correlated on the outer workspace column as one
+// hashed lookup of the Workspaces with the flag on, where a scalar subquery reruns for every row
+// of an Audience.
 func requireConfirmed(r ref) *sql.Predicate {
-	// raw sql: a scalar subquery inside COALESCE used as a predicate; ent has no subquery predicate
-	// over another table.
-	return sql.P(func(b *sql.Builder) {
-		sub := sql.Select(workspace.FieldRequireConfirmedOptIn).From(sql.Table(workspace.Table))
-		// raw sql: correlates the subquery with the outer query's workspace column.
-		sub.Where(sql.P(func(pb *sql.Builder) {
-			pb.WriteString(sub.C(workspace.FieldID)).WriteString(" = ")
-			r.workspace(pb)
-		}))
-		b.WriteString("COALESCE((").Join(sub).WriteString("), FALSE)")
-	})
+	sub := sql.Select(workspace.FieldID).From(sql.Table(workspace.Table))
+	return sql.Exists(sub.Where(sql.And(
+		// raw sql: correlates the subquery with the outer query's workspace column (or a bound
+		// value), a correlation ent predicates cannot name.
+		sql.P(func(b *sql.Builder) {
+			b.WriteString(sub.C(workspace.FieldID)).WriteString(" = ")
+			r.workspace(b)
+		}),
+		sql.EQ(sub.C(workspace.FieldRequireConfirmedOptIn), true),
+	)))
 }
