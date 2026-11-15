@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
 
@@ -43,11 +44,11 @@ func (m *UseCase) OpensByHour(ctx context.Context, s *ent.Scoped, w Window) (*Op
 			event.OccurredAtGTE(days.Since), event.OccurredAtLT(days.Until),
 		).
 		Modify(func(sel *sql.Selector) {
-			happened := sel.C(event.FieldOccurredAt)
+			happened := reportday.Local(sel.C(event.FieldOccurredAt), days.Loc)
 			local := func(field string) sql.Querier {
-				// raw sql: ent has no AT TIME ZONE or EXTRACT expression; the zone is a bound argument
+				// raw sql: ent has no EXTRACT expression.
 				return sql.ExprFunc(func(b *sql.Builder) {
-					b.WriteString("EXTRACT(" + field + " FROM " + happened + " AT TIME ZONE ").Arg(days.Loc.String()).WriteString(")::int")
+					b.WriteString("EXTRACT(" + field + " FROM ").Join(happened).WriteString(")::int")
 				})
 			}
 			sel.Select(sql.As(sql.Count("*"), "opens")).

@@ -15,14 +15,11 @@ import (
 // ColumnsOf counts how many of the named columns the table has.
 func ColumnsOf(t *testing.T, sqlDB *sql.DB, table string, columns ...string) int {
 	t.Helper()
-	n := 0
-	for _, column := range columns {
-		var found int
-		// raw sql: reads information_schema, which is not an ent entity.
-		require.NoError(t, sqlDB.QueryRowContext(t.Context(),
-			`SELECT count(*) FROM information_schema.columns WHERE table_name = $1 AND column_name = $2`, table, column).Scan(&found))
-		n += found
-	}
+	var n int
+	// raw sql: reads information_schema, which is not an ent entity.
+	require.NoError(t, sqlDB.QueryRowContext(t.Context(),
+		`SELECT count(*) FROM information_schema.columns WHERE table_name = $1 AND column_name::text = ANY($2::text[])`,
+		table, columns).Scan(&n))
 	return n
 }
 
@@ -72,7 +69,7 @@ func HoldInTransaction(t *testing.T, sqlDB *sql.DB, statement string) (release f
 	ctx := context.WithoutCancel(t.Context()) // the release may run in the cleanup, after the test's context ends
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
-	// raw sql: the statement is the lock a test of the schema's runner holds, on a table of its own.
+	// raw sql: the statement is the lock its caller's test holds (a LOCK TABLE), which ent cannot express.
 	_, err = tx.ExecContext(ctx, statement)
 	require.NoError(t, err)
 	release = sync.OnceFunc(func() { require.NoError(t, tx.Commit()) })

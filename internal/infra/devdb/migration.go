@@ -40,10 +40,19 @@ func GenerateMigration(ctx context.Context, dir, diffURL, name string) (err erro
 	if diffURL == "" {
 		return errors.New("SPHERICON_DIFF_DATABASE_URL is not set (the diff database migrations are generated against)")
 	}
-	if err := applyMigrations(ctx, dir, diffURL); err != nil {
+	diffDB, err := sql.Open("pgx", diffURL)
+	if err != nil {
+		return fmt.Errorf("open the diff database: %w", err)
+	}
+	defer func() {
+		if closeErr := diffDB.Close(); err == nil && closeErr != nil {
+			err = fmt.Errorf("close the diff database: %w", closeErr)
+		}
+	}()
+	if err := applyMigrations(ctx, dir, diffDB); err != nil {
 		return err
 	}
-	stored, err := setNullActions(ctx, diffURL)
+	stored, err := setNullActions(ctx, diffDB)
 	if err != nil {
 		return err
 	}
@@ -107,16 +116,7 @@ func normalized(ctx context.Context, n atlas.Normalizer, stored map[string]atlas
 // applyMigrations empties the diff database, whatever an earlier run left in it, and applies the
 // migrations in dir to it with goose. It fails with the task that creates the diff database when
 // it is not there.
-func applyMigrations(ctx context.Context, dir, dsn string) (err error) {
-	diffDB, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return fmt.Errorf("open the diff database: %w", err)
-	}
-	defer func() {
-		if closeErr := diffDB.Close(); err == nil && closeErr != nil {
-			err = fmt.Errorf("close the diff database: %w", closeErr)
-		}
-	}()
+func applyMigrations(ctx context.Context, dir string, diffDB *sql.DB) error {
 	if err := diffDB.PingContext(ctx); err != nil {
 		return fmt.Errorf("the diff database (SPHERICON_DIFF_DATABASE_URL) is not reachable, run `mise run db:up` to create it: %w", err)
 	}
@@ -134,16 +134,7 @@ func applyMigrations(ctx context.Context, dir, dsn string) (err error) {
 // setNullActions is the delete action of every foreign key of the diff database that clears only
 // some of its columns (ON DELETE SET NULL (x_id)), by the key's name: Atlas reads such a key as a
 // bare SET NULL.
-func setNullActions(ctx context.Context, dsn string) (_ map[string]atlas.ReferenceOption, err error) {
-	diffDB, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("open the diff database: %w", err)
-	}
-	defer func() {
-		if closeErr := diffDB.Close(); err == nil && closeErr != nil {
-			err = fmt.Errorf("close the diff database: %w", closeErr)
-		}
-	}()
+func setNullActions(ctx context.Context, diffDB *sql.DB) (_ map[string]atlas.ReferenceOption, err error) {
 	// raw sql: the columns a SET NULL clears are only in the catalog (pg_constraint.confdelsetcols).
 	rows, err := diffDB.QueryContext(ctx, `SELECT con.conname,
 	  array_to_string(ARRAY(SELECT a.attname FROM unnest(con.confdelsetcols) WITH ORDINALITY AS k(num, ord)
