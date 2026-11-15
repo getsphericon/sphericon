@@ -2,12 +2,10 @@ package engagement_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -20,10 +18,6 @@ const (
 	scannerUA  = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
 	personAddr = "192.0.2.10" // outside every listed range
 )
-
-func recorder(env *testhelper.TestEnv) *engagement.Recorder {
-	return engagement.New(env.DB, env.Bus, testhelper.Module[*contacts.Module](env), env.Tracker, env.Machine, time.Now)
-}
 
 func openToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {
 	t.Helper()
@@ -46,7 +40,7 @@ func person(host int64) engagement.Hit {
 func TestAnOpenPublishesTheOpenOfItsMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(0))
+	err := testhelper.Module[*engagement.Recorder](env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(0))
 
 	require.NoError(t, err)
 	got := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
@@ -62,7 +56,7 @@ func TestAnOpenByAScannerIsAMachineOpen(t *testing.T) {
 	hit := person(0)
 	hit.UserAgent = scannerUA
 
-	require.NoError(t, recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), hit))
+	require.NoError(t, testhelper.Module[*engagement.Recorder](env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), hit))
 
 	got := testhelper.Queued[*events.EmailEngagement](t, env, systemevent.EmailOpened)
 	require.Len(t, got, 1)
@@ -74,7 +68,7 @@ func TestAnOpenByAScannerIsAMachineOpen(t *testing.T) {
 func TestAnOpenOnAnotherWorkspacesTrackingHostIsNotFoundAndRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(fixtures.GlobexID))
+	err := testhelper.Module[*engagement.Recorder](env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(fixtures.GlobexID))
 
 	require.ErrorIs(t, err, engagement.ErrNotFound)
 	assert.Empty(t, env.QueuedEvents(t, systemevent.EmailOpened))
@@ -83,7 +77,7 @@ func TestAnOpenOnAnotherWorkspacesTrackingHostIsNotFoundAndRecordsNothing(t *tes
 func TestAnOpenOnItsOwnWorkspacesTrackingHostIsRecorded(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	err := recorder(env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(fixtures.AcmeID))
+	err := testhelper.Module[*engagement.Recorder](env).Open(t.Context(), openToken(t, env, fixtures.OutboundMessageTrackingSampleID), person(fixtures.AcmeID))
 
 	require.NoError(t, err)
 	assert.Len(t, env.QueuedEvents(t, systemevent.EmailOpened), 1)
@@ -99,15 +93,15 @@ func TestAHitOverTheTrackingBudgetRecordsNothing(t *testing.T) {
 	off.MayRecord = hit.MayRecord
 	token := openToken(t, env, fixtures.OutboundMessageTrackingSampleID)
 
-	require.NoError(t, recorder(env).Open(t.Context(), token, hit))
-	require.ErrorIs(t, recorder(env).Open(t.Context(), token, off), engagement.ErrNotFound)
+	require.NoError(t, testhelper.Module[*engagement.Recorder](env).Open(t.Context(), token, hit))
+	require.ErrorIs(t, testhelper.Module[*engagement.Recorder](env).Open(t.Context(), token, off), engagement.ErrNotFound)
 	assert.Empty(t, env.QueuedEvents(t, systemevent.EmailOpened))
 }
 
 func TestAnOpenWithATokenThatDoesNotDecodeIsInvalid(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	require.ErrorIs(t, recorder(env).Open(t.Context(), "not-a-token", person(0)), engagement.ErrInvalidToken)
+	require.ErrorIs(t, testhelper.Module[*engagement.Recorder](env).Open(t.Context(), "not-a-token", person(0)), engagement.ErrInvalidToken)
 	assert.Empty(t, env.QueuedEvents(t, systemevent.EmailOpened))
 }
 
@@ -115,7 +109,7 @@ func TestAClickPublishesTheClickAndReturnsTheLinkItSigns(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := clickToken(t, env, fixtures.OutboundMessageTrackingSampleID, "https://dest.test/a")
 
-	dest, err := recorder(env).Click(t.Context(), token, person(0))
+	dest, err := testhelper.Module[*engagement.Recorder](env).Click(t.Context(), token, person(0))
 
 	require.NoError(t, err)
 	assert.Equal(t, "https://dest.test/a", dest)
@@ -128,7 +122,7 @@ func TestAClickPublishesTheClickAndReturnsTheLinkItSigns(t *testing.T) {
 func TestAClickWithATokenThatDoesNotDecodeIsInvalid(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := recorder(env).Click(t.Context(), "not-a-token", person(0))
+	_, err := testhelper.Module[*engagement.Recorder](env).Click(t.Context(), "not-a-token", person(0))
 
 	require.ErrorIs(t, err, engagement.ErrInvalidToken)
 }
@@ -137,7 +131,7 @@ func TestAShortLinkPublishesTheClickOfItsMessageAndReturnsItsURL(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := env.DB.TrackedLink.GetX(t.Context(), fixtures.TrackedLinkAcmeID).Token
 
-	dest, err := recorder(env).ShortLink(t.Context(), token, person(fixtures.AcmeID))
+	dest, err := testhelper.Module[*engagement.Recorder](env).ShortLink(t.Context(), token, person(fixtures.AcmeID))
 
 	require.NoError(t, err)
 	assert.Equal(t, fixtures.TrackedLinkAcmeURL, dest)
@@ -152,7 +146,7 @@ func TestAShortLinkOnAnotherWorkspacesTrackingHostIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	token := env.DB.TrackedLink.GetX(t.Context(), fixtures.TrackedLinkAcmeID).Token
 
-	_, err := recorder(env).ShortLink(t.Context(), token, person(fixtures.GlobexID))
+	_, err := testhelper.Module[*engagement.Recorder](env).ShortLink(t.Context(), token, person(fixtures.GlobexID))
 
 	require.ErrorIs(t, err, engagement.ErrNotFound)
 }
@@ -160,7 +154,7 @@ func TestAShortLinkOnAnotherWorkspacesTrackingHostIsNotFound(t *testing.T) {
 func TestAnUnknownShortLinkIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := recorder(env).ShortLink(t.Context(), "unknowntoken", person(0))
+	_, err := testhelper.Module[*engagement.Recorder](env).ShortLink(t.Context(), "unknowntoken", person(0))
 
 	require.ErrorIs(t, err, engagement.ErrNotFound)
 }

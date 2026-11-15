@@ -172,7 +172,7 @@ func (env *TestEnv) DeliverQueuedBroadcasts(t *testing.T) {
 // (a Hold): it returns ErrBroadcastWaits, or a plan job's error, instead of failing the test.
 func (env *TestEnv) TryDeliverQueuedBroadcasts(t *testing.T) error {
 	t.Helper()
-	return env.DeliverQueuedBroadcastsThrough(t, env.sender)
+	return env.DeliverQueuedBroadcastsThrough(t, env.OutboundModule())
 }
 
 // DeliverQueuedBroadcastsThrough works the queued plan jobs of the Broadcasts and the recipients'
@@ -233,7 +233,7 @@ func (env *TestEnv) claimBroadcast(t *testing.T, b *ent.Broadcast) {
 		env.EnqueueJob(t, broadcasts.SendArgs{WorkspaceID: b.WorkspaceID, BroadcastID: b.ID})
 		return
 	}
-	_, err := broadcasts.New(env.Bus, nil, env.sender).Send(t.Context(), env.DB.Scoped(b.WorkspaceID), b.ID, b.Revision)
+	_, err := Module[*broadcasts.Module](env).Send(t.Context(), env.DB.Scoped(b.WorkspaceID), b.ID, b.Revision)
 	require.NoError(t, err)
 }
 

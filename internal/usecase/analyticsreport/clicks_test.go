@@ -88,7 +88,7 @@ func TestClicksByLinkEqualTheBroadcastAndAutomationReportsSummed(t *testing.T) {
 	for _, l := range perBroadcast {
 		want[l.URL] += l.Clicks
 	}
-	perAutomation, err := automations.New(nil, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now).ReportOf(ctx, s, fixtures.AutomationWinBackID, automations.ReportPeriod30Days)
+	perAutomation, err := testhelper.Module[*automations.Module](env).ReportOf(ctx, s, fixtures.AutomationWinBackID, automations.ReportPeriod30Days)
 	require.NoError(t, err)
 	for _, l := range perAutomation.Links {
 		want[l.URL] += l.Clicks

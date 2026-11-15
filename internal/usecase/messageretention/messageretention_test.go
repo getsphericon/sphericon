@@ -75,7 +75,7 @@ func reports(t *testing.T, env *testhelper.TestEnv) (stats map[int64]broadcasts.
 		require.NoError(t, err)
 		stats[b.ID] = got[b.ID]
 	}
-	m := automations.New(nil, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	figures = map[int64]automationFigures{}
 	for _, a := range env.DB.Automation.Query().AllX(ctx) {
 		r, err := m.ReportOf(ctx, env.DB.Scoped(a.WorkspaceID), a.ID, automations.ReportPeriod30Days)

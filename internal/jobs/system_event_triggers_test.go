@@ -3,7 +3,6 @@ package jobs_test
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +83,7 @@ func TestARuleTriggeredByACompletedEnrollmentFiresAndItsTagFiresNoRule(t *testin
 	evaluations := lo.Filter(queuedArgs[jobs.EvaluateRulesArgs](t, env, jobkind.RuleEvaluate.Kind),
 		func(args jobs.EvaluateRulesArgs, _ int) bool { return args.Action == systemevent.AutomationCompleted })
 	require.Len(t, evaluations, 1)
-	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
+	m := testhelper.Module[*rules.Module](env)
 	fired, err := m.Evaluate(ctx, acme, rules.Event{
 		ContactID: evaluations[0].ContactID, Action: evaluations[0].Action, SourceID: evaluations[0].SourceID,
 		RecordedAt: evaluations[0].RecordedAt, Properties: evaluations[0].Properties,

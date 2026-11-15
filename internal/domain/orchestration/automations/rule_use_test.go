@@ -3,7 +3,6 @@ package automations_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +32,7 @@ func TestAnAutomationAnActiveRuleEnrollsInIsNotArchived(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, kept.ArchivedAt)
 
-	_, err = rules.New(env.Cipher, env.Bus, nil, time.Now).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
+	_, err = testhelper.Module[*rules.Module](env).Deactivate(ctx, s, fixtures.RuleEnrollWaitFirstID)
 	require.NoError(t, err)
 	archived, err := m.Archive(ctx, s, fixtures.AutomationJobsWaitFirstID)
 	require.NoError(t, err, "an inactive Rule holds nothing")
