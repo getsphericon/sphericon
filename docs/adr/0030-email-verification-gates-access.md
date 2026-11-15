@@ -1,5 +1,8 @@
 # Email verification gates access
 
+> **Amended by [[0152-an-invitation-link-verifies-an-address-but-proves-nothing]]:** the inviter
+> holds the Invitation link too, so accepting it stamps the Verified email but proves no address.
+
 > **Amended by [[0060-an-instance-runs-in-one-mode]]:** `SPHERICON_REQUIRE_EMAIL_VERIFICATION` is gone.
 > The gate is on in `saas` and not required in `selfhosted`. ADR 0060 also closed `selfhosted` sign-up
 > after the first Owner; [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]] reopened

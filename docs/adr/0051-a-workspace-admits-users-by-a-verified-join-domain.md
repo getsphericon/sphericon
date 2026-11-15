@@ -4,6 +4,10 @@ status: accepted
 
 # A Workspace admits Users by a verified Join domain
 
+> **Amended by [[0152-an-invitation-link-verifies-an-address-but-proves-nothing]]:** accepting an
+> Invitation proves no address, so it is no Domain join step; the Invitation accept below is gone
+> from the proof points, and so is the cost it brought.
+
 > **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** sign-up is
 > always open, so the join decision no longer takes the sign-up gate and has no `signup_closed` reason.
 

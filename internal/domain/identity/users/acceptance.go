@@ -76,9 +76,11 @@ func (a *Module) AcceptInvitationLink(ctx context.Context, token string, in Invi
 // more: consent follows the User, not the Workspace (ADR 0062). For an address with no User
 // or an Unverified User (ADR 0030) the name and password are required (a *validation.FieldsError naming both
 // otherwise) and the Sign-up items are answered as on the sign-up form (a
-// *validation.FieldsError refuses the answers): the link proves control of the address, so
-// the User is created, or the Unverified User's row completed (name and password set,
-// Verified email stamped, session epoch bumped, `user.email_verify` audited), and nothing
+// *validation.FieldsError refuses the answers): the link stands for the address, so the User is
+// created, or the Unverified User's row completed (name and password set, Verified email stamped,
+// session epoch bumped, `user.email_verify` audited). The link proves nothing (ADR 0152): its token
+// is the inviter's too, so accepting stamps no proof of the address and joins no Workspace by its
+// domain (ADR 0051). Nothing
 // the person who signed up set survives but their Consent records, which are only added to:
 // the answers are recorded after them with the source Invitation, and the latest per item is
 // the current one. If the address was verified meanwhile that is ErrSignInRequired too
@@ -116,7 +118,7 @@ func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in I
 func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub events.Publisher, inv *ent.Invitation, account newAccount, sessionEmail string) error {
 	at := a.now()
 	role := membership.Role(inv.Role)
-	u, proven, err := invitee(ctx, tx, a.passwords, inv, account, sessionEmail, at)
+	u, byInvitation, err := invitee(ctx, tx, a.passwords, inv, account, sessionEmail, at)
 	if err != nil {
 		return err
 	}
@@ -134,19 +136,10 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		}
 	}
 
-	if proven.now {
-		// The address was proven now, so the domain-join step runs after the explicit
-		// Invitation's Membership (which then wins: a Workspace the Invitation names is
-		// not joined twice). Accepting an Invitation is untouched by the sign-up gate.
-		if _, err := ApplyDomainJoinIn(ctx, tx, pub, u); err != nil {
-			return err
-		}
-	}
-
 	if err := invitations.MarkAcceptedIn(ctx, ts, inv.ID, at); err != nil {
 		return err
 	}
-	if proven.byInvitation {
+	if byInvitation {
 		if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
 			return err
 		}
@@ -171,46 +164,37 @@ type newAccount struct {
 	refused  *validation.FieldsError
 }
 
-// acceptProof says how accepting an Invitation proved the address.
-type acceptProof struct {
-	// now is true when the address was proven by this acceptance (a stamp from empty).
-	now bool
-	// byInvitation is true when the Invitation link itself was the proof: the User was created or
-	// completed from it.
-	byInvitation bool
-}
-
 // invitee resolves the User an Invitation is accepted by: a Verified User by their own session,
 // any other address by the account the link's holder sets up (ADR 0030), with the Consent
-// records of its answers (ADR 0062).
-func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (*ent.User, acceptProof, error) {
+// records of its answers (ADR 0062). byInvitation is true when the User was created or completed
+// from the link, which Verifies the address but proves it not (ADR 0152).
+func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (u *ent.User, byInvitation bool, err error) {
 	// Only a pending Invitation has an address: an accepted one is past accepting.
 	if inv.Email == nil {
-		return nil, acceptProof{}, lifecycle.ErrInvalidTransition
+		return nil, false, lifecycle.ErrInvalidTransition
 	}
 	email := *inv.Email
-	u, err := tx.User.Query().Where(user.EmailEqualFold(email)).Only(ctx)
+	u, err = tx.User.Query().Where(user.EmailEqualFold(email)).Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
-		return nil, acceptProof{}, err
+		return nil, false, err
 	}
 	if err == nil && u.EmailVerifiedAt != nil {
-		now, err := proveByOwnSession(ctx, tx, u, email, sessionEmail, at)
-		return u, acceptProof{now: now}, err
+		return u, false, ownSession(email, sessionEmail)
 	}
 	name := strings.TrimSpace(account.name)
 	if name == "" || account.password == "" {
-		return nil, acceptProof{}, credentialsRequired()
+		return nil, false, credentialsRequired()
 	}
 	if account.refused != nil {
-		return nil, acceptProof{}, account.refused
+		return nil, false, account.refused
 	}
 	name, nerr := validation.UserName(name)
 	if nerr != nil {
-		return nil, acceptProof{}, nerr
+		return nil, false, nerr
 	}
 	hash, herr := passwords.Hash(account.password)
 	if herr != nil {
-		return nil, acceptProof{}, herr
+		return nil, false, herr
 	}
 	if ent.IsNotFound(err) {
 		err = constraints.Write(ctx, tx, func() error {
@@ -220,38 +204,35 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 				SetEmail(email).
 				SetPasswordHash(hash).
 				SetEmailVerifiedAt(at).
-				SetEmailProvenAt(at).
 				Save(ctx)
 			return cerr
 		})
 	} else {
-		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash, at)
+		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash, at, false)
 		if err == nil {
 			// The person who signed up is an invitee now, not a public Sign-up.
 			err = clearSurveyDue(ctx, tx, u.ID)
 		}
 	}
 	if err != nil {
-		return nil, acceptProof{}, err
+		return nil, false, err
 	}
 	if err := consentrecords.Write(ctx, tx, u.ID, account.consents); err != nil {
-		return nil, acceptProof{}, err
+		return nil, false, err
 	}
-	return u, acceptProof{now: true, byInvitation: true}, nil
+	return u, true, nil
 }
 
-// proveByOwnSession accepts for a Verified User: their own session is the proof of the address
-// (ADR 0030). The invitation reached the address, and its owner's session accepted it. Only a
-// stamp from empty is a proof (rows changed): an already proven address triggers nothing about
-// domain join.
-func proveByOwnSession(ctx context.Context, tx *ent.Client, u *ent.User, invitedEmail, sessionEmail string, at time.Time) (bool, error) {
+// ownSession accepts for a Verified User by their own session (ADR 0030): ErrSignInRequired without
+// one, ErrWrongAccount for another User's. It proves nothing about the address (ADR 0152).
+func ownSession(invitedEmail, sessionEmail string) error {
 	if sessionEmail == "" {
-		return false, ErrSignInRequired
+		return ErrSignInRequired
 	}
 	if !strings.EqualFold(sessionEmail, invitedEmail) {
-		return false, ErrWrongAccount
+		return ErrWrongAccount
 	}
-	return proveEmailIn(ctx, tx, u.ID, at)
+	return nil
 }
 
 // ensureMembership returns the User's Membership in the scoped Workspace, creating it with role

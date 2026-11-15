@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -155,14 +156,34 @@ func acceptAnonymously(t *testing.T, env *testhelper.TestEnv, token string) {
 	require.NoError(t, err)
 }
 
-func TestAnInvitationToAnotherWorkspaceThatProvesANewAddressAlsoJoinsTheDomainWorkspace(t *testing.T) {
+// Accepting an Invitation proves no address (ADR 0152): a new address on Acme's Join domain invited
+// to Globex joins Globex only, and joins Acme at its first real proof.
+func TestAnInvitationToAnotherWorkspaceJoinsTheDomainWorkspaceOnlyAtALaterProof(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
 	token := fixtures.InvitationGlobexColleagueToken
 
 	acceptAnonymously(t, env, token)
+	requireNotInAcme(t, env, colleague.Email)
+	resetPassword(t, env, colleague.Email)
 
 	requireDomainJoined(t, env, colleague.Email)
+}
+
+// The inviter holds the copy link too, so a Globex owner who invites an address on Acme's Join
+// domain and accepts the link themselves gets no Membership in Acme (ADR 0152).
+func TestAnInviterWhoAcceptsTheirOwnCopyLinkJoinsNoDomainWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	enableAcmeJoin(t, env)
+	created, err := env.SiteActor(t, fixtures.OwnerJaneEmail).SiteInvitationsCreate(t.Context(),
+		&siteapi.SiteCreateInvitationInput{Email: "someone@acme.com", Role: siteapi.SiteInvitableRoleMember},
+		siteapi.SiteInvitationsCreateParams{WorkspaceId: fixtures.GlobexPublicID})
+	require.NoError(t, err)
+
+	acceptAnonymously(t, env, created.InviteUrl[strings.LastIndex(created.InviteUrl, "/")+1:])
+
+	requireNotInAcme(t, env, "someone@acme.com")
+	assert.Empty(t, entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionMembershipDomainJoin))
 }
 
 func TestAnInvitationForAnAlreadyProvenAddressTriggersNoDomainJoin(t *testing.T) {
@@ -178,7 +199,7 @@ func TestAnInvitationForAnAlreadyProvenAddressTriggersNoDomainJoin(t *testing.T)
 	requireNotInAcme(t, env, colleague.Email)
 }
 
-func TestAnAdminInvitationToTheDomainWorkspaceKeepsTheAdminRoleOfAFirstProof(t *testing.T) {
+func TestAnAdminInvitationToTheDomainWorkspaceMakesAnAdminAndNoDomainJoin(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
 	token := fixtures.InvitationAcmeColleagueToken
