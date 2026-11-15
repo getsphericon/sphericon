@@ -18,7 +18,14 @@ import { DatePickerInput } from '@mantine/dates'
 import type { DatesRangeValue } from '@mantine/dates'
 import { useDisclosure } from '@mantine/hooks'
 import { IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  hashKey,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
 import { saveAs } from 'file-saver'
 import { Fragment, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -26,6 +33,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ActionOption } from '../../components/ActionName.tsx'
 import { AuditActionName } from '../../components/AuditActionName.tsx'
+import { LoadMore } from '../../components/LoadMore.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { MenuItemLink } from '../../components/RouterLink.tsx'
 import { BlockSkeleton } from '../../components/Skeletons.tsx'
@@ -33,7 +41,9 @@ import {
   siteAuditExportOptions,
   siteAuditFacetsOptions,
   siteAuditGetRetentionOptions,
+  siteAuditListInfiniteOptions,
   siteAuditListOptions,
+  siteAuditListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteAuditActor,
@@ -60,6 +70,7 @@ import {
 } from '../../utils/auditFilter.ts'
 import type { AuditChipField, AuditFilter } from '../../utils/auditFilter.ts'
 import { dayOf, daysBefore } from '../../utils/datetime.ts'
+import { suspenseInfinite } from '../../utils/suspenseInfinite.ts'
 import { retentionEditor } from './settings/workspaceSettingsEditors.ts'
 
 const PAGE_SIZE = 25
@@ -278,42 +289,28 @@ function EntryRows({
   )
 }
 
-interface AuditPageProps extends FilterProps {
-  workspaceId: string
-  cursor?: string
-  first: boolean
-}
-
-// AuditPage is one page of the log under a boundary of its own, so a next page loads and fails
-// beneath the rows already shown; a refused log shows nothing.
-function AuditPage(props: AuditPageProps) {
+// AuditEntries is the log narrowed by the filter, read a page at a time: the first under the
+// section's boundary, each next one beneath the rows already shown.
+function AuditEntries({
+  workspaceId,
+  filter,
+  onFilterChange,
+}: FilterProps & { workspaceId: string }) {
   const { t } = useTranslation()
-  return (
-    <QueryBoundary
-      fallback={<BlockSkeleton />}
-      errorTitle={t(($) => $.settings.auditLog.loadError)}
-      renderError={(error) => (isHidden(error) ? null : undefined)}
-    >
-      <AuditPageRows {...props} />
-    </QueryBoundary>
-  )
-}
-
-// AuditPageRows renders one page of the log and, while more exist, a button that mounts the
-// next page beneath it, so the list grows without holding every page in one state.
-function AuditPageRows({ workspaceId, filter, onFilterChange, cursor, first }: AuditPageProps) {
-  const { t } = useTranslation()
-  const [showNext, setShowNext] = useState(false)
   const timeZone = useTimeZone()
-  const { items, nextCursor } = useSuspenseQuery(
-    siteAuditListOptions({
-      path: { workspaceId },
-      query: { ...auditQuery(filter, timeZone), limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) },
-    }),
-  ).data
+  const options = {
+    path: { workspaceId },
+    query: { ...auditQuery(filter, timeZone), limit: PAGE_SIZE },
+  }
+  const query = useSuspenseInfiniteQuery({
+    ...suspenseInfinite(siteAuditListInfiniteOptions(options), siteAuditListQueryKey(options)),
+    // The empty cursor is the log's start.
+    initialPageParam: '',
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+  })
+  const items = query.data.pages.flatMap((page) => page.items)
 
-  const next = nextCursor ?? undefined
-  if (first && items.length === 0) {
+  if (items.length === 0) {
     return (
       <EmptyState
         title={
@@ -329,17 +326,15 @@ function AuditPageRows({ workspaceId, filter, onFilterChange, cursor, first }: A
     <>
       <Table.ScrollContainer minWidth={640}>
         <Table withTableBorder>
-          {first ? (
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t(($) => $.settings.auditLog.time)}</Table.Th>
-                <Table.Th>{t(($) => $.settings.auditLog.actor)}</Table.Th>
-                <Table.Th>{t(($) => $.settings.auditLog.action)}</Table.Th>
-                <Table.Th>{t(($) => $.settings.auditLog.target)}</Table.Th>
-                <Table.Th w={40} />
-              </Table.Tr>
-            </Table.Thead>
-          ) : null}
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t(($) => $.settings.auditLog.time)}</Table.Th>
+              <Table.Th>{t(($) => $.settings.auditLog.actor)}</Table.Th>
+              <Table.Th>{t(($) => $.settings.auditLog.action)}</Table.Th>
+              <Table.Th>{t(($) => $.settings.auditLog.target)}</Table.Th>
+              <Table.Th w={40} />
+            </Table.Tr>
+          </Table.Thead>
           <Table.Tbody>
             {items.map((entry) => (
               <EntryRows
@@ -352,20 +347,11 @@ function AuditPageRows({ workspaceId, filter, onFilterChange, cursor, first }: A
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
-      {next && !showNext ? (
-        <Button variant="light" onClick={() => setShowNext(true)}>
-          {t(($) => $.settings.auditLog.loadMore)}
-        </Button>
-      ) : null}
-      {next && showNext ? (
-        <AuditPage
-          workspaceId={workspaceId}
-          filter={filter}
-          onFilterChange={onFilterChange}
-          cursor={next}
-          first={false}
-        />
-      ) : null}
+      <LoadMore
+        query={query}
+        label={t(($) => $.settings.auditLog.loadMore)}
+        errorTitle={t(($) => $.settings.auditLog.loadError)}
+      />
     </>
   )
 }
@@ -643,7 +629,6 @@ export function AuditLogSection({
   if (isHidden(probe.error)) {
     return null
   }
-  const filterKey = JSON.stringify(filter)
 
   return (
     <Box>
@@ -656,13 +641,15 @@ export function AuditLogSection({
         >
           <FilterBar workspaceId={workspaceId} filter={filter} onFilterChange={onFilterChange} />
         </QueryBoundary>
-        <AuditPage
-          key={filterKey}
-          workspaceId={workspaceId}
-          filter={filter}
-          onFilterChange={onFilterChange}
-          first
-        />
+        {/* It starts over when the filter changes, so a filter that failed does not stay on screen. */}
+        <QueryBoundary
+          key={hashKey([filter])}
+          fallback={<BlockSkeleton />}
+          errorTitle={t(($) => $.settings.auditLog.loadError)}
+          renderError={(error) => (isHidden(error) ? null : undefined)}
+        >
+          <AuditEntries workspaceId={workspaceId} filter={filter} onFilterChange={onFilterChange} />
+        </QueryBoundary>
       </Stack>
     </Box>
   )
