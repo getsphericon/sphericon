@@ -11,6 +11,12 @@ from `.mise.toml`); `mise tasks` lists them. The dev stack (Postgres, Mailpit, b
 Caddy) is a set of **mise daemons** (`[daemons]` in `.mise.toml`, experimental). Tasks that need
 Postgres depend on `db:up` (below) instead of a `db` daemon of their own.
 
+**Git hooks are [hk](https://hk.jdx.dev)'s** (`hk.pkl`, installed by `mise install`'s postinstall hook): each commit
+runs the steps over the staged files, and a step's full output is in `.git/hk/output.log` (a linked
+worktree's under `.git/worktrees/<name>/hk/`). When a step fails on what `main` itself holds rather
+than on the change (two ADRs that took one number), commit with that one step skipped,
+`HK_SKIP_STEPS=<step> git commit`, and let the fix to `main` land on its own.
+
 **One Postgres for every checkout.** The `db` daemon (mise `postgres` preset, fixed port 15432)
 is declared in `.mise.toml` but only ever runs in the **primary checkout** (the first
 `git worktree list` entry: a stable project root that `mise daemons prune` never sees as

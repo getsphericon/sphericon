@@ -187,7 +187,9 @@ The rest of this file is for maintainers and the agents they run: how work lands
 - **Land every change from its worktree, then clean up.** When the user says to land or finish
   ("заливай", "завершай", "land it"): push to `main` as above if they asked for that, otherwise run
   `mise run land`, wait for CI (`gh pr checks --watch`) and
-  merge with `gh pr merge --squash`. The repository squashes with the pull request title, which is a
+  merge with `gh pr merge --squash`. The ruleset merges only a pull request that holds the latest
+  `main`: when GitHub refuses it as behind, run `gh pr update-branch --rebase`, which also catches a
+  number another branch took meanwhile (an ADR's), wait for CI again, then merge. The repository squashes with the pull request title, which is a
   Conventional Commit, and release-please reads it. A pull request of the maintainer that touches a
   `CODEOWNERS` path merges with plain `gh pr merge --squash`, no bypass (#664 did). If GitHub refuses
   for want of the owner's review, ask the user before `--admin`. A red or missing check is fixed, never

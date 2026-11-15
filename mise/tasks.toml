@@ -618,8 +618,11 @@ description = "openapi/{site,external,service} (the value bounds boundgen.Bounds
 run = "go run ./cmd/boundgen"
 
 [generate]
-description = "Full cycle: typespec -> openapi -> backend -> test mocks -> fixture catalog -> backend i18n ids -> configuration reference -> frontend (clients, route tree) -> i18n types -> format"
+description = "Full cycle: backend i18n ids -> typespec -> openapi -> backend -> test mocks -> fixture catalog -> configuration reference -> frontend (clients, route tree) -> i18n types -> format"
 run = [
+  # First: it reads only en.json, and every later step that loads Go packages (goverter, moq) needs
+  # the message ids (`i18n.Errors…`) the code already names.
+  { task = "generate:i18n-ids" },
   { task = "generate:typespec" },
   { task = "generate:openapi" },
   { task = "generate:routes" },
@@ -628,7 +631,6 @@ run = [
   { task = "generate:bounds" },
   { task = "generate:mocks" },
   { task = "generate:fixtures" },
-  { task = "generate:i18n-ids" },
   { task = "generate:configdoc" },
   { task = "fix" },
 ]
