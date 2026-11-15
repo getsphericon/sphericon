@@ -154,6 +154,10 @@ func (r *run) broadcasts(ctx context.Context) (int, error) {
 	}
 	var total int
 	for _, id := range finished {
+		// A spent budget prunes nothing more: the next run freezes and prunes the rest.
+		if r.budget <= 0 {
+			break
+		}
 		n, err := r.broadcast(ctx, id)
 		total += n
 		if err != nil {

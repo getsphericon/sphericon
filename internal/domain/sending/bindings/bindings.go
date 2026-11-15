@@ -500,9 +500,13 @@ func AnnounceVisitor(ctx context.Context, s *ent.Scoped, pub events.Publisher, v
 		if err != nil {
 			return err
 		}
-		if err := s.Binding().UpdateOneID(b.ID).SetAnnounced(true).Exec(ctx); err != nil {
-			return fmt.Errorf("mark binding announced: %w", err)
-		}
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	ids := lo.Map(rows, func(b *ent.Binding, _ int) int64 { return b.ID })
+	if err := s.Binding().Update().Where(binding.IDIn(ids...)).SetAnnounced(true).Exec(ctx); err != nil {
+		return fmt.Errorf("mark bindings announced: %w", err)
 	}
 	return nil
 }

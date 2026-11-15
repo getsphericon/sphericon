@@ -6,6 +6,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/infra/db"
@@ -33,16 +35,26 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 	if len(kv) == 0 {
 		return nil, nil
 	}
-	out := make(map[string]any, len(kv))
-	for key, val := range kv {
-		if key == "" {
+	keys := lo.Without(lo.Keys(kv), "")
+	if slices.ContainsFunc(keys, func(k string) bool { return reservedKeys[k] }) {
+		return nil, ErrReservedKey
+	}
+	// Only the keys not defined yet are inserted: an ingest of known keys reads once and writes
+	// nothing, rather than an insert per key that only conflicts.
+	var defined []string
+	if err := s.CustomField().Query().Where(customfield.KeyIn(keys...)).Select(customfield.FieldKey).Scan(ctx, &defined); err != nil {
+		return nil, err
+	}
+	known := lo.SliceToMap(defined, func(k string) (string, bool) { return k, true })
+	out := make(map[string]any, len(keys))
+	for _, key := range keys {
+		val := kv[key]
+		out[key] = val
+		if known[key] {
 			continue
 		}
-		if reservedKeys[key] {
-			return nil, ErrReservedKey
-		}
 		// DO NOTHING, not Ignore: an insert is the audited create of the definition under
-		// a User or API token (ADR 0022); a conflict writes nothing.
+		// a User or API token (ADR 0022); a conflict (a concurrent first use) writes nothing.
 		err := s.CustomField().Create().
 			SetKey(key).
 			SetName(key).
@@ -54,7 +66,6 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 		if err != nil {
 			return nil, err
 		}
-		out[key] = val
 	}
 	return out, nil
 }

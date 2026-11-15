@@ -561,16 +561,26 @@ func Resolve(ctx context.Context, s *ent.Scoped, subjectID, email, phone *string
 	if a.Phone != nil {
 		keys = append(keys, contact.Phone(*a.Phone))
 	}
-	for _, key := range keys {
-		c, err := s.Contact().Query().Where(key).First(ctx)
-		if err == nil {
-			return c, nil
-		}
-		if !ent.IsNotFound(err) {
-			return nil, err
+	if len(keys) == 0 {
+		return nil, nil
+	}
+	// One query for all the keys: each is unique in the Workspace, so it matches a row at most,
+	// and the row of the first key in the order above wins.
+	rows, err := s.Contact().Query().Where(contact.Or(keys...)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rank := func(c *ent.Contact) int {
+		switch {
+		case a.SubjectID != nil && lo.FromPtr(c.SubjectID) == *a.SubjectID:
+			return 0
+		case a.Email != nil && lo.FromPtr(c.Email) == *a.Email:
+			return 1
+		default:
+			return 2
 		}
 	}
-	return nil, nil
+	return lo.MinBy(rows, func(x, y *ent.Contact) bool { return rank(x) < rank(y) }), nil
 }
 
 // ResolveID resolves an existing Contact by any present alias key (subject_id

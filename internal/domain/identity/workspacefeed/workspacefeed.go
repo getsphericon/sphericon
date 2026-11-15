@@ -203,15 +203,9 @@ func mutateUser(ctx context.Context, next ent.Mutator, m *entclient.UserMutation
 
 // workspacesOf is the Workspaces the Memberships of q belong to.
 func workspacesOf(ctx context.Context, q *entclient.MembershipQuery) ([]int64, error) {
-	rows, err := q.All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	ids := make([]int64, len(rows))
-	for i, r := range rows {
-		ids[i] = r.WorkspaceID
-	}
-	return ids, nil
+	var ids []int64
+	err := q.Unique(true).Select(membership.FieldWorkspaceID).Scan(ctx, &ids)
+	return ids, err
 }
 
 // touch gives each Workspace the next position, all of them the same one. The lock is

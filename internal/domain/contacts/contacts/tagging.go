@@ -101,10 +101,13 @@ func RemoveTagIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, conta
 // bound to: it applies the missing ones (creating them on first use) and removes the rest, each
 // change recorded as ApplyTagIn and RemoveTagIn do. Names are compared as Tags are matched
 // (tagname): a name the Contact holds in another case is kept, not removed and applied again, and
-// blank and repeated names are dropped, so a form's empty chip changes nothing.
+// blank and repeated names are dropped, so a form's empty chip changes nothing. The Contact is
+// locked and its set read once, so each change is the write of its join row and its event, and the
+// Contact's row is written once for the whole set.
 func SetTagsIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, names []string) error {
 	want := lo.UniqBy(lo.Filter(names, func(n string, _ int) bool { return tagname.Key(n) != "" }), tagname.Key)
-	if _, err := lockTagged(ctx, s, contactID); err != nil {
+	c, err := lockTagged(ctx, s, contactID)
+	if err != nil {
 		return err
 	}
 	have, err := s.Tag().Query().Where(tag.HasContactsWith(contact.ID(contactID))).All(ctx)
@@ -113,23 +116,39 @@ func SetTagsIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, contact
 	}
 	wanted := lo.SliceToMap(want, func(n string) (string, bool) { return tagname.Key(n), true })
 	held := lo.SliceToMap(have, func(t *ent.Tag) (string, bool) { return t.NameKey, true })
+	changed := false
 	for _, name := range want {
 		if held[tagname.Key(name)] {
 			continue
 		}
-		if _, err := ApplyTagIn(ctx, s, pub, contactID, name); err != nil {
+		t, err := tags.EnsureIn(ctx, s, name)
+		if err != nil {
 			return err
 		}
+		if err := s.ContactTag().Create().SetContactID(contactID).SetTagID(t.ID).Exec(ctx); err != nil {
+			return err
+		}
+		if err := publishTagChange(ctx, s, pub, systemevent.ContactTagged, c, t); err != nil {
+			return err
+		}
+		changed = true
 	}
 	for _, t := range have {
 		if wanted[t.NameKey] {
 			continue
 		}
-		if err := RemoveTagIn(ctx, s, pub, contactID, t.Name); err != nil {
+		if _, err := s.ContactTag().Delete().Where(contacttag.ContactID(contactID), contacttag.TagID(t.ID)).Exec(ctx); err != nil {
 			return err
 		}
+		if err := publishTagChange(ctx, s, pub, systemevent.ContactUntagged, c, t); err != nil {
+			return err
+		}
+		changed = true
 	}
-	return nil
+	if !changed {
+		return nil
+	}
+	return touch(ctx, s, contactID)
 }
 
 // lockTagged locks the Contact's row to the end of the transaction s is bound to (contactlock), so

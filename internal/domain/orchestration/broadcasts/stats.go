@@ -2,9 +2,9 @@ package broadcasts
 
 import (
 	"context"
-	"slices"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -195,9 +195,8 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 	if err != nil {
 		return nil, err
 	}
-	live := slices.DeleteFunc(slices.Clone(ids), func(id int64) bool {
-		return slices.ContainsFunc(frozen, func(f *ent.BroadcastFigure) bool { return f.BroadcastID == id })
-	})
+	isFrozen := lo.SliceToMap(frozen, func(f *ent.BroadcastFigure) (int64, bool) { return f.BroadcastID, true })
+	live := lo.Reject(ids, func(id int64, _ int) bool { return isFrozen[id] })
 	out, err := RowStatsOf(ctx, s, live...)
 	if err != nil {
 		return nil, err

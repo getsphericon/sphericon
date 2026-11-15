@@ -537,8 +537,12 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		if err := validate(*e.steps, linkLength); err != nil {
 			return definition{}, err
 		}
-		for i := range *e.steps {
-			if err := checkIntegration(ctx, ts, (*e.steps)[i].IntegrationID); err != nil {
+		// Each Integration the steps name is checked once, however many steps send through it.
+		named := lo.FilterMap(*e.steps, func(st automationstep.Step, _ int) (int64, bool) {
+			return lo.FromPtr(st.IntegrationID), st.IntegrationID != nil
+		})
+		for _, id := range lo.Uniq(named) {
+			if err := checkIntegration(ctx, ts, &id); err != nil {
 				return definition{}, err
 			}
 		}
