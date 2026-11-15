@@ -3,6 +3,7 @@ package db_test
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -14,20 +15,30 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// scriptedSchema is a database check with a clock the test moves. The cache of the watch reads the
+// clock from its maintenance goroutine too, so the clock is atomic.
 type scriptedSchema struct {
-	now     time.Time
+	now     atomic.Int64 // Unix nanoseconds
 	pending int
 	err     error
 }
 
+func newScriptedSchema(pending int) *scriptedSchema {
+	s := &scriptedSchema{pending: pending}
+	s.now.Store(time.Unix(1000, 0).UnixNano())
+	return s
+}
+
+func (s *scriptedSchema) advance(d time.Duration) { s.now.Add(int64(d)) }
+
 func (s *scriptedSchema) watch() *db.SchemaWatch {
 	return db.WatchSchema(func(context.Context) (int, error) {
 		return s.pending, s.err
-	}, func() time.Time { return s.now })
+	}, func() time.Time { return time.Unix(0, s.now.Load()) })
 }
 
 func TestSchemaWatchSeesAMigrationRunAfterABehindVerdictWithinASecond(t *testing.T) {
-	s := &scriptedSchema{now: time.Unix(1000, 0), pending: 2}
+	s := newScriptedSchema(2)
 	w := s.watch()
 
 	behind, err := w.Pending(t.Context())
@@ -35,26 +46,26 @@ func TestSchemaWatchSeesAMigrationRunAfterABehindVerdictWithinASecond(t *testing
 	assert.Equal(t, 2, behind)
 
 	s.pending = 0
-	s.now = s.now.Add(1500 * time.Millisecond)
+	s.advance(1500 * time.Millisecond)
 	current, err := w.Pending(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 0, current)
 }
 
 func TestSchemaWatchKeepsACurrentVerdictForAWhileThenAsksAgain(t *testing.T) {
-	s := &scriptedSchema{now: time.Unix(1000, 0)}
+	s := newScriptedSchema(0)
 	w := s.watch()
 	_, err := w.Pending(t.Context())
 	require.NoError(t, err)
 
 	// The database was reset under the running process: the verdict holds until it expires.
 	s.pending = 3
-	s.now = s.now.Add(5 * time.Second)
+	s.advance(5 * time.Second)
 	held, err := w.Pending(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 0, held)
 
-	s.now = s.now.Add(6 * time.Second)
+	s.advance(6 * time.Second)
 	behind, err := w.Pending(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 3, behind)
@@ -118,7 +129,8 @@ func TestSchemaWatchKeepsASharedCheckRunningWhenTheCallerThatStartedItIsCancelle
 }
 
 func TestSchemaWatchDoesNotCacheAnError(t *testing.T) {
-	s := &scriptedSchema{now: time.Unix(1000, 0), err: errors.New("db down")}
+	s := newScriptedSchema(0)
+	s.err = errors.New("db down")
 	w := s.watch()
 	_, err := w.Pending(t.Context())
 	require.Error(t, err)
