@@ -70,7 +70,7 @@ func (m *Module) ResetByStaff(ctx context.Context, email, by string) error {
 
 // ClearFactorAndPasskeysIn clears whatever Second factor, Recovery codes and Passkeys the User holds on the
 // transaction tx, as a reset does, without asking that there be any: the first proof of an address
-// drops what was set up before it (ADR 0162). It returns the User as it stands afterwards.
+// drops what was set up before it (ADR 0170). It returns the User as it stands afterwards.
 func ClearFactorAndPasskeysIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
 	u, err := resetIn(ctx, tx, userID)
 	if errors.Is(err, ErrNothingToReset) {

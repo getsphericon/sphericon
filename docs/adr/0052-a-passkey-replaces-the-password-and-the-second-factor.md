@@ -4,7 +4,7 @@ status: accepted
 
 # A passkey replaces the password and the Second factor
 
-> **Amended by [[0162-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** Passkeys
+> **Amended by [[0170-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** Passkeys
 > registered before a User's address was first proven are removed by that proof.
 
 A User may register **Passkeys** (WebAuthn, `go-webauthn/webauthn`) and log in with one without typing an

@@ -120,7 +120,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    `userdeletion.UseCase.Delete` (User deletion, ADR 0050, `internal/usecase/userdeletion`) scopes its one transaction in turn to each
    Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
    to lock the Owner rows and remove the Membership; and the first proof of an address
-   (`internal/domain/identity/signup`, its `afterProofIn`, ADR 0162) scopes the
+   (`internal/domain/identity/signup`, its `afterProofIn`, ADR 0170) scopes the
    transaction of the provider link or the reset link in turn to each Workspace the User belongs to
    (from `memberships.OfUserIn`), to revoke the User's Personal tokens and Connections there
    (`apitokens.RevokeOfUser`);
@@ -184,7 +184,7 @@ and the bootstrap, whose token names no Workspace, so it scopes to the oldest li
 every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
 (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
 Workspace; the Second factor reset, `secondfactors.Module.Reset`, clears both in one transaction, and so does
-`secondfactors.ClearFactorAndPasskeysIn` on the transaction of an address's first proof, ADR 0162),
+`secondfactors.ClearFactorAndPasskeysIn` on the transaction of an address's first proof, ADR 0170),
 `internal/domain/identity/noticedelivery` (Notice delivery, a module without a table: the Notices of
 the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
 Workspace's Owners and Members are read by the id an event names),
@@ -192,7 +192,7 @@ Workspace's Owners and Members are read by the id an event names),
 Verified with its first Workspace, ADR 0030, ADR 0043: neither exists yet, so it opens the raw transaction
 that the users module's steps and `memberships.CreateWorkspaceIn` write on; and the provider link and the
 reset link of a Verified User, whose raw transaction also drops, at the address's first proof, what was
-set up before it, ADR 0162),
+set up before it, ADR 0170),
 the unchecked operations of the identity modules that join their use case's raw transaction
 (ADR 0110: `workspacesunchecked`, `membershipsunchecked` and `usersunchecked`, in the component
 `domain-identity-unchecked`, which only a use case imports), the use cases

@@ -258,7 +258,7 @@ func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (
 // transaction tx. The provider's proof makes the address proven; every link ends the User's other
 // sessions, and a User whose address was not proven before also loses its password and the
 // identities linked before, in the same transaction. firstProof reports that case: the caller drops
-// the rest of what was set up before the proof (ADR 0162). It returns the User as it stands
+// the rest of what was set up before the proof (ADR 0170). It returns the User as it stands
 // afterwards and the new identity's id.
 func LinkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
 	// Every link ends the other sessions (ADR 0048); the caller starts the new one from
@@ -304,7 +304,7 @@ func LinkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, h
 }
 
 // dropIdentitiesIn removes every Linked identity of the User on tx: at the first proof of their
-// address, the identities linked before it are not the owner's for sure (ADR 0162).
+// address, the identities linked before it are not the owner's for sure (ADR 0170).
 func dropIdentitiesIn(ctx context.Context, tx *ent.Client, userID int64) error {
 	_, err := tx.UserIdentity.Delete().Where(useridentity.UserID(userID)).Exec(ctx)
 	return err

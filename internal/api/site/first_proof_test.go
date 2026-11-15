@@ -18,7 +18,7 @@ import (
 )
 
 // The first proof of an address drops the ways into the account that were set up before it:
-// whoever proves the address is the one who controls the account (ADR 0162). John's fixture
+// whoever proves the address is the one who controls the account (ADR 0170). John's fixture
 // address is Verified but was never proven, so whoever knows his password stands for a squatter.
 
 // squatterWithGoogle is a Google account of someone who is not the owner of John's address.

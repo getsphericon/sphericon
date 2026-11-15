@@ -301,7 +301,7 @@ func (m *Module) linkToHolder(ctx context.Context, holderID int64, in users.Prov
 // afterProofIn is the end of a step that proved u's address at now, on its transaction tx. When
 // that proof was the address's first, it drops the ways into the account that were set up before
 // it: whoever set them was not shown to control the address, so whoever proves it is the one who
-// controls the account (ADR 0162). The Personal tokens and Connections go in every Workspace of the
+// controls the account (ADR 0170). The Personal tokens and Connections go in every Workspace of the
 // User, then the Second factor, its Recovery codes and the Passkeys. It returns the User as it
 // stands afterwards, its session epoch the last one.
 func afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof bool, now time.Time) (*ent.User, error) {

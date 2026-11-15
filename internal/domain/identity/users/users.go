@@ -376,7 +376,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 
 // updateProfileIn is updateProfile's write on the transaction tx, the name already checked.
 // firstProof reports that proven stamped the address from empty: the identities linked before it
-// go then too, and the caller drops the rest of what was set up before the proof (ADR 0162).
+// go then too, and the caller drops the rest of what was set up before the proof (ADR 0170).
 func updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, w profileWrite, proven bool, now time.Time) (saved *ent.User, firstProof bool, err error) {
 	// The mailed link proves the address; only a stamp from empty is a domain-join step,
 	// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
@@ -420,7 +420,7 @@ func updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 // login address, so following it proves the address. An Unverified User's reset completes the
 // Sign-up instead (internal/domain/identity/signup).
 // It runs on the transaction tx; firstProof reports that the link was the address's first proof, so
-// the caller drops what was set up before it (ADR 0162).
+// the caller drops what was set up before it (ADR 0170).
 func ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, passwordHash string, now time.Time) (*ent.User, bool, error) {
 	return updateProfileIn(ctx, tx, pub, id, profileWrite{PasswordHash: &passwordHash}, true, now)
 }

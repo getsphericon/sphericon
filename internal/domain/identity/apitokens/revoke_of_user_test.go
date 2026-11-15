@@ -15,7 +15,7 @@ import (
 )
 
 // RevokeOfUser retires the User's own credentials in the Workspace, and no one else's: another
-// member's Connection and the Workspace's API token keep working (ADR 0162).
+// member's Connection and the Workspace's API token keep working (ADR 0170).
 func TestRevokeOfUserRetiresOnlyThatUsersCredentials(t *testing.T) {
 	env := testhelper.Setup(t)
 	johns := env.ExternalWithToken(t, env.ConnectionBearer(t, fixtures.OwnerJohnEmail, apitokens.ScopeContactsRead))

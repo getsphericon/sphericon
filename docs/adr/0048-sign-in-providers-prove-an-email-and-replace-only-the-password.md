@@ -4,7 +4,7 @@ status: accepted
 
 # Sign-in providers prove an email and replace only the password
 
-> **Amended by [[0162-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** the first
+> **Amended by [[0170-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** the first
 > proof of a Verified User's address, by a provider link or a reset link, drops every credential set
 > up before it, not only the password: Linked identities, the Second factor, Passkeys, Personal
 > tokens and Connections.

@@ -71,7 +71,7 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
-  # Proven, so a provider link to his address is no first proof and keeps his factor (ADR 0162).
+  # Proven, so a provider link to his address is no first proof and keeps his factor (ADR 0170).
   email_proven_at: '2026-01-01 00:00:00'
 # Rita owns Umbrella, the Workspace with a Two-factor requirement, through a Membership
 # older than the requirement (her grace ends 2026-03-08), and has no Second factor. She is

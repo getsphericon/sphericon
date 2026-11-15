@@ -1625,7 +1625,7 @@ trusted email that a Verified User holds, the identity is linked silently and th
 notice with a "this was not me" link that unlinks it and ends every session. If that address was
 never proven (an install with verification off marks it Verified without proof), the link also
 drops what was set up before it (the password, the other Linked identities, the Second factor,
-Passkeys, Personal tokens and Connections; a first reset link drops the same, ADR 0162), so whoever
+Passkeys, Personal tokens and Connections; a first reset link drops the same, ADR 0170), so whoever
 proves the address is the one who controls it.
 _Avoid_: Social account, connected account
 

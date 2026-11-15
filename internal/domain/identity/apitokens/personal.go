@@ -78,7 +78,7 @@ func PersonalTokens(ctx context.Context, s *ent.Scoped, caller *ent.Membership) 
 }
 
 // RevokeOfUser retires every active Personal token and Connection the User holds in the Workspace s:
-// the credentials set up before the User's address was first proven (ADR 0162).
+// the credentials set up before the User's address was first proven (ADR 0170).
 func RevokeOfUser(ctx context.Context, s *ent.Scoped, userID int64, at time.Time) error {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := s.ApiToken().Update().

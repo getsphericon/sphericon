@@ -256,7 +256,7 @@ func TestLifecycleAStaleResetOfPasskeysAloneCannotWriteAgain(t *testing.T) {
 }
 
 // ClearFactorAndPasskeysIn drops a User's factor, Recovery codes and Passkeys whatever they hold, and a User who
-// holds none of them is no error (ADR 0162).
+// holds none of them is no error (ADR 0170).
 func TestClearFactorAndPasskeysInDropsWhateverTheUserHolds(t *testing.T) {
 	for name, userID := range map[string]int64{
 		"a factor and its codes": fixtures.SecondFactorSamID,
