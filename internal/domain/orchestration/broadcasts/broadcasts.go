@@ -27,7 +27,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
-	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -509,7 +508,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	if err := m.checkRefs(ctx, s, channel, f.SegmentID.Ptr(), f.IntegrationID.Ptr()); err != nil {
 		return nil, err
 	}
-	u := s.Broadcast().Update().Where(draftOf(id, f.Revision))
+	u := editOfDraft(s, id, f.Revision)
 	if f.Content != nil {
 		if err := f.Content.update(ctx, m, s, cur, u); err != nil {
 			return nil, err
@@ -533,7 +532,7 @@ func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id, revision int
 			return nil, err
 		}
 	}
-	u := s.Broadcast().Update().Where(draftOf(id, revision)).SetNillableSegmentID(segmentID)
+	u := editOfDraft(s, id, revision).SetNillableSegmentID(segmentID)
 	if segmentID == nil {
 		u.ClearSegmentID()
 	}
@@ -608,38 +607,32 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	return Report{Status: b.Status, HoldReason: b.HoldReason, Figures: figures[id].Figures()}, nil
 }
 
-// draftOf matches the Broadcast while it is a draft its owner may edit, not archived, at the
-// revision the edit was made on (ADR 0119).
-func draftOf(id, revision int64) predicate.Broadcast {
-	return broadcast.And(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil(), broadcast.Revision(revision))
+// editOfDraft is the edit of the Broadcast made on revision (ADR 0119), which writes only while it is
+// a draft its owner may edit, not archived (ADR 0109).
+func editOfDraft(s *ent.Scoped, id, revision int64) *ent.BroadcastScopedUpdateOne {
+	return s.Broadcast().EditAt(id, revision).Where(broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil())
 }
 
-func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.BroadcastScopedUpdate) (*ent.Broadcast, error) {
-	n, err := u.Save(ctx)
+// editDraft writes the edit of a draft. One that matched no row is refused in order: the Broadcast is
+// not the Workspace's (ErrNotFound), archived, past draft (ErrNotDraft, whatever its revision:
+// reading it again changes nothing), or a draft someone wrote since (ErrRevisionChanged).
+func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.BroadcastScopedUpdateOne) (*ent.Broadcast, error) {
+	_, err := u.Save(ctx)
+	if miss, ok := errors.AsType[*ent.BroadcastMiss](err); ok {
+		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged, refuseArchived, refuseNotDraft)
+	}
 	if err != nil {
 		return nil, err
-	}
-	if n == 0 {
-		return nil, m.notDraftOrNotFound(ctx, s, id)
 	}
 	return m.Get(ctx, s, id)
 }
 
-// notDraftOrNotFound tells why an edit of a draft matched no row: the Broadcast is not the
-// Workspace's (ErrNotFound), archived, past draft (ErrNotDraft, whatever its revision: reading it
-// again changes nothing), or a draft someone wrote since (ErrRevisionChanged).
-func (m *Module) notDraftOrNotFound(ctx context.Context, s *ent.Scoped, id int64) error {
-	b, err := m.Get(ctx, s, id)
-	if err != nil {
-		return err
-	}
-	if err := refuseArchived(b); err != nil {
-		return err
-	}
+// refuseNotDraft is ErrNotDraft for a Broadcast past draft: only a draft is edited.
+func refuseNotDraft(b *ent.Broadcast) error {
 	if b.Status != broadcast.StatusDraft {
 		return ErrNotDraft
 	}
-	return ErrRevisionChanged
+	return nil
 }
 
 // refuseArchived is ErrArchived for an archived Broadcast: it is read-only to its owner until it

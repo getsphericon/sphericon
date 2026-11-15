@@ -44,7 +44,10 @@ func (s *Schema) Funcs() template.FuncMap {
 		"versionOwnerField": func(n *gen.Type) *gen.Field { return s.entities[n].versionOwner },
 		// isWorkspaceField reports whether f is the Workspace column of a Workspace-owned entity,
 		// which the scoped client sets itself and never exposes a setter for.
-		"isWorkspaceField":  s.isWorkspaceField,
+		"isWorkspaceField": s.isWorkspaceField,
+		// isRevisionField reports whether f is the revision of a type with one (ADR 0119), which only
+		// internal/app/entclient's Revision hook moves on an update: a scoped update has no setter of it.
+		"isRevisionField":   s.isRevisionField,
 		"replantFields":     s.replantFields,
 		"scopedEdges":       s.scopedEdges,
 		"scopedEdgeMutable": scopedEdgeMutable,
@@ -132,6 +135,15 @@ func (s *Schema) fieldsOf(n *gen.Type, match func(*fieldAnnotations) bool) []*ge
 func (s *Schema) isWorkspaceField(f *gen.Field) bool {
 	for _, e := range s.entities {
 		if e.workspace == f {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Schema) isRevisionField(f *gen.Field) bool {
+	for _, e := range s.entities {
+		if e.revision == f {
 			return true
 		}
 	}

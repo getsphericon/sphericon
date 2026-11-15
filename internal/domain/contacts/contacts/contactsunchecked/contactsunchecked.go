@@ -9,6 +9,7 @@ package contactsunchecked
 
 import (
 	"context"
+	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -29,10 +30,9 @@ type CustomFieldUpdate struct {
 
 // CustomFieldUpdateIn opens the edit in of the Custom field with the id in the transaction l holds
 // the Workspace's lock in, and refuses what the field's own rules refuse before anything is
-// written: an unknown id is contacts.ErrCustomFieldNotFound, a new name the name rule refuses is
-// its refusal (validation.Name), and an edit made on a revision the field has moved past is
-// contacts.ErrCustomFieldRevisionChanged (ADR 0119). Every write of a Custom field holds the lock,
-// so the field read here is the one Apply replaces.
+// written: an unknown id is contacts.ErrCustomFieldNotFound and a new name the name rule refuses is
+// its refusal (validation.Name). The revision the edit was made on is Apply's to compare, at the
+// write (ADR 0119).
 func CustomFieldUpdateIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, in contacts.CustomFieldUpdateInput) (*CustomFieldUpdate, error) {
 	field, err := contacts.CustomField(ctx, l.Scope(), id)
 	if err != nil {
@@ -41,9 +41,6 @@ func CustomFieldUpdateIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, 
 	name, err := validation.NamePatch(in.Name)
 	if err != nil {
 		return nil, err
-	}
-	if field.Revision != in.Revision {
-		return nil, contacts.ErrCustomFieldRevisionChanged
 	}
 	return &CustomFieldUpdate{l: l, field: field, in: in, name: name}, nil
 }
@@ -64,14 +61,19 @@ func (u *CustomFieldUpdate) Retype() (customfield.Type, bool) {
 // as edited. A type change rewrites no stored value: the leaves of the new type read the values as
 // they are, and are false on one of another shape. It does not ask whether a Segment, a Rule or a
 // Broadcast tests the field with a leaf the new type does not take: that is the use case's Removal
-// check, run under the same lock before.
+// check, run under the same lock before. It writes on the revision the edit was made on (ADR 0119):
+// a field that has moved past it is contacts.ErrCustomFieldRevisionChanged, and nothing is written.
 func (u *CustomFieldUpdate) Apply(ctx context.Context) (*ent.CustomField, error) {
-	upd := u.l.CustomField().UpdateOneID(u.field.ID)
+	upd := u.l.CustomField().EditAt(u.field.ID, u.in.Revision)
 	patch.ApplySet(u.name, upd.SetName)
 	if t, ok := u.Retype(); ok {
 		upd.SetType(t)
 	}
-	return upd.Save(ctx)
+	updated, err := upd.Save(ctx)
+	if miss, ok := errors.AsType[*ent.CustomFieldMiss](err); ok {
+		return nil, miss.Refuse(contacts.ErrCustomFieldNotFound, contacts.ErrCustomFieldRevisionChanged)
+	}
+	return updated, err
 }
 
 // DeleteIn removes the Contact row inside the transaction s is bound to; its Tag links and Custom

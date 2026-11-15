@@ -36,9 +36,9 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 // on one of another shape. It is refused with the Removal check's *liveuse.Error while a Segment, a
 // kept Rule or an armed Broadcast tests the field with a leaf the new type does not take, as their
 // Conditions would stop compiling; a leaf every type takes (notNull) does not hold the type. An
-// unknown id is contacts.ErrCustomFieldNotFound, a new name the name rule refuses its refusal, and
-// an edit made on a revision the field has moved past contacts.ErrCustomFieldRevisionChanged (ADR
-// 0119), each refused before the check runs.
+// unknown id is contacts.ErrCustomFieldNotFound and a new name the name rule refuses its refusal,
+// each refused before the check runs; an edit made on a revision the field has moved past is
+// contacts.ErrCustomFieldRevisionChanged (ADR 0119), refused by the write, which is made on it.
 //
 // The check and the edit run in one transaction under the Workspace's lock (ADR 0099), which saving
 // a Segment or a Rule and scheduling a Broadcast take too: one saved first is what the check finds,

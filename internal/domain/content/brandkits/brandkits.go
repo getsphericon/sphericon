@@ -2,6 +2,7 @@ package brandkits
 
 import (
 	"context"
+	"errors"
 	"net/url"
 	"regexp"
 	"strings"
@@ -165,8 +166,7 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []r
 		if err != nil {
 			return err
 		}
-		saved, err = ts.BrandKit().UpdateOneID(row.ID).
-			Where(brandkit.Revision(in.Revision)).
+		saved, err = ts.BrandKit().EditAt(row.ID, in.Revision).
 			SetAccentColor(in.AccentColor).
 			SetTextColor(in.TextColor).
 			SetBackgroundColor(in.BackgroundColor).
@@ -177,8 +177,8 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []r
 			SetButtonRadius(in.ButtonRadius).
 			SetFooterText(in.FooterText).
 			Save(ctx)
-		if ent.IsNotFound(err) {
-			return ErrRevisionChanged
+		if miss, ok := errors.AsType[*ent.BrandKitMiss](err); ok {
+			return miss.Refuse(ErrRevisionChanged, ErrRevisionChanged)
 		}
 		return err
 	})

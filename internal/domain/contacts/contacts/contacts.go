@@ -20,6 +20,7 @@ package contacts
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"strings"
 	"time"
@@ -241,8 +242,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 // Update applies a patch to a Contact, its Tags included, in one transaction and returns it with
 // its Tags; each Custom field and Tag it changes is recorded as its System event. ErrNotFound when
 // the Contact is not in the Workspace, and ErrRevisionChanged when it moved past the revision the
-// edit was made on: compared under the Contact lock every writer takes, so no write lands between
-// the check and this one.
+// edit was made on (ADR 0119): compared under the Contact lock every writer takes before anything
+// else is checked, and again by the write, which is made on that revision.
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.Contact, error) {
 	in = in.normalized()
 	if _, err := checked(in.Email.Ptr(), in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr()); err != nil {
@@ -262,7 +263,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err != nil {
 			return err
 		}
-		q := ts.Contact().UpdateOneID(id)
+		q := ts.Contact().EditAt(id, in.Revision)
 		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
 		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
 		patch.Apply(phone, q.SetPhone, q.ClearPhone)
@@ -278,7 +279,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			q.ClearCustomFields()
 		}
 		var after *ent.Contact
-		if err := constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err }); err != nil {
+		err = constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err })
+		if miss, ok := errors.AsType[*ent.ContactMiss](err); ok {
+			return miss.Refuse(ErrNotFound, ErrRevisionChanged)
+		}
+		if err != nil {
 			return err
 		}
 		if err := publishFieldChanges(ctx, pub, ts.WorkspaceID(), after, before.CustomFields); err != nil {

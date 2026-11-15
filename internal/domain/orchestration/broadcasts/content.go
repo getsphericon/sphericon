@@ -33,7 +33,7 @@ type ContentInput interface {
 type ContentPatch interface {
 	Channel() channels.Channel
 	// update checks the edit of the draft cur and sets it on u.
-	update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdate) error
+	update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdateOne) error
 }
 
 // channelOf is the Broadcast column value of a Channel.
@@ -92,7 +92,7 @@ func (EmailContentPatch) Channel() channels.Channel { return channels.Email }
 
 // update resolves a written body or document as create does; a From set to a new value must be on
 // a verified Sending domain, an unchanged one is not checked again.
-func (c EmailContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+func (c EmailContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdateOne) error {
 	doc, _ := c.Doc.Get()
 	resolved, err := emailrender.ResolveContent(ctx, m.renderer, c.Subject.Ptr(), c.Body.Ptr(), doc, ErrBodyAndDoc)
 	if err != nil {
@@ -163,15 +163,15 @@ type TelegramContentPatch struct {
 // Channel is Telegram.
 func (TelegramContentPatch) Channel() channels.Channel { return channels.Telegram }
 
-func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped, _ *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped, _ *ent.Broadcast, u *ent.BroadcastScopedUpdateOne) error {
 	if err := checkTelegram(c.Text.Ptr(), c.ImageURL.Ptr(), c.Buttons.Ptr(), c.UnsubscribeButton.Ptr()); err != nil {
 		return err
 	}
 	patch.ApplySet(c.Text, u.SetText)
-	patch.Apply(blankToClear(c.ImageURL), func(v string) *ent.BroadcastScopedUpdate { return u.SetImageURL(strings.TrimSpace(v)) }, u.ClearImageURL)
+	patch.Apply(blankToClear(c.ImageURL), func(v string) *ent.BroadcastScopedUpdateOne { return u.SetImageURL(strings.TrimSpace(v)) }, u.ClearImageURL)
 	patch.ApplySet(c.Buttons, u.SetButtons)
 	patch.ApplySet(c.LinkPreview, u.SetLinkPreview)
-	patch.Apply(blankToClear(c.UnsubscribeButton), func(v string) *ent.BroadcastScopedUpdate { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
+	patch.Apply(blankToClear(c.UnsubscribeButton), func(v string) *ent.BroadcastScopedUpdateOne { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
 	return nil
 }
 
@@ -212,7 +212,7 @@ func (SMSContentPatch) Channel() channels.Channel { return channels.SMS }
 
 // update checks the text the draft will hold, the stored one when only link tracking changes:
 // turning tracking off counts its links as written, which can take it over the provider's length limit.
-func (c SMSContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdate) error {
+func (c SMSContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, cur *ent.Broadcast, u *ent.BroadcastScopedUpdateOne) error {
 	text, textSet := c.Text.Get()
 	tracked, trackingSet := c.LinkTracking.Get()
 	if textSet || trackingSet {
