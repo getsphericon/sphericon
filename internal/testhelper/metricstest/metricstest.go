@@ -3,7 +3,6 @@
 package metricstest
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -47,9 +46,10 @@ func ScrapeMetrics(t *testing.T) Scrape {
 // find returns the sample line of the metric whose labels include every
 // key/value of labels (other labels, such as the OTel scope ones, are ignored).
 func (s Scrape) find(name string, labels map[string]string) (string, bool) {
-	sc := bufio.NewScanner(strings.NewReader(string(s)))
-	for sc.Scan() {
-		line := sc.Text()
+	// strings.Lines, not a bufio.Scanner: a scanner stops at a line over 64 KiB, and an unchecked
+	// Err() would then report a metric that is there as missing.
+	for line := range strings.Lines(string(s)) {
+		line = strings.TrimSuffix(line, "\n")
 		if !strings.HasPrefix(line, name+"{") && !strings.HasPrefix(line, name+" ") {
 			continue
 		}
