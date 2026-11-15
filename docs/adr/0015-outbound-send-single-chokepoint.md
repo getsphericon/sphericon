@@ -4,6 +4,10 @@ status: accepted
 
 # Outbound send: one module, one message record, two outcome scopes
 
+> **Settled by [[0122-an-automation-branches-into-nested-paths-that-rejoin]] and
+> [[0124-an-automation-chooses-a-path-by-condition-by-weight-or-by-an-awaited-event]]:** branching runs
+> on River, so the external workflow engine rejected below until branching was real is not needed.
+
 > **Amended by [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]:**
 > a marketing send over its Destination's frequency cap is checked under an advisory lock in the
 > claim's transaction; a Broadcast Recipient over it is Skipped, an Automation send deferred.

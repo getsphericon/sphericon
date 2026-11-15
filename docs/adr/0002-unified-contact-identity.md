@@ -4,6 +4,12 @@ status: accepted
 
 # One Contact identity: absorb the tracking profile, attach events by stable id
 
+> **Settled by [[0072-identify-writes-a-contacts-core-attributes]] and
+> [[0086-a-form-submit-binds-only-an-anonymous-visitor-and-only-fills-a-known-contact]]:** the
+> promotion policy left open below is that a Visitor never becomes a Contact on its own; a Contact is
+> made only when Identify, a form submit, the API or an import brings an alias key (`subjectId`,
+> `email`, `phone`), and an Event only attaches to an existing Contact.
+
 > **Amended by [[0128-two-contacts-of-one-person-are-merged-by-a-deliberate-act]]:** an Upsert whose
 > keys resolve to two Contacts no longer fails: it writes to the first by `subject_id`, `email`,
 > `phone`, leaves the key another holds unfilled and records a Duplicate candidate; two Contacts of
