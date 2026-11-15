@@ -4,7 +4,6 @@
 // github.com/golangci/plugin-module-register versions of the golangci-lint release that mise pins.
 // The release itself is read from mise by `build:lint` (`golangci-lint custom --version`).
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
 
 const shared = ['golang.org/x/tools', 'github.com/golangci/plugin-module-register']
 
@@ -12,10 +11,28 @@ function output(command: string, args: string[], cwd?: string): string {
   return execFileSync(command, args, { encoding: 'utf8', cwd }).trim()
 }
 
-// The version a go.mod requires a Go module at: its require line, in a block or on its own.
-function required(goMod: string, path: string): string | undefined {
-  const escaped = path.replaceAll(/[.*+?^${}()|[\]\\/]/g, String.raw`\$&`)
-  return new RegExp(String.raw`^\s*(?:require\s+)?${escaped}\s+(\S+)`, 'm').exec(goMod)?.[1]
+// The version each module a go.mod requires is required at, as `go mod edit -json` reads the file.
+function requirements(goMod: string): Map<string, string> {
+  const parsed: unknown = JSON.parse(output('go', ['mod', 'edit', '-json', goMod]))
+  const requires: unknown[] =
+    typeof parsed === 'object' &&
+    parsed !== null &&
+    'Require' in parsed &&
+    Array.isArray(parsed.Require)
+      ? parsed.Require
+      : []
+  return new Map(
+    requires.flatMap((req): [string, string][] =>
+      typeof req === 'object' &&
+      req !== null &&
+      'Path' in req &&
+      typeof req.Path === 'string' &&
+      'Version' in req &&
+      typeof req.Version === 'string'
+        ? [[req.Path, req.Version]]
+        : [],
+    ),
+  )
 }
 
 const release = output('mise', ['current', 'golangci-lint'])
@@ -36,10 +53,10 @@ if (lintGoMod === undefined) {
   process.exit(1)
 }
 
-const lintText = readFileSync(lintGoMod, 'utf8')
+const lintRequires = requirements(lintGoMod)
 let failed = false
 for (const path of shared) {
-  const theirs = required(lintText, path)
+  const theirs = lintRequires.get(path)
   const ours = output('go', ['list', '-m', '-f', '{{.Version}}', path], 'tools/analyzers')
   if (theirs !== ours) {
     process.stderr.write(

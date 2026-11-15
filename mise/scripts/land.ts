@@ -34,37 +34,19 @@ function fail(message: string): never {
   process.exit(1)
 }
 
-function takeValue(args: string[], flag: string): string | undefined {
-  const at = args.indexOf(flag)
-  if (at === -1) {
-    return undefined
-  }
-  const [, value] = args.splice(at, 2)
-  if (value === undefined || value.startsWith('--')) {
-    fail(`${flag} needs a value`)
-  }
-  return value
-}
+// The task's usage spec (mise/tasks.toml) parses the flags, refuses an unknown --door or --ai and a
+// missing --door or --blast, and hands them over as usage_* variables; it has no pattern for the
+// issues, which are checked here.
+const door = process.env.usage_door
+const blast = process.env.usage_blast
+const aiValue = process.env.usage_ai ?? 'wrote'
+const titleFlag = process.env.usage_title
+const issues = (process.env.usage_issue ?? '').split(/\s+/).filter((issue) => issue !== '')
 
-function isAi(value: string): value is Ai {
-  return value in aiLines
-}
-
-const args = process.argv.slice(2)
-const door = takeValue(args, '--door')
-const blast = takeValue(args, '--blast')
-const aiValue = takeValue(args, '--ai') ?? 'wrote'
-const titleFlag = takeValue(args, '--title')
-const issues = args
-
-if (!isAi(aiValue)) {
-  fail(`--ai is one of none, helped, wrote, not '${aiValue}'`)
-}
-if (door !== 'one-way' && door !== 'two-way') {
-  fail("--door is 'one-way' or 'two-way'")
-}
-if (blast === undefined) {
-  fail('--blast is a one-word description of the blast radius')
+if (door === undefined || blast === undefined) {
+  fail(
+    'run it as `mise run land -- --door <one-way|two-way> --blast <word> ...`, which parses the flags',
+  )
 }
 for (const issue of issues) {
   if (!/^\d+$/.test(issue)) {

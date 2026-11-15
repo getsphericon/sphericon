@@ -41,32 +41,24 @@ function outdatedTools(): Outdated[] {
     .filter((tool): tool is Outdated => isOutdated(tool))
 }
 
-// The number of the open issue with this title, if any: the search matches on words, not exactly.
+// The number of the open issue with this title, if any: the search matches on words, so jq keeps
+// the exact title.
 function openIssue(): string | undefined {
-  const issues: unknown = JSON.parse(
-    output('gh', [
-      'issue',
-      'list',
-      '--state',
-      'open',
-      '--label',
-      label,
-      '--search',
-      `"${title}" in:title`,
-      '--json',
-      'number,title',
-    ]),
-  )
-  if (!Array.isArray(issues)) {
-    return undefined
-  }
-  const found = issues.find(
-    (issue: unknown) =>
-      typeof issue === 'object' && issue !== null && 'title' in issue && issue.title === title,
-  )
-  return typeof found === 'object' && found !== null && 'number' in found
-    ? String(found.number)
-    : undefined
+  const number = output('gh', [
+    'issue',
+    'list',
+    '--state',
+    'open',
+    '--label',
+    label,
+    '--search',
+    `"${title}" in:title`,
+    '--json',
+    'number,title',
+    '--jq',
+    `[.[] | select(.title == ${JSON.stringify(title)})][0].number // ""`,
+  ])
+  return number === '' ? undefined : number
 }
 
 function bodyOf(tools: Outdated[]): string {
