@@ -16,14 +16,14 @@ func (h *Handlers) SiteAuthForgotPassword(ctx context.Context, req *siteapi.Site
 	return h.requests.PasswordReset(ctx, string(req.Email))
 }
 
-// SiteAuthResetPassword sets a new password from a reset link (users.Links, through the use case
-// signup, which completes the Sign-up of an Unverified User and then welcomes them).
+// SiteAuthResetPassword sets a new password from a reset link (users.Links, through the Sign-up
+// module signup, which completes the Sign-up of an Unverified User and then welcomes them).
 func (h *Handlers) SiteAuthResetPassword(ctx context.Context, req *siteapi.SiteResetPasswordInput) error {
 	_, err := h.signUp.ResetPasswordLink(ctx, req.Token, req.Password)
 	return err
 }
 
-// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, the use case signup): the
+// SiteAuthVerifyEmail completes a Sign-up from its link (ADR 0030, the Sign-up module signup): the
 // token proves the address, so it stamps the Verified email, ends every earlier session,
 // creates the User's first Workspace and welcomes the User, then starts the session through
 // the login issuer. The password stored at Sign-up stays only when the request carries the

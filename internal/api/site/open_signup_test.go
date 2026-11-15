@@ -10,9 +10,9 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 // selfHosted is an Instance in the selfhosted Mode, which already has its Owners (the fixtures).
@@ -39,7 +39,7 @@ func TestASecondPersonSignsUpOnASelfHostedInstanceAndGetsTheirOwnWorkspace(t *te
 func TestAnOwnerMadeByCreateOwnerSignsIn(t *testing.T) {
 	env := selfHosted(t)
 
-	password, err := testhelper.Module[*signup.UseCase](env).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
+	password, err := testhelper.Module[*signup.Module](env).CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	rec := postLogin(t, env, "ada@example.com", password)

@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -39,7 +40,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
 
@@ -401,9 +401,9 @@ func (a *App) SecondFactors() (*secondfactors.Module, error) {
 	return do.Invoke[*secondfactors.Module](a.injector)
 }
 
-// SignUp is the Sign-up use case from the DI container, which creates an Owner from a shell.
-func (a *App) SignUp() (*signup.UseCase, error) {
-	return do.Invoke[*signup.UseCase](a.injector)
+// SignUp is the Sign-up module from the DI container, which creates an Owner from a shell.
+func (a *App) SignUp() (*signup.Module, error) {
+	return do.Invoke[*signup.Module](a.injector)
 }
 
 // StaffMembers is the platform Staff members module from the DI container.

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -26,7 +27,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
-	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 // requests are the events a Sign-up publishes for its mail, read from what the publish left in
@@ -60,15 +60,16 @@ type rig struct {
 	env      *testhelper.TestEnv
 	db       *ent.Client
 	queue    requests
-	module   *signup.UseCase
+	module   *signup.Module
+	users    *users.Module
 	consents *consentrecords.Module
 	links    *users.Links
 }
 
-type option func(*users.Module, *signup.SignUpConfig)
+type option func(*signup.SignUpConfig)
 
 // verificationOff runs the rig on an Instance that does not require email verification.
-func verificationOff(_ *users.Module, cfg *signup.SignUpConfig) {
+func verificationOff(cfg *signup.SignUpConfig) {
 	cfg.RequireVerification = false
 }
 
@@ -88,20 +89,20 @@ func newRig(t *testing.T, budget int, opts ...option) rig {
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
 	sqlDB := testhelper.RealDB(t)
-	return build(t, sqlDB, entclient.Core.New(sqlDB), testhelper.BusOn(t, sqlDB), 5, func(acc *users.Module, cfg *signup.SignUpConfig) {
-		looked := false
-		cfg.Lookup = func(ctx context.Context, email string) (*ent.User, bool, error) {
-			if !looked {
-				looked = true
-				return nil, false, nil
-			}
-			u, err := acc.UserByEmail(ctx, email)
-			if ent.IsNotFound(err) {
-				return nil, false, nil
-			}
-			return u, err == nil, err
+	r := build(t, sqlDB, entclient.Core.New(sqlDB), testhelper.BusOn(t, sqlDB), 5)
+	looked := false
+	r.module.SetLookup(func(ctx context.Context, email string) (*ent.User, bool, error) {
+		if !looked {
+			looked = true
+			return nil, false, nil
 		}
+		u, err := r.users.UserByEmail(ctx, email)
+		if ent.IsNotFound(err) {
+			return nil, false, nil
+		}
+		return u, err == nil, err
 	})
+	return r
 }
 
 func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
@@ -111,15 +112,14 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 	attempts := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := requests{sqlDB: sqlDB}
 	cfg := signup.SignUpConfig{
-		Budget: attempts.For(throttle.KindSignUp), Consents: consents,
-		RequireVerification: true, SurveyDue: func() bool { return false },
+		Budget: attempts.For(throttle.KindSignUp), RequireVerification: true, SurveyDue: func() bool { return false },
 	}
 	for _, o := range opts {
-		o(acc, &cfg)
+		o(&cfg)
 	}
 	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
-	module := signup.New(bus, acc, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false), cfg, signup.SignInConfig{}, time.Now)
-	return rig{db: client, queue: q, module: module, consents: consents, links: links}
+	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false), cfg, signup.SignInConfig{}, time.Now)
+	return rig{db: client, queue: q, module: module, users: acc, consents: consents, links: links}
 }
 
 func (r rig) signUp(t *testing.T, name, email, password string) signup.SignUpResult {

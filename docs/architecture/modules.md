@@ -107,7 +107,8 @@ a context the raw-client holders sit above the rest; where the rest imports them
 sending), that edge is the one a rule's `may_depend_on` names. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
 Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
 Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
-`invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signupitems`,
+`invitations`, `joindomains`, `oauthclients`, `passkeys`, `secondfactors`, `signup` (the Sign-up,
+which has no table: every step that makes a User Verified with its first Workspace), `signupitems`,
 `signupsurveyresponses`, `staffmembers`, `suspension`, `users`, `usertombstones` and `workspacefeed`
 (`domain-identity-raw`), and `login`, `userlogin`, `admission`, `signinprovider` and `accountlink` (`domain-identity`).
 An identity module imports no module of another context: not `providerlimit`, not `contacts`.

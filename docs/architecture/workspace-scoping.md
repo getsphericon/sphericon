@@ -151,13 +151,13 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 **The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
 ADR 0102, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
 or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
-transaction, which the use case `signup` opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its
+transaction, which the Sign-up (`internal/domain/identity/signup`) opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its
 token, the only handle, before any Workspace is known; issuing and revoking take the Workspace's scope), `internal/domain/identity/workspaces` (the Workspace row, ADR 0043, ADR 0102: it is the
 tenant, not a tenant-owned entity, so the scoped client has no wrapper for it; a setting is written on the Workspace a
 scope names, and a suspension from the command line resolves a Workspace id in its transaction, `workspaces.IDByPublicIDIn`), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
 the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
 several Workspaces, and the creation of a Workspace with its Owner, `CreateWorkspaceIn`, on the raw transaction of the
-use case `workspaceview` or `signup`, since no Workspace exists yet), `internal/api/auth` (credentials, token and key lookup),
+use case `workspaceview` or of the Sign-up, since no Workspace exists yet), `internal/api/auth` (credentials, token and key lookup),
 `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes,
 ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is
 looked up by its secret before any scope exists), `internal/domain/identity/apitokens` (only the
@@ -167,12 +167,14 @@ and the bootstrap, whose token names no Workspace, so it scopes to the oldest li
 every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
 (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
 Workspace; the Second factor reset, `secondfactors.Module.Reset`, clears both in one transaction),
+`internal/domain/identity/signup` (the Sign-up, a module without a table, with every step that makes a User
+Verified with its first Workspace, ADR 0030, ADR 0043: neither exists yet, so it opens the raw transaction
+that the users module's steps and `memberships.CreateWorkspaceIn` write on),
 the unchecked operations of the identity modules that join their use case's raw transaction
 (ADR 0110: `workspacesunchecked`, `membershipsunchecked` and `usersunchecked`, in the component
 `domain-identity-unchecked`, which only a use case imports), the use cases
 `internal/usecase/workspaceview` (a Workspace created with its Owner Membership, ADR 0043: no Workspace
-exists yet, so it opens the raw transaction `memberships.CreateWorkspaceIn` writes on; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/signup` (the steps that make a User Verified with its first
-Workspace, ADR 0030, ADR 0043: neither exists yet), `internal/usecase/userdeletion` (User deletion,
+exists yet, so it opens the raw transaction `memberships.CreateWorkspaceIn` writes on; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/userdeletion` (User deletion,
 ADR 0050: the User belongs to no Workspace, and its one transaction is scoped in turn to each
 Workspace the User leaves), `internal/usecase/noticedelivery` (the Notices of
 the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
@@ -198,7 +200,7 @@ Workspace with `Module.Due` and loads a row by id in `Module.Recheck` before any
 Workspace's scope; `Module.HostWorkspace` reads the Instance-wide Tracking host index, ADR 0038, for the host gate of
 `internal/server` (`trackinghost.go`) and the edge's TLS question (`internal/api/tlsask`), which resolve a host to its
 Workspace before any scope exists), `internal/domain/orchestration/automations` (only `FenceOn`, the Automation run fence, ADR 0046: it opens the transaction that holds the share lock on the Enrollment's row, and `SecretSweeps`, the sealed HTTP step fields of every Automation version the re-encryption rewrites; every other function takes a `*ent.Scoped`), `internal/domain/identity/suspension` (Workspace
-suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067; it opens the transaction and writes the row through `workspaces`; and the default Send cap, ADR 0146, whose one row belongs to no Workspace: `DefaultSendCap.StartingIn` reads it on the transaction that creates a Workspace (`memberships.CreateWorkspaceIn`, which the use case `workspaceview` or `signup` hands it), and `SetIn` changes it on the transaction of `instancestates`, which records the change), `internal/infra/events`
+suspension and the Staff's other levers on the Workspace row: the abuse exemption and the Send cap, ADR 0067; it opens the transaction and writes the row through `workspaces`; and the default Send cap, ADR 0146, whose one row belongs to no Workspace: `DefaultSendCap.StartingIn` reads it on the transaction that creates a Workspace (`memberships.CreateWorkspaceIn`, which the use case `workspaceview` or the Sign-up hands it), and `SetIn` changes it on the transaction of `instancestates`, which records the change), `internal/infra/events`
 (the bus, the Event rows it writes and the event consumers' work), `internal/jobs` (job entry points), `internal/server`
 (composition only: it hands the raw client to the security handlers it mounts), `internal/domain/sending/outboundmessages/engagement` (the
 opens and clicks of the Outbound messages, ADR 0053: an open or click token names a message, and a short

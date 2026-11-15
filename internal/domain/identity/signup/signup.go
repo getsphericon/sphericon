@@ -40,24 +40,14 @@ type Budget interface {
 	Take(ctx context.Context, address string) (granted bool, err error)
 }
 
-// Consents answers a form's answers against the Sign-up items in effect: the Consent records
-// they make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check).
-type Consents interface {
-	Check(ctx context.Context, answers []consentrecords.Answer, source consentrecord.Source) (consentrecords.Consents, error)
-}
-
-// SignUpConfig is what a Sign-up needs besides the users module and the password hasher.
+// SignUpConfig is what a Sign-up needs besides the modules and the password hasher.
 type SignUpConfig struct {
-	Consents Consents
-	Budget   Budget
+	// Budget is the mail budget of an address, a seam to the infrastructure's throttle.
+	Budget Budget
 	// RequireVerification is the email verification gate (ADR 0030): on in the saas Mode.
 	RequireVerification bool
 	// SurveyDue reports whether a new User owes the Sign-up survey (ADR 0055).
 	SurveyDue func() bool
-	// Lookup finds the User that holds an address, whatever its case; ok is false when none. Nil
-	// reads it through the users module; a test stands in for it to replay the race of two
-	// Sign-ups of one new address (step 3 of SignUp).
-	Lookup func(ctx context.Context, email string) (u *ent.User, ok bool, err error)
 }
 
 // SignUp is a person creating a User for themself with a name, an email and a password (the
@@ -82,16 +72,16 @@ type SignUpConfig struct {
 //  5. with verification off there is no mail to tell the owner, so a Taken address is the
 //     answer (the one exception, ADR 0031), and the User is Verified at once with its first
 //     Workspace.
-func (u *UseCase) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, error) {
-	cfg := u.signUp
+func (m *Module) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, error) {
+	cfg := m.signUp
 	form, formErr := users.CheckForm(in.Name, in.Email, in.Password)
-	consents, err := cfg.Consents.Check(ctx, in.SignupItems, consentrecord.SourceSignUpForm)
+	consents, err := m.consents.Check(ctx, in.SignupItems, consentrecord.SourceSignUpForm)
 	if err := validation.Fields(formErr, err); err != nil {
 		return SignUpResult{}, err
 	}
 	name, email := form.Name, form.Email
 	if !cfg.RequireVerification {
-		return u.signUpVerified(ctx, users.NewUser{Name: name, Email: email, SurveyDue: cfg.SurveyDue(), Consents: consents}, in.Password)
+		return m.signUpVerified(ctx, users.NewUser{Name: name, Email: email, SurveyDue: m.surveyDue(), Consents: consents}, in.Password)
 	}
 
 	granted, err := cfg.Budget.Take(ctx, email)
@@ -100,11 +90,11 @@ func (u *UseCase) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, err
 	}
 	// Hashed whatever the address is, so the work does not say whether it is Taken; a
 	// Verified User's hash is dropped unused.
-	hash, err := u.passwords.Hash(in.Password)
+	hash, err := m.passwords.Hash(in.Password)
 	if err != nil {
 		return SignUpResult{}, err
 	}
-	usr, err := u.signUpUser(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash, SurveyDue: cfg.SurveyDue(), Consents: consents})
+	usr, err := m.signUpUser(ctx, users.NewUser{Name: name, Email: email, PasswordHash: hash, SurveyDue: m.surveyDue(), Consents: consents})
 	if err != nil {
 		return SignUpResult{}, err
 	}
@@ -120,15 +110,21 @@ func (u *UseCase) SignUp(ctx context.Context, in SignUpInput) (SignUpResult, err
 		request = &events.AddressClaimed{Email: usr.Email, Deliver: granted}
 	}
 	// Best-effort: a lost request is asked for again.
-	if err := u.bus.Publish(ctx, request); err != nil {
+	if err := m.bus.Publish(ctx, request); err != nil {
 		slog.WarnContext(ctx, "signup: request not published", "event", request.EventName(), "error", err)
 	}
 	return SignUpResult{Browser: browser}, nil
 }
 
+// surveyDue reports whether a new User owes the Sign-up survey (SignUpConfig.SurveyDue); a
+// config without the check owes none.
+func (m *Module) surveyDue() bool {
+	return m.signUp.SurveyDue != nil && m.signUp.SurveyDue()
+}
+
 // lookupUser finds the User that holds an address, whatever its case; ok is false when none.
-func (u *UseCase) lookupUser(ctx context.Context, email string) (*ent.User, bool, error) {
-	usr, err := u.users.UserByEmail(ctx, email)
+func (m *Module) lookupUser(ctx context.Context, email string) (*ent.User, bool, error) {
+	usr, err := m.users.UserByEmail(ctx, email)
 	if ent.IsNotFound(err) {
 		return nil, false, nil
 	}
@@ -138,20 +134,20 @@ func (u *UseCase) lookupUser(ctx context.Context, email string) (*ent.User, bool
 // signUpUser is the User a Sign-up with verification required ends on: a new Unverified User, or
 // the one that holds the address with the password replaced while it is Unverified. Every path
 // writes once, so the work does not say which one it took.
-func (u *UseCase) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, error) {
+func (m *Module) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, error) {
 	email := n.Email
-	usr, found, err := u.signUp.Lookup(ctx, email)
+	usr, found, err := m.lookup(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		usr, err = u.users.CreateUnverified(ctx, n)
+		usr, err = m.users.CreateUnverified(ctx, n)
 		if !errors.Is(err, users.ErrEmailTaken) {
 			return usr, err
 		}
 		// Two Sign-ups of one new address raced: the loser finds the winner's User and goes on
 		// as a repeated Sign-up, replacing the winner's password too (ADR 0030).
-		usr, found, err = u.signUp.Lookup(ctx, email)
+		usr, found, err = m.lookup(ctx, email)
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +155,7 @@ func (u *UseCase) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, e
 			return nil, fmt.Errorf("signup: %q is taken but holds no User", email)
 		}
 	}
-	return u.users.ReplaceUnverifiedPassword(ctx, usr.ID, n.PasswordHash, n.Consents)
+	return m.users.ReplaceUnverifiedPassword(ctx, usr.ID, n.PasswordHash, n.Consents)
 }
 
 // signUpVerified is a Sign-up on an Instance that does not require email verification: the
@@ -168,13 +164,13 @@ func (u *UseCase) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, e
 // User signs in next. An address that belongs to a User is users.ErrEmailTaken, and nothing is
 // created: with no mail to tell the owner, the Taken address is the answer (ADR 0031's one
 // exception).
-func (u *UseCase) signUpVerified(ctx context.Context, n users.NewUser, password string) (SignUpResult, error) {
-	hash, err := u.passwords.Hash(password)
+func (m *Module) signUpVerified(ctx context.Context, n users.NewUser, password string) (SignUpResult, error) {
+	hash, err := m.passwords.Hash(password)
 	if err != nil {
 		return SignUpResult{}, err
 	}
 	n.PasswordHash = hash
-	if _, err := u.createVerified(ctx, n, signedUp); err != nil {
+	if _, err := m.createVerified(ctx, n, signedUp); err != nil {
 		return SignUpResult{}, err
 	}
 	return SignUpResult{}, nil

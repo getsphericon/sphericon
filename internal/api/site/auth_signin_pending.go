@@ -38,7 +38,7 @@ func (h *Handlers) SiteAuthSigninPending(ctx context.Context, params siteapi.Sit
 }
 
 // SiteAuthSigninPendingSubmit completes a pending sign-up with the answers to the Sign-up items
-// (ADR 0062): the sign-up use case resolves the reference, checks the answers as the provider
+// (ADR 0062): the Sign-up module resolves the reference, checks the answers as the provider
 // screen's, creates the User and what comes with it in one transaction and records the login, and
 // the session starts as at the end of a provider sign-in, at the time of that sign-in.
 func (h *Handlers) SiteAuthSigninPendingSubmit(ctx context.Context, req *siteapi.SiteSigninPendingSubmitInput) (*siteapi.SiteAuthSigninPendingSubmitNoContent, error) {

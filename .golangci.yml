@@ -281,8 +281,8 @@ linters:
       # left to the author.
       struct-method: false
     testpackage:
-      # No export_test.go opens a package's insides to its tests, and a command (package main) is
-      # a handler over internal packages: it has no tests of its own.
+      # No export_test.go opens a package's insides to its tests (but the one rule 11 allows, below),
+      # and a command (package main) is a handler over internal packages: it has no tests of its own.
       skip-regexp: ^$
       allow-packages: []
     gosmopolitan:
@@ -453,6 +453,11 @@ linters:
       # the package exports. The end-to-end suite is a package of its own that drives the app over
       # HTTP, and the analyzers' testdata are the inputs analysistest loads, not tests.
       - path: ^(e2e/|tools/analyzers/.*/testdata/)
+        linters:
+          - testpackage
+      # The one export_test.go of rule 11: the race of two Sign-ups of one new address replays a
+      # lookup that missed the winner's User.
+      - path: ^internal/domain/identity/signup/export_test\.go$
         linters:
           - testpackage
       # A failed assertion in a test panics, and the panic fails the test with its stack.

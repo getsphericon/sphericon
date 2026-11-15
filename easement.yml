@@ -350,8 +350,7 @@ components:
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the deletion cycle of a Workspace, which
   # lists the Workspaces that have no scope yet, the Workspace view, which creates a Workspace and
-  # restores a deleted one, the Sign-up with the
-  # steps that make a User Verified with its first one, Notice delivery, which reads a User or a
+  # restores a deleted one, Notice delivery, which reads a User or a
   # Workspace's Owners by the ids an event names, and User deletion, which reaches the User by id
   # and leaves each of their Workspaces in turn. They hold the raw client (the closed list of
   # docs/architecture/workspace-scoping.md, Workspace scoping) and are isolated like every use case: one pattern
@@ -362,7 +361,6 @@ components:
         'internal/usecase/workspacedeletion*',
         'internal/usecase/messageretention*',
         'internal/usecase/workspaceview*',
-        'internal/usecase/signup*',
         'internal/usecase/noticedelivery*',
         'internal/usecase/userdeletion*',
       ]
@@ -407,7 +405,8 @@ components:
   # Identity, the bottom context: the Workspaces, the Memberships, the Users, the Invitations, the
   # Join domains, the API tokens, the Staff members, the OAuth clients, the second step of signing
   # in (Passkeys, the Second factors with their Recovery codes), sign-in and sign-up (login,
-  # signinprovider, Consent records, Sign-up items, the Sign-up survey responses), suspension, the
+  # signinprovider, the Sign-up with every step that makes a User Verified, Consent records, Sign-up
+  # items, the Sign-up survey responses), suspension, the
   # Account link and the service feeds of Users and Workspaces.
   # Its bottom: the Workspace with its settings and its deletion window, and the Memberships with the
   # Permissions, the Owners and the notices to them. Every module may read a Workspace, ask a
@@ -426,6 +425,7 @@ components:
         internal/domain/identity/oauthclients,
         internal/domain/identity/passkeys,
         internal/domain/identity/secondfactors,
+        internal/domain/identity/signup,
         internal/domain/identity/signupitems,
         internal/domain/identity/signupsurveyresponses,
         internal/domain/identity/staffmembers,

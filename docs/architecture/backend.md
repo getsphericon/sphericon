@@ -83,20 +83,21 @@ which satisfies `login.Throttle`. Handlers switch on the per-step outcomes (`log
 
 ## Sign-up
 
-**Sign-up sequence**: `signup.UseCase.SignUp` (ADR 0030, 0031; the use case
-`internal/usecase/signup`, ADR 0102, which also holds every other step that makes a User Verified
-with its first Workspace) is the one place of a Sign-up with a password, shaped
+**Sign-up sequence**: `signup.Module.SignUp` (ADR 0030, 0031; the Sign-up, a domain module of
+identity without a table, `internal/domain/identity/signup`, ADR 0102, which also holds every other
+step that makes a User Verified with its first Workspace) is the one place of a Sign-up with a password, shaped
 like `login`: the form first, then the same work for every address (a mail budget slot, the hash, the
 lookup, one write and exactly one published event, ADR 0105) so a Taken address is not learnable, the recovery
 from a race on the unique email, the replaced password of an Unverified User, and the Sign-up
 browser's value (drawn here; its hash is `users.BrowserHash` and the verification link checks it
 with `users.SameBrowser`). The Sign-up items' answers (ADR 0062) are checked with the form, before
-any work, through the `Consents` seam (`consentrecords.Module.Check`): a required acceptance not
+any work, by the Consent records module `signup.New` takes (`consentrecords.Module.Check`): a required acceptance not
 ticked, an item not in effect or a stale version is a field of the same refusal, and the Consent
 records are written by `users` in the transaction that creates the User (or replaces an Unverified
 User's password; a Verified User gets none). The wiring gives it the budget
-(`throttle.Attempts.For(KindSignUp)`), the mails, the token mint and the verification gate
-(`signup.SignUpConfig`, a parameter of `signup.New`); the `/site` handler calls it and turns its result into the answer
+(`throttle.Attempts.For(KindSignUp)`, the seam to the infrastructure's throttle), the verification
+gate and whether a new User owes the Sign-up survey (`signup.SignUpConfig`, a parameter of
+`signup.New`); the `/site` handler calls it and turns its result into the answer
 and the cookie. The
 profile rules of a User (a blank name, the password rule, the proof of the current password and
 whether the session is issued again) are `users.Module.ChangeProfile`, which takes the login module's
