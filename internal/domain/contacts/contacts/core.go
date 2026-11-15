@@ -92,8 +92,8 @@ func guess(s *string, read func(string) (string, bool)) *string {
 }
 
 func (c Core) normalized() Core {
-	c.Country = patch.Map(c.Country, func(s string) string { return strings.ToUpper(strings.TrimSpace(s)) })
-	c.Locale = patch.Map(c.Locale, canonicalLocale)
+	c.Country = c.Country.Map(func(s string) string { return strings.ToUpper(strings.TrimSpace(s)) })
+	c.Locale = c.Locale.Map(canonicalLocale)
 	return c
 }
 

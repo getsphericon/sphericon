@@ -46,7 +46,7 @@ func TestApplyCallsTheSetterOnlyForASetAndTheClearerOnlyForAClear(t *testing.T) 
 		stored := drawStored(t)
 
 		got := stored
-		patch.Apply(f, func(n int) bool { got = &n; return true }, func() bool { got = nil; return true })
+		f.Apply(func(n int) bool { got = &n; return true }, func() bool { got = nil; return true })
 
 		assert.Equal(t, f.Over(stored), got)
 	})
@@ -57,7 +57,7 @@ func TestMapConvertsASetValueAndKeepsTheState(t *testing.T) {
 		v := rapid.Int().Draw(t, "v")
 		f := rapid.SampledFrom([]patch.Field[int]{patch.Keep[int](), patch.Set(v), patch.Clear[int]()}).Draw(t, "field")
 
-		mapped := patch.Map(f, func(n int) int64 { return int64(n) * 2 })
+		mapped := f.Map(func(n int) int64 { return int64(n) * 2 })
 
 		assert.Equal(t, f.IsKeep(), mapped.IsKeep())
 		assert.Equal(t, f.IsClear(), mapped.IsClear())

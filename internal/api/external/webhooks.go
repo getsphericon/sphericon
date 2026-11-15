@@ -20,7 +20,7 @@ func (h *Handlers) WebhooksList(ctx context.Context, params externalapi.Webhooks
 	if err != nil {
 		return nil, err
 	}
-	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
+	return mapper.WebhooksListPage(page.Map(webhookResource)), nil
 }
 
 func (h *Handlers) WebhooksCreate(ctx context.Context, req *externalapi.CreateWebhookInput) (*externalapi.WebhookResource, error) {

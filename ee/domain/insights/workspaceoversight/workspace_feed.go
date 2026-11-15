@@ -66,7 +66,7 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (p
 	for _, o := range owners {
 		byWorkspace[o.WorkspaceID] = append(byWorkspace[o.WorkspaceID], o.Edges.User)
 	}
-	return pagination.MapCursor(page, func(w *ent.Workspace) FeedEntry {
+	return page.Map(func(w *ent.Workspace) FeedEntry {
 		return FeedEntry{Workspace: w, Owners: slices.Clip(byWorkspace[w.ID])}
 	}), nil
 }

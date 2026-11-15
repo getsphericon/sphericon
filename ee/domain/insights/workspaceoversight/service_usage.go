@@ -30,7 +30,7 @@ func (m *Module) UsageList(ctx context.Context, period time.Time, p pagination.P
 	if err != nil {
 		return pagination.Page[UsageEntry]{}, err
 	}
-	return pagination.Map(page, func(w usages.WorkspaceUsage) UsageEntry {
+	return page.Map(func(w usages.WorkspaceUsage) UsageEntry {
 		return UsageEntry{WorkspaceID: publicIDs[w.WorkspaceID], Usage: w}
 	}), nil
 }

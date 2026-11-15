@@ -104,9 +104,9 @@ func (c EmailContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped,
 		}
 	}
 	u.SetNillableBody(resolved.Body)
-	patch.ApplySet(c.Subject, u.SetSubject)
-	patch.Apply(c.FromName, u.SetFromName, u.ClearFromName)
-	patch.Apply(c.FromEmail, u.SetFromEmail, u.ClearFromEmail)
+	c.Subject.ApplySet(u.SetSubject)
+	c.FromName.Apply(u.SetFromName, u.ClearFromName)
+	c.FromEmail.Apply(u.SetFromEmail, u.ClearFromEmail)
 	switch {
 	case resolved.Authored != nil:
 		u.SetDoc(doc).SetEditorVersion(resolved.Authored.EditorVersion)
@@ -167,11 +167,11 @@ func (c TelegramContentPatch) update(_ context.Context, _ *Module, _ *ent.Scoped
 	if err := checkTelegram(c.Text.Ptr(), c.ImageURL.Ptr(), c.Buttons.Ptr(), c.UnsubscribeButton.Ptr()); err != nil {
 		return err
 	}
-	patch.ApplySet(c.Text, u.SetText)
-	patch.Apply(blankToClear(c.ImageURL), func(v string) *ent.BroadcastScopedUpdateOne { return u.SetImageURL(strings.TrimSpace(v)) }, u.ClearImageURL)
-	patch.ApplySet(c.Buttons, u.SetButtons)
-	patch.ApplySet(c.LinkPreview, u.SetLinkPreview)
-	patch.Apply(blankToClear(c.UnsubscribeButton), func(v string) *ent.BroadcastScopedUpdateOne { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
+	c.Text.ApplySet(u.SetText)
+	blankToClear(c.ImageURL).Apply(func(v string) *ent.BroadcastScopedUpdateOne { return u.SetImageURL(strings.TrimSpace(v)) }, u.ClearImageURL)
+	c.Buttons.ApplySet(u.SetButtons)
+	c.LinkPreview.ApplySet(u.SetLinkPreview)
+	blankToClear(c.UnsubscribeButton).Apply(func(v string) *ent.BroadcastScopedUpdateOne { return u.SetUnsubscribeButton(strings.TrimSpace(v)) }, u.ClearUnsubscribeButton)
 	return nil
 }
 
@@ -226,8 +226,8 @@ func (c SMSContentPatch) update(ctx context.Context, m *Module, s *ent.Scoped, c
 			return err
 		}
 	}
-	patch.ApplySet(c.Text, u.SetText)
-	patch.ApplySet(c.LinkTracking, u.SetLinkTracking)
+	c.Text.ApplySet(u.SetText)
+	c.LinkTracking.ApplySet(u.SetLinkTracking)
 	return nil
 }
 

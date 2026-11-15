@@ -494,7 +494,7 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	if name != nil {
 		upd.SetName(*name)
 	}
-	patch.ApplySet(in.Enabled, upd.SetEnabled)
+	in.Enabled.ApplySet(upd.SetEnabled)
 	if sealed != nil {
 		// The account's standing was read with the old credentials, which may name another
 		// account: it goes until the read the save schedules, so a failed one holds nothing. The
@@ -508,9 +508,9 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 			upd.SetPreset(*inb.preset).SetParamsEncrypted(*inb.sealed)
 		}
 	}
-	patch.Apply(in.MaxPerSecond, upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
-	patch.Apply(in.MaxPerDay, upd.SetMaxPerDay, upd.ClearMaxPerDay)
-	patch.ApplySet(in.IsDefault, upd.SetIsDefault)
+	in.MaxPerSecond.Apply(upd.SetMaxPerSecond, upd.ClearMaxPerSecond)
+	in.MaxPerDay.Apply(upd.SetMaxPerDay, upd.ClearMaxPerDay)
+	in.IsDefault.ApplySet(upd.SetIsDefault)
 }
 
 // HoldsWebhook reports whether the Integration is a Telegram bot whose webhook points at its hook:

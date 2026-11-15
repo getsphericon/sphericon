@@ -236,7 +236,7 @@ func List(ctx context.Context, client *ent.Client, period time.Time, p paginatio
 	if err != nil {
 		return pagination.Page[WorkspaceUsage]{}, err
 	}
-	return pagination.Map(page, func(w *ent.Workspace) WorkspaceUsage {
+	return page.Map(func(w *ent.Workspace) WorkspaceUsage {
 		out := WorkspaceUsage{WorkspaceID: w.ID, Period: period}
 		for _, r := range w.Edges.Usages {
 			out.Figures = append(out.Figures, figureOf(r))

@@ -514,9 +514,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 			return nil, err
 		}
 	}
-	patch.ApplySet(f.Name, u.SetName)
-	patch.Apply(f.SegmentID, u.SetSegmentID, u.ClearSegmentID)
-	patch.Apply(f.IntegrationID, u.SetIntegrationID, u.ClearIntegrationID)
+	f.Name.ApplySet(u.SetName)
+	f.SegmentID.Apply(u.SetSegmentID, u.ClearSegmentID)
+	f.IntegrationID.Apply(u.SetIntegrationID, u.ClearIntegrationID)
 	return m.editDraft(ctx, s, id, u)
 }
 

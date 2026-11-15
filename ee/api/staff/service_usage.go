@@ -22,7 +22,7 @@ func (h *ServiceHandlers) ServiceUsageList(ctx context.Context, params serviceap
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.UsageListPage(pagination.Map(page, func(e workspaceoversight.UsageEntry) serviceapi.WorkspaceUsageResource {
+	return serviceMapper.UsageListPage(page.Map(func(e workspaceoversight.UsageEntry) serviceapi.WorkspaceUsageResource {
 		return usageResource(e.Usage, e.WorkspaceID)
 	})), nil
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
-	"github.com/getsphericon/sphericon/internal/kernel/patch"
 )
 
 // updateHealth owns an explicit enable/disable and any URL/filter edit made with it. Enable
@@ -31,8 +30,8 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 			machine := HealthMachine(before, change, lifecycle.Storage[HealthState]{Write: func(ctx context.Context, _, _ HealthState) (bool, error) {
 				// The endpoint moved since it was read: read again, and a stale revision is refused.
 				u := ts.WebhookEndpoint().EditAt(id, before.Revision).Where(atHealth(before)...).Refusing(errHealthConflict, errHealthConflict)
-				patch.ApplySet(in.URL, u.SetURL)
-				patch.ApplySet(in.EventTypes, u.SetEventTypes)
+				in.URL.ApplySet(u.SetURL)
+				in.EventTypes.ApplySet(u.SetEventTypes)
 				if enabled {
 					clearFailures(u)
 					u.ClearDisabledAt().ClearDisabledReason().AddHealthGeneration(1)

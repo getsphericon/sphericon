@@ -27,7 +27,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 		return nil, err
 	}
 
-	return mapper.SendingDomainsListPage(pagination.Map(page, h.sendingDomainResource)), nil
+	return mapper.SendingDomainsListPage(page.Map(h.sendingDomainResource)), nil
 }
 
 func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (*siteapi.SiteSendingDomainResource, error) {

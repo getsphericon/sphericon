@@ -5,7 +5,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceTrackingHostFeedList is the Tracking domain hosts that entered or left the
@@ -15,7 +14,7 @@ func (h *ServiceHandlers) ServiceTrackingHostFeedList(ctx context.Context, param
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.TrackingHostFeedPage(pagination.MapCursor(page, func(e workspaceoversight.TrackingHostFeedEntry) serviceapi.ServiceTrackingHostChange {
+	return serviceMapper.TrackingHostFeedPage(page.Map(func(e workspaceoversight.TrackingHostFeedEntry) serviceapi.ServiceTrackingHostChange {
 		item := serviceMapper.TrackingHostChangeToResource(e.Change)
 		item.WorkspaceId = serviceapi.WorkspaceId(e.WorkspaceID)
 		return item

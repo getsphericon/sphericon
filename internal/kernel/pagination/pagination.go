@@ -135,13 +135,13 @@ func List[Q Query[Q, T], T any](ctx context.Context, p Params, q Q) (Page[T], er
 
 // Map is the page with each item passed through f: the handler's own mapping of the items (an
 // extra a Converter cannot attach), before the page goes to the Converter. Items is never nil.
-func Map[T, U any](p Page[T], f func(T) U) Page[U] {
+func (p Page[T]) Map[U any](f func(T) U) Page[U] {
 	items := lo.Map(p.Items, func(item T, _ int) U { return f(item) })
 	return Page[U]{Items: items, Page: p.Page, PageSize: p.PageSize, TotalItems: p.TotalItems, TotalPages: p.TotalPages}
 }
 
 // MapErr is Map with a mapping that can fail: the first error is returned and no page.
-func MapErr[T, U any](p Page[T], f func(T) (U, error)) (Page[U], error) {
+func (p Page[T]) MapErr[U any](f func(T) (U, error)) (Page[U], error) {
 	items, err := lo.MapErr(p.Items, func(item T, _ int) (U, error) { return f(item) })
 	if err != nil {
 		return Page[U]{}, err
@@ -181,9 +181,9 @@ func Cursor[T any](rows []T, limit int, requested string, cursorOf func(T) strin
 	return page
 }
 
-// MapCursor is Map for a CursorPage: the cursor kept, each item passed through f (an extra a
-// Converter cannot attach). Items is never nil.
-func MapCursor[T, U any](p CursorPage[T], f func(T) U) CursorPage[U] {
+// Map is the page with the cursor kept and each item passed through f (an extra a Converter
+// cannot attach). Items is never nil.
+func (p CursorPage[T]) Map[U any](f func(T) U) CursorPage[U] {
 	items := lo.Map(p.Items, func(item T, _ int) U { return f(item) })
 	return CursorPage[U]{Items: items, NextCursor: p.NextCursor, HasMore: p.HasMore}
 }

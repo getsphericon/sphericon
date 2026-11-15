@@ -13,13 +13,13 @@ import (
 func TestMapKeepsTheEnvelopeAndMapsTheItems(t *testing.T) {
 	page := pagination.Page[string]{Items: []string{"a", "b"}, Page: 2, PageSize: 2, TotalItems: 5, TotalPages: 3}
 
-	got := pagination.Map(page, strings.ToUpper)
+	got := page.Map(strings.ToUpper)
 
 	assert.Equal(t, pagination.Page[string]{Items: []string{"A", "B"}, Page: 2, PageSize: 2, TotalItems: 5, TotalPages: 3}, got)
 }
 
 func TestMapOfAnEmptyPageSerializesAsArray(t *testing.T) {
-	got := pagination.Map(pagination.Page[string]{Page: 9, PageSize: 2, TotalItems: 5, TotalPages: 3}, strings.ToUpper)
+	got := pagination.Page[string]{Page: 9, PageSize: 2, TotalItems: 5, TotalPages: 3}.Map(strings.ToUpper)
 
 	assert.NotNil(t, got.Items, "an empty page serializes as [], not null")
 	assert.Empty(t, got.Items)
@@ -28,7 +28,7 @@ func TestMapOfAnEmptyPageSerializesAsArray(t *testing.T) {
 func TestMapErrKeepsTheEnvelopeAndMapsTheItems(t *testing.T) {
 	page := pagination.Page[string]{Items: []string{"a", "b"}, Page: 1, PageSize: 2, TotalItems: 2, TotalPages: 1}
 
-	got, err := pagination.MapErr(page, func(s string) (string, error) { return strings.ToUpper(s), nil })
+	got, err := page.MapErr(func(s string) (string, error) { return strings.ToUpper(s), nil })
 
 	require.NoError(t, err)
 	assert.Equal(t, pagination.Page[string]{Items: []string{"A", "B"}, Page: 1, PageSize: 2, TotalItems: 2, TotalPages: 1}, got)
@@ -38,7 +38,7 @@ func TestMapErrReturnsTheFirstError(t *testing.T) {
 	boom := errors.New("boom")
 	page := pagination.Page[string]{Items: []string{"a", "b"}, Page: 1, PageSize: 2, TotalItems: 2, TotalPages: 1}
 
-	got, err := pagination.MapErr(page, func(string) (string, error) { return "", boom })
+	got, err := page.MapErr(func(string) (string, error) { return "", boom })
 
 	require.ErrorIs(t, err, boom)
 	assert.Zero(t, got)

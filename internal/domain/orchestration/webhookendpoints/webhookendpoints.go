@@ -268,8 +268,8 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	}
 	build := func() *ent.WebhookEndpointScopedUpdateOne {
 		upd := s.WebhookEndpoint().EditAt(id, in.Revision).Refusing(ErrNotFound, ErrRevisionChanged)
-		patch.ApplySet(in.URL, upd.SetURL)
-		patch.ApplySet(in.EventTypes, upd.SetEventTypes)
+		in.URL.ApplySet(upd.SetURL)
+		in.EventTypes.ApplySet(upd.SetEventTypes)
 		return upd
 	}
 	enabled, toggles := in.Enabled.Get()
@@ -311,7 +311,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (
 	if err != nil {
 		return pagination.Page[Endpoint]{}, err
 	}
-	return pagination.MapErr(page, m.open)
+	return page.MapErr(m.open)
 }
 
 // generateSecret returns a Standard Webhooks signing secret: the "whsec_" prefix

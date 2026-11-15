@@ -5,7 +5,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
-	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // ServiceUserFeedList is the Users created, changed or deleted since a cursor, each with their
@@ -15,7 +14,7 @@ func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params servic
 	if err != nil {
 		return nil, err
 	}
-	return serviceMapper.UserFeedPage(pagination.MapCursor(page, userFeedItem)), nil
+	return serviceMapper.UserFeedPage(page.Map(userFeedItem)), nil
 }
 
 // userFeedItem is a feed entry as a resource: a tombstone, or the User with the mailings consent

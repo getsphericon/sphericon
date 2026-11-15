@@ -104,7 +104,7 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   from the limit+1 rows it read, and the page method (`UserFeedPage(source
   pagination.CursorPage[…]) *…UserFeedPage`) maps its items, `NextCursor` and `HasMore`; the rule
   also refuses a literal with a `NextCursor:` or `HasMore:` key. Items the handler maps itself (an
-  extra per item) go through `pagination.Map`/`MapErr`/`MapCursor` first and the method, taking a
+  extra per item) go through the page's `Map`/`MapErr` first and the method, taking a
   page of resources, is marked `goverter:skipCopySameType`; an unpaginated list is
   `pagination.Whole(items)`. `annotate:unmapped` writes a
   `// Field: ignore` line into the generated code for each field the converter leaves to the

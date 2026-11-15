@@ -151,8 +151,8 @@ func (s *Module) updateIn(ctx context.Context, wl *ent.WorkspaceLocked, id int64
 	}
 	q := wl.Segment().EditAt(id, in.Revision).Where(segment.ArchivedAtIsNil()).
 		Refusing(ErrNotFound, ErrRevisionChanged, refuseArchived)
-	patch.ApplySet(in.Name, q.SetName)
-	patch.ApplySet(in.Condition, q.SetCondition)
+	in.Name.ApplySet(q.SetName)
+	in.Condition.ApplySet(q.SetCondition)
 	seg, err := q.Save(ctx)
 	return seg, err
 }
