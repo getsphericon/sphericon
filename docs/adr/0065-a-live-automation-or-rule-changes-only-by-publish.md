@@ -4,6 +4,12 @@ status: accepted
 
 # A live Automation or Rule changes only by Publish, and a scheduled Broadcast holds a copy of its Condition
 
+> **Amended by [[0150-a-sending-broadcast-is-cancelled-and-a-deactivated-automation-may-end-its-enrollments]]:**
+> Deactivate takes a required `finish` or `end`; `end` moves every active Enrollment to `exited`.
+
+> **Amended by [[0149-a-broadcasts-audience-is-chosen-explicitly-and-counted-before-it-is-armed]]:**
+> Schedule answers the Recipients the Broadcast would take at that moment.
+
 > **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**
 > a Broadcast series is a Versioned definition too, and its Publish is send-class.
 
