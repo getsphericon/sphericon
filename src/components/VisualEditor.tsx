@@ -10,7 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { useDisclosure } from '@mantine/hooks'
+import { getHotkeyHandler, useDisclosure } from '@mantine/hooks'
 import { EmailEditor } from '@react-email/editor'
 import type { EmailEditorRef } from '@react-email/editor'
 import {
@@ -226,12 +226,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
               placeholder="https://"
               value={href}
               onChange={(event) => setHref(event.currentTarget.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  applyLink()
-                }
-              }}
+              onKeyDown={getHotkeyHandler([['Enter', applyLink]])}
             />
             <Button size="xs" onClick={applyLink}>
               {t(($) => $.messageEditor.toolbar.linkApply)}
@@ -321,12 +316,8 @@ export function VisualEditor({
                   placeholder="amount"
                   value={property}
                   onChange={(event) => setProperty(event.currentTarget.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      insertProperty()
-                    }
-                  }}
+                  // Made in the handler: insertProperty reads the caret ref, which render must not.
+                  onKeyDown={(event) => getHotkeyHandler([['Enter', insertProperty]])(event)}
                 />
                 <Button size="xs" disabled={propertyTag === null} onClick={insertProperty}>
                   {t(($) => $.messageEditor.eventPropertyInsert)}
