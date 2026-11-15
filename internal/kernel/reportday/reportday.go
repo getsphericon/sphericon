@@ -95,8 +95,17 @@ func span(loc *time.Location, y int, m time.Month, first, days int) Window {
 // Label is the Report-day label (YYYY-MM-DD) of a timestamp column in loc, for a query that counts
 // by Report day. The zone is a bound argument, never spliced into the statement.
 func Label(column string, loc *time.Location) sql.Querier {
-	// raw sql: ent has no AT TIME ZONE expression; the zone is a bound argument
+	// raw sql: ent has no to_char expression.
 	return sql.ExprFunc(func(b *sql.Builder) {
-		b.WriteString("to_char(").WriteString(column).WriteString(" AT TIME ZONE ").Arg(loc.String()).WriteString(", 'YYYY-MM-DD')")
+		b.WriteString("to_char(").Join(Local(column, loc)).WriteString(", 'YYYY-MM-DD')")
+	})
+}
+
+// Local is a timestamp column as local time in loc, the base of every Report-day expression (a
+// label, an hour, a weekday). The zone is a bound argument, never spliced into the statement.
+func Local(column string, loc *time.Location) sql.Querier {
+	// raw sql: ent has no AT TIME ZONE expression; the zone is a bound argument.
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.WriteString(column).WriteString(" AT TIME ZONE ").Arg(loc.String())
 	})
 }

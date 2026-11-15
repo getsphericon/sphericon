@@ -84,6 +84,6 @@ BEGIN
 		JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
 		WHERE s.relkind = 'S'
 	LOOP
-		EXECUTE format('SELECT setval(%L, GREATEST(100000, COALESCE((SELECT MAX(%I) FROM %I), 0)))', r.seq, r.col, r.tbl);
+		EXECUTE format('SELECT setval(%L, GREATEST(100000, (SELECT MAX(%I) FROM %I)))', r.seq, r.col, r.tbl);
 	END LOOP;
 END $$`

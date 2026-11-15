@@ -184,10 +184,7 @@ func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predi
 	v := sql.Table(visitor.Table)
 	sub := sql.Select(b.C(entbinding.FieldID)).From(b)
 	ofVisitors := sql.Select(v.C(visitor.FieldID)).From(v)
-	// raw sql: the visitors of the outer Contact, a correlation ent predicates cannot name.
-	ofVisitors.Where(sql.P(func(w *sql.Builder) {
-		w.WriteString(v.C(visitor.FieldContactID)).WriteString(" = ").WriteString(s.C(contact.FieldID))
-	}))
+	ofVisitors.Where(sql.ColumnsEQ(v.C(visitor.FieldContactID), s.C(contact.FieldID)))
 	r := ref{
 		workspace:   func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldWorkspaceID)) },
 		destination: func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldDestination)) },
@@ -195,10 +192,7 @@ func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predi
 	sub.Where(sql.And(
 		sql.EQ(b.C(entbinding.FieldIntegrationID), d.integration),
 		sql.Or(
-			// raw sql: the Binding is the outer Contact's own, a correlation ent predicates cannot name.
-			sql.P(func(w *sql.Builder) {
-				w.WriteString(b.C(entbinding.FieldContactID)).WriteString(" = ").WriteString(s.C(contact.FieldID))
-			}),
+			sql.ColumnsEQ(b.C(entbinding.FieldContactID), s.C(contact.FieldID)),
 			sql.In(b.C(entbinding.FieldVisitorID), ofVisitors),
 		),
 		eligible(r),

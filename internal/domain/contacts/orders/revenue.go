@@ -90,8 +90,7 @@ func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, of
 			o := sql.Table(order.Table)
 			sel.Join(o).On(sel.C(ordermovement.FieldOrderID), o.C(order.FieldID))
 			netAndCompleted(sel)
-			// raw sql: the credited Broadcast or Automation is a column of the joined Order, which ent's aggregate cannot group by from the Movement.
-			sel.AppendSelectExprAs(sql.Expr(o.C(column)), "credited_id").GroupBy(o.C(column))
+			sel.AppendSelectAs(o.C(column), "credited_id").GroupBy(o.C(column))
 		}).Scan(ctx, &rows)
 	if err != nil {
 		return Figures{}, err

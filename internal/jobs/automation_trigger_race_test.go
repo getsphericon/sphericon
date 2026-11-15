@@ -3,7 +3,6 @@ package jobs_test
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
@@ -23,14 +22,9 @@ import (
 // window.
 func holdEventLog(t *testing.T, e *realEnv) (release func()) {
 	t.Helper()
-	tx, err := e.env.SQLDB.BeginTx(t.Context(), nil)
-	require.NoError(t, err)
-	// raw sql: a table lock that also stops plain reads; ent has no statement for it.
-	_, err = tx.ExecContext(t.Context(), "LOCK TABLE events IN ACCESS EXCLUSIVE MODE")
-	require.NoError(t, err)
-	release = sync.OnceFunc(func() { _ = tx.Rollback() })
-	t.Cleanup(release) // a failed assertion must not leave the Event handler blocked
-	return release
+	// A table lock that also stops plain reads; the cleanup releases it if an assertion fails, so
+	// the Event handler is never left blocked.
+	return testhelper.HoldInTransaction(t, e.env.SQLDB, "LOCK TABLE events IN ACCESS EXCLUSIVE MODE")
 }
 
 // raceThePick hands Alice's hold_demo to the Automations, runs meanwhile once they have picked Hold

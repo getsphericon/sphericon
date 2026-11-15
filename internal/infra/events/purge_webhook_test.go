@@ -100,22 +100,25 @@ func TestPurgeWebhookJobsMatchesTheBodyDispatchBuilds(t *testing.T) {
 
 	names := make([]string, 0, 9)
 	for _, d := range []struct {
-		endpoint int64
-		id       string
-		body     []byte
+		workspace int64
+		endpoint  int64
+		id        string
+		body      []byte
 	}{
-		{fixtures.WebhookInitechID, "by-id", byID},
-		{fixtures.WebhookInitechID, "by-address", byAddress},
-		{fixtures.WebhookInitechID, "by-number", byNumber},
-		{fixtures.WebhookInitechID, "other-number", otherNumber},
-		{fixtures.WebhookInitechID, "by-top-level-id-only", onlyTopLevelID},
-		{fixtures.WebhookInitechID, "by-data-id-only", onlyDataID},
-		{fixtures.WebhookInitechID, "bystander", bystander},
-		{fixtures.WebhookInitechID, "nobody", nobody},
-		{fixtures.WebhookGlobexID, "other-tenant", otherTenant},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "by-id", byID},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "by-address", byAddress},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "by-number", byNumber},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "other-number", otherNumber},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "by-top-level-id-only", onlyTopLevelID},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "by-data-id-only", onlyDataID},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "bystander", bystander},
+		{fixtures.InitechID, fixtures.WebhookInitechID, "nobody", nobody},
+		{fixtures.GlobexID, fixtures.WebhookGlobexID, "other-tenant", otherTenant},
 	} {
 		names = append(names, d.id)
-		env.EnqueueJob(t, jobs.DeliverWebhookArgs{EndpointID: d.endpoint, EventName: "x", DeliveryID: d.id, Body: d.body})
+		env.EnqueueJob(t, jobs.DeliverWebhookArgs{
+			WorkspaceID: d.workspace, EndpointID: d.endpoint, EventName: "x", DeliveryID: d.id, Body: d.body,
+		})
 	}
 
 	scope := env.DB.Scoped(fixtures.InitechID)

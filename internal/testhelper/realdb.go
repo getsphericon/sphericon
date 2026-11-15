@@ -1,9 +1,11 @@
 package testhelper
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"database/sql"
+	"encoding/binary"
 	"fmt"
 	"hash/fnv"
 	"net/url"
@@ -20,6 +22,7 @@ import (
 	"golang.org/x/mod/sumdb/dirhash"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/infra/postgres"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
 
@@ -58,9 +61,7 @@ func RealDBURL(t *testing.T) string {
 	cloneMu.Unlock()
 	require.NoError(t, err, "clone the baseline database")
 	t.Cleanup(func() {
-		// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
-		_, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{name}.Sanitize()+" WITH (FORCE)")
-		require.NoError(t, err, "drop the clone %s", name)
+		require.NoError(t, dropDatabase(ctx, admin, name), "drop the clone %s", name)
 	})
 	return withDatabase(t, base.url, name)
 }
@@ -88,9 +89,7 @@ func AbsentDBURL(t *testing.T, name string) string {
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(admin, "AbsentDB admin") })
 	t.Cleanup(func() {
-		// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
-		_, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{unique}.Sanitize()+" WITH (FORCE)")
-		require.NoError(t, err, "drop %s", unique)
+		require.NoError(t, dropDatabase(ctx, admin, unique), "drop %s", unique)
 	})
 	return withDatabase(t, shared, unique)
 }
@@ -185,17 +184,23 @@ func BaselineLeaseHeld(t *testing.T) bool {
 	require.NoError(t, err)
 	defer cleanup.Close(admin, "BaselineLeaseHeld admin")
 
+	// dbcleaner takes the lease as an advisory lock on the shared database, keyed by the FNV-64a
+	// hash of "worker:<name>" read as a signed bigint (its key derivation is unexported).
 	h := fnv.New64a()
 	_, err = h.Write([]byte("worker:" + base.name))
 	require.NoError(t, err)
-	key := h.Sum64()
-	var held int
-	// raw sql: pg_locks is a server view; ent has no entity for it.
-	err = admin.QueryRowContext(t.Context(),
-		`SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND granted AND objsubid = 1 AND classid = $1::bigint::oid AND objid = $2::bigint::oid`,
-		int64(key>>32), int64(key&0xffffffff)).Scan(&held)
+	var key int64
+	require.NoError(t, binary.Read(bytes.NewReader(h.Sum(nil)), binary.BigEndian, &key))
+	holders, err := postgres.LockHolders(t.Context(), admin, key, 0)
 	require.NoError(t, err)
-	return held > 0
+	return len(holders) > 0
+}
+
+// dropDatabase drops the database name, closing the sessions still connected to it.
+func dropDatabase(ctx context.Context, admin *sql.DB, name string) error {
+	// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
+	_, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{name}.Sanitize()+" WITH (FORCE)")
+	return err
 }
 
 // dropClones drops what an earlier process left of the baseline's clones. Only the process that
@@ -206,8 +211,7 @@ func dropClones(ctx context.Context, admin *sql.DB, base string) error {
 		return err
 	}
 	for _, name := range stale {
-		// raw sql: DROP DATABASE is server DDL; ent models tables, not databases.
-		if _, err := admin.ExecContext(ctx, "DROP DATABASE IF EXISTS "+pgx.Identifier{name}.Sanitize()+" WITH (FORCE)"); err != nil {
+		if err := dropDatabase(ctx, admin, name); err != nil {
 			return err
 		}
 	}

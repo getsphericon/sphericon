@@ -79,20 +79,7 @@ func LockHolders(ctx context.Context, q Queryer, key int64, exceptPID int) ([]Lo
 // *sql.Conn or a transaction.
 func BackendPID(ctx context.Context, q Queryer) (int, error) {
 	// raw sql: pg_backend_pid is a server function; ent has none.
-	rows, err := q.QueryContext(ctx, "SELECT pg_backend_pid()")
-	if err != nil {
-		return 0, fmt.Errorf("read the backend pid: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	if !rows.Next() {
-		return 0, errors.Join(errors.New("read the backend pid: no row"), rows.Err())
-	}
-	var pid int
-	scanErr := rows.Scan(&pid)
-	if scanErr != nil {
-		return 0, fmt.Errorf("read the backend pid: %w", scanErr)
-	}
-	return pid, rows.Err()
+	return queryInt(ctx, q, "SELECT pg_backend_pid()", "the backend pid")
 }
 
 // MinMajor is the oldest Postgres major the Instance runs on. The schema relies on 15 and later: a
@@ -115,17 +102,25 @@ func WorkspaceKey(kind string, workspaceID int64) int64 {
 // major*10000+minor from version 10 on).
 func ServerMajor(ctx context.Context, q Queryer) (int, error) {
 	// raw sql: SHOW is a server command; ent has no form for it.
-	rows, err := q.QueryContext(ctx, "SHOW server_version_num")
+	num, err := queryInt(ctx, q, "SHOW server_version_num", "the Postgres version")
+	return num / 10000, err
+}
+
+// queryInt reads the one integer query returns, naming what in its errors. Queryer has only
+// QueryContext, so the single row is read through it.
+func queryInt(ctx context.Context, q Queryer, query, what string) (int, error) {
+	// raw sql: runs the server statement its caller wrote, with the reason written beside it.
+	rows, err := q.QueryContext(ctx, query)
 	if err != nil {
-		return 0, fmt.Errorf("read the Postgres version: %w", err)
+		return 0, fmt.Errorf("read %s: %w", what, err)
 	}
 	defer func() { _ = rows.Close() }()
 	if !rows.Next() {
-		return 0, errors.Join(errors.New("read the Postgres version: no row"), rows.Err())
+		return 0, errors.Join(fmt.Errorf("read %s: no row", what), rows.Err())
 	}
-	var num int
-	if err := rows.Scan(&num); err != nil {
-		return 0, fmt.Errorf("read the Postgres version: %w", err)
+	var n int
+	if err := rows.Scan(&n); err != nil {
+		return 0, fmt.Errorf("read %s: %w", what, err)
 	}
-	return num / 10000, rows.Err()
+	return n, rows.Err()
 }
