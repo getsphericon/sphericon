@@ -534,8 +534,9 @@ _Avoid_: Tracking mode, privacy mode
 **Broadcast**:
 A send to an audience on one Channel, fixed when it is created, sent once (draft → scheduled →
 sending → sent / failed / cancelled): authored and scheduled by hand, or made as an issue of a **Broadcast
-series**, which it then cannot be edited apart from. Its Message content takes that Channel's shape, and
-exactly that Channel's content is stored; its lifecycle, audience, Integration, Recipients and
+series**, which it then cannot be edited apart from. Its content is one or more **Variants**, each a
+Message content of that Channel's shape (several make a **Split test**), and exactly that Channel's
+content is stored; its lifecycle, audience, Integration, Recipients and
 figures are the same on every Channel, and its Integration is one of its Channel (or that Channel's
 default). It is never converted to another Channel, nor copied into one. A new Broadcast asks for
 its Channel first, among the Channels the Workspace has an enabled Integration for, and the
@@ -565,6 +566,25 @@ Segment, and it is sent like any Broadcast, every check made again, with figures
 Broadcast has at most one Retry; what a Retry fails to reach is retried from it. Skipped Recipients
 are never retried.
 _Avoid_: Resend (re-mailing those already reached, such as non-openers), retry failed, re-dispatch
+
+**Variant**:
+One version of a Broadcast's content: a Message content of its Channel and, on email, its own sender
+name. A Broadcast has one Variant, or several in a Split test; its Channel, Integration, audience and
+send time never vary between them.
+_Avoid_: Version (that is an Automation's), A/B version, path (that is a Split's)
+
+**Split test**:
+A Broadcast with several Variants, tried on a test share of its Recipients (split evenly between
+them, by Contact) for a fixed time, after which the **Winner** goes to the rest. Its winner metric,
+chosen before it is armed, is the click rate or the revenue per Recipient, counted over tracked
+messages only, never opens. At a test share of 100% there is no rest.
+_Avoid_: A/B test (as a synonym), experiment, campaign test, Split (that is an Automation Step)
+
+**Winner**:
+The Variant of a Split test that goes to the rest of its Recipients: picked when the test ends by the
+winner metric, or by hand before. The leader goes to the rest even below 95% confidence, but the
+report then names no Winner.
+_Avoid_: Champion, best variant
 
 **Broadcast recipient**:
 The per-(Broadcast, Contact) record — the frozen audience snapshot taken at send
@@ -880,7 +900,7 @@ Contact's path is fixed by the Contact and the Step (and, in a date-triggered Au
 year, and when Contacts are enrolled again, the Enrollment's ordinal), so the same Enrollment lands
 on the same one, and it is kept on the Enrollment. An empty path is a holdout group. Used to test one path
 against another; no winner is picked for the author.
-_Avoid_: A/B test step, experiment, variant, random branch
+_Avoid_: A/B test step, experiment, variant (that is a Broadcast's), random branch
 
 **Wait for event**:
 A Step that holds the Enrollment until an Event arrives or a timeout passes, then takes `arrived` or

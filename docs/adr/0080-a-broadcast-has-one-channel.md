@@ -4,6 +4,9 @@ status: accepted
 
 # A Broadcast has one Channel
 
+> **Amended by [[0152-a-broadcast-tests-its-variants-on-a-share-and-sends-the-winner-to-the-rest]]:**
+> a Broadcast's content is one to N Variants, each a Message content of its one Channel.
+
 A Broadcast was an email: subject, sender, HTML body, an audience Segment, an Integration and a
 lifecycle with a planner, holds, deferrals, Recipients and derived figures. Each new Channel needs
 one-off sends too. The multichannel research on the map issue (getsphericon/sphericon#916) found
