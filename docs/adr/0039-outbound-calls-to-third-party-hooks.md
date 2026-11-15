@@ -4,7 +4,7 @@ status: accepted
 
 # Outbound calls to third-party hooks
 
-> **Amended by [[0158-an-http-steps-json-response-is-kept-for-later-steps]]:** a named HTTP step's
+> **Amended by [[0160-an-http-steps-json-response-is-kept-for-later-steps]]:** a named HTTP step's
 > JSON response is kept on the Enrollment for later Steps as `http.<name>`.
 
 > **Amended by #1421:** the HTTP step's body renders through the email renderer's JSON engine:
