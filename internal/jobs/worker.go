@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -41,7 +42,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
-	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/workspacedeletion"
 )
 
@@ -82,7 +82,7 @@ type Deps struct {
 	// with no outbound mail).
 	SystemSender messaging.EmailSender
 	// Notices issues the Notices of the domain events (ADR 0105).
-	Notices *noticedelivery.UseCase
+	Notices *noticedelivery.Module
 	// Callbacks reads again a Delivery notice that came before its message (the late notice job).
 	Callbacks *callbackinterpretation.Module
 	Rules     *rules.Module

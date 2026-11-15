@@ -149,16 +149,33 @@ func (*TrackingDomainRemoved) EventName() string  { return NameTrackingDomainRem
 func (*TrackingDomainRemoved) EventVersion() int  { return 1 }
 func (e *TrackingDomainRemoved) Workspace() int64 { return e.WorkspaceID }
 
+// WebhookDisabledReason is why the delivery turned a Webhook endpoint off (ADR 0039). An Owner
+// turning one off publishes nothing.
+type WebhookDisabledReason string
+
+const (
+	// WebhookDisabledGone: the receiver answered 410 Gone.
+	WebhookDisabledGone WebhookDisabledReason = "gone"
+	// WebhookDisabledPersistentFailure: deliveries kept failing, at least Failures in a row over
+	// more than Window.
+	WebhookDisabledPersistentFailure WebhookDisabledReason = "persistent_failure"
+)
+
 // WebhookEndpointDisabled is the Webhook endpoint EndpointID turned off by the delivery, for
-// Reason (the endpoint's disabled reason). Origin is the scheme and host of its URL: the path and
-// the query may carry a secret, so they are never carried.
+// Reason. Origin is the scheme and host of its URL: the path and the query may carry a secret, so
+// they are never carried. Failures and Window are the run of failures that disables an endpoint
+// (at least Failures in a row over more than Window), as they were when this one was disabled, so
+// a threshold changed since words an old disable as it happened. Version 1 carried neither: one
+// still queued decodes with both zero.
 type WebhookEndpointDisabled struct {
-	WorkspaceID int64  `json:"workspaceId"`
-	EndpointID  int64  `json:"endpointId"`
-	Origin      string `json:"origin"`
-	Reason      string `json:"reason"`
+	WorkspaceID int64                 `json:"workspaceId"`
+	EndpointID  int64                 `json:"endpointId"`
+	Origin      string                `json:"origin"`
+	Reason      WebhookDisabledReason `json:"reason"`
+	Failures    int                   `json:"failures,omitempty"`
+	Window      time.Duration         `json:"window,omitempty"`
 }
 
 func (*WebhookEndpointDisabled) EventName() string  { return NameWebhookEndpointDisabled }
-func (*WebhookEndpointDisabled) EventVersion() int  { return 1 }
+func (*WebhookEndpointDisabled) EventVersion() int  { return 2 }
 func (e *WebhookEndpointDisabled) Workspace() int64 { return e.WorkspaceID }

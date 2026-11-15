@@ -1,4 +1,5 @@
-// Package noticedelivery is the use case of Notice delivery (GLOSSARY, ADR 0105): what sphericon
+// Package noticedelivery is Notice delivery (GLOSSARY, ADR 0105), a domain module of identity
+// without a table (ADR 0112, amended by #1362): what sphericon
 // tells a person on its own behalf when one of its domain events says something happened that they
 // must know of. A User is sent their account's links and notices (a verification link, a password
 // reset, a deleted Passkey, …), a Member their Workspace's invitation and Second factor deadline,
@@ -12,8 +13,11 @@
 // minted then, bound to the User as they are. The consumer hands each Notice to the System sender
 // (internal/jobs), one send job per recipient, so a failed send is retried on its own.
 //
+// It reads only identity's modules: what happened in another context, a disabled Webhook endpoint
+// among them, is worded from the facts its event carries, as they were when it happened.
+//
 // An event of a User's account belongs to no Workspace, and a Workspace's Owners are read across
-// the Instance by the Workspace's id, so there is no *ent.Scoped to take: this use case holds the
+// the Instance by the Workspace's id, so there is no *ent.Scoped to take: this module holds the
 // raw *ent.Client, one of the closed list of docs/architecture/workspace-scoping.md (Workspace scoping).
 package noticedelivery
 
@@ -26,7 +30,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -34,7 +37,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
@@ -59,8 +61,8 @@ type Config struct {
 	TrackingTarget string
 }
 
-// UseCase issues the Notices of the domain events.
-type UseCase struct {
+// Module issues the Notices of the domain events.
+type Module struct {
 	client    *ent.Client
 	links     *users.Links
 	factors   *secondfactors.Module
@@ -72,8 +74,8 @@ type UseCase struct {
 // New builds Notice delivery over the raw client, the links of the account mails, the Second
 // factors (whose deadlines the Two-factor notices name), the Sign-in providers (which name a linked
 // one) and the Instance's configuration; now is the Instance clock.
-func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, providers *signinprovider.Providers, cfg Config, now func() time.Time) *UseCase {
-	return &UseCase{client: client, links: links, factors: factors, providers: providers, cfg: cfg, now: now}
+func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, providers *signinprovider.Providers, cfg Config, now func() time.Time) *Module {
+	return &Module{client: client, links: links, factors: factors, providers: providers, cfg: cfg, now: now}
 }
 
 // Issue answers the Notices ev calls for (the Notices' consumer wants only an event that calls for
@@ -81,7 +83,7 @@ func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, 
 // delivered, a User gone since, a suspension lifted since). A suspension's notice is recorded on
 // the Workspace (workspaces.MarkAbuseFreezeNotified) when it is issued. An error leaves the event
 // to be handled again: Issue reads and mints nothing it cannot read and mint again.
-func (u *UseCase) Issue(ctx context.Context, ev events.DomainEvent) ([]Notice, error) {
+func (u *Module) Issue(ctx context.Context, ev events.DomainEvent) ([]Notice, error) {
 	switch e := ev.(type) {
 	case *events.LinkRequested:
 		return u.link(ctx, e)
@@ -112,7 +114,7 @@ func (u *UseCase) Issue(ctx context.Context, ev events.DomainEvent) ([]Notice, e
 func accountFooter() string { return i18n.T(i18n.EmailAuthFooter, nil) }
 
 // appLink is the app's page path, with query q when it is not empty.
-func (u *UseCase) appLink(path string, q url.Values) string {
+func (u *Module) appLink(path string, q url.Values) string {
 	link := strings.TrimRight(u.cfg.AppURL, "/") + path
 	if len(q) > 0 {
 		link += "?" + q.Encode()
@@ -137,7 +139,7 @@ var linkCopies = map[string]linkCopy{
 
 // link is the mail of a link request that is delivered: the link is minted now, bound to the User
 // as they are (a password changed since the request ends it).
-func (u *UseCase) link(ctx context.Context, e *events.LinkRequested) ([]Notice, error) {
+func (u *Module) link(ctx context.Context, e *events.LinkRequested) ([]Notice, error) {
 	c, ok := linkCopies[e.Action]
 	if !ok {
 		return nil, fmt.Errorf("notice: unknown link request %q", e.Action)
@@ -158,7 +160,7 @@ func (u *UseCase) link(ctx context.Context, e *events.LinkRequested) ([]Notice, 
 }
 
 // mint is the token of the link e asks for, for usr.
-func (u *UseCase) mint(usr *ent.User, e *events.LinkRequested) (string, error) {
+func (u *Module) mint(usr *ent.User, e *events.LinkRequested) (string, error) {
 	switch e.Action {
 	case events.NameUserPasswordResetRequested:
 		return u.links.PasswordResetLink(usr)
@@ -172,7 +174,7 @@ func (u *UseCase) mint(usr *ent.User, e *events.LinkRequested) (string, error) {
 }
 
 // workspace is the Workspace id, which a Notice of one names.
-func (u *UseCase) workspace(ctx context.Context, id int64) (*ent.Workspace, error) {
+func (u *Module) workspace(ctx context.Context, id int64) (*ent.Workspace, error) {
 	ws, err := u.client.Workspace.Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("notice: load workspace %d: %w", id, err)
@@ -181,7 +183,7 @@ func (u *UseCase) workspace(ctx context.Context, id int64) (*ent.Workspace, erro
 }
 
 // user is the User id, found false when it is gone.
-func (u *UseCase) user(ctx context.Context, id int64) (*ent.User, bool, error) {
+func (u *Module) user(ctx context.Context, id int64) (*ent.User, bool, error) {
 	usr, err := u.client.User.Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, false, nil
@@ -194,7 +196,7 @@ func (u *UseCase) user(ctx context.Context, id int64) (*ent.User, bool, error) {
 
 // addressClaimed is the notice a Sign-up or an email change to a Taken address sends its owner. It
 // carries no token, so it can never be a way in.
-func (u *UseCase) addressClaimed(e *events.AddressClaimed) []Notice {
+func (u *Module) addressClaimed(e *events.AddressClaimed) []Notice {
 	if !e.Deliver {
 		return nil
 	}
@@ -221,7 +223,7 @@ func welcome(e *events.UserSignedUp) Notice {
 
 // identityLinked tells the owner of the account that a Sign-in provider was linked silently, with
 // the link that undoes it.
-func (u *UseCase) identityLinked(ctx context.Context, e *events.IdentityLinked) ([]Notice, error) {
+func (u *Module) identityLinked(ctx context.Context, e *events.IdentityLinked) ([]Notice, error) {
 	usr, found, err := u.user(ctx, e.UserID)
 	if err != nil || !found {
 		return nil, err
@@ -263,7 +265,7 @@ func passkeyChanged(e *events.PasskeyChange) ([]Notice, error) {
 
 // invitation is the mail of an Invitation, with its one-time link. The Workspace and the inviter
 // are named as they are now; an inviter gone since is "Someone".
-func (u *UseCase) invitation(ctx context.Context, e *events.InvitationCreated) ([]Notice, error) {
+func (u *Module) invitation(ctx context.Context, e *events.InvitationCreated) ([]Notice, error) {
 	ws, err := u.workspace(ctx, e.WorkspaceID)
 	if err != nil {
 		return nil, err
@@ -290,7 +292,7 @@ const secondFactorSetupPath = "/account/security"
 
 // secondFactorRequired mails every Member of the Workspace who has no Second factor their deadline.
 // The Memberships are read now, so a requirement switched off again in between mails no one.
-func (u *UseCase) secondFactorRequired(ctx context.Context, e *events.SecondFactorRequired) ([]Notice, error) {
+func (u *Module) secondFactorRequired(ctx context.Context, e *events.SecondFactorRequired) ([]Notice, error) {
 	members, err := u.client.Scoped(e.WorkspaceID).Membership().Query().WithUser().WithWorkspace().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("notice: load the members of workspace %d: %w", e.WorkspaceID, err)
@@ -310,7 +312,7 @@ func (u *UseCase) secondFactorRequired(ctx context.Context, e *events.SecondFact
 
 // secondFactorReminder reminds the Member of the claimed reminder that their grace ends at its
 // deadline, unless they have a Second factor by now or are no longer a Member.
-func (u *UseCase) secondFactorReminder(ctx context.Context, e *events.SecondFactorReminderDue) ([]Notice, error) {
+func (u *Module) secondFactorReminder(ctx context.Context, e *events.SecondFactorReminderDue) ([]Notice, error) {
 	m, err := u.client.Scoped(e.WorkspaceID).Membership().Query().
 		Where(membership.ID(e.MembershipID)).WithUser().WithWorkspace().Only(ctx)
 	if ent.IsNotFound(err) {
@@ -331,7 +333,7 @@ func (u *UseCase) secondFactorReminder(ctx context.Context, e *events.SecondFact
 
 // secondFactorMail is a Second factor mail to the Membership's User. The deadline is shown in the
 // User time zone (ADR 0068); the locale is the Instance's.
-func (u *UseCase) secondFactorMail(subject, body i18n.ID, m *ent.Membership, deadline time.Time) Notice {
+func (u *Module) secondFactorMail(subject, body i18n.ID, m *ent.Membership, deadline time.Time) Notice {
 	usr := m.Edges.User
 	data := map[string]any{
 		"Workspace": m.Edges.Workspace.Name,
@@ -355,7 +357,7 @@ func mailTime(t time.Time, zone *string) string {
 // suspended tells the Owners of a suspended Workspace that its sending is frozen, why and who set
 // it (ADR 0007), through the System sender because the Workspace cannot send while suspended (ADR
 // 0015), and records on the Workspace that they were told. A suspension lifted since tells no one.
-func (u *UseCase) suspended(ctx context.Context, e *events.WorkspaceSuspended) ([]Notice, error) {
+func (u *Module) suspended(ctx context.Context, e *events.WorkspaceSuspended) ([]Notice, error) {
 	ws, err := u.workspace(ctx, e.WorkspaceID)
 	if err != nil {
 		return nil, err
@@ -385,13 +387,13 @@ func (u *UseCase) suspended(ctx context.Context, e *events.WorkspaceSuspended) (
 
 // disabledReasons words why the delivery disabled a Webhook endpoint. An Owner disabling one is
 // told nothing.
-var disabledReasons = map[string]i18n.ID{
-	string(webhookendpoint.DisabledReasonGone):              i18n.EmailWebhookDisabledReasonGone,
-	string(webhookendpoint.DisabledReasonPersistentFailure): i18n.EmailWebhookDisabledReasonPersistentFailure,
+var disabledReasons = map[events.WebhookDisabledReason]i18n.ID{
+	events.WebhookDisabledGone:              i18n.EmailWebhookDisabledReasonGone,
+	events.WebhookDisabledPersistentFailure: i18n.EmailWebhookDisabledReasonPersistentFailure,
 }
 
 // ownerNotice is the notice to a Workspace's Owners of a change of its configuration.
-func (u *UseCase) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Notice, error) {
+func (u *Module) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Notice, error) {
 	switch e := ev.(type) {
 	case *events.AbuseWarned:
 		ws, err := u.workspace(ctx, e.WorkspaceID)
@@ -425,17 +427,22 @@ func (u *UseCase) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Not
 		data := map[string]any{
 			"Workspace": ws.Name,
 			"URL":       e.Origin,
-			"Failures":  webhookendpoints.DisableFailures,
-			"Window":    webhookendpoints.DisableWindow.String(),
+			"Failures":  e.Failures,
+			"Window":    e.Window.String(),
 		}
-		data["Reason"] = i18n.T(disabledReasons[e.Reason], data)
+		reason := disabledReasons[e.Reason]
+		if e.Reason == events.WebhookDisabledPersistentFailure && e.Failures == 0 {
+			// A version 1 event carries no run of failures: it is worded without one.
+			reason = i18n.EmailWebhookDisabledReasonPersistentFailureUnmeasured
+		}
+		data["Reason"] = i18n.T(reason, data)
 		return u.toOwners(ctx, e.WorkspaceID, i18n.EmailWebhookDisabledSubject, i18n.EmailWebhookDisabledBody, data)
 	}
 	return nil, fmt.Errorf("notice: no notice for the event %q", ev.EventName())
 }
 
 // toOwners is the notice, rendered from data, to every Owner of the Workspace with an address.
-func (u *UseCase) toOwners(ctx context.Context, workspaceID int64, subject, body i18n.ID, data map[string]any) ([]Notice, error) {
+func (u *Module) toOwners(ctx context.Context, workspaceID int64, subject, body i18n.ID, data map[string]any) ([]Notice, error) {
 	owners, err := memberships.Owners(ctx, u.client.Scoped(workspaceID))
 	if err != nil {
 		return nil, fmt.Errorf("notice: load the owners of workspace %d: %w", workspaceID, err)

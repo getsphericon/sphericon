@@ -27,7 +27,10 @@ Event's Contact through `contacts`, checks an order Event through `orders` and p
 batch on the bus, which owns the Events and the Event log's reads; the Callback interpretation
 (`internal/domain/sending/callbackinterpretation`) opens the Ingest hook request's transaction,
 stamps Outbound messages and changes Bindings through their modules, and publishes the rest as
-System events; the Sign-up (`internal/domain/identity/signup`, which holds the raw client, since
+System events; Notice delivery (`internal/domain/identity/noticedelivery`, which holds the raw
+client, since an account's event belongs to no Workspace) answers the Notices a domain event calls
+for through identity's modules alone, wording what happened in another context from the facts its
+event carries; the Sign-up (`internal/domain/identity/signup`, which holds the raw client, since
 neither the User nor its first Workspace exists when a step starts) creates the User's first
 Workspace through `memberships.CreateWorkspaceIn` in every step that makes a User Verified, each on its own transaction: the verification and reset
 links, a Sign-up and an Owner made where verification is off, the provider sign-in and the

@@ -8,14 +8,14 @@ import (
 
 	"github.com/riverqueue/river"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 )
 
 // The Notices (ADR 0105): every mail sphericon sends on its own behalf, through the System sender,
 // reacts to a domain event. The Notices' consumer wants the events Notice delivery covers; its job
-// asks the use case for the Notices of the event and queues one send job per Notice, which the
+// asks Notice delivery for the Notices of the event and queues one send job per Notice, which the
 // System sender delivers. A failed send is retried on its own, and a Notice queued again by a
 // retried event job is the same send job (unique on the event and the address), so nobody is mailed
 // twice for one event.
@@ -27,7 +27,7 @@ type NoticeEventArgs struct {
 
 func (NoticeEventArgs) Kind() string { return "event_notice" }
 
-// callsForNotices wants an event that calls for Notices (noticedelivery.UseCase.Issue), reading the
+// callsForNotices wants an event that calls for Notices (noticedelivery.Module.Issue), reading the
 // event alone, as a consumer's filter must: an account's event, a change of a Workspace its people
 // are told of, and a Tracking host that fell back.
 func callsForNotices(_ events.Envelope, ev events.DomainEvent) bool {
@@ -49,13 +49,13 @@ func callsForNotices(_ events.Envelope, ev events.DomainEvent) bool {
 type NoticeEventWorker struct {
 	river.WorkerDefaults[NoticeEventArgs]
 
-	notices *noticedelivery.UseCase
+	notices *noticedelivery.Module
 	sender  messaging.EmailSender
 }
 
 // NewNoticeEventWorker is the Notices' consumer's worker over Notice delivery and the System
 // sender (nil on an Instance with no outbound mail).
-func NewNoticeEventWorker(notices *noticedelivery.UseCase, sender messaging.EmailSender) *NoticeEventWorker {
+func NewNoticeEventWorker(notices *noticedelivery.Module, sender messaging.EmailSender) *NoticeEventWorker {
 	return &NoticeEventWorker{notices: notices, sender: sender}
 }
 

@@ -184,3 +184,38 @@ func TestALiftedSuspensionTellsNobody(t *testing.T) {
 
 	assert.Empty(t, env.SystemMail.Messages())
 }
+
+// The notice of a Webhook endpoint the delivery disabled for persistent failure states the
+// failures and the window its event carries, as they were when the endpoint was disabled.
+func TestADisabledEndpointNoticeStatesTheFailuresAndTheWindowOfItsEvent(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	publish(t, env, &events.WebhookEndpointDisabled{
+		WorkspaceID: fixtures.AcmeID, EndpointID: fixtures.WebhookCodebasicsID, Origin: "https://hooks.example.com",
+		Reason: events.WebhookDisabledPersistentFailure, Failures: 7, Window: 45 * time.Minute,
+	})
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Equal(t, fixtures.OwnerJohnEmail, msgs[0].To)
+	assert.Contains(t, msgs[0].Text, "https://hooks.example.com")
+	assert.Contains(t, msgs[0].Text, "at least 7 in a row over more than 45m0s")
+}
+
+// A version 1 event still queued carries no failures and no window: its notice is sent without
+// them rather than with zeros.
+func TestADisabledEndpointNoticeOfAVersion1EventIsSentWithoutTheNumbers(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	publish(t, env, &events.WebhookEndpointDisabled{
+		WorkspaceID: fixtures.AcmeID, EndpointID: fixtures.WebhookCodebasicsID, Origin: "https://hooks.example.com",
+		Reason: events.WebhookDisabledPersistentFailure,
+	})
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Contains(t, msgs[0].Text, "Deliveries kept failing.")
+	assert.NotContains(t, msgs[0].Text, "in a row")
+	assert.NotContains(t, msgs[0].Text, "0s")
+	assert.NotContains(t, msgs[0].Text, "<no value>")
+}

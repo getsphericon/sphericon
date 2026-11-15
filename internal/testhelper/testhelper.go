@@ -35,6 +35,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -58,7 +59,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
-	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 
 	// The pgx driver behind database/sql.
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -508,7 +508,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client))
 		add(tb, p, txDB, client, jobs.NewMessageObservationWorker(client))
-		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.UseCase](injector), systemSender))
+		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.Module](injector), systemSender))
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
 		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
 		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(client, lic))

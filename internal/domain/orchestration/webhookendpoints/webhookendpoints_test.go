@@ -525,6 +525,7 @@ func TestRecordDeliveryDisablesOnGoneAndTellsTheOwnersOnce(t *testing.T) {
 	require.Len(t, published, 1)
 	assert.EqualValues(t, fixtures.AcmeID, published[0].WorkspaceID)
 	assert.Equal(t, "https://hooks.example.com", published[0].Origin, "the path and the query may carry a secret")
+	assert.Equal(t, events.WebhookDisabledGone, published[0].Reason)
 	sent := r.env.SystemMail.Messages()
 	require.Len(t, sent, 1)
 	assert.Equal(t, fixtures.OwnerJohnEmail, sent[0].To)
@@ -566,7 +567,11 @@ func TestRecordDeliveryDisablesOnlyWhenTheRunReachedTheCountAndTheWindow(t *test
 	assert.NotNil(t, e.DisabledAt)
 	require.NotNil(t, e.DisabledReason)
 	assert.Equal(t, webhookendpoint.DisabledReasonPersistentFailure, *e.DisabledReason)
-	assert.Len(t, r.disabled(), 1)
+	published := r.disabled()
+	require.Len(t, published, 1)
+	assert.Equal(t, events.WebhookDisabledPersistentFailure, published[0].Reason)
+	assert.Equal(t, webhookendpoints.DisableFailures, published[0].Failures, "the run that disables, as it was then")
+	assert.Equal(t, webhookendpoints.DisableWindow, published[0].Window)
 }
 
 // Without a System sender the endpoint still disables.
