@@ -1,5 +1,8 @@
 # Old Outbound messages are folded into stored figures and deleted
 
+> **Amended by [[0151-a-broadcasts-unreached-recipients-are-reached-by-a-retry]]:** a `cancelled`
+> Broadcast (ADR 0150) is frozen like a sent or failed one.
+
 Every send left an Outbound message, a Broadcast recipient and, for a Telegram message or an SMS,
 its tracked links, and nothing ever removed them: the largest tables of an Instance grew without
 end, each row holding a Destination long after the send mattered. Event retention (ADR 0019) left

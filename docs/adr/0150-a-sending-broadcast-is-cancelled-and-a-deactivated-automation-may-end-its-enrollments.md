@@ -36,7 +36,7 @@ send must be able to end it without first being trusted to send.
   it is listed without `mcp:send`. A Connection that cannot send can still stop a send.
 - There is **no Pause and Resume**. Resume would arm a send again, a second state would meet holds
   and deferrals, and the need behind it, fixing a mistake and reaching the rest, is a new Broadcast to
-  those the cancelled one did not reach: the retry of a Broadcast's unsent Recipients, decided apart.
+  those the cancelled one did not reach: the retry of a Broadcast's unsent Recipients, decided apart (ADR 0151).
 
 ### Deactivate chooses what happens to the Enrollments in flight
 

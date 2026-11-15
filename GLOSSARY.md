@@ -529,7 +529,8 @@ figures are the same on every Channel, and its Integration is one of its Channel
 default). It is never converted to another Channel, nor copied into one. A new Broadcast asks for
 its Channel first, among the Channels the Workspace has an enabled Integration for, and the
 Broadcasts of every Channel share one list with a Channel column and filter. Its audience is a
-Segment or all Contacts, always chosen as such, never the absence of a choice, reached at the Channel's Destination: a Contact without one is never a
+Segment or all Contacts, always chosen as such, never the absence of a choice (or, for a **Retry**,
+the Recipients its source did not reach), reached at the Channel's Destination: a Contact without one is never a
 Recipient. An SMS Broadcast needs an SMS Integration in the Workspace to be created at all. Scheduling takes a **copy of the
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
@@ -542,8 +543,17 @@ _Avoid_: Campaign, newsletter blast, mailshot, email blast
 **Cancel**:
 Stopping a Broadcast while it is sending: no Recipient without a message is sent to after it, what
 the provider already took still goes, and the Broadcast is `cancelled` for good; the Recipients it
-did not reach count as cancelled. It only narrows reach. From `scheduled` the way back is Unschedule.
+did not reach count as cancelled. It only narrows reach; reaching them later is a **Retry**. From
+`scheduled` the way back is Unschedule.
 _Avoid_: Abort, stop, pause, Unschedule (that returns a scheduled Broadcast to draft)
+
+**Retry**:
+A new Broadcast made from a finished one to reach the Recipients it did not: those whose message
+failed and, after a Cancel, those it never sent to. Its audience is exactly those Recipients, never a
+Segment, and it is sent like any Broadcast, every check made again, with figures of its own. A
+Broadcast has at most one Retry; what a Retry fails to reach is retried from it. Skipped Recipients
+are never retried.
+_Avoid_: Resend (re-mailing those already reached, such as non-openers), retry failed, re-dispatch
 
 **Broadcast recipient**:
 The per-(Broadcast, Contact) record — the frozen audience snapshot taken at send

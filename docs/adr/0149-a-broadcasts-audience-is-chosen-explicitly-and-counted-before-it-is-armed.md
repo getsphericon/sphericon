@@ -7,6 +7,9 @@ status: accepted
 > Amends [[0065-a-live-automation-or-rule-changes-only-by-publish]] (what Schedule answers) and
 > [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]] (a series' audience).
 
+> **Amended by [[0151-a-broadcasts-unreached-recipients-are-reached-by-a-retry]]:** a Retry's
+> audience is its source's unreached Recipients, named by its link, beside a Segment and all Contacts.
+
 ## Context
 
 A Broadcast's audience is a Segment or all Contacts. On create, `segmentId` is optional and its
