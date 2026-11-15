@@ -55,6 +55,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -117,7 +118,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/messageretention"
 	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
-	"github.com/getsphericon/sphericon/internal/usecase/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
@@ -379,7 +379,7 @@ var messagingPackage = do.Package(
 	// Notice delivery (ADR 0105): what sphericon tells a User, a Member or a Workspace's Owners on
 	// its own behalf when a domain event calls for it, sent through the System sender by the
 	// Notices' event consumer.
-	do.Lazy(func(i do.Injector) (*noticedelivery.UseCase, error) {
+	do.Lazy(func(i do.Injector) (*noticedelivery.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
 		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
@@ -567,7 +567,7 @@ var jobsPackage = do.Package(
 			Outbound:         do.MustInvoke[*outboundmessages.Module](i),
 			Cipher:           do.MustInvoke[*secrets.Cipher](i),
 			SystemSender:     do.MustInvoke[SystemSender](i).EmailSender,
-			Notices:          do.MustInvoke[*noticedelivery.UseCase](i),
+			Notices:          do.MustInvoke[*noticedelivery.Module](i),
 			Callbacks:        do.MustInvoke[*callbackinterpretation.Module](i),
 			Rules:            do.MustInvoke[*rules.Module](i),
 			Users:            do.MustInvoke[*users.Module](i),

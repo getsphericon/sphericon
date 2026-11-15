@@ -31,6 +31,15 @@ status: accepted
 > (condition 1), and the modules it composes are of sending and the contexts below, the case of a
 > domain module without a table rather than of condition 2. Its `Integrations` and `Bots` ports
 > stood in front of `integrations.Module`, a module of the core, and go.
+>
+> **Amended by #1362:** Notice delivery leaves the use cases, since the events it reads carry what it
+> words. It read only identity's modules but for one notice: wording a disabled Webhook endpoint
+> took the delivery's thresholds and disabled reasons from `webhookendpoints`, read when the notice
+> was sent rather than when the endpoint was disabled. `webhook_endpoint.disabled` (version 2) now
+> carries the run of failures that disabled it, as it was then, and a reason the `events` package
+> declares, so neither condition holds: Notice delivery is `internal/domain/identity/noticedelivery`,
+> a domain module of identity without a table that holds the raw client. A version 1 event still
+> queued is worded without the numbers.
 
 ## Context
 
@@ -114,7 +123,9 @@ context gets a package of its own by the same test.
     (`workspaces`) and whose rows are the Audit entries' (condition 2).
   - Across contexts: `analyticsreport` (contacts and sending), `needsattentionreport` (sending,
     orchestration and insights) and `noticedelivery` (identity's Users and Owners, told of what
-    happened in other contexts, a Webhook endpoint among them) (condition 2).
+    happened in other contexts, a Webhook endpoint among them) (condition 2). (Amended by #1362:
+    the events Notice delivery reads carry what it words, so it imports nothing above identity and
+    is a domain module of identity, `internal/domain/identity/noticedelivery`.)
 - **The use cases that move, each owner in a change of its own:**
   - `contactintake` into `contacts`, as `contacts.Module.UpsertBatch`.
   - `transactionalsend` into `outboundmessages`, as `SendTransactional`.

@@ -131,10 +131,17 @@ func (m *Module) deliveryStorage(ts *ent.Scoped, pub events.Publisher, before *e
 		}
 		err = pub.Publish(ctx, &events.WebhookEndpointDisabled{
 			WorkspaceID: before.WorkspaceID, EndpointID: before.ID,
-			Origin: originOf(before.URL), Reason: string(reason),
+			Origin: originOf(before.URL), Reason: publishedReasons[reason],
+			Failures: DisableFailures, Window: DisableWindow,
 		})
 		return err == nil, err
 	}}
+}
+
+// publishedReasons is the reason a disabled endpoint's event names for each the delivery sets.
+var publishedReasons = map[webhookendpoint.DisabledReason]events.WebhookDisabledReason{
+	webhookendpoint.DisabledReasonGone:              events.WebhookDisabledGone,
+	webhookendpoint.DisabledReasonPersistentFailure: events.WebhookDisabledPersistentFailure,
 }
 
 // originOf keeps scheme and host of an endpoint URL for a mail: path and query may carry a secret.

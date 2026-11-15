@@ -116,7 +116,7 @@ its own lock (orders takes one per Workspace).
 The Event row is written before any consumer runs, so an Automation's exit and goal checks and a
 Rule's Condition that counts the Contact's Events see the Event that triggered them (#751).
 
-The notices consumer asks the use case `internal/usecase/noticedelivery` for the Notices of the
+The notices consumer asks Notice delivery (`internal/domain/identity/noticedelivery`) for the Notices of the
 event (who is told and what, read when the event is handled, a link minted then) and queues their
 sends, which the System sender delivers, each retried on its own. Its events are the account's
 (`account.go`) and the Workspace's changes its people are told of (`workspace_changes.go`); none is

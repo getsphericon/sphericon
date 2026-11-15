@@ -61,7 +61,9 @@ Workspace.
   no one). The Notices' consumer (`internal/jobs/notices.go`) queues one send job per Notice, unique
   on the event and the address, which the System sender delivers; a failed send is retried on its own,
   and a retried event job queues nobody twice. On an Instance with no System sender nothing is
-  queued.
+  queued. (Amended by #1362: Notice delivery is a domain module of identity,
+  `internal/domain/identity/noticedelivery`, since the events it reads carry what it words; see
+  [[0112-an-operation-belongs-to-the-module-that-owns-its-subject]].)
 - **The modules know no recipient and no sender.** `memberships.Notify`, `OwnerNotifier`,
   `suspension.NotifyOwners`, `suspension.ErrNoticeNotSent` and `internal/kernel/mailjobs` are gone. A
   suspension stands and its notice is retried until it is delivered; the abuse detector marks a

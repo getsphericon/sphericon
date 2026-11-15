@@ -355,8 +355,7 @@ components:
   # The use cases whose rows belong to no Workspace when the operation starts, so there is no
   # *ent.Scoped to take: the deletion cycle of a Workspace, which
   # lists the Workspaces that have no scope yet, the Workspace view, which creates a Workspace and
-  # restores a deleted one, Notice delivery, which reads a User or a
-  # Workspace's Owners by the ids an event names, and User deletion, which reaches the User by id
+  # restores a deleted one, and User deletion, which reaches the User by id
   # and leaves each of their Workspaces in turn. They hold the raw client (the closed list of
   # docs/architecture/workspace-scoping.md, Workspace scoping) and are isolated like every use case: one pattern
   # each, so each is an instance, and neither `usecase` nor `usecase-raw` imports the other.
@@ -366,7 +365,6 @@ components:
         'internal/usecase/workspacedeletion*',
         'internal/usecase/messageretention*',
         'internal/usecase/workspaceview*',
-        'internal/usecase/noticedelivery*',
         'internal/usecase/userdeletion*',
       ]
     isolated: true
@@ -427,6 +425,7 @@ components:
         internal/domain/identity/consentrecords,
         internal/domain/identity/invitations,
         internal/domain/identity/joindomains,
+        internal/domain/identity/noticedelivery,
         internal/domain/identity/oauthclients,
         internal/domain/identity/passkeys,
         internal/domain/identity/secondfactors,

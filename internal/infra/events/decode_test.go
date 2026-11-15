@@ -73,3 +73,21 @@ func TestEventsReportTheirEnvelopeMetadata(t *testing.T) {
 		assert.NotEmpty(t, ev.Project().Action, "%T", ev)
 	}
 }
+
+// A version 1 webhook_endpoint.disabled still queued, as it was stored, decodes to the reason the
+// events package declares and to no run of failures, which its notice is worded without.
+func TestAVersion1DisabledEndpointDecodesWithoutARunOfFailures(t *testing.T) {
+	for stored, reason := range map[string]events.WebhookDisabledReason{
+		"gone":               events.WebhookDisabledGone,
+		"persistent_failure": events.WebhookDisabledPersistentFailure,
+	} {
+		ev, err := events.Decode(events.Envelope{Name: events.NameWebhookEndpointDisabled, Version: 1,
+			Data: []byte(`{"workspaceId":7,"endpointId":3,"origin":"https://hooks.example.com","reason":"` + stored + `"}`)})
+		require.NoError(t, err, stored)
+		e, ok := ev.(*events.WebhookEndpointDisabled)
+		require.True(t, ok, stored)
+		assert.Equal(t, reason, e.Reason, stored)
+		assert.Zero(t, e.Failures, stored)
+		assert.Zero(t, e.Window, stored)
+	}
+}

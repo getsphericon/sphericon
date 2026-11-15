@@ -13,12 +13,14 @@ Webhook endpoint) publishes its event in the transaction of the change
 the sender; a request that changes no state publishes with `events.Bus.Publish`: an account's
 requests for a mailed link (a password reset, the verification link sent again, an email change,
 a deletion link) are `users.Requests`, which take the address's mail budget and publish the same
-work for every address (ADR 0031), and the `/site` handlers only call them. The use case
-`internal/usecase/noticedelivery` answers the Notices an event calls for, who is told and what,
-read when the event is handled, a link minted then, and the Notices' consumer
+work for every address (ADR 0031), and the `/site` handlers only call them. Notice delivery
+(`internal/domain/identity/noticedelivery`, a domain module of identity without a table) answers
+the Notices an event calls for, who is told and what, read when the event is handled, a link minted
+then; what happened in another context is worded from the facts its event carries, as they were
+when it happened (a disabled Webhook endpoint's run of failures), and the Notices' consumer
 (`internal/jobs/notices.go`) queues one send job per Notice, unique on the event and the address,
 which the System sender delivers. Do not mail a person anywhere else: publish the event and add its
-Notice to the use case.
+Notice to Notice delivery.
 
 ## Transactional reactions
 

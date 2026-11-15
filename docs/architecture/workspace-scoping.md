@@ -167,6 +167,9 @@ and the bootstrap, whose token names no Workspace, so it scopes to the oldest li
 every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
 (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
 Workspace; the Second factor reset, `secondfactors.Module.Reset`, clears both in one transaction),
+`internal/domain/identity/noticedelivery` (Notice delivery, a module without a table: the Notices of
+the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
+Workspace's Owners and Members are read by the id an event names),
 `internal/domain/identity/signup` (the Sign-up, a module without a table, with every step that makes a User
 Verified with its first Workspace, ADR 0030, ADR 0043: neither exists yet, so it opens the raw transaction
 that the users module's steps and `memberships.CreateWorkspaceIn` write on),
@@ -176,10 +179,7 @@ the unchecked operations of the identity modules that join their use case's raw 
 `internal/usecase/workspaceview` (a Workspace created with its Owner Membership, ADR 0043: no Workspace
 exists yet, so it opens the raw transaction `memberships.CreateWorkspaceIn` writes on; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/userdeletion` (User deletion,
 ADR 0050: the User belongs to no Workspace, and its one transaction is scoped in turn to each
-Workspace the User leaves), `internal/usecase/noticedelivery` (the Notices of
-the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
-Workspace's Owners and Members are read by the id an event names) and
-`internal/usecase/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the
+Workspace the User leaves) and `internal/usecase/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the
 Owners' deleted Workspaces, which have no scope yet, and, for each one past its window
 (`workspaces.Module.DueForErase`), opens a
 transaction per erase step (one per Workspace-owned table, the Send cap's bucket
