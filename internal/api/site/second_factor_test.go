@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pquerna/otp/totp"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -129,7 +130,8 @@ func TestEnrollmentIsPendingUntilConfirmedWithAValidCode(t *testing.T) {
 		confirmBody(e.EnrollmentID, s.code(t, e.Secret)), &rc)
 	require.Equal(t, http.StatusOK, status)
 	assert.Len(t, rc.Codes, 10)
-	assert.Len(t, uniq(rc.Codes), 10)
+	distinct := lo.Uniq(rc.Codes)
+	assert.Len(t, distinct, 10)
 
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, s.env, other), "other sessions end")
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, s.env, acting), "the acting cookie as sent")
@@ -162,14 +164,6 @@ func TestEnrollmentRequiresThePasswordOnBothSteps(t *testing.T) {
 // wrong is a code that differs from c in its last digit.
 func wrong(c string) string {
 	return c[:len(c)-1] + string('0'+(c[len(c)-1]-'0'+1)%10)
-}
-
-func uniq(xs []string) map[string]struct{} {
-	m := map[string]struct{}{}
-	for _, x := range xs {
-		m[x] = struct{}{}
-	}
-	return m
 }
 
 func (s *secondFactorEnv) disable(t *testing.T, session, password, code string) (status int, raw string) {
