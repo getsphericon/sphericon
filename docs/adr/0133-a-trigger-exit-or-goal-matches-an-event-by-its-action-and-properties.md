@@ -4,6 +4,10 @@ status: accepted
 
 # A Trigger, exit or goal matches an Event by its action and properties
 
+> **Extended by [[0153-a-conditions-event-test-filters-the-events-it-counts-by-their-properties]]:**
+> a Condition's `event` leaf takes the same filter, and a Broadcast or Automation it names is
+> Definition use.
+
 An Automation version names Events by action alone: its Trigger, its exit events and its goal event.
 Three decisions since have run into it. A goal of "the Contact got the Tag `qualified`" matches every
 `contact.tagged`, so one Automation cannot signal another precisely (ADR 0125). An Automation for one

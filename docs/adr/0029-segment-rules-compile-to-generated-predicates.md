@@ -4,6 +4,9 @@ status: accepted
 
 # A Segment's Condition compiles to generated ent predicates; an Event links to its Contact by a nullable FK
 
+> **Amended by [[0153-a-conditions-event-test-filters-the-events-it-counts-by-their-properties]]:**
+> the `event` leaf takes an optional filter on the counted Events' properties, ADR 0133's grammar.
+
 > **Amended by #749:** an Event test is its own `event` leaf (`action`, `operator` atLeast or
 > atMost, `times`, optional `withinDays`) that counts the Contact's Events, not a `rule` leaf on
 > `event:<action>` compiled to `contact.HasEventsWith`. It compiles to a subquery that counts the
