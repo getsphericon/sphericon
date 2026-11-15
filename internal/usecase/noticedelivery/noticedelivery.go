@@ -440,10 +440,11 @@ func (u *UseCase) toOwners(ctx context.Context, workspaceID int64, subject, body
 	if err != nil {
 		return nil, fmt.Errorf("notice: load the owners of workspace %d: %w", workspaceID, err)
 	}
+	subjectText, bodyText := i18n.T(subject, data), i18n.T(body, data)
 	var notices []Notice
 	for _, m := range owners {
 		if usr := m.Edges.User; usr != nil && usr.Email != "" {
-			notices = append(notices, Notice{To: usr.Email, Subject: i18n.T(subject, data), Text: i18n.T(body, data)})
+			notices = append(notices, Notice{To: usr.Email, Subject: subjectText, Text: bodyText})
 		}
 	}
 	return notices, nil

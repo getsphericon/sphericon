@@ -108,8 +108,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `// test writes: <why the write is the operation under test>` on the line above its statement or trailing on
   its line; an empty reason is still a finding, there is no baseline file, and `*_gen_test.go` mocks are skipped.
   What counts as the operation under test is rule 10; any other test takes its rows from `fixtures/`
-  (add a row, `internal/AGENTS.md`). Test-support code outside `_test.go` files
-  (`internal/testhelper`) is the fixture tooling and is not read.
+  (add a row, `internal/AGENTS.md`). The test harness (`internal/testhelper`) is read like a test: a
+  helper that creates a row for every test that calls it is setup the fixtures should hold, so it names
+  its reason too.
 - **Rule 5, `entrywrite`.** Only the owner writes a table (ADR 0102): `owners` in
   `tools/analyzers/entrywrite` names, for every ent entity, the package that owns its table, and a write
   to the entity from any other package is a finding, as is a write to an entity the map does not name (a

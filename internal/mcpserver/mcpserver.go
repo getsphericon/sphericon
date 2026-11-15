@@ -92,12 +92,7 @@ func sendLock(sendTools map[string]bool, auth Authenticator) mcp.Middleware {
 					return res, err
 				}
 				kept := *list
-				kept.Tools = make([]*mcp.Tool, 0, len(list.Tools))
-				for _, tool := range list.Tools {
-					if !sendTools[tool.Name] {
-						kept.Tools = append(kept.Tools, tool)
-					}
-				}
+				kept.Tools = slices.DeleteFunc(slices.Clone(list.Tools), func(t *mcp.Tool) bool { return sendTools[t.Name] })
 				return &kept, nil
 			case "tools/call":
 				if params, ok := req.GetParams().(*mcp.CallToolParamsRaw); ok && sendTools[params.Name] &&
@@ -278,11 +273,7 @@ func (op *operation) request(ctx context.Context, args map[string]any, extra *mc
 		}
 	}
 	if len(rest) > 0 {
-		unknown := make([]string, 0, len(rest))
-		for k := range rest {
-			unknown = append(unknown, k)
-		}
-		slices.Sort(unknown)
+		unknown := slices.Sorted(maps.Keys(rest))
 		return nil, errors.New("unknown arguments: " + strings.Join(unknown, ", "))
 	}
 

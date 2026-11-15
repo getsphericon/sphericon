@@ -179,19 +179,9 @@ func workspacesOf(ctx context.Context, mu *ent.ContactMutation, identifiedOnly b
 	if identifiedOnly {
 		q = q.Where(identified())
 	}
-	rows, err := q.Select(contact.FieldWorkspaceID).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	seen := make(map[int64]bool, len(rows))
 	var out []int64
-	for _, r := range rows {
-		if !seen[r.WorkspaceID] {
-			seen[r.WorkspaceID] = true
-			out = append(out, r.WorkspaceID)
-		}
-	}
-	return out, nil
+	err = q.Unique(true).Select(contact.FieldWorkspaceID).Scan(ctx, &out)
+	return out, err
 }
 
 // PeakLock is the kind of the advisory lock (postgres.WorkspaceKey) a Workspace's contacts peak is

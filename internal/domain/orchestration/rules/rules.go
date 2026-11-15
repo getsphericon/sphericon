@@ -870,16 +870,17 @@ func (m *Module) record(ctx context.Context, s *ent.Scoped, firingID int64, inde
 // requireAutomations refuses an enroll Action whose Automation is not a kept Automation of the
 // Workspace (ErrInvalid).
 func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) error {
+	named := lo.FilterMap(actions, func(a Action, _ int) (int64, bool) { return a.AutomationID, a.Type == ActionEnroll })
+	if len(named) == 0 {
+		return nil
+	}
+	found, err := s.Automation().Query().Where(automation.IDIn(lo.Uniq(named)...)).IDs(ctx)
+	if err != nil {
+		return err
+	}
+	kept := lo.SliceToMap(found, func(id int64) (int64, bool) { return id, true })
 	for i := range actions {
-		a := &actions[i]
-		if a.Type != ActionEnroll {
-			continue
-		}
-		ok, err := s.Automation().Query().Where(automation.ID(a.AutomationID)).Exist(ctx)
-		if err != nil {
-			return err
-		}
-		if !ok {
+		if a := &actions[i]; a.Type == ActionEnroll && !kept[a.AutomationID] {
 			return ErrInvalid.With(fmt.Sprintf("action %d: automation %d not found", i+1, a.AutomationID))
 		}
 	}

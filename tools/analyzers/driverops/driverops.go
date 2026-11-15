@@ -25,6 +25,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/ctrlflow"
 	"golang.org/x/tools/go/cfg"
+	"golang.org/x/tools/go/types/typeutil"
 
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
@@ -203,7 +204,8 @@ func (c *checker) blockCost(b *cfg.Block) cost {
 }
 
 func (c *checker) callCost(call *ast.CallExpr) cost {
-	f := callee(c.pass.TypesInfo, call)
+	// The function or method the call names, generic instances resolved to their origin.
+	f, _ := typeutil.Callee(c.pass.TypesInfo, call).(*types.Func)
 	if f == nil || f.Pkg() == nil {
 		return cost{}
 	}
@@ -265,31 +267,6 @@ func cyclic(comp []*cfg.Block, of map[*cfg.Block]int, i int) bool {
 		return true
 	}
 	return slices.ContainsFunc(comp[0].Succs, func(s *cfg.Block) bool { return of[s] == i })
-}
-
-// callee is the function or method a call names, generic instances resolved to their origin.
-func callee(info *types.Info, call *ast.CallExpr) *types.Func {
-	fun := ast.Unparen(call.Fun)
-	switch f := fun.(type) {
-	case *ast.IndexExpr:
-		fun = f.X
-	case *ast.IndexListExpr:
-		fun = f.X
-	}
-	var id *ast.Ident
-	switch f := fun.(type) {
-	case *ast.Ident:
-		id = f
-	case *ast.SelectorExpr:
-		id = f.Sel
-	default:
-		return nil
-	}
-	fn, _ := info.Uses[id].(*types.Func)
-	if fn == nil {
-		return nil
-	}
-	return fn.Origin()
 }
 
 // takesContext holds for a function with a context.Context parameter.
