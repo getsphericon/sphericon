@@ -514,6 +514,15 @@ does; a `granted` does not.
 _Avoid_: Tracking consent (it does not say which tracking), engagement consent, open tracking
 opt-out, Do Not Track
 
+**Consent observation**:
+Something that says a person gave or withdrew consent for a Destination on a Channel: a STOP or START,
+a blocked or unblocked bot, a button, a link, a member's action, a form, an import. Each is applied
+once, in the order it occurred (the provider's time or sequence where there is one, else when the
+Instance received it), never the order it arrived: one older than the state standing only joins the
+history, and of two that cannot be told apart the refusal wins. Provenance rules decide first which
+observation may replace which.
+_Avoid_: Consent event (an Event is one record of it), opt-out message, consent update
+
 **Engagement tracking default**:
 The Workspace's choice for a Destination with no Engagement tracking consent: `track` (until the
 Workspace changes it) or `dont_track`, for the Workspaces whose regulators require consent before

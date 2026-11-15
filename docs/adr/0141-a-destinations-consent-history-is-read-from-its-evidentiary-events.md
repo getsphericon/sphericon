@@ -4,6 +4,9 @@ status: accepted
 
 # A Destination's consent history is read from its evidentiary Events
 
+> **Amended by [[0154-consent-observations-apply-in-the-order-they-occurred]]:** an observation
+> older than the standing state is shown at its own time as one that changed nothing.
+
 A Workspace asked by a regulator or by a person "what consent do you hold, and did you honour my
 opt-out?" has the facts but no place that shows them together. Consent facts are keyed by
 Destination: a Confirmation with its provenance and evidence, an Unsubscribe with its scope and
