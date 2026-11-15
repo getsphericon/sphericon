@@ -42,7 +42,11 @@ func LintFiles(ctx context.Context, paths []string) ([]Finding, error) {
 		}
 		if hasNoTransaction(up) {
 			noTx = append(noTx, dst)
-			findings = append(findings, unboundedWaits(filepath.Base(p), up)...)
+			waits, err := unboundedWaits(filepath.Base(p), up)
+			if err != nil {
+				return nil, err
+			}
+			findings = append(findings, waits...)
 		} else {
 			inTx = append(inTx, dst)
 		}

@@ -247,3 +247,14 @@ UPDATE t SET a = 'x; -- it''s
 ALTER TABLE t DROP NOT NULL';`})
 	assert.NotContains(t, codesOf(findings), upgradecheck.UnboundedWaitRule)
 }
+
+// A NO TRANSACTION migration whose statements cannot be split (a quote left open) fails the check
+// and names the file, rather than letting what follows the quote pass unread.
+func TestAnUnclosedQuoteInANoTransactionMigrationIsAnError(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "20260119000000_no_tx.sql")
+	require.NoError(t, os.WriteFile(path, []byte("-- +goose Up\n-- +goose NO TRANSACTION\nUPDATE t SET a = 'x;\nALTER TABLE t DROP NOT NULL;\n"), 0o600))
+
+	_, err := upgradecheck.LintFiles(t.Context(), []string{path})
+
+	require.ErrorContains(t, err, "20260119000000_no_tx.sql")
+}
