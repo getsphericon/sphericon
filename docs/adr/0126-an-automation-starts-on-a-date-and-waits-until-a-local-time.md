@@ -2,6 +2,9 @@
 status: accepted
 ---
 
+> **Amended by [[0166-wait-until-may-wait-for-a-window-and-go-on-inside-it]]:** Wait until has a
+> window form that goes on at once inside the window.
+
 # An Automation starts on a date and waits until a local time
 
 > **Amended by [[0135-a-broadcast-series-makes-an-ordinary-broadcast-at-each-occurrence]]:**

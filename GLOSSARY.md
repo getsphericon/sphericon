@@ -937,7 +937,8 @@ _Avoid_: Wait until (a calendar wait), wait with condition, delay
 
 **Wait until**:
 A Step that holds the Enrollment until a calendar moment: the next local time of day, optionally on
-chosen weekdays, or a date the Contact holds with an offset and a local time. The moment is fixed
+chosen weekdays; a date the Contact holds with an offset and a local time; or a window of weekdays
+and hours, which an Enrollment arriving inside it passes at once. The moment is fixed
 when the Enrollment reaches it, in the Contact's time zone or else the Workspace's; one already past,
 or a date the Contact lacks, moves the Enrollment on at once.
 _Avoid_: Wait for event (that one waits for an Event), schedule, delay, send window
