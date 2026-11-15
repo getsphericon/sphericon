@@ -1,7 +1,7 @@
 package signinprovider
 
 import (
-	"crypto/hmac"
+	"crypto/hkdf"
 	"crypto/sha256"
 	"crypto/subtle"
 	"errors"
@@ -46,9 +46,12 @@ func NewFlowCodec(secret string, now func() time.Time) *FlowCodec {
 	if now == nil {
 		panic("signinprovider: a flow codec needs the Instance clock")
 	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write([]byte("signin_flow"))
-	return &FlowCodec{key: mac.Sum(nil), now: now}
+	key, err := hkdf.Key(sha256.New, []byte(secret), nil, "signin_flow", sha256.Size)
+	if err != nil {
+		// HKDF refuses only a key longer than 255 hashes; one hash's length never is.
+		panic("signinprovider: " + err.Error())
+	}
+	return &FlowCodec{key: key, now: now}
 }
 
 type flowClaims struct {

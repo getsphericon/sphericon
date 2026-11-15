@@ -8,7 +8,7 @@ package passkeys
 
 import (
 	"context"
-	"crypto/hmac"
+	"crypto/hkdf"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -147,9 +147,11 @@ func New(client *ent.Client, bus *events.Bus, identity Users, appURL, secret str
 	if err != nil {
 		return nil, fmt.Errorf("passkeys: %w", err)
 	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	_, _ = mac.Write([]byte("passkey_ceremony"))
-	return &Module{ent: client, bus: bus, users: identity, wa: wa, key: mac.Sum(nil), now: now}, nil
+	key, err := hkdf.Key(sha256.New, []byte(secret), nil, "passkey_ceremony", sha256.Size)
+	if err != nil {
+		return nil, fmt.Errorf("passkeys: %w", err)
+	}
+	return &Module{ent: client, bus: bus, users: identity, wa: wa, key: key, now: now}, nil
 }
 
 // Available reports whether Passkeys work on this Instance: its public URL has a host name.
