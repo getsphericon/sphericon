@@ -16,7 +16,7 @@ import (
 func TestCreatingAStaffMemberWithATakenEmailIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.StaffMembers.Create(t.Context(), fixtures.StaffEnrolledEmail)
+	_, err := testhelper.Module[*staffmembers.Module](env).Create(t.Context(), fixtures.StaffEnrolledEmail)
 
 	require.ErrorIs(t, err, staffmembers.ErrDuplicate)
 }
@@ -24,7 +24,7 @@ func TestCreatingAStaffMemberWithATakenEmailIsRefused(t *testing.T) {
 func TestTheTakenEmailIsComparedNormalized(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := env.StaffMembers.Create(t.Context(), " "+fixtures.StaffFreshEmail+" ")
+	_, err := testhelper.Module[*staffmembers.Module](env).Create(t.Context(), " "+fixtures.StaffFreshEmail+" ")
 
 	require.ErrorIs(t, err, staffmembers.ErrDuplicate)
 }

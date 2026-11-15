@@ -106,7 +106,7 @@ func TestAChangeIsRecordedWithTheSourceAccountSettings(t *testing.T) {
 	_, err := setOptionalConsent(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.OperatorNewsKey, fixtures.OperatorNewsCurrentLabel, true)
 	require.NoError(t, err)
 
-	records, err := env.ConsentRecords.Current(t.Context(), fixtures.OwnerJohnID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	news, ok := lo.Find(records, func(r consentrecords.Record) bool { return r.Key == fixtures.OperatorNewsKey })
 	require.True(t, ok)

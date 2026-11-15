@@ -27,7 +27,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 	env := testhelper.Setup(t)
 	ev := storedEventOf(t, env, fixtures.EventPaymentFailedID)
 
-	require.NoError(t, env.StepExecution.OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(t.Context(), env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactPaymentFailedID, Event: ev}))
 	fs := &fakeSender{}
 	env.RunQueuedSteps(t, stepperOf(env, resolvingTo(fs)))
 
@@ -41,7 +41,7 @@ func TestAnAutomationEmailRendersTheTriggeringEventsProperties(t *testing.T) {
 func TestAnAutomationEmailOfAnEnrollmentNoEventBeganRendersTheEventEmpty(t *testing.T) {
 	env := testhelper.Setup(t)
 	in := automations.EnrollOnRuleInput{AutomationID: fixtures.AutomationPaymentRecoveryID, ContactID: fixtures.ContactPaymentFailedID}
-	enrolled, err := env.StepExecution.EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID), in)
+	enrolled, err := testhelper.Module[*automations.StepExecution](env).EnrollOnRule(t.Context(), env.DB.Scoped(fixtures.AcmeID), in)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 

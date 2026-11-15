@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/telemetryschema"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -113,7 +114,7 @@ func TestTheTelemetrySettingFollowsTheEnvironment(t *testing.T) {
 				c.DoNotTrack = tc.doNotTrack
 			}))
 			for _, stored := range tc.stored {
-				row, err := h.env.Instance.Ensure(t.Context())
+				row, err := testhelper.Module[*instancestates.Module](h.env).Ensure(t.Context())
 				require.NoError(t, err)
 				require.NoError(t, h.env.DB.InstanceState.UpdateOneID(row.ID).SetTelemetryEnabled(stored).Exec(t.Context()))
 			}
@@ -179,7 +180,7 @@ func TestTheConsoleShowsANewerRelease(t *testing.T) {
 		c.ReleaseCheck = true
 		c.IsDev = false // the Release check never runs in a development or test environment
 	}))
-	require.NoError(t, h.env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](h.env).CheckRelease(t.Context()))
 
 	state := instanceState(t, h.console(t))
 
@@ -221,7 +222,7 @@ func TestTheInstanceSectionNeedsASignedInStaffMember(t *testing.T) {
 	requireProblem(t, err, 401)
 	_, err = c.StaffInstanceAcknowledgeNotice(t.Context())
 	requireProblem(t, err, 401)
-	row, err := h.env.Instance.Ensure(t.Context())
+	row, err := testhelper.Module[*instancestates.Module](h.env).Ensure(t.Context())
 	require.NoError(t, err)
 	assert.Nil(t, row.NoticeAcknowledgedAt)
 }

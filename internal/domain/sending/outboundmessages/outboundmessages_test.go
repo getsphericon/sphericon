@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -47,7 +48,7 @@ func startClock() *testhelper.Clock { return testhelper.NewClock(time.Now()) }
 func newModule(env *testhelper.TestEnv, now func() time.Time, opts ...outboundmessages.Option) *outboundmessages.Module {
 	return outboundmessages.New(
 		env.Bus,
-		env.Holds,
+		testhelper.Module[*holds.Holds](env),
 		senders{sender: env.CustomerMail},
 		messagetoken.New("test-secret", "http://local", time.Now),
 		now,
@@ -228,7 +229,7 @@ func TestMarketingCarriesFooterAndOneClickHeader(t *testing.T) {
 
 func TestMarketingWithoutTrackerFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, env.Holds, senders{sender: env.CustomerMail}, nil, time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, nil, time.Now)
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:notracker", fixtures.ContactAliceID))
 	require.ErrorIs(t, err, outboundmessages.ErrNoTracker)
@@ -284,7 +285,7 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// The owner's Hold is the same rule: the send gate's reason and wording.
-	standing, err := env.Holds.Standing(ctx, env.DB.Scoped(fixtures.AcmeID))
+	standing, err := testhelper.Module[*holds.Holds](env).Standing(ctx, env.DB.Scoped(fixtures.AcmeID))
 	require.NoError(t, err)
 	owner := standing.Holds()
 	require.Len(t, owner, 1)
@@ -331,7 +332,7 @@ func TestDomainLosingVerificationAtSignTimeIsHeldAndFreesTheClaim(t *testing.T) 
 
 func TestNoIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, env.Holds, senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), time.Now)
 
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
@@ -520,7 +521,7 @@ func TestSlowAttemptCannotRecordOverATakeover(t *testing.T) {
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 		second, secondErr = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	}
-	m = outboundmessages.New(env.Bus, env.Holds, senders{sender: s}, messagetoken.New("s", "http://local", time.Now), time.Now)
+	m = outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: s}, messagetoken.New("s", "http://local", time.Now), time.Now)
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	require.ErrorIs(t, err, outboundmessages.ErrInProgress, "the slow attempt lost its claim and must not record")

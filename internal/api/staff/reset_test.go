@@ -10,12 +10,13 @@ import (
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 func TestAResetTOTPForcesReenrolmentAtNextLogin(t *testing.T) {
 	h := newHarness(t)
 
-	require.NoError(t, h.env.StaffMembers.ResetTOTP(t.Context(), " "+fixtures.StaffEnrolledEmail+" "))
+	require.NoError(t, testhelper.Module[*staffmembers.Module](h.env).ResetTOTP(t.Context(), " "+fixtures.StaffEnrolledEmail+" "))
 
 	res := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword)
 	assert.Equal(t, staffapi.StaffLoginOutcomeEnrolment, res.Outcome, "the password alone never gives a session")
@@ -30,7 +31,7 @@ func TestAResetTOTPRefusesTheOldAuthenticator(t *testing.T) {
 	h := newHarness(t)
 	old := h.challenge(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword).Challenge
 
-	require.NoError(t, h.env.StaffMembers.ResetTOTP(t.Context(), fixtures.StaffEnrolledEmail))
+	require.NoError(t, testhelper.Module[*staffmembers.Module](h.env).ResetTOTP(t.Context(), fixtures.StaffEnrolledEmail))
 
 	assert.Equal(t, http.StatusUnauthorized, h.rawSecondStep(t, old, h.code(t, fixtures.StaffEnrolledTotpSecret)).Code,
 		"a challenge minted before the reset is dead")
@@ -42,7 +43,7 @@ func TestAResetTOTPEndsTheStaffMembersSessions(t *testing.T) {
 	h := newHarness(t)
 	cookie := h.session(t, fixtures.StaffEnrolledEmail, fixtures.StaffEnrolledPassword, fixtures.StaffEnrolledTotpSecret)
 
-	require.NoError(t, h.env.StaffMembers.ResetTOTP(t.Context(), fixtures.StaffEnrolledEmail))
+	require.NoError(t, testhelper.Module[*staffmembers.Module](h.env).ResetTOTP(t.Context(), fixtures.StaffEnrolledEmail))
 
 	requireProblem(t, errOf(h.me(t, cookie.Value)), http.StatusUnauthorized)
 }
@@ -50,7 +51,7 @@ func TestAResetTOTPEndsTheStaffMembersSessions(t *testing.T) {
 func TestResettingAnUnknownStaffIsRefused(t *testing.T) {
 	h := newHarness(t)
 
-	require.ErrorIs(t, h.env.StaffMembers.ResetTOTP(t.Context(), "nobody@sphericon.test"), staffmembers.ErrNotFound)
+	require.ErrorIs(t, testhelper.Module[*staffmembers.Module](h.env).ResetTOTP(t.Context(), "nobody@sphericon.test"), staffmembers.ErrNotFound)
 }
 
 // A lost TOTP is recoverable only through the CLI: no web route resets it.

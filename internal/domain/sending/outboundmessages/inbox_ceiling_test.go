@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -33,7 +34,7 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Cl
 	require.True(t, ok)
 	return outboundmessages.New(
 		env.Bus,
-		env.Holds,
+		testhelper.Module[*holds.Holds](env),
 		senders{sender: sender},
 		messagetoken.New("test-secret", "http://local", time.Now),
 		c.Now,

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/signup"
 )
 
 // The acceptance gate on /site (ADR 0062). With the fixture terms in effect, every fixture User
@@ -113,7 +114,7 @@ func TestAcceptingRecordsTheCurrentVersionAcceptedWithTheSourceReAcceptance(t *t
 
 	acceptPending(t, env.SiteActor(t, fixtures.MemberMaryEmail), termsAccepted)
 
-	records, err := env.ConsentRecords.Current(t.Context(), fixtures.MemberMaryID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), fixtures.MemberMaryID)
 	require.NoError(t, err)
 	terms, found := lo.Find(records, func(r consentrecords.Record) bool { return r.Key == fixtures.ServiceTermsKey })
 	require.True(t, found)
@@ -150,7 +151,7 @@ func TestANewVersionGatesAUserWhoAcceptedThePreviousOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
-	records, err := env.ConsentRecords.Current(t.Context(), fixtures.MemberMaryID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), fixtures.MemberMaryID)
 	require.NoError(t, err)
 	refused := send(t, env, fixtures.MemberMaryEmail, http.MethodGet, "/site/workspaces", "")
 	pending := pendingKeys(t, env.SiteActor(t, fixtures.MemberMaryEmail))
@@ -188,7 +189,7 @@ func TestARequiredItemAddedAfterUsersExistGatesThem(t *testing.T) {
 func TestAnOwnerMadeByTheOperatorIsGated(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
-	_, err := env.SignUp.CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
+	_, err := testhelper.Module[*signup.UseCase](env).CreateOwner(t.Context(), "operator@example.com", "Ada Lovelace")
 	require.NoError(t, err)
 
 	refused := send(t, env, "operator@example.com", http.MethodGet, "/site/workspaces", "")

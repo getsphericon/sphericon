@@ -22,7 +22,7 @@ func TestReleaseWebhookLetsTheBotOfADeletedTelegramIntegrationGoOfItsWebhook(t *
 	bot := env.AcmeTelegram(t)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeTelegramID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 
-	err := jobs.NewReleaseWebhookWorker(env.DB, env.Integrations).Work(t.Context(), job(release))
+	err := jobs.NewReleaseWebhookWorker(env.DB, testhelper.Module[*integrations.Module](env)).Work(t.Context(), job(release))
 
 	require.NoError(t, err)
 	deleted, ok := env.Telegram.Last(telegramtest.DeleteWebhook)
@@ -38,7 +38,7 @@ func TestReleaseWebhookRefusedByTelegramEndsTheJob(t *testing.T) {
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeTelegramID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 	env.Telegram.FailOnce(telegramtest.DeleteWebhook, telegramtest.Unauthorized)
 
-	err := jobs.NewReleaseWebhookWorker(env.DB, env.Integrations).Work(t.Context(), job(release))
+	err := jobs.NewReleaseWebhookWorker(env.DB, testhelper.Module[*integrations.Module](env)).Work(t.Context(), job(release))
 
 	require.NoError(t, err)
 	tried := env.Telegram.RequestsOf(telegramtest.DeleteWebhook)
@@ -50,7 +50,7 @@ func TestReleaseWebhookRefusedByTelegramEndsTheJob(t *testing.T) {
 func TestReleaseWebhookOfAnIntegrationNotDeletedTouchesNoBot(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.AcmeTelegram(t)
-	worker := jobs.NewReleaseWebhookWorker(env.DB, env.Integrations)
+	worker := jobs.NewReleaseWebhookWorker(env.DB, testhelper.Module[*integrations.Module](env))
 
 	kept := worker.Work(t.Context(), job(release))
 	gone := worker.Work(t.Context(), job(integrations.ReleaseWebhookArgs{WorkspaceID: fixtures.AcmeID, IntegrationID: 999999}))

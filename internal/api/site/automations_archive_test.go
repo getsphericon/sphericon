@@ -90,17 +90,17 @@ func TestArchivedAutomationEnrollsNobody(t *testing.T) {
 
 	_, err := archiveAutomation(c, id)
 	require.NoError(t, err)
-	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 	assert.Empty(t, env.JobsOf(t, automations.RunStepArgs{}.Kind()), "an archived Automation starts no Enrollment")
 
 	_, err = c.SiteAutomationsUnarchive(ctx, siteapi.SiteAutomationsUnarchiveParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 	assert.Empty(t, env.JobsOf(t, automations.RunStepArgs{}.Kind()), "the unarchived Automation is inactive")
 
 	_, err = c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.EntityId(id))))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(id)})
 	require.NoError(t, err)
-	require.NoError(t, env.StepExecution.OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
+	require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, acme, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 	assert.Len(t, env.JobsOf(t, automations.RunStepArgs{}.Kind()), 1, "the published Automation enrolls the Contact")
 }
 

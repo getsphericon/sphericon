@@ -124,7 +124,7 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	created, err := h.env.WorkspaceView.Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "Hooli"})
+	created, err := testhelper.Module[*workspaceview.UseCase](h.env).Create(t.Context(), workspaceview.CreateInput{UserID: fixtures.MemberMaryID, Name: "Hooli"})
 	require.NoError(t, err)
 	ws := created.Summary.Workspace
 
@@ -167,7 +167,7 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 	c := h.env.ServiceClient(t, primary)
 	_, saved := feedFrom(t, c, "")
 
-	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.InitechCoOwnerOwenID, Email: fixtures.InitechCoOwnerOwenEmail, Password: fixtures.InitechCoOwnerOwenPassword})
+	err := testhelper.Module[*userdeletion.UseCase](h.env).Delete(t.Context(), userdeletion.Request{UserID: fixtures.InitechCoOwnerOwenID, Email: fixtures.InitechCoOwnerOwenEmail, Password: fixtures.InitechCoOwnerOwenPassword})
 	require.NoError(t, err)
 
 	got, _ := feedFrom(t, c, saved)
@@ -265,7 +265,7 @@ func TestDeletingAndRestoringAWorkspaceEachPutItBackInTheFeedInOrder(t *testing.
 	assert.Equal(t, got, again)
 	assert.Equal(t, afterDelete, replayed)
 
-	_, err = h.env.WorkspaceView.Restore(t.Context(), workspaceview.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
+	_, err = testhelper.Module[*workspaceview.UseCase](h.env).Restore(t.Context(), workspaceview.RestoreInput{UserID: 5, PublicID: fixtures.InitechPublicID, Actor: actor})
 	require.NoError(t, err)
 	got, _ = feedFrom(t, c, afterDelete)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))

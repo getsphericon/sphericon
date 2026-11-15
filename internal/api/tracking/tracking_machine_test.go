@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -221,15 +222,15 @@ func TestRefreshReplacesTheRangesAndAFailedRefreshKeepsThem(t *testing.T) {
 	require.False(t, machineHit(publishedAddr))
 
 	env.PrivateRelay.Fail(errors.New("apple is down"))
-	require.Error(t, env.Machine.Refresh(t.Context()))
+	require.Error(t, testhelper.Module[*privaterelayranges.Detector](env).Refresh(t.Context()))
 	assert.True(t, machineHit(relayAddr), "a failed fetch keeps the old ranges")
 
 	env.PrivateRelay.Publish("not a range\n\n")
-	require.Error(t, env.Machine.Refresh(t.Context()))
+	require.Error(t, testhelper.Module[*privaterelayranges.Detector](env).Refresh(t.Context()))
 	assert.True(t, machineHit(relayAddr), "a list with no range keeps the old ranges")
 
 	env.PrivateRelay.Publish(publishedRowCSV)
-	require.NoError(t, env.Machine.Refresh(t.Context()))
+	require.NoError(t, testhelper.Module[*privaterelayranges.Detector](env).Refresh(t.Context()))
 	assert.True(t, machineHit(publishedAddr), "the published range is listed")
 	assert.False(t, machineHit(relayAddr), "the list is replaced as a whole")
 }

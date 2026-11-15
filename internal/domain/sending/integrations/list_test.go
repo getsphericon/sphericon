@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -14,7 +15,7 @@ import (
 
 func TestListPagesTheWorkspaceIntegrationsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := env.Integrations
+	m := testhelper.Module[*integrations.Module](env)
 
 	first, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 1})
 	require.NoError(t, err)

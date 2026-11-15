@@ -69,7 +69,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 
 func TestRefreshIntegrationQuotaOfADeletedIntegrationIsNothingToDo(t *testing.T) {
 	env := testhelper.Setup(t)
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, env.Integrations)
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, testhelper.Module[*integrations.Module](env))
 	require.NoError(t, worker.Work(t.Context(), job(integrations.RefreshQuotaArgs{IntegrationID: 424242})))
 }
 

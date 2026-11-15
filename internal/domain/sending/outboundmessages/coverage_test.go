@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -101,7 +102,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 
 	t.Run("sender cannot be resolved", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		m := outboundmessages.New(env.Bus, env.Holds, senders{err: errors.New("vault down")}, nil, time.Now)
+		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: errors.New("vault down")}, nil, time.Now)
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
 		require.ErrorContains(t, err, "resolve sender")
 		assert.ErrorContains(t, err, "vault down")
@@ -111,7 +112,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		m := outboundmessages.New(env.Bus, env.Holds, cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, time.Now)
+		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, time.Now)
 		_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:domaindb", "a@example.com"))
 		assert.ErrorContains(t, err, "check sending domain")
 	})
@@ -624,7 +625,7 @@ func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 	}}
-	m := outboundmessages.New(env.Bus, env.Holds, senders{sender: slow}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: slow}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 

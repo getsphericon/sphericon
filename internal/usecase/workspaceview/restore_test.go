@@ -45,7 +45,7 @@ func initech(t *testing.T, env *testhelper.TestEnv) *ent.Workspace {
 // restore is Olga, an Owner of Initech, restoring it.
 func restore(t *testing.T, env *testhelper.TestEnv) (workspaceview.View, error) {
 	t.Helper()
-	return env.WorkspaceView.Restore(t.Context(), workspaceview.RestoreInput{
+	return testhelper.Module[*workspaceview.UseCase](env).Restore(t.Context(), workspaceview.RestoreInput{
 		UserID: fixtures.InitechOwnerOlgaID, PublicID: fixtures.InitechPublicID, Actor: events.Actor{Kind: events.ActorUser},
 	})
 }

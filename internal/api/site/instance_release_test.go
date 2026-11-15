@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -59,7 +60,7 @@ func TestReleaseCheckStoresANewerReleaseAndTheBannerShowsItToAnOwner(t *testing.
 	_, url := newReleases(t, "v0.2.0")
 	env, now := releaseEnv(t, "0.1.0", url)
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
@@ -77,9 +78,9 @@ func TestReleaseCheckNeverStoresAnEqualOlderOrPrerelease(t *testing.T) {
 			_, url := newReleases(t, tag)
 			env, _ := releaseEnv(t, "0.1.0", url)
 
-			require.NoError(t, env.Instance.CheckRelease(t.Context()))
+			require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
-			row, err := env.Instance.Ensure(t.Context())
+			row, err := testhelper.Module[*instancestates.Module](env).Ensure(t.Context())
 			require.NoError(t, err)
 			assert.Nil(t, row.LatestRelease)
 			assert.Nil(t, row.LatestReleaseCheckedAt)
@@ -91,12 +92,12 @@ func TestReleaseCheckNeverStoresAnEqualOlderOrPrerelease(t *testing.T) {
 func TestReleaseCheckKeepsThePreviousResultWhenTheSourceIsDown(t *testing.T) {
 	src, url := newReleases(t, "v0.2.0")
 	env, now := releaseEnv(t, "0.1.0", url)
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 	first := *now
 
 	*now = now.Add(24 * time.Hour)
 	src.status.Store(http.StatusBadGateway)
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
 	row, err := env.DB.InstanceState.Get(t.Context(), 1)
 	require.NoError(t, err)
@@ -119,9 +120,9 @@ func TestReleaseCheckSwitchedOffAsksNobodyAndShowsNothing(t *testing.T) {
 		c.Telemetry = &on
 	})
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
-	row, err := env.Instance.Ensure(t.Context())
+	row, err := testhelper.Module[*instancestates.Module](env).Ensure(t.Context())
 	require.NoError(t, err)
 	assert.Nil(t, row.LatestRelease)
 	assert.False(t, asked.Load())
@@ -135,9 +136,9 @@ func TestReleaseCheckIgnoresTheTelemetrySwitches(t *testing.T) {
 		c.DoNotTrack = true
 	})
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
-	setting, err := env.Instance.Setting(t.Context())
+	setting, err := testhelper.Module[*instancestates.Module](env).Setting(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, "0.2.0", latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail)).Value)
 	assert.False(t, setting.Enabled)
@@ -145,7 +146,7 @@ func TestReleaseCheckIgnoresTheTelemetrySwitches(t *testing.T) {
 
 func TestAReleaseThatIsNoLongerNewerIsNotShownAfterAnUpgrade(t *testing.T) {
 	env, _ := releaseEnv(t, "0.2.0", "")
-	row, err := env.Instance.Ensure(t.Context())
+	row, err := testhelper.Module[*instancestates.Module](env).Ensure(t.Context())
 	require.NoError(t, err)
 	require.NoError(t, env.DB.InstanceState.UpdateOneID(row.ID).SetLatestRelease("0.2.0").Exec(t.Context()))
 
@@ -161,9 +162,9 @@ func TestABuildThatIsNotAReleaseNeitherAsksNorShowsABanner(t *testing.T) {
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "dev", srv.URL)
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
-	row, err := env.Instance.Ensure(t.Context())
+	row, err := testhelper.Module[*instancestates.Module](env).Ensure(t.Context())
 	require.NoError(t, err)
 	assert.Nil(t, row.LatestRelease)
 	assert.False(t, asked.Load())
@@ -179,9 +180,9 @@ func TestADevelopmentEnvironmentNeverAsksForANewerRelease(t *testing.T) {
 	t.Cleanup(srv.Close)
 	env, _ := releaseEnv(t, "0.1.0", srv.URL, func(c *config.Config) { c.IsDev = true })
 
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
-	row, err := env.Instance.Ensure(t.Context())
+	row, err := testhelper.Module[*instancestates.Module](env).Ensure(t.Context())
 	require.NoError(t, err)
 	assert.Nil(t, row.LatestRelease)
 	assert.False(t, asked.Load())

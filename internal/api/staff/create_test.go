@@ -14,7 +14,7 @@ import (
 func TestACreatedStaffEnrolsAtFirstLoginWithItsOneTimePassword(t *testing.T) {
 	h := newHarness(t)
 
-	password, err := h.env.StaffMembers.Create(t.Context(), "  New.Staff@Sphericon.test ")
+	password, err := testhelper.Module[*staffmembers.Module](h.env).Create(t.Context(), "  New.Staff@Sphericon.test ")
 	require.NoError(t, err)
 	require.NotEmpty(t, password)
 
@@ -29,7 +29,7 @@ func TestACreatedStaffEnrolsAtFirstLoginWithItsOneTimePassword(t *testing.T) {
 func TestWithoutAStaffSecretNoStaffIsCreated(t *testing.T) {
 	h := newHarness(t, testhelper.WithoutStaffSecret())
 
-	_, err := h.env.StaffMembers.Create(t.Context(), "new.staff@sphericon.test")
+	_, err := testhelper.Module[*staffmembers.Module](h.env).Create(t.Context(), "new.staff@sphericon.test")
 
 	require.ErrorIs(t, err, staffmembers.ErrSignInOff)
 }

@@ -39,8 +39,8 @@ func completed(id string, contactID int64, at time.Time) events.OrderEvent {
 func record(t *testing.T, env *testhelper.TestEnv, ev events.OrderEvent) *ent.Order {
 	t.Helper()
 	s := env.DB.Scoped(fixtures.EmporiumID)
-	require.NoError(t, env.Orders.Prepare(t.Context(), s, ev))
-	require.NoError(t, env.Orders.Record(t.Context(), s, ev))
+	require.NoError(t, testhelper.Module[*orders.Module](env).Prepare(t.Context(), s, ev))
+	require.NoError(t, testhelper.Module[*orders.Module](env).Record(t.Context(), s, ev))
 	return orderOf(t, env, ev.Properties["order_id"].(string))
 }
 
@@ -188,7 +188,7 @@ func TestAnEarlyRefundMovesTheRevenueOfTheMessageTheOrderIsCreditedTo(t *testing
 		Properties: map[string]any{"order_id": "C-1", "total": 5.0, "currency": "USD"},
 		ContactID:  fixtures.ContactClickerBroadcastID, OccurredAt: ago(time.Hour), EventID: "refunded-C-1",
 	}
-	require.NoError(t, env.Orders.Record(t.Context(), s, refund))
+	require.NoError(t, testhelper.Module[*orders.Module](env).Record(t.Context(), s, refund))
 
 	placeOrder(t, env, fixtures.ContactClickerBroadcastID, "C-1")
 

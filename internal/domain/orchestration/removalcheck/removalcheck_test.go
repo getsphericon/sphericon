@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -27,9 +28,11 @@ func underLock(t *testing.T, env *testhelper.TestEnv, workspaceID int64, check f
 func TestATagNamedByDefinitionsIsRefusedNamingThemInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	vip := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error { return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagVipName) })
+	vip := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
+		return testhelper.Module[*removalcheck.Module](env).Tag(t.Context(), s, fixtures.TagVipName)
+	})
 	newsletter := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagNewsletterName)
+		return testhelper.Module[*removalcheck.Module](env).Tag(t.Context(), s, fixtures.TagNewsletterName)
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectTag, Users: []liveuse.User{
@@ -48,7 +51,7 @@ func TestATagNamedOnlyInAnArmedBroadcastsCopyIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	refused := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagRenewalDueName)
+		return testhelper.Module[*removalcheck.Module](env).Tag(t.Context(), s, fixtures.TagRenewalDueName)
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectTag, Users: []liveuse.User{
@@ -60,7 +63,7 @@ func TestATagNothingNamesPasses(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	answer := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.Tag(t.Context(), s, fixtures.TagUnusedName)
+		return testhelper.Module[*removalcheck.Module](env).Tag(t.Context(), s, fixtures.TagUnusedName)
 	})
 
 	assert.NoError(t, answer)
@@ -73,10 +76,10 @@ func TestACustomFieldRetypeIsRefusedOnlyByALeafTheNewTypeDoesNotTake(t *testing.
 	env := testhelper.Setup(t)
 
 	endsOn := underLock(t, env, fixtures.DuffID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.CustomFieldRetype(t.Context(), s, fixtures.CustomFieldDuffEndsOnKey, customfield.TypeString)
+		return testhelper.Module[*removalcheck.Module](env).CustomFieldRetype(t.Context(), s, fixtures.CustomFieldDuffEndsOnKey, customfield.TypeString)
 	})
 	hasIt := underLock(t, env, fixtures.DuffID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.CustomFieldRetype(t.Context(), s, fixtures.CustomFieldDuffHasItKey, customfield.TypeString)
+		return testhelper.Module[*removalcheck.Module](env).CustomFieldRetype(t.Context(), s, fixtures.CustomFieldDuffHasItKey, customfield.TypeString)
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectCustomField, Users: []liveuse.User{
@@ -91,7 +94,7 @@ func TestAnIntegrationLiveWorkSendsThroughIsRefusedNamingItInOrder(t *testing.T)
 	env := testhelper.Setup(t)
 
 	refused := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.Integration(t.Context(), s, fixtures.IntegrationMeridianDefaultID)
+		return testhelper.Module[*removalcheck.Module](env).Integration(t.Context(), s, fixtures.IntegrationMeridianDefaultID)
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectIntegration, Users: []liveuse.User{
@@ -106,7 +109,7 @@ func TestAnIntegrationOnlyADraftSendsThroughPasses(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	answer := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.Integration(t.Context(), s, fixtures.IntegrationMeridianDraftOnlyID)
+		return testhelper.Module[*removalcheck.Module](env).Integration(t.Context(), s, fixtures.IntegrationMeridianDraftOnlyID)
 	})
 
 	assert.NoError(t, answer)
@@ -119,7 +122,7 @@ func TestASendingDomainIsRefusedThroughTheFromOfTheIntegrationASendGoesThrough(t
 	env := testhelper.Setup(t)
 
 	refused := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianRelayDomain)
+		return testhelper.Module[*removalcheck.Module](env).SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianRelayDomain)
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectSendingDomain, Users: []liveuse.User{
@@ -133,10 +136,10 @@ func TestASendingDomainIsRefusedThroughABroadcastsOwnFromAndNotByHistory(t *test
 	env := testhelper.Setup(t)
 
 	news := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianNewsDomain)
+		return testhelper.Module[*removalcheck.Module](env).SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianNewsDomain)
 	})
 	mail := underLock(t, env, fixtures.MeridianID, func(s *ent.WorkspaceLocked) error {
-		return env.RemovalCheck.SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianMailDomain)
+		return testhelper.Module[*removalcheck.Module](env).SendingDomain(t.Context(), s, fixtures.SendingDomainMeridianMailDomain)
 	})
 
 	assert.Equal(t, &liveuse.Error{What: liveuse.SubjectSendingDomain, Users: []liveuse.User{

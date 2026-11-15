@@ -48,7 +48,7 @@ func signUpAnswering(t *testing.T, env *testhelper.TestEnv, email string, answer
 // currentAnswers is the User's current answers, each as its key and decision.
 func currentAnswers(t *testing.T, env *testhelper.TestEnv, userID int64) []string {
 	t.Helper()
-	records, err := env.ConsentRecords.Current(t.Context(), userID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), userID)
 	require.NoError(t, err)
 	return lo.Map(records, func(r consentrecords.Record, _ int) string { return r.Key + ": " + string(r.Decision) })
 }
@@ -139,7 +139,7 @@ func TestARecordKeepsTheClientAddressAndUserAgent(t *testing.T) {
 	rec := env.Serve(req)
 
 	require.Equal(t, http.StatusAccepted, rec.Code, rec.Body.String())
-	records, err := env.ConsentRecords.Current(t.Context(), userByEmail(t, env, "grace@example.com").ID)
+	records, err := testhelper.Module[*consentrecords.Module](env).Current(t.Context(), userByEmail(t, env, "grace@example.com").ID)
 	require.NoError(t, err)
 	terms, ok := lo.Find(records, func(r consentrecords.Record) bool { return r.Key == fixtures.ServiceTermsKey })
 	require.True(t, ok)

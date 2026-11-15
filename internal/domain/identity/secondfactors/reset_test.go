@@ -36,10 +36,10 @@ func TestResetOfTheCallersOwnSecondFactorIsRefused(t *testing.T) {
 	ctx := t.Context()
 	sam := secondfactors.Caller{UserID: fixtures.SecondFactorSamID, Role: membership.RoleOwner, Actor: events.Actor{Kind: events.ActorUser, ID: "9"}}
 
-	err := env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, sam)
+	err := testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, sam)
 
 	require.ErrorIs(t, err, memberships.ErrResetOwnSecondFactor)
-	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.True(t, st.Enabled)
 }
@@ -50,9 +50,9 @@ func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 	session := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 
 	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
-	require.NoError(t, env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
+	require.NoError(t, testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
 
-	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.Equal(t, secondfactors.Status{}, st)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
@@ -70,7 +70,7 @@ func TestResetIsAuditedInTheActingWorkspaceOnly(t *testing.T) {
 	ctx := t.Context()
 	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
 
-	require.NoError(t, env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
+	require.NoError(t, testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
 
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	got, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserSecondFactorReset)).All(ctx)
@@ -88,7 +88,7 @@ func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
 	before, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
 	require.NoError(t, err)
 
-	err = env.SecondFactor.Reset(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AcmeOwnerMembershipID, janeResets(events.Actor{Kind: events.ActorUser, ID: "2"}))
+	err = testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AcmeOwnerMembershipID, janeResets(events.Actor{Kind: events.ActorUser, ID: "2"}))
 	require.ErrorIs(t, err, secondfactors.ErrNothingToReset)
 
 	after, err := env.DB.User.Get(ctx, fixtures.OwnerJohnID)
@@ -102,9 +102,9 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 
 	before := env.DB.User.GetX(ctx, fixtures.SecondFactorSamID)
 
-	require.NoError(t, env.SecondFactor.ResetByStaff(ctx, "Sam@Globex.test", "cli"), "the email is matched whatever its case")
+	require.NoError(t, testhelper.Module[*secondfactors.Module](env).ResetByStaff(ctx, "Sam@Globex.test", "cli"), "the email is matched whatever its case")
 
-	st, err := env.SecondFactor.Status(ctx, fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
 	assert.False(t, st.Enabled)
 	factor := env.DB.SecondFactor.GetX(ctx, fixtures.SamSecondFactorID)
@@ -128,9 +128,9 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 func TestStaffResetOfAUserWithNothingToClearChangesNothing(t *testing.T) {
 	env, _ := setup(t)
 	ctx := t.Context()
-	require.NoError(t, env.SecondFactor.ResetByStaff(ctx, fixtures.SecondFactorSamEmail, "cli"))
+	require.NoError(t, testhelper.Module[*secondfactors.Module](env).ResetByStaff(ctx, fixtures.SecondFactorSamEmail, "cli"))
 
-	err := env.SecondFactor.ResetByStaff(ctx, fixtures.SecondFactorSamEmail, "cli")
+	err := testhelper.Module[*secondfactors.Module](env).ResetByStaff(ctx, fixtures.SecondFactorSamEmail, "cli")
 
 	require.ErrorIs(t, err, secondfactors.ErrNothingToReset)
 }
@@ -138,7 +138,7 @@ func TestStaffResetOfAUserWithNothingToClearChangesNothing(t *testing.T) {
 func TestStaffResetOfAnUnknownEmailNamesIt(t *testing.T) {
 	env, _ := setup(t)
 
-	err := env.SecondFactor.ResetByStaff(t.Context(), "nobody@app-2fa-reset.test", "cli")
+	err := testhelper.Module[*secondfactors.Module](env).ResetByStaff(t.Context(), "nobody@app-2fa-reset.test", "cli")
 
 	require.ErrorContains(t, err, `user "nobody@app-2fa-reset.test"`)
 	require.True(t, ent.IsNotFound(err))
@@ -146,15 +146,15 @@ func TestStaffResetOfAnUnknownEmailNamesIt(t *testing.T) {
 
 func TestLifecycleResetCancelsPendingEnrollment(t *testing.T) {
 	env, _ := setup(t)
-	_, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
+	_, err := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	before, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 
-	err = env.SecondFactor.ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
+	err = testhelper.Module[*secondfactors.Module](env).ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
 
 	require.NoError(t, err)
-	status, err := env.SecondFactor.Status(t.Context(), fixtures.OwnerJohnID)
+	status, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	assert.False(t, status.Pending)
 	assert.False(t, status.Enabled)
@@ -165,17 +165,17 @@ func TestLifecycleResetCancelsPendingEnrollment(t *testing.T) {
 
 func TestLifecycleResetNeverReusesAnEnrollmentIdentity(t *testing.T) {
 	env, c := setup(t)
-	first, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
+	first, err := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
-	err = env.SecondFactor.ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
+	err = testhelper.Module[*secondfactors.Module](env).ResetByStaff(t.Context(), fixtures.OwnerJohnEmail, "cli")
 	require.NoError(t, err)
-	second, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
+	second, err := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	assert.Greater(t, second.ID, first.ID)
 	code, err := totp.GenerateCode(second.Secret, c.Now())
 	require.NoError(t, err)
 
-	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+	_, err = testhelper.Module[*secondfactors.Module](env).ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 }

@@ -539,7 +539,7 @@ func TestEvaluateTriggerAndRunStepWorkers(t *testing.T) {
 	c := e.DB.Contact.GetX(ctx, fixtures.ContactLiamID)
 	trigger := triggerOf(t, e.TestEnv, fixtures.AutomationJobsGreetingID)
 
-	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, e.StepExecution).Work(ctx, job(jobs.EvaluateTriggerArgs{
+	require.NoError(t, jobs.NewEvaluateTriggerWorker(e.DB, testhelper.Module[*automations.StepExecution](e.TestEnv)).Work(ctx, job(jobs.EvaluateTriggerArgs{
 		WorkspaceID: fixtures.AcmeID, ContactID: c.ID, Action: trigger,
 	})))
 	require.Len(t, e.JobsOf(t, automations.RunStepArgs{}.Kind()), 1, "the Enrollment is queued with its first step")
@@ -591,7 +591,7 @@ func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollme
 	}
 	realQueue, err := jobs.NewInserter(e.SQLDB)
 	require.NoError(t, err)
-	w := jobs.NewEvaluateTriggerWorker(e.DB, e.StepExecution)
+	w := jobs.NewEvaluateTriggerWorker(e.DB, testhelper.Module[*automations.StepExecution](e.TestEnv))
 
 	e.Bus.UseJobs(failingQueue{err: errors.New("queue is down")})
 	require.Error(t, w.Work(ctx, job(args)), "the trigger fails when its first step cannot be queued")

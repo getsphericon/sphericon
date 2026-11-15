@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -36,7 +37,7 @@ func requireReleaseRefused(t *testing.T, c *siteapi.Client) {
 func TestTheReleaseBannerReachesAnOwnerOfAnyWorkspaceAndNoOneElse(t *testing.T) {
 	_, url := newReleases(t, "v0.2.0")
 	env, _ := releaseEnv(t, "0.1.0", url)
-	require.NoError(t, env.Instance.CheckRelease(t.Context()))
+	require.NoError(t, testhelper.Module[*instancestates.Module](env).CheckRelease(t.Context()))
 
 	john := latestRelease(t, env.SiteActor(t, fixtures.OwnerJohnEmail))
 	jane := latestRelease(t, env.SiteActor(t, fixtures.OwnerJaneEmail))

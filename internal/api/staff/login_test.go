@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
+	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -125,7 +126,7 @@ func post(t *testing.T, h http.Handler, path, body string) *httptest.ResponseRec
 // member who enrols a TOTP, signs in and reads who they are.
 func TestASelfhostedInstanceWithoutALicenseSignsACreatedStaffMemberIn(t *testing.T) {
 	h := newHarness(t)
-	password, err := h.env.StaffMembers.Create(t.Context(), "ops@selfhosted.test")
+	password, err := testhelper.Module[*staffmembers.Module](h.env).Create(t.Context(), "ops@selfhosted.test")
 	require.NoError(t, err)
 
 	res := h.challenge(t, "ops@selfhosted.test", password)
