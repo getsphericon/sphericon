@@ -229,9 +229,15 @@ type emailChange struct {
 }
 
 // EmailChangeLink mints the token of the link mailed to newEmail to confirm u's change to it,
-// bound to the current email so it works once (invalid once the email changed).
+// bound to the current email so it works once (invalid once the email changed) and to the session
+// epoch, so a password change or signing out everywhere kills a change asked for before it.
 func (l *Links) EmailChangeLink(u *ent.User, newEmail string) (string, error) {
-	return l.tokens.Mint(authtoken.PurposeEmailChange, u.ID, u.Email, emailChangeLinkTTL, map[string]string{claimNewEmail: newEmail})
+	return l.tokens.Mint(authtoken.PurposeEmailChange, u.ID, emailChangeBinding(u), emailChangeLinkTTL, map[string]string{claimNewEmail: newEmail})
+}
+
+// emailChangeBinding keys an email change link to the User's current email and session epoch.
+func emailChangeBinding(u *ent.User) string {
+	return u.Email + " " + strconv.FormatInt(u.SessionEpoch, 10)
 }
 
 // emailChange reads an email change link: ErrConfirmLinkInvalid when it does not stand,
@@ -242,7 +248,7 @@ func (l *Links) emailChange(ctx context.Context, token string) (emailChange, err
 		if err != nil {
 			return "", err
 		}
-		return u.Email, nil
+		return emailChangeBinding(u), nil
 	}, ErrConfirmLinkInvalid)
 	if err != nil {
 		return emailChange{}, err

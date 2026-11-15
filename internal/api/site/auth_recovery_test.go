@@ -145,6 +145,44 @@ func TestEmailChangeStopsMailingAnAddressOnceItsBudgetIsSpent(t *testing.T) {
 	assert.Len(t, env.SystemMail.Messages(), limit)
 }
 
+// A password change or signing out everywhere ends what the sessions before it asked for: an email
+// change link mailed before it no longer confirms, and the address stays.
+func TestEmailChangeLinkDiesWithTheSessionsThatAskedForIt(t *testing.T) {
+	cases := map[string]func(t *testing.T, c *siteapi.Client){
+		"signing out everywhere": func(t *testing.T, c *siteapi.Client) {
+			t.Helper()
+			_, err := c.SiteUserSignOutEverywhere(t.Context())
+			require.NoError(t, err)
+		},
+		"a password change": func(t *testing.T, c *siteapi.Client) {
+			t.Helper()
+			_, err := c.SiteUserUpdateMe(t.Context(), &siteapi.SiteUpdateMeInput{
+				CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword), NewPassword: siteapi.NewOptString("a-brand-new-password-1"),
+			})
+			require.NoError(t, err)
+		},
+	}
+	for name, revoke := range cases {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			authed := env.SiteActor(t, fixtures.OwnerJohnEmail)
+			err := authed.SiteUserEmailChange(t.Context(), &siteapi.SiteEmailChangeInput{
+				NewEmail: "moved@example.com", CurrentPassword: fixtures.OwnerJohnPassword,
+			})
+			require.NoError(t, err)
+			_, body := lastSystemEmail(t, env)
+			revoke(t, authed)
+
+			_, err = env.SiteAnonymous(t).SiteAuthConfirmEmailChange(t.Context(),
+				&siteapi.SiteConfirmEmailChangeInput{Token: tokenFromEmail(t, body)}, siteapi.SiteAuthConfirmEmailChangeParams{})
+
+			refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
+			assert.Equal(t, "invalid or expired confirmation link", refused.Detail.Value)
+			assert.Equal(t, fixtures.OwnerJohnEmail, userByEmail(t, env, fixtures.OwnerJohnEmail).Email)
+		})
+	}
+}
+
 func TestEmailChangeConfirmSwapsEmail(t *testing.T) {
 	env := testhelper.Setup(t)
 	authed := env.SiteActor(t, fixtures.OwnerJohnEmail)

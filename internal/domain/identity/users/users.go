@@ -253,8 +253,9 @@ func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash strin
 // session epoch (ending every earlier session), sets the password hash when passwordHash is
 // not nil (nil keeps the stored one) and the name when not empty. The write lands only on a still-Unverified User, so of two
 // racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
-// nothing.
-func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string, at time.Time) (*ent.User, error) {
+// nothing. proven also stamps the address as proven: a verify link was followed, which only the
+// address received; an Invitation link is no proof (ADR 0158).
+func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string, at time.Time, proven bool) (*ent.User, error) {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		upd := tx.User.Update().
 			Where(user.ID(id), user.EmailVerifiedAtIsNil()).
@@ -275,9 +276,10 @@ func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, 
 	if err != nil {
 		return nil, err
 	}
-	// The verify link proves the address too.
-	if _, err := proveEmailIn(ctx, tx, id, at); err != nil {
-		return nil, err
+	if proven {
+		if _, err := proveEmailIn(ctx, tx, id, at); err != nil {
+			return nil, err
+		}
 	}
 	return tx.User.Get(ctx, id)
 }

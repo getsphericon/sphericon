@@ -270,6 +270,32 @@ func TestSigninALinkedUserWithASecondFactorStillGetsTheChallenge(t *testing.T) {
 	challengeOf(t, resp)
 }
 
+// An accepted Invitation verifies the address but proves it not (ADR 0158): its link reaches the
+// inviter too.
+func TestAnAcceptedInvitationProvesNoAddress(t *testing.T) {
+	t.Run("a new address", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		token := fixtures.InvitationAcmeNewcomerToken
+		err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
+			&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newbie"), Password: siteapi.NewOptString("newbie-password-1")},
+			siteapi.SitePublicInvitationsAcceptParams{Token: token})
+		require.NoError(t, err)
+		u := userByEmail(t, env, fixtures.InvitationAcmeNewcomerEmail)
+		assert.NotNil(t, u.EmailVerifiedAt)
+		assert.Nil(t, u.EmailProvenAt)
+	})
+	t.Run("a Verified User", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		token := fixtures.InvitationAcmeOscarToken
+		before := userByEmail(t, env, fixtures.OutsiderOscarEmail).EmailProvenAt
+		err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(t.Context(),
+			&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
+		require.NoError(t, err)
+		assert.Nil(t, before, "the fixture's address was never proven")
+		assert.Nil(t, userByEmail(t, env, fixtures.OutsiderOscarEmail).EmailProvenAt)
+	})
+}
+
 func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 	t.Run("a verify link", func(t *testing.T) {
 		env := testhelper.Setup(t)
@@ -282,23 +308,6 @@ func TestTheAddressIsProvenByEveryLinkItIsMailedTo(t *testing.T) {
 		u := userByEmail(t, env, patEmail)
 		assert.NotNil(t, u.EmailVerifiedAt)
 		assert.Nil(t, u.EmailProvenAt)
-	})
-	t.Run("an accepted invitation of a new address", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		token := fixtures.InvitationAcmeNewcomerToken
-		err := env.SiteAnonymous(t).SitePublicInvitationsAccept(t.Context(),
-			&siteapi.SiteAcceptInvitationInput{Name: siteapi.NewOptUserName("Newbie"), Password: siteapi.NewOptString("newbie-password-1")},
-			siteapi.SitePublicInvitationsAcceptParams{Token: token})
-		require.NoError(t, err)
-		assert.NotNil(t, userByEmail(t, env, fixtures.InvitationAcmeNewcomerEmail).EmailProvenAt)
-	})
-	t.Run("an accepted invitation of a Verified User", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		token := fixtures.InvitationAcmeOscarToken
-		err := env.SiteActor(t, fixtures.OutsiderOscarEmail).SitePublicInvitationsAccept(t.Context(),
-			&siteapi.SiteAcceptInvitationInput{}, siteapi.SitePublicInvitationsAcceptParams{Token: token})
-		require.NoError(t, err)
-		assert.NotNil(t, userByEmail(t, env, fixtures.OutsiderOscarEmail).EmailProvenAt)
 	})
 	t.Run("a confirmed email change", func(t *testing.T) {
 		env := testhelper.Setup(t)

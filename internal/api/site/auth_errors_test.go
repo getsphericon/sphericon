@@ -2,6 +2,7 @@ package site_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -87,7 +88,7 @@ func TestSiteAuthRecoveryRejectsBadTokens(t *testing.T) {
 	})
 
 	t.Run("confirm email change rejects a token without a new address", func(t *testing.T) {
-		tok, err := s.Mint(authtoken.PurposeEmailChange, john.ID, john.Email, time.Hour, nil)
+		tok, err := s.Mint(authtoken.PurposeEmailChange, john.ID, fmt.Sprintf("%s %d", john.Email, john.SessionEpoch), time.Hour, nil)
 		require.NoError(t, err)
 		_, err = c.SiteAuthConfirmEmailChange(ctx, &siteapi.SiteConfirmEmailChangeInput{Token: tok}, siteapi.SiteAuthConfirmEmailChangeParams{})
 		testhelper.SiteRefusal(t, err, http.StatusBadRequest)

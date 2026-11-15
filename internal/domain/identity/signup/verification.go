@@ -102,7 +102,7 @@ type PasswordReset struct {
 // users.ErrAlreadyVerified when the User is no longer Unverified (a used link).
 func (m *Module) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verified, error) {
 	verified, landing, err := m.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, err := users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, m.now())
+		usr, err := users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, m.now(), true)
 		if err != nil {
 			return nil, err
 		}

@@ -1536,8 +1536,9 @@ snapshot, and no entry or accepted Invitation keeps their address. It never touc
 _Avoid_: Account deletion, closing an account, deactivation, Erasure (that is a Contact's)
 
 **Verified email**:
-A User's email address whose control has been proven by following a link sent to it (a verify
-link, an accepted Invitation, or a confirmed email change). Until then the User is an
+A User's email address that a link sent to it stood for (a verify link, an accepted Invitation,
+or a confirmed email change). An accepted Invitation verifies the address without proving it: its
+link reaches the inviter too (ADR 0158). Until then the User is an
 **Unverified User**: it holds no session, no Membership and no Workspace, and its password, if
 any, is not yet usable. A password chosen before the address is proven stays only if the link is
 opened in the **Sign-up browser**; otherwise it is set again through the link, so whoever
@@ -1562,7 +1563,8 @@ _Avoid_: Allowed domain, trusted domain, SSO domain
 **Domain join**:
 A Membership created because its member proved an address on a Workspace's verified Join domain
 (ADR 0051): Role `member`, source `domain`. A Workspace has one switch for it, off by default, that
-only an Owner changes. It happens at the moment an address becomes a Proven email and never later:
+only an Owner changes. It happens at the moment an address becomes a Proven email and never later
+(accepting an Invitation proves no address, ADR 0158):
 an address proven before the switch was turned on joins nobody, and turning it on adds and invites
 no one. It ignores a suspended Workspace or one in its deletion window, and sends no mail. It is audited as `membership.domain_join`
 with the system as the actor.
