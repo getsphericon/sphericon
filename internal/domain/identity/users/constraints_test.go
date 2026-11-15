@@ -12,15 +12,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func usersModule(env *testhelper.TestEnv) *users.Module {
-	return testhelper.Module[*users.Module](env)
-}
-
 // An address is one User's: users_email_key refuses a second User with it.
 func TestCreatingAUserWithATakenAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := usersModule(env).CreateUser(t.Context(), "Mallory", fixtures.OwnerJohnEmail, "hash")
+	_, err := testhelper.Module[*users.Module](env).CreateUser(t.Context(), "Mallory", fixtures.OwnerJohnEmail, "hash")
 
 	require.ErrorIs(t, err, users.ErrEmailTaken)
 }
@@ -30,7 +26,7 @@ func TestCreatingAUserWithATakenAddressIsRefused(t *testing.T) {
 func TestChangingTheEmailToATakenAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := usersModule(env).ChangeEmail(t.Context(), fixtures.MemberMaryID, fixtures.OwnerJohnEmail)
+	_, err := testhelper.Module[*users.Module](env).ChangeEmail(t.Context(), fixtures.MemberMaryID, fixtures.OwnerJohnEmail)
 
 	require.ErrorIs(t, err, users.ErrEmailTaken)
 	mary, err := env.DB.User.Get(t.Context(), fixtures.MemberMaryID)
@@ -43,7 +39,7 @@ func TestChangingTheEmailToATakenAddressIsRefused(t *testing.T) {
 func TestLinkingAProviderAccountOfAnotherUserIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, added, err := usersModule(env).LinkIdentity(t.Context(), fixtures.OwnerJohnID, fixtures.MaryGoogleIdentityProvider, fixtures.MaryGoogleIdentitySubject)
+	_, added, err := testhelper.Module[*users.Module](env).LinkIdentity(t.Context(), fixtures.OwnerJohnID, fixtures.MaryGoogleIdentityProvider, fixtures.MaryGoogleIdentitySubject)
 
 	require.ErrorIs(t, err, users.ErrIdentityInUse)
 	assert.False(t, added)
@@ -56,7 +52,7 @@ func TestLinkingAProviderAccountOfAnotherUserIsRefused(t *testing.T) {
 func TestLinkingAProviderAccountTheUserHoldsChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, added, err := usersModule(env).LinkIdentity(t.Context(), fixtures.MemberMaryID, fixtures.MaryGoogleIdentityProvider, fixtures.MaryGoogleIdentitySubject)
+	_, added, err := testhelper.Module[*users.Module](env).LinkIdentity(t.Context(), fixtures.MemberMaryID, fixtures.MaryGoogleIdentityProvider, fixtures.MaryGoogleIdentitySubject)
 
 	require.NoError(t, err)
 	assert.False(t, added)

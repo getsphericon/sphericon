@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
-	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -73,7 +72,7 @@ func TestMCPEmailSchemaDescribesTheDocumentAnAgentMayWrite(t *testing.T) {
 func TestMCPAgentCopiesAStarterTemplateAndEditsItsDocument(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	starters, err := brandkits.New(env.Bus, emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
+	starters, err := testhelper.Module[*brandkits.Module](env).RecreateStarterTemplates(ctx, env.DB.Scoped(fixtures.InitechID))
 	require.NoError(t, err)
 	starter := starters[0]
 	s := env.MCPClient(t, env.ScopedBearerFor(t, fixtures.InitechID, apitokens.ScopeTemplatesRead, apitokens.ScopeTemplatesWrite))

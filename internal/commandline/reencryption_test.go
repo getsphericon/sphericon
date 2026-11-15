@@ -181,7 +181,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	// a draft with a header and a signing secret makes a third version. The Rule has Firings, so
 	// deleting it discards it and keeps every version for them.
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	module := rules.New(env.Cipher, env.Bus, nil, time.Now)
+	module := testhelper.Module[*rules.Module](env)
 	_, err = module.Update(ctx, acme, fixtures.RuleHTTPExecutionID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme, fixtures.RuleHTTPExecutionID), Actions: &[]rules.Action{{
 		Type: rules.ActionHTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: "whsec_rule_draft",
 		Headers: []httpcall.Header{{Name: "Authorization", Value: "Bearer rule-draft"}},

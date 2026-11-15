@@ -14,9 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/oauthcode"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
-	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -205,7 +203,6 @@ var johnInAcme = admission.Request{UserID: fixtures.OwnerJohnID, Workspace: fixt
 // newModule is the OAuth clients module over client with the production metadata fetcher, which
 // admits the User over the test's database.
 func newModule(env *testhelper.TestEnv, client *ent.Client) *oauthclients.Module {
-	acceptance := testhelper.Module[*users.Module](env)
-	admit := admission.New(testhelper.Module[*memberships.Module](env), acceptance, secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now))
+	admit := testhelper.Module[*admission.Module](env)
 	return oauthclients.New(client, oauthclients.NewFetcher(webhook.Allowlist{}), admit, time.Now)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,7 +26,7 @@ import (
 func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	inv, _, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 
@@ -69,7 +68,7 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	inv, _, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 	env.Bus.Use(hook.On(firstInsertMember, ent.OpCreate))
@@ -108,7 +107,7 @@ func TestAnInvitationLinkIsAcceptedByItsToken(t *testing.T) {
 func TestAnAcceptedInvitationKeepsNoAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	inv, _, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
 

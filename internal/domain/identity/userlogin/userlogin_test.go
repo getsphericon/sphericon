@@ -35,7 +35,7 @@ func newRig(t *testing.T) rig {
 	require.NoError(t, err)
 	module := userlogin.New(userlogin.Config{
 		Users:               acc,
-		SecondFactors:       secondfactors.New(env.DB, env.Bus, env.Cipher, acc, time.Now),
+		SecondFactors:       testhelper.Module[*secondfactors.Module](env),
 		Passkeys:            keys,
 		Throttle:            throttle.NewAttempts(env.DB, time.Now).For(throttle.KindLogin),
 		Passwords:           testhelper.Passwords(),
@@ -104,7 +104,7 @@ func TestAProvidersChallengeCarriesItsMethodAndTimeToTheSecondStep(t *testing.T)
 	r := newRig(t)
 	sam, err := r.users.User(t.Context(), fixtures.SecondFactorSamID)
 	require.NoError(t, err)
-	binding, err := secondfactors.New(r.env.DB, r.env.Bus, r.env.Cipher, r.users, time.Now).ChallengeBinding(t.Context(), sam)
+	binding, err := testhelper.Module[*secondfactors.Module](r.env).ChallengeBinding(t.Context(), sam)
 	require.NoError(t, err)
 	at := time.Now().Add(-time.Minute).Truncate(time.Second)
 	challenge, err := r.module.Challenge(sam, binding, "google", at)

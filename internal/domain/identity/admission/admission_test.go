@@ -19,16 +19,10 @@ import (
 // Umbrella requires a Second factor since 2026-03-01, and Rita's grace there ended on 2026-03-08.
 var afterRitasGrace = time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
 
-func newModule(env *testhelper.TestEnv) *admission.Module {
-	acceptance := testhelper.Module[*users.Module](env)
-	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now)
-	return admission.New(testhelper.Module[*memberships.Module](env), acceptance, factors)
-}
-
 func TestAMemberIsAdmittedToTheirWorkspaceWithItsScopeAndTheirMembership(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	got, err := newModule(env).Admit(t.Context(), admission.Request{UserID: fixtures.MemberMaryID, Workspace: fixtures.AcmePublicID})
+	got, err := testhelper.Module[*admission.Module](env).Admit(t.Context(), admission.Request{UserID: fixtures.MemberMaryID, Workspace: fixtures.AcmePublicID})
 
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeMemberMembershipID, got.Membership.ID)
@@ -41,7 +35,7 @@ func TestAMemberIsAdmittedToTheirWorkspaceWithItsScopeAndTheirMembership(t *test
 func TestARequestOfNoWorkspaceAdmitsTheUserAlone(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	got, err := newModule(env).Admit(t.Context(), admission.Request{UserID: fixtures.MemberMaryID})
+	got, err := testhelper.Module[*admission.Module](env).Admit(t.Context(), admission.Request{UserID: fixtures.MemberMaryID})
 
 	require.NoError(t, err)
 	assert.Equal(t, admission.Admitted{}, got)
@@ -51,7 +45,7 @@ func TestARequestOfNoWorkspaceAdmitsTheUserAlone(t *testing.T) {
 // required acceptance pending, and that before the Two-factor requirement.
 func TestTheRefusalsComeInOneOrder(t *testing.T) {
 	env := testhelper.Setup(t)
-	module := newModule(env)
+	module := testhelper.Module[*admission.Module](env)
 
 	_, notMember := module.Admit(t.Context(), admission.Request{UserID: fixtures.UmbrellaOwnerRitaID, Workspace: fixtures.KramericaPublicID})
 	_, withheld := module.Admit(t.Context(), admission.Request{UserID: fixtures.UmbrellaOwnerRitaID, Workspace: fixtures.UmbrellaPublicID, At: afterRitasGrace})
@@ -72,7 +66,7 @@ func TestTheRefusalsComeInOneOrder(t *testing.T) {
 
 func TestAUserWithARequiredAcceptancePendingIsRefusedInAndOutOfAWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	module := newModule(env)
+	module := testhelper.Module[*admission.Module](env)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)
 
 	_, inWorkspace := module.Admit(t.Context(), admission.Request{UserID: fixtures.MemberMaryID, Workspace: fixtures.AcmePublicID})
@@ -88,7 +82,7 @@ func TestAUserWithARequiredAcceptancePendingIsRefusedInAndOutOfAWorkspace(t *tes
 // strong or the operation lets a withheld User through, and never outside its Workspace.
 func TestTheTwoFactorRequirementLetsThroughWhatTheRequestAllows(t *testing.T) {
 	env := testhelper.Setup(t)
-	module := newModule(env)
+	module := testhelper.Module[*admission.Module](env)
 	admit := func(r admission.Request) error {
 		r.UserID, r.Workspace = fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID
 		_, err := module.Admit(t.Context(), r)
@@ -106,7 +100,7 @@ func TestTheTwoFactorRequirementLetsThroughWhatTheRequestAllows(t *testing.T) {
 // the acceptance first, then the Two-factor requirement, and nothing lets it through.
 func TestATokenIsAdmittedToItsMembershipAsTheSessionWouldBe(t *testing.T) {
 	env := testhelper.Setup(t)
-	module := newModule(env)
+	module := testhelper.Module[*admission.Module](env)
 	_, rita, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
 	require.NoError(t, err)
 

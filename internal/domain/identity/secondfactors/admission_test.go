@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,19 +21,13 @@ var (
 	afterRitasEnd = time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
 )
 
-// newModule builds the Module of the test's database.
-func newModule(env *testhelper.TestEnv) *secondfactors.Module {
-	acceptance := testhelper.Module[*users.Module](env)
-	return secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now)
-}
-
 // admission builds the Module of the test's database and loads userID's Membership of the
 // Workspace publicID names, as the admission does before it asks the requirement.
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*secondfactors.Module, *ent.Membership) {
 	t.Helper()
 	_, m, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
-	return newModule(env), m
+	return testhelper.Module[*secondfactors.Module](env), m
 }
 
 // check asks the requirement of the Workspace of m about its member at at.
