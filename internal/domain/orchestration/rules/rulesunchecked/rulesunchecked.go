@@ -17,6 +17,6 @@ import (
 // carries the triggering Event's properties. An Actions job carries only a Firing id and finds
 // the Firing gone once the Contact row is deleted, which cascades to its Firings. It runs inside
 // the caller's transaction.
-func CancelPending(ctx context.Context, _ *ent.Scoped, contactID int64, purger events.QueuePurger) error {
-	return purger.PurgeJobs(ctx, jobkind.RuleEvaluate, []int64{contactID})
+func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger events.QueuePurger) error {
+	return purger.PurgeJobs(ctx, s.WorkspaceID(), jobkind.RuleEvaluate, []int64{contactID})
 }

@@ -58,7 +58,7 @@ func removeReportJobs(t *testing.T, bus *events.Bus, s *ent.Scoped, kinds ...riv
 	t.Helper()
 	require.NoError(t, bus.WithinScopedPurgeTx(t.Context(), s, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
 		for _, args := range kinds {
-			if err := pub.PurgeJobs(t.Context(), jobkind.Key{Kind: args.Kind(), Arg: jobkind.WorkspaceArg}, []int64{s.WorkspaceID()}); err != nil {
+			if err := pub.PurgeJobs(t.Context(), s.WorkspaceID(), jobkind.Key{Kind: args.Kind(), Arg: jobkind.WorkspaceArg}, []int64{s.WorkspaceID()}); err != nil {
 				return err
 			}
 		}

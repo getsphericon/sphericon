@@ -32,10 +32,11 @@ type QueuePurger interface {
 	// that only writes into the Workspace (the suppression, the orders, the Audit log, the Erasures
 	// stream) runs to its end.
 	PurgeEventJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error
-	// PurgeJobs deletes the river jobs of kind whose args integer field key is one of ids.
+	// PurgeJobs deletes the river jobs of kind of the Workspace whose args integer field key is
+	// one of ids.
 	// A running job, or one a fetch holds locked to start it, is left to finish: each of these
 	// kinds' workers loads the row its args name and ends when it is gone.
-	PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error
+	PurgeJobs(ctx context.Context, workspaceID int64, key jobkind.Key, ids []int64) error
 	// PurgeWebhookJobs deletes the queued deliveries to the Workspace's own webhook
 	// endpoints whose body names the Contact (contactId) or one of its
 	// destinations (data.email case-insensitively, or data.phone). The body is the event payload
@@ -47,11 +48,13 @@ type QueuePurger interface {
 // call (10000 at most), so a purge deletes again until a batch comes back short.
 const purgeBatch = 1000
 
-func (p *txPublisher) PurgeJobs(ctx context.Context, key jobkind.Key, ids []int64) error {
+func (p *txPublisher) PurgeJobs(ctx context.Context, workspaceID int64, key jobkind.Key, ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Kinds(key.Kind).
+	// The Workspace's containment is what river's GIN index on args serves; the field match then
+	// runs over its jobs only, not over every job of the kind.
+	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Kinds(key.Kind), workspaceID).
 		// raw sql: an integer field of the args matched against a list; river's delete filters
 		// stop at a job's own columns.
 		Where("(args->>@purge_arg::text)::bigint = any(@purge_ids::bigint[])",

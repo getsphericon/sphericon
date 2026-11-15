@@ -32,8 +32,8 @@ func TestCancelPendingRemovesTheContactsQueuedCallsAndKeepsOthers(t *testing.T) 
 		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
 		fixtures.AutomationRunBystanderHTTPFailedID,
 	} {
-		env.EnqueueJob(t, automations.RunStepArgs{RunID: id})
-		env.EnqueueJob(t, automations.RunHTTPStepArgs{RunID: id})
+		env.EnqueueJob(t, automations.RunStepArgs{WorkspaceID: fixtures.InitechID, RunID: id})
+		env.EnqueueJob(t, automations.RunHTTPStepArgs{WorkspaceID: fixtures.InitechID, RunID: id})
 	}
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactBystanderID, Action: "x"})
