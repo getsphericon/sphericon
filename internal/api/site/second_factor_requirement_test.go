@@ -27,14 +27,10 @@ var (
 	ninaGraceEnds = time.Date(2026, 3, 5, 0, 0, 0, 0, time.UTC).Add(7 * 24 * time.Hour)
 )
 
-type requirementClock struct{ t time.Time }
-
-func (c *requirementClock) now() time.Time { return c.t }
-
 func requirementEnv(t *testing.T, at time.Time) *testhelper.TestEnv {
 	t.Helper()
-	c := &requirementClock{t: at}
-	return testhelper.Setup(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(at)
+	return testhelper.Setup(t, testhelper.WithClock(c.Now))
 }
 
 // requireSecondFactor switches the Workspace's Two-factor requirement on as c.
@@ -98,8 +94,8 @@ func problemCode(t *testing.T, body []byte) string {
 
 func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	at := time.Date(2026, 3, 4, 12, 0, 0, 0, time.UTC)
-	c := &requirementClock{t: at}
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(at)
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
 	john := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	w := requireSecondFactor(t, john, fixtures.AcmePublicID)
@@ -116,7 +112,7 @@ func TestOwnerAndAdminSwitchTheRequirementAndAMemberCannot(t *testing.T) {
 	assert.Contains(t, e.Diff, "second_factor_required_at")
 
 	// Switching it on again keeps the start, so no one's grace restarts.
-	c.t = at.Add(48 * time.Hour)
+	c.Set(at.Add(48 * time.Hour))
 	again := requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJohnEmail), fixtures.AcmePublicID)
 	assert.True(t, time.Time(again.SecondFactorRequiredAt.Value).Equal(at))
 	assert.True(t, time.Time(again.SecondFactorRequirementGraceEndsAt.Value).Equal(at.Add(7*24*time.Hour)))
@@ -251,8 +247,8 @@ func TestAStrongSessionMeetsTheRequirementWithoutASecondFactor(t *testing.T) {
 // The grace end the Workspace list shows follows the withhold decision: a Passkey session
 // of a User with no Second factor meets the requirement, a password or provider one does not.
 func TestTheGraceEndFollowsTheStrengthOfTheSession(t *testing.T) {
-	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC))
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
 	requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 	graceEnds := func(method apiauth.Method) any {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)

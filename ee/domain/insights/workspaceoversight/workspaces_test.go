@@ -312,7 +312,7 @@ func (h *harness) acmeHolds(t *testing.T, c *staffeeapi.Client) []staffeeapi.Sta
 func TestTheWorkspaceDetailListsItsActiveHolds(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.Now().Add(time.Hour))
 
 	holds := h.acmeHolds(t, c)
 
@@ -321,7 +321,7 @@ func TestTheWorkspaceDetailListsItsActiveHolds(t *testing.T) {
 	assert.Equal(t, "review", holds[0].ReasonCode)
 	assert.Equal(t, "Sending is paused for now.", holds[0].Message)
 	assert.Equal(t, fixtures.ServiceCredentialPrimaryName, holds[0].SetBy)
-	assert.WithinDuration(t, h.clock.now().Add(time.Hour), time.Time(holds[0].ExpiresAt), time.Second)
+	assert.WithinDuration(t, h.clock.Now().Add(time.Hour), time.Time(holds[0].ExpiresAt), time.Second)
 	stored := h.env.DB.Hold.GetX(t.Context(), fixtures.HoldAcmeLapsedID)
 	assert.WithinDuration(t, stored.CreatedAt, time.Time(holds[0].CreatedAt), time.Second)
 }
@@ -329,8 +329,8 @@ func TestTheWorkspaceDetailListsItsActiveHolds(t *testing.T) {
 func TestAnExpiredHoldIsNotListedAndAnUnaffectedWorkspaceShowsNone(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
-	h.clock.t = h.clock.t.Add(2 * time.Hour)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.Now().Add(time.Hour))
+	h.clock.Advance(2 * time.Hour)
 
 	assert.Empty(t, h.acmeHolds(t, c), "the fixture's lapsed holds and the expired one are not active")
 	globex, err := h.getWorkspace(t, c, fixtures.GlobexPublicID)

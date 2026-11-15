@@ -159,7 +159,8 @@ server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests
 The Sign-up (`signup.UseCase.SignUp`) is built with `New` and a `signup.SignUpConfig`; its test
 of a race on a new address gives it a `Lookup` whose first lookup misses.
 A use case reads the time from the clock `New` takes (ADR 0104), so a test that needs a moment
-builds it with a clock it controls.
+builds it with a clock it controls: `testhelper.NewClock(at)`, moved with `Set` and `Advance`
+and handed over as `clock.Now` (to `WithClock` for the Instance).
 
 ## Fixture catalog
 

@@ -267,11 +267,11 @@ func TestConnectionsAreTheirUsersOrAManagersToRevoke(t *testing.T) {
 func TestTheTwoFactorRequirementWithholdsAConnection(t *testing.T) {
 	// Umbrella requires a Second factor since 2026-03-01; Rita's grace ends a week later.
 	graceEnds := time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC)
-	clock := &shiftingClock{at: graceEnds.Add(-time.Hour)}
-	env := testhelper.Setup(t, testhelper.WithClock(clock.now))
+	clock := testhelper.NewClock(graceEnds.Add(-time.Hour))
+	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
 	require.NotEqual(t, http.StatusForbidden, mcpStatus(t, env, ritasConnection))
 
-	clock.at = graceEnds.Add(time.Hour)
+	clock.Set(graceEnds.Add(time.Hour))
 
 	rec := serve(env, mcpRequest(t, ritasConnection))
 	assert.Equal(t, http.StatusForbidden, rec.Code)
@@ -281,8 +281,3 @@ func TestTheTwoFactorRequirementWithholdsAConnection(t *testing.T) {
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &problem))
 	assert.Equal(t, string(siteapi.ProblemCodeSecondFactorRequired), problem.Code)
 }
-
-// shiftingClock is a clock a test moves forward.
-type shiftingClock struct{ at time.Time }
-
-func (c *shiftingClock) now() time.Time { return c.at }

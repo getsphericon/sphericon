@@ -108,8 +108,8 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerUserPerHour(t *testing.T) {
 }
 
 func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T) {
-	clock := &movableClock{t: time.Now()}
-	env := testhelper.Setup(t, testhelper.WithClock(clock.now))
+	clock := testhelper.NewClock(time.Now())
+	env := testhelper.Setup(t, testhelper.WithClock(clock.Now))
 	jane := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
 	// Jane spends her hourly budget four times over, an hour apart: the Workspace's twenty.
@@ -118,7 +118,7 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T)
 			_, err := testSendAsJane(env, jane, fixtures.OwnerJaneEmail)
 			require.NoError(t, err, "round %d send %d", round, i+1)
 		}
-		clock.t = clock.t.Add(61 * time.Minute)
+		clock.Advance(61 * time.Minute)
 	}
 
 	// Another User, with a budget of her own, is the Workspace's twenty-first.

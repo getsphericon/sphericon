@@ -20,14 +20,9 @@ import (
 // The core /staff surface runs on every Instance without a License key (ADR 0063), so every
 // test here runs unlicensed unless it says otherwise.
 
-// movableClock is the clock the server checks TOTP codes and session expiry against.
-type movableClock struct{ t time.Time }
-
-func (c *movableClock) now() time.Time { return c.t }
-
 type harness struct {
 	env   *testhelper.TestEnv
-	clock *movableClock
+	clock *testhelper.Clock
 }
 
 // newHarness is a self-hosted Instance without a License key (a saas one refuses to start
@@ -40,14 +35,14 @@ func newHarness(t *testing.T, opts ...testhelper.Option) *harness {
 // newLicensedHarness is an Instance licensed for every Enterprise feature.
 func newLicensedHarness(t *testing.T, opts ...testhelper.Option) *harness {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	return &harness{env: testhelper.Setup(t, append([]testhelper.Option{testhelper.WithClock(c.now)}, opts...)...), clock: c}
+	c := testhelper.NewClock(time.Now())
+	return &harness{env: testhelper.Setup(t, append([]testhelper.Option{testhelper.WithClock(c.Now)}, opts...)...), clock: c}
 }
 
 // code is the authenticator code of secret at the env clock.
 func (h *harness) code(t *testing.T, secret string) string {
 	t.Helper()
-	c, err := totp.GenerateCode(secret, h.clock.now())
+	c, err := totp.GenerateCode(secret, h.clock.Now())
 	require.NoError(t, err)
 	return c
 }
@@ -225,7 +220,7 @@ func TestTheSessionIsShorterThanACustomersAndHasNoRememberMe(t *testing.T) {
 	assert.Positive(t, ttl)
 	assert.Less(t, ttl, 24*time.Hour, "shorter than SPHERICON_SESSION_TTL's default")
 
-	h.clock.t = h.clock.t.Add(ttl + time.Second)
+	h.clock.Advance(ttl + time.Second)
 	requireProblem(t, errOf(h.me(t, cookie.Value)), http.StatusUnauthorized)
 }
 
@@ -247,7 +242,7 @@ func TestAReplayedCodeAndAnExpiredChallengeAreRejected(t *testing.T) {
 	requireProblem(t, errOf(h.secondStep(t, replay, code)), http.StatusUnauthorized)
 	requireProblem(t, errOf(h.secondStep(t, first, h.code(t, fixtures.StaffEnrolledTotpSecret))), http.StatusUnauthorized)
 
-	h.clock.t = h.clock.t.Add(5*time.Minute + time.Second)
+	h.clock.Advance(5*time.Minute + time.Second)
 	requireProblem(t, errOf(h.secondStep(t, replay, h.code(t, fixtures.StaffEnrolledTotpSecret))), http.StatusUnauthorized)
 }
 
@@ -272,7 +267,7 @@ func TestAFirstLoginEnrolsATOTPAndOnlyTheConfirmingCodeStartsASession(t *testing
 	_, err = h.me(t, parseCookie(t, done.SetCookie).Value)
 	require.NoError(t, err)
 
-	h.clock.t = h.clock.t.Add(time.Minute)
+	h.clock.Advance(time.Minute)
 	next := h.challenge(t, fixtures.StaffFreshEmail, fixtures.StaffFreshPassword)
 	assert.Equal(t, staffapi.StaffLoginOutcomeChallenge, next.Outcome, "enrolled once, challenged from then on")
 	assert.False(t, next.Enrolment.Set)

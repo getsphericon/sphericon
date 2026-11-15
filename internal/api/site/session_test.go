@@ -18,11 +18,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// movableClock is the injected `now` of the site session check.
-type movableClock struct{ t time.Time }
-
-func (c *movableClock) now() time.Time { return c.t }
-
 // workspacesStatus answers the status of a protected site request carrying the
 // session cookie.
 func workspacesStatus(t *testing.T, env *testhelper.TestEnv, session string) int {
@@ -37,8 +32,8 @@ func TestSiteSessionEndsAfterTheConfiguredLifetime(t *testing.T) {
 	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	require.Equal(t, 24*time.Hour, cfg.SessionTTL, "default session lifetime")
-	c := &movableClock{t: time.Now()}
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(time.Now())
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
 
 	rec := postLogin(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)
 	require.Equal(t, http.StatusOK, rec.Code, "body: %s", rec.Body.String())
@@ -47,10 +42,10 @@ func TestSiteSessionEndsAfterTheConfiguredLifetime(t *testing.T) {
 	require.True(t, hasCookie)
 	assert.Equal(t, int(cfg.SessionTTL.Seconds()), cookie.MaxAge, "the cookie lives as long as the session")
 
-	c.t = c.t.Add(cfg.SessionTTL - time.Minute)
+	c.Advance(cfg.SessionTTL - time.Minute)
 	assert.Equal(t, http.StatusOK, workspacesStatus(t, env, cookie.Value), "still inside the lifetime")
 
-	c.t = c.t.Add(2 * time.Minute)
+	c.Advance(2 * time.Minute)
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, cookie.Value), "past the lifetime")
 }
 

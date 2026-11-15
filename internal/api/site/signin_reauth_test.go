@@ -26,13 +26,13 @@ const (
 type reauthEnv struct {
 	env   *testhelper.TestEnv
 	fake  *testhelper.FakeSignin
-	clock *movableClock
+	clock *testhelper.Clock
 }
 
 func newReauthEnv(t *testing.T) *reauthEnv {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	env, fake := signinEnv(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(time.Now())
+	env, fake := signinEnv(t, testhelper.WithClock(c.Now))
 	return &reauthEnv{env: env, fake: fake, clock: c}
 }
 
@@ -54,7 +54,7 @@ func (r *reauthEnv) call(t *testing.T, method, path, session, body string) (code
 
 func (r *reauthEnv) totp(t *testing.T, secret string) string {
 	t.Helper()
-	c, err := totp.GenerateCode(secret, r.clock.now())
+	c, err := totp.GenerateCode(secret, r.clock.Now())
 	require.NoError(t, err)
 	return c
 }
@@ -80,7 +80,7 @@ func TestReauthAPasswordlessUserWithAFreshProviderLoginEnrollsRegeneratesAndDisa
 	code, session, raw := r.call(t, http.MethodPost, regeneratePath, session, `{}`)
 	require.Equal(t, http.StatusOK, code, raw)
 	require.NotEmpty(t, session)
-	r.clock.t = r.clock.t.Add(time.Minute) // a code works once: the next one is of the next step
+	r.clock.Advance(time.Minute) // a code works once: the next one is of the next step
 	code, _, raw = r.call(t, http.MethodPost, disablePath, session, `{"code":"`+r.totp(t, secret)+`"}`)
 	assert.Equal(t, http.StatusNoContent, code, raw)
 }
@@ -88,7 +88,7 @@ func TestReauthAPasswordlessUserWithAFreshProviderLoginEnrollsRegeneratesAndDisa
 func TestReauthAnExpiredProviderLoginIsRefusedUntilANewOne(t *testing.T) {
 	r := newReauthEnv(t)
 	session := r.signIn(t, newcomer)
-	r.clock.t = r.clock.t.Add(time.Hour)
+	r.clock.Advance(time.Hour)
 
 	code, _, raw := r.call(t, http.MethodPost, enrollmentPath, session, `{}`)
 
@@ -107,7 +107,7 @@ func TestReauthTheProofDoesNotOutliveItsWindowWhileEnrolling(t *testing.T) {
 	require.Equal(t, http.StatusOK, code, raw)
 	var e enrollmentRes
 	require.NoError(t, json.Unmarshal([]byte(raw), &e))
-	r.clock.t = r.clock.t.Add(time.Hour)
+	r.clock.Advance(time.Hour)
 
 	code, _, _ = r.call(t, http.MethodPost, confirmPath, session, `{"enrollmentId":"`+e.EnrollmentID+`","code":"`+r.totp(t, e.Secret)+`"}`)
 
@@ -140,7 +140,7 @@ func TestReauthTheProofSurvivesTheChallengeOfASecondFactor(t *testing.T) {
 	r := newReauthEnv(t)
 	_, secret := r.enroll(t, r.signIn(t, newcomer))
 	challenge := challengeOf(t, signInWith(t, r.fake, r.env.NewRedirectBrowser(t), newcomer, ""))
-	r.clock.t = r.clock.t.Add(time.Minute) // the enrollment's code is spent: the next one is of the next step
+	r.clock.Advance(time.Minute) // the enrollment's code is spent: the next one is of the next step
 
 	rec := secondStepStatus(t, r.env, challenge, r.totp(t, secret))
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
@@ -166,7 +166,7 @@ func TestReauthTheStatusTellsWhetherAProviderLoginIsNeeded(t *testing.T) {
 	}
 
 	assert.Equal(t, status{PasswordSet: false, IdentityProofFresh: true}, read(session))
-	r.clock.t = r.clock.t.Add(time.Hour)
+	r.clock.Advance(time.Hour)
 	assert.Equal(t, status{PasswordSet: false, IdentityProofFresh: false}, read(session))
 
 	john := r.env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
@@ -177,7 +177,7 @@ func TestReauthLinkingANewProviderAccountDoesNotRefreshTheProof(t *testing.T) {
 	r := newReauthEnv(t)
 	b := r.env.NewRedirectBrowser(t)
 	signInWith(t, r.fake, b, newcomer, "")
-	r.clock.t = r.clock.t.Add(time.Hour) // the login's proof has expired
+	r.clock.Advance(time.Hour) // the login's proof has expired
 	attacker := testhelper.SigninIdentity{Subject: "google-subject-of-the-attacker", Email: "attacker@gmail.test", EmailVerified: true}
 
 	resp := link(t, r.fake, b, attacker)
@@ -192,7 +192,7 @@ func TestReauthLinkingAnAlreadyLinkedProviderAccountRefreshesTheProof(t *testing
 	r := newReauthEnv(t)
 	b := r.env.NewRedirectBrowser(t)
 	signInWith(t, r.fake, b, newcomer, "")
-	r.clock.t = r.clock.t.Add(time.Hour)
+	r.clock.Advance(time.Hour)
 
 	resp := link(t, r.fake, b, newcomer)
 

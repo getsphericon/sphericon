@@ -35,7 +35,7 @@ func (h *harness) trySetHold(t *testing.T, key string, d time.Duration) (*servic
 func (h *harness) trySetHoldFor(t *testing.T, key, reasonCode string, d time.Duration) (*serviceapi.HoldSetResult, error) {
 	t.Helper()
 	return h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
-		ReasonCode: reasonCode, Message: "Sending is paused for now.", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(d)),
+		ReasonCode: reasonCode, Message: "Sending is paused for now.", ExpiresAt: serviceapi.Timestamp(h.clock.Now().Add(d)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: acme, Key: key})
 }
 
@@ -92,11 +92,11 @@ func TestSettingTheSameHoldTwiceIsHarmlessAndRenewingMovesItsExpiry(t *testing.T
 	require.Len(t, h.listHolds(t), 1, "the key is unique per Workspace")
 
 	h.setHold(t, "k1", 3*time.Hour)
-	h.clock.t = h.clock.t.Add(2 * time.Hour)
+	h.clock.Advance(2 * time.Hour)
 	h.requireHeld(t, "renewed@example.com")
 	items := h.listHolds(t)
 	require.Len(t, items, 1)
-	assert.WithinDuration(t, h.clock.now().Add(time.Hour), time.Time(items[0].ExpiresAt), time.Second)
+	assert.WithinDuration(t, h.clock.Now().Add(time.Hour), time.Time(items[0].ExpiresAt), time.Second)
 }
 
 func TestAHoldPastItsExpiryIsIgnoredAtOnceWithNoCleanup(t *testing.T) {
@@ -104,7 +104,7 @@ func TestAHoldPastItsExpiryIsIgnoredAtOnceWithNoCleanup(t *testing.T) {
 	h.setHold(t, "k1", time.Hour)
 	h.requireHeld(t, "before@example.com")
 
-	h.clock.t = h.clock.t.Add(time.Hour + time.Second)
+	h.clock.Advance(time.Hour + time.Second)
 
 	h.sendOnAPI(t, "lapsed@example.com")
 	assert.Empty(t, h.listHolds(t), "a lapsed hold is not listed")
@@ -113,8 +113,8 @@ func TestAHoldPastItsExpiryIsIgnoredAtOnceWithNoCleanup(t *testing.T) {
 
 func TestASecondHoldKeepsSendingFrozenAfterTheFirstIsCleared(t *testing.T) {
 	h := newHarness(t)
-	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
-	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeSecondLapsedID, h.clock.now().Add(time.Hour))
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.Now().Add(time.Hour))
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeSecondLapsedID, h.clock.Now().Add(time.Hour))
 
 	h.clearHold(t, fixtures.HoldAcmeLapsedKey)
 	h.requireHeld(t, "still@example.com")
@@ -162,8 +162,8 @@ func TestTheMaximumExpiryIsConfigurable(t *testing.T) {
 // beside the Staff holds while the Workspace is deleted, and restoring lifts it alone.
 func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	h := newHarness(t)
-	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
-	discardedAt := h.clock.now().Add(-time.Hour).UTC().Truncate(time.Second)
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.Now().Add(time.Hour))
+	discardedAt := h.clock.Now().Add(-time.Hour).UTC().Truncate(time.Second)
 	h.env.DeleteWorkspace(t.Context(), fixtures.AcmeID, discardedAt)
 
 	items := h.listHolds(t)
@@ -185,7 +185,7 @@ func TestHoldsOfAnUnknownWorkspaceAreNotFound(t *testing.T) {
 	_, err := c.ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: "NoSuchId"})
 	testhelper.ServiceRefusal(t, err, http.StatusNotFound)
 	_, err = c.ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
-		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
+		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.Now().Add(time.Hour)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: "NoSuchId", Key: "k"})
 	testhelper.ServiceRefusal(t, err, http.StatusNotFound)
 	_, err = c.ServiceHoldsClear(t.Context(), serviceapi.ServiceHoldsClearParams{WorkspaceId: "NoSuchId", Key: "k"})
@@ -198,7 +198,7 @@ func TestHoldsNeedTheWriteHoldsScope(t *testing.T) {
 	_, err := h.env.ServiceClient(t, readOnly).ServiceHoldsList(t.Context(), serviceapi.ServiceHoldsListParams{WorkspaceId: acme})
 	require.Error(t, err, "a credential without the scope is refused")
 	_, err = h.env.ServiceClient(t, readOnly).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
-		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
+		ReasonCode: "r", Message: "m", ExpiresAt: serviceapi.Timestamp(h.clock.Now().Add(time.Hour)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: acme, Key: "k"})
 	require.Error(t, err)
 	assert.Zero(t, h.env.DB.Hold.Query().Where(enthold.Key("k")).CountX(t.Context()))

@@ -176,7 +176,7 @@ func TestAnExpiredPendingSignupCanNoLongerBeSubmitted(t *testing.T) {
 	withSignupItems(t, env)
 	b := env.NewRedirectBrowser(t)
 	token := pendingToken(t, signInWith(t, fake, b, newcomer, ""))
-	clock.t = clock.t.Add(11 * time.Minute)
+	clock.Advance(11 * time.Minute)
 
 	resp := submitPending(t, b, token, termsTicked)
 

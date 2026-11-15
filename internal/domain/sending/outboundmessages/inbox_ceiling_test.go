@@ -22,7 +22,7 @@ import (
 // pinewoodInboxModule sends Pinewood's marketing through its default, its Test inbox: the real
 // provider keeping Captured messages, with the 200 a day the Integration row reports, on a clock the
 // test moves. opts add to the module's options.
-func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts ...outboundmessages.Option) *outboundmessages.Module {
+func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Clock, opts ...outboundmessages.Option) *outboundmessages.Module {
 	t.Helper()
 	s := env.DB.Scoped(fixtures.PinewoodID)
 	built, err := inbox.Descriptor().Build(nil, messaging.Deps{
@@ -36,7 +36,7 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *clock, opts .
 		env.Holds,
 		senders{sender: sender},
 		messagetoken.New("test-secret", "http://local", time.Now),
-		c.now,
+		c.Now,
 		opts...,
 	)
 }
@@ -68,7 +68,7 @@ func TestTestInboxDefersTheMessageAfterItsDailyCeilingAndSendsItLater(t *testing
 	assert.Equal(t, 24*time.Hour/inbox.PerDay, res.Wait, "one token of 200 a day returns every 7.2 minutes")
 	assert.Zero(t, res.MessageID, "a Deferral leaves no Outbound message")
 
-	c.elapse(res.Wait)
+	c.Advance(res.Wait)
 	assert.Equal(t, outboundmessages.Sent, sendTo("bc:201").Outcome, "sent later with the same key")
 	kept := s.CapturedMessage().Query().Where(capturedmessage.IntegrationID(fixtures.IntegrationPinewoodInboxID)).CountX(ctx)
 	assert.GreaterOrEqual(t, kept, inbox.PerDay, "every accepted message was captured")

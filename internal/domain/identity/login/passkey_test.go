@@ -126,7 +126,7 @@ func TestAPasskeyLoginWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 	}
 	waitOf(t, r.passkeyErr(t, userResponse(fixtures.OwnerJohnID)))
 
-	r.clock.t = r.clock.t.Add(2 * time.Second)
+	r.clock.Advance(2 * time.Second)
 
 	assert.Equal(t, int64(fixtures.OwnerJohnID), r.passkey(t, userResponse(fixtures.OwnerJohnID)).Principal.ID)
 }

@@ -70,14 +70,14 @@ func TestAStaffMemberSwitchesTheTelemetryReportOffAndOn(t *testing.T) {
 
 func TestAcknowledgingTheNoticeKeepsTheFirstTime(t *testing.T) {
 	h := newHarness(t)
-	first := h.clock.now()
+	first := h.clock.Now()
 
 	state, err := h.console(t).StaffInstanceAcknowledgeNotice(t.Context())
 	require.NoError(t, err)
 	assert.True(t, state.NoticeAcknowledged)
 
 	// Two days on, past the first session: a Staff member signs in again and acknowledges again.
-	h.clock.t = h.clock.t.Add(48 * time.Hour)
+	h.clock.Advance(48 * time.Hour)
 	_, err = h.console(t).StaffInstanceAcknowledgeNotice(t.Context())
 	require.NoError(t, err)
 	row, err := h.env.DB.InstanceState.Get(t.Context(), 1)

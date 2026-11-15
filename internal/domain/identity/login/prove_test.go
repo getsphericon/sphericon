@@ -66,5 +66,5 @@ func TestProvingAPasswordAnswersARunningDelayAsTheLoginAccountsRateLimit(t *test
 	assert.Equal(t, ratelimit.PolicyLoginAccount, wait.Policy)
 	assert.Positive(t, wait.Wait)
 	assert.Equal(t, 2, wait.Limit)
-	assert.Equal(t, r.clock.now(), wait.At)
+	assert.Equal(t, r.clock.Now(), wait.At)
 }

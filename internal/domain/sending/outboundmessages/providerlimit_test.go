@@ -45,7 +45,7 @@ func acme(env *testhelper.TestEnv) *ent.Scoped { return env.DB.Scoped(fixtures.A
 func TestSpentPerSecondLimitIsADeferralWithTheWaitUntilCapacityReturns(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(2), nil)
 
 	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
@@ -62,7 +62,7 @@ func TestSpentPerSecondLimitIsADeferralWithTheWaitUntilCapacityReturns(t *testin
 func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:a").Outcome)
@@ -74,7 +74,7 @@ func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) 
 	require.NoError(t, err)
 	before := n
 	// The deferred key left no row: no claim, so nothing for a retry to trip on.
-	c.elapse(res.Wait)
+	c.Advance(res.Wait)
 	retry := send(t, m, env, "bc:b")
 	assert.Equal(t, outboundmessages.Sent, retry.Outcome)
 	assert.False(t, retry.Replayed)
@@ -88,7 +88,7 @@ func TestDeferredSendLeavesNoClaimAndSendsExactlyOnceAfterTheWait(t *testing.T) 
 func TestDailyLimitIsRollingAndReportsItsOwnWait(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, nil, new(2))
 
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
@@ -98,7 +98,7 @@ func TestDailyLimitIsRollingAndReportsItsOwnWait(t *testing.T) {
 	require.Equal(t, outboundmessages.Deferral, res.Outcome)
 	assert.Equal(t, 12*time.Hour, res.Wait, "2 per 24h refills one token every 12 hours")
 
-	c.elapse(12 * time.Hour)
+	c.Advance(12 * time.Hour)
 	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:3").Outcome, "capacity returns gradually, not at a window edge")
 	assert.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:4").Outcome)
 }
@@ -106,7 +106,7 @@ func TestDailyLimitIsRollingAndReportsItsOwnWait(t *testing.T) {
 func TestReservationTakesFromBothBucketsOrNone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), new(2))
 
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome) // second 0, day 1
@@ -114,16 +114,16 @@ func TestReservationTakesFromBothBucketsOrNone(t *testing.T) {
 	require.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:2").Outcome)
 
 	// Had the denials taken a daily token, the daily bucket would now be empty.
-	c.elapse(time.Second)
+	c.Advance(time.Second)
 	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome, "the denied attempts spent no daily capacity")
-	c.elapse(time.Second)
+	c.Advance(time.Second)
 	assert.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:3").Outcome, "the daily bucket is now spent")
 }
 
 func TestSkippedAndHeldMessagesSpendNoCapacity(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 	ctx := context.Background()
 
@@ -147,7 +147,7 @@ func TestSkippedAndHeldMessagesSpendNoCapacity(t *testing.T) {
 func TestNoLimitMeansNoLimiterStateAndNoDeferral(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 
 	for _, key := range []string{"bc:1", "bc:2", "bc:3", "bc:4", "bc:5"} {
 		assert.Equal(t, outboundmessages.Sent, send(t, m, env, key).Outcome)
@@ -160,7 +160,7 @@ func TestNoLimitMeansNoLimiterStateAndNoDeferral(t *testing.T) {
 func TestTransactionalSendsAreNeverDeferredEvenWithTheLimitSpent(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
@@ -176,7 +176,7 @@ func TestTransactionalSendsAreNeverDeferredEvenWithTheLimitSpent(t *testing.T) {
 func TestTransactionalSendsSpendCapacityAndDelayLaterMarketingSends(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 	ctx := context.Background()
 
@@ -191,16 +191,16 @@ func TestTransactionalSendsSpendCapacityAndDelayLaterMarketingSends(t *testing.T
 	require.Equal(t, outboundmessages.Deferral, res.Outcome)
 	assert.Equal(t, 3*time.Second, res.Wait, "debt of two tokens plus the one the Broadcast needs")
 
-	c.elapse(2 * time.Second)
+	c.Advance(2 * time.Second)
 	assert.Equal(t, outboundmessages.Deferral, send(t, m, env, "bc:1").Outcome)
-	c.elapse(time.Second)
+	c.Advance(time.Second)
 	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
 }
 
 func TestTransactionalSendsCountTowardTheDailyBucketToo(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, nil, new(2))
 
 	for _, key := range []string{"tx:1", "tx:2", "tx:3"} {
@@ -216,7 +216,7 @@ func TestTransactionalSendsCountTowardTheDailyBucketToo(t *testing.T) {
 func TestTransactionalThatIsSkippedSpendsNoCapacity(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 
 	res, err := m.Send(context.Background(), acme(env), transactional("tx:sup", suppressd))
@@ -229,7 +229,7 @@ func TestTransactionalThatIsSkippedSpendsNoCapacity(t *testing.T) {
 func TestUnlimitedIntegrationKeepsNoStateForTransactional(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 
 	res, err := m.Send(context.Background(), acme(env), transactional("tx:1", "a@example.com"))
 	require.NoError(t, err)
@@ -242,7 +242,7 @@ func TestUnlimitedIntegrationKeepsNoStateForTransactional(t *testing.T) {
 func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 
 	auto := marketing(t, env, "auto:1", fixtures.ContactAliceID)
@@ -258,7 +258,7 @@ func TestAutomationAndBroadcastSendsShareOneLimit(t *testing.T) {
 func TestChangedLimitTakesEffectImmediatelyAndProportionally(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(10), nil)
 
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome) // bucket 9/10 full
@@ -272,7 +272,7 @@ func TestChangedLimitTakesEffectImmediatelyAndProportionally(t *testing.T) {
 func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 
 	before, err := providerlimit.Usage(context.Background(), acme(env), time.Now())
 	require.NoError(t, err)

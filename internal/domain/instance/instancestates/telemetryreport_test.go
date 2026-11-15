@@ -53,15 +53,10 @@ func (r *receiver) got() [][]byte {
 	return append([][]byte(nil), r.bodies...)
 }
 
-// clock is a settable test clock.
-type clock struct{ t time.Time }
-
-func (c *clock) now() time.Time { return c.t }
-
 type rig struct {
 	mod   *instancestates.Module
 	recv  *receiver
-	clock *clock
+	clock *testhelper.Clock
 	db    *ent.Client
 	host  instancestates.TelemetryHost
 }
@@ -80,12 +75,12 @@ func newRig(t *testing.T, version string, edit func(*config.Config)) *rig {
 	if edit != nil {
 		edit(cfg)
 	}
-	clk := &clock{t: time.Date(2027, 3, 1, 12, 0, 0, 0, time.UTC)}
+	clk := testhelper.NewClock(time.Date(2027, 3, 1, 12, 0, 0, 0, time.UTC))
 	host := testHost
 	host.AppVersion = version
 	client, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
 	require.NoError(t, err)
-	mod := instancestates.New(env.DB, instancestates.EnvironmentOf(cfg, version, time.Time{}), clk.now,
+	mod := instancestates.New(env.DB, instancestates.EnvironmentOf(cfg, version, time.Time{}), clk.Now,
 		nil, nil, host, client, slog.Default())
 	_, err = mod.AcknowledgeNotice(t.Context())
 	require.NoError(t, err)
@@ -110,7 +105,7 @@ func (r *rig) offset(t *testing.T) time.Duration {
 // firstSend moves the clock to the moment the first report is due.
 func (r *rig) firstSend(t *testing.T) {
 	t.Helper()
-	r.clock.t = r.clock.t.Add(r.offset(t))
+	r.clock.Advance(r.offset(t))
 }
 
 func TestSenderPostsTheReportThePreviewShowsAndRecordsWhenItWasSent(t *testing.T) {
@@ -128,7 +123,7 @@ func TestSenderPostsTheReportThePreviewShowsAndRecordsWhenItWasSent(t *testing.T
 	require.NoError(t, telemetryschema.Validate(bodies[0]))
 	assert.JSONEq(t, string(want), string(bodies[0]))
 	require.NotNil(t, r.lastSent(t))
-	assert.True(t, r.lastSent(t).Equal(r.clock.t))
+	assert.True(t, r.lastSent(t).Equal(r.clock.Now()))
 }
 
 func TestSenderSendsOncePerDay(t *testing.T) {
@@ -136,35 +131,35 @@ func TestSenderSendsOncePerDay(t *testing.T) {
 	r.firstSend(t)
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 
-	r.clock.t = r.clock.t.Add(3 * time.Hour)
+	r.clock.Advance(3 * time.Hour)
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
-	r.clock.t = r.clock.t.Add(24 * time.Hour)
+	r.clock.Advance(24 * time.Hour)
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 	assert.Len(t, r.recv.got(), 2)
-	assert.True(t, r.lastSent(t).Equal(r.clock.t))
+	assert.True(t, r.lastSent(t).Equal(r.clock.Now()))
 }
 
 func TestSenderFirstReportWaitsTheOffsetAfterTheNoticeAndLaterOnesKeepTheTimeOfDay(t *testing.T) {
 	r := newRig(t, "1.4.2", nil)
-	acked := r.clock.t
+	acked := r.clock.Now()
 	offset := r.offset(t)
 
-	r.clock.t = acked.Add(offset - time.Nanosecond)
+	r.clock.Set(acked.Add(offset - time.Nanosecond))
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 	assert.Empty(t, r.recv.got())
 
-	r.clock.t = acked.Add(offset)
+	r.clock.Set(acked.Add(offset))
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
-	nextSlot := r.clock.t.Truncate(24 * time.Hour).Add(24*time.Hour + offset)
-	r.clock.t = nextSlot.Add(-time.Minute)
+	nextSlot := r.clock.Now().Truncate(24 * time.Hour).Add(24*time.Hour + offset)
+	r.clock.Set(nextSlot.Add(-time.Minute))
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 	assert.Len(t, r.recv.got(), 1)
 
-	r.clock.t = nextSlot
+	r.clock.Set(nextSlot)
 	require.NoError(t, r.mod.SendTelemetryReport(t.Context()))
 	assert.Len(t, r.recv.got(), 2)
 }
@@ -226,7 +221,7 @@ func TestSenderLeavesThingsHealthyWhenTheReceiverIsUnreachableOrRefuses(t *testi
 	failing := newReceiver(t, http.StatusInternalServerError)
 	client, err := telemetryapi.NewClient(failing.URL)
 	require.NoError(t, err)
-	sender := instancestates.New(r.db, r.mod.Environment(), r.clock.now, nil, nil, r.host, client, slog.Default())
+	sender := instancestates.New(r.db, r.mod.Environment(), r.clock.Now, nil, nil, r.host, client, slog.Default())
 
 	require.NoError(t, sender.SendTelemetryReport(t.Context()))
 	assert.Nil(t, r.lastSent(t))

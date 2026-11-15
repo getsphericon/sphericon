@@ -25,13 +25,13 @@ type loginRes struct {
 // twoStepEnv is a test env on a clock the test moves, for Sam (an active Second factor).
 type twoStepEnv struct {
 	env   *testhelper.TestEnv
-	clock *movableClock
+	clock *testhelper.Clock
 }
 
 func newTwoStepEnv(t *testing.T, opts ...testhelper.Option) *twoStepEnv {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	return &twoStepEnv{env: testhelper.Setup(t, append([]testhelper.Option{testhelper.WithClock(c.now)}, opts...)...), clock: c}
+	c := testhelper.NewClock(time.Now())
+	return &twoStepEnv{env: testhelper.Setup(t, append([]testhelper.Option{testhelper.WithClock(c.Now)}, opts...)...), clock: c}
 }
 
 // challenge passes Sam's password step and returns the challenge it answers with.
@@ -49,7 +49,7 @@ func (s *twoStepEnv) challenge(t *testing.T) string {
 // code is Sam's authenticator code at the env clock.
 func (s *twoStepEnv) code(t *testing.T) string {
 	t.Helper()
-	c, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, s.clock.now())
+	c, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, s.clock.Now())
 	require.NoError(t, err)
 	return c
 }
@@ -106,7 +106,7 @@ func TestARecoveryCodeWorksOnceAndIsAudited(t *testing.T) {
 func TestAnExpiredChallengeIsRejected(t *testing.T) {
 	s := newTwoStepEnv(t)
 	challenge := s.challenge(t)
-	s.clock.t = s.clock.t.Add(5*time.Minute + time.Second)
+	s.clock.Advance(5*time.Minute + time.Second)
 	assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
 }
 
@@ -115,7 +115,7 @@ func TestAChallengeWorksOnlyOnce(t *testing.T) {
 		s := newTwoStepEnv(t)
 		challenge := s.challenge(t)
 		require.Equal(t, http.StatusOK, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
-		s.clock.t = s.clock.t.Add(time.Minute) // a fresh, never-used code
+		s.clock.Advance(time.Minute) // a fresh, never-used code
 		assert.Equal(t, http.StatusUnauthorized, secondStepStatus(t, s.env, challenge, s.code(t)).Code)
 	})
 	t.Run("after a Recovery code success", func(t *testing.T) {

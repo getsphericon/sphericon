@@ -86,14 +86,14 @@ func TestTransactionalBusyReplyIsARetryableErrorNotADeferral(t *testing.T) {
 func TestGenuineProviderFailureStillFailsTheMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now, outboundmessages.WithLease(time.Nanosecond))
+	m := newModule(env, c.Now, outboundmessages.WithLease(time.Nanosecond))
 	ctx := context.Background()
 
 	env.CustomerMail.SetErr(errors.New("554 mailbox does not exist"))
 	_, err := m.Send(ctx, acme(env), marketing(t, env, "bc:perm", fixtures.ContactAliceID))
 	require.Error(t, err, "a real failure is still an error, not a Deferral")
 
-	c.elapse(time.Millisecond)
+	c.Advance(time.Millisecond)
 	require.NoError(t, m.MarkFailed(ctx, acme(env), "bc:perm", err))
 	assert.Equal(t, outboundmessage.StatusFailed, byKey(t, env, "bc:perm").Status)
 }

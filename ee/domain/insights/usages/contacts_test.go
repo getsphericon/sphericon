@@ -3,7 +3,6 @@ package usages_test
 import (
 	"errors"
 	"fmt"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -22,24 +21,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
-// clock is the harness clock a test moves: the contacts peak is kept as Contacts change,
-// so it needs the time of the change.
-type clock struct{ t atomic.Pointer[time.Time] }
-
-func newClock(t time.Time) *clock {
-	c := &clock{}
-	c.set(t)
-	return c
-}
-func (c *clock) set(t time.Time) { c.t.Store(&t) }
-func (c *clock) now() time.Time  { return *c.t.Load() }
-
 // contactsEnv is a licensed instance on a moved clock, and the number of identified
 // Contacts Acme has as the fixtures leave them.
-func contactsEnv(t *testing.T, now time.Time) (*testhelper.TestEnv, *clock, int64) {
+func contactsEnv(t *testing.T, now time.Time) (*testhelper.TestEnv, *testhelper.Clock, int64) {
 	t.Helper()
-	c := newClock(now)
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(now)
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
 	base, err := env.DB.Scoped(fixtures.AcmeID).Contact().Query().
 		Where(contact.EmailNotNil()).Count(t.Context())
 	require.NoError(t, err)
@@ -131,7 +118,7 @@ func TestContactsPeakIsFrozenAtTheCloseAndTheNextPeriodStartsFromWhatRemains(t *
 	id := addContact(t, env, "january-peak@example.com")
 	deleteContact(t, env, id)
 
-	clk.set(feb.Add(time.Minute))
+	clk.Set(feb.Add(time.Minute))
 	refreshAt(t, env, feb.Add(time.Minute))
 	addContact(t, env, "february@example.com")
 	addContact(t, env, "february-2@example.com")
