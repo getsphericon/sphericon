@@ -270,7 +270,7 @@ func TestSigninALinkedUserWithASecondFactorStillGetsTheChallenge(t *testing.T) {
 	challengeOf(t, resp)
 }
 
-// An accepted Invitation verifies the address but proves it not (ADR 0152): its link reaches the
+// An accepted Invitation verifies the address but proves it not (ADR 0158): its link reaches the
 // inviter too.
 func TestAnAcceptedInvitationProvesNoAddress(t *testing.T) {
 	t.Run("a new address", func(t *testing.T) {

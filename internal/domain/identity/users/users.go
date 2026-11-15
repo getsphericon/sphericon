@@ -254,7 +254,7 @@ func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash strin
 // not nil (nil keeps the stored one) and the name when not empty. The write lands only on a still-Unverified User, so of two
 // racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
 // nothing. proven also stamps the address as proven: a verify link was followed, which only the
-// address received; an Invitation link is no proof (ADR 0152).
+// address received; an Invitation link is no proof (ADR 0158).
 func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string, at time.Time, proven bool) (*ent.User, error) {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		upd := tx.User.Update().

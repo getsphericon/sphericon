@@ -4,7 +4,7 @@ status: accepted
 
 # A Workspace admits Users by a verified Join domain
 
-> **Amended by [[0152-an-invitation-link-verifies-an-address-but-proves-nothing]]:** accepting an
+> **Amended by [[0158-an-invitation-link-verifies-an-address-but-proves-nothing]]:** accepting an
 > Invitation proves no address, so it is no Domain join step; the Invitation accept below is gone
 > from the proof points, and so is the cost it brought.
 

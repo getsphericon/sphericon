@@ -78,7 +78,7 @@ func (a *Module) AcceptInvitationLink(ctx context.Context, token string, in Invi
 // otherwise) and the Sign-up items are answered as on the sign-up form (a
 // *validation.FieldsError refuses the answers): the link stands for the address, so the User is
 // created, or the Unverified User's row completed (name and password set, Verified email stamped,
-// session epoch bumped, `user.email_verify` audited). The link proves nothing (ADR 0152): its token
+// session epoch bumped, `user.email_verify` audited). The link proves nothing (ADR 0158): its token
 // is the inviter's too, so accepting stamps no proof of the address and joins no Workspace by its
 // domain (ADR 0051). Nothing
 // the person who signed up set survives but their Consent records, which are only added to:
@@ -167,7 +167,7 @@ type newAccount struct {
 // invitee resolves the User an Invitation is accepted by: a Verified User by their own session,
 // any other address by the account the link's holder sets up (ADR 0030), with the Consent
 // records of its answers (ADR 0062). byInvitation is true when the User was created or completed
-// from the link, which Verifies the address but proves it not (ADR 0152).
+// from the link, which Verifies the address but proves it not (ADR 0158).
 func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (u *ent.User, byInvitation bool, err error) {
 	// Only a pending Invitation has an address: an accepted one is past accepting.
 	if inv.Email == nil {
@@ -224,7 +224,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 }
 
 // ownSession accepts for a Verified User by their own session (ADR 0030): ErrSignInRequired without
-// one, ErrWrongAccount for another User's. It proves nothing about the address (ADR 0152).
+// one, ErrWrongAccount for another User's. It proves nothing about the address (ADR 0158).
 func ownSession(invitedEmail, sessionEmail string) error {
 	if sessionEmail == "" {
 		return ErrSignInRequired

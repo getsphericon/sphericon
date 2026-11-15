@@ -156,7 +156,7 @@ func acceptAnonymously(t *testing.T, env *testhelper.TestEnv, token string) {
 	require.NoError(t, err)
 }
 
-// Accepting an Invitation proves no address (ADR 0152): a new address on Acme's Join domain invited
+// Accepting an Invitation proves no address (ADR 0158): a new address on Acme's Join domain invited
 // to Globex joins Globex only, and joins Acme at its first real proof.
 func TestAnInvitationToAnotherWorkspaceJoinsTheDomainWorkspaceOnlyAtALaterProof(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -171,7 +171,7 @@ func TestAnInvitationToAnotherWorkspaceJoinsTheDomainWorkspaceOnlyAtALaterProof(
 }
 
 // The inviter holds the copy link too, so a Globex owner who invites an address on Acme's Join
-// domain and accepts the link themselves gets no Membership in Acme (ADR 0152).
+// domain and accepts the link themselves gets no Membership in Acme (ADR 0158).
 func TestAnInviterWhoAcceptsTheirOwnCopyLinkJoinsNoDomainWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	enableAcmeJoin(t, env)
