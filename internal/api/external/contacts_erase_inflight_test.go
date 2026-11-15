@@ -108,8 +108,12 @@ func TestExternalContactsEraseClearsQueuedWebhookDeliveries(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	delivery := func(endpoint int64, id, body string) {
+		var workspace int64 = fixtures.InitechID
+		if endpoint == fixtures.WebhookGlobexID {
+			workspace = fixtures.GlobexID
+		}
 		env.EnqueueJob(t, jobs.DeliverWebhookArgs{
-			EndpointID: endpoint, EventName: systemevent.EmailSent, DeliveryID: id, Body: []byte(body),
+			WorkspaceID: workspace, EndpointID: endpoint, EventName: systemevent.EmailSent, DeliveryID: id, Body: []byte(body),
 		})
 	}
 	// Queued deliveries of the erased Contact's events, by contact id and by address

@@ -13,7 +13,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
-	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
@@ -60,25 +59,15 @@ func (p *txPublisher) PurgeJobs(ctx context.Context, key jobkind.Key, ids []int6
 }
 
 func (p *txPublisher) PurgeWebhookJobs(ctx context.Context, workspaceID, contactID int64, destinations []string) error {
-	endpointIDs, err := p.client.WebhookEndpoint.Query().Where(webhookendpoint.WorkspaceID(workspaceID)).IDs(ctx)
-	if err != nil {
-		return err
-	}
-	if len(endpointIDs) == 0 {
-		return nil
-	}
 	id := ""
 	if contactID != 0 {
 		id = publicid.Encode(contactID) // the body names the Contact by its public id (ADR 0142)
 	}
 	// DeliverWebhookArgs.Body is the JSON event payload, kept as JSON in the args, naming the
 	// Contact at contactId / data.contactId, the address at data.email, the phone number at
-	// data.phone.
-	return p.deleteJobs(ctx, river.NewJobDeleteManyParams().Kinds(jobkind.DeliverWebhook.Kind).
-		// raw sql: an integer field of the args matched against a list; river's delete filters
-		// stop at a job's own columns.
-		Where("(args->>@purge_endpoint_arg::text)::bigint = any(@purge_endpoints::bigint[])",
-			river.NamedArgs{"purge_endpoint_arg": jobkind.DeliverWebhook.Arg, "purge_endpoints": endpointIDs}).
+	// data.phone. A delivery names the Workspace of its endpoint (jobkind.Workspace), so the
+	// Workspace's deliveries are its endpoints'.
+	return p.deleteJobs(ctx, ofWorkspace(river.NewJobDeleteManyParams().Kinds(jobkind.DeliverWebhook.Kind), workspaceID).
 		// raw sql: the payload's fields inside the args, the address case-insensitively.
 		Where("(args->@purge_body_arg::text->>'contactId' = @purge_contact::text"+
 			" OR args->@purge_body_arg::text->'data'->>'contactId' = @purge_contact::text"+
