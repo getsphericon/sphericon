@@ -50,3 +50,23 @@ func TestRenderBodyRefusesWhatIsNotJSON(t *testing.T) {
 
 	require.ErrorIs(t, err, httpcall.ErrInvalidBody)
 }
+
+func TestRenderBodyFiltersAndComparesTheValueNotItsEscapedForm(t *testing.T) {
+	body := `{"up": "{{ v | upcase }}", "size": {{ v | size }}, "same": {% if v == 'a"b' %}true{% else %}false{% endif %}}`
+	got := decoded(t, body, map[string]any{"v": "a\"b"})
+
+	assert.Equal(t, map[string]any{"up": "A\"B", "size": 3.0, "same": true}, got)
+}
+
+func TestRenderBodyEscapesWhatAFilterAdds(t *testing.T) {
+	got := decoded(t, `{"v": "{{ v | append: '"' }}", "d": "{{ missing | default: 'x"y' }}"}`, map[string]any{"v": "a"})
+
+	assert.Equal(t, map[string]any{"v": "a\"", "d": "x\"y"}, got)
+}
+
+// A captured block is escaped as it is captured, so its output takes `safe` to stay escaped once.
+func TestRenderBodyWritesACapturedBlockRawThroughSafe(t *testing.T) {
+	got := decoded(t, `{% capture c %}{{ v }}!{% endcapture %}{"v": "{{ c | safe }}"}`, map[string]any{"v": hostile})
+
+	assert.Equal(t, map[string]any{"v": hostile + "!"}, got)
+}
