@@ -2,6 +2,9 @@
 status: accepted
 ---
 
+> **Extended by [[0167-a-domain-operation-has-the-call-contract-of-a-use-case]]:** the domain
+> modules follow the same contract, checked by the same analyzer.
+
 # A use case has one call contract
 
 > Refines [[0102-the-core-is-layered-and-an-operation-across-modules-is-a-use-case]]: it said what a

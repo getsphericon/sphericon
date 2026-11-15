@@ -2,6 +2,11 @@
 status: accepted
 ---
 
+> **Amended by [[0168-state-written-by-jobs-lives-beside-the-edited-row]]:** the bookkeeping
+> exemption goes; job-written state moves to tables of its own. And by
+> [[0169-definition-documents-are-typed-jsonb-values]]: secret rotation is a compare-and-swap on the
+> revision.
+
 # An edit names the revision it was made on
 
 Two people who open the same resource and both save lose the first save without being told. No

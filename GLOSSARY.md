@@ -24,8 +24,8 @@ _Avoid_: slug
 
 **Revision**:
 The number on the row of a resource a person edits (a Template, a Contact, a Segment, the Workspace's
-settings, …) that every write of the row moves by one, except a write of its bookkeeping alone and a
-write that changes nothing. An edit names the revision it was made on, and is refused when the row
+settings, …) that every write of the row moves by one, except a write that changes nothing. State
+that background work writes is kept beside the row, not in it. An edit names the revision it was made on, and is refused when the row
 has moved past it: someone wrote it since it was read. A version of a Versioned definition is not a
 revision.
 _Avoid_: version, ETag
