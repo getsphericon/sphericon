@@ -1,5 +1,55 @@
 id: no-branching-in-go-tests
 snapshots:
+  "func FuzzBodyBranches(f *testing.F) {\n\tf.Fuzz(func(t *testing.T, s string) {\n\t\tif s == \"\" {\n\t\t\tt.Skip()\n\t\t}\n\t})\n}\n":
+    labels:
+      - source: |-
+          if s == "" {
+          			t.Skip()
+          		}
+        style: primary
+        start: 79
+        end: 107
+      - source: t *testing.T
+        style: secondary
+        start: 51
+        end: 63
+      - source: (t *testing.T, s string)
+        style: secondary
+        start: 50
+        end: 74
+      - source: |-
+          func(t *testing.T, s string) {
+          		if s == "" {
+          			t.Skip()
+          		}
+          	}
+        style: secondary
+        start: 46
+        end: 110
+  "func FuzzSetupBranches(f *testing.F) {\n\tseeds, err := filepath.Glob(\"testdata/*\")\n\tif err != nil {\n\t\tf.Fatal(err)\n\t}\n\t_ = seeds\n}\n":
+    labels:
+      - source: |-
+          if err != nil {
+          		f.Fatal(err)
+          	}
+        style: primary
+        start: 83
+        end: 116
+      - source: FuzzSetupBranches
+        style: secondary
+        start: 5
+        end: 22
+      - source: |-
+          func FuzzSetupBranches(f *testing.F) {
+          	seeds, err := filepath.Glob("testdata/*")
+          	if err != nil {
+          		f.Fatal(err)
+          	}
+          	_ = seeds
+          }
+        style: secondary
+        start: 0
+        end: 129
   "func TestBranches(t *testing.T) {\n\tif x {\n\t\tt.Fatal(\"no\")\n\t}\n}\n":
     labels:
       - source: |-
@@ -22,6 +72,32 @@ snapshots:
         style: secondary
         start: 0
         end: 62
+  "func TestPropertyBranches(t *testing.T) {\n\trapid.Check(t, func(rt *rapid.T) {\n\t\tif x {\n\t\t\trt.Fatalf(\"no\")\n\t\t}\n\t})\n}\n":
+    labels:
+      - source: |-
+          if x {
+          			rt.Fatalf("no")
+          		}
+        style: primary
+        start: 80
+        end: 109
+      - source: rt *rapid.T
+        style: secondary
+        start: 63
+        end: 74
+      - source: (rt *rapid.T)
+        style: secondary
+        start: 62
+        end: 75
+      - source: |-
+          func(rt *rapid.T) {
+          		if x {
+          			rt.Fatalf("no")
+          		}
+          	}
+        style: secondary
+        start: 58
+        end: 112
   "func TestSubtestBranches(t *testing.T) {\n\tt.Run(\"a\", func(t *testing.T) {\n\t\tif x {\n\t\t\tt.Fatal(\"no\")\n\t\t}\n\t})\n}\n":
     labels:
       - source: |-

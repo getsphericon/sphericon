@@ -40,3 +40,27 @@ invalid:
     	case 1:
     	}
     }
+  - |
+    func FuzzSetupBranches(f *testing.F) {
+    	seeds, err := filepath.Glob("testdata/*")
+    	if err != nil {
+    		f.Fatal(err)
+    	}
+    	_ = seeds
+    }
+  - |
+    func FuzzBodyBranches(f *testing.F) {
+    	f.Fuzz(func(t *testing.T, s string) {
+    		if s == "" {
+    			t.Skip()
+    		}
+    	})
+    }
+  - |
+    func TestPropertyBranches(t *testing.T) {
+    	rapid.Check(t, func(rt *rapid.T) {
+    		if x {
+    			rt.Fatalf("no")
+    		}
+    	})
+    }
