@@ -20,7 +20,6 @@ package contacts
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"strings"
 	"time"
@@ -263,7 +262,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err != nil {
 			return err
 		}
-		q := ts.Contact().EditAt(id, in.Revision)
+		q := ts.Contact().EditAt(id, in.Revision).Refusing(ErrNotFound, ErrRevisionChanged)
 		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
 		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
 		patch.Apply(phone, q.SetPhone, q.ClearPhone)
@@ -280,9 +279,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		var after *ent.Contact
 		err = constraints.Write(ctx, ts, func() (err error) { after, err = q.Save(ctx); return err })
-		if miss, ok := errors.AsType[*ent.ContactMiss](err); ok {
-			return miss.Refuse(ErrNotFound, ErrRevisionChanged)
-		}
 		if err != nil {
 			return err
 		}

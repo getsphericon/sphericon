@@ -179,7 +179,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if err != nil {
 		return nil, err
 	}
-	update := s.EmailTemplate().EditAt(id, in.Revision).
+	update := s.EmailTemplate().EditAt(id, in.Revision).Refusing(ErrNotFound, ErrRevisionChanged).
 		SetNillableName(in.Name.Ptr()).
 		SetNillableSubject(in.Subject.Ptr()).
 		SetNillableBody(c.Body)
@@ -190,9 +190,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		update.ClearDoc().ClearEditorVersion()
 	}
 	tpl, err := update.Save(ctx)
-	if miss, ok := errors.AsType[*ent.EmailTemplateMiss](err); ok {
-		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged)
-	}
 	return tpl, err
 }
 

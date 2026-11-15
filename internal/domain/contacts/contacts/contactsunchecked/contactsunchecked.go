@@ -9,7 +9,6 @@ package contactsunchecked
 
 import (
 	"context"
-	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -64,15 +63,13 @@ func (u *CustomFieldUpdate) Retype() (customfield.Type, bool) {
 // check, run under the same lock before. It writes on the revision the edit was made on (ADR 0119):
 // a field that has moved past it is contacts.ErrCustomFieldRevisionChanged, and nothing is written.
 func (u *CustomFieldUpdate) Apply(ctx context.Context) (*ent.CustomField, error) {
-	upd := u.l.CustomField().EditAt(u.field.ID, u.in.Revision)
+	upd := u.l.CustomField().EditAt(u.field.ID, u.in.Revision).
+		Refusing(contacts.ErrCustomFieldNotFound, contacts.ErrCustomFieldRevisionChanged)
 	patch.ApplySet(u.name, upd.SetName)
 	if t, ok := u.Retype(); ok {
 		upd.SetType(t)
 	}
 	updated, err := upd.Save(ctx)
-	if miss, ok := errors.AsType[*ent.CustomFieldMiss](err); ok {
-		return nil, miss.Refuse(contacts.ErrCustomFieldNotFound, contacts.ErrCustomFieldRevisionChanged)
-	}
 	return updated, err
 }
 

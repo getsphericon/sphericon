@@ -2,7 +2,6 @@ package webhookendpoints
 
 import (
 	"context"
-	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
@@ -30,7 +29,8 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 				return ErrRevisionChanged
 			}
 			machine := HealthMachine(before, change, lifecycle.Storage[HealthState]{Write: func(ctx context.Context, _, _ HealthState) (bool, error) {
-				u := ts.WebhookEndpoint().EditAt(id, before.Revision).Where(atHealth(before)...)
+				// The endpoint moved since it was read: read again, and a stale revision is refused.
+				u := ts.WebhookEndpoint().EditAt(id, before.Revision).Where(atHealth(before)...).Refusing(errHealthConflict, errHealthConflict)
 				patch.ApplySet(in.URL, u.SetURL)
 				patch.ApplySet(in.EventTypes, u.SetEventTypes)
 				if enabled {
@@ -41,10 +41,6 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 						SetDisabledAt(change.At).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
 				}
 				saved, err = u.Save(ctx)
-				// The endpoint moved since it was read: read again, and a stale revision is refused.
-				if _, missed := errors.AsType[*ent.WebhookEndpointMiss](err); missed {
-					return false, errHealthConflict
-				}
 				return err == nil, err
 			}})
 			return machine.FireCtx(ctx, change.Trigger)

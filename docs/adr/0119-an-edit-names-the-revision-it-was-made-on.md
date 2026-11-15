@@ -51,7 +51,9 @@ overwrite a person, and a person overwrites them, the same way.
   row a state predicate excludes, is refused like any other write. A JSON column compares by value
   (jsonb reorders keys), a time at the microseconds Postgres keeps; an edge change, an added number
   and a sealed column (its ciphertext is new each time) are changes, as is an update that names no
-  column (a touch); in doubt, a change. A bulk `Update` is outside the rule: a state move is
+  column (a touch, as a Contact's Tag change makes); in doubt, a change. An edit at a revision that
+  sets nothing is no touch: it reads the row at its revision and writes nothing, refused as its
+  write would be. A bulk `Update` is outside the rule: a state move is
   conditioned on the state it leaves (ADR 0109). A Versioned definition is outside it too: its
   compare-and-swap names the revision with the rest of its position.
 - **Bookkeeping does not move it.** A column the system keeps for itself, which no editor shows or
@@ -73,7 +75,8 @@ overwrite a person, and a person overwrites them, the same way.
   never through a bulk update. A miss is classified at the write: the same client reads the row
   again in the edit's transaction and returns a typed miss carrying it, or none when it is gone,
   whose `Refuse` applies the order of refusals (gone, then the owner's state guards in order, such
-  as archived or not a draft, then stale) with the owner's own sentinels (ADR 0106). A not found
+  as archived or not a draft, then stale) with the owner's own sentinels (ADR 0106); the owner names
+  them once on the edit (`Refusing`), and the edit returns its refusal in place of the miss. A not found
   from anything else the transaction does is never a stale revision.
 - **The `revision` is required on every surface**: `/site`, `/api` and so MCP. An update without
   one is the lost update itself, whoever sends it, and there is no client to keep: a script or an

@@ -168,5 +168,5 @@ func TestTheFirstOrderCompletedChoosesTheReportingCurrencyAsTheSystemOnce(t *tes
 	assert.Equal(t, events.ActorSystem, entry.Actor.Kind)
 	diff, err := json.Marshal(entry.Diff)
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"reporting_currency":{"to":"EUR"}}`, string(diff))
+	assert.JSONEq(t, `{"reporting_currency":{"from":null,"to":"EUR"}}`, string(diff))
 }

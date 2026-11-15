@@ -22,7 +22,9 @@ write does. The Workspace's lifecycle (creation, deletion, erasure, suspension) 
 stay the `workspaces` module's writes over the raw client. Every Workspace-owned type with a revision
 but a Versioned definition gets `EditAt(id, revision)` (ADR 0119): an update by id conditional on
 the revision, whose miss is a typed `<N>Miss` read again in the same transaction; its `Refuse`
-gives the owner's refusal, gone, then the owner's state guards, then stale. The scoped update
+gives the owner's refusal, gone, then the owner's state guards, then stale, and the owner names
+those refusals once on the edit (`Refusing`), which then returns the refusal in place of the miss.
+An edit that sets nothing writes nothing: it checks the revision alone. The scoped update
 wrappers have no `SetRevision` or `AddRevision`: only `entclient.Revision` moves a revision on an
 update. A Versioned definition
 (`VersionedMixin` on the object, `VersionMixin` on its versions: the Automation and the Rule, ADR 0065)

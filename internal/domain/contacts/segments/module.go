@@ -4,7 +4,6 @@ package segments
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/samber/lo"
@@ -150,13 +149,11 @@ func (s *Module) updateIn(ctx context.Context, wl *ent.WorkspaceLocked, id int64
 			return nil, err
 		}
 	}
-	q := wl.Segment().EditAt(id, in.Revision).Where(segment.ArchivedAtIsNil())
+	q := wl.Segment().EditAt(id, in.Revision).Where(segment.ArchivedAtIsNil()).
+		Refusing(ErrNotFound, ErrRevisionChanged, refuseArchived)
 	patch.ApplySet(in.Name, q.SetName)
 	patch.ApplySet(in.Condition, q.SetCondition)
 	seg, err := q.Save(ctx)
-	if miss, ok := errors.AsType[*ent.SegmentMiss](err); ok {
-		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged, refuseArchived)
-	}
 	return seg, err
 }
 

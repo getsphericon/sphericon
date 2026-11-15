@@ -608,19 +608,17 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 }
 
 // editOfDraft is the edit of the Broadcast made on revision (ADR 0119), which writes only while it is
-// a draft its owner may edit, not archived (ADR 0109).
+// a draft its owner may edit, not archived (ADR 0109). One that matches no row is refused in order:
+// the Broadcast is not the Workspace's (ErrNotFound), archived, past draft (ErrNotDraft, whatever its
+// revision: reading it again changes nothing), or a draft someone wrote since (ErrRevisionChanged).
 func editOfDraft(s *ent.Scoped, id, revision int64) *ent.BroadcastScopedUpdateOne {
-	return s.Broadcast().EditAt(id, revision).Where(broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil())
+	return s.Broadcast().EditAt(id, revision).Where(broadcast.StatusEQ(broadcast.StatusDraft), broadcast.ArchivedAtIsNil()).
+		Refusing(ErrNotFound, ErrRevisionChanged, refuseArchived, refuseNotDraft)
 }
 
-// editDraft writes the edit of a draft. One that matched no row is refused in order: the Broadcast is
-// not the Workspace's (ErrNotFound), archived, past draft (ErrNotDraft, whatever its revision:
-// reading it again changes nothing), or a draft someone wrote since (ErrRevisionChanged).
+// editDraft writes the edit of a draft (editOfDraft) and returns the draft.
 func (m *Module) editDraft(ctx context.Context, s *ent.Scoped, id int64, u *ent.BroadcastScopedUpdateOne) (*ent.Broadcast, error) {
 	_, err := u.Save(ctx)
-	if miss, ok := errors.AsType[*ent.BroadcastMiss](err); ok {
-		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged, refuseArchived, refuseNotDraft)
-	}
 	if err != nil {
 		return nil, err
 	}
