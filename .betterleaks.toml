@@ -43,7 +43,7 @@ description = "Password field names, translation keys and audit labels, includin
 targetRules = ["generic-password"]
 condition = "AND"
 paths = [
-  '''^internal/((kernel/)?validation/fields|api/site/fields|accounts/accounts|users/users)\.go$''',
+  '''^internal/((kernel/)?validation/fields|api/site/fields|accounts/accounts|(domain/identity/)?users/users)\.go$''',
   '''^internal/(kernel/)?i18n/locales/en\.json$''',
   '''^locales/(en|ru|es)/translation\.json$''',
   '''^types/resources\.d\.ts$''',
