@@ -344,10 +344,19 @@ _Avoid_: Medium, transport, provider (that is what an Integration sends through)
 
 **Destination**:
 The channel-specific address a message is sent to: the Contact's email on email, its phone number
-(always in international form) on SMS and on WhatsApp, its subject_id on mobile push, and a
+(always in international form) on SMS and on WhatsApp (where the **WhatsApp user id** is a second key
+of it), its subject_id on mobile push, and a
 **Binding** on Telegram and web push. Suppression and Unsubscribe are keyed by
 (channel, destination); a Contact may have several (its email, its phone, its Bindings).
 _Avoid_: Address (unqualified), recipient, endpoint
+
+**WhatsApp user id**:
+The id WhatsApp gives a person for one business portfolio, carried by every webhook, sometimes without
+the phone number: a second key of the WhatsApp Destination, which stays the number. Learned whenever a
+webhook carries both, and moved to the new number when the person changes number, while consent stays
+with the number it was given for. A stop that carries only the id applies to the number once the key is
+known. Nothing is sent to a person known only by it.
+_Avoid_: BSUID (Meta's abbreviation), Binding, WhatsApp username (a name the person shows, not the id)
 
 **Integration-bound Destination**:
 A Destination that only the Integration it was obtained through can reach: a Telegram chat (only
@@ -418,6 +427,8 @@ message id resolves to an Outbound message) and blocking the bot, which Telegram
 or by refusing a send. A `/start`, bare or with a token, and unblocking the bot lift it. A deactivated
 user is no opt-out: the Binding goes (`telegram.unbound`). A stop from a Destination nobody is Bound to
 is still kept, and records nothing else.
+On WhatsApp, turning marketing messages off inside WhatsApp is such an opt-out, and turning them on
+lifts it; a stop carrying only the **WhatsApp user id** applies to the number once that key is known.
 On SMS the Destination is the phone number in E.164, never the sender's, so changing the sender
 reactivates nobody. Every SMS opt-out is Channel-wide: a text that is exactly a STOP keyword (from any
 number, a Contact's or not; "please don't stop" is a reply), a send Twilio refuses with 21610 (the
