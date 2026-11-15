@@ -4,6 +4,10 @@ status: accepted
 
 # Mandatory SMS and Telegram consent reactions run in the publishing transaction
 
+> **Ordered by [[0154-consent-observations-apply-in-the-order-they-occurred]]:** distinct
+> observations apply in the order they occurred, an older one only joins the history, a tie goes to
+> the refusal.
+
 > **Amended by #1236:** the stop's subscriber also publishes the customer-facing
 > `sms.unsubscribed` when the opt-out is new (ADR 0115). It is a projection of that transition for
 > the Contact; the facts below stay internal.
