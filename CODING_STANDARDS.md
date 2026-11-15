@@ -270,7 +270,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   an operator, an agent or the network (a document, a Preset file, a key) gets a `Fuzz…` test next
   to it that states what must hold for any input (no panic, a result or an error and never both, a
   refusal of a known kind), seeded from the real files. `mise run test:fuzz` runs the targets (the
-  nightly workflow for minutes each); a crash is saved under `testdata/fuzz` and committed.
+  nightly workflow for minutes each); a crash is saved under `testdata/fuzz` and committed. The
+  nightly uploads a failing target's corpus as the artifact `fuzz-corpus-<target>`: its new input
+  goes into the package's `testdata/fuzz` with the fix.
 - **A package that starts goroutines checks that its tests stop them.** It has a `main_test.go`
   with `goleak.VerifyTestMain`: a test that leaves a server, worker or subscriber running fails the
   package. A new package that starts goroutines gets the same file.
