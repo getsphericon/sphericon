@@ -893,6 +893,18 @@ as `completed`). There are no parallel paths: an Enrollment is at one
 Step at a time.
 _Avoid_: Action, node, block, stage
 
+**Enrollment timeline**:
+What one Enrollment went through, read from what was recorded: each Step and when, the path taken and,
+at a Branch, whether each path's Condition was true, false or unknown (never the values tested), each
+wait's due moment, each send's outcome and an exit or goal.
+_Avoid_: Log, trace, debug view
+
+**Path preview**:
+The path one Contact would take through an Automation version now, computed without writing or sending
+anything: Branches on the Contact's data, a Split by its hash, waits counted from now, a Wait for event
+as the author assumes it ends, each send's rendered message and whether it would be sent.
+_Avoid_: Simulation, dry run, test mode
+
 **Branch**:
 A Step with an ordered list of **paths**, each a **Condition** and a nested sequence of Steps, and a
 last path, `otherwise`, with none; the paths rejoin right after it. The Enrollment takes the first
