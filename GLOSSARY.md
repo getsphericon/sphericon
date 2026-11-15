@@ -338,14 +338,21 @@ _Avoid_: Lookback, conversion window
 
 Whether a message on channel C from sending source S may reach destination D is decided in
 layers — never by a single flag on the Contact: (1) (C, D) in Suppression → never; (2) (C, D)
-unsubscribed from _everything_ → never; (3) (C, D) unsubscribed from S → never; (4) (C, D) has
-no Confirmation where one is required → never (the one positive layer, evaluated last so the
-negatives always dominate); (5) otherwise, send. A Confirmation is always required on SMS and
+unsubscribed from _everything_ → never; (3) (C, D) unsubscribed from S → never; (4) the Contact is in the Workspace's **Control group** → never;
+(5) (C, D) has no Confirmation where one is required → never (the one positive layer, evaluated last
+so the negatives always dominate); (6) otherwise, send. A Confirmation is always required on SMS and
 WhatsApp, and on email only when the workspace requires confirmed opt-in; on Telegram and web push
 the Binding is the opt-in (the person started the bot or allowed notifications), and on mobile
-push the external push service holds it. Transactional messages (email only) skip layers 2–4
+push the external push service holds it. Transactional messages (email only) skip layers 2–5
 (they still respect Suppression's hard bounces). Consent is per-channel: an email opt-out never
 silences SMS.
+
+**Control group**:
+A share of a Workspace's Contacts, chosen by a hash and turned on by the Workspace, that receives no
+marketing message on any Channel (Transactional messages and those the person asked for still go), so
+that Orders can be compared between it and everyone else to measure what the marketing adds. A reset
+starts a new period.
+_Avoid_: Holdout (the group of one test), global holdout, suppression list
 
 **Channel**:
 The medium a message travels by, each with its own Destinations, consent and Message content:
@@ -700,7 +707,8 @@ _Avoid_: Send log, delivery row, email record
 **Outcome** (of an Outbound send):
 Either **per-recipient** and final for that destination — _Sent_, _Skipped_ (no Destination on the
 Channel, Suppression, Unsubscribe, missing Confirmation, no local time in which a marketing SMS
-may go, or a Broadcast Recipient over the **Frequency cap**), or a permanent failure of that one message
+may go, a Broadcast Recipient over the **Frequency cap**, or a Contact in the **Control group**), or a
+permanent failure of that one message
 (on Telegram, a message the Bot API refuses for its content; on SMS, a number the provider refuses,
 which fails that message alone and lets an Automation go on) — or
 **per-source** and reversible: a **Hold** (Workspace suspension, Staff hold, an unverified

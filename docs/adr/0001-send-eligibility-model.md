@@ -2,6 +2,9 @@
 status: accepted
 ---
 
+> **Amended by [[0163-a-workspaces-control-group-receives-no-marketing]]:** a Contact in the
+> Workspace's Control group receives no marketing message, a layer of its own.
+
 # Send-eligibility: (channel, destination)-keyed Suppression + scoped Unsubscribe, no contact status
 
 A Contact has no "subscribed/unsubscribed" status. Whether a message on channel C from
