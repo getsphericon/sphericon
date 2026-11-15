@@ -87,7 +87,6 @@ func TestAVersion1DisabledEndpointDecodesWithoutARunOfFailures(t *testing.T) {
 		e, ok := ev.(*events.WebhookEndpointDisabled)
 		require.True(t, ok, stored)
 		assert.Equal(t, reason, e.Reason, stored)
-		assert.Zero(t, e.Failures, stored)
-		assert.Zero(t, e.Window, stored)
+		assert.False(t, e.Measured(), stored)
 	}
 }

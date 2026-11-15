@@ -376,18 +376,6 @@ var messagingPackage = do.Package(
 		}
 		return SystemSender{EmailSender: sender}, nil
 	}),
-	// Notice delivery (ADR 0105): what sphericon tells a User, a Member or a Workspace's Owners on
-	// its own behalf when a domain event calls for it, sent through the System sender by the
-	// Notices' event consumer.
-	do.Lazy(func(i do.Injector) (*noticedelivery.Module, error) {
-		cfg := do.MustInvoke[*config.Config](i)
-		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
-		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
-			AppURL:         cfg.AppURL,
-			Support:        cfg.SupportEmail,
-			TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
-		}, do.MustInvoke[Clock](i)), nil
-	}),
 	// The DKIM DNS resolver of Sending domain and Join domain verification (ADR 0010): published
 	// DNS records on every Instance; a development stack points the resolver at its own DNS
 	// server (SPHERICON_DNS_ADDR) that publishes the Brightpath demo records. The e2e suite's
@@ -658,7 +646,8 @@ var deliveryPackage = do.Package(
 )
 
 // identityPackage provides the Users, Invitations, Workspace, Membership and Instance state modules,
-// the Login throttle, the second factor, and the creation and deletion of a Workspace.
+// the Login throttle, the second factor, the creation and deletion of a Workspace, and Notice
+// delivery.
 var identityPackage = do.Package(
 	// The default Send cap a new Workspace starts with (ADR 0146), suspension's, given whether the
 	// Instance has Send caps: identity sits below sending, so it takes the flag as a plain bool.
@@ -706,6 +695,18 @@ var identityPackage = do.Package(
 				SecondFactors: do.MustInvoke[*secondfactors.Module](i),
 			},
 			do.MustInvoke[Clock](i)), nil
+	}),
+	// Notice delivery (ADR 0105, a domain module of identity): what sphericon tells a User, a Member
+	// or a Workspace's Owners on its own behalf when a domain event calls for it, sent through the
+	// System sender by the Notices' event consumer.
+	do.Lazy(func(i do.Injector) (*noticedelivery.Module, error) {
+		cfg := do.MustInvoke[*config.Config](i)
+		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
+		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
+			AppURL:         cfg.AppURL,
+			Support:        cfg.SupportEmail,
+			TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
+		}, do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sign-up survey is on only with an explicit switch and the `staff` license; the warning for
 	// a switch without the license is logged here, once, at start.
