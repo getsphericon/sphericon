@@ -27,14 +27,10 @@ import (
 func FuzzParseAnswersWithAPresetOrAnError(f *testing.F) {
 	for _, pattern := range []string{"builtin/*.yaml", "testdata/custom/*.yaml"} {
 		seeds, err := filepath.Glob(filepath.FromSlash(pattern))
-		if err != nil {
-			f.Fatal(err)
-		}
+		require.NoError(f, err)
 		for _, path := range seeds {
 			data, err := os.ReadFile(path)
-			if err != nil {
-				f.Fatal(err)
-			}
+			require.NoError(f, err)
 			f.Add(data)
 		}
 	}
@@ -124,13 +120,9 @@ func FuzzTwilioFormBodyBecomesValidFactsOrARefusal(f *testing.F) {
 	f.Add("a=%zz")
 	f.Add("")
 	reg, err := preset.Load(nil)
-	if err != nil {
-		f.Fatal(err)
-	}
+	require.NoError(f, err)
 	p, ok := reg.Get("twilio")
-	if !ok {
-		f.Fatal("the twilio Preset is not built in")
-	}
+	require.True(f, ok, "the twilio Preset is not built in")
 	const token = "fuzz-auth-token"
 
 	f.Fuzz(func(t *testing.T, body string) {
@@ -199,13 +191,9 @@ func FuzzTelegramUpdateBecomesValidFactsOrARefusal(f *testing.F) {
 	f.Add(`{}`)
 	f.Add(`[]`)
 	registry, err := preset.Load(nil)
-	if err != nil {
-		f.Fatal(err)
-	}
+	require.NoError(f, err)
 	p, ok := registry.Get("telegram")
-	if !ok {
-		f.Fatal("the telegram Preset is not built in")
-	}
+	require.True(f, ok, "the telegram Preset is not built in")
 	f.Fuzz(func(t *testing.T, body string) {
 		header := http.Header{}
 		header.Set("X-Telegram-Bot-Api-Secret-Token", "fuzz-secret")

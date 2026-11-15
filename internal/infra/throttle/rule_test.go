@@ -66,9 +66,7 @@ func TestWaitAgreesWithTheDoublingSchedule(t *testing.T) {
 
 		got, want := rule.Wait(failures), doublingWait(rule, failures)
 
-		if got != want {
-			rt.Fatalf("%+v after %d failures: wait %v, want %v", rule, failures, got, want)
-		}
+		assert.Equalf(rt, want, got, "%+v after %d failures", rule, failures)
 	})
 }
 

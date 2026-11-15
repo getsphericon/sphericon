@@ -28,9 +28,9 @@ func TestCursorRoundTrips(t *testing.T) {
 
 		got, err := exportstream.ParseCursor(c.String())
 
-		if err != nil || !got.At.Equal(c.At) || got.ID != c.ID {
-			t.Fatalf("%v came back as %v, %v", c, got, err)
-		}
+		require.NoError(t, err)
+		assert.Truef(t, got.At.Equal(c.At), "%v came back at %v", c, got.At)
+		assert.Equal(t, c.ID, got.ID)
 	})
 }
 
@@ -42,9 +42,8 @@ func TestFollowingIsTheNextPositionOfTheSameInstant(t *testing.T) {
 
 		next := c.Following()
 
-		if !next.At.Equal(c.At) || next.ID != c.ID+1 {
-			t.Fatalf("%v is followed by %v", c, next)
-		}
+		assert.Truef(t, next.At.Equal(c.At), "%v is followed by %v", c, next)
+		assert.Equal(t, c.ID+1, next.ID)
 	})
 }
 

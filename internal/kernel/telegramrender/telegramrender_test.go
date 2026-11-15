@@ -81,42 +81,47 @@ func TestRenderAlwaysYieldsTheAllowedSubset(t *testing.T) {
 		text := strings.Join(rapid.SliceOf(pieces).Draw(t, "text"), "")
 
 		out, err := telegramrender.Render(text, map[string]any{"name": "<b>N&"})
-		if err != nil {
-			t.Skip()
-		}
+		require.NoError(t, err)
 
-		z := html.NewTokenizer(strings.NewReader(out))
-		var open []string
-		for tt := z.Next(); tt != html.ErrorToken; tt = z.Next() {
-			switch tt {
-			case html.StartTagToken:
-				name, hasAttr := z.TagName()
-				require.Truef(t, allowedTags[string(name)], "tag %s in %q", name, out)
-				if string(name) == "a" {
-					require.NotContains(t, open, "a", "links cannot be nested after unsupported tags are flattened")
-				}
-				if hasAttr {
-					key, val, _ := z.TagAttr()
-					require.Equal(t, "a", string(name))
-					require.Equal(t, "href", string(key))
-					require.Regexp(t, `^https?://`, string(val))
-				}
-				open = append(open, string(name))
-			case html.EndTagToken:
-				name, _ := z.TagName()
-				require.NotEmpty(t, open, out)
-				require.Equal(t, open[len(open)-1], string(name), out)
-				open = open[:len(open)-1]
-			case html.SelfClosingTagToken, html.CommentToken, html.DoctypeToken:
-				t.Fatalf("unexpected token in %q", out)
-			case html.TextToken, html.ErrorToken:
-			}
-		}
-		require.Empty(t, open, out)
+		requireAllowedSubset(t, out)
 		again, err := telegramrender.Render(out, nil)
 		require.NoError(t, err)
 		require.Equal(t, out, again)
 	})
+}
+
+// requireAllowedSubset walks the tokens of out: only allowed tags, an http(s) href as the one
+// attribute and only on a link, no link inside a link, every tag closed in order, and nothing but
+// tags and text.
+func requireAllowedSubset(t *rapid.T, out string) {
+	z := html.NewTokenizer(strings.NewReader(out))
+	var open []string
+	for tt := z.Next(); tt != html.ErrorToken; tt = z.Next() {
+		switch tt {
+		case html.StartTagToken:
+			name, hasAttr := z.TagName()
+			require.Truef(t, allowedTags[string(name)], "tag %s in %q", name, out)
+			if string(name) == "a" {
+				require.NotContains(t, open, "a", "links cannot be nested after unsupported tags are flattened")
+			}
+			if hasAttr {
+				key, val, _ := z.TagAttr()
+				require.Equal(t, "a", string(name))
+				require.Equal(t, "href", string(key))
+				require.Regexp(t, `^https?://`, string(val))
+			}
+			open = append(open, string(name))
+		case html.EndTagToken:
+			name, _ := z.TagName()
+			require.NotEmpty(t, open, out)
+			require.Equal(t, open[len(open)-1], string(name), out)
+			open = open[:len(open)-1]
+		case html.SelfClosingTagToken, html.CommentToken, html.DoctypeToken:
+			t.Fatalf("unexpected token in %q", out)
+		case html.TextToken, html.ErrorToken:
+		}
+	}
+	require.Empty(t, open, out)
 }
 
 func TestLimitIsTheCaptionLimitWithAnImage(t *testing.T) {
@@ -180,25 +185,30 @@ func TestCheckImageRefusesEveryInternalAddressSpelling(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		p := netip.MustParsePrefix(rapid.SampledFrom(blocked).Draw(t, "range"))
 		noise := rapid.SliceOfN(rapid.Byte(), 16, 16).Draw(t, "noise")
-		// Keep the prefix's bits and take the rest from the noise.
-		base := p.Addr().As16()
-		bits := p.Bits()
-		if p.Addr().Is4() {
-			bits += 96
-		}
-		for i := range base {
-			keep := min(max(bits-8*i, 0), 8)
-			mask := ^byte(0) << (8 - keep)
-			base[i] = base[i]&mask | noise[i]&^mask
-		}
-		addr := netip.AddrFrom16(base)
-		hosts := []string{"[" + addr.String() + "]"}
-		if p.Addr().Is4() {
-			hosts = []string{addr.Unmap().String(), "[" + addr.String() + "]"}
-		}
-		host := rapid.SampledFrom(hosts).Draw(t, "form")
+		host := rapid.SampledFrom(hostsIn(p, noise)).Draw(t, "form")
+
 		require.Error(t, telegramrender.CheckImage("https://"+host+"/a.png"), host)
 	})
+}
+
+// hostsIn spells an address of the range p as a URL host: the prefix's bits kept and the rest taken
+// from the noise, in brackets as IPv6, and an IPv4 range's address also as plain IPv4.
+func hostsIn(p netip.Prefix, noise []byte) []string {
+	base := p.Addr().As16()
+	bits := p.Bits()
+	if p.Addr().Is4() {
+		bits += 96
+	}
+	for i := range base {
+		keep := min(max(bits-8*i, 0), 8)
+		mask := ^byte(0) << (8 - keep)
+		base[i] = base[i]&mask | noise[i]&^mask
+	}
+	addr := netip.AddrFrom16(base)
+	if p.Addr().Is4() {
+		return []string{addr.Unmap().String(), "[" + addr.String() + "]"}
+	}
+	return []string{"[" + addr.String() + "]"}
 }
 
 func TestCheckButtonsRefusesTooManyBlankLabelsAndBadURLs(t *testing.T) {

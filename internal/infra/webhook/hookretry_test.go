@@ -63,9 +63,7 @@ func TestHookRetryWaitStaysWithinTenPercentOfTheDelay(t *testing.T) {
 		wait, delay := webhook.HookRetryWait(attempt, u), doublingDelay(attempt)
 		outside := 10*wait < 9*delay || 10*wait > 11*delay
 
-		if outside {
-			rt.Fatalf("attempt %d, draw %v: wait %v, outside 10%% of %v", attempt, u, wait, delay)
-		}
+		assert.Falsef(rt, outside, "attempt %d, draw %v: wait %v, outside 10%% of %v", attempt, u, wait, delay)
 	})
 }
 
@@ -129,9 +127,7 @@ func TestHookRetryDelayAgreesWithTheDoublingSchedule(t *testing.T) {
 
 		got, want := webhook.HookRetryDelay(attempt), doublingDelay(attempt)
 
-		if got != want {
-			rt.Fatalf("attempt %d: delay %v, want %v", attempt, got, want)
-		}
+		assert.Equalf(rt, want, got, "attempt %d", attempt)
 	})
 }
 

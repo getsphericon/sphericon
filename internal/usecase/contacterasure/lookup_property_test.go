@@ -30,9 +30,8 @@ func TestLookupIgnoresPaddingAndCase(t *testing.T) {
 
 		got, err := erasure.Lookup(t.Context(), acme, pad+raw+pad)
 
-		if err != nil || got != want {
-			rt.Fatalf("%q: got %+v, %v, want %+v", pad+raw+pad, got, err, want)
-		}
+		require.NoErrorf(rt, err, "%q", pad+raw+pad)
+		require.Equalf(rt, want, got, "%q", pad+raw+pad)
 	})
 }
 
@@ -47,8 +46,7 @@ func TestLookupReadsAnAddressOrRefusesIt(t *testing.T) {
 
 		_, err := erasure.Lookup(t.Context(), acme, raw)
 
-		if err != nil && !errors.Is(err, contacterasure.ErrInvalidEmail) {
-			rt.Fatalf("%q: unexpected error %v", raw, err)
-		}
+		readOrRefused := err == nil || errors.Is(err, contacterasure.ErrInvalidEmail)
+		require.Truef(rt, readOrRefused, "%q: unexpected error %v", raw, err)
 	})
 }

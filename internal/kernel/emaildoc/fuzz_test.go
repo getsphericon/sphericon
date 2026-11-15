@@ -22,14 +22,10 @@ func (acceptingEngine) Export([]byte) (emaildoc.Rendered, error) { return emaild
 // before a runtime exists neither panic nor answer with anything but a refusal or success.
 func FuzzPrepareNeverPanicsAndRefusesCleanly(f *testing.F) {
 	seeds, err := filepath.Glob(filepath.Join("testdata", "docs", "*.json"))
-	if err != nil {
-		f.Fatal(err)
-	}
+	require.NoError(f, err)
 	for _, path := range seeds {
 		doc, err := os.ReadFile(path)
-		if err != nil {
-			f.Fatal(err)
-		}
+		require.NoError(f, err)
 		f.Add(doc)
 	}
 	f.Add([]byte(`{"type":"doc","content":[]}`))
