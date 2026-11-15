@@ -22,11 +22,11 @@ import (
 // returns the error the worker returned.
 func Work[T river.JobArgs](ctx context.Context, tb testing.TB, worker river.Worker[T], args T) error {
 	tb.Helper()
-	initBaseline()
-	if errLoad != nil {
-		return errLoad
+	proc, err := process()
+	if err != nil {
+		return err
 	}
-	pool, err := sql.Open("pgx", baseCfg.DatabaseURL)
+	pool, err := sql.Open("pgx", proc.cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
