@@ -1744,6 +1744,13 @@ moment, and the checklist is done for good: a step that later regresses is not o
 (a Sending domain that loses its record is an item that **Needs attention**).
 _Avoid_: Onboarding wizard, getting started, tour
 
+**Recommendation**:
+What the assistant observed in a Workspace's figures when one of its fixed detectors fired (a rising
+complaint rate, an Automation that stopped enrolling, a finished Broadcast), with the reports it rests
+on and, if the Workspace lets it, drafts it made; `open`, `accepted` once a Member sends or publishes
+what it proposed, `dismissed`, or `expired`. The assistant never schedules, publishes or sends.
+_Avoid_: Insight, notification, task, suggestion, alert
+
 **Needs attention**:
 What in a Workspace needs a member's action now, the Overview's first block, shown only while it
 holds an item: what stops its mail (a Sending domain that lost its DKIM record, an Integration whose
