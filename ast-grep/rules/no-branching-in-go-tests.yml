@@ -18,16 +18,15 @@ rule:
       - kind: function_declaration
         has:
           field: name
-          regex: ^(Test|Benchmark)
+          regex: ^(Test|Benchmark|Fuzz)
       - kind: func_literal
         has:
           field: parameters
           kind: parameter_list
           has:
             kind: parameter_declaration
-            regex: \*testing\.(T|F|B)
+            regex: \*(testing\.(T|F|B)|rapid\.T)
 files:
   - '**/*_test.go'
 ignores:
-  - ent/**
   - gen/**

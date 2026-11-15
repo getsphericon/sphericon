@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"pgregory.net/rapid"
 
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -17,8 +18,8 @@ func TestReportOffsetIsAStableTimeOfDayDerivedFromTheInstanceID(t *testing.T) {
 
 		first, second := instancestates.ReportOffset(id), instancestates.ReportOffset(id)
 
-		if first != second || first < 0 || first >= 6*time.Hour {
-			rt.Fatalf("%q: offsets %v and %v, want one stable offset in [0, 6h)", id, first, second)
-		}
+		assert.Equalf(rt, first, second, "%q: the offset is stable", id)
+		assert.GreaterOrEqual(rt, first, time.Duration(0))
+		assert.Less(rt, first, 6*time.Hour)
 	})
 }

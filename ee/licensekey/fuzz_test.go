@@ -18,9 +18,7 @@ func FuzzParseOfAnUnsignedKeyNeverLicenses(f *testing.F) {
 	f.Add("a.b.c")
 	f.Add("eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.e30.")
 	pub, _, err := ed25519.GenerateKey(nil)
-	if err != nil {
-		f.Fatal(err)
-	}
+	require.NoError(f, err)
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	f.Fuzz(func(t *testing.T, key string) {

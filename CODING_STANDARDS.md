@@ -276,7 +276,14 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
 - **A package that starts goroutines checks that its tests stop them.** It has a `main_test.go`
   with `goleak.VerifyTestMain`: a test that leaves a server, worker or subscriber running fails the
   package. A new package that starts goroutines gets the same file.
-- **Tools for tests without branching (rule 14).** Filter and find with `lo.Filter`/`lo.Find`; wait
+- **Tools for tests without branching (rule 14).** The ast-grep rule `no-branching-in-go-tests`
+  refuses an `if`, `switch`, type switch or `select` in a `Test…`, `Benchmark…` or `Fuzz…` function
+  and in a function literal that takes a `*testing.T`, `*testing.B`, `*testing.F` or `*rapid.T` (a
+  subtest, the body `f.Fuzz` runs, a rapid property); a fake, a handler, a named helper and a method
+  are not read, so a rapid state machine's actions, which are methods (`rapid.StateMachineActions`),
+  may branch. State an error with `require.NoError` and a condition with an assertion; compare with
+  what a specification function computes (`lowerCeiling` of `providerlimit`) rather than branch on
+  the input. Filter and find with `lo.Filter`/`lo.Find`; wait
   on a channel with `testhelper.Receive`; logic that has to branch (a simulated clock, a pager, a
   conditional skip by build tag) goes into a helper function or a file with a build constraint,
   named for what it does. Split a table whose rows need different assertions into two tests.

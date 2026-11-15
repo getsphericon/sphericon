@@ -5,8 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -64,6 +67,61 @@ func (m *bucketModel) shortBy(now time.Time) (granted, borderline bool) {
 	return granted, borderline
 }
 
+// drawLimits draws the ceilings of a run: per second, per day or both.
+func drawLimits(t *rapid.T) providerlimit.Limits {
+	var limits providerlimit.Limits
+	if rapid.Bool().Draw(t, "limited per second") {
+		limits.PerSecond = new(rapid.IntRange(1, 20).Draw(t, "per second"))
+	}
+	if limits.PerSecond == nil || rapid.Bool().Draw(t, "limited per day") {
+		limits.PerDay = new(rapid.IntRange(1, 5000).Draw(t, "per day"))
+	}
+	return limits
+}
+
+// limiterRun drives the limiter and the model side by side: each exported method is an action of
+// the state machine rapid draws.
+type limiterRun struct {
+	s           *ent.Scoped
+	within      providerlimit.Tx
+	reservation providerlimit.Reservation
+	model       *bucketModel
+	now         time.Time
+}
+
+// Reserve asks for a token: granted exactly when the model holds one in each bucket, and when
+// denied, granted after the wait the limiter reports.
+func (r *limiterRun) Reserve(t *rapid.T) {
+	granted, borderline := r.model.shortBy(r.now)
+
+	short, err := providerlimit.Reserve(t.Context(), r.s, r.within, r.reservation, r.now)
+
+	require.NoErrorf(t, err, "reserve at %v", r.now)
+	assert.Truef(t, borderline || (short.Wait == 0) == granted,
+		"at %v the model grants %v, the limiter waited %v", r.now, granted, short.Wait)
+	if short.Wait != 0 {
+		r.now = r.now.Add(short.Wait)
+		again, err := providerlimit.Reserve(t.Context(), r.s, r.within, r.reservation, r.now)
+		require.NoError(t, err)
+		require.Zerof(t, again.Wait, "after the reported wait of %v the reservation still waits", short.Wait)
+	}
+	r.model.take(r.now)
+}
+
+// Spend takes a token for a transactional send, granted or not.
+func (r *limiterRun) Spend(t *rapid.T) {
+	require.NoErrorf(t, providerlimit.Spend(t.Context(), r.s, r.within, r.reservation, r.now), "spend at %v", r.now)
+	r.model.take(r.now)
+}
+
+// LetTimePass moves the clock by up to two minutes.
+func (r *limiterRun) LetTimePass(t *rapid.T) {
+	r.now = r.now.Add(time.Duration(rapid.IntRange(0, 120_000).Draw(t, "milliseconds")) * time.Millisecond)
+}
+
+// Check holds nothing between actions: each action checks what it did.
+func (*limiterRun) Check(*rapid.T) {}
+
 // Whatever mix of marketing sends, transactional sends and waiting, a reservation is granted
 // exactly when the model says both buckets hold a token, and a denied one reports a wait after
 // which the same reservation is granted.
@@ -75,51 +133,15 @@ func TestProviderLimiterFollowsTheTokenBucketModel(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		// Each run starts from no limiter row, so the first reservation creates it full.
 		env.DB.ProviderLimiter.Delete().Where(providerlimiter.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ExecX(t.Context())
-
-		var limits providerlimit.Limits
-		if rapid.Bool().Draw(t, "limited per second") {
-			limits.PerSecond = new(rapid.IntRange(1, 20).Draw(t, "per second"))
+		limits := drawLimits(t)
+		run := &limiterRun{
+			s:           s,
+			within:      env.Bus.WithinAuditTx,
+			reservation: providerlimit.Reservation{IntegrationID: fixtures.IntegrationAcmeDefaultID, Limits: limits},
+			model:       &bucketModel{limits: limits, second: 1, day: 1, at: start},
+			now:         start,
 		}
-		if limits.PerSecond == nil || rapid.Bool().Draw(t, "limited per day") {
-			limits.PerDay = new(rapid.IntRange(1, 5000).Draw(t, "per day"))
-		}
-		model := &bucketModel{limits: limits, second: 1, day: 1, at: start}
-		reservation := providerlimit.Reservation{IntegrationID: fixtures.IntegrationAcmeDefaultID, Limits: limits}
-		now := start
 
-		t.Repeat(map[string]func(*rapid.T){
-			"reserve": func(t *rapid.T) {
-				granted, borderline := model.shortBy(now)
-
-				short, err := providerlimit.Reserve(t.Context(), s, env.Bus.WithinAuditTx, reservation, now)
-				wait := short.Wait
-
-				if err != nil {
-					t.Fatalf("reserve at %v: %v", now, err)
-				}
-				if !borderline && (wait == 0) != granted {
-					t.Fatalf("at %v the model grants %v, the limiter waited %v", now, granted, wait)
-				}
-				if wait == 0 {
-					model.take(now)
-					return
-				}
-				now = now.Add(wait)
-				again, err := providerlimit.Reserve(t.Context(), s, env.Bus.WithinAuditTx, reservation, now)
-				if err != nil || again.Wait != 0 {
-					t.Fatalf("after the reported wait of %v the reservation still waits %v (error %v)", wait, again, err)
-				}
-				model.take(now)
-			},
-			"spend": func(t *rapid.T) {
-				if err := providerlimit.Spend(t.Context(), s, env.Bus.WithinAuditTx, reservation, now); err != nil {
-					t.Fatalf("spend at %v: %v", now, err)
-				}
-				model.take(now)
-			},
-			"let time pass": func(t *rapid.T) {
-				now = now.Add(time.Duration(rapid.IntRange(0, 120_000).Draw(t, "milliseconds")) * time.Millisecond)
-			},
-		})
+		t.Repeat(rapid.StateMachineActions(run))
 	})
 }
