@@ -11,6 +11,8 @@ WORKDIR /src
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY packages/analytics/package.json packages/analytics/
 COPY packages/emaildoc/package.json packages/emaildoc/
+# pnpm-workspace.yaml patches dependencies (patchedDependencies): the install reads the patches.
+COPY patches/ patches/
 
 RUN pnpm install --frozen-lockfile
 COPY . .
