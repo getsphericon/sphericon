@@ -66,27 +66,48 @@ func (s *Scoped) writeWorkspace(ctx context.Context, verb string, where []predic
 // WorkspaceScopedUpdateOne is an update of the scope's own Workspace row: it keeps what its setters
 // set, and the revision of an edit, and builds the ent update on the client the update runs on.
 type WorkspaceScopedUpdateOne struct {
-	s   *Scoped
-	set []func(*WorkspaceUpdateOne)
+	s     *Scoped
+	where []predicate.Workspace
+	set   []func(*WorkspaceUpdateOne)
 	// at is the revision an edit was made on (EditWorkspaceAt), nil for an update alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*WorkspaceMiss) error
 }
 
 const (
-	TypeOf_WorkspaceScopedUpdateOne      = TypeScopedUpdate
-	EntityOf_WorkspaceScopedUpdateOne    = "Workspace"
-	RoleOf_WorkspaceScopedUpdateOne_Save = RoleStep
-	RoleOf_WorkspaceScopedUpdateOne_Exec = RoleStep
-	RoleOf_Scoped_EditWorkspaceAt        = RoleStart
-	RoleOf_Scoped_UpdateWorkspace        = RoleStart
+	TypeOf_WorkspaceScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_WorkspaceScopedUpdateOne     = "Workspace"
+	RoleOf_WorkspaceScopedUpdateOne_Save  = RoleStep
+	RoleOf_WorkspaceScopedUpdateOne_Where = RoleStep
+	RoleOf_WorkspaceScopedUpdateOne_Exec  = RoleStep
+	RoleOf_Scoped_EditWorkspaceAt         = RoleStart
+	RoleOf_Scoped_UpdateWorkspace         = RoleStart
 )
 
 // EditWorkspaceAt is the edit of the scope's Workspace made on revision (ADR 0119): it writes only
 // while the row is at that revision, and the write moves the revision unless it changes nothing.
 // When it matches no row, Save re-reads the row in the same transaction and returns a *WorkspaceMiss
-// carrying it, whose Refuse tells the owner's refusal.
+// carrying it, or the owner's refusal of it (Refusing).
 func (s *Scoped) EditWorkspaceAt(revision int64) *WorkspaceScopedUpdateOne {
 	return &WorkspaceScopedUpdateOne{s: s, at: &revision}
+}
+
+// Where appends predicates the row must also match: a write conditioned on a state of the row (ADR
+// 0109). An update that names no revision and matches no row is ent's NotFoundError.
+func (x *WorkspaceScopedUpdateOne) Where(ps ...predicate.Workspace) *WorkspaceScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// get reads the scope's Workspace as it is now on the scope s.
+func (x *WorkspaceScopedUpdateOne) get(ctx context.Context, s *Scoped) (*Workspace, error) {
+	return s.c.Workspace.Get(ctx, s.ws)
+}
+
+// atRevision is the scope's Workspace while it is at the revision of the edit.
+func (x *WorkspaceScopedUpdateOne) atRevision(s *Scoped) *WorkspaceQuery {
+	return s.c.Workspace.Query().Where(x.where...).Where(workspace.ID(s.ws), workspace.Revision(*x.at))
 }
 
 // UpdateWorkspace is an update of the scope's Workspace that names no revision, for a write that
@@ -703,7 +724,10 @@ const RoleOf_WorkspaceScopedUpdateOne_ClearAbuseFreezeNotifiedAt = RoleStep
 
 // Save updates the Workspace, recorded as its workspace.update Audit entry when its audited fields change.
 func (x *WorkspaceScopedUpdateOne) Save(ctx context.Context) (*Workspace, error) {
-	where := []predicate.Workspace{workspace.ID(x.s.ws)}
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
+	where := append([]predicate.Workspace{workspace.ID(x.s.ws)}, x.where...)
 	if x.at != nil {
 		where = append(where, workspace.Revision(*x.at))
 	}
@@ -716,11 +740,7 @@ func (x *WorkspaceScopedUpdateOne) Save(ctx context.Context) (*Workspace, error)
 		var err error
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.c.Workspace.Get(ctx, s.ws)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &WorkspaceMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -767,4 +787,38 @@ func (m *WorkspaceMiss) Refuse(gone, stale error, guards ...func(*Workspace) err
 		}
 	}
 	return stale
+}
+
+const RoleOf_WorkspaceScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *WorkspaceMiss: gone, the owner's state guards in order, stale (WorkspaceMiss.Refuse).
+func (x *WorkspaceScopedUpdateOne) Refusing(gone, stale error, guards ...func(*Workspace) error) *WorkspaceScopedUpdateOne {
+	x.refuse = func(m *WorkspaceMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *WorkspaceMiss otherwise.
+func (x *WorkspaceScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &WorkspaceMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *WorkspaceScopedUpdateOne) unwritten(ctx context.Context) (*Workspace, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }

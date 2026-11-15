@@ -441,16 +441,14 @@ func saveEdit(ctx context.Context, wl *ent.WorkspaceLocked, row *ent.Integration
 			return nil, err
 		}
 	}
-	upd := wl.Integration().EditAt(row.ID, revision).Where(integration.DiscardedAtIsNil())
+	upd := wl.Integration().EditAt(row.ID, revision).Where(integration.DiscardedAtIsNil()).
+		Refusing(ErrNotFound, ErrRevisionChanged, refuseDiscarded)
 	apply(upd)
 	var updated *ent.Integration
 	err := constraints.Write(ctx, wl, func() (err error) {
 		updated, err = upd.Save(ctx)
 		return err
 	})
-	if miss, ok := errors.AsType[*ent.IntegrationMiss](err); ok {
-		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged, refuseDiscarded)
-	}
 	return updated, err
 }
 

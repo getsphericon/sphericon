@@ -275,7 +275,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return Endpoint{}, err
 	}
 	build := func() *ent.WebhookEndpointScopedUpdateOne {
-		upd := s.WebhookEndpoint().EditAt(id, in.Revision)
+		upd := s.WebhookEndpoint().EditAt(id, in.Revision).Refusing(ErrNotFound, ErrRevisionChanged)
 		patch.ApplySet(in.URL, upd.SetURL)
 		patch.ApplySet(in.EventTypes, upd.SetEventTypes)
 		return upd
@@ -283,9 +283,6 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	enabled, toggles := in.Enabled.Get()
 	if !toggles {
 		e, err := build().Save(ctx)
-		if miss, ok := errors.AsType[*ent.WebhookEndpointMiss](err); ok {
-			return Endpoint{}, miss.Refuse(ErrNotFound, ErrRevisionChanged)
-		}
 		if err != nil {
 			return Endpoint{}, err
 		}

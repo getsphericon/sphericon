@@ -82,11 +82,11 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, revision int64, name
 	if err != nil {
 		return nil, err
 	}
-	upd := s.EditWorkspaceAt(revision).SetName(name)
+	upd := edit(s, revision).SetName(name)
 	if postalAddress != nil {
 		upd.SetPostalAddress(strings.TrimSpace(*postalAddress))
 	}
-	return saveEdit(ctx, upd)
+	return upd.Save(ctx)
 }
 
 // SetAuditRetention sets (or, with nil, clears) the number of days the Audit log is
@@ -98,13 +98,13 @@ func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, revision 
 			return nil, err
 		}
 	}
-	upd := s.EditWorkspaceAt(revision)
+	upd := edit(s, revision)
 	if days == nil {
 		upd.ClearRetentionDays()
 	} else {
 		upd.SetRetentionDays(*days)
 	}
-	return saveEdit(ctx, upd)
+	return upd.Save(ctx)
 }
 
 // SetTimezone sets the Workspace time zone (ADR 0057). A name the zone database does not know is
@@ -114,7 +114,7 @@ func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, revision int64,
 	if err := CheckZone(name); err != nil {
 		return nil, err
 	}
-	return saveEdit(ctx, s.EditWorkspaceAt(revision).SetTimezone(name))
+	return edit(s, revision).SetTimezone(name).Save(ctx)
 }
 
 // ErrUnknownCurrency refuses a Reporting currency code that is not in ISO 4217.
@@ -138,8 +138,7 @@ func CheckZone(name string) error {
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
 // as it is, ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency, and a window
 // outside the contract's bounds (bounds.AttributionWindowDays) too.
-// It is an edit made on revision, as Update is; one that names neither changes nothing and writes
-// nothing, and is refused like any other when the Workspace has moved past revision.
+// It is an edit made on revision, as Update is: one that names neither writes nothing.
 func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision int64, code *string, windowDays *int) (*ent.Workspace, error) {
 	if windowDays != nil {
 		if err := validation.Range(fieldname.AttributionWindowDays, *windowDays,
@@ -155,42 +154,29 @@ func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision
 		canonical := unit.String()
 		code = &canonical
 	}
-	if code == nil && windowDays == nil {
-		return unedited(ctx, s, revision)
-	}
-	upd := s.EditWorkspaceAt(revision)
+	upd := edit(s, revision)
 	if code != nil {
 		upd.SetReportingCurrency(*code)
 	}
 	if windowDays != nil {
 		upd.SetAttributionWindowDays(*windowDays)
 	}
-	return saveEdit(ctx, upd)
+	return upd.Save(ctx)
 }
 
 // AdoptReportingCurrency makes code the Reporting currency of the scoped Workspace when it has
 // none yet (ADR 0064): the currency of the first Order Completed the Workspace sends. It changes
-// nothing once one is set, by an Owner or Admin or by an earlier Order. The change is a
-// `workspace.update` Audit entry by the system, in a transaction of its own (the orders
-// subscriber calls it before it opens the Event's), and the conditional write makes the first of
-// two Orders read at once win. code is a currency the order Event check has accepted.
+// nothing once one is set, by an Owner or Admin or by an earlier Order. The change is the
+// Workspace's `workspace.update` Audit entry by the system, in a transaction of its own (the orders
+// subscriber calls it before it opens the Event's), and the write, conditioned on no currency, makes
+// the first of two Orders read at once win. code is a currency the order Event check has accepted.
 func (m *Module) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code string) error {
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := tx.Workspace.Update().
-			Where(workspace.ID(s.WorkspaceID()), workspace.ReportingCurrencyIsNil()).
-			SetReportingCurrency(code).
-			Save(ctx)
-		if err != nil || n == 0 {
-			return err
-		}
-		ws, err := tx.Workspace.Get(ctx, s.WorkspaceID())
-		if err != nil {
-			return err
-		}
-		diff := map[string]any{workspace.FieldReportingCurrency: events.Became(code)}
-		return events.RecordAudit(ctx, pub,
-			events.WorkspaceAudit(ws, events.Actor{Kind: events.ActorSystem}, events.ActionWorkspaceUpdate, diff))
-	})
+	system := m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
+	_, err := system.UpdateWorkspace().Where(workspace.ReportingCurrencyIsNil()).SetReportingCurrency(code).Save(ctx)
+	if ent.IsNotFound(err) {
+		return nil // a currency is set already
+	}
+	return err
 }
 
 // MarkSetupComplete stamps the scoped Workspace's Setup checklist complete at now, once: a
@@ -231,7 +217,7 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 		}
 		upd := ts.UpdateWorkspace()
 		if revision != nil {
-			upd = ts.EditWorkspaceAt(*revision)
+			upd = edit(ts, *revision)
 		}
 		switch {
 		case !required:
@@ -241,7 +227,7 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 		default:
 			upd.SetSecondFactorRequiredAt(now)
 		}
-		updated, err = saveEdit(ctx, upd)
+		updated, err = upd.Save(ctx)
 		if err != nil || !required || before.SecondFactorRequiredAt != nil {
 			return err
 		}
@@ -256,28 +242,11 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 // does not move it. Nothing is written.
 var ErrRevisionChanged = validation.RevisionChanged("workspaces: workspace changed since it was read", i18n.ErrorsWorkspaceRevisionChanged)
 
-// saveEdit saves a settings edit and returns the Workspace it saved, or the edit's refusal, told at
-// the write (ADR 0119): ErrRevisionChanged when the Workspace has moved past the revision the edit
-// was made on.
-func saveEdit(ctx context.Context, upd *ent.WorkspaceScopedUpdateOne) (*ent.Workspace, error) {
-	ws, err := upd.Save(ctx)
-	if miss, ok := errors.AsType[*ent.WorkspaceMiss](err); ok {
-		return nil, miss.Refuse(ErrNotFound, ErrRevisionChanged)
-	}
-	return ws, err
-}
-
-// unedited is the Workspace of an edit that names nothing to change: it writes nothing, and is
-// ErrRevisionChanged when the Workspace has moved past revision, as an edit of it would be.
-func unedited(ctx context.Context, s *ent.Scoped, revision int64) (*ent.Workspace, error) {
-	ws, err := s.Workspace(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if ws.Revision != revision {
-		return nil, ErrRevisionChanged
-	}
-	return ws, nil
+// edit is the edit of the Workspace of s made on revision (ADR 0119), through the scope's tenant
+// edit: it writes nothing when nothing changes, and is refused with ErrRevisionChanged when the
+// Workspace has moved past revision.
+func edit(s *ent.Scoped, revision int64) *ent.WorkspaceScopedUpdateOne {
+	return s.EditWorkspaceAt(revision).Refusing(ErrNotFound, ErrRevisionChanged)
 }
 
 // Get is the scoped Workspace's own row.
@@ -346,5 +315,5 @@ func Deleted() predicate.Workspace { return workspace.DiscardedAtNotNil() }
 // it on adds nobody: only an address proven afterwards joins. It
 // is an edit made on revision, as Update is.
 func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, revision int64, enabled bool) (*ent.Workspace, error) {
-	return saveEdit(ctx, s.EditWorkspaceAt(revision).SetDomainJoinEnabled(enabled))
+	return edit(s, revision).SetDomainJoinEnabled(enabled).Save(ctx)
 }

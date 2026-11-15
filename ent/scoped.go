@@ -10848,6 +10848,8 @@ type BrandKitScopedUpdateOne struct {
 	set   []func(*BrandKitUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*BrandKitMiss) error
 }
 
 // UpdateOneID updates the BrandKit with the id; a row of another Workspace is not found.
@@ -10858,10 +10860,20 @@ func (t *BrandKitScoped) UpdateOneID(id int64) *BrandKitScopedUpdateOne {
 // EditAt is the edit of the BrandKit with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *BrandKitMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *BrandKitMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *BrandKitScoped) EditAt(id, revision int64) *BrandKitScopedUpdateOne {
 	return &BrandKitScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *BrandKitScopedUpdateOne) get(ctx context.Context, s *Scoped) (*BrandKit, error) {
+	return s.BrandKit().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *BrandKitScopedUpdateOne) atRevision(s *Scoped) *BrandKitQuery {
+	return s.c.BrandKit.Query().Where(s.inBrandKit(x.where...)...).Where(brandkit.ID(x.id), brandkit.Revision(*x.at))
 }
 
 // BrandKitMiss is an edit at a revision (EditAt) that matched no row. Row is the BrandKit as it is
@@ -10898,6 +10910,40 @@ func (m *BrandKitMiss) Refuse(gone, stale error, guards ...func(*BrandKit) error
 		}
 	}
 	return stale
+}
+
+const RoleOf_BrandKitScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *BrandKitMiss: gone, the owner's state guards in order, stale (BrandKitMiss.Refuse).
+func (x *BrandKitScopedUpdateOne) Refusing(gone, stale error, guards ...func(*BrandKit) error) *BrandKitScopedUpdateOne {
+	x.refuse = func(m *BrandKitMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *BrandKitMiss otherwise.
+func (x *BrandKitScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &BrandKitMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *BrandKitScopedUpdateOne) unwritten(ctx context.Context) (*BrandKit, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -11103,6 +11149,9 @@ func (x *BrandKitScopedUpdateOne) build(ctx context.Context, s *Scoped) (*BrandK
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BrandKitScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*BrandKit, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inBrandKit(x.where...)
 	var updated *BrandKit
 	err := x.s.writeBrandKit(ctx, verb, append([]predicate.BrandKit{brandkit.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -11112,11 +11161,7 @@ func (x *BrandKitScopedUpdateOne) save(ctx context.Context, verb string, unchang
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.BrandKit().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &BrandKitMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -13036,6 +13081,8 @@ type BroadcastScopedUpdateOne struct {
 	set   []func(*BroadcastUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*BroadcastMiss) error
 }
 
 // UpdateOneID updates the Broadcast with the id; a row of another Workspace is not found.
@@ -13046,10 +13093,20 @@ func (t *BroadcastScoped) UpdateOneID(id int64) *BroadcastScopedUpdateOne {
 // EditAt is the edit of the Broadcast with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *BroadcastMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *BroadcastMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *BroadcastScoped) EditAt(id, revision int64) *BroadcastScopedUpdateOne {
 	return &BroadcastScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *BroadcastScopedUpdateOne) get(ctx context.Context, s *Scoped) (*Broadcast, error) {
+	return s.Broadcast().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *BroadcastScopedUpdateOne) atRevision(s *Scoped) *BroadcastQuery {
+	return s.c.Broadcast.Query().Where(s.inBroadcast(x.where...)...).Where(broadcast.ID(x.id), broadcast.Revision(*x.at))
 }
 
 // BroadcastMiss is an edit at a revision (EditAt) that matched no row. Row is the Broadcast as it is
@@ -13086,6 +13143,40 @@ func (m *BroadcastMiss) Refuse(gone, stale error, guards ...func(*Broadcast) err
 		}
 	}
 	return stale
+}
+
+const RoleOf_BroadcastScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *BroadcastMiss: gone, the owner's state guards in order, stale (BroadcastMiss.Refuse).
+func (x *BroadcastScopedUpdateOne) Refusing(gone, stale error, guards ...func(*Broadcast) error) *BroadcastScopedUpdateOne {
+	x.refuse = func(m *BroadcastMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *BroadcastMiss otherwise.
+func (x *BroadcastScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &BroadcastMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *BroadcastScopedUpdateOne) unwritten(ctx context.Context) (*Broadcast, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -13805,6 +13896,9 @@ func (x *BroadcastScopedUpdateOne) build(ctx context.Context, s *Scoped) (*Broad
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *BroadcastScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Broadcast, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inBroadcast(x.where...)
 	var updated *Broadcast
 	err := x.s.writeBroadcast(ctx, verb, append([]predicate.Broadcast{broadcast.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -13814,11 +13908,7 @@ func (x *BroadcastScopedUpdateOne) save(ctx context.Context, verb string, unchan
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.Broadcast().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &BroadcastMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -20043,6 +20133,8 @@ type ContactScopedUpdateOne struct {
 	set   []func(*ContactUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*ContactMiss) error
 }
 
 // UpdateOneID updates the Contact with the id; a row of another Workspace is not found.
@@ -20053,10 +20145,20 @@ func (t *ContactScoped) UpdateOneID(id int64) *ContactScopedUpdateOne {
 // EditAt is the edit of the Contact with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *ContactMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *ContactMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *ContactScoped) EditAt(id, revision int64) *ContactScopedUpdateOne {
 	return &ContactScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *ContactScopedUpdateOne) get(ctx context.Context, s *Scoped) (*Contact, error) {
+	return s.Contact().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *ContactScopedUpdateOne) atRevision(s *Scoped) *ContactQuery {
+	return s.c.Contact.Query().Where(s.inContact(x.where...)...).Where(contact.ID(x.id), contact.Revision(*x.at))
 }
 
 // ContactMiss is an edit at a revision (EditAt) that matched no row. Row is the Contact as it is
@@ -20093,6 +20195,40 @@ func (m *ContactMiss) Refuse(gone, stale error, guards ...func(*Contact) error) 
 		}
 	}
 	return stale
+}
+
+const RoleOf_ContactScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *ContactMiss: gone, the owner's state guards in order, stale (ContactMiss.Refuse).
+func (x *ContactScopedUpdateOne) Refusing(gone, stale error, guards ...func(*Contact) error) *ContactScopedUpdateOne {
+	x.refuse = func(m *ContactMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *ContactMiss otherwise.
+func (x *ContactScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &ContactMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *ContactScopedUpdateOne) unwritten(ctx context.Context) (*Contact, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -20630,6 +20766,9 @@ func (x *ContactScopedUpdateOne) build(ctx context.Context, s *Scoped) (*Contact
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *ContactScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Contact, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inContact(x.where...)
 	var updated *Contact
 	err := x.s.writeContact(ctx, verb, append([]predicate.Contact{contact.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -20639,11 +20778,7 @@ func (x *ContactScopedUpdateOne) save(ctx context.Context, verb string, unchange
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.Contact().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &ContactMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -22534,6 +22669,8 @@ type CustomFieldScopedUpdateOne struct {
 	set   []func(*CustomFieldUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*CustomFieldMiss) error
 }
 
 // UpdateOneID updates the CustomField with the id; a row of another Workspace is not found.
@@ -22544,10 +22681,20 @@ func (t *CustomFieldScoped) UpdateOneID(id int64) *CustomFieldScopedUpdateOne {
 // EditAt is the edit of the CustomField with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *CustomFieldMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *CustomFieldMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *CustomFieldScoped) EditAt(id, revision int64) *CustomFieldScopedUpdateOne {
 	return &CustomFieldScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *CustomFieldScopedUpdateOne) get(ctx context.Context, s *Scoped) (*CustomField, error) {
+	return s.CustomField().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *CustomFieldScopedUpdateOne) atRevision(s *Scoped) *CustomFieldQuery {
+	return s.c.CustomField.Query().Where(s.inCustomField(x.where...)...).Where(customfield.ID(x.id), customfield.Revision(*x.at))
 }
 
 // CustomFieldMiss is an edit at a revision (EditAt) that matched no row. Row is the CustomField as it is
@@ -22584,6 +22731,40 @@ func (m *CustomFieldMiss) Refuse(gone, stale error, guards ...func(*CustomField)
 		}
 	}
 	return stale
+}
+
+const RoleOf_CustomFieldScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *CustomFieldMiss: gone, the owner's state guards in order, stale (CustomFieldMiss.Refuse).
+func (x *CustomFieldScopedUpdateOne) Refusing(gone, stale error, guards ...func(*CustomField) error) *CustomFieldScopedUpdateOne {
+	x.refuse = func(m *CustomFieldMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *CustomFieldMiss otherwise.
+func (x *CustomFieldScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &CustomFieldMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *CustomFieldScopedUpdateOne) unwritten(ctx context.Context) (*CustomField, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -22655,6 +22836,9 @@ func (x *CustomFieldScopedUpdateOne) build(ctx context.Context, s *Scoped) (*Cus
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *CustomFieldScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*CustomField, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inCustomField(x.where...)
 	var updated *CustomField
 	err := x.s.writeCustomField(ctx, verb, append([]predicate.CustomField{customfield.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -22664,11 +22848,7 @@ func (x *CustomFieldScopedUpdateOne) save(ctx context.Context, verb string, unch
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.CustomField().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &CustomFieldMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -23586,6 +23766,8 @@ type EmailTemplateScopedUpdateOne struct {
 	set   []func(*EmailTemplateUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*EmailTemplateMiss) error
 }
 
 // UpdateOneID updates the EmailTemplate with the id; a row of another Workspace is not found.
@@ -23596,10 +23778,20 @@ func (t *EmailTemplateScoped) UpdateOneID(id int64) *EmailTemplateScopedUpdateOn
 // EditAt is the edit of the EmailTemplate with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *EmailTemplateMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *EmailTemplateMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *EmailTemplateScoped) EditAt(id, revision int64) *EmailTemplateScopedUpdateOne {
 	return &EmailTemplateScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *EmailTemplateScopedUpdateOne) get(ctx context.Context, s *Scoped) (*EmailTemplate, error) {
+	return s.EmailTemplate().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *EmailTemplateScopedUpdateOne) atRevision(s *Scoped) *EmailTemplateQuery {
+	return s.c.EmailTemplate.Query().Where(s.inEmailTemplate(x.where...)...).Where(emailtemplate.ID(x.id), emailtemplate.Revision(*x.at))
 }
 
 // EmailTemplateMiss is an edit at a revision (EditAt) that matched no row. Row is the EmailTemplate as it is
@@ -23636,6 +23828,40 @@ func (m *EmailTemplateMiss) Refuse(gone, stale error, guards ...func(*EmailTempl
 		}
 	}
 	return stale
+}
+
+const RoleOf_EmailTemplateScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *EmailTemplateMiss: gone, the owner's state guards in order, stale (EmailTemplateMiss.Refuse).
+func (x *EmailTemplateScopedUpdateOne) Refusing(gone, stale error, guards ...func(*EmailTemplate) error) *EmailTemplateScopedUpdateOne {
+	x.refuse = func(m *EmailTemplateMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *EmailTemplateMiss otherwise.
+func (x *EmailTemplateScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &EmailTemplateMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *EmailTemplateScopedUpdateOne) unwritten(ctx context.Context) (*EmailTemplate, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -23775,6 +24001,9 @@ func (x *EmailTemplateScopedUpdateOne) build(ctx context.Context, s *Scoped) (*E
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *EmailTemplateScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*EmailTemplate, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inEmailTemplate(x.where...)
 	var updated *EmailTemplate
 	err := x.s.writeEmailTemplate(ctx, verb, append([]predicate.EmailTemplate{emailtemplate.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -23784,11 +24013,7 @@ func (x *EmailTemplateScopedUpdateOne) save(ctx context.Context, verb string, un
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.EmailTemplate().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &EmailTemplateMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -29900,6 +30125,8 @@ type IntegrationScopedUpdateOne struct {
 	set   []func(*IntegrationUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*IntegrationMiss) error
 }
 
 // UpdateOneID updates the Integration with the id; a row of another Workspace is not found.
@@ -29910,10 +30137,20 @@ func (t *IntegrationScoped) UpdateOneID(id int64) *IntegrationScopedUpdateOne {
 // EditAt is the edit of the Integration with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *IntegrationMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *IntegrationMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *IntegrationScoped) EditAt(id, revision int64) *IntegrationScopedUpdateOne {
 	return &IntegrationScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *IntegrationScopedUpdateOne) get(ctx context.Context, s *Scoped) (*Integration, error) {
+	return s.Integration().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *IntegrationScopedUpdateOne) atRevision(s *Scoped) *IntegrationQuery {
+	return s.c.Integration.Query().Where(s.inIntegration(x.where...)...).Where(integration.ID(x.id), integration.Revision(*x.at))
 }
 
 // IntegrationMiss is an edit at a revision (EditAt) that matched no row. Row is the Integration as it is
@@ -29950,6 +30187,40 @@ func (m *IntegrationMiss) Refuse(gone, stale error, guards ...func(*Integration)
 		}
 	}
 	return stale
+}
+
+const RoleOf_IntegrationScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *IntegrationMiss: gone, the owner's state guards in order, stale (IntegrationMiss.Refuse).
+func (x *IntegrationScopedUpdateOne) Refusing(gone, stale error, guards ...func(*Integration) error) *IntegrationScopedUpdateOne {
+	x.refuse = func(m *IntegrationMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *IntegrationMiss otherwise.
+func (x *IntegrationScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &IntegrationMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *IntegrationScopedUpdateOne) unwritten(ctx context.Context) (*Integration, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -30613,6 +30884,9 @@ func (x *IntegrationScopedUpdateOne) build(ctx context.Context, s *Scoped) (*Int
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *IntegrationScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Integration, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inIntegration(x.where...)
 	var updated *Integration
 	err := x.s.writeIntegration(ctx, verb, append([]predicate.Integration{integration.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -30622,11 +30896,7 @@ func (x *IntegrationScopedUpdateOne) save(ctx context.Context, verb string, unch
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.Integration().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &IntegrationMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -47980,6 +48250,8 @@ type SegmentScopedUpdateOne struct {
 	set   []func(*SegmentUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*SegmentMiss) error
 }
 
 // UpdateOneID updates the Segment with the id; a row of another Workspace is not found.
@@ -47990,10 +48262,20 @@ func (t *SegmentScoped) UpdateOneID(id int64) *SegmentScopedUpdateOne {
 // EditAt is the edit of the Segment with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *SegmentMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *SegmentMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *SegmentScoped) EditAt(id, revision int64) *SegmentScopedUpdateOne {
 	return &SegmentScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *SegmentScopedUpdateOne) get(ctx context.Context, s *Scoped) (*Segment, error) {
+	return s.Segment().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *SegmentScopedUpdateOne) atRevision(s *Scoped) *SegmentQuery {
+	return s.c.Segment.Query().Where(s.inSegment(x.where...)...).Where(segment.ID(x.id), segment.Revision(*x.at))
 }
 
 // SegmentMiss is an edit at a revision (EditAt) that matched no row. Row is the Segment as it is
@@ -48030,6 +48312,40 @@ func (m *SegmentMiss) Refuse(gone, stale error, guards ...func(*Segment) error) 
 		}
 	}
 	return stale
+}
+
+const RoleOf_SegmentScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *SegmentMiss: gone, the owner's state guards in order, stale (SegmentMiss.Refuse).
+func (x *SegmentScopedUpdateOne) Refusing(gone, stale error, guards ...func(*Segment) error) *SegmentScopedUpdateOne {
+	x.refuse = func(m *SegmentMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *SegmentMiss otherwise.
+func (x *SegmentScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &SegmentMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *SegmentScopedUpdateOne) unwritten(ctx context.Context) (*Segment, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -48141,6 +48457,9 @@ func (x *SegmentScopedUpdateOne) build(ctx context.Context, s *Scoped) (*Segment
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *SegmentScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*Segment, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inSegment(x.where...)
 	var updated *Segment
 	err := x.s.writeSegment(ctx, verb, append([]predicate.Segment{segment.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -48150,11 +48469,7 @@ func (x *SegmentScopedUpdateOne) save(ctx context.Context, verb string, unchange
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.Segment().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &SegmentMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
@@ -59671,6 +59986,8 @@ type WebhookEndpointScopedUpdateOne struct {
 	set   []func(*WebhookEndpointUpdateOne)
 	// at is the revision an edit was made on (EditAt), nil for an update by id alone.
 	at *int64
+	// refuse is the owner's refusal of a miss (Refusing), nil to return the miss itself.
+	refuse func(*WebhookEndpointMiss) error
 }
 
 // UpdateOneID updates the WebhookEndpoint with the id; a row of another Workspace is not found.
@@ -59681,10 +59998,20 @@ func (t *WebhookEndpointScoped) UpdateOneID(id int64) *WebhookEndpointScopedUpda
 // EditAt is the edit of the WebhookEndpoint with the id made on revision (ADR 0119): it writes only while
 // the row is at that revision and matches the predicates Where adds, and the write moves the
 // revision unless it changes nothing. When it matches no row, Save re-reads the row in the same
-// transaction and returns a *WebhookEndpointMiss carrying it, or none when it is gone, whose Refuse tells
-// the owner's refusal; a row of another Workspace is gone.
+// transaction and returns a *WebhookEndpointMiss carrying it, or none when it is gone, or the owner's
+// refusal of it (Refusing); a row of another Workspace is gone.
 func (t *WebhookEndpointScoped) EditAt(id, revision int64) *WebhookEndpointScopedUpdateOne {
 	return &WebhookEndpointScopedUpdateOne{s: t.s, id: id, at: &revision}
+}
+
+// get reads the row of the edit as it is now on the scope s, archived or discarded alike.
+func (x *WebhookEndpointScopedUpdateOne) get(ctx context.Context, s *Scoped) (*WebhookEndpoint, error) {
+	return s.WebhookEndpoint().Get(ctx, x.id)
+}
+
+// atRevision is the row of the edit while it is at the revision and matches its predicates.
+func (x *WebhookEndpointScopedUpdateOne) atRevision(s *Scoped) *WebhookEndpointQuery {
+	return s.c.WebhookEndpoint.Query().Where(s.inWebhookEndpoint(x.where...)...).Where(webhookendpoint.ID(x.id), webhookendpoint.Revision(*x.at))
 }
 
 // WebhookEndpointMiss is an edit at a revision (EditAt) that matched no row. Row is the WebhookEndpoint as it is
@@ -59721,6 +60048,40 @@ func (m *WebhookEndpointMiss) Refuse(gone, stale error, guards ...func(*WebhookE
 		}
 	}
 	return stale
+}
+
+const RoleOf_WebhookEndpointScopedUpdateOne_Refusing = RoleStep
+
+// Refusing names the owner's refusals of the edit's miss, which Save then returns in place of the
+// *WebhookEndpointMiss: gone, the owner's state guards in order, stale (WebhookEndpointMiss.Refuse).
+func (x *WebhookEndpointScopedUpdateOne) Refusing(gone, stale error, guards ...func(*WebhookEndpoint) error) *WebhookEndpointScopedUpdateOne {
+	x.refuse = func(m *WebhookEndpointMiss) error { return m.Refuse(gone, stale, guards...) }
+	return x
+}
+
+// missed is the miss of an edit that matched no row, the row read again on s, the scope of the
+// edit's transaction: the owner's refusal when it named its refusals, the *WebhookEndpointMiss otherwise.
+func (x *WebhookEndpointScopedUpdateOne) missed(ctx context.Context, s *Scoped) error {
+	now, err := x.get(ctx, s)
+	if err != nil && !IsNotFound(err) {
+		return err
+	}
+	miss := &WebhookEndpointMiss{Row: now}
+	if x.refuse != nil {
+		return x.refuse(miss)
+	}
+	return miss
+}
+
+// unwritten is an edit that sets nothing: it writes nothing, so neither the revision nor updated_at
+// moves (ADR 0119), and it misses as its write would when the row has moved past the revision or
+// one of its predicates excludes the row.
+func (x *WebhookEndpointScopedUpdateOne) unwritten(ctx context.Context) (*WebhookEndpoint, error) {
+	row, err := x.atRevision(x.s).Only(ctx)
+	if IsNotFound(err) {
+		return nil, x.missed(ctx, x.s)
+	}
+	return written(row, err)
 }
 
 // Where appends predicates the row must also match (fencing).
@@ -60054,6 +60415,9 @@ func (x *WebhookEndpointScopedUpdateOne) build(ctx context.Context, s *Scoped) (
 
 // save is Save under a verb, doing with an unchanged row what unchanged says.
 func (x *WebhookEndpointScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*WebhookEndpoint, error) {
+	if x.at != nil && len(x.set) == 0 {
+		return x.unwritten(ctx)
+	}
 	where := x.s.inWebhookEndpoint(x.where...)
 	var updated *WebhookEndpoint
 	err := x.s.writeWebhookEndpoint(ctx, verb, append([]predicate.WebhookEndpoint{webhookendpoint.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
@@ -60063,11 +60427,7 @@ func (x *WebhookEndpointScopedUpdateOne) save(ctx context.Context, verb string, 
 		}
 		updated, err = b.Save(ctx)
 		if x.at != nil && IsNotFound(err) {
-			now, getErr := s.WebhookEndpoint().Get(ctx, x.id)
-			if getErr != nil && !IsNotFound(getErr) {
-				return nil, getErr
-			}
-			return nil, &WebhookEndpointMiss{Row: now}
+			return nil, x.missed(ctx, s)
 		}
 		return nil, err
 	})
