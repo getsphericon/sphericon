@@ -154,8 +154,6 @@ func (m *Module) bot(ctx context.Context, s *ent.Scoped, id *int64) (*ent.Integr
 	return row, nil
 }
 
-// newToken is 32 random bytes in URL-safe base64 without padding: 43 characters of
-// [A-Za-z0-9_-].
 // Chat is a Binding as the Contact's card shows it: the bot and since when.
 type Chat struct {
 	ID              int64
