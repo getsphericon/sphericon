@@ -86,7 +86,7 @@ func (f Field[T]) Over(stored *T) *T {
 }
 
 // Map turns a Field of T into a Field of U, converting a set value with fn.
-func Map[T, U any](f Field[T], fn func(T) U) Field[U] {
+func (f Field[T]) Map[U any](fn func(T) U) Field[U] {
 	switch f.state {
 	case sets:
 		return Set(fn(f.value))
@@ -100,7 +100,7 @@ func Map[T, U any](f Field[T], fn func(T) U) Field[U] {
 // Apply writes the Field into an update builder: setter for a set value, clearer for a clear, and
 // nothing for a keep. The setter and clearer are an ent builder's own (upd.SetName,
 // upd.ClearName), whose returned builder is ignored.
-func Apply[T, B any](f Field[T], setter func(T) B, clearer func() B) {
+func (f Field[T]) Apply[B any](setter func(T) B, clearer func() B) {
 	switch f.state {
 	case sets:
 		setter(f.value)
@@ -112,7 +112,7 @@ func Apply[T, B any](f Field[T], setter func(T) B, clearer func() B) {
 
 // ApplySet writes a Field of a column that cannot be cleared: setter for a set value, nothing
 // otherwise. A clear of such a column is refused by the module before it builds the update.
-func ApplySet[T, B any](f Field[T], setter func(T) B) {
+func (f Field[T]) ApplySet[B any](setter func(T) B) {
 	if v, ok := f.Get(); ok {
 		setter(v)
 	}

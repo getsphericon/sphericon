@@ -20,7 +20,7 @@ func (h *Handlers) SendingDomainsList(ctx context.Context, params externalapi.Se
 	if err != nil {
 		return nil, err
 	}
-	return mapper.SendingDomainsListPage(pagination.Map(page, h.sendingDomainResource)), nil
+	return mapper.SendingDomainsListPage(page.Map(h.sendingDomainResource)), nil
 }
 
 // SendingDomainsCreate adds a Sending domain; the DKIM keypair is minted and sealed.

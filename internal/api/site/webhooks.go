@@ -23,7 +23,7 @@ func (h *Handlers) SiteWebhooksList(ctx context.Context, params siteapi.SiteWebh
 	if err != nil {
 		return nil, err
 	}
-	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
+	return mapper.WebhooksListPage(page.Map(webhookResource)), nil
 }
 
 func (h *Handlers) SiteWebhooksCreate(ctx context.Context, req *siteapi.CreateWebhookInput, _ siteapi.SiteWebhooksCreateParams) (*siteapi.SiteWebhookEndpointResource, error) {

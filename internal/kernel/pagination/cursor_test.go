@@ -28,16 +28,16 @@ func TestCursorOfNoRowsKeepsTheRequestedCursor(t *testing.T) {
 	assert.Equal(t, pagination.CursorPage[int]{Items: []int{}, NextCursor: "3", HasMore: false}, got)
 }
 
-func TestMapCursorKeepsTheCursorAndMapsTheItems(t *testing.T) {
+func TestCursorPageMapKeepsTheCursorAndMapsTheItems(t *testing.T) {
 	page := pagination.CursorPage[string]{Items: []string{"a", "b"}, NextCursor: "b", HasMore: true}
 
-	got := pagination.MapCursor(page, strings.ToUpper)
+	got := page.Map(strings.ToUpper)
 
 	assert.Equal(t, pagination.CursorPage[string]{Items: []string{"A", "B"}, NextCursor: "b", HasMore: true}, got)
 }
 
-func TestMapCursorOfAnEmptyPageHasNoNilItems(t *testing.T) {
-	got := pagination.MapCursor(pagination.CursorPage[string]{NextCursor: "x"}, strings.ToUpper)
+func TestCursorPageMapOfAnEmptyPageHasNoNilItems(t *testing.T) {
+	got := pagination.CursorPage[string]{NextCursor: "x"}.Map(strings.ToUpper)
 
 	assert.NotNil(t, got.Items, "an empty page serializes as [], not null")
 	assert.Empty(t, got.Items)

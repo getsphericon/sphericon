@@ -65,7 +65,7 @@ func (u *CustomFieldUpdate) Retype() (customfield.Type, bool) {
 func (u *CustomFieldUpdate) Apply(ctx context.Context) (*ent.CustomField, error) {
 	upd := u.l.CustomField().EditAt(u.field.ID, u.in.Revision).
 		Refusing(contacts.ErrCustomFieldNotFound, contacts.ErrCustomFieldRevisionChanged)
-	patch.ApplySet(u.name, upd.SetName)
+	u.name.ApplySet(upd.SetName)
 	if t, ok := u.Retype(); ok {
 		upd.SetType(t)
 	}

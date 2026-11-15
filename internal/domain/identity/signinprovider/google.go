@@ -73,6 +73,6 @@ func googleTrust(p Profile) Reason {
 }
 
 func isGmail(email string) bool {
-	at := strings.LastIndexByte(email, '@')
-	return at >= 0 && strings.EqualFold(email[at+1:], "gmail.com")
+	_, domain, found := strings.CutLast(email, "@")
+	return found && strings.EqualFold(domain, "gmail.com")
 }

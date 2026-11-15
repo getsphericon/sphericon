@@ -393,7 +393,7 @@ type Converter interface {
 
 	// Pages: a list response is the module's pagination.Page mapped whole, its items through
 	// the list methods above. Items the handler maps itself (an extra per item) arrive as a
-	// page of resources (pagination.Map), an unpaginated list as pagination.Whole.
+	// page of resources (Page.Map), an unpaginated list as pagination.Whole.
 	// goverter:useEmptyOnNil:slice
 	ContactsListPage(source pagination.Page[*ent.Contact]) *externalapi.ContactsListOK
 	// goverter:useEmptyOnNil:slice

@@ -7,7 +7,7 @@ note: >-
   goverter maps the module's pagination.Page (offset pages) or pagination.CursorPage (a feed read
   after a cursor) whole, the items through the list method and the counts through `count`, and
   fails generation when the response gains a field. Items the handler maps itself (an extra per
-  item) go through pagination.Map, MapErr or MapCursor first, an unpaginated list through
+  item) go through the page's Map or MapErr first, an unpaginated list through
   pagination.Whole; the page method of a page of resources is marked
   `// goverter:skipCopySameType`. A module builds its feed page with pagination.Cursor, never a
   literal of its own.

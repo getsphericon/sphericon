@@ -59,7 +59,7 @@ func (v *Views) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f 
 	if err != nil {
 		return pagination.Page[View]{}, err
 	}
-	return pagination.Map(page, func(b *ent.Broadcast) View {
+	return page.Map(func(b *ent.Broadcast) View {
 		return View{Broadcast: b, Stats: figures[b.ID]}
 	}), nil
 }

@@ -29,7 +29,7 @@ func (m *Module) ListWithRevenue(ctx context.Context, s *ent.Scoped, p paginatio
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}
-	return pagination.Map(page, func(a *ent.Automation) WithRevenue {
+	return page.Map(func(a *ent.Automation) WithRevenue {
 		return WithRevenue{Automation: a, Revenue: figures.Of(a.ID)}
 	}), nil
 }

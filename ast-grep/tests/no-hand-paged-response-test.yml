@@ -14,7 +14,7 @@ valid:
     	if err != nil {
     		return nil, err
     	}
-    	return mapper.WebhooksListPage(pagination.Map(page, webhookResource)), nil
+    	return mapper.WebhooksListPage(page.Map(webhookResource)), nil
     }
   - |
     func (h *ServiceHandlers) ServiceUserFeedList(ctx context.Context, params serviceapi.ServiceUserFeedListParams) (serviceapi.ServiceUserFeedListRes, error) {
@@ -22,7 +22,7 @@ valid:
     	if err != nil {
     		return nil, err
     	}
-    	return serviceMapper.UserFeedPage(pagination.MapCursor(page, userFeedItem)), nil
+    	return serviceMapper.UserFeedPage(page.Map(userFeedItem)), nil
     }
   - |
     func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int) (pagination.CursorPage[*ent.TrackingHostChange], error) {

@@ -30,7 +30,7 @@ func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBr
 	if err != nil {
 		return nil, err
 	}
-	return mapper.BroadcastsListPage(pagination.Map(page, broadcastResource)), nil
+	return mapper.BroadcastsListPage(page.Map(broadcastResource)), nil
 }
 
 func (h *Handlers) SiteBroadcastsCreate(ctx context.Context, req *siteapi.CreateBroadcastInput, _ siteapi.SiteBroadcastsCreateParams) (*siteapi.SiteBroadcastResource, error) {

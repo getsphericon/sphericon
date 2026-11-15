@@ -46,7 +46,7 @@ func (m *Module) TrackingHostFeed(ctx context.Context, cursor string, limit int)
 	if err != nil {
 		return pagination.CursorPage[TrackingHostFeedEntry]{}, err
 	}
-	return pagination.MapCursor(page, func(c *ent.TrackingHostChange) TrackingHostFeedEntry {
+	return page.Map(func(c *ent.TrackingHostChange) TrackingHostFeedEntry {
 		return TrackingHostFeedEntry{WorkspaceID: publicIDs[c.WorkspaceID], Change: c}
 	}), nil
 }

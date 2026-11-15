@@ -216,13 +216,13 @@ type ServiceConverter interface {
 	UsageToResource(source usages.WorkspaceUsage) serviceapi.WorkspaceUsageResource
 
 	// Pages: a list response is the module's pagination.Page mapped whole. Items the handler
-	// maps itself (an extra per item) arrive as a page of resources (pagination.Map).
+	// maps itself (an extra per item) arrive as a page of resources (Page.Map).
 	// goverter:useEmptyOnNil:slice
 	// goverter:skipCopySameType
 	UsageListPage(source pagination.Page[serviceapi.WorkspaceUsageResource]) *serviceapi.ServiceUsageListOK
 	// A feed is the module's pagination.CursorPage mapped whole. Each feed item carries an extra
 	// the mapper cannot see (the owners, the mailings consent, the Workspace's public id), so the
-	// handler maps the items (pagination.MapCursor) and the page arrives as resources.
+	// handler maps the items (CursorPage.Map) and the page arrives as resources.
 	// goverter:useEmptyOnNil:slice
 	// goverter:skipCopySameType
 	WorkspaceFeedPage(source pagination.CursorPage[serviceapi.ServiceWorkspaceResource]) *serviceapi.ServiceWorkspaceFeedPage

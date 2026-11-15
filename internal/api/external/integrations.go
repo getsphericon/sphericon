@@ -21,7 +21,7 @@ func (h *Handlers) IntegrationsList(ctx context.Context, params externalapi.Inte
 	if err != nil {
 		return nil, err
 	}
-	return mapper.IntegrationsListPage(pagination.Map(page, integrationResource)), nil
+	return mapper.IntegrationsListPage(page.Map(integrationResource)), nil
 }
 
 // IntegrationsCreate stores a new Integration; credentials are sealed and never returned.

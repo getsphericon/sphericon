@@ -93,17 +93,17 @@ func Patch[T any, O option[T]](o O) patch.Field[T] {
 
 // StringPatch is Patch for a named string (an EmailAddress, a TimeZoneName), as a plain string.
 func StringPatch[T ~string, O option[T]](o O) patch.Field[string] {
-	return patch.Map(Patch(o), func(v T) string { return string(v) })
+	return Patch(o).Map(func(v T) string { return string(v) })
 }
 
 // Int64Patch is Patch for a named int64 (an EntityId), as a plain int64.
 func Int64Patch[T ~int64, O option[T]](o O) patch.Field[int64] {
-	return patch.Map(Patch(o), func(v T) int64 { return int64(v) })
+	return Patch(o).Map(func(v T) int64 { return int64(v) })
 }
 
 // IntPatch is Patch for a named int32 (a limit), as an int.
 func IntPatch[T ~int32, O option[T]](o O) patch.Field[int] {
-	return patch.Map(Patch(o), func(v T) int { return int(v) })
+	return Patch(o).Map(func(v T) int { return int(v) })
 }
 
 // ListPatch is a list field that cannot be null as a patch field: an absent key (a nil slice)
@@ -136,7 +136,7 @@ func DocPatch[M ~map[string]jx.Raw, O option[M]](o O) patch.Field[json.RawMessag
 // MapPatch is an opaque object field (a Record of raw JSON values) as a patch field of plain values:
 // an absent key keeps, an explicit null clears.
 func MapPatch[M ~map[string]jx.Raw, O option[M]](o O) patch.Field[map[string]any] {
-	return patch.Map(Patch(o), RawMap[M])
+	return Patch(o).Map(RawMap[M])
 }
 
 // DocJSON is the opaque editor-document object of a write as the JSON the modules render; nil when

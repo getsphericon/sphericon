@@ -263,9 +263,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 			return err
 		}
 		q := ts.Contact().EditAt(id, in.Revision).Refusing(ErrNotFound, ErrRevisionChanged)
-		patch.Apply(in.SubjectID, q.SetSubjectID, q.ClearSubjectID)
-		patch.Apply(in.Email, q.SetEmail, q.ClearEmail)
-		patch.Apply(phone, q.SetPhone, q.ClearPhone)
+		in.SubjectID.Apply(q.SetSubjectID, q.ClearSubjectID)
+		in.Email.Apply(q.SetEmail, q.ClearEmail)
+		phone.Apply(q.SetPhone, q.ClearPhone)
 		applyCore(q, in.Core)
 		if fields, ok := in.CustomFields.Get(); ok {
 			typed, err := EnsureCustomFields(ctx, ts, fields)
@@ -453,27 +453,27 @@ func (in UpsertInput) withGuesses(timeZone, locale *string) Core {
 
 // applyCore writes a Core patch onto an update of a Contact.
 func applyCore(q *ent.ContactScopedUpdateOne, c Core) {
-	patch.Apply(c.FirstName, q.SetFirstName, q.ClearFirstName)
-	patch.Apply(c.LastName, q.SetLastName, q.ClearLastName)
-	patch.Apply(c.TimeZone, q.SetTimeZone, q.ClearTimeZone)
-	patch.Apply(c.Country, q.SetCountry, q.ClearCountry)
-	patch.Apply(c.Locale, q.SetLocale, q.ClearLocale)
-	patch.Apply(c.City, q.SetCity, q.ClearCity)
-	patch.Apply(c.Avatar, q.SetAvatar, q.ClearAvatar)
-	patch.Apply(c.Birthday, q.SetBirthday, q.ClearBirthday)
+	c.FirstName.Apply(q.SetFirstName, q.ClearFirstName)
+	c.LastName.Apply(q.SetLastName, q.ClearLastName)
+	c.TimeZone.Apply(q.SetTimeZone, q.ClearTimeZone)
+	c.Country.Apply(q.SetCountry, q.ClearCountry)
+	c.Locale.Apply(q.SetLocale, q.ClearLocale)
+	c.City.Apply(q.SetCity, q.ClearCity)
+	c.Avatar.Apply(q.SetAvatar, q.ClearAvatar)
+	c.Birthday.Apply(q.SetBirthday, q.ClearBirthday)
 }
 
 // createCore sets the attributes a Core patch sets on a new Contact; a clear of one it never had
 // is nothing.
 func createCore(q *ent.ContactScopedCreate, c Core) {
-	patch.ApplySet(c.FirstName, q.SetFirstName)
-	patch.ApplySet(c.LastName, q.SetLastName)
-	patch.ApplySet(c.TimeZone, q.SetTimeZone)
-	patch.ApplySet(c.Country, q.SetCountry)
-	patch.ApplySet(c.Locale, q.SetLocale)
-	patch.ApplySet(c.City, q.SetCity)
-	patch.ApplySet(c.Avatar, q.SetAvatar)
-	patch.ApplySet(c.Birthday, q.SetBirthday)
+	c.FirstName.ApplySet(q.SetFirstName)
+	c.LastName.ApplySet(q.SetLastName)
+	c.TimeZone.ApplySet(q.SetTimeZone)
+	c.Country.ApplySet(q.SetCountry)
+	c.Locale.ApplySet(q.SetLocale)
+	c.City.ApplySet(q.SetCity)
+	c.Avatar.ApplySet(q.SetAvatar)
+	c.Birthday.ApplySet(q.SetBirthday)
 }
 
 // enrich fills the Contact's missing alias keys, writes the core attributes in gives and merges
@@ -606,7 +606,7 @@ func publishCreated(ctx context.Context, pub events.Publisher, workspaceID int64
 func (in UpdateInput) normalized() UpdateInput {
 	in.SubjectID = trimmedPatch(in.SubjectID)
 	in.Phone = trimmedPatch(in.Phone)
-	in.Email = patch.Map(trimmedPatch(in.Email), emailcase.Of)
+	in.Email = trimmedPatch(in.Email).Map(emailcase.Of)
 	in.Core = in.Core.normalized()
 	return in
 }
