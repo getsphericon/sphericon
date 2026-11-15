@@ -172,7 +172,7 @@ func TestLifecycleResetNeverReusesAnEnrollmentIdentity(t *testing.T) {
 	second, err := env.SecondFactor.StartEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword})
 	require.NoError(t, err)
 	assert.Greater(t, second.ID, first.ID)
-	code, err := totp.GenerateCode(second.Secret, c.now())
+	code, err := totp.GenerateCode(second.Secret, c.Now())
 	require.NoError(t, err)
 
 	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})

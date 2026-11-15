@@ -31,7 +31,7 @@ func TestAPendingEnrollmentCannotVerifyRegenerateOrDisable(t *testing.T) {
 	proof := users.IdentityProof{Password: fixtures.OwnerJohnPassword}
 	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), john, proof)
 	require.NoError(t, err)
-	code := enrollmentCode(t, enrollment.Secret, c.now())
+	code := enrollmentCode(t, enrollment.Secret, c.Now())
 
 	_, verified := verify(t, env, fixtures.OwnerJohnID, code)
 	_, regenerated := env.SecondFactor.RegenerateRecoveryCodes(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), proof)
@@ -195,7 +195,7 @@ func TestLifecycleConfirmationNamesTheEnrollmentNotJustAValidCode(t *testing.T) 
 	pendingUser, err := env.DB.User.Get(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	assert.Equal(t, before.SessionEpoch, pendingUser.SessionEpoch, "opening a QR does not end sessions")
-	code := enrollmentCode(t, second.Secret, c.now())
+	code := enrollmentCode(t, second.Secret, c.Now())
 
 	_, err = env.SecondFactor.ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
 

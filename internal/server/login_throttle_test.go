@@ -25,16 +25,11 @@ const (
 	unknownLoginEmail = "nobody@nowhere.test"
 )
 
-// frozenClock is the injected `now` of the account attempt module.
-type frozenClock struct{ t time.Time }
-
-func (c *frozenClock) now() time.Time { return c.t }
-
-func loginEnv(t *testing.T, ipLimit int) (*testhelper.TestEnv, *frozenClock) {
+func loginEnv(t *testing.T, ipLimit int) (*testhelper.TestEnv, *testhelper.Clock) {
 	t.Helper()
-	c := &frozenClock{t: time.Now()}
+	c := testhelper.NewClock(time.Now())
 	env := testhelper.Setup(t,
-		testhelper.WithClock(c.now),
+		testhelper.WithClock(c.Now),
 		testhelper.WithRateLimits(config.RateLimits{LoginFailures: loginFailures, LoginIP: ipLimit}))
 	return env, c
 }
@@ -76,7 +71,7 @@ func TestLoginAnswers429AfterTheConfiguredFailuresEvenWithTheRightPassword(t *te
 func TestLoginWorksAgainOnceTheDelayHasPassedAndResetsTheCounter(t *testing.T) {
 	env, clock := loginEnv(t, 0)
 	failLogins(t, env, fixtures.OwnerJohnEmail, loginFailures)
-	clock.t = clock.t.Add(2 * time.Second)
+	clock.Advance(2 * time.Second)
 
 	rec := login(t, env, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword)
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
@@ -164,7 +159,7 @@ func TestWrongSecondStepCodesFeedTheLoginThrottle(t *testing.T) {
 		require.Equal(t, http.StatusUnauthorized, secondStep(t, env, challenge, "000000").Code, "failure %d", i+1)
 	}
 
-	good, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.now())
+	good, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.Now())
 	require.NoError(t, err)
 	rec := secondStep(t, env, challenge, good)
 	assert.Equal(t, http.StatusTooManyRequests, rec.Code, "a correct code during the delay must not log in")
@@ -191,7 +186,7 @@ func TestASuccessfulSecondStepResetsTheCounter(t *testing.T) {
 	for range loginFailures - 1 {
 		require.Equal(t, http.StatusUnauthorized, secondStep(t, env, challenge, "000000").Code)
 	}
-	good, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.now())
+	good, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.Now())
 	require.NoError(t, err)
 	rec := secondStep(t, env, challenge, good)
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())

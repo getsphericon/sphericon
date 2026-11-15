@@ -12,26 +12,21 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// movableClock is the clock the server checks TOTP codes and session expiry against.
-type movableClock struct{ t time.Time }
-
-func (c *movableClock) now() time.Time { return c.t }
-
 type harness struct {
 	env   *testhelper.TestEnv
-	clock *movableClock
+	clock *testhelper.Clock
 }
 
 func newHarness(t *testing.T, opts ...testhelper.Option) *harness {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	return &harness{env: testhelper.Setup(t, append([]testhelper.Option{testhelper.WithClock(c.now)}, opts...)...), clock: c}
+	c := testhelper.NewClock(time.Now())
+	return &harness{env: testhelper.Setup(t, append([]testhelper.Option{testhelper.WithClock(c.Now)}, opts...)...), clock: c}
 }
 
 // code is the authenticator code of secret at the env clock.
 func (h *harness) code(t *testing.T, secret string) string {
 	t.Helper()
-	c, err := totp.GenerateCode(secret, h.clock.now())
+	c, err := totp.GenerateCode(secret, h.clock.Now())
 	require.NoError(t, err)
 	return c
 }

@@ -29,20 +29,15 @@ var (
 	second  = testhelper.ServiceCredentialValue(fixtures.ServiceCredentialSecondPrefix, fixtures.ServiceCredentialSecondSecret)
 )
 
-// movableClock is the clock the server checks a credential's expiry and last use against.
-type movableClock struct{ t time.Time }
-
-func (c *movableClock) now() time.Time { return c.t }
-
 type harness struct {
 	env   *testhelper.TestEnv
-	clock *movableClock
+	clock *testhelper.Clock
 }
 
 func newHarness(t *testing.T) *harness {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	return &harness{env: testhelper.Setup(t, testhelper.WithClock(c.now)), clock: c}
+	c := testhelper.NewClock(time.Now())
+	return &harness{env: testhelper.Setup(t, testhelper.WithClock(c.Now)), clock: c}
 }
 
 // identity reads the credential's own identity, failing unless it is answered.
@@ -84,7 +79,7 @@ func TestIssuingShowsTheValueOnceAndStoresOnlyAHash(t *testing.T) {
 
 func TestIssuingRefusesABadInput(t *testing.T) {
 	h := newHarness(t)
-	past := h.clock.now().Add(-time.Minute)
+	past := h.clock.Now().Add(-time.Minute)
 
 	for name, tc := range map[string]struct {
 		in   servicecredentials.IssueInput
@@ -131,7 +126,7 @@ func TestARevokedCredentialIsRefusedAtOnceAndRevokingTwiceChangesNothing(t *test
 
 	require.NoError(t, h.env.ServiceCredentials.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID))
 	firstRevoked := h.env.DB.ServiceCredential.GetX(t.Context(), fixtures.ServiceCredentialPrimaryID).RevokedAt
-	h.clock.t = h.clock.t.Add(time.Hour)
+	h.clock.Advance(time.Hour)
 	require.NoError(t, h.env.ServiceCredentials.RevokeServiceCredential(t.Context(), fixtures.ServiceCredentialPrimaryID))
 
 	assert.Equal(t, http.StatusUnauthorized, getIdentity(t, h.env.Internal, primary).Code)
@@ -159,7 +154,7 @@ func TestTheListShowsEachCredentialsStateAndWhenItWasLastUsed(t *testing.T) {
 	used := lo.Filter(listed, func(c *ent.ServiceCredential, _ int) bool { return c.LastUsedAt != nil })
 	require.Len(t, used, 1, "only the credential that was used")
 	assert.EqualValues(t, fixtures.ServiceCredentialPrimaryID, used[0].ID)
-	assert.WithinDuration(t, h.clock.now(), *used[0].LastUsedAt, time.Millisecond, "at the clock's time")
+	assert.WithinDuration(t, h.clock.Now(), *used[0].LastUsedAt, time.Millisecond, "at the clock's time")
 
 	all, err := h.env.ServiceCredentials.ServiceCredentials(t.Context(), "")
 	require.NoError(t, err)

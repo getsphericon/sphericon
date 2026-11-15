@@ -83,15 +83,15 @@ func TestASendThroughADisabledNamedIntegrationIsHeld(t *testing.T) {
 func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.now)
+	m := newModule(env, c.Now)
 	limited(t, env, new(1), nil)
 	require.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:1").Outcome)
 
 	res := send(t, m, env, "bc:2")
 	require.Equal(t, outboundmessages.Deferral, res.Outcome)
-	c.elapse(res.Wait - time.Millisecond)
+	c.Advance(res.Wait - time.Millisecond)
 	early := send(t, m, env, "bc:2")
-	c.elapse(time.Millisecond)
+	c.Advance(time.Millisecond)
 	due := send(t, m, env, "bc:2")
 
 	assert.Equal(t, outboundmessages.Deferral, early.Outcome, "a millisecond short of the wait")
@@ -99,7 +99,7 @@ func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 	msg, err := acme(env).OutboundMessage().Get(context.Background(), due.MessageID)
 	require.NoError(t, err)
 	require.NotNil(t, msg.SentAt)
-	assert.WithinDuration(t, c.now(), *msg.SentAt, time.Microsecond, "recorded sent at the module's clock")
+	assert.WithinDuration(t, c.Now(), *msg.SentAt, time.Microsecond, "recorded sent at the module's clock")
 	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
 }
 
@@ -107,9 +107,9 @@ func TestTheProviderLimitRunsOnTheInjectedClock(t *testing.T) {
 // covers what the module does with its clock, this one that the Instance hands it its own.
 func TestTheInstancesOutboundSendRunsOnTheInstanceClock(t *testing.T) {
 	c := startClock()
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
-	c.elapse(time.Hour)
-	at := c.now()
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
+	c.Advance(time.Hour)
+	at := c.Now()
 
 	res := send(t, env.OutboundModule(), env, "bc:1")
 

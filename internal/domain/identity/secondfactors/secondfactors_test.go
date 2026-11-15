@@ -19,19 +19,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-type clock struct{ t time.Time }
-
-func (c *clock) now() time.Time { return c.t }
-
-func setup(t *testing.T) (*testhelper.TestEnv, *clock) {
+func setup(t *testing.T) (*testhelper.TestEnv, *testhelper.Clock) {
 	t.Helper()
-	c := &clock{t: time.Now()}
-	return testhelper.Setup(t, testhelper.WithClock(c.now)), c
+	c := testhelper.NewClock(time.Now())
+	return testhelper.Setup(t, testhelper.WithClock(c.Now)), c
 }
 
-func samCode(t *testing.T, c *clock) string {
+func samCode(t *testing.T, c *testhelper.Clock) string {
 	t.Helper()
-	code, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, c.now())
+	code, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, c.Now())
 	require.NoError(t, err)
 	return code
 }
@@ -77,12 +73,12 @@ func TestVerifyAcceptsEachTOTPCodeOnce(t *testing.T) {
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "a replay")
 
-	c.t = c.t.Add(30 * time.Second)
+	c.Advance(30 * time.Second)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
 	require.NoError(t, err, "the next step")
 
-	c.t = c.t.Add(10 * time.Minute)
-	old, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, c.t.Add(-5*time.Minute))
+	c.Advance(10 * time.Minute)
+	old, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, c.Now().Add(-5*time.Minute))
 	require.NoError(t, err)
 	_, err = verify(t, env, fixtures.SecondFactorSamID, old)
 	require.ErrorIs(t, err, secondfactors.ErrInvalidCode, "a stale code")
@@ -170,7 +166,7 @@ func TestAUserWithNoPasswordEnrollsOnlyWithAFreshSessionProof(t *testing.T) {
 	pia := env.DB.User.GetX(t.Context(), fixtures.ProviderOnlyPiaID)
 
 	_, stale := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{})
-	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: c.now()})
+	enrollment, err := env.SecondFactor.StartEnrollment(t.Context(), pia, users.IdentityProof{ProviderLoginAt: c.Now()})
 
 	require.ErrorIs(t, stale, users.ErrIdentityProofRequired)
 	require.NoError(t, err)

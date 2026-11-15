@@ -37,10 +37,10 @@ func signinEnv(t *testing.T, opts ...testhelper.Option) (*testhelper.TestEnv, *t
 }
 
 // signinEnvOnClock is signinEnv on a clock the test owns, for the code a Second factor asks for.
-func signinEnvOnClock(t *testing.T, opts ...testhelper.Option) (*testhelper.TestEnv, *testhelper.FakeSignin, *movableClock) {
+func signinEnvOnClock(t *testing.T, opts ...testhelper.Option) (*testhelper.TestEnv, *testhelper.FakeSignin, *testhelper.Clock) {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	env, fake := signinEnv(t, append([]testhelper.Option{testhelper.WithClock(c.now)}, opts...)...)
+	c := testhelper.NewClock(time.Now())
+	env, fake := signinEnv(t, append([]testhelper.Option{testhelper.WithClock(c.Now)}, opts...)...)
 	return env, fake, c
 }
 
@@ -340,9 +340,9 @@ func secondStepStatus(t *testing.T, env *testhelper.TestEnv, challenge, code str
 }
 
 // samTOTP is the authenticator app's current code for SecondFactorSam, on the env's clock.
-func samTOTP(t *testing.T, clock *movableClock) string {
+func samTOTP(t *testing.T, clock *testhelper.Clock) string {
 	t.Helper()
-	c, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.now())
+	c, err := totp.GenerateCode(fixtures.SamSecondFactorTotpSecret, clock.Now())
 	require.NoError(t, err)
 	return c
 }

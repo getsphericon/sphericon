@@ -296,7 +296,7 @@ func TestAnExpiredProviderLoginDoesNotProveAPasskeyRegistration(t *testing.T) {
 	session := r.signIn(t, newcomer)
 	options, ceremony := begin(t, r.env, session)
 	credential := r.env.NewAuthenticator(t).Attest(options)
-	r.clock.t = r.clock.t.Add(providerProofWindowPassed)
+	r.clock.Advance(providerProofWindowPassed)
 
 	rec := passkeyCall(t, r.env, http.MethodPost, passkeyFinishPath, session, ceremony,
 		finishBody(t, "", "Nina's laptop", credential))

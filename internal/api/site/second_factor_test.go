@@ -20,13 +20,13 @@ import (
 // secondFactorEnv is a test env on a clock the test moves, with John signed in.
 type secondFactorEnv struct {
 	env   *testhelper.TestEnv
-	clock *movableClock
+	clock *testhelper.Clock
 }
 
 func newSecondFactorEnv(t *testing.T) *secondFactorEnv {
 	t.Helper()
-	c := &movableClock{t: time.Now()}
-	return &secondFactorEnv{env: testhelper.Setup(t, testhelper.WithClock(c.now)), clock: c}
+	c := testhelper.NewClock(time.Now())
+	return &secondFactorEnv{env: testhelper.Setup(t, testhelper.WithClock(c.Now)), clock: c}
 }
 
 // send sends a JSON site request under the session and decodes a JSON answer into out.
@@ -42,7 +42,7 @@ func (s *secondFactorEnv) send(t *testing.T, method, path, session, body string,
 // code is the authenticator app's current code for the secret.
 func (s *secondFactorEnv) code(t *testing.T, secret string) string {
 	t.Helper()
-	c, err := totp.GenerateCode(secret, s.clock.now())
+	c, err := totp.GenerateCode(secret, s.clock.Now())
 	require.NoError(t, err)
 	return c
 }
@@ -226,7 +226,7 @@ func TestDisableRequiresThePasswordAndACurrentCode(t *testing.T) {
 	session := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 	other := s.env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
 
-	s.clock.t = s.clock.t.Add(30 * time.Second)
+	s.clock.Advance(30 * time.Second)
 	status, fresh := s.disable(t, session, "wrong-password", s.code(t, secret))
 	assert.Equal(t, http.StatusForbidden, status, "a wrong password")
 	assert.Empty(t, fresh)
@@ -253,7 +253,7 @@ func TestATOTPCodeWorksOnce(t *testing.T) {
 	status, _ := s.disable(t, session, fixtures.OwnerJohnPassword, s.code(t, secret))
 	assert.Equal(t, http.StatusUnprocessableEntity, status, "the confirmation code replayed")
 
-	s.clock.t = s.clock.t.Add(30 * time.Second)
+	s.clock.Advance(30 * time.Second)
 	status, _ = s.disable(t, session, fixtures.OwnerJohnPassword, s.code(t, secret))
 	assert.Equal(t, http.StatusNoContent, status, "the next step's code")
 }

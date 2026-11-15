@@ -22,7 +22,7 @@ func (h *harness) trySetHoldWithURL(t *testing.T, key, actionURL string) (*servi
 	t.Helper()
 	return h.holdClient(t).ServiceHoldsSet(t.Context(), &serviceapi.HoldInput{
 		ReasonCode: "review", Message: "Sending is paused for now.", ActionUrl: serviceapi.NewOptNilString(actionURL),
-		ExpiresAt: serviceapi.Timestamp(h.clock.now().Add(time.Hour)),
+		ExpiresAt: serviceapi.Timestamp(h.clock.Now().Add(time.Hour)),
 	}, serviceapi.ServiceHoldsSetParams{WorkspaceId: acme, Key: key})
 }
 
@@ -39,7 +39,7 @@ func TestLiftingAHoldLeavesTheSuspensionInForce(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
 	h.suspend(t, c, fixtures.AcmePublicID, "abuse report")
-	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.now().Add(time.Hour))
+	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.Now().Add(time.Hour))
 
 	assert.True(t, h.clearHold(t, fixtures.HoldAcmeLapsedKey))
 

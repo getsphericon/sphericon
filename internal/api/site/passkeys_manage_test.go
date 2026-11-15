@@ -167,11 +167,11 @@ func TestAPasskeyRemovedByItsUserNoLongerSignsAnyoneIn(t *testing.T) {
 // A Passkey session meets the Two-factor requirement only while the User holds a Passkey:
 // removing the last one reissues the acting session as the password session it falls back to.
 func TestRemovingTheLastPasskeyWeakensTheActingSessionUnderTheRequirement(t *testing.T) {
-	c := &requirementClock{t: time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC)}
-	env := testhelper.Setup(t, testhelper.WithClock(c.now))
+	c := testhelper.NewClock(time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC))
+	env := testhelper.Setup(t, testhelper.WithClock(c.Now))
 
 	requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
-	c.t = c.t.Add(8 * 24 * time.Hour)
+	c.Advance(8 * 24 * time.Hour)
 	tags := "/site/workspaces/" + fixtures.GlobexPublicID + "/tags"
 	session := env.SiteToken(t, fixtures.PasskeyPatEmail, func(claims *gptoken.Claims) {
 		claims.User.SetStrAttr(apiauth.ClaimMethod, string(apiauth.MethodPasskey))

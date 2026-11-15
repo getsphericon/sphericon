@@ -147,7 +147,7 @@ func TestACredentialExpiresWhenTheClockPassesItsExpiry(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, getIdentity(t, h.env.Internal, second).Code)
 
-	h.clock.t = expiresAt.Add(time.Second)
+	h.clock.Set(expiresAt.Add(time.Second))
 	assert.Equal(t, http.StatusUnauthorized, getIdentity(t, h.env.Internal, second).Code)
 }
 

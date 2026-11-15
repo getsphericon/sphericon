@@ -91,14 +91,9 @@ var errCounter = errors.New("counter down")
 
 func (failingCounter) RecordFailure(context.Context, string) error { return errCounter }
 
-// clock is a settable time source for the counter.
-type clock struct{ t time.Time }
-
-func (c *clock) now() time.Time { return c.t }
-
 type rig struct {
 	db     *ent.Client
-	clock  *clock
+	clock  *testhelper.Clock
 	factor *factor
 	module *login.Module[*ent.User]
 	login  login.Throttle
@@ -109,9 +104,9 @@ type rig struct {
 func newRig(t *testing.T, opts ...func(*login.Config[*ent.User])) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	clk := &clock{t: time.Now()}
+	clk := testhelper.NewClock(time.Now())
 	counters := throttle.NewAttempts(env.DB,
-		clk.now,
+		clk.Now,
 		throttle.WithRule(throttle.KindLogin, throttle.LoginRule(2)),
 		throttle.WithRule(throttle.KindStaffLogin, throttle.LoginRule(2)))
 	r := rig{db: env.DB, clock: clk, login: counters.For(throttle.KindLogin), staff: counters.For(throttle.KindStaffLogin)}
@@ -197,7 +192,7 @@ func TestThrottlePrecedesThePasswordCheckEvenForACorrectPassword(t *testing.T) {
 	wait := waitOf(t, r.passwordErr(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 	assert.Positive(t, wait.Wait)
 	assert.Equal(t, 2, wait.Limit)
-	assert.Equal(t, r.clock.now(), wait.At)
+	assert.Equal(t, r.clock.Now(), wait.At)
 }
 
 func TestThePasswordStepWorksAgainOnceTheDelayHasPassed(t *testing.T) {
@@ -207,7 +202,7 @@ func TestThePasswordStepWorksAgainOnceTheDelayHasPassed(t *testing.T) {
 	}
 	waitOf(t, r.passwordErr(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword))
 
-	r.clock.t = r.clock.t.Add(2 * time.Second)
+	r.clock.Advance(2 * time.Second)
 
 	assert.Equal(t, login.Authenticated, r.password(t, fixtures.OwnerJohnEmail, fixtures.OwnerJohnPassword).Outcome)
 }

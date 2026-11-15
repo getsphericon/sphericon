@@ -19,15 +19,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// holdClock is the clock the Staff hold read uses, moved by the test.
-type holdClock struct{ t time.Time }
-
-func (c *holdClock) now() time.Time { return c.t }
-
 // heldMod is an Outbound module whose send gate reads Staff holds on the test clock, as the
 // running application's does.
-func heldMod(env *testhelper.TestEnv, clock *holdClock, resolver outboundmessages.Senders) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, holds.New(func() bool { return true }, clock.now), resolver, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+func heldMod(env *testhelper.TestEnv, clock *testhelper.Clock, resolver outboundmessages.Senders) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, holds.New(func() bool { return true }, clock.Now), resolver, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
 }
 
 func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
@@ -40,7 +35,7 @@ func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {
 func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	clock := &holdClock{t: time.Now()}
+	clock := testhelper.NewClock(time.Now())
 	fs := &fakeSender{}
 	mod := heldMod(env, clock, resolvingTo(fs))
 
@@ -50,7 +45,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	}
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[0]))
 
-	setHold(t, env, clock.t.Add(time.Hour))
+	setHold(t, env, clock.Now().Add(time.Hour))
 	err := deliverRecipient(ctx, env.DB, mod, ids[1])
 	var held *broadcasts.HeldError
 	require.ErrorAs(t, err, &held)
@@ -58,7 +53,7 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 	assert.True(t, stillPending(ctx, env.DB, ids[1]), "the recipient is neither failed nor consumed")
 	assert.Len(t, fs.sent, 1)
 
-	clock.t = clock.t.Add(2 * time.Hour)
+	clock.Advance(2 * time.Hour)
 	require.NoError(t, deliverRecipient(ctx, env.DB, mod, ids[1]), "the retry goes through with no one clearing anything")
 	assert.False(t, stillPending(ctx, env.DB, ids[1]))
 	assert.Len(t, fs.sent, 2)
@@ -67,15 +62,15 @@ func TestAnStaffHoldMidBroadcastPausesRecipientsAndResumesOnItsOwn(t *testing.T)
 func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	clock := &holdClock{t: time.Now()}
+	clock := testhelper.NewClock(time.Now())
 	fs := &fakeSender{}
 
 	require.NoError(t, env.StepExecution.OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
 	runIDs := enrollmentsOf(t, env, fixtures.AutomationHoldDemoID, fixtures.ContactHoldDemoID)
 	require.Len(t, runIDs, 1)
-	setHold(t, env, clock.t.Add(time.Hour))
+	setHold(t, env, clock.Now().Add(time.Hour))
 
-	held := stepperAt(env, heldMod(env, clock, resolvingTo(fs)), clock.now)
+	held := stepperAt(env, heldMod(env, clock, resolvingTo(fs)), clock.Now)
 	require.True(t, env.RunNextStep(t, held))
 	run := env.DB.AutomationRun.GetX(ctx, runIDs[0])
 	assert.Equal(t, automationrun.StatusActive, run.Status)
@@ -83,7 +78,7 @@ func TestAnStaffHoldMakesAnAutomationStepWaitAndContinue(t *testing.T) {
 	assert.Equal(t, []map[string]any{stepJob(t, env, runIDs[0], 0)}, queuedSteps(t, env), "the same step is queued again")
 	assert.Empty(t, fs.sent)
 
-	clock.t = clock.t.Add(2 * time.Hour)
+	clock.Advance(2 * time.Hour)
 	env.RunQueuedSteps(t, held)
 	assert.Len(t, fs.sent, 1, "the step sends once the hold has lapsed")
 }

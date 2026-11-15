@@ -41,17 +41,8 @@ func (s senders) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (me
 	return s.sender, s.err
 }
 
-// clock is the module's clock in a test (outboundmessages.New's now): it stands still until the test
-// moves it, so the Provider limit and the claim lease are read at a time the test chose.
-type clock struct{ at time.Time }
-
 // startClock starts a clock at the real time, so the fixtures' times keep their meaning.
-func startClock() *clock { return &clock{at: time.Now()} }
-
-func (c *clock) now() time.Time { return c.at }
-
-// elapse lets d pass on the clock.
-func (c *clock) elapse(d time.Duration) { c.at = c.at.Add(d) }
+func startClock() *testhelper.Clock { return testhelper.NewClock(time.Now()) }
 
 func newModule(env *testhelper.TestEnv, now func() time.Time, opts ...outboundmessages.Option) *outboundmessages.Module {
 	return outboundmessages.New(

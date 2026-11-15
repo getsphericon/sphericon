@@ -37,8 +37,8 @@ func capped(t *testing.T, env *testhelper.TestEnv, workspaceID int64, perDay *in
 }
 
 // sendCapModule is the send path of an Instance with Send caps, on the test's clock.
-func sendCapModule(env *testhelper.TestEnv, c *clock) *outboundmessages.Module {
-	return newModule(env, c.now, outboundmessages.WithSendCaps(true))
+func sendCapModule(env *testhelper.TestEnv, c *testhelper.Clock) *outboundmessages.Module {
+	return newModule(env, c.Now, outboundmessages.WithSendCaps(true))
 }
 
 func TestSpentSendCapIsADeferralWithTheWaitUntilTheWorkspaceBucketRefills(t *testing.T) {
@@ -58,7 +58,7 @@ func TestSpentSendCapIsADeferralWithTheWaitUntilTheWorkspaceBucketRefills(t *tes
 	assert.Zero(t, res.MessageID)
 	assert.Len(t, env.CustomerMail.Messages(), 2, "the provider is not called")
 
-	c.elapse(res.Wait)
+	c.Advance(res.Wait)
 	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:3").Outcome, "the window frees up gradually")
 }
 
@@ -107,7 +107,7 @@ func TestARaisedSendCapRefillsAtTheNewRate(t *testing.T) {
 	require.Equal(t, outboundmessages.Deferral, res.Outcome)
 	assert.Equal(t, 86400*time.Millisecond, res.Wait, "1000 per 24 hours refills one token every 86.4 seconds")
 
-	c.elapse(res.Wait)
+	c.Advance(res.Wait)
 	assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome)
 }
 
@@ -150,9 +150,9 @@ func TestWorkspaceAndIntegrationBucketsAreSpentTogetherOrNotAtAll(t *testing.T) 
 			require.Equal(t, providerlimit.CauseProviderLimit, res.Cause)
 		}
 
-		c.elapse(time.Second)
+		c.Advance(time.Second)
 		assert.Equal(t, outboundmessages.Sent, send(t, m, env, "bc:2").Outcome, "the denied attempts left the Send cap's second token")
-		c.elapse(time.Second)
+		c.Advance(time.Second)
 		third := send(t, m, env, "bc:3")
 		assert.Equal(t, outboundmessages.Deferral, third.Outcome)
 		assert.Equal(t, providerlimit.CauseSendCap, third.Cause, "now the Send cap is spent")
