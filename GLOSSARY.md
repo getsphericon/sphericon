@@ -302,7 +302,9 @@ _Avoid_: Workflow, flow, hook, automation (an Automation is sequential and state
 
 **Order**:
 One purchase a Workspace's shop reported through order Events, identified by its `order_id`: its
-purchase amount before refunds, currency, refunds and cancellation. It holds no catalogue or payment state.
+purchase amount before refunds, currency, refunds, cancellation and its lines (the products of its
+latest Completed or Updated Event). A Condition tests a Contact's Orders: how many, how much, how
+recent, and which products. It holds no catalogue or payment state.
 _Avoid_: Purchase, transaction, sale
 
 **Revenue**:

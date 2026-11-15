@@ -2,6 +2,9 @@
 status: accepted
 ---
 
+> **Amended by [[0162-a-condition-tests-a-contacts-orders-and-their-lines]]:** an Order keeps the
+> lines of its latest Completed or Updated Event, and a Condition tests a Contact's Orders.
+
 # Revenue is read from order Events and credited to the last clicked Broadcast or Automation
 
 A Workspace could not say what its email earned: nothing in the model held an order, an amount or a
