@@ -97,7 +97,7 @@ func automationView(a *ent.Automation, err error) (view, error) {
 }
 
 func automationKind(env *testhelper.TestEnv) kind {
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	return kind{
 		target: "automation",
 		live:   fixtures.AutomationHoldDemoID, liveMark: "hold_demo",

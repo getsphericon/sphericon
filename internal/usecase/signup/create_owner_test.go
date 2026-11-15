@@ -2,7 +2,6 @@ package signup_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +14,7 @@ import (
 
 func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 
 	_, err := env.SignUp.CreateOwner(t.Context(), "not-an-email", "Ada")
 
@@ -27,7 +26,7 @@ func TestCreateOwnerRefusesAMalformedEmail(t *testing.T) {
 
 func TestCreateOwnerMakesTheUserAndReturnsItsOneTimePassword(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 
 	password, err := env.SignUp.CreateOwner(t.Context(), "ada@example.com", "Ada Lovelace")
 
@@ -49,7 +48,7 @@ func TestCreateOwnerOfATakenEmailIsRefused(t *testing.T) {
 
 func TestCreateOwnerRefusesANameEmptyToTheEye(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 
 	password, err := env.SignUp.CreateOwner(t.Context(), "ada@example.com", "   ")
 

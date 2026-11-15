@@ -3,7 +3,6 @@ package automations_test
 import (
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,7 +22,7 @@ import (
 func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	received, confirmed, sent := systemevent.SmsReceived, systemevent.SmsConfirmed, systemevent.SmsSent
 
 	onReply, err := m.Create(t.Context(), s, automations.CreateInput{
@@ -50,7 +49,7 @@ func TestSmsReceivedTriggersExitsAndCompletesButSmsSentDoesNot(t *testing.T) {
 func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	delivered, undelivered := systemevent.SmsDelivered, systemevent.SmsUndelivered
 
 	onUndelivered, err := m.Create(t.Context(), s, automations.CreateInput{
@@ -70,7 +69,7 @@ func TestSmsDeliveredAndUndeliveredTriggerExitAndComplete(t *testing.T) {
 func TestSmsUnsubscribedTriggersAndExits(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	unsubscribed, confirmed := systemevent.SmsUnsubscribed, systemevent.SmsConfirmed
 
 	onStop, err := m.Create(t.Context(), s, automations.CreateInput{
@@ -92,7 +91,7 @@ func smsVia(id *int64, text string) automationstep.Step {
 func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	email := int64(fixtures.IntegrationAcmeDefaultID)
 	cases := map[string]*int64{
 		"no default SMS Integration":        nil,
@@ -115,7 +114,7 @@ func TestPublishIsRefusedForAnSMSStepThatCannotSend(t *testing.T) {
 func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	id := int64(env.AcmeTwilio(t).Integration.ID)
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
 		Steps: &[]automationstep.Step{smsVia(&id, "Hi")},
@@ -130,7 +129,7 @@ func TestPublishSendsAnSMSStepThroughItsTwilioIntegration(t *testing.T) {
 func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	for name, text := range map[string]string{"blank": "  ", "bad Liquid": "{% if %}"} {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),
@@ -146,7 +145,7 @@ func TestAnSMSStepNeedsATextThatRenders(t *testing.T) {
 func TestSavingAnSMSStepOverTwiliosLengthLimitIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	atLimit := strings.Repeat("я", 700)
 
 	_, err := m.Update(t.Context(), s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHoldDemoID),

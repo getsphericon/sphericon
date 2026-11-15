@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +43,7 @@ func smsAutomation(t *testing.T, env *testhelper.TestEnv, steps ...automationste
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	created, err := m.Create(ctx, s, automations.CreateInput{
 		Name: "Cart reminder", TriggerEvent: smsTrigger, ExitEvents: []string{}, Steps: steps,
 	})

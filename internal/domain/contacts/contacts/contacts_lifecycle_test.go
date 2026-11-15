@@ -27,7 +27,7 @@ func fieldType(t *testing.T, env *testhelper.TestEnv, key string) customfield.Ty
 
 func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	c, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID),
@@ -48,7 +48,7 @@ func TestUpdateReplacesCustomFieldsAndDeclaresThemTyped(t *testing.T) {
 
 func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	cleared, err := m.Update(ctx, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(ctx, t, env.DB.Scoped(fixtures.StarkID), fixtures.ContactStarkFullID),
@@ -73,7 +73,7 @@ func TestUpdateClearsExplicitlyClearedAttributes(t *testing.T) {
 
 func TestCreateAndUpdateSetTheTagsAndReturnTheContactWithThem(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -95,7 +95,7 @@ func TestCreateAndUpdateSetTheTagsAndReturnTheContactWithThem(t *testing.T) {
 
 func TestUpdateKeepsAnAliasKeySetBlank(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID,
 		contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set("  ")})
@@ -109,7 +109,7 @@ func tagNames(c *ent.Contact) []string {
 
 func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	res, err := m.Upsert(ctx, env.DB.Scoped(fixtures.StarkID), contact.SourceManual, contacts.UpsertInput{
@@ -130,7 +130,7 @@ func TestUpsertEnrichesAnExistingContactFoundByAnotherKey(t *testing.T) {
 
 func TestUpsertIsScopedToTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.UpsertInput{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)

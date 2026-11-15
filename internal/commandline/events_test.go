@@ -18,7 +18,7 @@ import (
 )
 
 func eventHistory(env *testhelper.TestEnv) commandline.EventHistory {
-	return commandline.EventHistory{Workspaces: workspaces.New(env.DB, env.Bus, time.Now), Bus: env.Bus}
+	return commandline.EventHistory{Workspaces: testhelper.Module[*workspaces.Module](env), Bus: env.Bus}
 }
 
 // unsubscribeReplay asks for the Broadcast unsubscribe consumer's jobs of the minute from at.

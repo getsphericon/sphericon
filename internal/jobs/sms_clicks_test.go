@@ -92,7 +92,7 @@ func TestAnSMSBroadcastsLinksGoOutAsShortTrackedLinksAndAPersonsClickIsRecorded(
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
 	clickedAfterClick := clicked()
 	assert.True(t, clickedAfterClick, "a person's click sets the recipient's rollup")
-	report, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)
+	report, err := testhelper.Module[*broadcasts.Module](env).Report(ctx, env.DB.Scoped(fixtures.LacunaID), id)
 	require.NoError(t, err)
 	assert.Equal(t, 1, report.Clicked, "the SMS report shows clicked")
 	clicks := testhelper.Queued[*events.SmsClicked](t, env, systemevent.SmsClicked)

@@ -31,7 +31,7 @@ func TestCustomFieldsListTheWorkspaceCatalogueAscendingByKey(t *testing.T) {
 
 func TestGetLoadsTheContactTagsSortedByName(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	c, err := m.Get(context.Background(), s, fixtures.ContactAliceID)
@@ -46,7 +46,7 @@ func TestGetLoadsTheContactTagsSortedByName(t *testing.T) {
 
 func TestGetReportsAContactOfAnotherWorkspaceAsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	other := env.DB.Scoped(fixtures.GlobexID)
 
 	_, err := m.Get(context.Background(), other, fixtures.ContactAliceID)

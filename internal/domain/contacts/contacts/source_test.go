@@ -17,7 +17,7 @@ import (
 
 func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	byHand, err := m.Create(context.Background(), acme, contact.SourceManual, contacts.CreateInput{Email: new("door-hand@example.com")})
@@ -34,7 +34,7 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 
 func TestALaterUpsertLeavesTheSourceUnchanged(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	again, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.StarkID), contact.SourceTracker, contacts.UpsertInput{Email: new(fixtures.ContactStarkManualEmail), FirstName: patch.Set("Sam")})
 	require.NoError(t, err)

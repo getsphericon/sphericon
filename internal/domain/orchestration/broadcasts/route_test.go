@@ -24,7 +24,7 @@ func TestScheduleIsRefusedWhileTheBroadcastsIntegrationCannotSend(t *testing.T) 
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	m := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
+	m := testhelper.Module[*broadcasts.Module](env)
 	_, err := m.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeSesID)})
 	require.NoError(t, err, "a draft may name a disabled Integration")
 

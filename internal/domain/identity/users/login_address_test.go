@@ -2,7 +2,6 @@ package users_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +16,7 @@ import (
 // stored one still finds its User.
 func TestUserByLoginAddressIgnoresTheCaseOfTheAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 
 	found, err := acc.UserByLoginAddress(t.Context(), "Info@GetSphericon.com")
 	require.NoError(t, err)

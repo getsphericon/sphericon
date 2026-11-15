@@ -12,7 +12,10 @@ below) — no sockets. See `internal/api/site/contacts_test.go`.
 seams it names (clock, database, License, senders, DNS, …) with `do.Override`. A module
 or a surface gets no wiring of its own in the harness: add its provider to `internal/app/container.go`
 and read it from the container in `Setup`. A difference a test needs (no System sender, a volume
-floor) is configuration, set on the test's config.
+floor) is configuration, set on the test's config. A test reads the Instance's own module or use case with
+`testhelper.Module[*automations.Module](env)`, which the container built over the env's database,
+bus, clock and seams; it builds one with `New` only to hand it a seam of its own (a clock, a
+sender, an HTTP client).
 
 Code under test queues jobs through the real river client, and they wait in the test's transaction.
 `env.PerformEnqueuedJobs(t, only...)` works them with their real workers through river's test

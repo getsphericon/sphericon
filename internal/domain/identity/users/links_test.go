@@ -24,7 +24,7 @@ type emailChangeRig struct {
 func newEmailChangeRig(t *testing.T) emailChangeRig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 	links := users.NewLinks(acc, authtoken.New("links-test-secret", time.Now))
 	john, err := acc.User(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)

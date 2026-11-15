@@ -2,7 +2,6 @@ package auditlog_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,7 @@ import (
 func TestTheAuditLogOfAnInstanceWithoutItsLicenseIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	log := auditlog.New(nil, workspaces.New(env.DB, env.Bus, time.Now))
+	log := auditlog.New(nil, testhelper.Module[*workspaces.Module](env))
 
 	_, err := log.Page(t.Context(), s, auditlog.Query{Limit: 10})
 	require.ErrorIs(t, err, auditlog.ErrUnlicensed)

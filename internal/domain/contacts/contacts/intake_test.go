@@ -24,7 +24,7 @@ import (
 
 func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
-	intake := contacts.New(env.Bus)
+	intake := testhelper.Module[*contacts.Module](env)
 
 	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.IntakeInput{
 		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},

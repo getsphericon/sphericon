@@ -25,7 +25,7 @@ func createdEvents(t *testing.T, env *testhelper.TestEnv, contactID int64) int {
 
 func TestCreatePersistsAndPublishesContactCreated(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	c, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
 		Email:        new("  New.Person@Example.com "),
@@ -42,7 +42,7 @@ func TestCreatePersistsAndPublishesContactCreated(t *testing.T) {
 
 func TestCreateConflictOnAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	// Case and whitespace do not make a different email.
 	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Email: new(" ALICE@example.com ")})
@@ -53,7 +53,7 @@ func TestCreateConflictOnAliasKey(t *testing.T) {
 
 func TestCreateConflictOnPhone(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{Phone: new("+14155550115")})
 	require.NoError(t, err)
 
@@ -63,7 +63,7 @@ func TestCreateConflictOnPhone(t *testing.T) {
 
 func TestCreateConflictOnSubjectID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{SubjectID: new("user-new-1")})
 	require.NoError(t, err)
 
@@ -73,7 +73,7 @@ func TestCreateConflictOnSubjectID(t *testing.T) {
 
 func TestUpdateChangesOnlyGivenAttributes(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	c, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), LastName: patch.Set("Jones")})
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestUpdateChangesOnlyGivenAttributes(t *testing.T) {
 
 func TestUpdateNotFoundAcrossWorkspaces(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), 999999)})
 	require.ErrorIs(t, err, contacts.ErrNotFound)
@@ -96,7 +96,7 @@ func TestUpdateNotFoundAcrossWorkspaces(t *testing.T) {
 
 func TestUpdateConflict(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, contacts.UpdateInput{Revision: testhelper.ContactRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID), Email: patch.Set(fixtures.ContactBobEmail)})
 	require.ErrorIs(t, err, contacts.ErrEmailTaken)
@@ -104,7 +104,7 @@ func TestUpdateConflict(t *testing.T) {
 
 func TestUpsertResolvesExistingContactByAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{
 		Email:        new("Alice@example.com"),
@@ -128,7 +128,7 @@ func TestUpsertResolvesExistingContactByAliasKey(t *testing.T) {
 
 func TestUpsertCreatesAndPublishesOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{SubjectID: new("user-77"), Email: new("u77@example.com")})
 	require.NoError(t, err)
@@ -144,7 +144,7 @@ func TestUpsertCreatesAndPublishesOnce(t *testing.T) {
 
 func TestUpsertRequiresAnAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	_, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.UpsertInput{FirstName: patch.Set("Nobody"), Email: new("  ")})
 	assert.ErrorIs(t, err, contacts.ErrIdentityRequired)
@@ -152,7 +152,7 @@ func TestUpsertRequiresAnAliasKey(t *testing.T) {
 
 func TestUpsertDoesNotResolveAnotherWorkspacesContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.GlobexID), contact.SourceManual, contacts.UpsertInput{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)

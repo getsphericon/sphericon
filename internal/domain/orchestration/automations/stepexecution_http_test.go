@@ -195,7 +195,7 @@ func TestHTTPExecutionKeepsTheEnrollmentsPinnedVersionAfterPublish(t *testing.T)
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
-	a := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	a := testhelper.Module[*automations.Module](env)
 	steps := []automationstep.Step{{Type: automationstep.ApplyTag, Tag: "replaced-http"}}
 	_, err := a.Update(t.Context(), s, fixtures.AutomationHTTPExecutionID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, s, fixtures.AutomationHTTPExecutionID), Steps: &steps})
 	require.NoError(t, err)

@@ -118,7 +118,7 @@ func TestAZoneChangeMovesResultsToOtherDays(t *testing.T) {
 
 func TestResultsOfAnotherWorkspacesAutomationAreNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 
 	_, err := m.ReportOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationGothamResultsID, automations.ReportPeriod7Days)
 

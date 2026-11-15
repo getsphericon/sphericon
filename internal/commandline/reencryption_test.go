@@ -53,7 +53,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 
 	// An Enrollment stands on the first version of the Slack Automation (fixture), so editing its
 	// steps leaves that version as it was and adds a second: both hold sealed secrets.
-	_, err = automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationNotifySlackID), Steps: &[]automationstep.Step{
+	_, err = testhelper.Module[*automations.Module](env).Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: env.AutomationRevision(ctx, t, fixtures.AutomationNotifySlackID), Steps: &[]automationstep.Step{
 		{Type: automationstep.HTTP, ID: "01J00000000000000000000001", URL: "https://hooks.example.test/v2", Body: `{"v":2}`, Secret: "whsec_second_version"},
 	}})
 	require.NoError(t, err)

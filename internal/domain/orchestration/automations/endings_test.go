@@ -255,7 +255,7 @@ func TestAnUnlistedEventOrAnotherContactsEventEndsNothing(t *testing.T) {
 // that changes them, or a Deactivate, does not change what ends it.
 func TestAnEnrollmentEndsByTheEventsOfTheVersionItStandsOn(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	runID, contactID := recoveryRun(t, env)
@@ -302,7 +302,7 @@ func TestARuleEnrollmentWithoutItsStoredEventBeginsNow(t *testing.T) {
 
 func TestCreateKeepsExitAndGoalEventsInTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	goal := " subscription_expanded "
 
 	created, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), automations.CreateInput{
@@ -333,7 +333,7 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			env := testhelper.Setup(t)
-			m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+			m := testhelper.Module[*automations.Module](env)
 			tc.in.Name = "Refused"
 
 			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), tc.in)
@@ -347,7 +347,7 @@ func TestCreateRefusesAnExitOrGoalEventThatCannotEndAnEnrollment(t *testing.T) {
 // event is refused, though the edit names no exit event.
 func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 
 	_, err := m.Update(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationPaymentRecoveryID),
 		TriggerEvent: new(recoveryExit),
@@ -360,7 +360,7 @@ func TestUpdateRefusesATriggerEqualToAStoredExitEvent(t *testing.T) {
 // live version as it was.
 func TestEditingExitAndGoalEventsWritesTheDraft(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 

@@ -20,7 +20,7 @@ import (
 // Automation.
 func TestAnAutomationAnActiveRuleEnrollsInIsNotArchived(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 	named := []liveuse.User{{Kind: liveuse.Rule, ID: fixtures.RuleEnrollWaitFirstID, Name: fixtures.RuleEnrollWaitFirstName}}

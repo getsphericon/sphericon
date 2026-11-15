@@ -175,7 +175,7 @@ func TestAStepJobForAnotherStepLeavesTheEnrollmentWhereItStands(t *testing.T) {
 // starts on that Event's action: a Publish that moves the Trigger, or a Deactivate, ends it.
 func TestAnEventEnrollsOnlyWhileTheAutomationIsActiveOnThatTrigger(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.Update(ctx, s, fixtures.AutomationHoldDemoID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, s, fixtures.AutomationHoldDemoID), TriggerEvent: new("hold_demo_moved")})

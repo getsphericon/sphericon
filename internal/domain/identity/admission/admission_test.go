@@ -20,9 +20,9 @@ import (
 var afterRitasGrace = time.Date(2026, 3, 9, 0, 0, 0, 0, time.UTC)
 
 func newModule(env *testhelper.TestEnv) *admission.Module {
-	acceptance := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acceptance := testhelper.Module[*users.Module](env)
 	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now)
-	return admission.New(memberships.New(env.DB, env.Bus), acceptance, factors)
+	return admission.New(testhelper.Module[*memberships.Module](env), acceptance, factors)
 }
 
 func TestAMemberIsAdmittedToTheirWorkspaceWithItsScopeAndTheirMembership(t *testing.T) {
@@ -107,7 +107,7 @@ func TestTheTwoFactorRequirementLetsThroughWhatTheRequestAllows(t *testing.T) {
 func TestATokenIsAdmittedToItsMembershipAsTheSessionWouldBe(t *testing.T) {
 	env := testhelper.Setup(t)
 	module := newModule(env)
-	_, rita, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
+	_, rita, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
 	require.NoError(t, err)
 
 	withheld := module.AdmitMembership(t.Context(), rita, afterRitasGrace)

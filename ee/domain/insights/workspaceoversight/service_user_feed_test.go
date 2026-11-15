@@ -123,7 +123,7 @@ func TestReplayingAUserFeedCursorReturnsTheSamePage(t *testing.T) {
 func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](h.env)
 	_, saved := usersFrom(t, c, "")
 
 	created, err := h.env.SignUp.SignUpVerified(t.Context(), users.NewUser{Name: "Nora New", Email: "nora@new.test", PasswordHash: "!"})
@@ -150,7 +150,7 @@ func TestANewRenamedOrReaddressedUserIsANewEntry(t *testing.T) {
 func TestEndingTheSessionsIsNotAnEntry(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](h.env)
 	_, saved := usersFrom(t, c, "")
 
 	require.NoError(t, acc.EndSessions(t.Context(), fixtures.OwnerJohnID))
@@ -267,7 +267,7 @@ func TestADeletedUserIsATombstone(t *testing.T) {
 func TestTheFeedPagesFromATombstoneOnToTheUsersChangedAfterIt(t *testing.T) {
 	h := newHarness(t)
 	c := controlPlane(t, h)
-	acc := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](h.env)
 	_, saved := usersFrom(t, c, "")
 	err := h.env.UserDeletion.Delete(t.Context(), userdeletion.Request{UserID: fixtures.MemberMaryID, Email: fixtures.MemberMaryEmail, Password: fixtures.MemberMaryPassword})
 	require.NoError(t, err)
@@ -293,7 +293,7 @@ func TestAPrunedUnverifiedUserIsATombstone(t *testing.T) {
 	c := controlPlane(t, h)
 	_, saved := usersFrom(t, c, "")
 
-	_, err := users.New(h.env.DB, h.env.Bus, testhelper.Passwords(), h.env.ConsentRecords, time.Now).PruneUnverified(t.Context(), 7*24*time.Hour, 10)
+	_, err := testhelper.Module[*users.Module](h.env).PruneUnverified(t.Context(), 7*24*time.Hour, 10)
 	require.NoError(t, err)
 
 	got, _ := usersFrom(t, c, saved)

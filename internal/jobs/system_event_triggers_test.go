@@ -55,7 +55,7 @@ func TestAnAutomationTriggeredByATagEnrollsTheTaggedContact(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := contacts.New(env.Bus).ApplyTag(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
+	_, err := testhelper.Module[*contacts.Module](env).ApplyTag(ctx, acme, fixtures.ContactLiamID, "onboarding-ready")
 	require.NoError(t, err)
 	onlyEnvelope(t, env, systemevent.ContactTagged)
 	triggers := triggersOn(t, env, systemevent.ContactTagged)

@@ -101,7 +101,7 @@ func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 
 // bootstrapModule is the module of an Instance whose bootstrap token is configured ("" for none).
 func bootstrapModule(env *testhelper.TestEnv, configured string) *apitokens.Module {
-	return apitokens.New(env.DB, workspaces.New(env.DB, env.Bus, time.Now), configured, time.Now)
+	return apitokens.New(env.DB, testhelper.Module[*workspaces.Module](env), configured, time.Now)
 }
 
 // The bootstrap mints the first token, with no caller token to name a Workspace: into the oldest
