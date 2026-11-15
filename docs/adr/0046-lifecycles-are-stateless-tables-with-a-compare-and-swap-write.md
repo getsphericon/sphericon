@@ -4,6 +4,9 @@ status: accepted
 
 # Lifecycles are `stateless` transition tables with a compare-and-swap write
 
+> **Amended by [[0150-a-sending-broadcast-is-cancelled-and-a-deactivated-automation-may-end-its-enrollments]]:**
+> the Broadcast machine gains Cancel, `sending` to the final `cancelled`.
+
 > **Refined by [[0109-a-state-is-a-machine-or-a-latch-declared-in-the-schema]]:** a latch has one
 > form too, a `versioneddefinition` is a machine, and the schema declares each state field's form.
 

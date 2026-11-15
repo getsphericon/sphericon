@@ -4,6 +4,9 @@ status: accepted
 
 # Every error is the default Problem response
 
+> **Amended by [[0148-a-request-body-is-a-closed-object]]:**
+> a property a request body does not declare is a decoding error, a 400 naming its path.
+
 Each operation of the contract listed its error answers one status at a time (`| BadRequestProblem
 | NotFoundProblem | UnprocessableEntityProblem …`, about 1,100 of them), and ogen made each listed
 status a member of a per-operation sum type (`SiteContactsGetRes`). The Go side used none of those

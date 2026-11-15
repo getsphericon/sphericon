@@ -522,14 +522,14 @@ _Avoid_: Tracking mode, privacy mode
 
 **Broadcast**:
 A send to an audience on one Channel, fixed when it is created, sent once (draft → scheduled →
-sending → sent / failed): authored and scheduled by hand, or made as an issue of a **Broadcast
+sending → sent / failed / cancelled): authored and scheduled by hand, or made as an issue of a **Broadcast
 series**, which it then cannot be edited apart from. Its Message content takes that Channel's shape, and
 exactly that Channel's content is stored; its lifecycle, audience, Integration, Recipients and
 figures are the same on every Channel, and its Integration is one of its Channel (or that Channel's
 default). It is never converted to another Channel, nor copied into one. A new Broadcast asks for
 its Channel first, among the Channels the Workspace has an enabled Integration for, and the
 Broadcasts of every Channel share one list with a Channel column and filter. Its audience is a
-Segment (or all Contacts), reached at the Channel's Destination: a Contact without one is never a
+Segment or all Contacts, always chosen as such, never the absence of a choice, reached at the Channel's Destination: a Contact without one is never a
 Recipient. An SMS Broadcast needs an SMS Integration in the Workspace to be created at all. Scheduling takes a **copy of the
 Segment's Condition**, so a later edit of the Segment does not change who the Broadcast reaches;
 the copy is resolved and **frozen into Recipients at send time**, then filtered per-recipient by
@@ -538,6 +538,12 @@ shared "broadcasts" unsubscribe scope, or its series' scope inside it, which, li
 derived, not a contact status. "Audience" is prose for whoever a Broadcast reaches; the thing
 that picks them is always a Segment, and names say Segment.
 _Avoid_: Campaign, newsletter blast, mailshot, email blast
+
+**Cancel**:
+Stopping a Broadcast while it is sending: no Recipient without a message is sent to after it, what
+the provider already took still goes, and the Broadcast is `cancelled` for good; the Recipients it
+did not reach count as cancelled. It only narrows reach. From `scheduled` the way back is Unschedule.
+_Avoid_: Abort, stop, pause, Unschedule (that returns a scheduled Broadcast to draft)
 
 **Broadcast recipient**:
 The per-(Broadcast, Contact) record — the frozen audience snapshot taken at send
@@ -725,7 +731,8 @@ Contact is enrolled and walks the Automation's ordered steps (send on a Channel,
 surface where every Channel meets. Each
 Automation is its own unsubscribe Sending source. What it does is its **live version**: an edit
 writes a draft, and only **Publish** makes it live. Publishing starts enrolling; deactivating
-stops _new_ enrollments but lets in-flight Enrollments finish (deactivate ≠ halt).
+stops _new_ enrollments and, as the person deactivating chooses, either lets in-flight Enrollments
+finish or ends them (`exited`), so their waiting steps send nothing.
 An Automation is never deleted: it is **Archived** once no Enrollment is active, which hides it
 and enrolls nobody while its Enrollments stay.
 _Avoid_: Workflow, flow, journey, drip, campaign

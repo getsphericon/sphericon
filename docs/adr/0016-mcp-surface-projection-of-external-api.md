@@ -4,6 +4,14 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0150-a-sending-broadcast-is-cancelled-and-a-deactivated-automation-may-end-its-enrollments]]:**
+> Cancel of a sending Broadcast and Deactivate's `end` are authoring, not send-class: they only
+> narrow reach.
+
+> **Amended by [[0148-a-request-body-is-a-closed-object]]:**
+> a request body is a closed object at every depth, so a property nested in a tool's argument
+> that the contract does not declare is refused too.
+
 > **Amended by [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]]:**
 > a Workspace's own Skills are served as MCP prompts beside the shipped ones; they are written only
 > in the app.

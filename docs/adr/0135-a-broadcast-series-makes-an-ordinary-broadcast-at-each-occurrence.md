@@ -4,6 +4,9 @@ status: accepted
 
 # A Broadcast series makes an ordinary Broadcast at each occurrence
 
+> **Amended by [[0149-a-broadcasts-audience-is-chosen-explicitly-and-counted-before-it-is-armed]]:**
+> a series names its audience: a Segment, or `null` for all Contacts, never an absent field.
+
 > **Amended by [[0140-a-write-that-arms-live-use-refuses-a-row-already-discarded]]:**
 > a series making an issue reads its rows under the lock and skips the occurrence when one is
 > discarded.
