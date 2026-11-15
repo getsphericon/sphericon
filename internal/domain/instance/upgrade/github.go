@@ -32,7 +32,8 @@ type GitHub struct {
 	http   *http.Client
 }
 
-// NewGitHub points at api.github.com. It honours HTTP_PROXY, HTTPS_PROXY and NO_PROXY.
+// NewGitHub points at api.github.com. It honours http_proxy, https_proxy and no_proxy and their
+// uppercase forms; when both forms are set, the lowercase one wins.
 func NewGitHub() (*GitHub, error) { return NewGitHubAt("") }
 
 // NewGitHubAt points at another API root (a test server, GitHub Enterprise); "" is api.github.com.
