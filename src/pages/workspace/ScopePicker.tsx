@@ -18,14 +18,7 @@ export function ScopePicker<Scope extends string>({
   const selected = new Set(value)
 
   const toggle = (scopes: Scope[], on: boolean) => {
-    const next = new Set(selected)
-    for (const scope of scopes) {
-      if (on) {
-        next.add(scope)
-      } else {
-        next.delete(scope)
-      }
-    }
+    const next = on ? selected.union(new Set(scopes)) : selected.difference(new Set(scopes))
     // Keep the vocabulary's order, not the order of clicking.
     onChange(options.filter((scope) => next.has(scope)))
   }
