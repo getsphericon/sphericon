@@ -16,7 +16,7 @@ import (
 
 func pendingLinks(t *testing.T, env *testhelper.TestEnv) *users.Links {
 	t.Helper()
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 	return users.NewLinks(acc, authtoken.New("secret", time.Now))
 }
 

@@ -22,7 +22,7 @@ import (
 
 func TestChangeMembershipRoleInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
@@ -82,7 +82,7 @@ func membershipUpdateEntries(t *testing.T, env *testhelper.TestEnv) int {
 
 func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
@@ -101,7 +101,7 @@ func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 
 func TestRemoveMembershipInvariants(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 	actor := events.Actor{Kind: events.ActorUser}
@@ -139,7 +139,7 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 
 func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 
@@ -161,7 +161,7 @@ func TestLeaveRemovesTheCallersOwnMembershipWhateverTheRole(t *testing.T) {
 
 func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.InitechID)
 
@@ -176,7 +176,7 @@ func TestLeaveRefusesTheOnlyOwner(t *testing.T) {
 
 func TestLeaveByAUserWithoutMembershipIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 
 	err := ms.Leave(t.Context(), env.DB.Scoped(fixtures.InitechID), fixtures.OwnerJohnID)
 	assert.True(t, ent.IsNotFound(err))
@@ -184,7 +184,7 @@ func TestLeaveByAUserWithoutMembershipIsNotFound(t *testing.T) {
 
 func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 	env := testhelper.Setup(t)
-	ms := memberships.New(env.DB, env.Bus)
+	ms := testhelper.Module[*memberships.Module](env)
 	ctx := t.Context()
 
 	require.NoError(t, ms.Leave(ctx, env.DB.Scoped(fixtures.InitechID), fixtures.InitechMemberMaxID))

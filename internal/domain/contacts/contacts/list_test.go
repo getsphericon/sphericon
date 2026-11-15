@@ -15,7 +15,7 @@ import (
 
 func TestListPagesTheWorkspaceContactsAscendingByID(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
 	all, err := m.List(context.Background(), s, pagination.Params{Page: 1, PageSize: 100}, contacts.Filter{})

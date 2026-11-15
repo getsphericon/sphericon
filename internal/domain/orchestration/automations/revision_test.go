@@ -3,7 +3,6 @@ package automations_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +17,7 @@ import (
 // steps are the first's (ADR 0119).
 func TestASaveOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
@@ -40,7 +39,7 @@ func TestASaveOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 // revision once.
 func TestARenameAndADraftEditMoveTheRevisionOnce(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)
@@ -58,7 +57,7 @@ func TestARenameAndADraftEditMoveTheRevisionOnce(t *testing.T) {
 // Publish made on a stale revision is refused and publishes nothing.
 func TestAPublishOnARevisionAlreadyMovedPastPublishesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	read := env.AutomationRevision(ctx, t, fixtures.AutomationWinBackID)

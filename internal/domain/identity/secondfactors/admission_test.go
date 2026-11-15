@@ -24,7 +24,7 @@ var (
 
 // newModule builds the Module of the test's database.
 func newModule(env *testhelper.TestEnv) *secondfactors.Module {
-	acceptance := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acceptance := testhelper.Module[*users.Module](env)
 	return secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now)
 }
 
@@ -32,7 +32,7 @@ func newModule(env *testhelper.TestEnv) *secondfactors.Module {
 // Workspace publicID names, as the admission does before it asks the requirement.
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*secondfactors.Module, *ent.Membership) {
 	t.Helper()
-	_, m, err := memberships.New(env.DB, env.Bus).Scope(t.Context(), userID, publicID)
+	_, m, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
 	return newModule(env), m
 }

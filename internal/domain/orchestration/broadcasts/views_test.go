@@ -19,7 +19,7 @@ import (
 // page, and of the one read.
 func TestViewsCarryTheFigures(t *testing.T) {
 	env := testhelper.Setup(t)
-	v := broadcasts.NewViews(broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()))
+	v := broadcasts.NewViews(testhelper.Module[*broadcasts.Module](env))
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
@@ -40,7 +40,7 @@ func TestViewsCarryTheFigures(t *testing.T) {
 // Brand kit (ADR 0040).
 func TestViewsCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	env := testhelper.Setup(t)
-	v := broadcasts.NewViews(broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()))
+	v := broadcasts.NewViews(testhelper.Module[*broadcasts.Module](env))
 	name, subject, from := "Warned", "Hi", "a@"+fixtures.SendingDomainVerifiedDomain
 	body := `<p style="font-family:Georgia, serif">Sale</p><img src="https://cdn.example.com/a.png">`
 

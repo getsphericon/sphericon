@@ -35,7 +35,7 @@ func TestDeletingTwiceKeepsTheFirstDeletionTime(t *testing.T) {
 
 func TestDeleteRefusesAWrongName(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := workspaces.New(env.DB, env.Bus, time.Now)
+	m := testhelper.Module[*workspaces.Module](env)
 
 	_, err := m.Delete(t.Context(), env.DB.Scoped(fixtures.InitechID), deletedBy, "not the name")
 

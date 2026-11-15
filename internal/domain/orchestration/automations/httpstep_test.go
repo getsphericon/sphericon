@@ -7,7 +7,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +33,7 @@ func httpStep(url string) automationstep.Step {
 // Fixtures: Babel's Contact with quotes in both names, the last one an attempt to add a key.
 func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	ctx := context.Background()
 
 	res, err := m.DryRun(ctx, env.DB.Scoped(fixtures.BabelID), fixtures.ContactHostileQuotesID, slackBody)
@@ -49,7 +48,7 @@ func TestDryRunEscapesAHostileContactNameAndKeepsTheStructure(t *testing.T) {
 
 func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	res, err := m.DryRun(context.Background(), acme, fixtures.ContactAliceID, `{"n": {{ missing }}}`)
@@ -64,14 +63,14 @@ func TestDryRunNamesTheErrorKindOfAnInvalidBody(t *testing.T) {
 
 func TestDryRunOfAContactOfAnotherWorkspaceIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	_, err := m.DryRun(context.Background(), env.DB.Scoped(fixtures.GlobexID), fixtures.ContactAliceID, slackBody)
 	assert.ErrorIs(t, err, automations.ErrContactNotFound)
 }
 
 func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
@@ -120,7 +119,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 
 func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
 	a, err := m.Get(context.Background(), acme, fixtures.AutomationNotifySlackID)
@@ -138,7 +137,7 @@ func TestFixtureHTTPStepOpensAndItsBodyRenders(t *testing.T) {
 
 func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now)
+	m := testhelper.Module[*automations.Module](env)
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 

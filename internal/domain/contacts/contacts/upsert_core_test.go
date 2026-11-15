@@ -17,7 +17,7 @@ import (
 
 func TestAnUpsertClearsAnAttributeItIsGivenNullFor(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, contacts.UpsertInput{
 		Email:    lo.ToPtr(fixtures.ContactAliceEmail),
@@ -31,7 +31,7 @@ func TestAnUpsertClearsAnAttributeItIsGivenNullFor(t *testing.T) {
 
 func TestAnUpsertNeverOverwritesAnAliasKey(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 	stark := env.DB.Scoped(fixtures.StarkID)
 
@@ -44,7 +44,7 @@ func TestAnUpsertNeverOverwritesAnAliasKey(t *testing.T) {
 
 func TestTheBrowsersGuessesFillOnlyAnEmptyAttributeAndLoseToATrait(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 
@@ -72,7 +72,7 @@ func TestTheBrowsersGuessesFillOnlyAnEmptyAttributeAndLoseToATrait(t *testing.T)
 
 func TestAnInvalidGuessIsIgnored(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	res, err := m.Upsert(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceTracker, contacts.UpsertInput{
 		Email: new("bad.guess@example.com"), GuessedTimeZone: new("Mars/Olympus"), GuessedLocale: new("not a tag"),
@@ -84,7 +84,7 @@ func TestAnInvalidGuessIsIgnored(t *testing.T) {
 
 func TestNoCustomFieldTakesTheKeyOfACoreAttribute(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 
 	_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, contacts.CreateInput{
 		Email: new("reserved@example.com"), CustomFields: map[string]any{"country": "DE"}})

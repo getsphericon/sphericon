@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +74,7 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
-	want, err := segments.New(env.Bus, time.Now).Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(def)})
+	want, err := testhelper.Module[*segments.Module](env).Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(def)})
 	require.NoError(t, err)
 	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
 	require.NoError(t, err)

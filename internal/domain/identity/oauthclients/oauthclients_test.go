@@ -205,7 +205,7 @@ var johnInAcme = admission.Request{UserID: fixtures.OwnerJohnID, Workspace: fixt
 // newModule is the OAuth clients module over client with the production metadata fetcher, which
 // admits the User over the test's database.
 func newModule(env *testhelper.TestEnv, client *ent.Client) *oauthclients.Module {
-	acceptance := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
-	admit := admission.New(memberships.New(env.DB, env.Bus), acceptance, secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now))
+	acceptance := testhelper.Module[*users.Module](env)
+	admit := admission.New(testhelper.Module[*memberships.Module](env), acceptance, secondfactors.New(env.DB, env.Bus, env.Cipher, acceptance, time.Now))
 	return oauthclients.New(client, oauthclients.NewFetcher(webhook.Allowlist{}), admit, time.Now)
 }

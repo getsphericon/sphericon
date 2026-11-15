@@ -56,7 +56,7 @@ func TestAnAutomationDeactivatedAfterTheRuleJobsCheckEnrollsNobody(t *testing.T)
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
-	_, err := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), time.Now).
+	_, err := testhelper.Module[*automations.Module](env).
 		Deactivate(ctx, s, fixtures.AutomationJobsGreetingID)
 	require.NoError(t, err)
 

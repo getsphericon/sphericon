@@ -27,7 +27,7 @@ func catalogueNames(ts []*ent.Tag) []string {
 func TestApplyAutoCreatesOnFirstUseAndIsIdempotent(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	m, c := tags.New(), contacts.New(env.Bus)
+	m, c := tags.New(), testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	before, err := env.DB.Tag.Query().Count(ctx)
@@ -58,7 +58,7 @@ func TestApplyAutoCreatesOnFirstUseAndIsIdempotent(t *testing.T) {
 func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	c := contacts.New(env.Bus)
+	c := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	_, err := c.ApplyTag(ctx, acme, fixtures.ContactAliceID, "   ")
@@ -77,7 +77,7 @@ func TestApplyRejectsBlankNameAndUnknownContact(t *testing.T) {
 func TestRemoveDetachesAndKeepsTheTag(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m, c := tags.New(), contacts.New(env.Bus)
+	m, c := tags.New(), testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	require.NoError(t, c.RemoveTag(ctx, acme, fixtures.ContactAliceID, fixtures.TagVipName))
@@ -135,7 +135,7 @@ func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
 func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 	env := testhelper.Setup(t)
 	acme, globex := env.DB.Scoped(fixtures.AcmeID), env.DB.Scoped(fixtures.GlobexID)
-	m, c := tags.New(), contacts.New(env.Bus)
+	m, c := tags.New(), testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 
 	_, err := c.ApplyTag(ctx, acme, fixtures.ContactGlobexID, "vip")
@@ -154,7 +154,7 @@ func TestForeignContactIsRefusedOnEveryOperation(t *testing.T) {
 // rolls back: the tag is not auto-created.
 func TestApplyToAnotherWorkspacesContactCreatesNoTag(t *testing.T) {
 	env := testhelper.Setup(t)
-	m, c := tags.New(), contacts.New(env.Bus)
+	m, c := tags.New(), testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 	otherWsID := env.DB.Scoped(fixtures.GlobexID)
 

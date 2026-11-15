@@ -27,7 +27,7 @@ func TestSiteContactSaveAfterATagWasAppliedIsRefusedAndTheTagStays(t *testing.T)
 	require.NoError(t, err)
 	before := env.DB.Contact.GetX(ctx, fixtures.ContactAliceID)
 
-	_, err = contacts.New(env.Bus).ApplyTag(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, "from-automation")
+	_, err = testhelper.Module[*contacts.Module](env).ApplyTag(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.ContactAliceID, "from-automation")
 	require.NoError(t, err)
 
 	// The form sends the Tags it shows, which lack the one the step applied.

@@ -221,6 +221,7 @@ type TestEnv struct {
 	tb         testing.TB                  // the test, for the Notices' jobs SystemMail works before a read
 
 	sender    *outboundmessages.Module // the Outbound module the queued Broadcast sends run through
+	injector  do.Injector              // the Instance's container, which Module reads
 	jwtSecret string                   // for tokens a test needs in a state the Tracker never mints
 
 	now        func() time.Time // the clock the server checks site session expiry against
@@ -572,6 +573,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		license:         lic,
 		performers:      workers,
 		sender:          do.MustInvoke[*outboundmessages.Module](injector),
+		injector:        injector,
 		jwtSecret:       cfg.JWTSecret,
 		now:             st.now,
 		sessionTTL:      cfg.SessionTTL,

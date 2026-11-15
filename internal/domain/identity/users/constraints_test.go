@@ -2,7 +2,6 @@ package users_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +13,7 @@ import (
 )
 
 func usersModule(env *testhelper.TestEnv) *users.Module {
-	return users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	return testhelper.Module[*users.Module](env)
 }
 
 // An address is one User's: users_email_key refuses a second User with it.

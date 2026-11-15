@@ -22,7 +22,7 @@ const (
 )
 
 func recorder(env *testhelper.TestEnv) *engagement.Recorder {
-	return engagement.New(env.DB, env.Bus, contacts.New(env.Bus), env.Tracker, env.Machine, time.Now)
+	return engagement.New(env.DB, env.Bus, testhelper.Module[*contacts.Module](env), env.Tracker, env.Machine, time.Now)
 }
 
 func openToken(t *testing.T, env *testhelper.TestEnv, messageID int64) string {

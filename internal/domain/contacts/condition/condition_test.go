@@ -175,7 +175,7 @@ func TestTagConditions(t *testing.T) {
 	}))
 
 	// Live: tagging contact 2 adds it to the audience.
-	_, err := contacts.New(env.Bus).ApplyTag(ctx, env.DB.Scoped(fixtures.AcmeID), 2, "vip")
+	_, err := testhelper.Module[*contacts.Module](env).ApplyTag(ctx, env.DB.Scoped(fixtures.AcmeID), 2, "vip")
 	require.NoError(t, err)
 	assert.Equal(t, 3, count(has("vip")))
 

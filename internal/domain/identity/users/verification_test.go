@@ -26,7 +26,7 @@ import (
 // transaction: whatever the caller believed about the address, no session is refused.
 func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
@@ -68,7 +68,7 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 // and the explicit Invitation's admin Role still raises it.
 func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 // refused before anything sent is checked, and a password sent must pass its rule.
 func TestAnInvitationLinkIsAcceptedByItsToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 
 	unknown := acc.AcceptInvitationLink(t.Context(), "inv_unknown", users.InvitationAcceptance{Password: "short"})
 	short := acc.AcceptInvitationLink(t.Context(), fixtures.InvitationAcmeOscarToken, users.InvitationAcceptance{Password: "short", SessionEmail: fixtures.OutsiderOscarEmail})
@@ -107,7 +107,7 @@ func TestAnInvitationLinkIsAcceptedByItsToken(t *testing.T) {
 // of the invitee is the name they gave (ADR 0050).
 func TestAnAcceptedInvitationKeepsNoAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), env.ConsentRecords, time.Now)
+	acc := testhelper.Module[*users.Module](env)
 	inv, _, err := invitations.New(env.DB, env.Bus, time.Now).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)

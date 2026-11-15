@@ -83,7 +83,7 @@ func TestClicksByLinkEqualTheBroadcastAndAutomationReportsSummed(t *testing.T) {
 	}
 
 	want := map[string]int{}
-	perBroadcast, err := broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule()).LinkClicksOf(ctx, s, fixtures.BroadcastSentID)
+	perBroadcast, err := testhelper.Module[*broadcasts.Module](env).LinkClicksOf(ctx, s, fixtures.BroadcastSentID)
 	require.NoError(t, err)
 	for _, l := range perBroadcast {
 		want[l.URL] += l.Clicks

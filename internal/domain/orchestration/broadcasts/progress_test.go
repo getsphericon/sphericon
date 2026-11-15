@@ -32,7 +32,7 @@ type broadcastsFixture struct{ id int64 }
 
 // detailOf is the module that reads a Broadcast's figures and progress, over the env's Outbound send.
 func detailOf(env *testhelper.TestEnv) *broadcasts.Module {
-	return broadcasts.New(env.Bus, testhelper.Renderer(), env.OutboundModule())
+	return testhelper.Module[*broadcasts.Module](env)
 }
 
 // With no job scheduled ahead the ETA is the remaining recipients at the effective

@@ -22,7 +22,7 @@ import (
 // country field instead of reaching the database's check.
 func TestEveryWriteReadsTheCountryAsAnISOCode(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := contacts.New(env.Bus)
+	m := testhelper.Module[*contacts.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 

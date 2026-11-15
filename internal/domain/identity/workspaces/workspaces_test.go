@@ -28,7 +28,7 @@ func TestIDByPublicIDIn(t *testing.T) {
 
 func TestTheOldestLiveWorkspaceIsNeverADeletedOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	a := workspaces.New(env.DB, env.Bus, time.Now)
+	a := testhelper.Module[*workspaces.Module](env)
 	oldest, err := a.OldestLiveID(t.Context())
 	require.NoError(t, err)
 	require.EqualValues(t, fixtures.AcmeID, oldest)
@@ -43,7 +43,7 @@ func TestTheOldestLiveWorkspaceIsNeverADeletedOne(t *testing.T) {
 // A postal address is trimmed, so one of whitespace alone clears it, as an empty one does.
 func TestUpdateTrimsThePostalAddress(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := workspaces.New(env.DB, env.Bus, time.Now)
+	m := testhelper.Module[*workspaces.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	padded, blank := "  1 Main St  ", "   "
 
