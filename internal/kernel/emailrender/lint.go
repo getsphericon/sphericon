@@ -3,7 +3,6 @@ package emailrender
 import (
 	"fmt"
 	"maps"
-	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -413,26 +412,22 @@ func normalizeColor(v string) (string, bool) {
 	return fmt.Sprintf("#%02x%02x%02x", r, g, b), true
 }
 
-// parseColor reads a normalized #rrggbb into its channels, each from 0 to 1.
-func parseColor(c string) ([3]float64, bool) {
+// parseColor reads a normalized #rrggbb (so its channels are the 8-bit ones normalizeColor kept).
+func parseColor(c string) (csscolorparser.Color, bool) {
 	parsed, err := csscolorparser.Parse(c)
 	if err != nil || c == "" {
-		return [3]float64{}, false
+		return csscolorparser.Color{}, false
 	}
-	return [3]float64{parsed.R, parsed.G, parsed.B}, true
+	return parsed, true
 }
 
-func luminance(c [3]float64) float64 {
-	lin := func(v float64) float64 {
-		if v <= 0.04045 {
-			return v / 12.92
-		}
-		return math.Pow((v+0.055)/1.055, 2.4)
-	}
-	return 0.2126*lin(c[0]) + 0.7152*lin(c[1]) + 0.0722*lin(c[2])
+// luminance is the WCAG relative luminance: the weighted sum of the linearized sRGB channels.
+func luminance(c csscolorparser.Color) float64 {
+	lin := c.LinearRgb()
+	return 0.2126*lin[0] + 0.7152*lin[1] + 0.0722*lin[2]
 }
 
-func contrastRatio(a, b [3]float64) float64 {
+func contrastRatio(a, b csscolorparser.Color) float64 {
 	la, lb := luminance(a), luminance(b)
 	if la < lb {
 		la, lb = lb, la
