@@ -152,7 +152,16 @@ func (m *Module) ResetPasswordLink(ctx context.Context, token, password string) 
 		}
 		// A concurrent link verified the User first: this is now a plain password change.
 	}
-	reset, err := m.users.ResetVerifiedPassword(ctx, id, passwordHash)
+	var reset *ent.User
+	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		now := m.now()
+		u, firstProof, err := users.ResetVerifiedPasswordIn(ctx, tx, pub, id, passwordHash, now)
+		if err != nil {
+			return err
+		}
+		reset, err = afterProofIn(ctx, tx, u, firstProof, now)
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}

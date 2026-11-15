@@ -367,50 +367,62 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 	}
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		// The mailed link proves the address; only a stamp from empty is a domain-join step,
-		// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
-		stamped := false
-		if proven {
-			var err error
-			if stamped, err = proveEmailIn(ctx, tx, id, a.now()); err != nil {
-				return err
-			}
-		}
-		upd := tx.User.UpdateOneID(id).SetNillableName(w.Name).SetNillableTimezone(w.Timezone).SetNillableRegionalFormat(w.RegionalFormat)
-		if w.ClearTimezone {
-			upd = upd.ClearTimezone()
-		}
-		if w.ClearRegionalFormat {
-			upd = upd.ClearRegionalFormat()
-		}
-		if w.PasswordHash != nil {
-			// A new password ends every session issued before it (ADR 0020).
-			upd = upd.SetPasswordHash(*w.PasswordHash).AddSessionEpoch(1)
-		}
-		u, err := upd.Save(ctx)
-		if err != nil {
-			return err
-		}
-		saved = u
-		if stamped {
-			if _, err := ApplyDomainJoinIn(ctx, tx, pub, u); err != nil {
-				return err
-			}
-		}
-		if w.PasswordHash == nil {
-			return nil
-		}
-		return RecordUserAction(ctx, tx, pub, u, events.ActionUserPasswordChange, map[string]any{"password": "changed"})
+		var err error
+		saved, _, err = updateProfileIn(ctx, tx, pub, id, w, proven, a.now())
+		return err
 	})
 	return saved, err
 }
 
-// ResetVerifiedPassword sets a Verified User's password from a reset link (ADR 0030): a password
+// updateProfileIn is updateProfile's write on the transaction tx, the name already checked.
+// firstProof reports that proven stamped the address from empty: the identities linked before it
+// go then too, and the caller drops the rest of what was set up before the proof (ADR 0170).
+func updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, w profileWrite, proven bool, now time.Time) (saved *ent.User, firstProof bool, err error) {
+	// The mailed link proves the address; only a stamp from empty is a domain-join step,
+	// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
+	if proven {
+		if firstProof, err = proveEmailIn(ctx, tx, id, now); err != nil {
+			return nil, false, err
+		}
+	}
+	if firstProof {
+		if err := dropIdentitiesIn(ctx, tx, id); err != nil {
+			return nil, false, err
+		}
+	}
+	upd := tx.User.UpdateOneID(id).SetNillableName(w.Name).SetNillableTimezone(w.Timezone).SetNillableRegionalFormat(w.RegionalFormat)
+	if w.ClearTimezone {
+		upd = upd.ClearTimezone()
+	}
+	if w.ClearRegionalFormat {
+		upd = upd.ClearRegionalFormat()
+	}
+	if w.PasswordHash != nil {
+		// A new password ends every session issued before it (ADR 0020).
+		upd = upd.SetPasswordHash(*w.PasswordHash).AddSessionEpoch(1)
+	}
+	if saved, err = upd.Save(ctx); err != nil {
+		return nil, false, err
+	}
+	if firstProof {
+		if _, err := ApplyDomainJoinIn(ctx, tx, pub, saved); err != nil {
+			return nil, false, err
+		}
+	}
+	if w.PasswordHash == nil {
+		return saved, firstProof, nil
+	}
+	return saved, firstProof, RecordUserAction(ctx, tx, pub, saved, events.ActionUserPasswordChange, map[string]any{"password": "changed"})
+}
+
+// ResetVerifiedPasswordIn sets a Verified User's password from a reset link (ADR 0030): a password
 // change recorded like ChangeProfile, which ends every earlier session. The link was mailed to the
 // login address, so following it proves the address. An Unverified User's reset completes the
 // Sign-up instead (internal/domain/identity/signup).
-func (a *Module) ResetVerifiedPassword(ctx context.Context, id int64, passwordHash string) (*ent.User, error) {
-	return a.updateProfile(ctx, id, profileWrite{PasswordHash: &passwordHash}, true)
+// It runs on the transaction tx; firstProof reports that the link was the address's first proof, so
+// the caller drops what was set up before it (ADR 0170).
+func ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, passwordHash string, now time.Time) (*ent.User, bool, error) {
+	return updateProfileIn(ctx, tx, pub, id, profileWrite{PasswordHash: &passwordHash}, true, now)
 }
 
 // EndSessions bumps the User's session epoch, ending every session issued before

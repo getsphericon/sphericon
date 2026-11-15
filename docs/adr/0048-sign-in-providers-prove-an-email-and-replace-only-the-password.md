@@ -4,6 +4,11 @@ status: accepted
 
 # Sign-in providers prove an email and replace only the password
 
+> **Amended by [[0170-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** the first
+> proof of a Verified User's address, by a provider link or a reset link, drops every credential set
+> up before it, not only the password: Linked identities, the Second factor, Passkeys, Personal
+> tokens and Connections.
+
 > **Amended by [[0062-sign-up-items-the-operator-sets-and-every-decision-is-recorded]]:** when the
 > decision would create a User or take over an Unverified one and the Instance has Sign-up items, the
 > callback keeps a pending sign-up instead; the User is created or taken over, with its Linked identity

@@ -11,8 +11,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
@@ -252,7 +254,7 @@ func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pro
 			}
 			return &users.ProviderSignin{Pending: held}, nil
 		case users.SigninLink:
-			linked, identityID, err := m.users.LinkToHolder(ctx, holder.ID, in)
+			linked, identityID, err := m.linkToHolder(ctx, holder.ID, in)
 			if lostRace(err) && attempt == 0 {
 				continue // the same sign-in raced itself: read the facts again
 			}
@@ -275,6 +277,47 @@ func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pro
 			return nil, &users.SigninRefusedError{Reason: decision.Reason}
 		}
 	}
+}
+
+// linkToHolder links the provider's identity to the Verified User holderID who holds its email
+// (users.LinkToHolderIn). When that proof is the address's first, what was set up before it goes
+// in the same transaction (afterProofIn).
+func (m *Module) linkToHolder(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, int64, error) {
+	var linked *ent.User
+	var identityID int64
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		now := m.now()
+		u, id, firstProof, err := users.LinkToHolderIn(ctx, tx, pub, holderID, in, now)
+		if err != nil {
+			return err
+		}
+		linked, identityID = u, id
+		linked, err = afterProofIn(ctx, tx, u, firstProof, now)
+		return err
+	})
+	return linked, identityID, err
+}
+
+// afterProofIn is the end of a step that proved u's address at now, on its transaction tx. When
+// that proof was the address's first, it drops the ways into the account that were set up before
+// it: whoever set them was not shown to control the address, so whoever proves it is the one who
+// controls the account (ADR 0170). The Personal tokens and Connections go in every Workspace of the
+// User, then the Second factor, its Recovery codes and the Passkeys. It returns the User as it
+// stands afterwards, its session epoch the last one.
+func afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof bool, now time.Time) (*ent.User, error) {
+	if !firstProof {
+		return u, nil
+	}
+	held, err := memberships.OfUserIn(ctx, tx, u.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, ms := range held {
+		if err := apitokens.RevokeOfUser(ctx, tx.Scoped(ms.WorkspaceID), u.ID, now); err != nil {
+			return nil, err
+		}
+	}
+	return secondfactors.ClearFactorAndPasskeysIn(ctx, tx, u.ID)
 }
 
 // lostRace reports whether err is a write of a provider sign-in that another sign-in of the same

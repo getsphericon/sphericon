@@ -77,6 +77,23 @@ func PersonalTokens(ctx context.Context, s *ent.Scoped, caller *ent.Membership) 
 		All(ctx)
 }
 
+// RevokeOfUser retires every active Personal token and Connection the User holds in the Workspace s:
+// the credentials set up before the User's address was first proven (ADR 0170).
+func RevokeOfUser(ctx context.Context, s *ent.Scoped, userID int64, at time.Time) error {
+	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
+		n, err := s.ApiToken().Update().
+			Where(apitoken.HasMembershipWith(membership.UserID(userID)), apitoken.RevokedAtIsNil()).
+			SetRevokedAt(at).
+			Save(ctx)
+		return n > 0, err
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		// None left to revoke.
+		return nil
+	}
+	return err
+}
+
 // RevokePersonal retires the active Personal token id of the Workspace s on behalf of caller: the
 // caller's own, or anyone's when the Role holds members:manage. One the caller may not see is
 // ErrPersonalTokenNotFound, as an unknown one is.

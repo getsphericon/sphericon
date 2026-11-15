@@ -4,6 +4,9 @@ status: accepted
 
 # A passkey replaces the password and the Second factor
 
+> **Amended by [[0170-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** Passkeys
+> registered before a User's address was first proven are removed by that proof.
+
 A User may register **Passkeys** (WebAuthn, `go-webauthn/webauthn`) and log in with one without typing an
 email or a password. Unlike a Sign-in provider ([[0048-sign-in-providers-prove-an-email-and-replace-only-the-password]]),
 which replaces only the password step, a Passkey login requires user verification (biometric or PIN), so
