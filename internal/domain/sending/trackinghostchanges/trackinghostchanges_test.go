@@ -1,20 +1,16 @@
 package trackinghostchanges_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackinghostchanges"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -38,9 +34,11 @@ func TestAHostThatFallsBackToPendingIsRemoved(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// test writes: the hook fires on this write
-	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
-		UpdateOneID(fixtures.TrackingDomainServingID).
-		SetState(trackingdomain.StatePending).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.UmbrellaID).TrackingDomain().
+			UpdateOneID(fixtures.TrackingDomainServingID).
+			SetState(trackingdomain.StatePending).Exec(t.Context())
+	})
 
 	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateRemoved},
 		logged(t, env, fixtures.TrackingDomainServingHost))
@@ -49,10 +47,11 @@ func TestAHostThatFallsBackToPendingIsRemoved(t *testing.T) {
 // A deleted host that was verified is removed; one that never was has nothing to take back.
 func TestDeletingAHostLogsItOnlyWhenItWasVerified(t *testing.T) {
 	env := testhelper.Setup(t)
-	umbrella := env.FeedDB.Scoped(fixtures.UmbrellaID)
-
-	require.NoError(t, umbrella.TrackingDomain().DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context()))
-	require.NoError(t, umbrella.TrackingDomain().DeleteOneID(fixtures.TrackingDomainReplacementID).Exec(t.Context()))
+	for _, id := range []int64{fixtures.TrackingDomainRetiredID, fixtures.TrackingDomainReplacementID} {
+		env.Feed(t, func(tx *ent.Client) error {
+			return tx.Scoped(fixtures.UmbrellaID).TrackingDomain().DeleteOneID(id).Exec(t.Context())
+		})
+	}
 
 	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateRemoved},
 		logged(t, env, fixtures.TrackingDomainRetiredHost))
@@ -61,16 +60,17 @@ func TestDeletingAHostLogsItOnlyWhenItWasVerified(t *testing.T) {
 
 func TestACreatedHostIsLoggedOnlyWhenItIsAlreadyVerified(t *testing.T) {
 	env := testhelper.Setup(t)
-	create := func(ws int64, host string) *ent.TrackingDomainScopedCreate {
-		// test writes: the hook fires on this write
-		return env.FeedDB.Scoped(ws).TrackingDomain().Create().SetHost(host).SetRole(trackingdomain.RoleRetired)
-	}
 
-	// test writes: the hook fires on this write
-	require.NoError(t, env.FeedDB.Scoped(fixtures.KramericaID).TrackingDomain().Create().
-		SetHost("new-pending.kramerica.test").SetRole(trackingdomain.RoleCurrent).Exec(t.Context()))
-	require.NoError(t, create(fixtures.KramericaID, "new-dns.kramerica.test").
-		SetState(trackingdomain.StateDNSVerified).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		// test writes: the hook fires on this write
+		return tx.Scoped(fixtures.KramericaID).TrackingDomain().Create().
+			SetHost("new-pending.kramerica.test").SetRole(trackingdomain.RoleCurrent).Exec(t.Context())
+	})
+	env.Feed(t, func(tx *ent.Client) error {
+		// test writes: the hook fires on this write
+		return tx.Scoped(fixtures.KramericaID).TrackingDomain().Create().SetHost("new-dns.kramerica.test").
+			SetRole(trackingdomain.RoleRetired).SetState(trackingdomain.StateDNSVerified).Exec(t.Context())
+	})
 
 	assert.Empty(t, logged(t, env, "new-pending.kramerica.test"))
 	assert.Equal(t, []trackinghostchange.State{trackinghostchange.StateDNSVerified},
@@ -82,9 +82,11 @@ func TestRetiringAServingHostLogsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// test writes: the hook fires on this write
-	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
-		UpdateOneID(fixtures.TrackingDomainServingID).
-		SetRole(trackingdomain.RoleRetired).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.UmbrellaID).TrackingDomain().
+			UpdateOneID(fixtures.TrackingDomainServingID).
+			SetRole(trackingdomain.RoleRetired).Exec(t.Context())
+	})
 
 	assert.Empty(t, logged(t, env, fixtures.TrackingDomainServingHost))
 }
@@ -92,15 +94,10 @@ func TestRetiringAServingHostLogsNothing(t *testing.T) {
 // A log row written outside the transaction of its change is a separate statement: a
 // crash between the two loses the change. The plain client refuses such a change.
 func TestPlainClientRefusesAChangeToAVerifiedHost(t *testing.T) {
-	testhelper.Setup(t) // loads the schema into the real database once
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	pool, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	client := entclient.Core.New(pool)
+	// env.DB is the plain client, as production builds it: it carries the Guards.
+	client := testhelper.Setup(t).DB
 
-	err = client.TrackingDomain.UpdateOneID(fixtures.TrackingDomainServingID).
+	err := client.TrackingDomain.UpdateOneID(fixtures.TrackingDomainServingID).
 		SetState(trackingdomain.StatePending).Exec(t.Context())
 	require.ErrorIs(t, err, trackinghostchanges.ErrNeedsTransaction)
 

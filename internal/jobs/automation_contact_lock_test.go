@@ -2,7 +2,6 @@ package jobs_test
 
 import (
 	"context"
-	"database/sql"
 	"sync"
 	"testing"
 	"time"
@@ -16,13 +15,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
 )
 
 // queuedOnTheContact runs the writers queued behind a transaction of the test's own that holds the
-// Contact's row (testhelper.QueuedBehind), then releases the row. It returns each testhelper.Writer's error by
+// Contact's row (TestEnv.QueueBehind), then releases the row. It returns each testhelper.Writer's error by
 // its name.
 func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...testhelper.Writer) map[string]error {
 	t.Helper()
@@ -33,10 +31,7 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...te
 	t.Cleanup(release) // a failed assertion must not leave the Contact locked
 	_, err = contactlock.Lock(ctx, e.scoped.InTx(tx.Client(), nil), contactID)
 	require.NoError(t, err)
-	probe, err := sql.Open("pgx", e.url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(probe, "probe") })
-	return testhelper.QueuedBehind(t, probe, release, writers...)
+	return e.env.QueueBehind(t, release, writers...)
 }
 
 // enrolledForTheExit enrolls Alice in the Automation whose tag step an exit Event ends, and returns
@@ -45,10 +40,9 @@ func enrolledForTheExit(t *testing.T, e *realEnv) (int64, testhelper.Writer) {
 	t.Helper()
 	ctx := context.Background()
 	runID := e.enrolledNow(t, fixtures.AutomationJobsTagWithExitID, fixtures.ContactAliceID)
-	ending := e.bus(t)
 	return runID, testhelper.Writer{Name: "exit", Run: func() error {
 		left := automations.Event{Action: "job_tag_exit_left", OccurredAt: time.Now()}
-		return e.enrollments(ending).OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: left})
+		return e.enrollments().OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: left})
 	}}
 }
 
@@ -115,7 +109,7 @@ func TestAnErasureAndAnExitOfOneContactNeverDeadlock(t *testing.T) {
 			e := newRealEnv(t)
 			ctx := context.Background()
 			runID, exit := enrolledForTheExit(t, e)
-			erasing := contacterasure.New(e.bus(t), time.Now)
+			erasing := testhelper.Module[*contacterasure.UseCase](e.env)
 			erase := testhelper.Writer{Name: "erase", Run: func() error {
 				return erasing.Erase(ctx, e.scoped, contacterasure.Identifier{ContactID: fixtures.ContactAliceID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken})
 			}}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -27,22 +25,23 @@ import (
 // A click that a concurrent one beat to the opt-out finds it written when its insert goes ahead
 // (ON CONFLICT DO NOTHING): it succeeds and records nothing more, no second email.unsubscribed.
 func TestAClickThatLosesTheRaceToTheOptOutRecordsNothingMore(t *testing.T) {
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 	dest := fixtures.ContactAliceEmail
 
-	release := race.HoldOpen(t, events.Ingest(race.Scope), firstOptOut(ctx, dest))
+	release := env.HoldOpen(t, events.Ingest(scope), firstOptOut(ctx, dest))
 
-	errs := testhelper.QueuedBehind(t, race.DB, release,
+	errs := env.QueueBehind(t, release,
 		testhelper.Writer{Name: "second click", Run: func() error {
-			return unsubscriberecording.New(race.Bus, time.Now).RecordLink(ctx, race.Scope, linktarget.Unsubscribe{
+			return testhelper.Module[*unsubscriberecording.UseCase](env).RecordLink(ctx, scope, linktarget.Unsubscribe{
 				WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Channel: channels.Email,
 				Destination: dest, Source: eligibility.SourceEverything,
 			})
 		}})
 
 	require.NoError(t, errs["second click"])
-	client := entclient.Core.New(race.DB)
+	client := env.DB
 	rows, err := client.Unsubscribe.Query().Where(
 		unsubscribe.WorkspaceID(fixtures.AcmeID), unsubscribe.DestinationEQ(dest),
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),

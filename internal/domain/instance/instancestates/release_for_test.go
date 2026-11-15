@@ -68,7 +68,7 @@ func TestSomeoneWhoOwnsNoWorkspaceIsRefusedTheRelease(t *testing.T) {
 func TestAnOwnerOfADeletedWorkspaceOnlyIsRefusedTheRelease(t *testing.T) {
 	env := testhelper.Setup(t)
 	mod := releaseFound(t, env)
-	env.DeleteWorkspace(t.Context(), fixtures.AcmeID, time.Now())
+	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 
 	_, err := mod.ReleaseFor(t.Context(), fixtures.OwnerJohnID)
 

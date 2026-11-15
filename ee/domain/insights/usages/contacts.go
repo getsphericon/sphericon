@@ -92,7 +92,7 @@ func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 				if err != nil {
 					return nil, fmt.Errorf("count contacts: %w", err)
 				}
-				if err := track(ctx, c, now, id, n); err != nil {
+				if err := track(c, now, id, n); err != nil {
 					return nil, err
 				}
 			}
@@ -101,7 +101,7 @@ func Hook(lic *licensekey.License, now func() time.Time) entgo.Hook {
 				return v, err
 			}
 			for _, id := range after {
-				if err := track(ctx, c, now, id, 0); err != nil {
+				if err := track(c, now, id, 0); err != nil {
 					return v, err
 				}
 			}
@@ -214,15 +214,15 @@ func (p *peak) Run(ctx context.Context) error {
 	return raise(ctx, p.client, p.now(), p.workspaceID, p.floor)
 }
 
-// track has the Workspace's peak raised, to at least floor, right before c's transaction
-// commits; on a client whose transaction runs no such work (a test's go-txdb connection) it raises
-// it at once.
-func track(ctx context.Context, c *ent.Client, now func() time.Time, workspaceID, floor int64) error {
+// track has the Workspace's peak raised, to at least floor, right before c's transaction commits.
+// Hook runs only on the bus's transaction client, which runs such work; any other client is a
+// wiring error.
+func track(c *ent.Client, now func() time.Time, workspaceID, floor int64) error {
 	w, ok := c.BeforeCommit(peakKey{workspaceID}, func() ent.PreCommit {
 		return &peak{client: c, now: now, workspaceID: workspaceID}
 	})
 	if !ok {
-		return raise(ctx, c, now(), workspaceID, floor)
+		return fmt.Errorf("contacts peak of workspace %d: the client's transaction runs no work before its commit", workspaceID)
 	}
 	p, ok := w.(*peak)
 	if !ok {

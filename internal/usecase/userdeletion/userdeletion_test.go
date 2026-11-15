@@ -5,7 +5,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -13,12 +12,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/userdeletion"
 )
@@ -47,7 +44,10 @@ func TestDeleteRefusesAProofThatNoLongerFitsTheUser(t *testing.T) {
 		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
 			v, err := next.Query(ctx, q)
 			if err == nil && removed.CompareAndSwap(false, true) {
-				err = env.FeedDB.User.UpdateOneID(fixtures.SecondFactorSamID).SetPasswordHash("").Exec(ctx)
+				// The write a hook records goes through the bus, as Feed makes it.
+				err = env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+					return tx.User.UpdateOneID(fixtures.SecondFactorSamID).SetPasswordHash("").Exec(ctx)
+				})
 			}
 			return v, err
 		})
@@ -92,16 +92,10 @@ func TestDeleteRefusesAWrongCode(t *testing.T) {
 // Two co-Owners deleting themselves at the same moment serialize on the Workspace's Owner
 // rows (ADR 0050): exactly one is deleted, the other is refused as the last Owner.
 func TestTwoCoOwnersDeletingThemselvesAtOnceDeleteExactlyOne(t *testing.T) {
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
-	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
-	bus.UseJobs(testhelper.AcceptingQueue{})
-	usersModule := users.New(client, bus, testhelper.Passwords(), testhelper.ConsentRecords(client, bus), time.Now)
-	factors := secondfactors.New(client, bus, testhelper.Cipher(t), nil, time.Now)
-	budget := throttle.NewAttempts(client, time.Now).For(throttle.KindLogin)
+	env := testhelper.Setup(t, testhelper.Committed())
+	client := env.DB
 	// Both prove a password, so no deletion link is checked.
-	deletion := userdeletion.New(bus, usersModule, nil, factors, budget, testhelper.Passwords())
+	deletion := testhelper.Module[*userdeletion.UseCase](env)
 
 	owners := []userdeletion.Request{
 		{UserID: fixtures.InitechOwnerOlgaID, Email: fixtures.InitechOwnerOlgaEmail, Password: fixtures.InitechOwnerOlgaPassword},

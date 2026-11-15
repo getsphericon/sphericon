@@ -14,7 +14,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -45,6 +44,8 @@ func TestAPendingEnrollmentCannotVerifyRegenerateOrDisable(t *testing.T) {
 	assert.Equal(t, secondfactors.Status{Pending: true}, status)
 }
 
+// factorRace is the Second factors of a committed env, whose transactions wait side by side, on a
+// clock that stands still, built over Users whose every proof holds.
 type factorRace struct {
 	client  *ent.Client
 	bus     *events.Bus
@@ -54,15 +55,11 @@ type factorRace struct {
 
 func newFactorRace(t *testing.T) factorRace {
 	t.Helper()
-	pool := testhelper.RealDB(t)
-	pool.SetMaxOpenConns(4)
-	client := entclient.Core.New(pool)
 	now := time.Now()
 	clock := func() time.Time { return now }
-	bus := events.New(pool, entclient.Core.NewTx, clock)
-	bus.UseJobs(testhelper.AcceptingQueue{})
-	return factorRace{client: client, bus: bus, now: now,
-		factors: secondfactors.New(client, bus, testhelper.Cipher(t), testhelper.ProvenUsers{}, clock)}
+	env := testhelper.Setup(t, testhelper.Committed(), testhelper.WithClock(clock))
+	return factorRace{client: env.DB, bus: env.Bus, now: now,
+		factors: secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.ProvenUsers{}, clock)}
 }
 
 // pause holds the first write matches selects, after its operation loaded and checked the User

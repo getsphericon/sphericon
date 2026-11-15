@@ -33,7 +33,7 @@ func TestTheOldestLiveWorkspaceIsNeverADeletedOne(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, fixtures.AcmeID, oldest)
 
-	env.DeleteWorkspace(t.Context(), fixtures.AcmeID, time.Now())
+	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 
 	next, err := a.OldestLiveID(t.Context())
 	require.NoError(t, err)

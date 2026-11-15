@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/passkey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
@@ -47,7 +48,9 @@ func TestOwnerResetsAMembersSecondFactorAndEndsTheirSessions(t *testing.T) {
 
 func TestAdminResetsAMembersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.FeedDB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context())
+	})
 
 	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
 
@@ -75,7 +78,9 @@ func TestSecondFactorResetNeedsAMembershipInTheWorkspace(t *testing.T) {
 
 func TestAdminCannotResetAnOwnersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.FeedDB.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context())
+	})
 
 	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
 

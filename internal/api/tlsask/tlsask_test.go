@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -65,10 +66,12 @@ func TestTLSAskRefusesTheHostsOfADeletedWorkspace(t *testing.T) {
 	host := fixtures.TrackingDomainServingHost
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 
-	env.DeleteWorkspace(t.Context(), fixtures.UmbrellaID, time.Now())
+	env.DeleteWorkspace(t, fixtures.UmbrellaID, time.Now())
 	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDiscardedAt().ExecX(t.Context())
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(fixtures.UmbrellaID).ClearDiscardedAt().Exec(t.Context())
+	})
 	assert.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 }
 
@@ -78,7 +81,9 @@ func TestTLSAskRefusesAHostThatWent(t *testing.T) {
 	host := fixtures.TrackingDomainRetiredHost
 	require.Equal(t, http.StatusOK, ask(t, env.Internal, host))
 
-	require.NoError(t, env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
-		DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.UmbrellaID).TrackingDomain().
+			DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context())
+	})
 	assert.Equal(t, http.StatusNotFound, ask(t, env.Internal, host))
 }

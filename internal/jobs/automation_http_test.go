@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -338,7 +339,9 @@ func TestHTTPStepRateLimitEndsAtTheRetryHorizon(t *testing.T) {
 func TestHTTPStepOfAnErasedContactSendsNothing(t *testing.T) {
 	h := newHTTPStepHarness(t)
 	runID := int64(fixtures.AutomationRunQuahogHookID)
-	h.FeedDB.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).ExecX(context.Background())
+	h.Feed(t, func(tx *ent.Client) error {
+		return tx.Contact.DeleteOneID(fixtures.ContactQuahogQuinnID).Exec(context.Background())
+	})
 
 	require.NoError(t, h.attempt(h.worker(h.rcv.allow), runID, 1))
 	assert.Empty(t, h.rcv.received())

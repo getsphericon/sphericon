@@ -13,7 +13,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -69,7 +68,7 @@ func TestTwoRemovalsCannotTakeAPasswordlessUsersLastTwoPasskeys(t *testing.T) {
 	go func() { first <- remove(fixtures.PasskeyRuePhoneID) }()
 	testhelper.Receive(t, ready, "the first removal checked Rue's other Passkey")
 
-	errs := testhelper.QueuedBehind(t, r.db, release, testhelper.Writer{Name: "second removal", Run: func() error {
+	errs := r.env.QueueBehind(t, release, testhelper.Writer{Name: "second removal", Run: func() error {
 		return remove(fixtures.PasskeyRueKeyID)
 	}})
 
@@ -80,9 +79,10 @@ func TestTwoRemovalsCannotTakeAPasswordlessUsersLastTwoPasskeys(t *testing.T) {
 	assert.Equal(t, []int64{fixtures.PasskeyRueKeyID}, left)
 }
 
-// race is the Passkeys and the Second factors over a database of the test's own, whose pool lets
-// two transactions wait side by side, and a bus that takes every job and keeps none.
+// race is the Passkeys and the Second factors of a committed env, whose transactions wait side by
+// side, built over Users whose every proof holds (a passwordless User's removal proves nothing).
 type race struct {
+	env     *testhelper.TestEnv
 	db      *sql.DB
 	client  *ent.Client
 	bus     *events.Bus
@@ -92,16 +92,11 @@ type race struct {
 
 func newRace(t *testing.T) race {
 	t.Helper()
-	db := testhelper.RealDB(t)
-	db.SetMaxOpenConns(4)
-	client := entclient.Core.New(db)
-	clock := time.Now
-	bus := events.New(db, entclient.Core.NewTx, clock)
-	bus.UseJobs(testhelper.AcceptingQueue{})
-	keys, err := passkeys.New(client, bus, testhelper.ProvenUsers{}, "https://app.example", "passkeys-test-ceremony-secret", clock)
+	env := testhelper.Setup(t, testhelper.Committed())
+	keys, err := passkeys.New(env.DB, env.Bus, testhelper.ProvenUsers{}, "https://app.example", "passkeys-test-ceremony-secret", time.Now)
 	require.NoError(t, err)
-	factors := secondfactors.New(client, bus, testhelper.Cipher(t), testhelper.ProvenUsers{}, clock)
-	return race{db: db, client: client, bus: bus, keys: keys, factors: factors}
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.ProvenUsers{}, time.Now)
+	return race{env: env, db: env.SQLDB, client: env.DB, bus: env.Bus, keys: keys, factors: factors}
 }
 
 // pauseFirst holds the first write of the bus's transactions that matches selects, before it

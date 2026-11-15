@@ -50,12 +50,6 @@ func (c Clients) New(sqlDB *sql.DB) *ent.Client {
 	return client
 }
 
-// NewOnTx is a client over a sqlDB whose one connection is already a transaction (go-txdb in
-// tests), so a change a hook records takes its place inside that transaction.
-func (c Clients) NewOnTx(sqlDB *sql.DB) *ent.Client {
-	return c.NewTx(entsql.OpenDB(dialect.Postgres, sqlDB))
-}
-
 // NewTx is a client over a driver that runs inside one transaction (the events bus's, which
 // events.New is given it for): it carries the hooks where New only guards them. Every client
 // bound to a transaction is built here, so the two kinds of client keep the same hooks.

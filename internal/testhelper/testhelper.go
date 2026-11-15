@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/samber/do/v2"
@@ -33,7 +34,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
@@ -159,13 +159,10 @@ type TestEnv struct {
 	// feed, the User feed, the Tracking host log or, with the `staff` license, the Usage peak would
 	// record outside a bus transaction, so a module that forgets the transaction fails its tests.
 	DB *ent.Client
-	// FeedDB is a client on the same transaction that records those changes as a bus transaction
-	// does: for a test that moves a fixture row the hooks watch (a Workspace marked deleted, a
-	// User's address changed, a Contact's email cleared) as its setup, never for the operation
-	// under test.
-	FeedDB *ent.Client
-	SQLDB  *sql.DB     // the same txdb connection the ent client and bus ride
-	Bus    *events.Bus // domain-event bus over SQLDB (nested savepoint per WithinTx)
+	// SQLDB is the database the ent client and the bus ride: the test's one txdb connection, or the
+	// pool of a committed env's own database (Committed).
+	SQLDB  *sql.DB
+	Bus    *events.Bus // domain-event bus over SQLDB (a savepoint per WithinTx on txdb)
 	Server http.Handler
 	// Internal is the handler of the internal listener (ADR 0026), from the production
 	// container: the TLS ask, and the service endpoints with the `staff` license.
@@ -189,6 +186,9 @@ type TestEnv struct {
 
 	injector  do.Injector // the Instance's container, which Module reads
 	jwtSecret string      // for tokens a test needs in a state the Tracker never mints
+	// committed is whether the env rides a database of its own whose writes commit (Committed)
+	// rather than the test's rolled-back transaction.
+	committed bool
 
 	now        func() time.Time // the clock the server checks site session expiry against
 	sessionTTL time.Duration    // SPHERICON_SESSION_TTL, the lifetime of the site tokens tests mint
@@ -231,6 +231,9 @@ type Option func(*setup)
 // setup is what the options edit: a private copy of the test config, the clock the
 // account attempt module reads, and whether the instance has no EE license.
 type setup struct {
+	// database is the URL of a committed env's own database (Committed); nil rides the test's
+	// transaction.
+	database   func(*testing.T) string
 	cfg        *config.Config
 	now        func() time.Time
 	unlicensed bool
@@ -296,6 +299,18 @@ func WithRunningVersion(v string) Option { return func(s *setup) { s.version = v
 // WithSNSCertificates replaces where an `sns` Preset gets its signing certificate (the
 // test certificate by default), so a test makes the fetch fail.
 func WithSNSCertificates(f preset.CertFetcher) Option { return func(s *setup) { s.certs = f } }
+
+// Committed builds the same Instance over a database of the test's own (RealDB) whose writes
+// really commit, for a test that cannot ride the rolled-back transaction: transactions that meet
+// (the races of ADR 0099, run with QueueBehindWorkspaceLock, QueueBehindKey, HoldOpen and
+// QueueBehind), a river runtime, code that opens its own connection. Everything else about the
+// env is the same: the modules (Module), the actors, PerformEnqueuedJobs, Feed. It costs a clone of
+// the database, ten times a rolled-back test, so only such a test takes it.
+func Committed() Option { return func(s *setup) { s.database = RealDBURL } }
+
+// committedConns is the pool of a committed env: enough for the writers of a race to wait side by
+// side while the lock's holder and the race's own queries of the server keep theirs.
+const committedConns = 16
 
 // WithoutLicense builds the instance with no EE license key, like a plain core
 // self-host. Setup's default is an instance licensed for every EE feature.
@@ -392,8 +407,19 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// All queries ride the SAME transaction (the cleaner limits the pool to one
 	// connection); it is rolled back when the test ends. The bus opens a nested (savepoint)
 	// transaction on it, so producer writes, Event rows and the jobs queued in a bus
-	// transaction roll back with the test; no worker runs them.
-	txDB := cleaner.DB(t)
+	// transaction roll back with the test; no worker runs them. A committed env rides a database
+	// of its own instead, dropped when the test ends, whose pool lets transactions meet.
+	var txDB *sql.DB
+	if st.database == nil {
+		txDB = cleaner.DB(t)
+	} else {
+		cfg.DatabaseURL = st.database(t)
+		var err error
+		txDB, err = sql.Open("pgx", cfg.DatabaseURL)
+		require.NoError(t, err)
+		t.Cleanup(func() { cleanup.Close(txDB, "committed env") })
+		txDB.SetMaxOpenConns(committedConns)
+	}
 
 	// Captured sends of the jobs tests work at once, for assertions.
 	systemMail := &CapturingSender{}
@@ -469,10 +495,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// QueuedEnvelopes sees it whether or not a consumer of the application wants it.
 	do.MustInvoke[*events.Bus](injector).UseConsumers(recorder)
 
-	// The client of a test's own writes of rows the hooks watch, on the same transaction, built
-	// through the application's own builder, so it carries the hooks every other client does.
-	feedClient := do.MustInvoke[entclient.Clients](injector).NewOnTx(txDB)
-
 	// The workers PerformEnqueuedJobs works the queued jobs with, against the capturing senders,
 	// so a test asserts the real effect.
 	workers := func(tb testing.TB) performers {
@@ -497,7 +519,6 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	env := &TestEnv{
 		AppURL:          cfg.AppURL,
 		DB:              do.MustInvoke[*ent.Client](injector),
-		FeedDB:          feedClient,
 		SQLDB:           txDB,
 		Bus:             do.MustInvoke[*events.Bus](injector),
 		Server:          handler.Handler,
@@ -508,6 +529,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		license:         lic,
 		performers:      workers,
 		injector:        injector,
+		committed:       st.database != nil,
 		jwtSecret:       cfg.JWTSecret,
 		now:             st.now,
 		sessionTTL:      cfg.SessionTTL,

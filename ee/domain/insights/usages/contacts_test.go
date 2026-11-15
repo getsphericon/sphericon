@@ -37,21 +37,30 @@ func contactsEnv(t *testing.T, now time.Time) (*testhelper.TestEnv, *testhelper.
 // tracker Contact (no email Destination) when it is empty.
 func addContact(t *testing.T, env *testhelper.TestEnv, email string) int64 {
 	t.Helper()
-	// test writes: the contacts-peak hook fires on this Contact write
-	c := env.FeedDB.Scoped(fixtures.AcmeID).Contact().Create()
-	if email != "" {
-		c.SetEmail(email)
-	} else {
-		c.SetSubjectID("anonymous-" + t.Name())
-	}
-	created, err := c.Save(t.Context())
-	require.NoError(t, err)
-	return created.ID
+	var id int64
+	env.Feed(t, func(tx *ent.Client) error {
+		// test writes: the contacts-peak hook fires on this Contact write
+		c := tx.Scoped(fixtures.AcmeID).Contact().Create()
+		if email != "" {
+			c.SetEmail(email)
+		} else {
+			c.SetSubjectID("anonymous-" + t.Name())
+		}
+		created, err := c.Save(t.Context())
+		if err != nil {
+			return err
+		}
+		id = created.ID
+		return nil
+	})
+	return id
 }
 
 func deleteContact(t *testing.T, env *testhelper.TestEnv, id int64) {
 	t.Helper()
-	require.NoError(t, env.FeedDB.Scoped(fixtures.AcmeID).Contact().DeleteOneID(id).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.AcmeID).Contact().DeleteOneID(id).Exec(t.Context())
+	})
 }
 
 func refreshAt(t *testing.T, env *testhelper.TestEnv, now time.Time) {
@@ -104,8 +113,10 @@ func TestContactsPeakGrowsWhenAnAnonymousContactGetsAnEmail(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
 	id := addContact(t, env, "")
-	require.NoError(t, env.FeedDB.Scoped(fixtures.AcmeID).Contact().UpdateOneID(id).
-		SetEmail("identified-later@example.com").Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.AcmeID).Contact().UpdateOneID(id).
+			SetEmail("identified-later@example.com").Exec(t.Context())
+	})
 	deleteContact(t, env, id)
 
 	refreshAt(t, env, now)
@@ -192,8 +203,10 @@ func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 	before, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)
 
-	// test writes: the contacts-peak hook fires on this Contact write
-	require.NoError(t, env.FeedDB.Scoped(fixtures.BluthID).Contact().Create().SetEmail("late@bluth.test").Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		// test writes: the contacts-peak hook fires on this Contact write
+		return tx.Scoped(fixtures.BluthID).Contact().Create().SetEmail("late@bluth.test").Exec(t.Context())
+	})
 
 	after, err := s.Usage().Query().Count(t.Context())
 	require.NoError(t, err)
@@ -203,24 +216,25 @@ func TestContactsPeakIsNotKeptForAWorkspaceInItsDeletionWindow(t *testing.T) {
 // Two transactions that add a Contact at once both count in the peak: each counts and raises it in
 // turn, behind the Workspace's contacts-peak lock, so the second counts the first's committed row.
 func TestContactsPeakCountsContactsAddedAtOnce(t *testing.T) {
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	base, err := race.Scope.Contact().Query().Where(contact.EmailNotNil()).Count(t.Context())
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	base, err := s.Contact().Query().Where(contact.EmailNotNil()).Count(t.Context())
 	require.NoError(t, err)
 	add := func(email string) testhelper.Writer {
 		return testhelper.Writer{Name: email, Run: func() error {
-			return race.Bus.WithinScopedTx(t.Context(), race.Scope, func(ts *ent.Scoped, _ events.Publisher) error {
+			return env.Bus.WithinScopedTx(t.Context(), s, func(ts *ent.Scoped, _ events.Publisher) error {
 				// test writes: the contacts-peak hook fires on this Contact write
 				return ts.Contact().Create().SetEmail(email).Exec(t.Context())
 			})
 		}}
 	}
 
-	errs := race.QueueBehindKey(t, postgres.WorkspaceKey(usages.PeakLock, fixtures.AcmeID),
+	errs := env.QueueBehindKey(t, postgres.WorkspaceKey(usages.PeakLock, fixtures.AcmeID),
 		add("first@example.com"), add("second@example.com"))
 
 	require.NoError(t, errs["first@example.com"])
 	require.NoError(t, errs["second@example.com"])
-	peak, err := race.Scope.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())
+	peak, err := s.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, int64(base+2), peak.Value)
 }
@@ -229,25 +243,26 @@ func TestContactsPeakCountsContactsAddedAtOnce(t *testing.T) {
 // after its row locks. Here B holds Bob's row and adds a Contact while A, which added one first,
 // waits for Bob's row: had A taken the lock at its write, B would wait for A and A for B.
 func TestContactsPeakLockWaitsForNoRowLock(t *testing.T) {
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	base, err := race.Scope.Contact().Query().Where(contact.EmailNotNil()).Count(t.Context())
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	base, err := s.Contact().Query().Where(contact.EmailNotNil()).Count(t.Context())
 	require.NoError(t, err)
 	aAdded, bAdded := make(chan struct{}), make(chan struct{})
 
 	a := goWrite(func() error {
-		return race.Bus.WithinScopedTx(t.Context(), race.Scope, func(ts *ent.Scoped, _ events.Publisher) error {
+		return env.Bus.WithinScopedTx(t.Context(), s, func(ts *ent.Scoped, _ events.Publisher) error {
 			return addThenRename(t, ts, "a@example.com", aAdded, bAdded)
 		})
 	})
 	b := goWrite(func() error {
-		return race.Bus.WithinScopedTx(t.Context(), race.Scope, func(ts *ent.Scoped, _ events.Publisher) error {
+		return env.Bus.WithinScopedTx(t.Context(), s, func(ts *ent.Scoped, _ events.Publisher) error {
 			return renameThenAdd(t, ts, "b@example.com", aAdded, bAdded)
 		})
 	})
 
 	require.NoError(t, testhelper.Receive(t, b, "B commits"))
 	require.NoError(t, testhelper.Receive(t, a, "A commits once B let Bob go"))
-	peak, err := race.Scope.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())
+	peak, err := s.Usage().Query().Where(entusage.Metric(string(usages.Contacts))).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, int64(base+2), peak.Value)
 }

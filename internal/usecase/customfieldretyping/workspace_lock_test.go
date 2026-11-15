@@ -3,7 +3,6 @@ package customfieldretyping_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,11 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/customfieldretyping"
@@ -30,7 +26,8 @@ const dateHasIt = `{"kind":"group","combinator":"and","rules":[{"kind":"date","f
 // retypeRace is a race over Duff's lock and the writers that meet in it: a retype of has_it to a
 // string, and the save of a Segment and of a Rule testing has_it with a date leaf.
 type retypeRace struct {
-	*testhelper.WorkspaceRace
+	env   *testhelper.TestEnv
+	scope *ent.Scoped
 
 	retype, rename, saveSegment, saveRule testhelper.Writer
 	savedID                               *int64
@@ -39,12 +36,11 @@ type retypeRace struct {
 func newRetypeRace(t *testing.T) *retypeRace {
 	t.Helper()
 	ctx := context.Background()
-	race := testhelper.NewWorkspaceRace(t, fixtures.DuffID)
-	s, bus := race.Scope, race.Bus
-	cipher := testhelper.Cipher(t)
-	check := removalcheck.New(messaging.NewResolver(cipher, registry.Default()))
-	segs, ruleset, retyping := segments.New(bus, time.Now), rules.New(cipher, bus, nil, time.Now), customfieldretyping.New(bus, check)
-	r := &retypeRace{WorkspaceRace: race, savedID: new(int64)}
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.DuffID)
+	segs, ruleset := testhelper.Module[*segments.Module](env), testhelper.Module[*rules.Module](env)
+	retyping := testhelper.Module[*customfieldretyping.UseCase](env)
+	r := &retypeRace{env: env, scope: s, savedID: new(int64)}
 	r.rename = testhelper.Writer{Name: "rename", Run: func() error {
 		_, err := retyping.Update(ctx, s, fixtures.CustomFieldDuffHasItID, contacts.CustomFieldUpdateInput{Revision: testhelper.CustomFieldRevisionIn(ctx, t, s, fixtures.CustomFieldDuffHasItID), Name: patch.Set("Has it since")})
 		return err
@@ -77,7 +73,7 @@ func (r *retypeRace) fieldType(t *testing.T) customfield.Type {
 
 func (r *retypeRace) field(t *testing.T) *ent.CustomField {
 	t.Helper()
-	field, err := contacts.CustomField(context.Background(), r.Scope, fixtures.CustomFieldDuffHasItID)
+	field, err := contacts.CustomField(context.Background(), r.scope, fixtures.CustomFieldDuffHasItID)
 	require.NoError(t, err)
 	return field
 }
@@ -98,7 +94,7 @@ func TestRetypingACustomFieldWaitsForASaveThatTestsIt(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := newRetypeRace(t)
 
-			errs := r.Queue(t, tc.save(r), r.retype)
+			errs := r.env.QueueBehindWorkspaceLock(t, r.scope, tc.save(r), r.retype)
 
 			require.NoError(t, errs["save"])
 			var used *liveuse.Error
@@ -124,7 +120,7 @@ func TestASaveBehindARetypeIsCheckedAgainstTheNewType(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			r := newRetypeRace(t)
 
-			errs := r.Queue(t, r.retype, tc.save(r))
+			errs := r.env.QueueBehindWorkspaceLock(t, r.scope, r.retype, tc.save(r))
 
 			require.NoError(t, errs["retype"])
 			require.ErrorIs(t, errs["save"], tc.refusal)
@@ -139,7 +135,7 @@ func TestASaveBehindARetypeIsCheckedAgainstTheNewType(t *testing.T) {
 func TestRenamingACustomFieldWaitsForTheWorkspaceLock(t *testing.T) {
 	r := newRetypeRace(t)
 
-	errs := r.Queue(t, r.rename)
+	errs := r.env.QueueBehindWorkspaceLock(t, r.scope, r.rename)
 
 	require.NoError(t, errs["rename"])
 	renamed := r.field(t)

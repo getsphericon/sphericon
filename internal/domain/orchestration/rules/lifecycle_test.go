@@ -15,7 +15,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -85,11 +84,9 @@ func TestADeletedRuleTakesNoMove(t *testing.T) {
 // Publishing and deleting a fired Rule at the same moment leave it deleted and inactive, or active
 // and kept; never deleted and active (a deleted Rule must act on nothing).
 func TestPublishingAndDeletingARuleAtOnceNeverLeaveItDeletedAndActive(t *testing.T) {
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
-	m := rules.New(nil, events.New(sqlDB, entclient.Core.NewTx, time.Now), nil, time.Now)
-	s := client.Scoped(fixtures.AcmeID)
+	env := testhelper.Setup(t, testhelper.Committed())
+	m := testhelper.Module[*rules.Module](env)
+	s := env.DB.Scoped(fixtures.AcmeID)
 	_, err := m.Deactivate(t.Context(), s, fixtures.RuleTagClickedID)
 	require.NoError(t, err)
 

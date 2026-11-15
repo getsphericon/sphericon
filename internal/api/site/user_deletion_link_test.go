@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -77,8 +78,10 @@ func TestAUsedLinkIsRefused(t *testing.T) {
 	token := requestLink(t, env, pia, fixtures.ProviderOnlyPiaEmail)
 	require.NoError(t, deleteUser(t, pia, &siteapi.SiteDeleteUserInput{Email: fixtures.ProviderOnlyPiaEmail, Token: siteapi.NewOptString(token)}))
 	// The same address signs up again as a new User; the old link is bound to the old id.
-	// test writes: production Sign-up cannot make a password-less User, the successor of a provider-only User under test; a provider sign-in flow is a far heavier setup than the one row
-	require.NoError(t, env.FeedDB.User.Create().SetName("Pia Again").SetEmail(fixtures.ProviderOnlyPiaEmail).SetEmailVerifiedAt(time.Now()).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		// test writes: production Sign-up cannot make a password-less User, the successor of a provider-only User under test; a provider sign-in flow is a far heavier setup than the one row
+		return tx.User.Create().SetName("Pia Again").SetEmail(fixtures.ProviderOnlyPiaEmail).SetEmailVerifiedAt(time.Now()).Exec(t.Context())
+	})
 	again := env.SiteActor(t, fixtures.ProviderOnlyPiaEmail)
 
 	err := deleteUser(t, again, &siteapi.SiteDeleteUserInput{Email: fixtures.ProviderOnlyPiaEmail, Token: siteapi.NewOptString(token)})

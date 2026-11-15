@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -79,13 +78,13 @@ func TestInternalFactRunsItsSubscriberOnceAndRollsBackFailedConsumption(t *testi
 }
 
 func TestSimultaneousDuplicateSTOPRunsItsReactionOnce(t *testing.T) {
-	r := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	r.Bus.UseSubscribers(channelstop.Subscribers()...)
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
 	entered, release := make(chan struct{}), make(chan struct{})
 	unblock := sync.OnceFunc(func() { close(release) })
 	t.Cleanup(unblock)
 	var wait sync.Once
-	r.Bus.UseSubscribers(events.Subscriber{
+	env.Bus.UseSubscribers(events.Subscriber{
 		Wants: func(_ events.Envelope, ev events.DomainEvent) bool { _, ok := ev.(*events.SmsStopObserved); return ok },
 		Handle: func(ctx context.Context, s *ent.Scoped, pub events.Publisher, _ events.Envelope, _ events.DomainEvent) error {
 			wait.Do(func() { close(entered); <-release })
@@ -94,13 +93,13 @@ func TestSimultaneousDuplicateSTOPRunsItsReactionOnce(t *testing.T) {
 	})
 	fact := &events.SmsStopObserved{WorkspaceID: fixtures.AcmeID, Phone: fixtures.ContactTexterPhone, Via: events.UnsubscribedByKeyword, DedupID: "simultaneous-stop"}
 	first := make(chan error, 1)
-	go func() { first <- r.Bus.Publish(t.Context(), fact) }()
+	go func() { first <- env.Bus.Publish(t.Context(), fact) }()
 	testhelper.Receive(t, entered, "the first STOP enters its reaction")
-	results := testhelper.QueuedBehind(t, r.DB, unblock, testhelper.Writer{Name: "duplicate", Run: func() error { return r.Bus.Publish(t.Context(), fact) }})
+	results := env.QueueBehind(t, unblock, testhelper.Writer{Name: "duplicate", Run: func() error { return env.Bus.Publish(t.Context(), fact) }})
 	require.NoError(t, testhelper.Receive(t, first, "first publication commits"))
 	require.NoError(t, results["duplicate"])
-	assert.Equal(t, 1, r.Scope.Event().Query().Where(event.Action("stop.handled")).CountX(t.Context()))
-	row, err := unsubscribes.SMSOptOut(t.Context(), r.Scope, fixtures.ContactTexterPhone)
+	assert.Equal(t, 1, scope.Event().Query().Where(event.Action("stop.handled")).CountX(t.Context()))
+	row, err := unsubscribes.SMSOptOut(t.Context(), scope, fixtures.ContactTexterPhone)
 	require.NoError(t, err)
 	require.NotNil(t, row, "consent is already stopped without asynchronous work")
 }

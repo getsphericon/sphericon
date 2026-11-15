@@ -8,45 +8,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/sendingdomaindeletion"
 )
-
-// anySender resolves every Integration to a sender that accepts every message.
-type anySender struct{}
-
-func (anySender) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
-	return anySender{}, nil
-}
-
-func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
-	return messaging.Receipt{}, nil
-}
 
 // Deleting a Sending domain and scheduling a draft that sends from an address on it take the
 // Workspace's lock (ADR 0099), so the delete queued behind the schedule reads the armed Broadcast
 // and is refused naming it: the domain is never deleted under a Broadcast the check found a draft.
 func TestAScheduleQueuedFirstRefusesTheDeleteOfTheDomainItSendsFrom(t *testing.T) {
 	ctx := context.Background()
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	s, bus := race.Scope, race.Bus
-	cipher := testhelper.Cipher(t)
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	sends := broadcasts.New(bus, testhelper.Renderer(), out)
-	domains := sendingdomains.New(bus, cipher, nil, time.Now)
-	deletion := sendingdomaindeletion.New(bus, removalcheck.New(messaging.NewResolver(cipher, registry.Default())), time.Now)
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	sends := testhelper.Module[*broadcasts.Module](env)
+	domains := testhelper.Module[*sendingdomains.Module](env)
+	deletion := testhelper.Module[*sendingdomaindeletion.UseCase](env)
 	from := broadcasts.EmailContentPatch{FromEmail: patch.Set("news@" + fixtures.SendingDomainVerifiedDomain)}
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), Content: from})
 	require.NoError(t, err)
@@ -56,7 +36,7 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheDomainItSendsFrom(t *testing.T
 	}}
 	remove := testhelper.Writer{Name: "delete", Run: func() error { return deletion.Delete(ctx, s, fixtures.SendingDomainVerifiedID) }}
 
-	errs := race.Queue(t, schedule, remove)
+	errs := env.QueueBehindWorkspaceLock(t, s, schedule, remove)
 
 	require.NoError(t, errs["schedule"])
 	b, err := sends.Get(ctx, s, fixtures.BroadcastDraftID)

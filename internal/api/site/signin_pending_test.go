@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
@@ -274,7 +275,9 @@ func TestATakeoverIsGoneOnceThePersonWhoSignedUpVerifiesTheAddress(t *testing.T)
 	b := env.NewRedirectBrowser(t)
 	token := pendingToken(t, signInWith(t, fake, b, victimWithGoogle, ""))
 	squatter := userByEmail(t, env, victimWithGoogle.Email)
-	require.NoError(t, env.FeedDB.User.UpdateOneID(squatter.ID).SetEmailVerifiedAt(time.Now()).Exec(t.Context()))
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.User.UpdateOneID(squatter.ID).SetEmailVerifiedAt(time.Now()).Exec(t.Context())
+	})
 
 	resp := submitPending(t, b, token, termsTicked)
 

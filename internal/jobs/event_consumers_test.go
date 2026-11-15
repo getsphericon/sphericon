@@ -19,7 +19,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -105,8 +104,8 @@ func (chainArgs) Kind() string { return "event_chain_test" }
 // job's metadata carries that chain to the job's work.
 func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	bus := testhelper.BusOn(t, sqlDB)
+	env := testhelper.Setup(t, testhelper.Committed())
+	sqlDB, bus := env.SQLDB, env.Bus
 	bus.UseConsumers(events.Consumer{
 		Wants: func(env events.Envelope, _ events.DomainEvent) bool { return env.Name == systemevent.ContactCreated },
 		Job:   events.EnvelopeJob[chainArgs],
@@ -120,7 +119,7 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	queued, err := testhelper.RiverClientOn(t, sqlDB).JobList(ctx, river.NewJobListParams().Kinds(chainArgs{}.Kind()))
 	require.NoError(t, err)
 	require.Len(t, queued.Jobs, 1)
-	handled := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
+	handled := env.QueuedEnvelopes(t, systemevent.ContactCreated)
 	require.Len(t, handled, 1)
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	require.NoError(t, err)
@@ -134,7 +133,7 @@ func TestAnEventPublishedByAnEventJobIsCausedByTheHandledEvent(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Jobs[0])
 
 	require.NoError(t, err)
-	published := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
+	published := env.QueuedEnvelopes(t, systemevent.ContactCreated)
 	require.Len(t, published, 2)
 	caused := published[1]
 	assert.Equal(t, "01JROOT", caused.CorrelationID)
@@ -187,12 +186,10 @@ func (fixedCurrency) AdoptReportingCurrency(context.Context, *ent.Scoped, string
 // Completed applies it. One transaction at a time reads a Workspace's order Events.
 func TestOrderJobsWorkedConcurrentlyLeaveTheOrderAsWorkedInTurn(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
+	env := testhelper.Setup(t, testhelper.Committed())
+	sqlDB, client, bus := env.SQLDB, env.DB, env.Bus
 	// test writes: the Workspace's Reporting currency, so no Order Completed adopts one.
 	client.Workspace.UpdateOneID(fixtures.AcmeID).SetReportingCurrency("USD").ExecX(ctx)
-	bus := testhelper.BusOn(t, sqlDB)
 	inserter, err := jobs.NewInserter(sqlDB)
 	require.NoError(t, err)
 	for _, ev := range []*events.CollectedEvent{

@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
-	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -27,16 +26,17 @@ var kit = brandkits.Input{
 // is refused rather than replacing the first save's values, and makes no starter Templates, which
 // the save that created the Brand kit made.
 func TestAFirstSaveThatLosesTheRaceIsRefusedAndMakesNoStarters(t *testing.T) {
-	race := testhelper.NewWorkspaceRace(t, fixtures.UmbrellaID)
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.UmbrellaID)
 	ctx := context.Background()
 	templates := func() int {
-		n, err := race.Scope.EmailTemplate().Query().Count(ctx)
+		n, err := scope.EmailTemplate().Query().Count(ctx)
 		require.NoError(t, err)
 		return n
 	}
 	before := templates()
 
-	release := race.HoldOpen(t, events.Ingest(race.Scope), func(ts *ent.Scoped, _ events.Publisher) error {
+	release := env.HoldOpen(t, events.Ingest(scope), func(ts *ent.Scoped, _ events.Publisher) error {
 		// test writes: the Brand kit of the concurrent first save, held uncommitted while the other runs.
 		return ts.BrandKit().Create().
 			SetAccentColor("#000000").SetTextColor(kit.TextColor).SetBackgroundColor(kit.BackgroundColor).
@@ -46,15 +46,15 @@ func TestAFirstSaveThatLosesTheRaceIsRefusedAndMakesNoStarters(t *testing.T) {
 			Exec(ctx)
 	})
 
-	module := brandkits.New(race.Bus, emailtemplates.New(testhelper.Renderer(), brandkits.Brands{}))
-	errs := testhelper.QueuedBehind(t, race.DB, release,
+	module := testhelper.Module[*brandkits.Module](env)
+	errs := env.QueueBehind(t, release,
 		testhelper.Writer{Name: "second first save", Run: func() error {
-			_, err := module.Save(ctx, events.Ingest(race.Scope), kit)
+			_, err := module.Save(ctx, events.Ingest(scope), kit)
 			return err
 		}})
 
 	require.ErrorIs(t, errs["second first save"], brandkits.ErrRevisionChanged)
-	stored, err := race.Scope.BrandKit().Query().Only(ctx)
+	stored, err := scope.BrandKit().Query().Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "#000000", stored.AccentColor, "the first save's values stay")
 	after := templates()

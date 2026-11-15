@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -17,16 +18,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// holdingQueue holds the transaction that queues a job open, once the work before the queueing
-// is done, until it is released: for an Enrollment, once it is written and has looked for the exit
-// and goal Events, and before it commits.
+// holdingQueue holds the transaction that queues the first job open, once the work before the
+// queueing is done, until it is released: for an Enrollment, once it is written and has looked for
+// the exit and goal Events, and before it commits. The jobs after the first pass on, so the other
+// writers of the bus run while it holds.
 type holdingQueue struct {
 	events.JobQueue
 
+	first   atomic.Bool
 	reached chan struct{}
 	gate    chan struct{}
 	arrive  func()
@@ -42,8 +44,10 @@ func newHoldingQueue() *holdingQueue {
 }
 
 func (q *holdingQueue) InsertTx(ctx context.Context, tx *sql.Tx, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error) {
-	q.arrive()
-	<-q.gate
+	if q.first.CompareAndSwap(false, true) {
+		q.arrive()
+		<-q.gate
+	}
 	return q.JobQueue.InsertTx(ctx, tx, args, opts)
 }
 
@@ -65,28 +69,25 @@ func TestAGoalEventHandledWhileTheEnrollmentCommitsEndsIt(t *testing.T) {
 	ctx := context.Background()
 	hold := newHoldingQueue()
 	t.Cleanup(hold.release) // a failed assertion must not leave the enrollment blocked
-	enrolling := e.busQueueingThrough(t, func(q events.JobQueue) events.JobQueue {
+	e.queueThrough(t, func(q events.JobQueue) events.JobQueue {
 		hold.JobQueue = q
 		return hold
 	})
-	probe, err := sql.Open("pgx", e.url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(probe, "probe") })
+	probe := e.env.SQLDB
 	failed := time.Now().Add(-time.Minute)
 	paid := failed.Add(30 * time.Second)
 
 	enrolled := make(chan error, 1)
 	go func() {
-		enrolled <- e.enrollments(enrolling).OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}})
+		enrolled <- e.enrollments().OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_failed", OccurredAt: failed}})
 	}()
 	testhelper.Receive(t, hold.reached, "the held write is reached")
 	stored(t, e, &events.CollectedEvent{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Action: "payment_succeeded", OccurredAt: paid,
 	})
-	ending := e.bus(t)
 	ended, endDone := make(chan error, 1), make(chan struct{})
 	go func() {
-		ended <- e.enrollments(ending).OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}})
+		ended <- e.enrollments().OnEvent(ctx, e.scoped, automations.OnEventInput{ContactID: fixtures.ContactAliceID, Event: automations.Event{Action: "payment_succeeded", OccurredAt: paid}})
 		close(endDone)
 	}()
 	require.Eventually(t, func() bool {

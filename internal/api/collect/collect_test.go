@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/event"
@@ -34,12 +35,14 @@ func TestCollectKeyAuth(t *testing.T) {
 func TestCollectKeyOfADeletedWorkspaceIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.DeleteWorkspace(ctx, fixtures.AcmeID, time.Now())
+	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 
 	err := env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	testhelper.CollectRefusal(t, err, http.StatusUnauthorized)
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(ctx)
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().Exec(ctx)
+	})
 	err = env.CollectAcme(t).CollectEventsCreate(ctx, &collectapi.CollectEventsInput{})
 	require.NoError(t, err, "restored, the key works again")
 }

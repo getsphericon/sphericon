@@ -63,8 +63,8 @@ func (chainedArgs) Kind() string { return "chained" }
 // even in a context of its own, is caused by the handled one.
 func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	bus := testhelper.BusOn(t, sqlDB)
+	env := testhelper.Setup(t, testhelper.Committed())
+	sqlDB, bus := env.SQLDB, env.Bus
 	cfg := &river.Config{Middleware: []rivertype.Middleware{events.JobCorrelation()}}
 	inserter, err := river.NewClient(riverdatabasesql.New(sqlDB), cfg)
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestAJobKeepsTheChainItWasQueuedIn(t *testing.T) {
 	_, err = w.WorkJob(ctx, t, tx, queued.Job)
 
 	require.NoError(t, err)
-	published := testhelper.QueuedEnvelopesOn(t, sqlDB, systemevent.ContactCreated)
+	published := env.QueuedEnvelopes(t, systemevent.ContactCreated)
 	require.NotEmpty(t, published)
 	assert.Equal(t, "01JROOT", published[len(published)-1].CorrelationID)
 	assert.Equal(t, "01JPARENT", published[len(published)-1].CausationID)

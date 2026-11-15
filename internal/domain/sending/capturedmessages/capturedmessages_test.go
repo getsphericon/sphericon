@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -54,12 +53,9 @@ func TestCappingOneWorkspaceLeavesAnotherUntouched(t *testing.T) {
 
 // Concurrent sends each insert and trim on their own connection; the last trim sees every committed
 // insert, so the Workspace ends at the cap. The other tests ride one go-txdb transaction, which
-// serializes statements, so this one runs on a database of its own.
+// serializes statements, so this one runs on a committed env.
 func TestConcurrentCapturesNeverLeaveMoreThanTheCap(t *testing.T) {
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
-	s := client.Scoped(fixtures.GlobexID)
+	s := testhelper.Setup(t, testhelper.Committed()).DB.Scoped(fixtures.GlobexID)
 	const kept = 5
 	c := capturedmessages.New(kept).Capturer(s, fixtures.IntegrationGlobexInboxID)
 

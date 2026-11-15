@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	enthold "github.com/getsphericon/sphericon/ent/hold"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
@@ -164,7 +165,7 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	h := newHarness(t)
 	h.env.ExtendHold(t.Context(), fixtures.AcmeID, fixtures.HoldAcmeLapsedID, h.clock.Now().Add(time.Hour))
 	discardedAt := h.clock.Now().Add(-time.Hour).UTC().Truncate(time.Second)
-	h.env.DeleteWorkspace(t.Context(), fixtures.AcmeID, discardedAt)
+	h.env.DeleteWorkspace(t, fixtures.AcmeID, discardedAt)
 
 	items := h.listHolds(t)
 	require.Len(t, items, 2)
@@ -172,7 +173,9 @@ func TestAHoldListReportsThePendingDeletionOfADeletedWorkspace(t *testing.T) {
 	assert.Equal(t, string(holdreason.WorkspacePendingDeletion), items[0].ReasonCode)
 	assert.Equal(t, fixtures.HoldAcmeLapsedKey, items[1].Key)
 
-	h.env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().Exec(t.Context())
+	})
 	items = h.listHolds(t)
 	require.Len(t, items, 1)
 	assert.Equal(t, fixtures.HoldAcmeLapsedKey, items[0].Key)

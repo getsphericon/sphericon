@@ -75,8 +75,8 @@ func TestPublishRefusesALabelTheItemHas(t *testing.T) {
 // The writes that read the items' positions queue behind the items' lock: two Reorders in opposite
 // orders both finish instead of deadlocking, and two Adds take positions of their own.
 func TestPositionWritesQueueBehindTheItemsLock(t *testing.T) {
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	m := testhelper.SignupItems(testhelper.Clients(t).New(race.DB), race.Bus)
+	env := testhelper.Setup(t, testhelper.Committed())
+	m := testhelper.Module[*signupitems.Module](env)
 	keys := []string{"privacy", "offers"}
 	ids := make([]int64, 0, len(keys))
 	for _, key := range keys {
@@ -87,7 +87,7 @@ func TestPositionWritesQueueBehindTheItemsLock(t *testing.T) {
 	reversed := slices.Clone(ids)
 	slices.Reverse(reversed)
 
-	errs := race.QueueBehindKey(t, signupitems.LockKey,
+	errs := env.QueueBehindKey(t, signupitems.LockKey,
 		testhelper.Writer{Name: "in order", Run: func() error { _, err := m.Reorder(t.Context(), fixtures.StaffEnrolledID, ids); return err }},
 		testhelper.Writer{Name: "reversed", Run: func() error { _, err := m.Reorder(t.Context(), fixtures.StaffEnrolledID, reversed); return err }},
 		testhelper.Writer{Name: "first add", Run: func() error {

@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -85,8 +84,9 @@ func TestASuccessClearsFailuresRecordedWhileTheRequestWasInFlight(t *testing.T) 
 	assert.Nil(t, stored.FailingSince)
 }
 
+// refusingEventQueue refuses every job the bus queues with fault.
 type refusingEventQueue struct {
-	testhelper.AcceptingQueue
+	events.JobQueue // only the inserts are called
 
 	fault error
 }
@@ -135,12 +135,10 @@ func pauseFirstHealthWrites(ready chan<- struct{}, resume <-chan struct{}) ent.H
 }
 
 func TestConcurrentCurrentGenerationResultsAreBothCounted(t *testing.T) {
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(4)
-	client := entclient.Core.New(sqlDB)
-	scope := client.Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
-	mod := webhookendpoints.New(bus, testhelper.Cipher(t), nil, nil, time.Now)
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
+	bus := env.Bus
+	mod := testhelper.Module[*webhookendpoints.Module](env)
 	inFlight, err := scope.WebhookEndpoint().Get(t.Context(), fixtures.WebhookCodebasicsID)
 	require.NoError(t, err)
 	ready, resume := make(chan struct{}, 2), make(chan struct{})

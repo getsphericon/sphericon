@@ -5,30 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
-
-// anySender resolves every Integration to a sender that accepts every message.
-type anySender struct{}
-
-func (anySender) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
-	return anySender{}, nil
-}
-
-func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
-	return messaging.Receipt{}, nil
-}
 
 // Every write that creates a use a Removal check reads (Live use or Definition use), and the
 // archive of a Segment, which a draft's schedule copies the Condition of, waits for the Workspace's
@@ -37,14 +21,12 @@ func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receip
 // test. What each write answers once it runs is its own module's concern; here it only has to wait.
 func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 	ctx := context.Background()
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	s, bus := race.Scope, race.Bus
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	sends := broadcasts.New(bus, testhelper.Renderer(), out)
-	cipher := testhelper.Cipher(t)
-	segs := segments.New(bus, time.Now)
-	ruleset := rules.New(cipher, bus, nil, time.Now)
-	autos := automations.New(cipher, bus, testhelper.Renderer(), out, time.Now)
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	sends := testhelper.Module[*broadcasts.Module](env)
+	segs := testhelper.Module[*segments.Module](env)
+	ruleset := testhelper.Module[*rules.Module](env)
+	autos := testhelper.Module[*automations.Module](env)
 	renamed := new("Renamed")
 
 	for _, tc := range []struct {
@@ -87,7 +69,7 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 		{"archive an Automation", func() error { _, err := autos.Archive(ctx, s, fixtures.AutomationJobsEditableID); return err }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			race.Queue(t, testhelper.Writer{Name: tc.name, Run: tc.run})
+			env.QueueBehindWorkspaceLock(t, s, testhelper.Writer{Name: tc.name, Run: tc.run})
 		})
 	}
 }

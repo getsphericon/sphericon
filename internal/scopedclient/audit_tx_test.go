@@ -36,20 +36,18 @@ func (o failAfterWrite) WithinAuditTx(ctx context.Context, s *ent.Scoped, fn fun
 // that transaction's client: when the transaction fails after the write, neither the row nor an
 // entry is left, for every write the registry makes of every audited entity. Under Setup every
 // connection rides the test's one transaction, and a write that escaped to the scope's own client
-// would be rolled back with the audit transaction's savepoint, so the test commits on a database of
-// its own.
+// would be rolled back with the audit transaction's savepoint, so the test runs on a committed env.
 func TestAnAuditedWriteRunsInTheTransactionItsOpenerOpens(t *testing.T) {
 	ctx := t.Context()
-	sqlDB := testhelper.RealDB(t)
-	c := testhelper.Clients(t).New(sqlDB)
-	bus := testhelper.BusOn(t, sqlDB)
+	testEnv := testhelper.Setup(t, testhelper.Committed())
+	c, bus := testEnv.DB, testEnv.Bus
 	failing := c.Scoped(acme).As(johnActor, failAfterWrite{bus: bus})
 	committing := bus.Act(c.Scoped(acme), johnActor)
 	// actions lists the actions of the entity's queued Audit entries, of the row with the target id
 	// when one is given.
 	actions := func(e *ent.ScopedEntity, target ...string) []string {
 		var out []string
-		for _, env := range testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameAuditEntry) {
+		for _, env := range testEnv.QueuedEnvelopes(t, events.NameAuditEntry) {
 			var entry events.AuditEntry
 			require.NoError(t, json.Unmarshal(env.Data, &entry))
 			if slices.Contains(e.AuditActions, entry.Action) && (len(target) == 0 || slices.Contains(target, entry.TargetID)) {

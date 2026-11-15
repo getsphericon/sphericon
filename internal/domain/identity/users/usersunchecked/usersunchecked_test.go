@@ -43,7 +43,7 @@ func TestTheDeletionRefusesAProofThatPredatesAPasswordChange(t *testing.T) {
 			ctx := t.Context()
 			proven, err := env.DB.User.Get(ctx, tc.userID)
 			require.NoError(t, err)
-			require.NoError(t, env.FeedDB.User.UpdateOneID(tc.userID).SetPasswordHash(tc.hash).Exec(ctx))
+			env.Feed(t, func(tx *ent.Client) error { return tx.User.UpdateOneID(tc.userID).SetPasswordHash(tc.hash).Exec(ctx) })
 
 			err = deleteProven(t, env, proven)
 

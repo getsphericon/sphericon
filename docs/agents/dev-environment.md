@@ -70,7 +70,7 @@ dates. `SPHERICON_DATABASE_URL` is rewritten to that database for the process, s
 config reaches it too. `worktrees:gc` keeps these with their checkout. The end-to-end suite keeps
 one database and `-p 1`.
 
-A test that needs a real commit (`testhelper.RealDB`, `RealDBURL`) takes a clone, not the worker's
+A test that needs a real commit (`testhelper.Setup` with `Committed`, `RealDB`, `RealDBURL`) takes a clone, not the worker's
 transaction: the process leases a second worker from the same template (`<test db>_w<j>`), loads the
 fixtures into it at the same moment as into the first, and never connects to it again, so each
 test is `CREATE DATABASE <test db>_w<j>_c<n> TEMPLATE <test db>_w<j>` (tens to a few hundred

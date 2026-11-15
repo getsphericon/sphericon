@@ -2,7 +2,6 @@ package signup_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"maps"
 	"slices"
@@ -15,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/user"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
@@ -32,12 +30,12 @@ import (
 // requests are the events a Sign-up publishes for its mail, read from what the publish left in
 // the queue: the request of a verification link, the claim of a Taken address, the completed
 // Sign-up.
-type requests struct{ sqlDB *sql.DB }
+type requests struct{ env *testhelper.TestEnv }
 
 // published are the mail events published so far, oldest first.
 func (q requests) published(t *testing.T) []events.DomainEvent {
 	t.Helper()
-	envelopes := testhelper.QueuedEnvelopesOn(t, q.sqlDB, events.NameUserVerificationRequested, events.NameUserAddressClaimed, events.NameUserSignedUp)
+	envelopes := q.env.QueuedEnvelopes(t, events.NameUserVerificationRequested, events.NameUserAddressClaimed, events.NameUserSignedUp)
 	out := make([]events.DomainEvent, 0, len(envelopes))
 	for i := range envelopes {
 		ev, err := events.Decode(envelopes[i])
@@ -77,19 +75,17 @@ func verificationOff(cfg *signup.SignUpConfig) {
 func newRig(t *testing.T, budget int, opts ...option) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	r := build(t, env.SQLDB, env.DB, env.Bus, budget, opts...)
-	r.env = env
-	return r
+	return build(t, env, budget, opts...)
 }
 
 // newRacingRig builds the module with a first lookup that misses, as the lookup of a Sign-up that
-// lost a race on a new address did before the winner's User was written, on a database of the
-// test's own: the create that meets the winner's row fails a statement, which inside the one
-// transaction of the ordinary tests would abort everything after it.
+// lost a race on a new address did before the winner's User was written, on a committed env: the
+// create that meets the winner's row fails a statement, which inside the one transaction of the
+// ordinary tests would abort everything after it.
 func newRacingRig(t *testing.T) rig {
 	t.Helper()
-	sqlDB := testhelper.RealDB(t)
-	r := build(t, sqlDB, entclient.Core.New(sqlDB), testhelper.BusOn(t, sqlDB), 5)
+	env := testhelper.Setup(t, testhelper.Committed())
+	r := build(t, env, 5)
 	looked := false
 	r.module.SetLookup(func(ctx context.Context, email string) (*ent.User, bool, error) {
 		if !looked {
@@ -105,12 +101,14 @@ func newRacingRig(t *testing.T) rig {
 	return r
 }
 
-func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, budget int, opts ...option) rig {
+// build is the Sign-up over env, with a mail budget of budget per address.
+func build(t *testing.T, env *testhelper.TestEnv, budget int, opts ...option) rig {
 	t.Helper()
+	client, bus := env.DB, env.Bus
 	consents := testhelper.ConsentRecords(client, bus)
 	acc := users.New(client, bus, testhelper.Passwords(), consents, time.Now)
 	attempts := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
-	q := requests{sqlDB: sqlDB}
+	q := requests{env: env}
 	cfg := signup.SignUpConfig{
 		Budget: attempts.For(throttle.KindSignUp), RequireVerification: true, SurveyDue: func() bool { return false },
 	}
@@ -119,7 +117,7 @@ func build(t *testing.T, sqlDB *sql.DB, client *ent.Client, bus *events.Bus, bud
 	}
 	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
 	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false), cfg, signup.SignInConfig{}, time.Now)
-	return rig{db: client, queue: q, module: module, users: acc, consents: consents, links: links}
+	return rig{env: env, db: client, queue: q, module: module, users: acc, consents: consents, links: links}
 }
 
 func (r rig) signUp(t *testing.T, name, email, password string) signup.SignUpResult {

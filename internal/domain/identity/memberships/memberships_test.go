@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -199,14 +197,11 @@ func TestLeaveAuditsTheUserAsActor(t *testing.T) {
 
 // Two co-Owners leaving at the same moment serialize on the Workspace's Owner rows: the
 // second reads the first's committed outcome. The other tests ride one go-txdb transaction,
-// which serializes statements, so this one runs on a database of its own.
+// which serializes statements, so this one runs on a committed env.
 func TestTwoCoOwnersLeavingAtOnceLeaveOneOwner(t *testing.T) {
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
-	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
-	ms := memberships.New(client, bus)
-	s := client.Scoped(fixtures.InitechID)
+	env := testhelper.Setup(t, testhelper.Committed())
+	ms := testhelper.Module[*memberships.Module](env)
+	s := env.DB.Scoped(fixtures.InitechID)
 
 	errs := make([]error, 2)
 	var wg sync.WaitGroup

@@ -276,7 +276,7 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	ctx := context.Background()
 	m := newModule(env, time.Now)
 
-	env.DeleteWorkspace(ctx, fixtures.AcmeID, time.Now())
+	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, res.Outcome)
@@ -296,7 +296,9 @@ func TestPendingDeletionWorkspaceIsHeldNotConsumed(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Held, tx.Outcome, "transactional sends are refused too")
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(ctx)
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().Exec(ctx)
+	})
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:deleted", fixtures.ContactAliceID))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome)

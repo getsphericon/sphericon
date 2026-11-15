@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/recoverycode"
 	entuser "github.com/getsphericon/sphericon/ent/user"
@@ -212,20 +213,23 @@ func TestAnInvitationSentByTheDeletedUserStaysValidWithoutASenderAndCanBeRevoked
 
 func TestAContactAndAStaffMemberWithTheUsersAddressAreUntouched(t *testing.T) {
 	env := testhelper.Setup(t)
-	acme := env.FeedDB.Scoped(fixtures.AcmeID)
-	// John is no longer Acme's only Owner, so his deletion goes through.
-	require.NoError(t, acme.Membership().UpdateOneID(fixtures.AcmeMemberMembershipID).SetRole(membership.RoleOwner).Exec(t.Context()))
-	// A Contact that carries the User's address (a fixture Contact moves to it).
-	contact, err := acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetEmail(fixtures.OwnerJohnEmail).SetFirstName("Johnny").Save(t.Context())
-	require.NoError(t, err)
+	env.Feed(t, func(tx *ent.Client) error {
+		acme := tx.Scoped(fixtures.AcmeID)
+		// John is no longer Acme's only Owner, so his deletion goes through.
+		if err := acme.Membership().UpdateOneID(fixtures.AcmeMemberMembershipID).SetRole(membership.RoleOwner).Exec(t.Context()); err != nil {
+			return err
+		}
+		// A Contact that carries the User's address (a fixture Contact moves to it).
+		return acme.Contact().UpdateOneID(fixtures.ContactAliceID).SetEmail(fixtures.OwnerJohnEmail).SetFirstName("Johnny").Exec(t.Context())
+	})
 	staffBefore := env.DB.StaffMember.GetX(t.Context(), fixtures.StaffAlsoCustomerID)
 
-	err = deleteUser(t, env.SiteActor(t, fixtures.OwnerJohnEmail), &siteapi.SiteDeleteUserInput{
+	err := deleteUser(t, env.SiteActor(t, fixtures.OwnerJohnEmail), &siteapi.SiteDeleteUserInput{
 		Email: fixtures.OwnerJohnEmail, CurrentPassword: siteapi.NewOptString(fixtures.OwnerJohnPassword),
 	})
 	require.NoError(t, err)
 
-	contactAfter, err := acme.Contact().Get(t.Context(), contact.ID)
+	contactAfter, err := env.DB.Scoped(fixtures.AcmeID).Contact().Get(t.Context(), fixtures.ContactAliceID)
 	require.NoError(t, err)
 	assert.Equal(t, new("Johnny"), contactAfter.FirstName)
 	staffAfter := env.DB.StaffMember.GetX(t.Context(), fixtures.StaffAlsoCustomerID)
