@@ -32,7 +32,7 @@ var (
 )
 
 // The node and mark types of the editor's schema the rules and the schema listing single out
-// (EditorSchema refuses a schema without one).
+// (editorSchema refuses a schema without one).
 const (
 	nodeDoc         = "doc"
 	nodeText        = "text"
@@ -83,7 +83,7 @@ func checkNode(value any, path string) error {
 		return invalidf("%s has no \"type\": every node needs one of %s.", path, quoted(nodeNames()))
 	}
 	where := fmt.Sprintf("%s (%s)", path, name)
-	schema := EditorSchema()
+	schema := editorSchema()
 	def, known := schema.Nodes[name]
 	if !known || name == nodeDoc {
 		return invalidf("%s: unknown node type %q. Use one of %s.", where, name, quoted(nodeNames()))
@@ -238,7 +238,7 @@ func checkMarks(value any, where string) error {
 	if !ok {
 		return invalidf("%s: \"marks\" must be an array of objects like {\"type\":\"bold\"}, got %s.", where, show(value))
 	}
-	schema := EditorSchema()
+	schema := editorSchema()
 	for i, v := range marks {
 		here := fmt.Sprintf("%s.marks[%d]", where, i)
 		mark, ok := v.(map[string]any)
@@ -340,7 +340,7 @@ func validSize(value any) bool {
 }
 
 func nodeNames() []string {
-	names := slices.Sorted(maps.Keys(EditorSchema().Nodes))
+	names := slices.Sorted(maps.Keys(editorSchema().Nodes))
 	return slices.DeleteFunc(names, func(n string) bool { return n == nodeDoc })
 }
 

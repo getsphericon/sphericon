@@ -4,8 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"maps"
-	"slices"
 	"strings"
 	"sync"
 )
@@ -44,8 +42,10 @@ type SchemaType struct {
 	Attrs map[string]any `json:"attrs"`
 }
 
-// EditorSchema returns the editor's schema listing, read from the embedded file once.
-var EditorSchema = sync.OnceValue(func() Schema {
+// editorSchema is the editor's schema, read from the embedded file once. Every call returns the
+// same maps, which the rules check documents against, so it stays inside the package: an agent
+// is handed copies through AgentSchema.
+var editorSchema = sync.OnceValue(func() Schema {
 	var loaded Schema
 	if err := json.Unmarshal(schemaJSON, &loaded); err != nil {
 		panic(fmt.Sprintf("emaildoc: the embedded schema.json is not valid: %v", err))
@@ -62,35 +62,6 @@ var EditorSchema = sync.OnceValue(func() Schema {
 	}
 	return loaded
 })
-
-// Listing is the schema as compact text for an agent: one line per node and mark.
-func (s Schema) Listing() string {
-	var b strings.Builder
-	b.WriteString("Nodes:\n")
-	writeTypes(&b, s.Nodes)
-	b.WriteString("Marks:\n")
-	writeTypes(&b, s.Marks)
-	return b.String()
-}
-
-func writeTypes(b *strings.Builder, types map[string]SchemaType) {
-	for _, name := range slices.Sorted(maps.Keys(types)) {
-		t := types[name]
-		fmt.Fprintf(b, "- %s", name)
-		if t.Content != "" {
-			fmt.Fprintf(b, ": content %q", t.Content)
-		}
-		if len(t.Attrs) > 0 {
-			attrs := make([]string, 0, len(t.Attrs))
-			for _, attr := range slices.Sorted(maps.Keys(t.Attrs)) {
-				def := mustMarshal(t.Attrs[attr])
-				attrs = append(attrs, attr+"="+string(def))
-			}
-			fmt.Fprintf(b, "; attrs %s", strings.Join(attrs, ", "))
-		}
-		b.WriteString("\n")
-	}
-}
 
 // mustMarshal encodes a default value that was itself decoded from JSON (the bundle's schema), so
 // it always encodes.

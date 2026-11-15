@@ -278,11 +278,3 @@ func TestHostileTextIsEscapedNotExecuted(t *testing.T) {
 	require.NotContains(t, got.HTML, "<img src=x")
 	require.Contains(t, got.HTML, "&lt;script&gt;")
 }
-
-func TestEditorSchemaListsNodesAndMarks(t *testing.T) {
-	s := emaildoc.EditorSchema()
-	require.Contains(t, s.Nodes, "heading")
-	require.Contains(t, s.Nodes, "button")
-	require.Contains(t, s.Marks, "link")
-	require.Contains(t, s.Listing(), "- heading: content \"inline*\"")
-}

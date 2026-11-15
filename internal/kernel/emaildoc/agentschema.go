@@ -62,7 +62,7 @@ const agentExample = `{
 
 // AgentSchema describes the editor's document for an agent.
 func AgentSchema() AgentDescription {
-	schema := EditorSchema()
+	schema := editorSchema()
 	out := AgentDescription{
 		EditorVersion: EditorVersion(),
 		Nodes:         make(map[string]AgentType, len(schema.Nodes)),
