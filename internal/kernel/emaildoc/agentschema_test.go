@@ -29,6 +29,21 @@ func TestAgentSchemaExampleAndAllowedValuesRender(t *testing.T) {
 	require.ErrorIs(t, err, emaildoc.ErrInvalid)
 }
 
+// The allowed values an agent is handed are its own copy: editing them changes neither what a
+// document is checked against nor what the next agent is told.
+func TestAgentSchemaAllowedValuesAreACopy(t *testing.T) {
+	handed := emaildoc.AgentSchema()
+	handed.Nodes["paragraph"].Attrs["alignment"].Allowed[0] = "justify"
+	handed.Nodes["orderedList"].Attrs["type"].Allowed[0] = "x"
+
+	_, err := shared().Render(context.Background(),
+		doc(node{"type": "paragraph", "attrs": node{"alignment": "justify"}, "content": []any{text("x")}}))
+	require.ErrorIs(t, err, emaildoc.ErrInvalid)
+	next := emaildoc.AgentSchema()
+	assert.Equal(t, []string{"left", "center", "right"}, next.Nodes["paragraph"].Attrs["alignment"].Allowed)
+	assert.Equal(t, []string{"1", "a", "A", "i", "I"}, next.Nodes["orderedList"].Attrs["type"].Allowed)
+}
+
 // The schema lists the editor's structure and tells an agent the rule of the attributes the server
 // checks, and which ones are required.
 func TestAgentSchemaNamesTheRulesTheServerChecks(t *testing.T) {

@@ -94,7 +94,7 @@ func agentType(name string, t SchemaType) AgentType {
 func agentAttrRule(typ, attr string) AgentAttr {
 	switch {
 	case attr == "alignment" || attr == "align":
-		return AgentAttr{Type: "alignment", Allowed: alignments, Rule: "optional; one of " + strings.Join(alignments, ", ")}
+		return AgentAttr{Type: "alignment", Allowed: slices.Clone(alignments), Rule: "optional; one of " + strings.Join(alignments, ", ")}
 	case attr == "style":
 		return AgentAttr{Type: "css", Rule: "optional CSS declarations like \"color:#333333\"; no script URL, expression(), @import, backslash or tag"}
 	case typ == nodeHeading && attr == "level":
@@ -102,7 +102,7 @@ func agentAttrRule(typ, attr string) AgentAttr {
 	case typ == nodeOrderedList && attr == "start":
 		return AgentAttr{Type: "integer", Rule: "optional; a whole number of 1 or more"}
 	case typ == nodeOrderedList && attr == "type":
-		return AgentAttr{Type: "string", Allowed: orderedTypes, Rule: "optional; one of " + strings.Join(orderedTypes, ", ")}
+		return AgentAttr{Type: "string", Allowed: slices.Clone(orderedTypes), Rule: "optional; one of " + strings.Join(orderedTypes, ", ")}
 	case typ == nodeButton && attr == "href":
 		return AgentAttr{Type: "url", Rule: "required: the address the button opens, an absolute URL or a {{ variable }}"}
 	case typ == nodeImage && attr == "src":
