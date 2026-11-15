@@ -10,6 +10,9 @@ status: accepted
 > **Amended by [[0151-a-broadcasts-unreached-recipients-are-reached-by-a-retry]]:** a Retry's
 > audience is its source's unreached Recipients, named by its link, beside a Segment and all Contacts.
 
+> **Amended by [[0152-a-broadcast-tests-its-variants-on-a-share-and-sends-the-winner-to-the-rest]]:**
+> the count of a Split test also gives the size of its test share.
+
 ## Context
 
 A Broadcast's audience is a Segment or all Contacts. On create, `segmentId` is optional and its
