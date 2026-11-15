@@ -1,32 +1,14 @@
 package auth
 
 import (
+	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/getsphericon/sphericon/ent"
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
-)
+	"github.com/samber/lo"
 
-// The session token's claims beyond go-pkgz's own (ADR 0020). Both ride the token's
-// user attributes as decimal strings: ClaimUserID is the User's id, the lookup key of
-// every request; ClaimEpoch is the User's session_epoch at issuance.
-const (
-	ClaimUserID = "uid"
-	ClaimEpoch  = "epoch"
-	// ClaimProviderLogin is the Unix time, in seconds, of the Sign-in provider login the session
-	// began with (ADR 0048). It is the stateless proof that stands in for the password of a User
-	// who has none; only a provider login sets it, and a reissue keeps the original time.
-	ClaimProviderLogin = "provider_login"
-	// ClaimPasskeyCheck is the Unix time, in seconds, of the last fresh Passkey check of the
-	// session: a Passkey login or a step-up check (ADR 0052). Like ClaimProviderLogin it is a
-	// stateless proof for a User with no password, and a reissue keeps the original time.
-	ClaimPasskeyCheck = "passkey_check"
-	// ClaimMethod is how the session was obtained (a Method). A token without a known method
-	// is refused: the User signs in again (ADR 0052).
-	ClaimMethod = "method"
+	"github.com/getsphericon/sphericon/ent"
 )
 
 // Method is how a session was obtained (ADR 0052). The Two-factor requirement reads it:
@@ -105,16 +87,86 @@ const SessionCookie = "JWT"
 // sessionIssuer is the token issuer and audience of every session.
 const sessionIssuer = "sphericon"
 
+// SessionClaims is the payload of a session token (ADR 0020, ADR 0147): the registered claims the
+// parser validates (issuer, audience and an expiry it requires, against the Instance clock) and
+// the session's own. A token whose own claims do not hold is refused by Validate, which the parser
+// runs after the registered ones.
+type SessionClaims struct {
+	jwt.RegisteredClaims
+
+	// UserID is the User's id, the lookup key of every request.
+	UserID int64 `json:"uid,string"`
+	// Epoch is the User's session_epoch at issuance; a bump ends every earlier session, and a
+	// token without one is refused.
+	Epoch *int64 `json:"epoch"`
+	// Method is how the session was obtained. A token without a known method is refused: the User
+	// signs in again (ADR 0052).
+	Method Method `json:"method"`
+	// ProviderLogin is the time of the Sign-in provider login the session began with (ADR 0048).
+	// It is the stateless proof that stands in for the password of a User who has none; only a
+	// provider login sets it, and a reissue keeps the original time.
+	ProviderLogin *jwt.NumericDate `json:"provider_login,omitempty"`
+	// PasskeyCheck is the time of the last fresh Passkey check of the session: a Passkey login or
+	// a step-up check (ADR 0052). Like ProviderLogin it is a stateless proof for a User with no
+	// password, and a reissue keeps the original time.
+	PasskeyCheck *jwt.NumericDate `json:"passkey_check,omitempty"`
+}
+
+// NewSessionClaims are the claims of a session of u that begins at now and lives ttl: its id,
+// current session epoch and how it began. It is the one shape of a session token: Issue signs it,
+// and the test harness mints its tokens from it.
+func NewSessionClaims(u *ent.User, sess Session, now time.Time, ttl time.Duration) SessionClaims {
+	c := SessionClaims{
+		Issuer:    sessionIssuer,
+		Audience:  jwt.ClaimStrings{sessionIssuer},
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(ttl)),
+		UserID:    u.ID,
+		Epoch:     new(u.SessionEpoch),
+		Method:    sess.Method,
+	}
+	if !sess.ProviderLoginAt.IsZero() {
+		c.ProviderLogin = jwt.NewNumericDate(sess.ProviderLoginAt)
+	}
+	if !sess.PasskeyCheckAt.IsZero() {
+		c.PasskeyCheck = jwt.NewNumericDate(sess.PasskeyCheckAt)
+	}
+	return c
+}
+
+var errSessionClaims = errors.New("auth: the session token names no User, epoch or known method")
+
+// Validate refuses a token without a User id, an epoch or a known method (jwt.ClaimsValidator).
+func (c SessionClaims) Validate() error {
+	if c.UserID == 0 || c.Epoch == nil || !c.Method.known() {
+		return errSessionClaims
+	}
+	return nil
+}
+
+// session is how the token's session began.
+func (c SessionClaims) session() Session {
+	sess := Session{Method: c.Method}
+	if c.ProviderLogin != nil {
+		sess.ProviderLoginAt = c.ProviderLogin.Time
+	}
+	if c.PasskeyCheck != nil {
+		sess.PasskeyCheckAt = c.PasskeyCheck.Time
+	}
+	return sess
+}
+
 // Sessions issues and clears the site session (ADR 0020): a JWT signed with the
 // instance secret, carried in an HttpOnly, SameSite=Lax cookie that lives as long as
 // the token (SPHERICON_SESSION_TTL, no refresh). It is the one place a session is minted; the
 // login operations hand its cookie to the client.
 type Sessions struct {
-	// verifier signs with its first service (the primary secret) and verifies with all.
-	verifier verifier
-	ttl      time.Duration
-	secure   bool
-	now      func() time.Time
+	// key signs every session; parser verifies with it and then with each secondary secret.
+	key    []byte
+	parser sessionParser
+	ttl    time.Duration
+	secure bool
+	now    func() time.Time
 }
 
 // NewSessions builds the issuer. secure sets the cookie's Secure attribute (the
@@ -126,10 +178,11 @@ func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() ti
 		panic("auth: the sessions need the Instance clock")
 	}
 	return &Sessions{
-		verifier: newVerifier(jwtSecret, verifyWith),
-		ttl:      ttl,
-		secure:   secure,
-		now:      now,
+		key:    []byte(jwtSecret),
+		parser: newSessionParser(jwtSecret, verifyWith, now),
+		ttl:    ttl,
+		secure: secure,
+		now:    now,
 	}
 }
 
@@ -137,23 +190,8 @@ func NewSessions(jwtSecret string, ttl time.Duration, secure bool, now func() ti
 // and returns the cookie that carries it. The provider login time rides the token, so a step
 // that asks a passwordless User for proof can tell how recent the login was without a store.
 func (s *Sessions) Issue(u *ent.User, sess Session) (*http.Cookie, error) {
-	now := s.now()
-	claims := gptoken.Claims{
-		Issuer:    sessionIssuer,
-		Audience:  jwt.ClaimStrings{sessionIssuer},
-		IssuedAt:  jwt.NewNumericDate(now),
-		ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
-		User:      &gptoken.User{Name: u.Email, ID: "user_" + strconv.FormatInt(u.ID, 10), Email: u.Email},
-	}
-	StampUser(&claims, u)
-	claims.User.SetStrAttr(ClaimMethod, string(sess.Method))
-	if !sess.ProviderLoginAt.IsZero() {
-		claims.User.SetStrAttr(ClaimProviderLogin, strconv.FormatInt(sess.ProviderLoginAt.Unix(), 10))
-	}
-	if !sess.PasskeyCheckAt.IsZero() {
-		claims.User.SetStrAttr(ClaimPasskeyCheck, strconv.FormatInt(sess.PasskeyCheckAt.Unix(), 10))
-	}
-	tk, err := s.verifier[0].Token(claims)
+	claims := NewSessionClaims(u, sess, s.now(), s.ttl)
+	tk, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.key)
 	if err != nil {
 		return nil, err
 	}
@@ -166,27 +204,21 @@ func (s *Sessions) Issue(u *ent.User, sess Session) (*http.Cookie, error) {
 // under. The caller compares the epoch with the User's; ok is false for a token
 // that does not verify.
 func (s *Sessions) Holder(raw string) (id, epoch int64, ok bool) {
-	if raw == "" {
+	claims, err := s.parser.parse(raw)
+	if err != nil {
 		return 0, 0, false
 	}
-	claims, err := s.verifier.parse(raw)
-	if err != nil || claims.ExpiresAt == nil || !s.now().Before(claims.ExpiresAt.Time) {
-		return 0, 0, false
-	}
-	return sessionUser(claims)
+	return claims.UserID, *claims.Epoch, true
 }
 
 // SessionOf is how a raw session token began; ok is false for a token that does not verify,
 // is expired or records no known method.
 func (s *Sessions) SessionOf(raw string) (Session, bool) {
-	if raw == "" {
+	claims, err := s.parser.parse(raw)
+	if err != nil {
 		return Session{}, false
 	}
-	claims, err := s.verifier.parse(raw)
-	if err != nil || claims.ExpiresAt == nil || !s.now().Before(claims.ExpiresAt.Time) {
-		return Session{}, false
-	}
-	return sessionOf(claims)
+	return claims.session(), true
 }
 
 // Cleared is the cookie that ends the session on the client: empty and expired.
@@ -203,76 +235,32 @@ func (s *Sessions) cookie(value string, maxAge int) *http.Cookie {
 	}
 }
 
-// StampUser writes the User's id and session epoch into the claims' user: the
-// claims every session carries (Issue; the test harness mints its tokens with it).
-func StampUser(claims *gptoken.Claims, u *ent.User) {
-	claims.User.SetStrAttr(ClaimUserID, strconv.FormatInt(u.ID, 10))
-	claims.User.SetStrAttr(ClaimEpoch, strconv.FormatInt(u.SessionEpoch, 10))
+// sessionParser verifies a session token against the primary secret and then each secondary one,
+// and validates its claims: HS256 only, this issuer and audience, an expiry that is required and
+// not reached on the Instance clock, and the session's own claims (SessionClaims.Validate).
+type sessionParser struct {
+	keys   jwt.VerificationKeySet
+	parser *jwt.Parser
 }
 
-// sessionOf reads how a session token began; ok is false when its method is missing or unknown.
-func sessionOf(claims gptoken.Claims) (Session, bool) {
-	if claims.User == nil {
-		return Session{}, false
+func newSessionParser(primary string, secondary []string, now func() time.Time) sessionParser {
+	secrets := append([]string{primary}, secondary...)
+	return sessionParser{
+		keys: jwt.VerificationKeySet{Keys: lo.Map(secrets, func(s string, _ int) jwt.VerificationKey { return []byte(s) })},
+		parser: jwt.NewParser(
+			jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+			jwt.WithIssuer(sessionIssuer),
+			jwt.WithAudience(sessionIssuer),
+			jwt.WithExpirationRequired(),
+			jwt.WithTimeFunc(now),
+		),
 	}
-	m := Method(claims.User.StrAttr(ClaimMethod))
-	if !m.known() {
-		return Session{}, false
-	}
-	sess := Session{Method: m}
-	if sec, err := strconv.ParseInt(claims.User.StrAttr(ClaimProviderLogin), 10, 64); err == nil {
-		sess.ProviderLoginAt = time.Unix(sec, 0)
-	}
-	if sec, err := strconv.ParseInt(claims.User.StrAttr(ClaimPasskeyCheck), 10, 64); err == nil {
-		sess.PasskeyCheckAt = time.Unix(sec, 0)
-	}
-	return sess, true
 }
 
-// sessionUser reads the User id and epoch a session token carries. ok is false
-// when either is missing or malformed (a token issued before the epoch existed).
-func sessionUser(claims gptoken.Claims) (id, epoch int64, ok bool) {
-	if claims.User == nil {
-		return 0, 0, false
+func (p sessionParser) parse(raw string) (*SessionClaims, error) {
+	var claims SessionClaims
+	if _, err := p.parser.ParseWithClaims(raw, &claims, func(*jwt.Token) (any, error) { return p.keys, nil }); err != nil {
+		return nil, err
 	}
-	id, err := strconv.ParseInt(claims.User.StrAttr(ClaimUserID), 10, 64)
-	if err != nil {
-		return 0, 0, false
-	}
-	epoch, err = strconv.ParseInt(claims.User.StrAttr(ClaimEpoch), 10, 64)
-	if err != nil {
-		return 0, 0, false
-	}
-	return id, epoch, true
-}
-
-// verifier parses a session token against the primary secret and then each secondary one.
-type verifier []*gptoken.Service
-
-func newTokenService(secret string) *gptoken.Service {
-	return gptoken.NewService(gptoken.Opts{
-		SecretReader: gptoken.SecretFunc(func(string) (string, error) { return secret, nil }),
-		Issuer:       sessionIssuer,
-		DisableXSRF:  true,
-	})
-}
-
-func newVerifier(primary string, secondary []string) verifier {
-	v := make(verifier, 0, 1+len(secondary))
-	v = append(v, newTokenService(primary))
-	for _, secret := range secondary {
-		v = append(v, newTokenService(secret))
-	}
-	return v
-}
-
-func (v verifier) parse(raw string) (gptoken.Claims, error) {
-	var err error
-	for _, svc := range v {
-		var claims gptoken.Claims
-		if claims, err = svc.Parse(raw); err == nil {
-			return claims, nil
-		}
-	}
-	return gptoken.Claims{}, err
+	return &claims, nil
 }

@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/stretchr/testify/require"
@@ -223,41 +222,32 @@ func (env *TestEnv) siteClient(t *testing.T, jwtValue string) *siteapi.Client {
 }
 
 // SiteToken mints the session token a login issues for the fixture user with the
-// given email: the go-pkgz claims, stamped by the production apiauth.StampUser
-// (User id and current session epoch), signed with the test config's secret and
-// valid for SPHERICON_SESSION_TTL from the env's clock. edit, when not nil, changes the
-// claims before signing, for tests of tokens a login never issues (expired,
-// without an epoch). The token is fixed at minting: a later epoch bump ends it.
-func (env *TestEnv) SiteToken(t *testing.T, email string, edit func(*gptoken.Claims)) string {
+// given email: the production apiauth.NewSessionClaims (User id, current session epoch and the
+// password method), signed with the test config's secret and valid for SPHERICON_SESSION_TTL
+// from the env's clock. edit, when not nil, changes the claims before signing, for tests of
+// tokens a login never issues (expired, without an epoch). The token is fixed at minting: a
+// later epoch bump ends it.
+func (env *TestEnv) SiteToken(t *testing.T, email string, edit func(*apiauth.SessionClaims)) string {
 	t.Helper()
 	tk, err := env.mintSiteToken(t.Context(), email, edit)
 	require.NoError(t, err)
 	return tk
 }
 
-func (env *TestEnv) mintSiteToken(ctx context.Context, email string, edit func(*gptoken.Claims)) (string, error) {
-	svc := gptoken.NewService(gptoken.Opts{
-		SecretReader: gptoken.SecretFunc(func(string) (string, error) { return env.jwtSecret, nil }),
-		Issuer:       "sphericon",
-		DisableXSRF:  true,
-	})
-	claims := gptoken.Claims{
-		Issuer:    "sphericon",
-		Audience:  jwt.ClaimStrings{"sphericon"},
-		ExpiresAt: jwt.NewNumericDate(env.now().Add(env.sessionTTL)),
-		User:      &gptoken.User{Name: email, ID: "test"},
+func (env *TestEnv) mintSiteToken(ctx context.Context, email string, edit func(*apiauth.SessionClaims)) (string, error) {
+	// An unknown email mints the claims of no User: the site rejects the token.
+	u, err := env.DB.User.Query().Where(user.Email(email)).Only(ctx)
+	if ent.IsNotFound(err) {
+		u, err = &ent.User{}, nil
 	}
-	// An unknown email leaves the claims unstamped: the site rejects the token.
-	if u, err := env.DB.User.Query().Where(user.Email(email)).Only(ctx); err == nil {
-		apiauth.StampUser(&claims, u)
-		claims.User.SetStrAttr(apiauth.ClaimMethod, string(apiauth.MethodPassword))
-	} else if !ent.IsNotFound(err) {
+	if err != nil {
 		return "", err
 	}
+	claims := apiauth.NewSessionClaims(u, apiauth.Session{Method: apiauth.MethodPassword}, env.now(), env.sessionTTL)
 	if edit != nil {
 		edit(&claims)
 	}
-	return svc.Token(claims)
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(env.jwtSecret))
 }
 
 // sessionSource signs an actor in afresh on every request, under the request's

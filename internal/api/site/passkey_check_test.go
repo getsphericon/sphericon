@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -107,8 +106,8 @@ func TestThePasskeyCheckIsReflectedInTheList(t *testing.T) {
 
 func TestAnExpiredPasskeyCheckIsRefusedAndAsksForANewOne(t *testing.T) {
 	env := testhelper.Setup(t)
-	session := env.SiteToken(t, fixtures.PasskeyOnlyPegEmail, func(c *gptoken.Claims) {
-		c.User.SetStrAttr(apiauth.ClaimPasskeyCheck, strconv.FormatInt(time.Now().Add(-time.Hour).Unix(), 10))
+	session := env.SiteToken(t, fixtures.PasskeyOnlyPegEmail, func(c *apiauth.SessionClaims) {
+		c.PasskeyCheck = jwt.NewNumericDate(time.Now().Add(-time.Hour))
 	})
 
 	rec := passkeyCall(t, env, http.MethodPost, startEnrollmentPath, session, "", `{}`)

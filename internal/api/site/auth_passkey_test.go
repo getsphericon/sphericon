@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -71,14 +72,9 @@ func methodOf(t *testing.T, token string) string {
 	require.Len(t, parts, 3)
 	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
 	require.NoError(t, err)
-	var claims struct {
-		User struct {
-			Attrs map[string]any `json:"attrs"`
-		} `json:"user"`
-	}
+	var claims apiauth.SessionClaims
 	require.NoError(t, json.Unmarshal(payload, &claims))
-	method, _ := claims.User.Attrs["method"].(string)
-	return method
+	return string(claims.Method)
 }
 
 func TestAUserLogsInWithAPasskeyWithoutAnEmailOrAPasswordOrASecondStep(t *testing.T) {

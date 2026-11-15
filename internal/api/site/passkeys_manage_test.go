@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -115,8 +114,8 @@ func TestRemovingAPasskeyIsRefusedWithoutProvingTheUser(t *testing.T) {
 
 func TestAUserWithNoPasswordAndNoLinkedIdentityCannotRemoveTheirLastPasskey(t *testing.T) {
 	env := testhelper.Setup(t)
-	session := env.SiteToken(t, fixtures.PasskeyOnlyPegEmail, func(c *gptoken.Claims) {
-		c.User.SetStrAttr(apiauth.ClaimProviderLogin, strconv.FormatInt(time.Now().Unix(), 10))
+	session := env.SiteToken(t, fixtures.PasskeyOnlyPegEmail, func(c *apiauth.SessionClaims) {
+		c.ProviderLogin = jwt.NewNumericDate(time.Now())
 	})
 
 	rec := passkeyCall(t, env, http.MethodDelete, passkeyPath(fixtures.PasskeyPegKeyID), session, "", removeBody(""))
@@ -173,8 +172,8 @@ func TestRemovingTheLastPasskeyWeakensTheActingSessionUnderTheRequirement(t *tes
 	requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 	c.Advance(8 * 24 * time.Hour)
 	tags := "/site/workspaces/" + fixtures.GlobexPublicID + "/tags"
-	session := env.SiteToken(t, fixtures.PasskeyPatEmail, func(claims *gptoken.Claims) {
-		claims.User.SetStrAttr(apiauth.ClaimMethod, string(apiauth.MethodPasskey))
+	session := env.SiteToken(t, fixtures.PasskeyPatEmail, func(claims *apiauth.SessionClaims) {
+		claims.Method = apiauth.MethodPasskey
 	})
 	status := func(session string) int {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, tags, nil)

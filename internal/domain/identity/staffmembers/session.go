@@ -4,11 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"slices"
-	"strconv"
 	"time"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -26,20 +23,37 @@ const sessionIssuer = "sphericon-staff"
 // cookiePath confines the cookie to the Staff surface.
 const cookiePath = paths.Staff
 
-const (
-	claimStaffID = "oid"
-	claimEpoch   = "epoch"
-)
-
 // ErrUnauthorized is the security handler's refusal of a missing or bad session.
 var ErrUnauthorized = errors.New("staff: unauthorized")
+
+// sessionClaims is the payload of a Staff member session (ADR 0147): the registered claims the
+// parser validates and the Staff member's id and session epoch at issuance.
+type sessionClaims struct {
+	jwt.RegisteredClaims
+
+	StaffID int64  `json:"oid,string"`
+	Epoch   *int64 `json:"epoch"`
+}
+
+var errSessionClaims = errors.New("staff: the session token names no Staff member or epoch")
+
+// Validate refuses a token without a Staff member id or an epoch (jwt.ClaimsValidator).
+func (c sessionClaims) Validate() error {
+	if c.StaffID == 0 || c.Epoch == nil {
+		return errSessionClaims
+	}
+	return nil
+}
 
 // Sessions issues, clears and verifies Staff member sessions: a JWT signed with the
 // Staff member secret in an HttpOnly cookie that lives SessionTTL, with no refresh and no
 // "remember me". It is the one place a session is minted, and the one check of a session
 // that the security handler of every /staff surface (core and Enterprise) calls.
 type Sessions struct {
-	tokens *gptoken.Service
+	key []byte
+	// parser accepts HS256 only, this issuer and audience, and an expiry that is required and
+	// not reached on the Instance clock.
+	parser *jwt.Parser
 	ttl    time.Duration
 	secure bool
 	now    func() time.Time
@@ -49,11 +63,14 @@ type Sessions struct {
 // newSessions builds the issuer and verifier.
 func newSessions(client *ent.Client, cfg Config, now func() time.Time) *Sessions {
 	return &Sessions{
-		tokens: gptoken.NewService(gptoken.Opts{
-			SecretReader: gptoken.SecretFunc(func(string) (string, error) { return cfg.Secret, nil }),
-			Issuer:       sessionIssuer,
-			DisableXSRF:  true,
-		}),
+		key: []byte(cfg.Secret),
+		parser: jwt.NewParser(
+			jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+			jwt.WithIssuer(sessionIssuer),
+			jwt.WithAudience(sessionIssuer),
+			jwt.WithExpirationRequired(),
+			jwt.WithTimeFunc(now),
+		),
 		ttl: cfg.SessionTTL, secure: cfg.SecureCookies, now: now, ent: client,
 	}
 }
@@ -62,16 +79,15 @@ func newSessions(client *ent.Client, cfg Config, now func() time.Time) *Sessions
 // returns the cookie that carries it.
 func (s *Sessions) Issue(op *ent.StaffMember) (*http.Cookie, error) {
 	now := s.now()
-	claims := gptoken.Claims{
+	claims := sessionClaims{
 		Issuer:    sessionIssuer,
 		Audience:  jwt.ClaimStrings{sessionIssuer},
 		IssuedAt:  jwt.NewNumericDate(now),
 		ExpiresAt: jwt.NewNumericDate(now.Add(s.ttl)),
-		User:      &gptoken.User{Name: op.Email, ID: "staff_" + strconv.FormatInt(op.ID, 10), Email: op.Email},
+		StaffID:   op.ID,
+		Epoch:     new(op.SessionEpoch),
 	}
-	claims.User.SetStrAttr(claimStaffID, strconv.FormatInt(op.ID, 10))
-	claims.User.SetStrAttr(claimEpoch, strconv.FormatInt(op.SessionEpoch, 10))
-	tk, err := s.tokens.Token(claims)
+	tk, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.key)
 	if err != nil {
 		return nil, err
 	}
@@ -95,26 +111,18 @@ func (s *Sessions) cookie(value string, maxAge int) *http.Cookie {
 // Verify checks a raw session token (signature, issuer, expiry, Staff member id and epoch)
 // and returns the Staff member it belongs to, or ErrUnauthorized.
 func (s *Sessions) Verify(ctx context.Context, raw string) (*ent.StaffMember, error) {
-	claims, err := s.tokens.Parse(raw)
-	if err != nil || claims.Issuer != sessionIssuer || !slices.Contains(claims.Audience, sessionIssuer) {
+	var claims sessionClaims
+	if _, err := s.parser.ParseWithClaims(raw, &claims, func(*jwt.Token) (any, error) { return s.key, nil }); err != nil {
 		return nil, ErrUnauthorized
 	}
-	if claims.ExpiresAt == nil || !s.now().Before(claims.ExpiresAt.Time) || claims.User == nil {
-		return nil, ErrUnauthorized
-	}
-	id, idErr := strconv.ParseInt(claims.User.StrAttr(claimStaffID), 10, 64)
-	epoch, epochErr := strconv.ParseInt(claims.User.StrAttr(claimEpoch), 10, 64)
-	if idErr != nil || epochErr != nil {
-		return nil, ErrUnauthorized
-	}
-	op, err := s.ent.StaffMember.Get(ctx, id)
+	op, err := s.ent.StaffMember.Get(ctx, claims.StaffID)
 	if ent.IsNotFound(err) {
 		return nil, ErrUnauthorized
 	}
 	if err != nil {
 		return nil, err
 	}
-	if op.SessionEpoch != epoch {
+	if op.SessionEpoch != *claims.Epoch {
 		return nil, ErrUnauthorized
 	}
 	return op, nil

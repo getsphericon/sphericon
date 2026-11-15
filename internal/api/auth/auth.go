@@ -11,7 +11,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/samber/lo"
 
@@ -398,16 +397,14 @@ func GetSiteAuth(ctx context.Context) *SiteAuth {
 }
 
 // SiteSecurityHandler implements siteapi.SecurityHandler: validates the JWT
-// cookie issued by go-pkgz/auth and resolves the dashboard user from it.
+// cookie auth.Sessions issued and resolves the dashboard user from it.
 //
-// go-pkgz's Parse ignores an expired exp (its own middleware would refresh), so the
-// expiry is enforced here against the injected clock; there is no refresh (ADR
-// 0020). The User is looked up by the id the token carries, and the token's epoch
+// The parser enforces the token's expiry against the injected clock; there is no
+// refresh (ADR 0020). The User is looked up by the id the token carries, and the token's epoch
 // must equal the User's session_epoch: a bump ends every earlier session.
 type SiteSecurityHandler struct {
-	verifier verifier
-	ent      *ent.Client
-	now      func() time.Time
+	parser sessionParser
+	ent    *ent.Client
 }
 
 // NewSiteSecurityHandler builds the cookie handler. now is the Instance clock the token's
@@ -417,7 +414,7 @@ func NewSiteSecurityHandler(jwtSecret string, client *ent.Client, now func() tim
 	if now == nil {
 		panic("auth: the site security handler needs the Instance clock")
 	}
-	return &SiteSecurityHandler{verifier: newVerifier(jwtSecret, verifyWith), ent: client, now: now}
+	return &SiteSecurityHandler{parser: newSessionParser(jwtSecret, verifyWith, now), ent: client}
 }
 
 var _ siteapi.SecurityHandler = (*SiteSecurityHandler)(nil)
@@ -432,8 +429,7 @@ func (h *SiteSecurityHandler) HandleApiKeyAuth(ctx context.Context, op siteapi.O
 	if err != nil {
 		return ctx, err
 	}
-	sess, _ := sessionOf(claims)
-	return WithSiteAuth(ctx, &SiteAuth{User: u, Session: sess}), nil
+	return WithSiteAuth(ctx, &SiteAuth{User: u, Session: claims.session()}), nil
 }
 
 // Verify checks a raw session token (signature, expiry, User id and epoch) and
@@ -444,31 +440,20 @@ func (h *SiteSecurityHandler) Verify(ctx context.Context, raw string) (*ent.User
 }
 
 // verify is Verify that also returns the token's claims.
-func (h *SiteSecurityHandler) verify(ctx context.Context, raw string) (*ent.User, gptoken.Claims, error) {
-	claims, err := h.verifier.parse(raw)
+func (h *SiteSecurityHandler) verify(ctx context.Context, raw string) (*ent.User, *SessionClaims, error) {
+	claims, err := h.parser.parse(raw)
 	if err != nil {
-		return nil, claims, ErrUnauthorized
+		return nil, nil, ErrUnauthorized
 	}
-	if claims.ExpiresAt == nil || !h.now().Before(claims.ExpiresAt.Time) {
-		return nil, claims, ErrUnauthorized
-	}
-	id, epoch, ok := sessionUser(claims)
-	if !ok {
-		return nil, claims, ErrUnauthorized
-	}
-	if _, ok := sessionOf(claims); !ok {
-		return nil, claims, ErrUnauthorized
-	}
-
-	u, err := h.ent.User.Get(ctx, id)
+	u, err := h.ent.User.Get(ctx, claims.UserID)
 	if ent.IsNotFound(err) {
-		return nil, claims, ErrUnauthorized
+		return nil, nil, ErrUnauthorized
 	}
 	if err != nil {
-		return nil, claims, err
+		return nil, nil, err
 	}
-	if u.SessionEpoch != epoch {
-		return nil, claims, ErrUnauthorized
+	if u.SessionEpoch != *claims.Epoch {
+		return nil, nil, ErrUnauthorized
 	}
 	return u, claims, nil
 }

@@ -29,7 +29,6 @@ require (
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
 	github.com/go-jose/go-jose/v4 v4.1.9
-	github.com/go-pkgz/auth/v2 v2.4.0
 	github.com/go-playground/validator/v10 v10.30.6
 	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/go-webauthn/webauthn v0.18.2

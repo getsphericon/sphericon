@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -186,13 +185,6 @@ func TestSiteAuthResolvesTheDashboardUserByTheIDInTheToken(t *testing.T) {
 	require.NotNil(t, got)
 	assert.EqualValues(t, fixtures.OwnerJohnID, got.User.ID)
 	assert.Equal(t, fixtures.OwnerJohnEmail, got.User.Email)
-
-	// The id decides, not the login name the token also carries.
-	ctx, err = h.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{
-		APIKey: env.SiteToken(t, fixtures.OwnerJaneEmail, func(c *gptoken.Claims) { c.User.Name = fixtures.OwnerJohnEmail }),
-	})
-	require.NoError(t, err)
-	assert.EqualValues(t, fixtures.OwnerJaneID, auth.GetSiteAuth(ctx).User.ID)
 }
 
 func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
@@ -202,7 +194,7 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 	h := auth.NewSiteSecurityHandler(cfg.JWTSecret, env.DB, time.Now)
 	other := auth.NewSiteSecurityHandler("a-different-secret", env.DB, time.Now)
 	good := env.SiteToken(t, fixtures.OwnerJohnEmail, nil)
-	edited := func(edit func(*gptoken.Claims)) string { return env.SiteToken(t, fixtures.OwnerJohnEmail, edit) }
+	edited := func(edit func(*auth.SessionClaims)) string { return env.SiteToken(t, fixtures.OwnerJohnEmail, edit) }
 
 	for name, tc := range map[string]struct {
 		handler *auth.SiteSecurityHandler
@@ -211,14 +203,15 @@ func TestSiteAuthRejectsEveryUnusableCredential(t *testing.T) {
 		"empty":            {h, ""},
 		"garbage":          {h, "not.a.jwt"},
 		"signed elsewhere": {other, good},
-		"no user claim":    {h, edited(func(c *gptoken.Claims) { c.User = nil })},
 		"unknown login":    {h, env.SiteToken(t, "ghost@nowhere.test", nil)},
-		"unknown user id":  {h, edited(func(c *gptoken.Claims) { c.User.SetStrAttr(auth.ClaimUserID, "999999999") })},
-		"no user id":       {h, edited(func(c *gptoken.Claims) { delete(c.User.Attributes, auth.ClaimUserID) })},
-		"no epoch":         {h, edited(func(c *gptoken.Claims) { delete(c.User.Attributes, auth.ClaimEpoch) })},
-		"other epoch":      {h, edited(func(c *gptoken.Claims) { c.User.SetStrAttr(auth.ClaimEpoch, "7") })},
-		"expired":          {h, edited(func(c *gptoken.Claims) { c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Second)) })},
-		"no expiry":        {h, edited(func(c *gptoken.Claims) { c.ExpiresAt = nil })},
+		"unknown user id":  {h, edited(func(c *auth.SessionClaims) { c.UserID = 999999999 })},
+		"no user id":       {h, edited(func(c *auth.SessionClaims) { c.UserID = 0 })},
+		"no epoch":         {h, edited(func(c *auth.SessionClaims) { c.Epoch = nil })},
+		"other epoch":      {h, edited(func(c *auth.SessionClaims) { c.Epoch = new(int64(7)) })},
+		"expired":          {h, edited(func(c *auth.SessionClaims) { c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Second)) })},
+		"no expiry":        {h, edited(func(c *auth.SessionClaims) { c.ExpiresAt = nil })},
+		"another issuer":   {h, edited(func(c *auth.SessionClaims) { c.Issuer = "sphericon-staff" })},
+		"another audience": {h, edited(func(c *auth.SessionClaims) { c.Audience = jwt.ClaimStrings{"sphericon-staff"} })},
 	} {
 		ctx, err := tc.handler.HandleApiKeyAuth(context.Background(), "", siteapi.ApiKeyAuth{APIKey: tc.token})
 		require.ErrorIs(t, err, auth.ErrUnauthorized, name)

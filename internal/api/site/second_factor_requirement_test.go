@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
-
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	apiauth "github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -230,8 +228,8 @@ func TestAStrongSessionMeetsTheRequirementWithoutASecondFactor(t *testing.T) {
 	path := "/site/workspaces/" + fixtures.UmbrellaPublicID + "/tags"
 	get := func(method apiauth.Method) int {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, path, nil)
-		token := env.SiteToken(t, fixtures.UmbrellaOwnerRitaEmail, func(c *gptoken.Claims) {
-			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
+		token := env.SiteToken(t, fixtures.UmbrellaOwnerRitaEmail, func(c *apiauth.SessionClaims) {
+			c.Method = method
 		})
 		req.AddCookie(testhelper.RequestCookie("JWT", token))
 		rec := env.Serve(req)
@@ -252,8 +250,8 @@ func TestTheGraceEndFollowsTheStrengthOfTheSession(t *testing.T) {
 	requireSecondFactor(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 	graceEnds := func(method apiauth.Method) any {
 		req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/site/workspaces", nil)
-		token := env.SiteToken(t, fixtures.PasskeyPatEmail, func(c *gptoken.Claims) {
-			c.User.SetStrAttr(apiauth.ClaimMethod, string(method))
+		token := env.SiteToken(t, fixtures.PasskeyPatEmail, func(c *apiauth.SessionClaims) {
+			c.Method = method
 		})
 		req.AddCookie(testhelper.RequestCookie("JWT", token))
 		rec := env.Serve(req)
