@@ -8,6 +8,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 )
@@ -79,15 +80,8 @@ func buildIndexShell(sub fs.FS, settings Settings) []byte {
 	return []byte(strings.NewReplacer(
 		localeSentinel, settings.Locale,
 		verificationSentinel, strconv.FormatBool(settings.RequireEmailVerification),
-		sentryDSNSentinel, jsStringContent(settings.SentryDSN),
+		// Escaped for the inside of a single-quoted JavaScript string in an inline <script>, so an
+		// operator's value can end neither the string nor the script element.
+		sentryDSNSentinel, template.JSEscapeString(settings.SentryDSN),
 	).Replace(string(b)))
-}
-
-// jsStringContent escapes s for the inside of a single-quoted JavaScript string in an inline
-// <script>, so an operator's value can end neither the string nor the script element.
-func jsStringContent(s string) string {
-	return strings.NewReplacer(
-		`\`, `\\`, `'`, `\'`, `<`, `\x3c`, `>`, `\x3e`, "\n", `\n`, "\r", `\r`,
-		" ", ` `, " ", ` `,
-	).Replace(s)
 }
