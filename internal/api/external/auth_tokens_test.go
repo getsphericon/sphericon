@@ -38,12 +38,14 @@ func TestExternalAuthMeRequiresACredential(t *testing.T) {
 func TestExternalTokensOfADeletedWorkspaceAreRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.DeleteWorkspace(ctx, fixtures.AcmeID, time.Now())
+	env.DeleteWorkspace(t, fixtures.AcmeID, time.Now())
 
 	_, err := env.ExternalAnchor(t).AuthMeGet(ctx)
 	testhelper.ExternalRefusal(t, err, http.StatusUnauthorized)
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(ctx)
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().Exec(ctx)
+	})
 	_, err = env.ExternalAnchor(t).AuthMeGet(ctx)
 	require.NoError(t, err, "restored, the token works again")
 }

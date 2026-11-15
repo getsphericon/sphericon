@@ -3,7 +3,6 @@ package tagdeletion_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -13,10 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/tagdeletion"
 )
@@ -30,9 +26,10 @@ func names(ts []*ent.Tag) []string {
 // the delete then finds, so the Tag is kept instead of vanishing under it.
 func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	ctx := context.Background()
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	s := race.Scope
-	segs, catalogue, deletion := segments.New(race.Bus, time.Now), tags.New(), tagdeletion.New(race.Bus, removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default())))
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
+	s := scope
+	segs, catalogue, deletion := testhelper.Module[*segments.Module](env), tags.New(), testhelper.Module[*tagdeletion.UseCase](env)
 
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {
@@ -45,7 +42,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	}}
 	remove := testhelper.Writer{Name: "delete", Run: func() error { return deletion.Delete(ctx, s, fixtures.TagUnusedID) }}
 
-	errs := race.Queue(t, save, remove)
+	errs := env.QueueBehindWorkspaceLock(t, scope, save, remove)
 
 	require.NoError(t, errs["save"])
 	var used *liveuse.Error

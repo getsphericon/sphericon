@@ -237,10 +237,12 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `forbidigo` in `.golangci.yml` rejects `*sql.DB` `Exec`/`Query`/`QueryRow` in `_test.go` files.
   Inject faults with ent hooks/interceptors, never DDL or triggers.
 - **Tests never clean up by hand, and never reset state at their start.** A test that needs a real
-  commit (a river runtime, concurrent workers, a whole app) takes a database of its own from
-  `testhelper.RealDB`, `RealDBURL`, `EmptyDBURL` or `AbsentDBURL` (a clone of the process's
-  baseline database, an empty one, or one not created yet), dropped when the test ends; every
-  other test rides the transaction `dbcleaner` hands out, which rolls back. A `t.Cleanup` that
+  commit (a river runtime, concurrent workers, a race) takes `testhelper.Setup(t,
+  testhelper.Committed())`, the Instance over a clone of the process's baseline database; a test
+  below the Instance (a whole app, a migration, a raw pool) takes `testhelper.RealDB`,
+  `RealDBURL`, `EmptyDBURL` or `AbsentDBURL` (such a clone, an empty database, or one not created
+  yet). Each is dropped when the test ends; every other test rides the transaction `dbcleaner`
+  hands out, which rolls back. A `t.Cleanup` that
   deletes rows, a purge or a reset at the top of a test means a test is committing outside its
   transaction: fix that test.
 - **No `time.Sleep`, anywhere.** A sleep is a guess about how long something takes: it makes a test

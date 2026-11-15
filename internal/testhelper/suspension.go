@@ -2,8 +2,10 @@ package testhelper
 
 import (
 	"context"
+	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -28,8 +30,11 @@ func (env *TestEnv) UnsuspendWorkspace(ctx context.Context, id int64) {
 }
 
 // DeleteWorkspace puts a Workspace into deletion at `at`, as its Owner's delete does: the write goes
-// through FeedDB, whose Hooks record a Workspace's deletion, which env.DB refuses outside a
+// through Feed, since the Hooks record a Workspace's deletion, which env.DB refuses outside a
 // transaction (internal/AGENTS.md).
-func (env *TestEnv) DeleteWorkspace(ctx context.Context, id int64, at time.Time) {
-	env.FeedDB.Workspace.UpdateOneID(id).SetDiscardedAt(at).ExecX(ctx)
+func (env *TestEnv) DeleteWorkspace(tb testing.TB, id int64, at time.Time) {
+	tb.Helper()
+	env.Feed(tb, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(id).SetDiscardedAt(at).Exec(tb.Context())
+	})
 }

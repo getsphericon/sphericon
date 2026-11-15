@@ -50,9 +50,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// riverEnv is a real river client over the test database. The workers read and
-// write through the test's txdb-bound ent client (rolled back with the test), and river
-// queues on the same connection, so the queue rolls back with the test too.
+// riverEnv is a real river client over the env's database. The workers read and write through the
+// env's ent client, and river queues on the same database: on a rolled-back env the queue rolls
+// back with the test, on a committed one it is committed.
 type riverEnv struct {
 	*testhelper.TestEnv
 
@@ -67,18 +67,17 @@ type riverEnv struct {
 
 func newRiverEnv(t *testing.T) *riverEnv {
 	t.Helper()
-	env := testhelper.Setup(t)
 	// river rides the test's own connection, so what it queues rolls back with the test.
-	return newRiverEnvOn(t, env, env.SQLDB)
+	return riverEnvOf(t, testhelper.Setup(t))
 }
 
 // newRiverEnvWithRealQueue is newRiverEnv for a test that needs the queue really committed: a
 // river runtime working it from connections of its own, or a reader of the table that goes by
 // the database's clock (a transaction's now() stays at its start, so a job river stamps later
-// is not yet due in it). The queue lives in a database of the test's own, dropped with it.
+// is not yet due in it). It runs on a committed env, whose database holds the queue too.
 func newRiverEnvWithRealQueue(t *testing.T) *riverEnv {
 	t.Helper()
-	return newRiverEnvOn(t, testhelper.Setup(t), testhelper.RealDB(t))
+	return riverEnvOf(t, testhelper.Setup(t, testhelper.Committed()))
 }
 
 // The job runner refuses to start without the Instance clock rather than fall back to the wall
@@ -91,8 +90,10 @@ func TestTheJobRunnerRefusesToStartWithoutTheInstanceClock(t *testing.T) {
 	require.ErrorContains(t, err, "Deps.Clock is required")
 }
 
-func newRiverEnvOn(t *testing.T, env *testhelper.TestEnv, pool *sql.DB) *riverEnv {
+// riverEnvOf is a river client over env's database, with the workers' senders of its own.
+func riverEnvOf(t *testing.T, env *testhelper.TestEnv) *riverEnv {
 	t.Helper()
+	pool := env.SQLDB
 	cfg, err := config.Load(config.EnvTest)
 	require.NoError(t, err)
 	cipher := env.Cipher

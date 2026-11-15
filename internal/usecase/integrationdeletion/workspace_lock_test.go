@@ -12,30 +12,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
-	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/messaging"
-	"github.com/getsphericon/sphericon/internal/infra/messaging/registry"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/integrationdeletion"
 )
-
-// anySender resolves every Integration to a sender that accepts every message.
-type anySender struct{}
-
-func (anySender) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (messaging.EmailSender, error) {
-	return anySender{}, nil
-}
-
-func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receipt, error) {
-	return messaging.Receipt{}, nil
-}
 
 // Deleting an Integration and scheduling a draft that sends through it take the Workspace's lock
 // (ADR 0099), so the second waits for the first and then reads what it committed: the Integration
@@ -43,7 +26,7 @@ func (anySender) Send(context.Context, messaging.EmailMessage) (messaging.Receip
 func TestADeleteOfAnIntegrationQueuedFirstRefusesTheScheduleThroughIt(t *testing.T) {
 	r := newIntegrationRace(t)
 
-	errs := r.Queue(t, r.remove, r.schedule)
+	errs := r.env.QueueBehindWorkspaceLock(t, r.scope, r.remove, r.schedule)
 
 	require.NoError(t, errs["delete"])
 	require.ErrorIs(t, errs["schedule"], outboundmessages.ErrRouteHeld)
@@ -54,7 +37,7 @@ func TestADeleteOfAnIntegrationQueuedFirstRefusesTheScheduleThroughIt(t *testing
 func TestAScheduleQueuedFirstRefusesTheDeleteOfTheIntegrationItSendsThrough(t *testing.T) {
 	r := newIntegrationRace(t)
 
-	errs := r.Queue(t, r.schedule, r.remove)
+	errs := r.env.QueueBehindWorkspaceLock(t, r.scope, r.schedule, r.remove)
 
 	require.NoError(t, errs["schedule"])
 	b := r.broadcast(t)
@@ -67,7 +50,8 @@ func TestAScheduleQueuedFirstRefusesTheDeleteOfTheIntegrationItSendsThrough(t *t
 // integrationRace is a draft Broadcast that sends through an Integration, with a writer that
 // deletes the Integration and one that schedules the Broadcast, on a database of its own.
 type integrationRace struct {
-	*testhelper.WorkspaceRace
+	env   *testhelper.TestEnv
+	scope *ent.Scoped
 
 	sends            *broadcasts.Module
 	remove, schedule testhelper.Writer
@@ -76,18 +60,17 @@ type integrationRace struct {
 func newIntegrationRace(t *testing.T) integrationRace {
 	t.Helper()
 	ctx := context.Background()
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	s, bus := race.Scope, race.Bus
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), anySender{}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	sends := broadcasts.New(bus, testhelper.Renderer(), out)
-	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
-	deletion := integrationdeletion.New(bus, check, time.Now)
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	sends := testhelper.Module[*broadcasts.Module](env)
+	deletion := testhelper.Module[*integrationdeletion.UseCase](env)
 
 	_, err := sends.Update(ctx, s, fixtures.BroadcastDraftID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), IntegrationID: patch.Set[int64](fixtures.IntegrationAcmeGenericAID)})
 	require.NoError(t, err)
 	return integrationRace{
-		WorkspaceRace: race,
-		sends:         sends,
+		env:   env,
+		scope: s,
+		sends: sends,
 		remove: testhelper.Writer{Name: "delete", Run: func() error {
 			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeGenericAID)
 		}},
@@ -100,7 +83,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 
 func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 	t.Helper()
-	b, err := r.sends.Get(context.Background(), r.Scope, fixtures.BroadcastDraftID)
+	b, err := r.sends.Get(context.Background(), r.scope, fixtures.BroadcastDraftID)
 	require.NoError(t, err)
 	return b
 }
@@ -108,17 +91,14 @@ func (r integrationRace) broadcast(t *testing.T) *ent.Broadcast {
 // Promoting an Integration to its Channel's default moves Live use (ADR 0108), so it takes the
 // Workspace's lock: a promotion queued behind the Integration's deletion waits for it, then finds
 // the Integration gone, and the Channel keeps the default it had.
-func TestAPromotionQueuedBehindTheDeleteOfItsIntegrationLeavesTheChannelItsDefault(t *testing.T) {
+func TestAPromotionQueueBehindTheDeleteOfItsIntegrationLeavesTheChannelItsDefault(t *testing.T) {
 	ctx := context.Background()
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	s, bus := race.Scope, race.Bus
-	presets, err := preset.Load(nil)
-	require.NoError(t, err)
-	integs := integrations.New(bus, testhelper.Cipher(t), nil, presets, "", time.Now)
-	check := removalcheck.New(messaging.NewResolver(testhelper.Cipher(t), registry.Default()))
-	deletion := integrationdeletion.New(bus, check, time.Now)
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.AcmeID)
+	integs := testhelper.Module[*integrations.Module](env)
+	deletion := testhelper.Module[*integrationdeletion.UseCase](env)
 
-	errs := race.Queue(t,
+	errs := env.QueueBehindWorkspaceLock(t, s,
 		testhelper.Writer{Name: "delete", Run: func() error {
 			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeSesID)
 		}},

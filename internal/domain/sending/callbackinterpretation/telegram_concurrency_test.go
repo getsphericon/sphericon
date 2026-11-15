@@ -4,19 +4,15 @@ import (
 	"context"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
-	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -26,13 +22,13 @@ import (
 )
 
 func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
-	r := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
-	r.Bus.UseSubscribers(channelstop.Subscribers()...)
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
 	entered, release := make(chan struct{}), make(chan struct{})
 	unblock := sync.OnceFunc(func() { close(release) })
 	t.Cleanup(unblock)
 	var first sync.Once
-	r.Bus.UseSubscribers(events.Subscriber{
+	env.Bus.UseSubscribers(events.Subscriber{
 		Wants: func(_ events.Envelope, ev events.DomainEvent) bool {
 			_, ok := ev.(*events.TelegramStopObserved)
 			return ok
@@ -42,24 +38,23 @@ func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
 			return nil
 		},
 	})
-	bot, err := r.Scope.Integration().Get(t.Context(), fixtures.IntegrationAcmeTelegramID)
+	bot, err := scope.Integration().Get(t.Context(), fixtures.IntegrationAcmeTelegramID)
 	require.NoError(t, err)
-	integs := integrations.New(r.Bus, testhelper.Cipher(t), nil, nil, "", time.Now)
-	u := callbackinterpretation.New(entclient.Core.New(r.DB), r.Bus, integs, time.Now)
+	u := testhelper.Module[*callbackinterpretation.Module](env)
 	in := callbackinterpretation.InterpretInput{Integration: bot, Preset: "telegram", Result: preset.Result{
 		InboundMessages: []preset.InboundMessage{{ID: "1", Channel: "telegram", Destination: fixtures.BindingLiamDestination, Text: "/stop"}},
 	}}
 	done := make(chan error, 1)
-	go func() { done <- u.Interpret(t.Context(), r.Scope, in) }()
+	go func() { done <- u.Interpret(t.Context(), scope, in) }()
 	testhelper.Receive(t, entered, "the first observation holds its receipt and consent change")
-	results := testhelper.QueuedBehind(t, r.DB, unblock, testhelper.Writer{Name: "duplicate", Run: func() error {
-		return u.Interpret(t.Context(), r.Scope, in)
+	results := env.QueueBehind(t, unblock, testhelper.Writer{Name: "duplicate", Run: func() error {
+		return u.Interpret(t.Context(), scope, in)
 	}})
 	require.NoError(t, testhelper.Receive(t, done, "first callback commits"))
 	require.NoError(t, results["duplicate"])
-	stopped, err := unsubscribes.Get(t.Context(), r.Scope, channels.Telegram, fixtures.BindingLiamDestination, eligibility.SourceEverything)
+	stopped, err := unsubscribes.Get(t.Context(), scope, channels.Telegram, fixtures.BindingLiamDestination, eligibility.SourceEverything)
 	require.NoError(t, err)
 	require.NotNil(t, stopped)
-	transitions := r.Scope.Event().Query().Where(event.Action(systemevent.TelegramUnsubscribed), event.ContactID(fixtures.ContactLiamID)).CountX(t.Context())
+	transitions := scope.Event().Query().Where(event.Action(systemevent.TelegramUnsubscribed), event.ContactID(fixtures.ContactLiamID)).CountX(t.Context())
 	assert.Equal(t, 1, transitions)
 }

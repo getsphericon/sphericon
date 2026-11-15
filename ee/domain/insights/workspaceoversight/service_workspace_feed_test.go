@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	entmembership "github.com/getsphericon/sphericon/ent/membership"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -137,26 +138,32 @@ func TestANewWorkspaceEntersTheFeedWithItsOwner(t *testing.T) {
 func TestAnOwnerAddedRemovedOrTransferredPutsTheWorkspaceBackInTheFeed(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	initech := h.env.FeedDB.Scoped(fixtures.InitechID)
+	initech := func(write func(s *ent.Scoped) error) {
+		h.env.Feed(t, func(tx *ent.Client) error { return write(tx.Scoped(fixtures.InitechID)) })
+	}
 	_, saved := feedFrom(t, c, "")
 
 	// Added.
-	// test writes: the Workspace feed hook fires on this write
-	added, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleOwner).Save(t.Context())
-	require.NoError(t, err)
+	var added *ent.Membership
+	initech(func(s *ent.Scoped) (err error) {
+		// test writes: the Workspace feed hook fires on this write
+		added, err = s.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleOwner).Save(t.Context())
+		return err
+	})
 	got, saved := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	assert.ElementsMatch(t, []int64{3, 5, 6}, ownerIDs(got[0]))
 
 	// Transferred: the co-owner steps down.
-	_, err = initech.Membership().UpdateOneID(fixtures.InitechCoOwnerMembershipID).SetRole(entmembership.RoleAdmin).Save(t.Context())
-	require.NoError(t, err)
+	initech(func(s *ent.Scoped) error {
+		return s.Membership().UpdateOneID(fixtures.InitechCoOwnerMembershipID).SetRole(entmembership.RoleAdmin).Exec(t.Context())
+	})
 	got, saved = feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	assert.ElementsMatch(t, []int64{3, 5}, ownerIDs(got[0]))
 
 	// Removed.
-	require.NoError(t, initech.Membership().DeleteOneID(added.ID).Exec(t.Context()))
+	initech(func(s *ent.Scoped) error { return s.Membership().DeleteOneID(added.ID).Exec(t.Context()) })
 	got, _ = feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.InitechPublicID}, feedIDs(got))
 	assert.Equal(t, []int64{5}, ownerIDs(got[0]))
@@ -178,13 +185,17 @@ func TestADeletedOwnerLeavesTheFeedAndTheirWorkspaceComesBackWithoutThem(t *test
 func TestAMemberJoiningOrLeavingIsNotAChangeOfOwners(t *testing.T) {
 	h := newHarness(t)
 	c := h.env.ServiceClient(t, primary)
-	initech := h.env.FeedDB.Scoped(fixtures.InitechID)
 	_, saved := feedFrom(t, c, "")
 
-	// test writes: the Workspace feed hook fires on this write
-	m, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleMember).Save(t.Context())
-	require.NoError(t, err)
-	require.NoError(t, initech.Membership().DeleteOneID(m.ID).Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		initech := tx.Scoped(fixtures.InitechID)
+		// test writes: the Workspace feed hook fires on this write
+		m, err := initech.Membership().Create().SetUserID(fixtures.MemberMaryID).SetRole(entmembership.RoleMember).Save(t.Context())
+		if err != nil {
+			return err
+		}
+		return initech.Membership().DeleteOneID(m.ID).Exec(t.Context())
+	})
 
 	got, _ := feedFrom(t, c, saved)
 	assert.Empty(t, got)
@@ -197,7 +208,9 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 	_, saved := feedFrom(t, c, "")
 
 	verifiedAt := time.Now().UTC().Truncate(time.Second)
-	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.VirtuconOwnerVeraID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.User.UpdateOneID(fixtures.VirtuconOwnerVeraID).SetEmailVerifiedAt(verifiedAt).Exec(t.Context())
+	})
 	got, saved := feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.VirtuconPublicID}, feedIDs(got))
 	vera, foundVera := lo.Find(got[0].Owners, func(o serviceapi.ServiceWorkspaceOwner) bool { return o.UserId == fixtures.VirtuconOwnerVeraID })
@@ -209,13 +222,17 @@ func TestAnOwnersEmailOrVerificationChangingPutsEveryTheirWorkspaceBackInTheFeed
 	assert.WithinDuration(t, verifiedAt, time.Time(at), time.Second)
 	assert.False(t, vic.EmailVerifiedAt.IsSet() && !vic.EmailVerifiedAt.IsNull(), "the co-owner stays unverified")
 
-	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("john@acme.test").Exec(t.Context())
+	})
 	got, saved = feedFrom(t, c, saved)
 	require.Equal(t, []string{fixtures.AcmePublicID}, feedIDs(got))
 	assert.Equal(t, "john@acme.test", string(got[0].Owners[0].Email))
 
 	// A User who owns nothing is nobody's change.
-	require.NoError(t, h.env.FeedDB.User.UpdateOneID(fixtures.MemberMaryID).SetEmail("mary@elsewhere.test").Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.User.UpdateOneID(fixtures.MemberMaryID).SetEmail("mary@elsewhere.test").Exec(t.Context())
+	})
 	got, _ = feedFrom(t, c, saved)
 	assert.Empty(t, got)
 }

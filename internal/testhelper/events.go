@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"slices"
 	"testing"
-	"time"
 
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
@@ -18,8 +17,6 @@ import (
 	eejobs "github.com/getsphericon/sphericon/ee/jobs"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -38,12 +35,6 @@ import (
 func (env *TestEnv) QueuedEnvelopes(t *testing.T, names ...string) []events.Envelope {
 	t.Helper()
 	return queuedEnvelopes(t, env.riverClient(t), names)
-}
-
-// QueuedEnvelopesOn is QueuedEnvelopes for a database a test wrote to for real (RealDB).
-func QueuedEnvelopesOn(t *testing.T, sqlDB *sql.DB, names ...string) []events.Envelope {
-	t.Helper()
-	return queuedEnvelopes(t, RiverClientOn(t, sqlDB), names)
 }
 
 func queuedEnvelopes(t *testing.T, rc *river.Client[*sql.Tx], names []string) []events.Envelope {
@@ -177,22 +168,6 @@ var recorder = events.Consumer{
 	Job: func(env events.Envelope, _ events.DomainEvent) river.JobArgs {
 		return recordedArgs{events.EventJob{Envelope: env}}
 	},
-}
-
-// BusOn is the application's event bus over a database a test writes to for real (RealDB): a
-// publish stores its Event row and inserts the jobs of core's and the Edition's consumers there.
-func BusOn(t *testing.T, sqlDB *sql.DB) *events.Bus {
-	t.Helper()
-	bus := events.New(sqlDB, Clients(t).NewTx, time.Now)
-	inserter, err := jobs.NewInserter(sqlDB)
-	require.NoError(t, err)
-	bus.UseJobs(inserter)
-	bus.UseSubscribers(channelstop.Subscribers()...)
-	bus.UseSubscribers(suppressions.Subscribers()...)
-	bus.UseConsumers(append(jobs.EventConsumers(), eejobs.EventConsumers()...)...)
-	bus.UseConsumers(recorder)
-	bus.OnStored(jobs.RecordSendOutcome)
-	return bus
 }
 
 // EventJobs are the envelopes of the queued jobs of an event consumer's kind, oldest first: the

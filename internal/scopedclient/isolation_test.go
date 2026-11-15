@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -27,15 +28,23 @@ func firstID(ctx context.Context, t *testing.T, c *ent.Client, entities []*ent.S
 	return ids[0]
 }
 
+// inAcme runs write on Acme's scope in a transaction of the bus, as production makes every write
+// (a write a hook watches, such as a Contact's, is refused anywhere else), and returns its error;
+// the transaction rolls back on one.
+func inAcme(ctx context.Context, env *testhelper.TestEnv, write func(scoped *ent.Scoped) error) error {
+	return env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return write(tx.Scoped(acme))
+	})
+}
+
 // replantInAcme re-creates the Globex row in Acme with every reference pointed at an
 // Acme row. A unique index (e.g. one run per automation and contact) can reject a
-// pairing, so it tries the next Acme rows, each attempt in its own savepoint.
-func replantInAcme(ctx context.Context, t *testing.T, c *ent.Client, entities []*ent.ScopedEntity, e *ent.ScopedEntity, from int64) (int64, error) {
+// pairing, so it tries the next Acme rows, each attempt in a transaction of its own.
+func replantInAcme(ctx context.Context, t *testing.T, env *testhelper.TestEnv, entities []*ent.ScopedEntity, e *ent.ScopedEntity, from int64) (int64, error) {
 	t.Helper()
-	// Read before the transaction opens: the test connection serves one query at a time.
 	acmeIDs := map[string][]int64{}
 	for _, te := range entities {
-		ids, err := te.IDs(ctx, c, acme)
+		ids, err := te.IDs(ctx, env.DB, acme)
 		require.NoError(t, err)
 		acmeIDs[te.Name] = ids
 	}
@@ -47,14 +56,14 @@ func replantInAcme(ctx context.Context, t *testing.T, c *ent.Client, entities []
 			exhausted = attempt >= len(ids)
 			return ids[attempt%len(ids)]
 		}
-		tx, err := c.Tx(ctx)
-		require.NoError(t, err)
-		ws, err := e.Replant(ctx, tx.Client().Scoped(acme), from, remap)
+		var ws int64
+		err := inAcme(ctx, env, func(scoped *ent.Scoped) (err error) {
+			ws, err = e.Replant(ctx, scoped, from, remap)
+			return err
+		})
 		if err == nil {
-			require.NoError(t, tx.Commit())
 			return ws, nil
 		}
-		require.NoError(t, tx.Rollback())
 		if !ent.IsConstraintError(err) || exhausted {
 			return 0, err
 		}
@@ -85,66 +94,81 @@ func TestScopedClientIsolation(t *testing.T) {
 		t.Run(e.Name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
-			scoped := env.FeedDB.Scoped(acme)
+			read := env.DB.Scoped(acme)
 
-			own, err := e.IDs(ctx, env.FeedDB, acme)
+			own, err := e.IDs(ctx, env.DB, acme)
 			require.NoError(t, err)
-			foreign, err := e.IDs(ctx, env.FeedDB, globex)
+			foreign, err := e.IDs(ctx, env.DB, globex)
 			require.NoError(t, err)
 			require.NotEmpty(t, own, "add a %s fixture row to Acme", e.Name)
 			require.NotEmpty(t, foreign, "add a %s fixture row to Globex", e.Name)
 
 			t.Run("own row is reachable", func(t *testing.T) {
-				_, err := e.Get(ctx, scoped, own[0])
+				_, err := e.Get(ctx, read, own[0])
 				require.NoError(t, err)
-				require.NoError(t, e.Touch(ctx, scoped, own[0]))
-				n, err := e.BulkTouch(ctx, scoped, own[0])
-				require.NoError(t, err)
+				require.NoError(t, inAcme(ctx, env, func(scoped *ent.Scoped) error { return e.Touch(ctx, scoped, own[0]) }))
+				var n int
+				require.NoError(t, inAcme(ctx, env, func(scoped *ent.Scoped) (err error) {
+					n, err = e.BulkTouch(ctx, scoped, own[0])
+					return err
+				}))
 				assert.Equal(t, 1, n)
 			})
 
 			t.Run("foreign row reads as not found and cannot be changed", func(t *testing.T) {
 				id := foreign[0]
-				_, err := e.Get(ctx, scoped, id)
+				_, err := e.Get(ctx, read, id)
 				assert.True(t, ent.IsNotFound(err), "Get")
-				assert.True(t, ent.IsNotFound(e.Touch(ctx, scoped, id)), "UpdateOneID")
-				n, err := e.BulkTouch(ctx, scoped, id)
-				require.NoError(t, err)
+				assert.True(t, ent.IsNotFound(inAcme(ctx, env, func(scoped *ent.Scoped) error { return e.Touch(ctx, scoped, id) })), "UpdateOneID")
+				var n int
+				require.NoError(t, inAcme(ctx, env, func(scoped *ent.Scoped) (err error) {
+					n, err = e.BulkTouch(ctx, scoped, id)
+					return err
+				}))
 				assert.Zero(t, n, "Update().Where")
-				assert.True(t, ent.IsNotFound(e.Delete(ctx, scoped, id)), "DeleteOneID")
-				n, err = e.BulkDelete(ctx, scoped, id)
-				require.NoError(t, err)
+				assert.True(t, ent.IsNotFound(inAcme(ctx, env, func(scoped *ent.Scoped) error { return e.Delete(ctx, scoped, id) })), "DeleteOneID")
+				require.NoError(t, inAcme(ctx, env, func(scoped *ent.Scoped) (err error) {
+					n, err = e.BulkDelete(ctx, scoped, id)
+					return err
+				}))
 				assert.Zero(t, n, "Delete().Where")
 
-				after, err := e.IDs(ctx, env.FeedDB, globex)
+				after, err := e.IDs(ctx, env.DB, globex)
 				require.NoError(t, err)
 				assert.Equal(t, foreign, after, "the foreign rows are untouched")
 			})
 
 			t.Run("a foreign reference is refused", func(t *testing.T) {
 				for _, ref := range e.Refs {
-					target := firstID(ctx, t, env.FeedDB, entities, ref.Target, globex)
-					err := ref.Set(ctx, scoped, own[0], target)
+					target := firstID(ctx, t, env.DB, entities, ref.Target, globex)
+					err := inAcme(ctx, env, func(scoped *ent.Scoped) error { return ref.Set(ctx, scoped, own[0], target) })
 					require.ErrorIs(t, err, ent.ErrNotInWorkspace, "ref %s -> %s", ref.Name, ref.Target)
 
 					// The same reference to an own row is accepted.
-					ownTarget := firstID(ctx, t, env.FeedDB, entities, ref.Target, acme)
-					assert.NotErrorIs(t, ref.Set(ctx, scoped, own[0], ownTarget), ent.ErrNotInWorkspace, "own ref %s -> %s", ref.Name, ref.Target)
+					ownTarget := firstID(ctx, t, env.DB, entities, ref.Target, acme)
+					err = inAcme(ctx, env, func(scoped *ent.Scoped) error { return ref.Set(ctx, scoped, own[0], ownTarget) })
+					assert.NotErrorIs(t, err, ent.ErrNotInWorkspace, "own ref %s -> %s", ref.Name, ref.Target)
 				}
 			})
 
 			t.Run("create sets the workspace and refuses foreign references", func(t *testing.T) {
 				// The foreign fixture row is re-created without its workspace_id:
 				// the new row lands in Acme only because the scoped create set it.
-				clearSingleton(ctx, t, scoped, e, own)
-				ws, err := replantInAcme(ctx, t, env.FeedDB, entities, e, foreign[0])
+				require.NoError(t, inAcme(ctx, env, func(scoped *ent.Scoped) error {
+					clearSingleton(ctx, t, scoped, e, own)
+					return nil
+				}))
+				ws, err := replantInAcme(ctx, t, env, entities, e, foreign[0])
 				require.NoError(t, err)
 				assert.Equal(t, acme, ws)
 
 				referenced := false
-				_, err = e.Replant(ctx, scoped, foreign[0], func(_ string, id int64) int64 {
-					referenced = true
-					return id // keeps pointing at the Globex row
+				err = inAcme(ctx, env, func(scoped *ent.Scoped) error {
+					_, err := e.Replant(ctx, scoped, foreign[0], func(_ string, id int64) int64 {
+						referenced = true
+						return id // keeps pointing at the Globex row
+					})
+					return err
 				})
 				refused := !referenced || errors.Is(err, ent.ErrNotInWorkspace)
 				assert.True(t, refused, "a reference to a foreign row is refused: %v", err)

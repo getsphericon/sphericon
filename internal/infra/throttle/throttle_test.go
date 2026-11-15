@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/authattempt"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -191,10 +190,10 @@ func TestResetBudgetNeverRefusesWhenDisabled(t *testing.T) {
 
 // Check and count are one statement, so concurrent requests for one address cannot
 // each see a free slot and all take it. The other tests ride one go-txdb transaction,
-// which serializes statements, so this one runs on a database of its own, with a
-// pool of real connections.
+// which serializes statements, so this one runs on a committed env, with a pool of real
+// connections.
 func TestResetBudgetGrantsExactlyThresholdSlotsUnderConcurrency(t *testing.T) {
-	client := entclient.Core.New(testhelper.RealDB(t))
+	client := testhelper.Setup(t, testhelper.Committed()).DB
 	const email = "race@attempts.test"
 
 	a := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(3)))

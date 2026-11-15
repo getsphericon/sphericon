@@ -29,18 +29,27 @@ type of a queued event itself.
 
 **Ride the transaction unless the test cannot.** A transaction costs the same however much the
 test writes, so `Setup` is the default, for a test of a hook, a refusal, a reader of the database,
-a worker called directly. A test that needs a **real commit** (code that opens its own connection,
-concurrent workers, a lock one transaction holds against another, a statement
-that fails and must not abort the rest, a whole `app.App`, a river runtime) cannot ride one. It takes
-a database of its own instead: `testhelper.RealDB(t)` (a `*sql.DB`), `RealDBURL(t)` (a URL, e.g.
-`t.Setenv("SPHERICON_DATABASE_URL", ...)` for an app), `EmptyDBURL(t)` (no schema, to migrate a fresh
-instance) or `AbsentDBURL(t, name)` (a database not created yet, for code that creates one).
-`RealDB` is a clone of a second database the process leases and loads with the fixtures
-at the same moment as `Setup`'s, so both see the same rows with the same relative dates; the clone
-is dropped when the test ends, so no test cleans up by hand or resets state at its start. A test
-whose only reason is `rivertest`, which hands a worker a `*sql.Tx`, does not need one: the txdb
-connection serves it as long as the worker does not touch the database through another handle while
-the `tx` is open (the pool has one connection). The test role is a superuser (the fixture loader
+a worker called directly. A test that needs a **real commit** (concurrent workers, a lock one
+transaction holds against another, a statement that fails and must not abort the rest, a river
+runtime, a reader of the database's clock) cannot ride one. It takes `Setup(t,
+testhelper.Committed())`: the same Instance from the container, over a database of its own whose
+writes commit, with everything else of the env as it is (the modules through `Module`, the actors,
+`PerformEnqueuedJobs`, `Feed`). Such a test never builds a client or a bus of its own: the bus, its
+subscribers and consumers, and the Edition's hooks are production's. A race runs on it:
+`env.QueueBehindWorkspaceLock(t, s, writers...)` and `env.QueueBehindKey` queue the writers behind a
+lock the env holds, `env.HoldOpen` holds a write in flight, and `env.QueueBehind(t, release,
+writers...)` queues them behind any transaction the test holds open; each writer must wait for the
+hold, as Postgres reports it (`pg_blocking_pids`), and each refuses a rolled-back env. Its database
+is a clone of a second database the process leases and loads with the fixtures at the same moment
+as `Setup`'s, so both see the same rows with the same relative dates; the clone is dropped when the
+test ends, so no test cleans up by hand or resets state at its start. It costs the clone, ten times
+a rolled-back test. A test below the Instance takes a database alone: `testhelper.RealDB(t)` (a
+`*sql.DB`, for a raw pool, a migration, river's own middleware), `RealDBURL(t)` (a URL, e.g.
+`t.Setenv("SPHERICON_DATABASE_URL", ...)` for a whole `app.App`, or a listener's connection),
+`EmptyDBURL(t)` (no schema, to migrate a fresh instance) or `AbsentDBURL(t, name)` (a database not
+created yet, for code that creates one). A test whose only reason is `rivertest`, which hands a
+worker a `*sql.Tx`, needs neither: the txdb connection serves it as long as the worker does not touch
+the database through another handle while the `tx` is open (the pool has one connection). The test role is a superuser (the fixture loader
 disables foreign-key triggers), as on the shared test database. A module that seals secrets takes
 the server's cipher, `env.Cipher`; a test without `Setup` takes `testhelper.Cipher(t)`, the same key
 the fixtures are sealed with, and never loads the configuration for it.
@@ -87,9 +96,10 @@ runs their Hooks, so a module that writes a Workspace's deletion, an owner chang
 record, the mailings mark, a Tracking host, or a Contact's creation with an email, its email or its
 removal outside `events.Bus.WithinTx` fails its tests. A test's own write of such a row (setup that
 marks a Workspace deleted, changes a User's address or deletes a Contact, or the write a test of a
-Hook makes) goes through `env.FeedDB`, the client on the same transaction that runs the Hooks;
-`env.DeleteWorkspace(ctx, id, at)` is that write for a Workspace put into deletion. A module under
-test only ever gets `env.DB` or a scope built from it, never `env.FeedDB`.
+Hook makes) goes through `env.Feed(t, func(tx *ent.Client) error)`, which makes it as production
+does, in a transaction of the bus whose Hooks run and whose work before the commit runs;
+`env.DeleteWorkspace(t, id, at)` is that write for a Workspace put into deletion. A module under
+test only ever gets `env.DB` or a scope built from it, never the client `Feed` hands its write.
 
 ## Domain contexts
 
@@ -139,8 +149,8 @@ changes). A check that needs nothing above its owner moves into the owner the sa
 `Recheck`). `internal/domain/identity/workspaces` holds the check of the typed name when
 it deletes a Workspace (`Module.Delete`). The use case is built from the container like a
 module, so the API tests reach it through the actors; a direct test builds it with
-`New` over `env.Bus`, or over the `Bus` of a `testhelper.NewWorkspaceRace` when it races the
-Workspace lock, whose `Queue` runs its writers queued behind the lock. The container's Step
+`New` over `env.Bus`. A test that races the Workspace lock reads it from a committed env
+(`Committed`) and runs its writers with `env.QueueBehindWorkspaceLock`. The container's Step
 execution is `Module[*automations.StepExecution](env)`, for a test of how the Instance builds it (its clock) and for a test
 that hands it an Event (`OnEvent`), a Rule's enrollment (`EnrollOnRule`) or a step; a test that
 drives an Automation over senders, a fence or a clock of its own builds one with
@@ -153,7 +163,7 @@ owns holds the raw client: the Workspace view's `Module[*workspaceview.UseCase](
 (`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
 creation is `workspaces.CreateIn`'s, tested with an id generator that collides), User deletion's `Module[*userdeletion.UseCase](env)`
 (`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
-deleting themselves at once; a test of the race builds it with `New` on a real database), the Workspace deletion cycle's
+deleting themselves at once, raced on a committed env), the Workspace deletion cycle's
 restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange
 of an OAuth grant (`apitokens.Module`, which holds the raw client too) is driven through the
 server's `/oauth` routes, which its driver `internal/api/oauth` serves and tests.

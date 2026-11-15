@@ -3,21 +3,25 @@ package testhelper
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"slices"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/riverqueue/river"
-	"github.com/riverqueue/river/rivertype"
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
 )
+
+// A race is run on a committed env (Setup with Committed): the Instance as the container builds it,
+// over a database whose transactions really meet. The test holds a transaction open (a lock, or rows
+// it wrote), queues the writers behind it and lets it go, so the writers meet in the order they
+// queued, each already inside its transaction, on the bus, the hooks and the modules production has.
 
 // Writer is one side of a race: a call that opens a transaction of its own, named by the test.
 type Writer struct {
@@ -25,160 +29,257 @@ type Writer struct {
 	Run  func() error
 }
 
-// QueuedBehind runs the writers in their order while a lock the test holds keeps them out, each
-// started once the ones before it wait for a lock, and then calls release: the writers meet in the
-// order they queued, each already inside its transaction. A writer that finishes instead of waiting
-// fails the test, since it took no lock the hold stands in. probe is a pool on the test's own
-// database (RealDB) to count the waiters with. It returns each writer's error by its name.
-func QueuedBehind(t *testing.T, probe *sql.DB, release func(), writers ...Writer) map[string]error {
-	t.Helper()
+// raceWait is how long a writer may take to start waiting, or a queued writer to finish once the
+// hold is let go.
+const raceWait = 10 * time.Second
+
+// QueueBehind runs the writers in their order behind the transactions held open when it is called
+// (the holders: the one a HoldOpen or the test's own code holds), each started once the ones before
+// it wait, and then calls release: the writers meet in the order they queued, each already inside
+// its transaction. A writer waits behind the holders when Postgres says so: a holder or a writer
+// queued before it blocks it (pg_blocking_pids). A writer that finishes instead of waiting fails the
+// test, since it took no lock the hold stands in; so does one that waits only for a transaction held
+// open that is no holder, which the release never lets go. It returns each writer's error by its
+// name, which is unique.
+func (env *TestEnv) QueueBehind(tb testing.TB, release func(), writers ...Writer) map[string]error {
+	tb.Helper()
+	env.requireCommitted(tb, "QueueBehind")
+	holders, err := idleInTransaction(context.Background(), env.SQLDB)
+	require.NoError(tb, err)
+	return env.queueBehind(tb, holders, release, writers)
+}
+
+// QueueBehindWorkspaceLock runs the writers queued behind the lock of s's Workspace (ADR 0099),
+// which it holds until all of them wait for it (QueueBehind): they meet in their order, and a
+// writer that takes no Workspace lock fails the test. It returns each writer's error by its name.
+func (env *TestEnv) QueueBehindWorkspaceLock(tb testing.TB, s *ent.Scoped, writers ...Writer) map[string]error {
+	tb.Helper()
+	env.requireCommitted(tb, "QueueBehindWorkspaceLock")
+	holders, release := env.holding(tb, func() func() { return env.holdWorkspaceLock(tb, s) })
+	return env.queueBehind(tb, holders, release, writers)
+}
+
+// QueueBehindKey runs the writers queued behind the advisory lock key, which it holds until all of
+// them wait for it (QueueBehind): a writer that takes no lock of that key fails the test.
+func (env *TestEnv) QueueBehindKey(tb testing.TB, key int64, writers ...Writer) map[string]error {
+	tb.Helper()
+	env.requireCommitted(tb, "QueueBehindKey")
+	holders, release := env.holding(tb, func() func() { return env.holdKey(tb, key) })
+	return env.queueBehind(tb, holders, release, writers)
+}
+
+// holding runs hold and returns the transaction it holds open, told apart from those held before
+// it, and its release.
+func (env *TestEnv) holding(tb testing.TB, hold func() (release func())) (holders []int, release func()) {
+	tb.Helper()
+	before, err := idleInTransaction(context.Background(), env.SQLDB)
+	require.NoError(tb, err)
+	release = hold()
+	after, err := idleInTransaction(context.Background(), env.SQLDB)
+	require.NoError(tb, err)
+	for _, pid := range after {
+		if !slices.Contains(before, pid) {
+			holders = append(holders, pid)
+		}
+	}
+	return holders, release
+}
+
+// queueBehind is QueueBehind behind the holders.
+func (env *TestEnv) queueBehind(tb testing.TB, holders []int, release func(), writers []Writer) map[string]error {
+	tb.Helper()
 	release = sync.OnceFunc(release)
-	t.Cleanup(release) // a failed assertion must not leave the writers waiting
+	tb.Cleanup(release) // a failed assertion must not leave the writers waiting
+	require.NotEmpty(tb, holders, "no transaction is held open for the writers to queue behind")
 	ctx := context.Background()
+	queued := slices.Clone(holders)
 	results := make(map[string]chan error, len(writers))
-	for i, w := range writers {
-		result, done := make(chan error, 1), make(chan struct{})
+	for _, w := range writers {
+		require.NotContains(tb, results, w.Name, "two writers are named %s", w.Name)
+		result := make(chan error, 1)
 		results[w.Name] = result
-		go func() {
-			result <- w.Run()
-			close(done)
-		}()
-		waits := false
-		require.Eventually(t, func() bool {
+		go func() { result <- w.Run() }()
+		var (
+			waiter   int
+			finished bool
+			ended    error
+			stray    error
+		)
+		require.Eventually(tb, func() bool {
 			select {
-			case <-done:
+			case ended = <-result:
+				finished = true
 				return true
 			default:
 			}
-			n, err := LockWaiters(ctx, probe)
-			waits = err == nil && n > i
-			return waits
-		}, 10*time.Second, 5*time.Millisecond, "%s finished or waits for a lock", w.Name)
-		require.True(t, waits, "%s waits for the lock instead of running at once", w.Name)
+			var err error
+			waiter, err = nextWaiter(ctx, env.SQLDB, queued)
+			stray = err
+			return err != nil || waiter != 0
+		}, raceWait, 5*time.Millisecond, "%s waits behind the hold", w.Name)
+		require.False(tb, finished, "%s ran at once instead of waiting for the hold (it returned %v)", w.Name, ended)
+		require.NoError(tb, stray, "%s waits behind the hold", w.Name)
+		queued = append(queued, waiter)
 	}
 	release()
 	errs := make(map[string]error, len(results))
 	for name, result := range results {
-		errs[name] = Receive(t, result, name+" finishes once the lock is let go")
+		errs[name] = Receive(tb, result, name+" finishes once the hold is let go")
 	}
 	return errs
 }
 
-// WorkspaceRace is a race of writes that take one Workspace's lock (ADR 0099): a database of the
-// test's own (RealDB) whose pool lets the writers wait side by side, a bus over it that takes every
-// job and keeps none (AcceptingQueue), and the Workspace's scope the writers act in. The modules
-// and use cases under test are built over Bus and called with Scope.
-type WorkspaceRace struct {
-	DB    *sql.DB
-	Bus   *events.Bus
-	Scope *ent.Scoped
+// HoldOpen runs write in a transaction of the bus over the scope s and, once write returns, holds
+// the transaction open and uncommitted until the returned release is called, which commits it. A
+// concurrent writer that meets its rows waits for the release, as one that loses a race to a write
+// in flight does. An error of write ends the test. The release runs at cleanup if the test does not
+// call it.
+func (env *TestEnv) HoldOpen(tb testing.TB, s *ent.Scoped, write func(ts *ent.Scoped, pub events.Publisher) error) (release func()) {
+	tb.Helper()
+	env.requireCommitted(tb, "HoldOpen")
+	return holdTx(tb, "the held transaction's write", func(held func() error) error {
+		return env.Bus.WithinScopedTx(context.Background(), s, func(ts *ent.Scoped, pub events.Publisher) error {
+			if err := write(ts, pub); err != nil {
+				return err
+			}
+			return held()
+		})
+	})
 }
 
-// NewWorkspaceRace opens the race's database at the fixture state and scopes it to the Workspace.
-func NewWorkspaceRace(t *testing.T, workspaceID int64) *WorkspaceRace {
-	t.Helper()
-	db := RealDB(t)
-	db.SetMaxOpenConns(8)
-	clients := Clients(t)
-	bus := events.New(db, clients.NewTx, time.Now)
-	bus.UseJobs(AcceptingQueue{})
-	return &WorkspaceRace{DB: db, Bus: bus, Scope: clients.New(db).Scoped(workspaceID)}
-}
-
-// Clients builds the ent clients of a test's own database (RealDB) with the hooks Setup's carry:
-// the core's and the Enterprise Edition's under the harness's License (every feature), through
-// the builder the application uses (internal/app/entclient).
-func Clients(t *testing.T) entclient.Clients {
-	t.Helper()
-	lic, err := testLicense()
-	require.NoError(t, err, "mint test license")
-	return entclient.WithEdition(ee.Hooks(lic, time.Now))
-}
-
-// Queue runs the writers queued behind the Workspace's lock, which the race holds until all of
-// them wait for it (QueuedBehind): they meet in their order, and a writer that takes no Workspace
-// lock fails the test. It returns each writer's error by its name.
-func (r *WorkspaceRace) Queue(t *testing.T, writers ...Writer) map[string]error {
-	t.Helper()
-	return QueuedBehind(t, r.DB, holdWorkspaceLock(t, r.Bus, r.Scope), writers...)
-}
-
-// QueueBehindKey runs the writers queued behind the advisory lock key, which the race holds until
-// all of them wait for it (QueuedBehind): a writer that takes no lock of that key fails the test.
-func (r *WorkspaceRace) QueueBehindKey(t *testing.T, key int64, writers ...Writer) map[string]error {
-	t.Helper()
-	return QueuedBehind(t, r.DB, holdKey(t, r.DB, key), writers...)
-}
-
-// holdKey takes the advisory lock key in a transaction of its own on db and holds it until the
-// returned release is called.
-func holdKey(t *testing.T, db *sql.DB, key int64) (release func()) {
-	t.Helper()
-	tx, err := db.BeginTx(context.Background(), nil)
-	require.NoError(t, err)
-	require.NoError(t, postgres.LockTx(context.Background(), tx, key))
-	release = sync.OnceFunc(func() { require.NoError(t, tx.Commit()) })
-	t.Cleanup(release)
-	return release
+// holdKey takes the advisory lock key in a transaction of its own and holds it until the returned
+// release is called.
+func (env *TestEnv) holdKey(tb testing.TB, key int64) (release func()) {
+	tb.Helper()
+	return holdTx(tb, "take the advisory lock", func(held func() error) error {
+		tx, err := env.SQLDB.BeginTx(context.Background(), nil)
+		if err != nil {
+			return err
+		}
+		if err := postgres.LockTx(context.Background(), tx, key); err != nil {
+			return fmt.Errorf("%w (rollback: %w)", err, tx.Rollback())
+		}
+		if err := held(); err != nil {
+			return err
+		}
+		return tx.Commit()
+	})
 }
 
 // holdWorkspaceLock takes the Workspace's lock (events.Bus.WithinWorkspaceLockTx) in a transaction
 // of its own and holds it until the returned release is called, as a removal or a write that
 // creates Live use holds it while it runs.
-func holdWorkspaceLock(t *testing.T, bus *events.Bus, s *ent.Scoped) (release func()) {
-	t.Helper()
-	held, let := make(chan struct{}), make(chan struct{})
+func (env *TestEnv) holdWorkspaceLock(tb testing.TB, s *ent.Scoped) (release func()) {
+	tb.Helper()
+	return holdTx(tb, "take the Workspace lock", func(held func() error) error {
+		return env.Bus.WithinWorkspaceLockTx(context.Background(), s, func(*ent.WorkspaceLocked, events.Publisher) error {
+			return held()
+		})
+	})
+}
+
+// holdTx runs run on a goroutine of its own until run calls held, which blocks until the returned
+// release; the release then waits for run to end and fails the test on its error, as does an error
+// of run before it held (named by what). The release runs at cleanup if the test does not call it.
+func holdTx(tb testing.TB, what string, run func(held func() error) error) (release func()) {
+	tb.Helper()
+	holding, let := make(chan struct{}), make(chan struct{})
 	ended := make(chan error, 1)
 	go func() {
-		ended <- bus.WithinWorkspaceLockTx(context.Background(), s, func(*ent.WorkspaceLocked, events.Publisher) error {
-			close(held)
+		ended <- run(func() error {
+			close(holding)
 			<-let
 			return nil
 		})
 	}()
 	select {
-	case <-held:
+	case <-holding:
 	case err := <-ended:
-		require.NoError(t, err, "take the Workspace lock")
+		require.NoError(tb, err, what)
+		tb.Fatalf("%s: ended without holding", what)
 	}
 	release = sync.OnceFunc(func() {
 		close(let)
-		require.NoError(t, <-ended)
+		require.NoError(tb, <-ended, what)
 	})
-	t.Cleanup(release)
+	tb.Cleanup(release)
 	return release
 }
 
-// HoldOpen runs write in a transaction of the race's bus over the scope s and, once write returns,
-// holds the transaction open and uncommitted until the returned release is called, which commits it.
-// A concurrent writer that meets its rows waits for the release, as one that loses a race to a write
-// in flight does. An error of write ends the test. The release runs at cleanup if the test does
-// not call it.
-func (r *WorkspaceRace) HoldOpen(t *testing.T, s *ent.Scoped, write func(ts *ent.Scoped, pub events.Publisher) error) (release func()) {
-	t.Helper()
-	held, let := make(chan struct{}), make(chan struct{})
-	ended := make(chan error, 1)
-	go func() {
-		ended <- r.Bus.WithinScopedTx(context.Background(), s, func(ts *ent.Scoped, pub events.Publisher) error {
-			if err := write(ts, pub); err != nil {
-				return err
-			}
-			close(held)
-			<-let
-			return nil
-		})
-	}()
-	select {
-	case <-held:
-	case err := <-ended:
-		require.NoError(t, err, "the held transaction's write")
+// requireCommitted fails the test at once on a rolled-back env, whose one connection would leave a
+// race's writers waiting for each other for good.
+func (env *TestEnv) requireCommitted(tb testing.TB, what string) {
+	tb.Helper()
+	if !env.committed {
+		tb.Fatalf("testhelper: %s needs transactions that meet, on an env built with Setup(t, testhelper.Committed())", what)
 	}
-	release = sync.OnceFunc(func() {
-		close(let)
-		require.NoError(t, <-ended)
-	})
-	t.Cleanup(release)
-	return release
+}
+
+// idleInTransaction is the backends of db's database that hold a transaction open and run nothing:
+// the transactions a race's writers can queue behind.
+func idleInTransaction(ctx context.Context, db *sql.DB) ([]int, error) {
+	// raw sql: pg_stat_activity is a server view; ent has no entity for it.
+	return pids(ctx, db, "SELECT pid FROM pg_stat_activity WHERE datname = current_database() AND state = 'idle in transaction'")
+}
+
+// errStrayWait is a writer waiting for a transaction held open that is not in the queue: the
+// release never lets that one go.
+var errStrayWait = errors.New("it waits for a transaction held open that the hold does not stand in")
+
+// nextWaiter is a backend of db's database, not yet in queued, that waits for a lock a backend of
+// queued holds or waits for, or 0 when none does yet. It returns errStrayWait for a backend that
+// waits only for transactions held open outside queued.
+func nextWaiter(ctx context.Context, db *sql.DB, queued []int) (int, error) {
+	// raw sql: pg_stat_activity and pg_blocking_pids are server views and functions; ent has no
+	// entity for them.
+	behind, err := pids(ctx, db, `SELECT pid FROM pg_stat_activity
+		WHERE datname = current_database() AND wait_event_type = 'Lock'
+		AND NOT pid = ANY($1::int[]) AND pg_blocking_pids(pid) && $1::int[]
+		ORDER BY pid LIMIT 1`, queued)
+	if err != nil || len(behind) > 0 {
+		return first(behind), err
+	}
+	// raw sql: as above.
+	stray, err := pids(ctx, db, `SELECT w.pid FROM pg_stat_activity w
+		WHERE w.datname = current_database() AND w.wait_event_type = 'Lock'
+		AND NOT w.pid = ANY($1::int[]) AND cardinality(pg_blocking_pids(w.pid)) > 0
+		AND NOT pg_blocking_pids(w.pid) && $1::int[]
+		AND NOT EXISTS (SELECT FROM pg_stat_activity b
+			WHERE b.pid = ANY(pg_blocking_pids(w.pid)) AND b.state <> 'idle in transaction')
+		LIMIT 1`, queued)
+	if err != nil {
+		return 0, err
+	}
+	if len(stray) > 0 {
+		return 0, errStrayWait
+	}
+	return 0, nil
+}
+
+// pids runs query, which selects one column of backend ids.
+func pids(ctx context.Context, db *sql.DB, query string, args ...any) ([]int, error) {
+	// raw sql: runs the statement its caller wrote, with the reason written beside it.
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []int
+	for rows.Next() {
+		var pid int
+		if err := rows.Scan(&pid); err != nil {
+			return nil, err
+		}
+		out = append(out, pid)
+	}
+	return out, rows.Err()
+}
+
+func first(xs []int) int {
+	if len(xs) == 0 {
+		return 0
+	}
+	return xs[0]
 }
 
 // ProvenUsers is the Users a Second factor module built by hand for a race takes
@@ -188,21 +289,3 @@ type ProvenUsers struct{}
 
 // ProveIdentity holds for every User.
 func (ProvenUsers) ProveIdentity(context.Context, *ent.User, users.IdentityProof) error { return nil }
-
-// AcceptingQueue is a job queue for a bus over a RealDB that takes every job and keeps none: a race
-// test asks what the transactions committed, not what they queued.
-type AcceptingQueue struct{ events.JobQueue } // only the inserts are called
-
-// InsertTx accepts the job and inserts nothing.
-func (AcceptingQueue) InsertTx(context.Context, *sql.Tx, river.JobArgs, *river.InsertOpts) (*rivertype.JobInsertResult, error) {
-	return &rivertype.JobInsertResult{}, nil
-}
-
-// InsertManyTx accepts the jobs and inserts nothing.
-func (AcceptingQueue) InsertManyTx(_ context.Context, _ *sql.Tx, params []river.InsertManyParams) ([]*rivertype.JobInsertResult, error) {
-	out := make([]*rivertype.JobInsertResult, len(params))
-	for i := range out {
-		out[i] = &rivertype.JobInsertResult{}
-	}
-	return out, nil
-}

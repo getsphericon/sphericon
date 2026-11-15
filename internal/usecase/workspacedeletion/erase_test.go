@@ -33,7 +33,7 @@ import (
 // deleteUmbrella puts Umbrella into its deletion window, deleted ago before now.
 func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
-	env.DeleteWorkspace(t.Context(), fixtures.UmbrellaID, now.Add(-ago))
+	env.DeleteWorkspace(t, fixtures.UmbrellaID, now.Add(-ago))
 }
 
 // runErase is one erase at now.
@@ -73,7 +73,9 @@ func rowsOfAll(t *testing.T, env *testhelper.TestEnv) map[string]int {
 // The fixtures hold rows of every scoped entity, which the first check requires.
 func TestEraseCoversEveryWorkspaceOwnedEntity(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.FeedDB.Workspace.Update().SetDiscardedAt(now.Add(-testhelper.DeletionWindow - time.Hour)).ExecX(t.Context())
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.Update().SetDiscardedAt(now.Add(-testhelper.DeletionWindow - time.Hour)).Exec(t.Context())
+	})
 	before := rowsOfAll(t, env)
 	for _, e := range ent.ScopedEntities() {
 		assert.Positivef(t, before[e.Name], "the fixtures hold a %s row", e.Name)
@@ -180,7 +182,7 @@ func TestEraseDueRemovesRowsWrittenWhileItDeletes(t *testing.T) {
 // messages before the Broadcast; the other Workspaces keep theirs.
 func TestEraseRemovesABroadcastThatHasSentOutboundMessages(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DeleteWorkspace(t.Context(), fixtures.InitechID, now.Add(-testhelper.DeletionWindow-time.Hour))
+	env.DeleteWorkspace(t, fixtures.InitechID, now.Add(-testhelper.DeletionWindow-time.Hour))
 	sent := env.DB.Scoped(fixtures.InitechID).OutboundMessage().Query().Where(outboundmessage.BroadcastID(fixtures.BroadcastInitechID)).CountX(t.Context())
 	require.NotZero(t, sent)
 	acmeBefore := rowsOf(t, env, fixtures.AcmeID)

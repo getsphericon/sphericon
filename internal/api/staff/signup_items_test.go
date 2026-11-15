@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	staffapi "github.com/getsphericon/sphericon/gen/staff"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -28,11 +29,13 @@ func (h *harness) console(t *testing.T) *staffapi.Client {
 
 // markMailings brings the fixture item id into effect as the one that stands for consent to the
 // operator's mailings. The mark moves the service feed of Users, so it is written through
-// env.FeedDB, as the bus's transaction of the console writes it.
+// env.Feed, in a transaction of the bus as the console writes it.
 func (h *harness) markMailings(t *testing.T, id int64) {
 	t.Helper()
 	h.env.PutSignupItemsInEffect(t.Context(), id)
-	require.NoError(t, h.env.FeedDB.SignupItem.UpdateOneID(id).SetMailingsConsent(true).Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.SignupItem.UpdateOneID(id).SetMailingsConsent(true).Exec(t.Context())
+	})
 }
 
 // addItem adds a Sign-up item through the console and returns it.

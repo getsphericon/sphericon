@@ -2,7 +2,6 @@ package jobs_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"sync"
 	"testing"
@@ -14,11 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
-	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -28,10 +23,7 @@ import (
 // window.
 func holdEventLog(t *testing.T, e *realEnv) (release func()) {
 	t.Helper()
-	db, err := sql.Open("pgx", e.url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(db, "event log hold") })
-	tx, err := db.BeginTx(t.Context(), nil)
+	tx, err := e.env.SQLDB.BeginTx(t.Context(), nil)
 	require.NoError(t, err)
 	// raw sql: a table lock that also stops plain reads; ent has no statement for it.
 	_, err = tx.ExecContext(t.Context(), "LOCK TABLE events IN ACCESS EXCLUSIVE MODE")
@@ -48,13 +40,9 @@ func raceThePick(t *testing.T, meanwhile func(ctx context.Context, mod *automati
 	t.Helper()
 	e := newRealEnv(t)
 	ctx := context.Background()
-	bus := e.bus(t)
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	mod := automations.New(testhelper.Cipher(t), bus, testhelper.Renderer(), out, time.Now)
-	steps := e.enrollments(e.bus(t))
-	probe, err := sql.Open("pgx", e.url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(probe, "probe") })
+	mod := testhelper.Module[*automations.Module](e.env)
+	steps := e.enrollments()
+	probe := e.env.SQLDB
 	release := holdEventLog(t, e)
 
 	handled, done := make(chan error, 1), make(chan struct{})

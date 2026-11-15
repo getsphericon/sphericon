@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
@@ -99,12 +100,14 @@ func TestHookOfADeletedWorkspaceIsNotFound(t *testing.T) {
 	env := setupHooks(t)
 	key := fixtures.IntegrationAcmeGenericAIngestKey
 	body := failureBody("evt_1", fixtures.ContactAliceEmail, true)
-	env.DeleteWorkspace(t.Context(), fixtures.AcmeID, hookClock)
+	env.DeleteWorkspace(t, fixtures.AcmeID, hookClock)
 
 	assert.Equal(t, http.StatusNotFound, signedPost(t, env, key, secretA, "msg_1", body).Code)
 	assert.Empty(t, failuresFor(t, env, fixtures.ContactAliceEmail))
 
-	env.FeedDB.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().ExecX(t.Context())
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Workspace.UpdateOneID(fixtures.AcmeID).ClearDiscardedAt().Exec(t.Context())
+	})
 	assert.Equal(t, http.StatusOK, signedPost(t, env, key, secretA, "msg_1", body).Code)
 }
 

@@ -11,7 +11,7 @@ import (
 
 // Cipher is the cipher of the test configuration's encryption key: the one the fixtures are sealed
 // with and Setup's server seals with. A test with a Setup env takes env.Cipher; Cipher is for a test
-// that builds its modules without one (a race over RealDB, a river runtime, the fixture loader).
+// that builds its modules without one (a river runtime on its own database, the fixture loader).
 func Cipher(tb testing.TB) *secrets.Cipher {
 	tb.Helper()
 	cfg, err := config.Load(config.EnvTest)

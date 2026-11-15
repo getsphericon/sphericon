@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -26,29 +25,30 @@ var evidence = confirmations.Evidence{Wording: "Text me offers", Source: "checko
 // goes ahead (ON CONFLICT DO NOTHING): it answers with the Confirmation that stands and publishes
 // no second sms.confirmed.
 func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) {
-	race := testhelper.NewWorkspaceRace(t, fixtures.AcmeID)
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 	const number = "+14155550199"
 
 	var first *ent.Confirmation
-	release := race.HoldOpen(t, race.Scope, func(ts *ent.Scoped, pub events.Publisher) error {
+	release := env.HoldOpen(t, scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		var err error
 		first, err = confirmations.ConfirmSMSIn(ctx, ts, pub, number, evidence)
 		return err
 	})
 
 	var second *ent.Confirmation
-	errs := testhelper.QueuedBehind(t, race.DB, release,
+	errs := env.QueueBehind(t, release,
 		testhelper.Writer{Name: "second request", Run: func() error {
 			var err error
-			second, err = confirmations.Confirm(ctx, race.Bus, race.Scope, channels.SMS, number, evidence)
+			second, err = confirmations.Confirm(ctx, env.Bus, scope, channels.SMS, number, evidence)
 			return err
 		}})
 
 	require.NoError(t, errs["second request"])
 	require.NotNil(t, second)
 	assert.Equal(t, first.ID, second.ID, "the second request answers with the Confirmation that stands")
-	logged, err := entclient.Core.New(race.DB).Event.Query().Where(
+	logged, err := env.DB.Event.Query().Where(
 		event.WorkspaceID(fixtures.AcmeID), event.Action(systemevent.SmsConfirmed), event.Phone(number),
 	).Count(ctx)
 	require.NoError(t, err)

@@ -28,10 +28,10 @@ import (
 
 // RealDB is a database of the test's own on the test server, at the fixture state and
 // NOT inside a transaction: whatever the test commits is committed, and a second
-// connection sees it. For code that needs a real commit (a river runtime, concurrent
-// workers, a whole app). It is cloned from this process's baseline (see baselineDB) and
-// dropped when the test ends, so nothing is cleaned up by hand. The ordinary tests ride
-// go-txdb (Setup).
+// connection sees it. It is what a committed env (Setup with Committed) rides, and alone it is
+// for a test below the Instance: a raw pool, a migration, river's own middleware. It is cloned
+// from this process's baseline (see baselineDB) and dropped when the test ends, so nothing is
+// cleaned up by hand. The ordinary tests ride go-txdb (Setup).
 func RealDB(t *testing.T) *sql.DB {
 	t.Helper()
 	sqlDB, err := sql.Open("pgx", RealDBURL(t))

@@ -146,7 +146,9 @@ func TestSendRecipientIsIdempotent(t *testing.T) {
 
 func TestRecipientWithoutEmailFailsWithAReason(t *testing.T) {
 	d := newDelivery(t, time.Now)
-	d.env.FeedDB.Contact.UpdateOneID(fixtures.ContactAliceID).ClearEmail().ExecX(d.t.Context())
+	d.env.Feed(t, func(tx *ent.Client) error {
+		return tx.Contact.UpdateOneID(fixtures.ContactAliceID).ClearEmail().Exec(d.t.Context())
+	})
 	id := d.recipient(fixtures.ContactAliceID)
 
 	require.NoError(t, d.del.SendRecipient(d.t.Context(), d.s, id))

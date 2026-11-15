@@ -134,10 +134,8 @@ func TestJournalErasureIsBatchedAndConfinedToItsWorkspace(t *testing.T) {
 }
 
 func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testing.T) {
-	database := testhelper.RealDB(t)
-	database.SetMaxOpenConns(4)
-	client := entclient.Core.New(database)
-	bus := testhelper.BusOn(t, database)
+	env := testhelper.Setup(t, testhelper.Committed())
+	client, bus := env.DB, env.Bus
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	now := time.Now()
@@ -146,7 +144,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	}))
 	fact := &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "accepted-before-tombstone"}
 	unblock, published := pauseJournalPublication(ctx, t, bus, fact)
-	results := testhelper.QueuedBehind(t, database, unblock, testhelper.Writer{
+	results := env.QueueBehind(t, unblock, testhelper.Writer{
 		Name: "final purge", Run: func() error {
 			return bus.WithinWorkspacePurgeTx(ctx, func(tx *ent.Client, purger events.WorkspacePurger) error {
 				if err := purger.PurgeWorkspaceJobs(ctx, fixtures.AcmeID); err != nil {
@@ -160,15 +158,13 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 	require.NoError(t, results["final purge"])
 	require.NoError(t, testhelper.Receive(t, published, "publisher committed"))
 	assert.Zero(t, client.EventJournalEntry.Query().Where(eventjournalentry.WorkspaceID(fixtures.AcmeID)).CountX(ctx))
-	assert.Empty(t, testhelper.QueuedEnvelopesOn(t, database, fact.EventName()))
+	assert.Empty(t, env.QueuedEnvelopes(t, fact.EventName()))
 	fact.SourceID = "arrived-after-tombstone"
 	require.ErrorIs(t, bus.Publish(ctx, fact), events.ErrWorkspaceErased)
 }
 
 func TestJournalPublicationDoesNotBlockAnOwnersFeedUpdate(t *testing.T) {
-	database := testhelper.RealDB(t)
-	database.SetMaxOpenConns(4)
-	bus := testhelper.BusOn(t, database)
+	bus := testhelper.Setup(t, testhelper.Committed()).Bus
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 	unblock, published := pauseJournalPublication(ctx, t, bus, &internalObservation{WorkspaceID: fixtures.AcmeID, SourceID: "held-during-owner-update"})

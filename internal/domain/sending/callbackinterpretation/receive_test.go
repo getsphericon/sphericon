@@ -67,7 +67,7 @@ func TestACallbackToAnUnknownKeyHasNoHook(t *testing.T) {
 // A Workspace in its deletion window takes no new data (ADR 0043).
 func TestACallbackToADeletedWorkspacesKeyHasNoHook(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.DeleteWorkspace(t.Context(), fixtures.AcmeID, receiveClock)
+	env.DeleteWorkspace(t, fixtures.AcmeID, receiveClock)
 
 	err := receiver(env).Receive(t.Context(), bounce(t, fixtures.IntegrationAcmeGenericAIngestKey, secretGenericA, fixtures.ContactAliceEmail))
 

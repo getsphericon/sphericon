@@ -2,7 +2,6 @@ package jobs_test
 
 import (
 	"context"
-	"database/sql"
 	"sync"
 	"testing"
 	"time"
@@ -16,7 +15,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -28,7 +26,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
-	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -74,43 +71,31 @@ func (b *blockingSender) Send(ctx context.Context, msg messaging.EmailMessage) (
 	return receipt, err
 }
 
-// realEnv is the step executor over a database of the test's own with real connections, so an
-// exit and a step are two writers that really contend for the Enrollment's row.
+// realEnv is the step executor of a committed env, so an exit and a step are two writers that
+// really contend for the Enrollment's row.
 type realEnv struct {
+	env    *testhelper.TestEnv
 	client *ent.Client
 	scoped *ent.Scoped
 	fence  automations.Fencer
-	url    string
 }
 
 func newRealEnv(t *testing.T) *realEnv {
 	t.Helper()
-	url := testhelper.RealDBURL(t)
-	sqlDB, err := sql.Open("pgx", url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	client := entclient.Core.New(sqlDB)
-	return &realEnv{client: client, scoped: client.Scoped(fixtures.AcmeID), fence: automations.FenceOn(client), url: url}
+	env := testhelper.Setup(t, testhelper.Committed())
+	return &realEnv{env: env, client: env.DB, scoped: env.DB.Scoped(fixtures.AcmeID), fence: automations.FenceOn(env.DB)}
 }
 
-// bus is a bus of its own over a pool of its own, with a queue to insert the jobs it enqueues into.
-func (e *realEnv) bus(t *testing.T) *events.Bus {
-	t.Helper()
-	return e.busQueueingThrough(t, func(q events.JobQueue) events.JobQueue { return q })
-}
+// bus is the env's bus.
+func (e *realEnv) bus(*testing.T) *events.Bus { return e.env.Bus }
 
-// busQueueingThrough is bus with its queue wrapped by wrap, which sees every job the bus's
-// transactions insert.
-func (e *realEnv) busQueueingThrough(t *testing.T, wrap func(events.JobQueue) events.JobQueue) *events.Bus {
+// queueThrough wraps the queue of the env's bus with wrap, which sees every job the bus's
+// transactions insert from then on.
+func (e *realEnv) queueThrough(t *testing.T, wrap func(events.JobQueue) events.JobQueue) {
 	t.Helper()
-	sqlDB, err := sql.Open("pgx", e.url)
+	queue, err := jobs.NewInserter(e.env.SQLDB)
 	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(sqlDB, "sqlDB") })
-	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
-	queue, err := jobs.NewInserter(sqlDB)
-	require.NoError(t, err)
-	bus.UseJobs(wrap(queue))
-	return bus
+	e.env.Bus.UseJobs(wrap(queue))
 }
 
 // stepper is the Step execution over a provider that sends through sender.
@@ -121,10 +106,10 @@ func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *automatio
 	return automations.NewStepExecution(bus, mod, e.fence, nil, nil, time.Now)
 }
 
-// enrollments is the Step execution over bus for a race that hands it an Event: it ends
-// and makes Enrollments on that bus's own connection, and runs no step.
-func (e *realEnv) enrollments(bus *events.Bus) *automations.StepExecution {
-	return automations.NewStepExecution(bus, nil, e.fence, nil, nil, time.Now)
+// enrollments is the env's Step execution, for a race that hands it an Event: it ends and makes
+// Enrollments in transactions of the env's bus.
+func (e *realEnv) enrollments() *automations.StepExecution {
+	return testhelper.Module[*automations.StepExecution](e.env)
 }
 
 // enrolledNow enrolls the Contact in the Automation as a Rule whose Event is no longer stored does
@@ -133,7 +118,7 @@ func (e *realEnv) enrolledNow(t *testing.T, automationID, contactID int64) int64
 	t.Helper()
 	ctx := context.Background()
 	in := automations.EnrollOnRuleInput{AutomationID: automationID, ContactID: contactID}
-	enrolled, err := e.enrollments(e.bus(t)).EnrollOnRule(ctx, e.scoped, in)
+	enrolled, err := e.enrollments().EnrollOnRule(ctx, e.scoped, in)
 	require.NoError(t, err)
 	require.True(t, enrolled)
 	run, err := e.client.AutomationRun.Query().
@@ -204,11 +189,8 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	e := newRealEnv(t)
 	ctx := context.Background()
-	cipher := testhelper.Cipher(t)
-	pool, err := sql.Open("pgx", e.url)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	queue := testhelper.RiverClientOn(t, pool)
+	cipher := e.env.Cipher
+	queue := testhelper.RiverClientOn(t, e.env.SQLDB)
 	workCtx := rivertest.WorkContext(ctx, queue)
 
 	rcv := newHookReceiver(t)
@@ -224,9 +206,8 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 		Headers: []httpcall.Header{{Name: "Authorization"}},
 	}}
 	bus := e.bus(t)
-	out := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(&fakeSender{}), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	mod := automations.New(cipher, bus, testhelper.Renderer(), out, time.Now)
-	_, err = mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID), Steps: &steps})
+	mod := testhelper.Module[*automations.Module](e.env)
+	_, err := mod.Update(ctx, e.scoped, fixtures.AutomationNotifySlackID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID), Steps: &steps})
 	require.NoError(t, err)
 	// The edit is a draft until it is published (ADR 0065); the Enrollment begins on the live one.
 	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID, testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID))

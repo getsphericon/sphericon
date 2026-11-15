@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/trackingdomain"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -61,8 +62,10 @@ func domainsReader(t *testing.T, h *harness) *serviceapi.Client {
 func setTracking(t *testing.T, h *harness, ws, id int64, state trackingdomain.State) {
 	t.Helper()
 	// test writes: the hook fires on this write
-	require.NoError(t, h.env.FeedDB.Scoped(ws).TrackingDomain().UpdateOneID(id).
-		SetState(state).Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(ws).TrackingDomain().UpdateOneID(id).
+			SetState(state).Exec(t.Context())
+	})
 }
 
 func TestAHostEnteringTheVerifiedStatesIsListedWithItsWorkspace(t *testing.T) {
@@ -102,8 +105,10 @@ func TestAHostThatLeavesTheVerifiedStatesIsReportedRemoved(t *testing.T) {
 	_, saved := hostChangesFrom(t, c, "")
 
 	setTracking(t, h, fixtures.InitechID, fixtures.TrackingDomainDNSVerifiedID, trackingdomain.StatePending)
-	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
-		DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.UmbrellaID).TrackingDomain().
+			DeleteOneID(fixtures.TrackingDomainRetiredID).Exec(t.Context())
+	})
 	setTracking(t, h, fixtures.AcmeID, fixtures.TrackingDomainAcmeID, trackingdomain.StateServing)
 
 	got, saved := hostChangesFrom(t, c, saved)
@@ -137,8 +142,10 @@ func TestRetiringAHostIsNotReported(t *testing.T) {
 	_, saved := hostChangesFrom(t, c, "")
 
 	// test writes: the hook fires on this write
-	require.NoError(t, h.env.FeedDB.Scoped(fixtures.UmbrellaID).TrackingDomain().
-		UpdateOneID(fixtures.TrackingDomainServingID).SetRole(trackingdomain.RoleRetired).Exec(t.Context()))
+	h.env.Feed(t, func(tx *ent.Client) error {
+		return tx.Scoped(fixtures.UmbrellaID).TrackingDomain().
+			UpdateOneID(fixtures.TrackingDomainServingID).SetRole(trackingdomain.RoleRetired).Exec(t.Context())
+	})
 
 	got, _ := hostChangesFrom(t, c, saved)
 	assert.Empty(t, got)

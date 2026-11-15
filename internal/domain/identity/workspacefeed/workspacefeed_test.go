@@ -1,16 +1,12 @@
 package workspacefeed_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/getsphericon/sphericon/config"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspacefeed"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -19,16 +15,11 @@ import (
 // the two loses the change, and two of them can commit out of order. The plain client
 // refuses such a change, so every path goes through a transaction.
 func TestPlainClientRefusesAChangeToTheFeed(t *testing.T) {
-	testhelper.Setup(t) // loads the schema into the real database once
-	cfg, err := config.Load(config.EnvTest)
-	require.NoError(t, err)
-	pool, err := sql.Open("pgx", cfg.DatabaseURL)
-	require.NoError(t, err)
-	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	client := entclient.Core.New(pool)
+	// env.DB is the plain client, as production builds it: it carries the Guards.
+	client := testhelper.Setup(t).DB
 
 	// test writes: the hook fires on this write
-	_, err = client.Workspace.Create().SetName("Plain").SetPublicID(workspaceid.New()).Save(t.Context())
+	_, err := client.Workspace.Create().SetName("Plain").SetPublicID(workspaceid.New()).Save(t.Context())
 	require.ErrorIs(t, err, workspacefeed.ErrNeedsTransaction)
 
 	err = client.User.UpdateOneID(fixtures.OwnerJohnID).SetEmail("moved@plain.test").Exec(t.Context())

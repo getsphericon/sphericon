@@ -9,7 +9,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -19,10 +18,8 @@ import (
 // of its own on a connection of its own, are one Event, stored and published once: the unique
 // source_id is the gate, and the transactions that lose the race publish nothing.
 func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testing.T) {
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
-	bus := testhelper.BusOn(t, sqlDB)
+	env := testhelper.Setup(t, testhelper.Committed())
+	client, bus := env.DB, env.Bus
 	const action = "race_client_event"
 
 	var wg sync.WaitGroup
@@ -45,6 +42,6 @@ func TestPublishingOneClientEventIdConcurrentlyStoresAndPublishesItOnce(t *testi
 	n, err := client.Event.Query().Where(event.Action(action)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "stored once")
-	published := testhelper.QueuedEnvelopesOn(t, sqlDB, events.NameCollected)
+	published := env.QueuedEnvelopes(t, events.NameCollected)
 	assert.Len(t, published, 1, "published once")
 }

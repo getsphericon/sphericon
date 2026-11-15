@@ -10,10 +10,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
-	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,13 +20,10 @@ import (
 // (ADR 0098: a deleted Rule never fires again).
 func TestARuleDeletedAfterEvaluateReadItRecordsNoFiring(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := testhelper.RealDB(t)
-	sqlDB.SetMaxOpenConns(8)
-	client := entclient.Core.New(sqlDB)
+	env := testhelper.Setup(t, testhelper.Committed())
+	client := env.DB
 	s := client.Scoped(fixtures.AcmeID)
-	bus := events.New(sqlDB, entclient.Core.NewTx, time.Now)
-	bus.UseJobs(testhelper.AcceptingQueue{})
-	m := rules.New(nil, bus, nil, time.Now)
+	m := testhelper.Module[*rules.Module](env)
 
 	// The test holds the Rule's row, so the Delete waits for it, and Evaluate, which reads the Rule
 	// before it fires, reaches its Firing while the Delete is still waiting.
@@ -44,7 +39,7 @@ func TestARuleDeletedAfterEvaluateReadItRecordsNoFiring(t *testing.T) {
 		return err
 	}}
 
-	errs := testhelper.QueuedBehind(t, sqlDB, func() { _ = tx.Rollback() }, remove, fire)
+	errs := env.QueueBehind(t, func() { _ = tx.Rollback() }, remove, fire)
 
 	require.Equal(t, map[string]error{"delete": nil, "evaluate": nil}, errs)
 	fired, err := client.RuleFiring.Query().

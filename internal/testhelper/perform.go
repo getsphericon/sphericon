@@ -90,12 +90,7 @@ func (env *TestEnv) performEnqueuedJobsInOrder(tb testing.TB, mustSucceed bool, 
 	}
 	rc := env.riverClient(tb)
 	workers := env.performers(tb)
-	// A second connection while the jobs run, which txdb maps onto the same transaction: river's
-	// test executor holds a nested transaction on one while the worker's queries take the other
-	// (river discussion #1214); with one, the worker would wait forever. Only for this: two
-	// goroutines' nested transactions on one transaction would interleave.
-	env.SQLDB.SetMaxOpenConns(2)
-	defer env.SQLDB.SetMaxOpenConns(1)
+	defer env.widenForWork()()
 	for range maxPerformRounds {
 		res, err := rc.JobList(tb.Context(), params)
 		require.NoError(tb, err)
@@ -130,8 +125,7 @@ func (env *TestEnv) perform(ctx context.Context, tb testing.TB, perform performF
 // the work needs and returns what the job did and the worker's error.
 func (env *TestEnv) performOne(tb testing.TB, perform performFunc, job *rivertype.JobRow) (*rivertest.WorkResult, error) {
 	tb.Helper()
-	env.SQLDB.SetMaxOpenConns(2)
-	defer env.SQLDB.SetMaxOpenConns(1)
+	defer env.widenForWork()()
 	return env.performIn(tb.Context(), tb, perform, job)
 }
 
@@ -143,4 +137,17 @@ func (env *TestEnv) performIn(ctx context.Context, tb testing.TB, perform perfor
 	res, workErr := perform(ctx, tb, tx, job)
 	require.NoError(tb, tx.Commit())
 	return res, workErr
+}
+
+// widenForWork gives a rolled-back env the second connection a job's work needs, until the
+// returned func narrows it back. txdb maps it onto the same transaction: river's test executor
+// holds a nested transaction on one while the worker's queries take the other (river discussion
+// #1214); with one, the worker would wait forever. Only for this: two goroutines' nested
+// transactions on one transaction would interleave. A committed env's pool needs nothing.
+func (env *TestEnv) widenForWork() (narrow func()) {
+	if env.committed {
+		return func() {}
+	}
+	env.SQLDB.SetMaxOpenConns(2)
+	return func() { env.SQLDB.SetMaxOpenConns(1) }
 }

@@ -109,7 +109,7 @@ func TestSuspensionIsItsOwnSourceBesideStaffHolds(t *testing.T) {
 func TestDeletionOutranksSuspensionAndStaffHolds(t *testing.T) {
 	w := newWorld(t)
 	w.env.SuspendWorkspace(w.t.Context(), fixtures.AcmeID, w.now)
-	w.env.DeleteWorkspace(w.t.Context(), fixtures.AcmeID, w.now)
+	w.env.DeleteWorkspace(t, fixtures.AcmeID, w.now)
 	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 
 	st := w.standing(t, true)
@@ -138,7 +138,7 @@ func TestWithoutTheStaffLicenseHoldsAreIgnoredButDeletionAndSuspensionCount(t *t
 	suspendedReason := suspended.Reason()
 	assert.Equal(t, holdreason.WorkspaceSuspended, suspendedReason)
 
-	w.env.DeleteWorkspace(w.t.Context(), fixtures.AcmeID, w.now)
+	w.env.DeleteWorkspace(t, fixtures.AcmeID, w.now)
 	deleted := w.standing(t, false)
 	deletedReason := deleted.Reason()
 	assert.Equal(t, holdreason.WorkspacePendingDeletion, deletedReason)
@@ -168,7 +168,7 @@ func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 	suspendedOff := reason(off)
 	assert.Equal(t, holdreason.WorkspaceSuspended, suspendedOff)
 
-	w.env.DeleteWorkspace(w.t.Context(), fixtures.AcmeID, w.now)
+	w.env.DeleteWorkspace(t, fixtures.AcmeID, w.now)
 	deletedOn := reason(on)
 	deletedOff := reason(off)
 	assert.Equal(t, holdreason.WorkspacePendingDeletion, deletedOn)
