@@ -1519,6 +1519,39 @@ url = "https://github.com/jdx/hk/releases/download/v2.12.0/hk-x86_64-pc-windows-
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
+[[tools."http:jetbrains-go-modern-guidelines"]]
+version = "0.1.1"
+backend = "http:jetbrains-go-modern-guidelines"
+specifiers = ["latest"]
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.linux-arm64"]
+checksum = "sha256:8a12aabc2ab21fa1cb94bada8495dcd52ea5d3d1d4dd966cf4399597c9443bbc"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.linux-arm64-musl"]
+checksum = "sha256:8a12aabc2ab21fa1cb94bada8495dcd52ea5d3d1d4dd966cf4399597c9443bbc"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.linux-x64"]
+checksum = "sha256:8a12aabc2ab21fa1cb94bada8495dcd52ea5d3d1d4dd966cf4399597c9443bbc"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.linux-x64-musl"]
+checksum = "sha256:8a12aabc2ab21fa1cb94bada8495dcd52ea5d3d1d4dd966cf4399597c9443bbc"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.macos-arm64"]
+checksum = "blake3:1ff6273d3df355bbd2a1b4a3ab1940bf578fa7e64ecd3e18c04ccbcf5c6f5fba"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.macos-x64"]
+checksum = "sha256:8a12aabc2ab21fa1cb94bada8495dcd52ea5d3d1d4dd966cf4399597c9443bbc"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
+[tools."http:jetbrains-go-modern-guidelines"."platforms.windows-x64"]
+checksum = "sha256:8a12aabc2ab21fa1cb94bada8495dcd52ea5d3d1d4dd966cf4399597c9443bbc"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v0.1.1.tar.gz"
+
 [[tools."http:mattpocock-skills"]]
 version = "1.3.2"
 backend = "http:mattpocock-skills"
