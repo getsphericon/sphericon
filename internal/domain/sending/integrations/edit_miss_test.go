@@ -43,7 +43,8 @@ func TestAnEditWhoseQuotaLookupIsNotFoundIsNotAStaleRevision(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	_, notFound := env.DB.Integration.Get(ctx, 999999)
-	require.True(t, ent.IsNotFound(notFound))
+	missed := ent.IsNotFound(notFound)
+	require.True(t, missed)
 	bus := events.New(env.SQLDB, entclient.Core.NewTx, time.Now)
 	bus.UseJobs(failingQueue{err: notFound})
 	ses := &testhelper.FakeSES{}
@@ -57,7 +58,9 @@ func TestAnEditWhoseQuotaLookupIsNotFoundIsNotAStaleRevision(t *testing.T) {
 		}}),
 	})
 
+	after := reload(t, s, row.ID)
+
 	require.ErrorIs(t, err, notFound)
-	assert.NotErrorIs(t, err, integrations.ErrRevisionChanged)
-	assert.Equal(t, row.Revision, reload(t, s, row.ID).Revision, "the edit rolled back")
+	require.NotErrorIs(t, err, integrations.ErrRevisionChanged)
+	assert.Equal(t, row.Revision, after.Revision, "the edit rolled back")
 }

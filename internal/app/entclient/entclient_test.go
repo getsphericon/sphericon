@@ -142,9 +142,11 @@ func TestWhatAnUnchangedWriteIs(t *testing.T) {
 			tc.prepare(ctx, env)
 			before := revisionOf(ctx, env)
 
-			require.NoError(t, tc.write(ctx, env))
+			err := tc.write(ctx, env)
+			after := revisionOf(ctx, env)
 
-			assert.Equal(t, tc.unchanged, before == revisionOf(ctx, env), "the write leaves the revision and updated_at: %v", tc.unchanged)
+			require.NoError(t, err)
+			assert.Equal(t, tc.unchanged, before == after, "the write leaves the revision and updated_at: %v", tc.unchanged)
 		})
 	}
 }

@@ -125,7 +125,7 @@ func (s *Scoped) WorkspaceID() int64 { return s.ws }
 
 // Workspace loads the Workspace row the client is confined to. The Workspace is the
 // tenant root, not a Workspace-owned entity, so it has no wrapper of its own: this
-// read is the one way in (writes live in the accounts package).
+// read is the one way in, and EditWorkspaceAt the edit of its settings (scoped_tenant.tmpl).
 func (s *Scoped) Workspace(ctx context.Context) (*Workspace, error) {
 	return s.c.Workspace.Get(ctx, s.ws)
 }

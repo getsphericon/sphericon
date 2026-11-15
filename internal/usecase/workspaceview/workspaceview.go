@@ -182,7 +182,7 @@ func (u *UseCase) One(ctx context.Context, s *ent.Scoped, c Caller) (View, error
 // Update renames the Workspace of s and sets its postal address (workspaces.Module.Update) and
 // answers its View for the caller.
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in UpdateInput) (View, error) {
-	ws, err := u.workspaces.Update(ctx, s, c.Actor, in.Revision, in.Name, in.PostalAddress)
+	ws, err := u.workspaces.Update(ctx, s, in.Revision, in.Name, in.PostalAddress)
 	if err != nil {
 		return View{}, err
 	}
@@ -192,7 +192,7 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in Update
 // SetTimezone sets the time zone of the Workspace of s (workspaces.Module.SetTimezone, ADR 0057)
 // and answers its View for the caller.
 func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, in SetTimezoneInput) (View, error) {
-	ws, err := u.workspaces.SetTimezone(ctx, s, c.Actor, in.Revision, in.Zone)
+	ws, err := u.workspaces.SetTimezone(ctx, s, in.Revision, in.Zone)
 	if err != nil {
 		return View{}, err
 	}
@@ -203,7 +203,7 @@ func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, in S
 // now, or off (workspaces.Module.SetSecondFactorRequirement, which tells the Users without a
 // Second factor when it goes on) and answers its View for the caller, whose grace starts with it.
 func (u *UseCase) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, c Caller, in SetSecondFactorRequirementInput) (View, error) {
-	ws, err := u.workspaces.SetSecondFactorRequirement(ctx, s, c.Actor, in.Revision, in.Required, u.now())
+	ws, err := u.workspaces.SetSecondFactorRequirement(ctx, s, in.Revision, in.Required, u.now())
 	if err != nil {
 		return View{}, err
 	}

@@ -119,7 +119,7 @@ func (l *Log) SetRetention(ctx context.Context, s *ent.Scoped, revision int64, d
 	if !l.retentionLicensed() {
 		return RetentionWindow{}, ErrRetentionUnlicensed
 	}
-	ws, err := l.workspaces.SetAuditRetention(ctx, s, s.Actor(), revision, days)
+	ws, err := l.workspaces.SetAuditRetention(ctx, s, revision, days)
 	if err != nil {
 		return RetentionWindow{}, err
 	}

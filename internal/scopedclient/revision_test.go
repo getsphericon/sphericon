@@ -50,8 +50,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.BrandKit().EditAt(id, revision).SetFooterText(value).Save(ctx)
-			var miss *ent.BrandKitMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.BrandKitMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -65,8 +64,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.Broadcast().EditAt(id, revision).SetName(value).Save(ctx)
-			var miss *ent.BroadcastMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.BroadcastMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -80,8 +78,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.Contact().EditAt(id, revision).SetFirstName(value).Save(ctx)
-			var miss *ent.ContactMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.ContactMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -95,8 +92,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.CustomField().EditAt(id, revision).SetName(value).Save(ctx)
-			var miss *ent.CustomFieldMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.CustomFieldMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -110,8 +106,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.EmailTemplate().EditAt(id, revision).SetName(value).Save(ctx)
-			var miss *ent.EmailTemplateMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.EmailTemplateMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -125,8 +120,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.Integration().EditAt(id, revision).SetName(value).Save(ctx)
-			var miss *ent.IntegrationMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.IntegrationMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -140,8 +134,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.Segment().EditAt(id, revision).SetName(value).Save(ctx)
-			var miss *ent.SegmentMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.SegmentMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -155,8 +148,7 @@ var revised = map[string]edited{
 		},
 		edit: func(ctx context.Context, s *ent.Scoped, id, revision int64, value string) error {
 			_, err := s.WebhookEndpoint().EditAt(id, revision).SetURL(value).Save(ctx)
-			var miss *ent.WebhookEndpointMiss
-			if errors.As(err, &miss) {
+			if miss, ok := errors.AsType[*ent.WebhookEndpointMiss](err); ok {
 				return miss.Refuse(errGone, errStale)
 			}
 			return err
@@ -198,8 +190,11 @@ func TestAnEditOfAMissingRowIsGone(t *testing.T) {
 			env := testhelper.Setup(t)
 			ctx := t.Context()
 
-			assert.ErrorIs(t, tc.edit(ctx, env.DB.Scoped(acme), 999999, 1, "anything"), errGone)
-			assert.ErrorIs(t, tc.edit(ctx, env.DB.Scoped(globex), tc.id, 1, "anything"), errGone, "a row of another Workspace")
+			missing := tc.edit(ctx, env.DB.Scoped(acme), 999999, 1, "anything")
+			foreign := tc.edit(ctx, env.DB.Scoped(globex), tc.id, 1, "anything")
+
+			require.ErrorIs(t, missing, errGone)
+			require.ErrorIs(t, foreign, errGone, "a row of another Workspace")
 		})
 	}
 }
@@ -212,11 +207,13 @@ func TestAnEditAtARevisionMovesItAndOneThatChangesNothingDoesNot(t *testing.T) {
 			s := env.DB.Scoped(acme)
 			before, value := tc.read(ctx, s, tc.id)
 
-			require.NoError(t, tc.edit(ctx, s, tc.id, before.revision, value))
+			same := tc.edit(ctx, s, tc.id, before.revision, value)
 			unchanged, _ := tc.read(ctx, s, tc.id)
-			require.NoError(t, tc.edit(ctx, s, tc.id, before.revision, value+" edited"))
+			changed := tc.edit(ctx, s, tc.id, before.revision, value+" edited")
 			edited, _ := tc.read(ctx, s, tc.id)
 
+			require.NoError(t, same)
+			require.NoError(t, changed)
 			assert.Equal(t, before, unchanged, "a write that changes nothing keeps the revision and updated_at")
 			assert.Equal(t, before.revision+1, edited.revision)
 		})
@@ -231,7 +228,49 @@ func TestAnEditThatChangesNothingAtAStaleRevisionIsRefused(t *testing.T) {
 			s := env.DB.Scoped(acme)
 			before, value := tc.read(ctx, s, tc.id)
 
-			assert.ErrorIs(t, tc.edit(ctx, s, tc.id, before.revision+1, value), errStale)
+			err := tc.edit(ctx, s, tc.id, before.revision+1, value)
+
+			require.ErrorIs(t, err, errStale)
 		})
 	}
+}
+
+// The scope's own Workspace is edited at a revision the same way (Scoped.EditWorkspaceAt): a stale
+// revision is refused and leaves the row, a write that changes nothing keeps the revision and
+// updated_at, and is refused over a stale revision.
+func TestTheTenantEditAtARevision(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(acme)
+	read := func() (stamp, string) {
+		ws := lo.Must(s.Workspace(ctx))
+		return at(ws.Revision, ws.UpdatedAt), ws.Name
+	}
+	edit := func(revision int64, name string) error { return renameWorkspace(ctx, s, revision, name) }
+	before, name := read()
+
+	staleEdit := edit(before.revision-1, name+" edited")
+	staleNoOp := edit(before.revision+1, name)
+	stale, _ := read()
+	same := edit(before.revision, name)
+	unchanged, _ := read()
+	changed := edit(before.revision, name+" edited")
+	edited, _ := read()
+
+	require.ErrorIs(t, staleEdit, errStale)
+	require.ErrorIs(t, staleNoOp, errStale, "a write that changes nothing over a stale revision")
+	require.NoError(t, same)
+	require.NoError(t, changed)
+	assert.Equal(t, before, stale)
+	assert.Equal(t, before, unchanged, "a write that changes nothing keeps the revision and updated_at")
+	assert.Equal(t, before.revision+1, edited.revision)
+}
+
+// renameWorkspace renames the Workspace of s at revision, its miss told as errGone or errStale.
+func renameWorkspace(ctx context.Context, s *ent.Scoped, revision int64, name string) error {
+	_, err := s.EditWorkspaceAt(revision).SetName(name).Save(ctx)
+	if miss, ok := errors.AsType[*ent.WorkspaceMiss](err); ok {
+		return miss.Refuse(errGone, errStale)
+	}
+	return err
 }

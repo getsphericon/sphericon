@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -47,9 +46,9 @@ func TestUpdateTrimsThePostalAddress(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	padded, blank := "  1 Main St  ", "   "
 
-	set, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).Revision, "Acme", &padded)
+	set, err := m.Update(t.Context(), s, env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).Revision, "Acme", &padded)
 	require.NoError(t, err)
-	cleared, err := m.Update(t.Context(), s, events.Actor{Kind: events.ActorUser}, set.Revision, "Acme", &blank)
+	cleared, err := m.Update(t.Context(), s, set.Revision, "Acme", &blank)
 	require.NoError(t, err)
 
 	assert.Equal(t, "1 Main St", set.PostalAddress)

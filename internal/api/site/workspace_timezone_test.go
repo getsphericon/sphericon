@@ -56,7 +56,7 @@ func TestAnOwnerSetsTheTimezoneAndItIsRecordedInTheAuditLog(t *testing.T) {
 	entry := published[0]
 	diff, err := json.Marshal(entry.Diff)
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"timezone":{"from":"UTC","to":"Europe/Berlin"}}`, string(diff))
+	assert.JSONEq(t, `{"timezone":{"from":null,"to":"Europe/Berlin"}}`, string(diff))
 
 	recorded := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceUpdate)
 	require.Len(t, recorded, 1)

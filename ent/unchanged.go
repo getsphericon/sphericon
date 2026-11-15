@@ -89,15 +89,23 @@ func Unchanged(ctx context.Context, m Mutation) (Value, bool, error) {
 	return nil, false, nil
 }
 
-// sameJSON reports whether a and b hold the same JSON value, whatever the order of their keys.
+// sameJSON reports whether a and b hold the same JSON value, whatever the order of their keys. A
+// value that does not round-trip through JSON is never the same: in doubt, a change.
 func sameJSON(a, b any) bool {
-	var x, y any
-	ab, errA := json.Marshal(a)
-	bb, errB := json.Marshal(b)
-	if errA != nil || errB != nil || json.Unmarshal(ab, &x) != nil || json.Unmarshal(bb, &y) != nil {
-		return false
+	x, okA := jsonValue(a)
+	y, okB := jsonValue(b)
+	return okA && okB && reflect.DeepEqual(x, y)
+}
+
+// jsonValue is v as the generic value its JSON decodes to, false when v does not round-trip.
+func jsonValue(v any) (any, bool) {
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return nil, false
 	}
-	return reflect.DeepEqual(x, y)
+	var decoded any
+	err = json.Unmarshal(raw, &decoded)
+	return decoded, err == nil
 }
 
 // sameTime reports whether a and b are the same moment at the microseconds Postgres keeps.
@@ -110,8 +118,6 @@ func sameTime(a, b time.Time) bool {
 func revisionNoise(column string) bool {
 	return column == schema.UpdatedColumn || column == schema.RevisionColumn
 }
-
-var _ = slices.Concat[[]string]
 
 // unchanged reports whether m sets every column of the BrandKit it names to what the row holds, and
 // returns the row read by its id and m's predicates when it does.
@@ -134,7 +140,9 @@ func (m *BrandKitMutation) unchanged(ctx context.Context) (*BrandKit, bool, erro
 	if v, ok := m.AddedButtonRadius(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().BrandKit.Query().Where(brandkit.ID(id)).Where(m.predicates...).Only(ctx)
@@ -223,7 +231,9 @@ func (m *BroadcastMutation) unchanged(ctx context.Context) (*Broadcast, bool, er
 	if v, ok := m.AppendedDoc(); ok && len(v) > 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().Broadcast.Query().Where(broadcast.ID(id)).Where(m.predicates...).Only(ctx)
@@ -516,7 +526,9 @@ func (m *ContactMutation) unchanged(ctx context.Context) (*Contact, bool, error)
 	if v, ok := m.AddedRevision(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().Contact.Query().Where(contact.ID(id)).Where(m.predicates...).Only(ctx)
@@ -703,7 +715,9 @@ func (m *CustomFieldMutation) unchanged(ctx context.Context) (*CustomField, bool
 	if v, ok := m.AddedRevision(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().CustomField.Query().Where(customfield.ID(id)).Where(m.predicates...).Only(ctx)
@@ -752,7 +766,9 @@ func (m *EmailTemplateMutation) unchanged(ctx context.Context) (*EmailTemplate, 
 	if v, ok := m.AppendedDoc(); ok && len(v) > 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().EmailTemplate.Query().Where(emailtemplate.ID(id)).Where(m.predicates...).Only(ctx)
@@ -836,7 +852,9 @@ func (m *IntegrationMutation) unchanged(ctx context.Context) (*Integration, bool
 	if v, ok := m.AddedProviderMaxPerDay(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().Integration.Query().Where(integration.ID(id)).Where(m.predicates...).Only(ctx)
@@ -1050,7 +1068,9 @@ func (m *SegmentMutation) unchanged(ctx context.Context) (*Segment, bool, error)
 	if v, ok := m.AddedRevision(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().Segment.Query().Where(segment.ID(id)).Where(m.predicates...).Only(ctx)
@@ -1129,7 +1149,9 @@ func (m *WebhookEndpointMutation) unchanged(ctx context.Context) (*WebhookEndpoi
 	if v, ok := m.AddedLastErrorStatus(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().WebhookEndpoint.Query().Where(webhookendpoint.ID(id)).Where(m.predicates...).Only(ctx)
@@ -1298,7 +1320,9 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 	if v, ok := m.AddedFeedPosition(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if !slices.ContainsFunc(slices.Concat(m.Fields(), m.ClearedFields()), func(c string) bool { return !revisionNoise(c) }) {
+	// An update that names no column but the noise is a touch: a write of what an editor shows.
+	written := slices.Concat(m.Fields(), m.ClearedFields())
+	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
 		return nil, false, nil
 	}
 	row, err := m.Client().Workspace.Query().Where(workspace.ID(id)).Where(m.predicates...).Only(ctx)

@@ -14,7 +14,7 @@ typespec/{site,external,collect,staff,staffee,service,telemetry}   ──tsp com
   openapi/telemetry ──ogen──▶ gen/telemetry   (Go client only, `ogen.telemetry.yml`; embedded in `spec.go`, checked by `internal/telemetryschema`)
 src/routes/**       ──tsr generate──▶ src/routeTree.gen.ts   (TanStack Router file-based route tree)
 ent/schema/*.go     ──entc──▶ ent/*           (Go ORM)
-ent/schema/*.go + ent/template/*.tmpl  ──entc + internal/entgen──▶ ent/scoped*.go (scoped client: `client.Scoped(ws)`), ent/kinds.go (the manifest of kinds), ent/roles.go (the manifest of roles), ent/stateform.go, ent/revision.go
+ent/schema/*.go + ent/template/*.tmpl  ──entc + internal/entgen──▶ ent/scoped*.go (scoped client: `client.Scoped(ws)`), ent/kinds.go (the manifest of kinds), ent/roles.go (the manifest of roles), ent/stateform.go, ent/revision.go, ent/unchanged.go (ent.Unchanged, what the Revision hook compares)
 ent + gen/{site,external,staff,staffee,service}  ──goverter (cmd/goverter)──▶ internal/api/{site,external,staff}/resources/converter_gen.go, ee/api/staff/resources/{staff,service}_converter_gen.go
 ent + liveuse + gen/* (what a refusal names, the site's problem to every surface's)  ──goverter──▶ internal/api/problem/mapping/converter_gen.go  (rendered by internal/api/problem)
 gen/{site,external,staff} request bodies  ──goverter──▶ internal/api/{site,external,staff}/resources/inputs_gen.go  (`Inputs`: bodies to module inputs, updates as internal/kernel/patch fields)

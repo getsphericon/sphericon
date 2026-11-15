@@ -177,6 +177,8 @@ func (m *Module) save(ctx context.Context, s *ent.Scoped, in Input, starters []r
 			SetButtonRadius(in.ButtonRadius).
 			SetFooterText(in.FooterText).
 			Save(ctx)
+		// A Brand kit is never deleted but with its Workspace: one gone since it was read is a change
+		// too, as a first save the loser read as not saved is.
 		if miss, ok := errors.AsType[*ent.BrandKitMiss](err); ok {
 			return miss.Refuse(ErrRevisionChanged, ErrRevisionChanged)
 		}
