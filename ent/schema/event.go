@@ -152,6 +152,10 @@ func (Event) Indexes() []ent.Index {
 		// Contact to its Events by the stable contact_id (not email) and filters by
 		// the event type.
 		index.Fields("workspace_id", "contact_id", "action"),
+		// Backs the analytics reports over a window of time (opens by hour, events by action,
+		// subscriptions by day): a Workspace's Events of an action in [since, until), so a report
+		// reads its window, not the Workspace's whole history.
+		index.Fields("workspace_id", "action", "occurred_at"),
 		// Backs stitching anonymous events onto a Contact at Identify time.
 		index.Fields("workspace_id", "visitor_id"),
 		index.Fields("contact_id"),

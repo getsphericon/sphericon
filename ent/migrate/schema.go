@@ -316,6 +316,16 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{AutomationRunsColumns[16], AutomationRunsColumns[15]},
 			},
+			{
+				Name:    "automationrun_workspace_id_automation_id_began_at",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationRunsColumns[16], AutomationRunsColumns[13], AutomationRunsColumns[4]},
+			},
+			{
+				Name:    "automationrun_workspace_id_automation_id_ended_at",
+				Unique:  false,
+				Columns: []*schema.Column{AutomationRunsColumns[16], AutomationRunsColumns[13], AutomationRunsColumns[7]},
+			},
 		},
 	}
 	// AutomationVersionsColumns holds the columns for the "automation_versions" table.
@@ -1085,6 +1095,11 @@ var (
 				Name:    "event_workspace_id_contact_id_action",
 				Unique:  false,
 				Columns: []*schema.Column{EventsColumns[18], EventsColumns[15], EventsColumns[8]},
+			},
+			{
+				Name:    "event_workspace_id_action_occurred_at",
+				Unique:  false,
+				Columns: []*schema.Column{EventsColumns[18], EventsColumns[8], EventsColumns[10]},
 			},
 			{
 				Name:    "event_workspace_id_visitor_id",

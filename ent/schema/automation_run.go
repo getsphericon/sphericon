@@ -133,5 +133,9 @@ func (AutomationRun) Indexes() []ent.Index {
 			StorageKey("automation_runs_contact_id"),
 		// "Does an Enrollment stand on this version" decides rewrite or supersede.
 		index.Fields("workspace_id", "version_id"),
+		// Back an Automation's Results: its Enrollments that began, and those that ended, in a
+		// window, so the report reads the window and not every Enrollment the Automation ever had.
+		index.Fields("workspace_id", "automation_id", "began_at"),
+		index.Fields("workspace_id", "automation_id", "ended_at"),
 	}
 }
