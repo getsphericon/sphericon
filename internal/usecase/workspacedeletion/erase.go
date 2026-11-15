@@ -52,6 +52,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/drain"
 )
 
 // eraseBatch bounds the rows one transaction removes, so a large Workspace never holds a
@@ -138,14 +139,14 @@ func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) (
 func (m *UseCase) erasePass(ctx context.Context, id int64) (int, error) {
 	// The bus's journal also holds Instance facts, so it has no required Workspace mixin
 	// or scoped table wrapper. Its owner drains this Workspace's history in bounded transactions.
-	total, err := drain(func() (int, error) {
+	total, err := drain.Batches(eraseBatch, func() (int, error) {
 		return m.bus.EraseWorkspaceJournalBatch(ctx, m.client.Scoped(id), eraseBatch)
 	})
 	if err != nil {
 		return total, err
 	}
 	for _, step := range eraseSteps() {
-		removed, err := drain(func() (int, error) {
+		removed, err := drain.Batches(eraseBatch, func() (int, error) {
 			removed := 0
 			err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 				s := tx.Scoped(id)
@@ -164,22 +165,6 @@ func (m *UseCase) erasePass(ctx context.Context, id int64) (int, error) {
 		}
 	}
 	return total, nil
-}
-
-// drain runs batch until one removes less than a full batch, and returns how many rows they
-// removed.
-func drain(batch func() (int, error)) (int, error) {
-	total := 0
-	for {
-		removed, err := batch()
-		if err != nil {
-			return total, err
-		}
-		total += removed
-		if removed < eraseBatch {
-			return total, nil
-		}
-	}
 }
 
 // eraseStep removes one kind of Workspace-owned row, a batch at a time: ids names up

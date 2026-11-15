@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
@@ -161,13 +162,6 @@ func Clear(ctx context.Context, s *ent.Scoped, key string) (Change, error) {
 // same reports whether the stored hold already says what in says. Timestamps are compared at
 // the database's microsecond precision.
 func same(h *ent.Hold, in Input) bool {
-	return h.ReasonCode == in.ReasonCode && h.Message == in.Message && equalStrings(h.ActionURL, in.ActionURL) &&
+	return h.ReasonCode == in.ReasonCode && h.Message == in.Message && optional.Equal(h.ActionURL, in.ActionURL) &&
 		h.ExpiresAt.Truncate(time.Microsecond).Equal(in.ExpiresAt.Truncate(time.Microsecond))
-}
-
-func equalStrings(a, b *string) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-	return *a == *b
 }

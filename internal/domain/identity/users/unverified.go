@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/drain"
 )
 
 // PruneUnverified deletes Users that have no Verified email and no Membership and were
@@ -22,18 +23,14 @@ func (a *Module) PruneUnverified(ctx context.Context, retention time.Duration, b
 	stale := func(extra predicate.User) []predicate.User {
 		return []predicate.User{user.EmailVerifiedAtIsNil(), user.Not(user.HasMemberships()), extra}
 	}
-	var total int64
-	for {
+	total, err := drain.Batches(batch, func() (int, error) {
 		ids, err := a.ent.User.Query().
 			Where(stale(user.CreatedAtLT(cutoff))...).
 			Order(user.ByID()).
 			Limit(batch).
 			IDs(ctx)
-		if err != nil {
-			return total, err
-		}
-		if len(ids) == 0 {
-			return total, nil
+		if err != nil || len(ids) == 0 {
+			return 0, err
 		}
 		// The deletion leaves a tombstone in the service feed of Users in its own transaction.
 		var n int
@@ -41,12 +38,7 @@ func (a *Module) PruneUnverified(ctx context.Context, retention time.Duration, b
 			n, err = tx.User.Delete().Where(stale(user.IDIn(ids...))...).Exec(ctx)
 			return err
 		})
-		if err != nil {
-			return total, err
-		}
-		total += int64(n)
-		if len(ids) < batch {
-			return total, nil
-		}
-	}
+		return n, err
+	})
+	return int64(total), err
 }

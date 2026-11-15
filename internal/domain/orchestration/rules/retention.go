@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/internal/kernel/drain"
 )
 
 // PruneFirings deletes Rule Firings created more than retention ago, in batches of
@@ -19,26 +20,23 @@ func PruneFirings(ctx context.Context, client *ent.Client, retention time.Durati
 		return 0, nil
 	}
 	cutoff := now.Add(-retention)
-	var total int64
-	for {
+	total, err := drain.Batches(batchSize, func() (int, error) {
 		ids, err := client.RuleFiring.Query().
 			Where(rulefiring.CreatedAtLT(cutoff)).
 			Order(rulefiring.ByCreatedAt()).
 			Limit(batchSize).
 			IDs(ctx)
 		if err != nil {
-			return total, fmt.Errorf("select expired rule firings batch: %w", err)
+			return 0, fmt.Errorf("select expired rule firings batch: %w", err)
 		}
 		if len(ids) == 0 {
-			return total, nil
+			return 0, nil
 		}
 		n, err := client.RuleFiring.Delete().Where(rulefiring.IDIn(ids...)).Exec(ctx)
 		if err != nil {
-			return total, fmt.Errorf("delete expired rule firings batch: %w", err)
+			return 0, fmt.Errorf("delete expired rule firings batch: %w", err)
 		}
-		total += int64(n)
-		if len(ids) < batchSize {
-			return total, nil
-		}
-	}
+		return n, nil
+	})
+	return int64(total), err
 }
