@@ -99,7 +99,8 @@ jobs:
       - name: Fuzz the external API against its contract
         run: mise run check:contract
 
-  # Native fuzzing of the parsers that take outside input; a crash is saved under testdata/fuzz.
+  # Native fuzzing of the parsers that take outside input; a crash is saved under testdata/fuzz and
+  # uploaded as the artifact fuzz-corpus-<target>.
   # The Fuzz targets, found by name (test:fuzz:targets): the fuzz job runs one job per target, so a
   # new target adds a job rather than minutes to one job's timeout.
   fuzz-targets:
@@ -145,6 +146,26 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
           SPHERICON_FUZZTIME: 3m
+
+      # The input the fuzzer wrote is gone with the runner: keep the target's corpus, the new input
+      # included, so it is committed as a regression with its fix (CODING_STANDARDS.md).
+      - name: Name the target's corpus
+        id: corpus
+        if: failure()
+        run: |
+          echo "name=fuzz-corpus-$(printf '%s' "$TARGET" | tr '/:' '--')" >> "$GITHUB_OUTPUT"
+          echo "path=${TARGET%%:*}/testdata/fuzz/${TARGET#*:}/" >> "$GITHUB_OUTPUT"
+        env:
+          TARGET: ${{ matrix.target }}
+
+      - name: Upload the target's corpus
+        if: failure() && steps.corpus.outputs.name != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.corpus.outputs.name }}
+          path: ${{ steps.corpus.outputs.path }}
+          retention-days: 30
+          if-no-files-found: warn
 
   # govulncheck. A new advisory can fail this with no change on our side, which
   # is why it runs here and not on a pull request.
