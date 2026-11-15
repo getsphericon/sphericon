@@ -99,6 +99,15 @@ func (ms *Module) OfUser(ctx context.Context, userID int64) ([]*ent.Membership, 
 		All(ctx)
 }
 
+// OfUserIn lists every Membership of the User on the transaction tx, a Workspace in its deletion
+// window included, oldest Workspace first: the Workspaces a step about the User scopes to in turn.
+func OfUserIn(ctx context.Context, tx *ent.Client, userID int64) ([]*ent.Membership, error) {
+	return tx.Membership.Query().
+		Where(membership.UserID(userID)).
+		Order(ent.Asc(membership.FieldWorkspaceID)).
+		All(ctx)
+}
+
 // Members lists the Memberships of the Workspace s with their Users, oldest first.
 func Members(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 	return s.Membership().Query().

@@ -254,3 +254,31 @@ func TestLifecycleAStaleResetOfPasskeysAloneCannotWriteAgain(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, held)
 }
+
+// ClearFactorAndPasskeysIn drops a User's factor, Recovery codes and Passkeys whatever they hold, and a User who
+// holds none of them is no error (ADR 0162).
+func TestClearFactorAndPasskeysInDropsWhateverTheUserHolds(t *testing.T) {
+	for name, userID := range map[string]int64{
+		"a factor and its codes": fixtures.SecondFactorSamID,
+		"passkeys alone":         fixtures.PasskeyPatID,
+		"nothing":                fixtures.OwnerJohnID,
+	} {
+		t.Run(name, func(t *testing.T) {
+			env, _ := setup(t)
+			ctx := t.Context()
+
+			_, err := secondfactors.ClearFactorAndPasskeysIn(ctx, env.DB, userID)
+
+			require.NoError(t, err)
+			st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, userID)
+			require.NoError(t, err)
+			assert.Equal(t, secondfactors.Status{}, st)
+			codes, err := env.DB.RecoveryCode.Query().Where(recoverycode.UserID(userID)).Count(ctx)
+			require.NoError(t, err)
+			assert.Zero(t, codes)
+			held, err := env.DB.Passkey.Query().Where(passkey.UserID(userID)).Exist(ctx)
+			require.NoError(t, err)
+			assert.False(t, held)
+		})
+	}
+}

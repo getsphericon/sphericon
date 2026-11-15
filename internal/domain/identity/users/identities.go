@@ -254,53 +254,60 @@ func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (
 	return saved, err
 }
 
-// LinkToHolder attaches the identity to the Verified User holding the provider's email. The
-// provider's proof makes the address proven; every link ends the User's other sessions, and
-// a User whose address was not proven before also loses its password, in the same
-// transaction. It returns the User as it
-// stands afterwards and the new identity's id.
-func (a *Module) LinkToHolder(ctx context.Context, holderID int64, in ProviderLogin) (*ent.User, int64, error) {
-	var linked *ent.User
-	var identityID int64
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		// Every link ends the other sessions (ADR 0048); the caller starts the new one from
-		// the User returned here, so it holds the new epoch.
-		// The provider's proof stamps the address only from empty, and the rows-changed count
-		// says whether it did: that, and only that, is a domain-join step (ADR 0051).
-		// A password set before the address was proven is not the owner's for sure, so the first
-		// proof drops it.
-		stamped, err := proveEmailIn(ctx, tx, holderID, a.now())
-		if err != nil {
-			return err
+// LinkToHolderIn attaches the identity to the Verified User holding the provider's email, on the
+// transaction tx. The provider's proof makes the address proven; every link ends the User's other
+// sessions, and a User whose address was not proven before also loses its password and the
+// identities linked before, in the same transaction. firstProof reports that case: the caller drops
+// the rest of what was set up before the proof (ADR 0162). It returns the User as it stands
+// afterwards and the new identity's id.
+func LinkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
+	// Every link ends the other sessions (ADR 0048); the caller starts the new one from
+	// the User returned here, so it holds the new epoch.
+	// The provider's proof stamps the address only from empty, and the rows-changed count
+	// says whether it did: that, and only that, is a domain-join step (ADR 0051).
+	// A password set before the address was proven is not the owner's for sure, so the first
+	// proof drops it.
+	stamped, err := proveEmailIn(ctx, tx, holderID, now)
+	if err != nil {
+		return nil, 0, false, err
+	}
+	upd := tx.User.UpdateOneID(holderID).AddSessionEpoch(1)
+	if stamped {
+		upd.ClearPasswordHash()
+		if err := dropIdentitiesIn(ctx, tx, holderID); err != nil {
+			return nil, 0, false, err
 		}
-		upd := tx.User.UpdateOneID(holderID).AddSessionEpoch(1)
-		if stamped {
-			upd.ClearPasswordHash()
+	}
+	if linked, err = upd.Save(ctx); err != nil {
+		return nil, 0, false, err
+	}
+	if stamped {
+		if _, err := ApplyDomainJoinIn(ctx, tx, pub, linked); err != nil {
+			return nil, 0, false, err
 		}
-		if linked, err = upd.Save(ctx); err != nil {
-			return err
+	}
+	if err := constraints.Write(ctx, tx, func() error {
+		identity, err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Save(ctx)
+		if err == nil {
+			identityID = identity.ID
 		}
-		if stamped {
-			if _, err := ApplyDomainJoinIn(ctx, tx, pub, linked); err != nil {
-				return err
-			}
-		}
-		if err := constraints.Write(ctx, tx, func() error {
-			identity, err := tx.UserIdentity.Create().SetUserID(holderID).SetProvider(in.Provider).SetSubject(in.Subject).Save(ctx)
-			if err == nil {
-				identityID = identity.ID
-			}
-			return err
-		}); err != nil {
-			return err
-		}
-		if err := RecordUserAction(ctx, tx, pub, linked, events.ActionUserIdentityLink, map[string]any{"provider": in.Provider}); err != nil {
-			return err
-		}
-		// The User did not take this step: the owner is told, with the link that undoes it (ADR 0048).
-		return pub.Publish(ctx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
-	})
-	return linked, identityID, err
+		return err
+	}); err != nil {
+		return nil, 0, false, err
+	}
+	if err := RecordUserAction(ctx, tx, pub, linked, events.ActionUserIdentityLink, map[string]any{"provider": in.Provider}); err != nil {
+		return nil, 0, false, err
+	}
+	// The User did not take this step: the owner is told, with the link that undoes it (ADR 0048).
+	err = pub.Publish(ctx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
+	return linked, identityID, stamped, err
+}
+
+// dropIdentitiesIn removes every Linked identity of the User on tx: at the first proof of their
+// address, the identities linked before it are not the owner's for sure (ADR 0162).
+func dropIdentitiesIn(ctx context.Context, tx *ent.Client, userID int64) error {
+	_, err := tx.UserIdentity.Delete().Where(useridentity.UserID(userID)).Exec(ctx)
+	return err
 }
 
 // TakeOverIn writes the take-over of the Unverified User holderID in tx, the provider's proof
