@@ -54,6 +54,11 @@ var (
 	// ErrTestPhoneInvalid: a Test send of an SMS Broadcast names no phone number in international
 	// format: one with its country code, which E.164 is written from.
 	ErrTestPhoneInvalid = validation.RefuseField(fieldTestPhone, "outbound: the test number is not a phone number in international format", i18n.ErrorsPhoneInvalid)
+	// ErrTestOtherEmail: a Test send limited to one address (TestAddress.OnlyTo) names another.
+	ErrTestOtherEmail = validation.RefuseField(fieldTestEmail, "outbound: the test send may go only to the asking user's address", i18n.ErrorsTestSendOwnAddressOnly)
+	// ErrTestOtherPhone: a Test send limited to one email address (TestAddress.OnlyTo) is of an SMS
+	// Broadcast, which no email address can receive.
+	ErrTestOtherPhone = validation.RefuseField(fieldTestPhone, "outbound: the test send may go only to the asking user's email address", i18n.ErrorsTestSendNoPhoneWithoutSend)
 )
 
 // The request fields a Test send names its address in, one per Channel that has a Test send.
@@ -67,6 +72,10 @@ const (
 type TestAddress struct {
 	Email string
 	Phone string
+	// OnlyTo, when set, is the one email address the Test send may go to: the address of the User a
+	// Connection without mcp:send acts for (ADR 0132). Another email is ErrTestOtherEmail, and an
+	// SMS Broadcast's Test send is ErrTestOtherPhone.
+	OnlyTo string
 }
 
 // SendBroadcastTest sends the Broadcast to one address with sample merge data for an author to
@@ -84,8 +93,14 @@ func (m *Module) SendBroadcastTest(ctx context.Context, s *ent.Scoped, b *ent.Br
 	}
 	switch content := stored.(type) {
 	case EmailContent:
+		if to.OnlyTo != "" && to.Email != "" && emailcase.Of(to.Email) != emailcase.Of(to.OnlyTo) {
+			return Result{}, ErrTestOtherEmail
+		}
 		return m.sendEmailBroadcastTest(ctx, s, b, content, to.Email)
 	case SMSContent:
+		if to.OnlyTo != "" {
+			return Result{}, ErrTestOtherPhone
+		}
 		return m.sendSMSTest(ctx, s, content, to.Phone, b.IntegrationID)
 	default:
 		return Result{}, ErrNoTestSend

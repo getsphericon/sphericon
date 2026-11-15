@@ -144,7 +144,6 @@ const (
 	ApiTokenScopeTemplatesRead         ApiTokenScope = "templates:read"
 	ApiTokenScopeTemplatesWrite        ApiTokenScope = "templates:write"
 	ApiTokenScopeWebhooksRead          ApiTokenScope = "webhooks:read"
-	ApiTokenScopeWebhooksWrite         ApiTokenScope = "webhooks:write"
 	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
@@ -159,6 +158,7 @@ const (
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeTrackingDomainsWrite  ApiTokenScope = "tracking_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
+	ApiTokenScopeWebhooksWrite         ApiTokenScope = "webhooks:write"
 	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
 	ApiTokenScopeCapturedMessagesWrite ApiTokenScope = "captured_messages:write"
@@ -187,7 +187,6 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeTemplatesRead,
 		ApiTokenScopeTemplatesWrite,
 		ApiTokenScopeWebhooksRead,
-		ApiTokenScopeWebhooksWrite,
 		ApiTokenScopeWebhooksRegenerate,
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
@@ -202,6 +201,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeTrackingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeWebhooksWrite,
 		ApiTokenScopeContactsErase,
 		ApiTokenScopeCapturedMessagesRead,
 		ApiTokenScopeCapturedMessagesWrite,
@@ -247,8 +247,6 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeWebhooksRead:
 		return []byte(s), nil
-	case ApiTokenScopeWebhooksWrite:
-		return []byte(s), nil
 	case ApiTokenScopeWebhooksRegenerate:
 		return []byte(s), nil
 	case ApiTokenScopeWebhooksTest:
@@ -276,6 +274,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksWrite:
 		return []byte(s), nil
 	case ApiTokenScopeContactsErase:
 		return []byte(s), nil
@@ -347,9 +347,6 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeWebhooksRead:
 		*s = ApiTokenScopeWebhooksRead
 		return nil
-	case ApiTokenScopeWebhooksWrite:
-		*s = ApiTokenScopeWebhooksWrite
-		return nil
 	case ApiTokenScopeWebhooksRegenerate:
 		*s = ApiTokenScopeWebhooksRegenerate
 		return nil
@@ -391,6 +388,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeWebhooksWrite:
+		*s = ApiTokenScopeWebhooksWrite
 		return nil
 	case ApiTokenScopeContactsErase:
 		*s = ApiTokenScopeContactsErase

@@ -62,7 +62,6 @@ const (
 	ApiTokenScopeTemplatesRead         ApiTokenScope = "templates:read"
 	ApiTokenScopeTemplatesWrite        ApiTokenScope = "templates:write"
 	ApiTokenScopeWebhooksRead          ApiTokenScope = "webhooks:read"
-	ApiTokenScopeWebhooksWrite         ApiTokenScope = "webhooks:write"
 	ApiTokenScopeWebhooksRegenerate    ApiTokenScope = "webhooks:regenerate"
 	ApiTokenScopeWebhooksTest          ApiTokenScope = "webhooks:test"
 	ApiTokenScopeCustomFieldsRead      ApiTokenScope = "custom_fields:read"
@@ -77,6 +76,7 @@ const (
 	ApiTokenScopeSendingDomainsWrite   ApiTokenScope = "sending_domains:write"
 	ApiTokenScopeTrackingDomainsWrite  ApiTokenScope = "tracking_domains:write"
 	ApiTokenScopeIntegrationsWrite     ApiTokenScope = "integrations:write"
+	ApiTokenScopeWebhooksWrite         ApiTokenScope = "webhooks:write"
 	ApiTokenScopeContactsErase         ApiTokenScope = "contacts:erase"
 	ApiTokenScopeCapturedMessagesRead  ApiTokenScope = "captured_messages:read"
 	ApiTokenScopeCapturedMessagesWrite ApiTokenScope = "captured_messages:write"
@@ -105,7 +105,6 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeTemplatesRead,
 		ApiTokenScopeTemplatesWrite,
 		ApiTokenScopeWebhooksRead,
-		ApiTokenScopeWebhooksWrite,
 		ApiTokenScopeWebhooksRegenerate,
 		ApiTokenScopeWebhooksTest,
 		ApiTokenScopeCustomFieldsRead,
@@ -120,6 +119,7 @@ func (ApiTokenScope) AllValues() []ApiTokenScope {
 		ApiTokenScopeSendingDomainsWrite,
 		ApiTokenScopeTrackingDomainsWrite,
 		ApiTokenScopeIntegrationsWrite,
+		ApiTokenScopeWebhooksWrite,
 		ApiTokenScopeContactsErase,
 		ApiTokenScopeCapturedMessagesRead,
 		ApiTokenScopeCapturedMessagesWrite,
@@ -165,8 +165,6 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case ApiTokenScopeWebhooksRead:
 		return []byte(s), nil
-	case ApiTokenScopeWebhooksWrite:
-		return []byte(s), nil
 	case ApiTokenScopeWebhooksRegenerate:
 		return []byte(s), nil
 	case ApiTokenScopeWebhooksTest:
@@ -194,6 +192,8 @@ func (s ApiTokenScope) MarshalText() ([]byte, error) {
 	case ApiTokenScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case ApiTokenScopeIntegrationsWrite:
+		return []byte(s), nil
+	case ApiTokenScopeWebhooksWrite:
 		return []byte(s), nil
 	case ApiTokenScopeContactsErase:
 		return []byte(s), nil
@@ -265,9 +265,6 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 	case ApiTokenScopeWebhooksRead:
 		*s = ApiTokenScopeWebhooksRead
 		return nil
-	case ApiTokenScopeWebhooksWrite:
-		*s = ApiTokenScopeWebhooksWrite
-		return nil
 	case ApiTokenScopeWebhooksRegenerate:
 		*s = ApiTokenScopeWebhooksRegenerate
 		return nil
@@ -309,6 +306,9 @@ func (s *ApiTokenScope) UnmarshalText(data []byte) error {
 		return nil
 	case ApiTokenScopeIntegrationsWrite:
 		*s = ApiTokenScopeIntegrationsWrite
+		return nil
+	case ApiTokenScopeWebhooksWrite:
+		*s = ApiTokenScopeWebhooksWrite
 		return nil
 	case ApiTokenScopeContactsErase:
 		*s = ApiTokenScopeContactsErase
@@ -3164,7 +3164,6 @@ const (
 	GrantableScopeTemplatesRead       GrantableScope = "templates:read"
 	GrantableScopeTemplatesWrite      GrantableScope = "templates:write"
 	GrantableScopeWebhooksRead        GrantableScope = "webhooks:read"
-	GrantableScopeWebhooksWrite       GrantableScope = "webhooks:write"
 	GrantableScopeWebhooksRegenerate  GrantableScope = "webhooks:regenerate"
 	GrantableScopeWebhooksTest        GrantableScope = "webhooks:test"
 	GrantableScopeCustomFieldsRead    GrantableScope = "custom_fields:read"
@@ -3193,7 +3192,6 @@ func (GrantableScope) AllValues() []GrantableScope {
 		GrantableScopeTemplatesRead,
 		GrantableScopeTemplatesWrite,
 		GrantableScopeWebhooksRead,
-		GrantableScopeWebhooksWrite,
 		GrantableScopeWebhooksRegenerate,
 		GrantableScopeWebhooksTest,
 		GrantableScopeCustomFieldsRead,
@@ -3238,8 +3236,6 @@ func (s GrantableScope) MarshalText() ([]byte, error) {
 	case GrantableScopeTemplatesWrite:
 		return []byte(s), nil
 	case GrantableScopeWebhooksRead:
-		return []byte(s), nil
-	case GrantableScopeWebhooksWrite:
 		return []byte(s), nil
 	case GrantableScopeWebhooksRegenerate:
 		return []byte(s), nil
@@ -3310,9 +3306,6 @@ func (s *GrantableScope) UnmarshalText(data []byte) error {
 		return nil
 	case GrantableScopeWebhooksRead:
 		*s = GrantableScopeWebhooksRead
-		return nil
-	case GrantableScopeWebhooksWrite:
-		*s = GrantableScopeWebhooksWrite
 		return nil
 	case GrantableScopeWebhooksRegenerate:
 		*s = GrantableScopeWebhooksRegenerate
@@ -8656,7 +8649,6 @@ const (
 	PersonalScopeTemplatesRead        PersonalScope = "templates:read"
 	PersonalScopeTemplatesWrite       PersonalScope = "templates:write"
 	PersonalScopeWebhooksRead         PersonalScope = "webhooks:read"
-	PersonalScopeWebhooksWrite        PersonalScope = "webhooks:write"
 	PersonalScopeWebhooksRegenerate   PersonalScope = "webhooks:regenerate"
 	PersonalScopeWebhooksTest         PersonalScope = "webhooks:test"
 	PersonalScopeCustomFieldsRead     PersonalScope = "custom_fields:read"
@@ -8671,6 +8663,7 @@ const (
 	PersonalScopeSendingDomainsWrite  PersonalScope = "sending_domains:write"
 	PersonalScopeTrackingDomainsWrite PersonalScope = "tracking_domains:write"
 	PersonalScopeIntegrationsWrite    PersonalScope = "integrations:write"
+	PersonalScopeWebhooksWrite        PersonalScope = "webhooks:write"
 )
 
 // AllValues returns all PersonalScope values.
@@ -8692,7 +8685,6 @@ func (PersonalScope) AllValues() []PersonalScope {
 		PersonalScopeTemplatesRead,
 		PersonalScopeTemplatesWrite,
 		PersonalScopeWebhooksRead,
-		PersonalScopeWebhooksWrite,
 		PersonalScopeWebhooksRegenerate,
 		PersonalScopeWebhooksTest,
 		PersonalScopeCustomFieldsRead,
@@ -8707,6 +8699,7 @@ func (PersonalScope) AllValues() []PersonalScope {
 		PersonalScopeSendingDomainsWrite,
 		PersonalScopeTrackingDomainsWrite,
 		PersonalScopeIntegrationsWrite,
+		PersonalScopeWebhooksWrite,
 	}
 }
 
@@ -8745,8 +8738,6 @@ func (s PersonalScope) MarshalText() ([]byte, error) {
 		return []byte(s), nil
 	case PersonalScopeWebhooksRead:
 		return []byte(s), nil
-	case PersonalScopeWebhooksWrite:
-		return []byte(s), nil
 	case PersonalScopeWebhooksRegenerate:
 		return []byte(s), nil
 	case PersonalScopeWebhooksTest:
@@ -8774,6 +8765,8 @@ func (s PersonalScope) MarshalText() ([]byte, error) {
 	case PersonalScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case PersonalScopeIntegrationsWrite:
+		return []byte(s), nil
+	case PersonalScopeWebhooksWrite:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -8831,9 +8824,6 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 	case PersonalScopeWebhooksRead:
 		*s = PersonalScopeWebhooksRead
 		return nil
-	case PersonalScopeWebhooksWrite:
-		*s = PersonalScopeWebhooksWrite
-		return nil
 	case PersonalScopeWebhooksRegenerate:
 		*s = PersonalScopeWebhooksRegenerate
 		return nil
@@ -8875,6 +8865,9 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 		return nil
 	case PersonalScopeIntegrationsWrite:
 		*s = PersonalScopeIntegrationsWrite
+		return nil
+	case PersonalScopeWebhooksWrite:
+		*s = PersonalScopeWebhooksWrite
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -9480,9 +9473,10 @@ func (s *SetTrackingDomainInput) SetHost(val string) {
 }
 
 // Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it authenticates,
-// the Tracking domain its links are on, the Integrations and the provider credentials they hold). An
-// OAuth client gets them only when it asked for them and the user ticks a box of their own for them,
-// apart from the send class: they are no send-class scope and bring no mcp:send.
+// the Tracking domain its links are on, the Integrations and the provider credentials they hold) or
+// open a standing way out for its data (a Webhook endpoint's URL and the Events it receives, ADR
+// 0132). An OAuth client gets them only when it asked for them and the user ticks a box of their own
+// for them, apart from the send class: they are no send-class scope and bring no mcp:send.
 // Ref: #/components/schemas/SetupScope
 type SetupScope string
 
@@ -9490,6 +9484,7 @@ const (
 	SetupScopeSendingDomainsWrite  SetupScope = "sending_domains:write"
 	SetupScopeTrackingDomainsWrite SetupScope = "tracking_domains:write"
 	SetupScopeIntegrationsWrite    SetupScope = "integrations:write"
+	SetupScopeWebhooksWrite        SetupScope = "webhooks:write"
 )
 
 // AllValues returns all SetupScope values.
@@ -9498,6 +9493,7 @@ func (SetupScope) AllValues() []SetupScope {
 		SetupScopeSendingDomainsWrite,
 		SetupScopeTrackingDomainsWrite,
 		SetupScopeIntegrationsWrite,
+		SetupScopeWebhooksWrite,
 	}
 }
 
@@ -9509,6 +9505,8 @@ func (s SetupScope) MarshalText() ([]byte, error) {
 	case SetupScopeTrackingDomainsWrite:
 		return []byte(s), nil
 	case SetupScopeIntegrationsWrite:
+		return []byte(s), nil
+	case SetupScopeWebhooksWrite:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -9526,6 +9524,9 @@ func (s *SetupScope) UnmarshalText(data []byte) error {
 		return nil
 	case SetupScopeIntegrationsWrite:
 		*s = SetupScopeIntegrationsWrite
+		return nil
+	case SetupScopeWebhooksWrite:
+		*s = SetupScopeWebhooksWrite
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

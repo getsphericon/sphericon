@@ -141,7 +141,9 @@ type Inputs interface {
 	TemplateUpdate(source *siteapi.UpdateTemplateInput) emailtemplates.UpdateInput
 
 	ConsentEvidence(source *siteapi.ConsentEvidence) confirmations.Evidence
-	// Where a Broadcast's Test send goes: the address on email, the number on sms.
+	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
+	// handler's to set.
+	// goverter:ignore OnlyTo
 	TestAddress(source *siteapi.TestSendBroadcastInput) outboundmessages.TestAddress
 
 	BroadcastCreate(source *siteapi.CreateBroadcastInput) (broadcasts.CreateInput, error)

@@ -436,7 +436,7 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 		tokenscope.GrantableScopeAutomationsRead, tokenscope.GrantableScopeAutomationsWrite,
 		tokenscope.GrantableScopeEnrollmentsRead, tokenscope.GrantableScopeTemplatesRead,
 		tokenscope.GrantableScopeTemplatesWrite, tokenscope.GrantableScopeWebhooksRead,
-		tokenscope.GrantableScopeWebhooksWrite, tokenscope.GrantableScopeWebhooksRegenerate,
+		tokenscope.GrantableScopeWebhooksRegenerate,
 		tokenscope.GrantableScopeWebhooksTest, tokenscope.GrantableScopeCustomFieldsRead,
 		tokenscope.GrantableScopeSendingDomainsRead, tokenscope.GrantableScopeIntegrationsRead,
 	}
@@ -445,4 +445,5 @@ func TestDefaultGrantCoversTheAuthoringScopes(t *testing.T) {
 	}))
 	assert.Empty(t, got.SendScopes)
 	assert.NotContains(t, got.Scopes, siteapi.GrantableScope("tokens:write"), "a connector never mints credentials")
+	assert.NotContains(t, got.Scopes, siteapi.GrantableScope("webhooks:write"), "a Webhook endpoint is a way out: a setup scope (ADR 0132)")
 }

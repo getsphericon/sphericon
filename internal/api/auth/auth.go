@@ -42,6 +42,8 @@ type TokenAuth struct {
 	// request loaded it, with its User and Workspace: its current Role bounds what the scopes allow.
 	// It is nil for the Workspace's API token.
 	Membership *ent.Membership
+	// Connection is true for a Connection: a token an OAuth client was issued for its User (ADR 0061).
+	Connection bool
 	// Scoped is the client confined to WorkspaceID. This file is the external
 	// API's construction point of it (ADR 0017); read it with TokenScoped.
 	Scoped *ent.Scoped
@@ -66,6 +68,12 @@ func HasScope(auth *TokenAuth, scope apitokens.Scope) bool {
 		return false
 	}
 	return lo.Contains(auth.Scopes, string(scope))
+}
+
+// SendLocked reports whether the token is a Connection without mcp:send, whose User did not let the
+// application send (ADR 0132): what it asks for may reach no one but that User.
+func SendLocked(auth *TokenAuth) bool {
+	return auth != nil && auth.Connection && !HasScope(auth, apitokens.ScopeMcpSend)
 }
 
 // TokenScoped returns the Workspace-scoped client of the authenticated api token.
@@ -280,6 +288,7 @@ func (h *ExternalSecurityHandler) authenticate(ctx context.Context, t externalap
 		Name:        token.Name,
 		Scopes:      token.Scopes,
 		Membership:  m,
+		Connection:  token.OauthClientID != nil,
 		Scoped:      h.bus.Act(h.ent.Scoped(token.WorkspaceID), actor),
 	}
 	return WithTokenAuth(ctx, auth), nil

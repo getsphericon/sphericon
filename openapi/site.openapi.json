@@ -10477,7 +10477,6 @@
           "templates:read",
           "templates:write",
           "webhooks:read",
-          "webhooks:write",
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
@@ -10492,6 +10491,7 @@
           "sending_domains:write",
           "tracking_domains:write",
           "integrations:write",
+          "webhooks:write",
           "contacts:erase",
           "captured_messages:read",
           "captured_messages:write",
@@ -11794,7 +11794,6 @@
           "templates:read",
           "templates:write",
           "webhooks:read",
-          "webhooks:write",
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
@@ -11854,10 +11853,6 @@
           },
           {
             "scope": "webhooks:read",
-            "permission": "webhooks:manage"
-          },
-          {
-            "scope": "webhooks:write",
             "permission": "webhooks:manage"
           },
           {
@@ -12097,7 +12092,6 @@
           "templates:read",
           "templates:write",
           "webhooks:read",
-          "webhooks:write",
           "webhooks:regenerate",
           "webhooks:test",
           "custom_fields:read",
@@ -12111,7 +12105,8 @@
           "mcp:send",
           "sending_domains:write",
           "tracking_domains:write",
-          "integrations:write"
+          "integrations:write",
+          "webhooks:write"
         ],
         "description": "The scopes a User may give a credential of their own: a Connection by consenting, a Personal\ntoken by minting it (ADR 0061). The authorization server advertises these and no other, and the\nPersonal token form offers them. Each still needs the Permission its enum declares in\n`x-grant-permissions`; the token-only scopes are never a User's to give. Only /site names it,\nso it is declared here and not with the external vocabulary."
       },
@@ -12357,8 +12352,13 @@
       },
       "SetupScope": {
         "type": "string",
-        "enum": ["sending_domains:write", "tracking_domains:write", "integrations:write"],
-        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Tracking domain its links are on, the Integrations and the provider\ncredentials they hold). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
+        "enum": [
+          "sending_domains:write",
+          "tracking_domains:write",
+          "integrations:write",
+          "webhooks:write"
+        ],
+        "description": "Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it\nauthenticates, the Tracking domain its links are on, the Integrations and the provider\ncredentials they hold) or open a standing way out for its data (a Webhook endpoint's URL and\nthe Events it receives, ADR 0132). An OAuth client\ngets them only when it asked for them and the user ticks a box of their own for them,\napart from the send class: they are no send-class scope and bring no mcp:send.",
         "x-grant-permissions": [
           {
             "scope": "sending_domains:write",
@@ -12371,6 +12371,10 @@
           {
             "scope": "integrations:write",
             "permission": "integrations:manage"
+          },
+          {
+            "scope": "webhooks:write",
+            "permission": "webhooks:manage"
           }
         ]
       },

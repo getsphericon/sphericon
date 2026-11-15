@@ -40,7 +40,6 @@ export const ApiTokenScope = {
   TEMPLATES_READ: 'templates:read',
   TEMPLATES_WRITE: 'templates:write',
   WEBHOOKS_READ: 'webhooks:read',
-  WEBHOOKS_WRITE: 'webhooks:write',
   WEBHOOKS_REGENERATE: 'webhooks:regenerate',
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
@@ -55,6 +54,7 @@ export const ApiTokenScope = {
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
   INTEGRATIONS_WRITE: 'integrations:write',
+  WEBHOOKS_WRITE: 'webhooks:write',
   CONTACTS_ERASE: 'contacts:erase',
   CAPTURED_MESSAGES_READ: 'captured_messages:read',
   CAPTURED_MESSAGES_WRITE: 'captured_messages:write',
@@ -3137,7 +3137,6 @@ export const GrantableScope = {
   TEMPLATES_READ: 'templates:read',
   TEMPLATES_WRITE: 'templates:write',
   WEBHOOKS_READ: 'webhooks:read',
-  WEBHOOKS_WRITE: 'webhooks:write',
   WEBHOOKS_REGENERATE: 'webhooks:regenerate',
   WEBHOOKS_TEST: 'webhooks:test',
   CUSTOM_FIELDS_READ: 'custom_fields:read',
@@ -4369,20 +4368,23 @@ export type SetTrackingDomainInput = {
 /**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
  * authenticates, the Tracking domain its links are on, the Integrations and the provider
- * credentials they hold). An OAuth client
+ * credentials they hold) or open a standing way out for its data (a Webhook endpoint's URL and
+ * the Events it receives, ADR 0132). An OAuth client
  * gets them only when it asked for them and the user ticks a box of their own for them,
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */
 export const SetupScope = {
   SENDING_DOMAINS_WRITE: 'sending_domains:write',
   TRACKING_DOMAINS_WRITE: 'tracking_domains:write',
-  INTEGRATIONS_WRITE: 'integrations:write'
+  INTEGRATIONS_WRITE: 'integrations:write',
+  WEBHOOKS_WRITE: 'webhooks:write'
 } as const;
 
 /**
  * Setup scopes (ADR 0016): they change how the Workspace sends (the Sending domains it
  * authenticates, the Tracking domain its links are on, the Integrations and the provider
- * credentials they hold). An OAuth client
+ * credentials they hold) or open a standing way out for its data (a Webhook endpoint's URL and
+ * the Events it receives, ADR 0132). An OAuth client
  * gets them only when it asked for them and the user ticks a box of their own for them,
  * apart from the send class: they are no send-class scope and bring no mcp:send.
  */

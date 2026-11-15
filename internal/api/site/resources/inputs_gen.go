@@ -893,6 +893,7 @@ func (c *InputsImpl) TestAddress(source *site.TestSendBroadcastInput) outboundme
 	if source != nil {
 		outboundmessagesTestAddress.Email = emailIn((*source).Email)
 		outboundmessagesTestAddress.Phone = stringIn((*source).Phone)
+		// outboundmessagesTestAddress.OnlyTo: ignore
 	}
 	return outboundmessagesTestAddress
 }
