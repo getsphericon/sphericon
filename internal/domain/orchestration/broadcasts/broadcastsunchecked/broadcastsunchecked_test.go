@@ -37,7 +37,7 @@ func TestCancelPendingRemovesTheContactsUnsentRecipientsAndTheirJobs(t *testing.
 		fixtures.BroadcastRecipientErasablePendingID, fixtures.BroadcastRecipientBystanderPendingID,
 		fixtures.BroadcastRecipientErasableSoloID,
 	} {
-		env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: id, BroadcastID: 1})
+		env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: id, BroadcastID: 1})
 	}
 
 	require.NoError(t, cancelFor(t, env, fixtures.ContactErasableID))

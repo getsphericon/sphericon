@@ -14,3 +14,9 @@ func ExprFunc(func(*Builder)) Querier { return nil }
 func Expr(string, ...any) Querier     { return nil }
 func Raw(string) Querier              { return nil }
 func EQ(string, any) *Predicate       { return nil }
+func As(string, string) string        { return "" }
+
+type Selector struct{}
+
+func (s *Selector) C(string) string            { return "" }
+func (s *Selector) Select(...string) *Selector { return s }

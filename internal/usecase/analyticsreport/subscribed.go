@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 )
@@ -59,8 +60,8 @@ func subscriptionSeries(ctx context.Context, s *ent.Scoped, days reportday.Windo
 			moment := sel.C(event.FieldOccurredAt)
 			action := sel.C(event.FieldAction)
 			sel.Select(
-				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+systemevent.MarketingConfirmed+"')", "subscribed"),
-				sql.As("COUNT(*) FILTER (WHERE "+action+" = '"+systemevent.EmailUnsubscribed+"')", "unsubscribed"),
+				aggregates.CountEQ(event.FieldAction, systemevent.MarketingConfirmed, "subscribed")(sel),
+				aggregates.CountEQ(event.FieldAction, systemevent.EmailUnsubscribed, "unsubscribed")(sel),
 			)
 			sel.AppendSelectExprAs(reportday.Label(moment, days.Loc), "day").
 				Where(sql.In(action, systemevent.MarketingConfirmed, systemevent.EmailUnsubscribed)).

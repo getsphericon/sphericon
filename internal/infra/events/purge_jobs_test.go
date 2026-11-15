@@ -21,13 +21,13 @@ import (
 func TestPurgeJobsKeepsARunningJobAndRemovesAQueuedOne(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
-	env.EnqueueRunningJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientErasableSoloID, BroadcastID: 1})
+	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
+	env.EnqueueRunningJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasableSoloID, BroadcastID: 1})
 
 	scope := env.DB.Scoped(fixtures.InitechID)
 	ids := []int64{fixtures.BroadcastRecipientErasablePendingID, fixtures.BroadcastRecipientErasableSoloID}
 	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
-		return pub.PurgeJobs(ctx, jobkind.SendRecipient, ids)
+		return pub.PurgeJobs(ctx, fixtures.InitechID, jobkind.SendRecipient, ids)
 	}))
 
 	left := env.JobsOf(t, jobkind.SendRecipient.Kind)
@@ -43,13 +43,13 @@ func TestPurgeJobsRemovesMoreThanOneBatch(t *testing.T) {
 	const queued = 1001 // one more than the purge's batch
 	args := make([]river.JobArgs, queued)
 	for i := range args {
-		args[i] = jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: int64(i + 1)}
+		args[i] = jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: int64(i + 1)}
 	}
 	env.EnqueueJobs(t, args...)
 
 	scope := env.DB.Scoped(fixtures.InitechID)
 	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(_ *ent.Scoped, pub events.PurgingPublisher) error {
-		return pub.PurgeJobs(ctx, jobkind.SendRecipient, []int64{fixtures.BroadcastRecipientErasablePendingID})
+		return pub.PurgeJobs(ctx, fixtures.InitechID, jobkind.SendRecipient, []int64{fixtures.BroadcastRecipientErasablePendingID})
 	}))
 
 	assert.Empty(t, env.JobsOf(t, jobkind.SendRecipient.Kind))

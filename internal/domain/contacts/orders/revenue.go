@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/order"
 	"github.com/getsphericon/sphericon/ent/ordermovement"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/infra/aggregates"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 )
 
@@ -289,7 +290,6 @@ func between(since, until time.Time) []predicate.OrderMovement {
 func netAndCompleted(sel *sql.Selector) {
 	sel.Select(
 		sql.As(sql.Sum(sel.C(ordermovement.FieldAmount)), "amount"),
-		// raw sql: a count of the completed Movements only, which ent has no filtered aggregate for.
-		sql.As("COUNT(*) FILTER (WHERE "+sel.C(ordermovement.FieldKind)+" = '"+string(ordermovement.KindCompleted)+"')", "orders"),
+		aggregates.CountEQ(ordermovement.FieldKind, string(ordermovement.KindCompleted), "orders")(sel),
 	)
 }

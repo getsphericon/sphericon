@@ -38,7 +38,7 @@ func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger e
 	ids := lo.Map(unsent, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ID })
 	affected := lo.Uniq(lo.Map(unsent, func(r *ent.BroadcastRecipient, _ int) int64 { return r.BroadcastID }))
 
-	if err := purger.PurgeJobs(ctx, jobkind.SendRecipient, ids); err != nil {
+	if err := purger.PurgeJobs(ctx, s.WorkspaceID(), jobkind.SendRecipient, ids); err != nil {
 		return err
 	}
 	if _, err := s.BroadcastRecipient().Delete().Where(broadcastrecipient.IDIn(ids...)).Exec(ctx); err != nil {

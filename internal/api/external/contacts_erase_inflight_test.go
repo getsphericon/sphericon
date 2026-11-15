@@ -83,9 +83,9 @@ func TestExternalContactsEraseClearsEventJobsAndJobArguments(t *testing.T) {
 
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: erasedID, Action: "x"})
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: bystanderID, Action: "x"})
-	env.EnqueueJob(t, automations.RunStepArgs{RunID: fixtures.AutomationRunErasableID})
-	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
-	env.EnqueueJob(t, jobs.SendRecipientArgs{RecipientID: fixtures.BroadcastRecipientBystanderPendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
+	env.EnqueueJob(t, automations.RunStepArgs{WorkspaceID: fixtures.InitechID, RunID: fixtures.AutomationRunErasableID})
+	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
+	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientBystanderPendingID, BroadcastID: fixtures.BroadcastInitechSendingID})
 
 	eraseErasable(t, env)
 
@@ -141,11 +141,11 @@ func TestExternalContactsEraseClearsQueuedHTTPStepCallsAndFailureExcerpts(t *tes
 	// A queued call of the erased Contact's runs (one mid-sequence, one failed), next to the
 	// bystander's and another tenant's.
 	for _, id := range []int64{
-		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID,
-		fixtures.AutomationRunBystanderHTTPFailedID, fixtures.AutomationRunHTTPFailedID,
+		fixtures.AutomationRunErasableID, fixtures.AutomationRunErasableHTTPFailedID, fixtures.AutomationRunBystanderHTTPFailedID,
 	} {
-		env.EnqueueJob(t, automations.RunHTTPStepArgs{RunID: id})
+		env.EnqueueJob(t, automations.RunHTTPStepArgs{WorkspaceID: fixtures.InitechID, RunID: id})
 	}
+	env.EnqueueJob(t, automations.RunHTTPStepArgs{WorkspaceID: fixtures.AcmeID, RunID: fixtures.AutomationRunHTTPFailedID})
 
 	eraseErasable(t, env)
 

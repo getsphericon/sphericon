@@ -26,11 +26,11 @@ func CancelPending(ctx context.Context, s *ent.Scoped, contactID int64, purger e
 	if err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.EvaluateTrigger, []int64{contactID}); err != nil {
+	if err := purger.PurgeJobs(ctx, s.WorkspaceID(), jobkind.EvaluateTrigger, []int64{contactID}); err != nil {
 		return err
 	}
-	if err := purger.PurgeJobs(ctx, jobkind.RunStep, runIDs); err != nil {
+	if err := purger.PurgeJobs(ctx, s.WorkspaceID(), jobkind.RunStep, runIDs); err != nil {
 		return err
 	}
-	return purger.PurgeJobs(ctx, jobkind.HTTPStep, runIDs)
+	return purger.PurgeJobs(ctx, s.WorkspaceID(), jobkind.HTTPStep, runIDs)
 }
