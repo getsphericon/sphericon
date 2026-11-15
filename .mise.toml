@@ -50,6 +50,13 @@ url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v{{version}}
 version_list_url = "https://api.github.com/repos/samber/cc-skills-golang/tags"
 version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v")), trimPrefix(#.name, "v")))'
 
+# Its tags include prereleases (v0.1.0-dev.1), which the expression leaves out.
+[tools."http:jetbrains-go-modern-guidelines"]
+version = "latest"
+url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v{{version}}.tar.gz"
+version_list_url = "https://api.github.com/repos/JetBrains/go-modern-guidelines/tags"
+version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v") && !(#.name contains "-")), trimPrefix(#.name, "v")))'
+
 # schemalens ships its CLI and each adapter as separate archives of one release: the CLI is the
 # primary asset and the ent adapter is extracted into the same install directory, so both are on
 # PATH. The patterns are per platform because mise resolves a templated pattern for the host, which

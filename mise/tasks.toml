@@ -24,6 +24,7 @@ run = """
 set -euo pipefail
 matt="$(mise where http:mattpocock-skills)/skills"
 samber="$(mise where http:samber-golang-skills)/skills"
+jetbrains="$(mise where http:jetbrains-go-modern-guidelines)/plugin/skills"
 skills=(
   "$matt/engineering/ask-matt" "$matt/engineering/code-review" "$matt/engineering/codebase-design"
   "$matt/engineering/diagnosing-bugs" "$matt/engineering/domain-modeling"
@@ -37,7 +38,9 @@ skills=(
   "$matt/productivity/teach" "$matt/productivity/to-questionnaire" "$matt/productivity/wait-what"
   "$matt/productivity/writing-for-agents"
   "$matt/in-progress/claude-handoff" "$matt/in-progress/loop-me"
-  "$samber/golang-samber-do"
+  "$samber/golang-safety" "$samber/golang-samber-do" "$samber/golang-samber-lo"
+  "$samber/golang-stretchr-testify"
+  "$jetbrains/use-modern-go"
 )
 dest=.agents/skills
 mkdir -p "$dest"
