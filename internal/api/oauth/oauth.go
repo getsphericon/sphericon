@@ -88,12 +88,7 @@ func (s *Server) Mount(mux *http.ServeMux) {
 }
 
 func (s *Server) authServerMetadata(w http.ResponseWriter, r *http.Request) {
-	meta := struct {
-		oauthex.AuthServerMeta
-
-		CodeChallengeMethodsSupported     []string `json:"code_challenge_methods_supported"`
-		ClientIDMetadataDocumentSupported bool     `json:"client_id_metadata_document_supported"`
-	}{
+	meta := oauthex.AuthServerMeta{
 		Issuer:                            s.issuer,
 		AuthorizationEndpoint:             s.issuer + authorizePath,
 		TokenEndpoint:                     s.issuer + tokenPath,
@@ -276,13 +271,10 @@ const (
 	errServerError           errorCode = "server_error"
 )
 
-// writeOAuthError renders an RFC 6749 section 5.2 error response.
+// writeOAuthError renders an RFC 6749 section 5.2 error response. RFC 7591 gives a registration's
+// refusal the same form, which is the body the SDK's ClientRegistrationError encodes to.
 func writeOAuthError(ctx context.Context, w http.ResponseWriter, code int, kind errorCode, description string) {
-	body := map[string]string{"error": string(kind)}
-	if description != "" {
-		body["error_description"] = description
-	}
-	writeJSON(ctx, w, code, body)
+	writeJSON(ctx, w, code, oauthex.ClientRegistrationError{ErrorCode: string(kind), ErrorDescription: description})
 }
 
 func registrationError(ctx context.Context, w http.ResponseWriter, kind errorCode, description string) {
