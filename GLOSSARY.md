@@ -956,8 +956,10 @@ A Step kind that **sphericon calls** a third party's URL (a Slack, Zapier or CRM
 enrolled Contact. It holds its _own_ URL, headers and a templated JSON body (the author-time copy
 rule again), and signs the request only when its author sets a secret. The Enrollment moves on
 after a 2xx; when the retries are spent it becomes `failed`, recording the status or the kind of
-error and the first 1 KiB of the response, never skipping the step. Distinct from a Webhook
-endpoint: that one is subscribed to events, this one runs when an Enrollment reaches it.
+error and the first 1 KiB of the response, never skipping the step. It has a name, and a 2xx response
+that is a JSON object is kept on the Enrollment, with its status, for later Steps and Branches to read
+as `http.<name>`, untrusted. Distinct from a Webhook endpoint: that one is subscribed to events, this
+one runs when an Enrollment reaches it.
 _Avoid_: Webhook step, action
 
 **Broadcast series**:
