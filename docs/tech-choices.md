@@ -7,7 +7,7 @@ Re-verify before adopting — these numbers age.
 
 Already in use (don't re-introduce; `go.mod` and `package.json` are the full list): ent, ogen,
 goverter, chi, pgx, goose, river, samber/do, samber/lo, caarlos0/env,
-go-playground/validator, qmuntal/stateless, go-pkgz/auth, go-webauthn, golang-jwt, tink-go,
+go-playground/validator, qmuntal/stateless, go-webauthn, golang-jwt, tink-go,
 go-crypt/crypt, osteele/liquid, k3a/html2text, wneessen/go-mail, nicksnyder/go-i18n,
 goja, gojq, otter, golang.org/x/net, ariga.io/atlas (the diff library in cmd/db); frontend: React 19,
 Mantine (+ mantine-datatable), TanStack Router/Query, zod, i18next, react-querybuilder +

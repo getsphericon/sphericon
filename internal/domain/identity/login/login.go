@@ -199,13 +199,23 @@ const (
 
 // Module is the password step.
 type Module[P any] struct {
-	cfg       Config[P]
-	decoyOnce sync.Once
-	decoy     string
+	cfg Config[P]
+	// decoy is a real password hash nobody knows the password of, hashed on first use. A decoy
+	// that could not be hashed is empty: it verifies nothing, and the login it guards is refused
+	// either way.
+	decoy func() string
 }
 
 // New builds the module over a surface's adapter.
-func New[P any](cfg Config[P]) *Module[P] { return &Module[P]{cfg: cfg} }
+func New[P any](cfg Config[P]) *Module[P] {
+	return &Module[P]{cfg: cfg, decoy: sync.OnceValue(func() string {
+		decoy, err := cfg.Passwords.Hash("decoy password: no account matches")
+		if err != nil {
+			return ""
+		}
+		return decoy
+	})}
+}
 
 // throttle consults the throttle for a normalized address: while the address must wait,
 // whatever the password or code, it is refused with a *ratelimit.WaitError of the per-account
@@ -342,22 +352,8 @@ func (m *Module[P]) Passkey(ctx context.Context, a PasskeyAssertion) (PasskeyRes
 // against a throwaway hash of the same cost so the work is the same.
 func (m *Module[P]) verify(hash, password string) bool {
 	if hash == "" {
-		credentials.VerifyPassword(m.decoyHash(), password)
+		credentials.VerifyPassword(m.decoy(), password)
 		return false
 	}
 	return credentials.VerifyPassword(hash, password)
-}
-
-// decoyHash is a real password hash nobody knows the password of, hashed once.
-func (m *Module[P]) decoyHash() string {
-	m.decoyOnce.Do(func() {
-		// A decoy that could not be hashed stays empty: it verifies nothing, and the login
-		// it guards is refused either way.
-		decoy, err := m.cfg.Passwords.Hash("decoy password: no account matches")
-		if err != nil {
-			return
-		}
-		m.decoy = decoy
-	})
-	return m.decoy
 }

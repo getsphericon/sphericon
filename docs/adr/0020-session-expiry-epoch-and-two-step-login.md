@@ -4,6 +4,10 @@ status: accepted
 
 # Enforced session expiry, session epoch and two-step login on go-pkgz
 
+> **Amended by [[0147-sessions-are-golang-jwt-tokens-with-typed-claims]]:** a session is a golang-jwt
+> token with typed claims, whose parser enforces the expiry on the Instance clock; go-pkgz is no
+> longer a dependency. The session rules below stand.
+
 Site sessions are stateless JWT cookies. go-pkgz's `Parse` ignores an expired `exp` (it expects its
 own middleware to refresh), and the site security handler only calls `Parse`, so the 1h token TTL
 was never enforced: a stolen cookie stayed valid until the signing secret changed. We keep go-pkgz

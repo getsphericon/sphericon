@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	gptoken "github.com/go-pkgz/auth/v2/token"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -51,7 +50,7 @@ func TestSiteSessionEndsAfterTheConfiguredLifetime(t *testing.T) {
 
 func TestSiteRejectsAnExpiredSessionToken(t *testing.T) {
 	env := testhelper.Setup(t)
-	expired := env.SiteToken(t, fixtures.OwnerJohnEmail, func(c *gptoken.Claims) {
+	expired := env.SiteToken(t, fixtures.OwnerJohnEmail, func(c *apiauth.SessionClaims) {
 		c.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Minute))
 	})
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, expired))
@@ -59,8 +58,8 @@ func TestSiteRejectsAnExpiredSessionToken(t *testing.T) {
 
 func TestSiteRejectsASessionTokenWithoutAnEpoch(t *testing.T) {
 	env := testhelper.Setup(t)
-	preEpoch := env.SiteToken(t, fixtures.OwnerJohnEmail, func(c *gptoken.Claims) {
-		delete(c.User.Attributes, apiauth.ClaimEpoch)
+	preEpoch := env.SiteToken(t, fixtures.OwnerJohnEmail, func(c *apiauth.SessionClaims) {
+		c.Epoch = nil
 	})
 	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, preEpoch))
 }
@@ -78,9 +77,9 @@ func TestSiteBumpedEpochEndsTheUsersExistingSessions(t *testing.T) {
 
 func TestSiteRejectsASessionTokenWithoutAMethod(t *testing.T) {
 	env := testhelper.Setup(t)
-	for name, edit := range map[string]func(*gptoken.Claims){
-		"no method":      func(c *gptoken.Claims) { delete(c.User.Attributes, apiauth.ClaimMethod) },
-		"unknown method": func(c *gptoken.Claims) { c.User.SetStrAttr(apiauth.ClaimMethod, "telepathy") },
+	for name, edit := range map[string]func(*apiauth.SessionClaims){
+		"no method":      func(c *apiauth.SessionClaims) { c.Method = "" },
+		"unknown method": func(c *apiauth.SessionClaims) { c.Method = "telepathy" },
 	} {
 		assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, env.SiteToken(t, fixtures.OwnerJohnEmail, edit)), name)
 	}
