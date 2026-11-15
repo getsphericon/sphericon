@@ -70,3 +70,12 @@ func TestRenderBodyWritesACapturedBlockRawThroughSafe(t *testing.T) {
 
 	assert.Equal(t, map[string]any{"v": hostile + "!"}, got)
 }
+
+// The json filter writes JSON text, which the body takes raw through `safe`; its strings are
+// encoded once, by the filter.
+func TestRenderBodyWritesAnObjectThroughJSONAndSafe(t *testing.T) {
+	props := map[string]any{"name": hostile, "n": 2}
+	got := decoded(t, `{"props": {{ props | json | safe }}}`, map[string]any{"props": props})
+
+	assert.Equal(t, map[string]any{"props": map[string]any{"name": hostile, "n": 2.0}}, got)
+}
