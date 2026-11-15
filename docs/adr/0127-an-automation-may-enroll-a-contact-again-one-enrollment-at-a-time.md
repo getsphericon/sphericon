@@ -4,6 +4,9 @@ status: accepted
 
 # An Automation may enroll a Contact again, one Enrollment at a time
 
+> **Amended by [[0165-an-enrollment-key-runs-one-enrollment-per-value-of-a-trigger-property]]:**
+> a version with an Enrollment key allows one active Enrollment per value of a Trigger property.
+
 A Contact is enrolled in an Automation at most once ever, enforced by a unique index on the
 Automation and the Contact. That fits a welcome series and fails a post-purchase series, an
 abandoned-cart reminder or a win-back: each should run again the next time its Event comes. ADR 0126
