@@ -268,7 +268,9 @@ on whether the Enrollment's own messages were opened or clicked. A test of engag
 click) is unknown for a Destination that is not tracked; a Segment or a Rule reads an unknown result
 as no match, and a Branch routes it. Evaluated live against current data, never materialized. One
 shared grammar: a Segment is a named Condition, a Rule holds one, each path of a Branch one, a
-Wait for event may hold one, and an **Event matcher**'s filter is one made of property tests only. A
+Wait for event may hold one, and an **Event matcher**'s filter is one made of property tests only.
+A test of past Events may filter the Events it counts the same way, a message's Events also by the
+Broadcast or Automation that sent it and the link clicked; it counts only the Events still kept. A
 Branch alone may also test the Event a Wait for event arrived on (`awaited:<name>.<key>`).
 _Avoid_: Filter, query, predicate, rule (a Rule is something else)
 
