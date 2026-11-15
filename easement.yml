@@ -102,7 +102,7 @@ x-no-global-i18n: &no-global-i18n
       because: the app's strings live on its own instance from src/i18n.ts, reached through useTranslation; the global default instance is never initialised, so a string read from it is its key
 x-no-dayjs: &no-dayjs
   name: dayjs
-  because: dates go through src/utils/datetime.ts (src/AGENTS.md), which holds the plugins, the time zone and the formats
+  because: dates go through src/utils/datetime.ts (src/AGENTS.md), which holds the plugins, the time zone and the formats; dayjs is imported only there and by the locale loading of the date inputs (`web-dates`)
 
 components:
   # The public API surfaces. Each has its own TypeSpec contract, handler package and auth scheme.
@@ -300,6 +300,11 @@ components:
   web-console: { in: src/console }
   web-shared:
     in: [src/components, src/editing, src/hooks, src/layouts, src/resources, src/utils]
+  # The one place dayjs is imported, carved out of web-shared (each file is a longer pattern than
+  # src/utils): the dates (datetime.ts) and the dayjs locale data of the date inputs (dayjsLocale.ts
+  # and its loaders). The rest of the frontend reaches dayjs only through them.
+  web-dates:
+    in: [src/utils/datetime.ts, src/utils/dayjsLocale.ts, src/utils/dayjsLocaleLoaders.ts]
   # The files directly under src/: router, guards, theme, instance, i18n, entry points.
   web-app: { in: 'src/*' }
 
@@ -940,9 +945,14 @@ rules:
   web-generated:
     may_depend_on: []
     because: generated clients come from the OpenAPI contract and import nothing of ours
+  web-dates:
+    <<: *no-global-i18n
+    may_depend_on: []
+    because: the dates and the dayjs locale data wrap dayjs and import nothing of ours, so every part of the frontend can use them
   web-shared:
     <<: *no-global-i18n
-    may_depend_on: [web-generated, web-routes, web-app]
+    forbid_external: [*no-dayjs]
+    may_depend_on: [web-generated, web-dates, web-routes, web-app]
     because: shared components, hooks and layouts sit below the pages; a page imports them, never the reverse (they link through a route's `Route`, never a path string)
   web-routes:
     <<: *no-global-i18n
@@ -960,12 +970,12 @@ rules:
       - name: '@mantine/notifications'
         because: toasts go through useNotify (src/hooks/useNotify.ts), never Mantine's global store
       - *no-dayjs
-    may_depend_on: [web-generated, web-shared, web-routes, web-app]
+    may_depend_on: [web-generated, web-shared, web-dates, web-routes, web-app]
     because: a page reaches its route through the route file's `Route` and never imports a lazy route file
   web-console:
     <<: *no-global-i18n
     forbid_external: [*no-dayjs]
-    may_depend_on: [web-generated, web-shared, web-routes, web-app]
+    may_depend_on: [web-generated, web-shared, web-dates, web-routes, web-app]
     because: the Staff console is its own feature and does not import the workspace pages
   web-app:
     <<: *no-global-i18n
@@ -1054,10 +1064,18 @@ examples:
     external: dayjs
     expect: rejected
     because: dates go through src/utils/datetime.ts
+  - from: src/components/ActionName.tsx
+    external: dayjs
+    expect: rejected
+    because: shared UI formats dates through src/utils/datetime.ts too
   - from: src/utils/datetime.ts
     external: dayjs
     expect: allowed
-    because: src/utils/datetime.ts is the one place dayjs is used
+    because: src/utils/datetime.ts is where the dates use dayjs
+  - from: src/utils/dayjsLocale.ts
+    external: dayjs
+    expect: allowed
+    because: the date inputs load their dayjs locale data there
 
 # Each import of a package is declared in the nearest package.json.
 manifests: true
