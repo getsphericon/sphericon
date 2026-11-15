@@ -875,9 +875,16 @@ _Avoid_: Run, automation run, journey instance, subscription
 Whether an Automation version with an Event Trigger enrolls a Contact again: `once`, the default (a
 Contact with any Enrollment in the Automation is not enrolled again), or `again` (once the previous
 Enrollment has ended, after a cooldown counted from its beginning, one hour at least). Whatever the policy, a
-Contact has one active Enrollment at a time, and an entry caused by a chain that passed through the
-same Automation is skipped.
+Contact has one active Enrollment at a time, or one per value of the version's **Enrollment key**, and
+an entry caused by a chain that passed through the same Automation is skipped.
 _Avoid_: Re-entry setting, frequency, recurrence (that is a date Trigger's)
+
+**Enrollment key**:
+A property of an Automation version's Trigger Event (`order_id`) by whose value a Contact may have
+several active Enrollments at once, one per value: a series per order. An exit, goal or awaited Event
+carrying the property acts on the Enrollment of its value, one without it on all of them; an
+unsubscribe ends all. At most 10 active and 10 begun in a day per Contact.
+_Avoid_: Dedup key, idempotency key, flow per order
 
 **Step**:
 One node in an Automation's sequence, with an id it keeps in every version; an Enrollment points at
