@@ -1519,6 +1519,39 @@ url = "https://github.com/jdx/hk/releases/download/v2.12.0/hk-x86_64-pc-windows-
 signer = "sigstore-oidc:https://github.com/jdx/hk/.github/workflows/release.yml"
 repository_ids = { repository = "922514152" }
 
+[[tools."http:jakubkrehel-skills"]]
+version = "a72290d140249813898ba8648becf6415abcb059"
+backend = "http:jakubkrehel-skills"
+specifiers = ["latest"]
+
+[tools."http:jakubkrehel-skills"."platforms.linux-arm64"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
+[tools."http:jakubkrehel-skills"."platforms.linux-arm64-musl"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
+[tools."http:jakubkrehel-skills"."platforms.linux-x64"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
+[tools."http:jakubkrehel-skills"."platforms.linux-x64-musl"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
+[tools."http:jakubkrehel-skills"."platforms.macos-arm64"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
+[tools."http:jakubkrehel-skills"."platforms.macos-x64"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
+[tools."http:jakubkrehel-skills"."platforms.windows-x64"]
+checksum = "sha256:858cf834ad2e338394a0a8f895a8210d4b826b5f29e4bd2cd3590bb23a625acb"
+url = "https://github.com/jakubkrehel/skills/archive/a72290d140249813898ba8648becf6415abcb059.tar.gz"
+
 [[tools."http:jetbrains-go-modern-guidelines"]]
 version = "0.1.1"
 backend = "http:jetbrains-go-modern-guidelines"
@@ -1617,6 +1650,72 @@ url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.g
 [tools."http:samber-golang-skills"."platforms.windows-x64"]
 checksum = "sha256:42d4d60c6273bf53452af92ba69186d28edcde4978dd1c825ebe225d8b194701"
 url = "https://github.com/samber/cc-skills-golang/archive/refs/tags/v2.0.0.tar.gz"
+
+[[tools."http:supabase-agent-skills"]]
+version = "0.1.9"
+backend = "http:supabase-agent-skills"
+specifiers = ["latest"]
+
+[tools."http:supabase-agent-skills"."platforms.linux-arm64"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[tools."http:supabase-agent-skills"."platforms.linux-arm64-musl"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[tools."http:supabase-agent-skills"."platforms.linux-x64"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[tools."http:supabase-agent-skills"."platforms.linux-x64-musl"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[tools."http:supabase-agent-skills"."platforms.macos-arm64"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[tools."http:supabase-agent-skills"."platforms.macos-x64"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[tools."http:supabase-agent-skills"."platforms.windows-x64"]
+checksum = "sha256:c0c1dc088238432f55bda802375bfe01dcdc6efb5bbad25313487ceef5d48950"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v0.1.9.tar.gz"
+
+[[tools."http:trailofbits-skills"]]
+version = "149d7b21f4067765b82e67029730b42d228ef4b4"
+backend = "http:trailofbits-skills"
+specifiers = ["latest"]
+
+[tools."http:trailofbits-skills"."platforms.linux-arm64"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
+
+[tools."http:trailofbits-skills"."platforms.linux-arm64-musl"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
+
+[tools."http:trailofbits-skills"."platforms.linux-x64"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
+
+[tools."http:trailofbits-skills"."platforms.linux-x64-musl"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
+
+[tools."http:trailofbits-skills"."platforms.macos-arm64"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
+
+[tools."http:trailofbits-skills"."platforms.macos-x64"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
+
+[tools."http:trailofbits-skills"."platforms.windows-x64"]
+checksum = "sha256:0b99e5cc4a17ce30dbebfd5d0badcd45cdefdbdc09ad08ac862bf080a98bb69c"
+url = "https://github.com/trailofbits/skills/archive/149d7b21f4067765b82e67029730b42d228ef4b4.tar.gz"
 
 [[tools.jactionlint]]
 version = "2.5.0"

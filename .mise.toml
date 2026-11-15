@@ -34,10 +34,11 @@ shellcheck = "latest"
 "go:github.com/scip-code/scip-go/cmd/scip-go" = "latest"
 "npm:@sourcegraph/scip-typescript" = "latest"
 
-# Agent skills: tagged releases of the skill repositories, locked in mise.lock and copied into
-# .agents/skills by `mise run skills`. mise links only the skills of tools that publish a packslip
-# manifest, which these repositories do not. The tags API lists the newest first and mise takes the
-# last version as the latest, so the expression reverses them.
+# Agent skills: releases (or, where a repository has none, commits) of the skill repositories,
+# locked in mise.lock and copied into .agents/skills by `mise run skills`. mise links only the
+# skills of tools that publish a packslip manifest, which these repositories do not. The tags API
+# lists the newest first and mise takes the last version as the latest, so the expression reverses
+# them.
 [tools."http:mattpocock-skills"]
 version = "latest"
 url = "https://github.com/mattpocock/skills/archive/refs/tags/v{{version}}.tar.gz"
@@ -56,6 +57,28 @@ version = "latest"
 url = "https://github.com/JetBrains/go-modern-guidelines/archive/refs/tags/v{{version}}.tar.gz"
 version_list_url = "https://api.github.com/repos/JetBrains/go-modern-guidelines/tags"
 version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v") && !(#.name contains "-")), trimPrefix(#.name, "v")))'
+
+# Besides the repository's releases (v0.1.9) it tags each skill on its own
+# (supabase-postgres-best-practices-v1.6.0), which the "v" prefix leaves out.
+[tools."http:supabase-agent-skills"]
+version = "latest"
+url = "https://github.com/supabase/agent-skills/archive/refs/tags/v{{version}}.tar.gz"
+version_list_url = "https://api.github.com/repos/supabase/agent-skills/tags?per_page=100"
+version_expr = 'reverse(map(filter(fromJSON(body), hasPrefix(#.name, "v")), trimPrefix(#.name, "v")))'
+
+# These repositories have no tags or releases: a version is a commit, the latest is the newest on
+# the default branch, and mise.lock pins the one installed.
+[tools."http:trailofbits-skills"]
+version = "latest"
+url = "https://github.com/trailofbits/skills/archive/{{version}}.tar.gz"
+version_list_url = "https://api.github.com/repos/trailofbits/skills/commits?per_page=1"
+version_expr = 'map(fromJSON(body), #.sha)'
+
+[tools."http:jakubkrehel-skills"]
+version = "latest"
+url = "https://github.com/jakubkrehel/skills/archive/{{version}}.tar.gz"
+version_list_url = "https://api.github.com/repos/jakubkrehel/skills/commits?per_page=1"
+version_expr = 'map(fromJSON(body), #.sha)'
 
 # schemalens ships its CLI and each adapter as separate archives of one release: the CLI is the
 # primary asset and the ent adapter is extracted into the same install directory, so both are on

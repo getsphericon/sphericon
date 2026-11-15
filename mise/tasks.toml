@@ -25,6 +25,9 @@ set -euo pipefail
 matt="$(mise where http:mattpocock-skills)/skills"
 samber="$(mise where http:samber-golang-skills)/skills"
 jetbrains="$(mise where http:jetbrains-go-modern-guidelines)/plugin/skills"
+supabase="$(mise where http:supabase-agent-skills)/skills"
+tob="$(mise where http:trailofbits-skills)/plugins"
+jk="$(mise where http:jakubkrehel-skills)/skills"
 skills=(
   "$matt/engineering/ask-matt" "$matt/engineering/code-review" "$matt/engineering/codebase-design"
   "$matt/engineering/diagnosing-bugs" "$matt/engineering/domain-modeling"
@@ -41,6 +44,8 @@ skills=(
   "$samber/golang-safety" "$samber/golang-samber-do" "$samber/golang-samber-lo"
   "$samber/golang-stretchr-testify"
   "$jetbrains/use-modern-go"
+  "$supabase/supabase-postgres-best-practices" "$tob/sharp-edges/skills/sharp-edges"
+  "$jk/better-accessibility"
 )
 dest=.agents/skills
 mkdir -p "$dest"
