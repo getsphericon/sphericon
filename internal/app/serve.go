@@ -20,6 +20,10 @@ import (
 const StopTimeout = jobs.StopTimeout + 5*time.Second
 
 // telemetryFlushTimeout bounds the flush of the last spans and metrics, after Close.
+//
+// A stop signal may take StopTimeout and then telemetryFlushTimeout, 30 seconds, before the process
+// exits. compose.yaml (stop_grace_period) and the Helm chart (terminationGracePeriodSeconds) give it
+// 40 seconds before the kill; a kill sooner loses the interrupted jobs' writes.
 const telemetryFlushTimeout = 10 * time.Second
 
 // Serve is `sphericon` without a subcommand: it runs the server of env until ctx ends or the

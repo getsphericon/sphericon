@@ -38,6 +38,9 @@ services:
   sphericon:
     <<: *sphericon
     restart: unless-stopped
+    # Docker kills the app 10s after the stop signal by default; a shutdown takes up to 30s
+    # (app.StopTimeout and the telemetry flush), the time a running job needs to be handed back.
+    stop_grace_period: 40s
     ports:
       - '3000:3000'
     depends_on:
