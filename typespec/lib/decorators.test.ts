@@ -38,14 +38,10 @@ function expectations(source: string): Expected[] {
   return out
 }
 
-async function compileFixture(name: string): Promise<Program> {
-  return compile(NodeHost, join(testdata, name), { noEmit: true })
-}
-
 /** Compiles the fixture and asserts that it reports exactly the diagnostics its marks expect. */
 async function assertDiagnostics(name: string): Promise<Program> {
   const path = join(testdata, name)
-  const program = await compileFixture(name)
+  const program = await compile(NodeHost, path, { noEmit: true })
   const expected = expectations(readFileSync(path, 'utf8'))
   const got = program.diagnostics.map((d) => {
     const location = getSourceLocation(d.target as Parameters<typeof getSourceLocation>[0])

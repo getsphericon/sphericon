@@ -46,11 +46,8 @@ interface SiteTemplates
   extends WorkspaceCrud<
       SiteEmailTemplateResource,
       CreateTemplateInput,
-      UpdateTemplateInput
+      UpdateTemplateInput,
+      #[],
+      #[],
+      #[]
     > {}
-
-@@requiresPermissions(SiteTemplates.create, #[]);
-@@requiresPermissions(SiteTemplates.delete, #[]);
-@@requiresPermissions(SiteTemplates.get, #[]);
-@@requiresPermissions(SiteTemplates.list, #[]);
-@@requiresPermissions(SiteTemplates.update, #[]);

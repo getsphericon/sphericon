@@ -15,18 +15,22 @@ namespace Sphericon;
  * path from the resource's @segment and its @parentResource(SiteWorkspaceResource):
  * `/workspaces/{workspaceId}/<segment>` for the collection and
  * `/workspaces/{workspaceId}/<segment>/{id}` for a single item. Every operation answers a
- * refusal with the `Problem` default response, whatever its status.
+ * refusal with the `Problem` default response, whatever its status. `ReadPermissions` gate list
+ * and get, `WritePermissions` create and update (ADR 0061; `#[]` lets any member).
  */
 interface WorkspaceCrudKept<
   Resource extends {},
   CreateInput,
   UpdateInput,
+  ReadPermissions extends valueof Permission[],
+  WritePermissions extends valueof Permission[],
   ListFilter extends {} = {}
 > {
   /** List resources for the site UI */
   @listsResource(Resource)
   @get
   @autoRoute
+  @requiresPermissions(ReadPermissions)
   list(...ResourceCollectionParameters<Resource>, ...PageQuery, ...ListFilter):
     | Page<Resource>
     | Problem;
@@ -35,6 +39,7 @@ interface WorkspaceCrudKept<
   @createsResource(Resource)
   @post
   @autoRoute
+  @requiresPermissions(WritePermissions)
   create(...ResourceCollectionParameters<Resource>, @body body: CreateInput):
     | {
         @statusCode statusCode: 201;
@@ -46,12 +51,14 @@ interface WorkspaceCrudKept<
   @readsResource(Resource)
   @get
   @autoRoute
+  @requiresPermissions(ReadPermissions)
   get(...ResourceParameters<Resource>): Resource | Problem;
 
   /** Update a resource from the site UI */
   @updatesResource(Resource)
   @put
   @autoRoute
+  @requiresPermissions(WritePermissions)
   update(...ResourceParameters<Resource>, @body body: UpdateInput):
     | Resource
     | Problem;
@@ -63,21 +70,31 @@ interface WorkspaceCrudKept<
  * refused with 409 while live work uses the resource, and an update of an archived resource
  * with 409 until it is unarchived.
  */
-interface WorkspaceCrudArchivable<Resource extends {}, CreateInput, UpdateInput>
+interface WorkspaceCrudArchivable<
+  Resource extends {},
+  CreateInput,
+  UpdateInput,
+  ReadPermissions extends valueof Permission[],
+  WritePermissions extends valueof Permission[]
+>
   extends WorkspaceCrudKept<
       Resource,
       CreateInput,
       UpdateInput,
+      ReadPermissions,
+      WritePermissions,
       ArchivedFilter
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
   @autoRoute
+  @requiresPermissions(WritePermissions)
   archive(...ResourceParameters<Resource>): Resource | Problem;
 
   /** Restore an archived resource */
   @action("unarchive")
   @autoRoute
+  @requiresPermissions(WritePermissions)
   unarchive(...ResourceParameters<Resource>): Resource | Problem;
 }
 
@@ -87,17 +104,29 @@ model ArchivedFilter {
   @query archived?: boolean;
 }
 
-/** Workspace-scoped CRUD with a delete. */
+/** Workspace-scoped CRUD with a delete, which needs `DeletePermissions`. */
 interface WorkspaceCrud<
   Resource extends {},
   CreateInput,
   UpdateInput,
+  ReadPermissions extends valueof Permission[],
+  WritePermissions extends valueof Permission[],
+  DeletePermissions extends valueof Permission[],
   ListFilter extends {} = {}
-> extends WorkspaceCrudKept<Resource, CreateInput, UpdateInput, ListFilter> {
+>
+  extends WorkspaceCrudKept<
+      Resource,
+      CreateInput,
+      UpdateInput,
+      ReadPermissions,
+      WritePermissions,
+      ListFilter
+    > {
   /** Delete a resource from the site UI */
   @deletesResource(Resource)
   @delete
   @autoRoute
+  @requiresPermissions(DeletePermissions)
   delete(...ResourceParameters<Resource>): NoContentResponse | Problem;
 }
 

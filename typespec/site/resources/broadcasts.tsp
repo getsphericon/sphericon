@@ -249,6 +249,8 @@ interface SiteBroadcasts
       SiteBroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
+      #[],
+      #[],
       SiteBroadcastsListFilter
     > {
   /**
@@ -327,8 +329,3 @@ namespace SiteBroadcastLinks {
     | SiteBroadcastLinkClicksList
     | Problem;
 }
-
-@@requiresPermissions(SiteBroadcasts.create, #[]);
-@@requiresPermissions(SiteBroadcasts.get, #[]);
-@@requiresPermissions(SiteBroadcasts.list, #[]);
-@@requiresPermissions(SiteBroadcasts.update, #[]);

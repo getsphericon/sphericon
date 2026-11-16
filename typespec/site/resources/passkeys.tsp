@@ -115,9 +115,7 @@ model SitePasskeyRenameInput {
 
 /** The proof of identity a removal asks for */
 model SitePasskeyRemoveInput {
-  /** Current password. Left out by a User with no password, who proves a provider or Passkey
-   * sign-in of the last few minutes instead (ADR 0048). */
-  currentPassword?: string;
+  ...SiteReauthentication;
 }
 
 /** The options to check a Passkey with, and the ceremony cookie they are bound to */
@@ -138,9 +136,7 @@ model SitePasskeyRegistrationBegun {
 
 /** The browser's response to a registration ceremony, with the proof of identity and a name */
 model SitePasskeyRegistrationInput {
-  /** Current password. Left out by a User with no password, who proves a provider or Passkey
-   * sign-in of the last few minutes instead (ADR 0048). */
-  currentPassword?: string;
+  ...SiteReauthentication;
 
   /** What to call the Passkey, to tell it from the User's others */
   name: Name;

@@ -141,6 +141,9 @@ interface SiteContacts
       SiteContactResource,
       SiteCreateContactInput,
       SiteUpdateContactInput,
+      #[],
+      #[],
+      #[Permission.contactsErase],
       SiteContactsListFilter
     > {
   /**
@@ -204,9 +207,3 @@ interface SiteContacts
   SiteContacts.delete,
   "Erase a contact (GDPR Art. 17): its personal data is removed, delivery records are anonymized and its opt-outs survive. Owner or admin only."
 );
-
-@@requiresPermissions(SiteContacts.create, #[]);
-@@requiresPermissions(SiteContacts.delete, #[Permission.contactsErase]);
-@@requiresPermissions(SiteContacts.get, #[]);
-@@requiresPermissions(SiteContacts.list, #[]);
-@@requiresPermissions(SiteContacts.update, #[]);
