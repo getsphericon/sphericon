@@ -167,7 +167,7 @@ export const zConfirmationProvenance = z.enum([
 /**
  * The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request
  */
-export const zConsentEvidence = z.object({
+export const zConsentEvidence = z.strictObject({
   wording: z.string().min(1).max(2000),
   source: z.string().min(1).max(500),
   brand: z.string().min(1).max(255)
@@ -190,7 +190,7 @@ export const zCountryCode = z.string().regex(/^[A-Z]{2}$/);
 /**
  * Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
  */
-export const zCreateSendingDomainInput = z.object({
+export const zCreateSendingDomainInput = z.strictObject({
   domain: z.string(),
   dkimSelector: z.exactOptional(z.string())
 });
@@ -198,7 +198,7 @@ export const zCreateSendingDomainInput = z.object({
 /**
  * Request body for creating a webhook endpoint
  */
-export const zCreateWebhookInput = z.object({
+export const zCreateWebhookInput = z.strictObject({
   url: z.string(),
   eventTypes: z.exactOptional(z.array(z.string())),
   enabled: z.exactOptional(z.boolean())
@@ -235,7 +235,7 @@ export const zEmailBroadcastContent = z.object({
  * Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on
  * update an omitted field keeps its value and null clears it.
  */
-export const zEmailBroadcastContentInput = z.object({
+export const zEmailBroadcastContentInput = z.strictObject({
   channel: z.enum(['email']),
   subject: z.exactOptional(z.string()),
   fromName: z.exactOptional(z.string().nullable()),
@@ -306,14 +306,14 @@ export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
 /**
  * The Test inbox takes no credentials: a Workspace has at most one
  */
-export const zInboxConfigInput = z.object({
+export const zInboxConfigInput = z.strictObject({
   kind: z.enum(['inbox'])
 });
 
 /**
  * Request body for issuing a Telegram start link
  */
-export const zIssueTelegramStartLinkInput = z.object({
+export const zIssueTelegramStartLinkInput = z.strictObject({
   integrationId: z.exactOptional(zEntityId.nullable())
 });
 
@@ -381,14 +381,14 @@ export const zName = z.string().max(100);
 /**
  * Request body for applying a tag to a contact
  */
-export const zApplyTagInput = z.object({
+export const zApplyTagInput = z.strictObject({
   name: zName
 });
 
 /**
  * Request body for creating a template
  */
-export const zCreateTemplateInput = z.object({
+export const zCreateTemplateInput = z.strictObject({
   name: zName,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
@@ -528,7 +528,7 @@ export const zRevision = z.int().gte(1);
  * The body of an editor's operation on stored content (Publish, Revert): the revision of what the
  * editor shows (ADR 0119)
  */
-export const zRevisionInput = z.object({
+export const zRevisionInput = z.strictObject({
   revision: zRevision
 });
 
@@ -547,7 +547,7 @@ export const zSendScope = z.enum([
 /**
  * SES credentials
  */
-export const zSesConfigInput = z.object({
+export const zSesConfigInput = z.strictObject({
   kind: z.enum(['ses']),
   region: z.string(),
   accessKeyId: z.string(),
@@ -560,7 +560,7 @@ export const zSesConfigInput = z.object({
 /**
  * Set the Workspace's Tracking domain
  */
-export const zSetTrackingDomainInput = z.object({
+export const zSetTrackingDomainInput = z.strictObject({
   host: z.string().min(1)
 });
 
@@ -617,7 +617,7 @@ export const zSiteAbuseWarning = z.object({
 /**
  * A required acceptance the screen showed: the item's key and the label of the version shown
  */
-export const zSiteAcceptance = z.object({
+export const zSiteAcceptance = z.strictObject({
   key: zSignupItemKey,
   version: zLegalDocumentLabel
 });
@@ -625,14 +625,14 @@ export const zSiteAcceptance = z.object({
 /**
  * The required acceptances a User accepts after a new version was published (ADR 0062)
  */
-export const zSiteAcceptPendingInput = z.object({
+export const zSiteAcceptPendingInput = z.strictObject({
   items: z.array(zSiteAcceptance)
 });
 
 /**
  * Request body for adding a Join domain
  */
-export const zSiteAddJoinDomainInput = z.object({
+export const zSiteAddJoinDomainInput = z.strictObject({
   domain: z.string()
 });
 
@@ -852,7 +852,7 @@ export const zSiteAuditFacets = z.object({
 /**
  * How long the Audit log is kept; the Enterprise advanced-retention control
  */
-export const zSiteAuditRetention = z.object({
+export const zSiteAuditRetention = z.strictObject({
   retentionDays: zRetentionDays.nullable(),
   revision: zRevision
 });
@@ -874,7 +874,7 @@ export const zSiteAutomationHttpErrorKind = z.enum(['invalid_body']);
 /**
  * One request header of an HTTP step. The value is a secret: it is never returned.
  */
-export const zSiteAutomationHttpHeader = z.object({
+export const zSiteAutomationHttpHeader = z.strictObject({
   name: z.string(),
   value: z.exactOptional(z.string())
 });
@@ -1022,7 +1022,7 @@ export const zSiteConditionDateOperator = z.enum(['before', 'after']);
  * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
  * date-time with a UTC offset is a moment, as for the date leaf.
  */
-export const zSiteConditionDateWithinLeaf = z.object({
+export const zSiteConditionDateWithinLeaf = z.strictObject({
   kind: z.enum(['dateWithin']),
   field: z.string(),
   withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
@@ -1039,7 +1039,7 @@ export const zSiteConditionEventOperator = z.enum(['atLeast', 'atMost']);
  * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
  * longer than Event retention is capped by it: expired Events are no longer counted.
  */
-export const zSiteConditionEventLeaf = z.object({
+export const zSiteConditionEventLeaf = z.strictObject({
   kind: z.enum(['event']),
   action: z.string(),
   operator: zSiteConditionEventOperator,
@@ -1064,7 +1064,7 @@ export const zSiteConditionNumberOperator = z.enum([
  * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
  * leaf false.
  */
-export const zSiteConditionNumberLeaf = z.object({
+export const zSiteConditionNumberLeaf = z.strictObject({
   kind: z.enum(['number']),
   field: z.string(),
   operator: zSiteConditionNumberOperator,
@@ -1091,7 +1091,7 @@ export const zSiteConditionOperator = z.enum([
 /**
  * One test of a condition: a field, an operator and a value
  */
-export const zSiteConditionLeaf = z.object({
+export const zSiteConditionLeaf = z.strictObject({
   kind: z.enum(['rule']),
   field: z.string(),
   operator: zSiteConditionOperator,
@@ -1101,7 +1101,7 @@ export const zSiteConditionLeaf = z.object({
 /**
  * Confirm a requested email change using the token sent to the new address
  */
-export const zSiteConfirmEmailChangeInput = z.object({
+export const zSiteConfirmEmailChangeInput = z.strictObject({
   token: z.string()
 });
 
@@ -1120,7 +1120,7 @@ export const zSiteContactHoldings = z.object({
 /**
  * Create a Workspace (ADR 0043)
  */
-export const zSiteCreateWorkspaceInput = z.object({
+export const zSiteCreateWorkspaceInput = z.strictObject({
   name: zName
 });
 
@@ -1139,7 +1139,7 @@ export const zSiteCustomFieldType = z.enum([
  * (a User with no password sends the token of the mailed link instead) and, when a Second
  * factor is enrolled, a current code.
  */
-export const zSiteDeleteUserInput = z.object({
+export const zSiteDeleteUserInput = z.strictObject({
   email: zEmailAddress,
   currentPassword: z.exactOptional(z.string()),
   token: z.exactOptional(z.string()),
@@ -1149,14 +1149,14 @@ export const zSiteDeleteUserInput = z.object({
 /**
  * The request for the one-time deletion link of a User with no password (ADR 0050)
  */
-export const zSiteDeleteUserLinkInput = z.object({
+export const zSiteDeleteUserLinkInput = z.strictObject({
   email: zEmailAddress
 });
 
 /**
  * Delete a Workspace (ADR 0043): the typed name must equal the stored name.
  */
-export const zSiteDeleteWorkspaceInput = z.object({
+export const zSiteDeleteWorkspaceInput = z.strictObject({
   name: z.string()
 });
 
@@ -1180,7 +1180,7 @@ export const zSiteDomainJoinResource = z.object({
 /**
  * Request body for rendering an HTTP step's body for a Contact
  */
-export const zSiteDryRunHttpStepInput = z.object({
+export const zSiteDryRunHttpStepInput = z.strictObject({
   body: z.string(),
   contactId: zEntityId
 });
@@ -1197,7 +1197,7 @@ export const zSiteDryRunHttpStepResult = z.object({
 /**
  * Site request body for dry-running a Rule on a stored Event
  */
-export const zSiteDryRunRuleInput = z.object({
+export const zSiteDryRunRuleInput = z.strictObject({
   eventId: zEntityId
 });
 
@@ -1205,7 +1205,7 @@ export const zSiteDryRunRuleInput = z.object({
  * Request a change of the login email. The new address must be confirmed via a
  * link sent to it before the change takes effect.
  */
-export const zSiteEmailChangeInput = z.object({
+export const zSiteEmailChangeInput = z.strictObject({
   newEmail: zEmailAddress,
   currentPassword: z.string()
 });
@@ -1252,7 +1252,7 @@ export const zSiteEventActionsResult = z.object({
 /**
  * Request a password-reset link (always accepted; no account enumeration)
  */
-export const zSiteForgotPasswordInput = z.object({
+export const zSiteForgotPasswordInput = z.strictObject({
   email: zEmailAddress
 });
 
@@ -1299,7 +1299,7 @@ export const zSiteInvitableRole = z.enum(['admin', 'member']);
 /**
  * Invite an email address to the workspace
  */
-export const zSiteCreateInvitationInput = z.object({
+export const zSiteCreateInvitationInput = z.strictObject({
   email: zEmailAddress,
   role: zSiteInvitableRole
 });
@@ -1331,7 +1331,7 @@ export const zSiteBroadcastLinkClicksList = z.object({
  * Sign in with an email and password. The email is a plain string: a malformed
  * address must answer like an unknown one.
  */
-export const zSiteLoginInput = z.object({
+export const zSiteLoginInput = z.strictObject({
   email: z.string(),
   password: z.string()
 });
@@ -1351,7 +1351,7 @@ export const zSiteLoginResult = z.object({
 /**
  * The second login step: the challenge from the password step and a code
  */
-export const zSiteLoginSecondFactorInput = z.object({
+export const zSiteLoginSecondFactorInput = z.strictObject({
   challenge: z.string(),
   code: z.string()
 });
@@ -1506,7 +1506,7 @@ export const zSiteOAuthDecisionResult = z.object({
 /**
  * A change of the User's answer to an optional consent
  */
-export const zSiteOptionalConsentChange = z.object({
+export const zSiteOptionalConsentChange = z.strictObject({
   version: zLegalDocumentLabel,
   accepted: z.boolean()
 });
@@ -1570,7 +1570,7 @@ export const zSitePasskeyAuthenticatorSelection = z.object({
 /**
  * The browser's response to a Passkey check ceremony
  */
-export const zSitePasskeyCheckInput = z.object({
+export const zSitePasskeyCheckInput = z.strictObject({
   credential: zSitePasskeyAssertion
 });
 
@@ -1592,7 +1592,7 @@ export const zSitePasskeyDescriptor = z.object({
 /**
  * The browser's response to a login ceremony
  */
-export const zSitePasskeyLoginInput = z.object({
+export const zSitePasskeyLoginInput = z.strictObject({
   credential: zSitePasskeyAssertion
 });
 
@@ -1613,7 +1613,7 @@ export const zSitePasskeyRegistrationResponse = z.record(z.string(), z.unknown()
 /**
  * The browser's response to a registration ceremony, with the proof of identity and a name
  */
-export const zSitePasskeyRegistrationInput = z.object({
+export const zSitePasskeyRegistrationInput = z.strictObject({
   currentPassword: z.exactOptional(z.string()),
   name: zName,
   credential: zSitePasskeyRegistrationResponse
@@ -1630,14 +1630,14 @@ export const zSitePasskeyRelyingParty = z.object({
 /**
  * The proof of identity a removal asks for
  */
-export const zSitePasskeyRemoveInput = z.object({
+export const zSitePasskeyRemoveInput = z.strictObject({
   currentPassword: z.exactOptional(z.string())
 });
 
 /**
  * The new name of a Passkey
  */
-export const zSitePasskeyRenameInput = z.object({
+export const zSitePasskeyRenameInput = z.strictObject({
   name: zName
 });
 
@@ -1791,7 +1791,7 @@ export const zSiteRecoveryCodes = z.object({
 /**
  * Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes
  */
-export const zSiteRecoveryCodesInput = z.object({
+export const zSiteRecoveryCodesInput = z.strictObject({
   currentPassword: z.exactOptional(z.string())
 });
 
@@ -1806,14 +1806,14 @@ export const zSiteReportPeriod = z.object({
 /**
  * Ask for the verification link again (always accepted; no account enumeration)
  */
-export const zSiteResendVerificationInput = z.object({
+export const zSiteResendVerificationInput = z.strictObject({
   email: zEmailAddress
 });
 
 /**
  * Set a new password using a reset token
  */
-export const zSiteResetPasswordInput = z.object({
+export const zSiteResetPasswordInput = z.strictObject({
   token: z.string(),
   password: z.string()
 });
@@ -1862,7 +1862,7 @@ export const zSiteRuleActionType = z.enum([
 /**
  * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
  */
-export const zSiteRuleAction = z.object({
+export const zSiteRuleAction = z.strictObject({
   type: zSiteRuleActionType,
   tag: z.exactOptional(z.string()),
   automationId: z.exactOptional(zEntityId),
@@ -1921,7 +1921,7 @@ export const zSiteRuleStatus = z.enum(['active', 'inactive']);
  * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
  * its values.
  */
-export const zSiteSaveBrandKitInput = z.object({
+export const zSiteSaveBrandKitInput = z.strictObject({
   revision: zRevision,
   accentColor: z.string(),
   textColor: z.string(),
@@ -1937,7 +1937,7 @@ export const zSiteSaveBrandKitInput = z.object({
 /**
  * Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app
  */
-export const zSiteSecondFactorConfirmInput = z.object({
+export const zSiteSecondFactorConfirmInput = z.strictObject({
   enrollmentId: zEntityId,
   currentPassword: z.exactOptional(z.string()),
   code: z.string()
@@ -1946,7 +1946,7 @@ export const zSiteSecondFactorConfirmInput = z.object({
 /**
  * Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the Second factor
  */
-export const zSiteSecondFactorDisableInput = z.object({
+export const zSiteSecondFactorDisableInput = z.strictObject({
   currentPassword: z.exactOptional(z.string()),
   code: z.string()
 });
@@ -1964,7 +1964,7 @@ export const zSiteSecondFactorEnrollment = z.object({
 /**
  * Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment
  */
-export const zSiteSecondFactorStartInput = z.object({
+export const zSiteSecondFactorStartInput = z.strictObject({
   currentPassword: z.exactOptional(z.string())
 });
 
@@ -2039,7 +2039,7 @@ export const zSiteSesConfig = z.object({
 /**
  * Switch domain join on or off
  */
-export const zSiteSetDomainJoinInput = z.object({
+export const zSiteSetDomainJoinInput = z.strictObject({
   revision: zRevision,
   enabled: z.boolean()
 });
@@ -2082,14 +2082,14 @@ export const zSiteSigninError = z.enum([
 /**
  * The "this was not me" link of the notice mailed when a Sign-in provider was linked to an account
  */
-export const zSiteSigninNotMeInput = z.object({
+export const zSiteSigninNotMeInput = z.strictObject({
   token: z.string()
 });
 
 /**
  * Decline a pending sign-up
  */
-export const zSiteSigninPendingDeclineInput = z.object({
+export const zSiteSigninPendingDeclineInput = z.strictObject({
   token: z.string()
 });
 
@@ -2148,7 +2148,7 @@ export const zSiteSignupItem = z.object({
  * A person's answer to one Sign-up item the form showed (ADR 0062). An item named that is not in
  * effect, a version that is not its current one, or an item named twice refuses the form.
  */
-export const zSiteSignupItemAnswer = z.object({
+export const zSiteSignupItemAnswer = z.strictObject({
   key: zSignupItemKey,
   version: zLegalDocumentLabel,
   accepted: z.exactOptional(z.boolean())
@@ -2157,7 +2157,7 @@ export const zSiteSignupItemAnswer = z.object({
 /**
  * The answers that complete a pending sign-up
  */
-export const zSiteSigninPendingSubmitInput = z.object({
+export const zSiteSigninPendingSubmitInput = z.strictObject({
   token: z.string(),
   signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
 });
@@ -2196,7 +2196,7 @@ export const zSiteSignupSource = z.enum([
  * and `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only
  * with its question's `other` choice.
  */
-export const zSiteSignupSurveyInput = z.object({
+export const zSiteSignupSurveyInput = z.strictObject({
   role: zSiteSignupRole,
   roleOther: z.exactOptional(z.string().max(100)),
   companySize: zSiteSignupCompanySize,
@@ -2239,7 +2239,7 @@ export const zSiteSuppressionChannel = z.enum([
 /**
  * Site request body for manually suppressing a destination
  */
-export const zSiteCreateSuppressionInput = z.object({
+export const zSiteCreateSuppressionInput = z.strictObject({
   channel: z.exactOptional(zSiteSuppressionChannel),
   destination: z.string()
 });
@@ -2314,7 +2314,7 @@ export const zSiteTransactionalEmailStatus = z.enum([
 /**
  * Request body for updating a custom field: its key never changes
  */
-export const zSiteUpdateCustomFieldInput = z.object({
+export const zSiteUpdateCustomFieldInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   type: z.exactOptional(zSiteCustomFieldType)
@@ -2323,14 +2323,14 @@ export const zSiteUpdateCustomFieldInput = z.object({
 /**
  * Change a member's role. Only an owner may grant/transfer the owner role.
  */
-export const zSiteUpdateMembershipInput = z.object({
+export const zSiteUpdateMembershipInput = z.strictObject({
   role: zSiteMembershipRole
 });
 
 /**
  * Change the revenue settings; a field left out stays as it is
  */
-export const zSiteUpdateRevenueSettingsInput = z.object({
+export const zSiteUpdateRevenueSettingsInput = z.strictObject({
   revision: zRevision,
   reportingCurrency: z.exactOptional(zCurrencyCode),
   attributionWindowDays: z.exactOptional(zAttributionWindowDays)
@@ -2339,14 +2339,14 @@ export const zSiteUpdateRevenueSettingsInput = z.object({
 /**
  * Rename an API token
  */
-export const zSiteUpdateTokenInput = z.object({
+export const zSiteUpdateTokenInput = z.strictObject({
   name: zName
 });
 
 /**
  * Update a workspace. The id is immutable (it is the route key); the display name and the CAN-SPAM postal address can change.
  */
-export const zSiteUpdateWorkspaceInput = z.object({
+export const zSiteUpdateWorkspaceInput = z.strictObject({
   revision: zRevision,
   name: zName,
   postalAddress: z.exactOptional(z.string())
@@ -2355,7 +2355,7 @@ export const zSiteUpdateWorkspaceInput = z.object({
 /**
  * Prove an email address with the token sent to it
  */
-export const zSiteVerifyEmailInput = z.object({
+export const zSiteVerifyEmailInput = z.strictObject({
   token: z.string(),
   password: z.exactOptional(z.string())
 });
@@ -2407,7 +2407,7 @@ export const zSmsBroadcastContent = z.object({
  * omitted field takes its default (an empty text, link tracking on); on update an omitted field
  * keeps its value.
  */
-export const zSmsBroadcastContentInput = z.object({
+export const zSmsBroadcastContentInput = z.strictObject({
   channel: z.enum(['sms']),
   text: z.exactOptional(z.string()),
   linkTracking: z.exactOptional(z.boolean())
@@ -2448,7 +2448,7 @@ export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
 /**
  * SMTP credentials
  */
-export const zSmtpConfigInput = z.object({
+export const zSmtpConfigInput = z.strictObject({
   kind: z.enum(['smtp']),
   host: z.string(),
   port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -2508,7 +2508,7 @@ export const zSystemEventAction = z.enum([
 /**
  * A link button under a Telegram message: an inline URL button on a row of its own
  */
-export const zTelegramButton = z.object({
+export const zTelegramButton = z.strictObject({
   label: z.string(),
   url: z.string()
 });
@@ -2517,7 +2517,7 @@ export const zTelegramButton = z.object({
  * One node in an automation's ordered, linear sequence. A flat shape: email
  * steps carry subject/body, wait steps carry seconds.
  */
-export const zSiteAutomationStep = z.object({
+export const zSiteAutomationStep = z.strictObject({
   type: zSiteAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
@@ -2554,7 +2554,7 @@ export const zSiteAutomationVersion = z.object({
 /**
  * Site request body for creating an automation
  */
-export const zSiteCreateAutomationInput = z.object({
+export const zSiteCreateAutomationInput = z.strictObject({
   name: zName,
   triggerEvent: z.string(),
   exitEvents: z.exactOptional(z.array(z.string())),
@@ -2567,7 +2567,7 @@ export const zSiteCreateAutomationInput = z.object({
  * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
  * version's, and publishing makes the draft live.
  */
-export const zSiteUpdateAutomationInput = z.object({
+export const zSiteUpdateAutomationInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvent: z.exactOptional(z.string()),
@@ -2602,7 +2602,7 @@ export const zBroadcastContent = z.discriminatedUnion('channel', [
  * create an omitted field takes its default (an empty text, no image, no buttons, the link preview
  * on, no unsubscribe button); on update an omitted field keeps its value.
  */
-export const zTelegramBroadcastContentInput = z.object({
+export const zTelegramBroadcastContentInput = z.strictObject({
   channel: z.enum(['telegram']),
   text: z.exactOptional(z.string()),
   imageUrl: z.exactOptional(z.string()),
@@ -2623,7 +2623,7 @@ export const zBroadcastContentInput = z.discriminatedUnion('channel', [
 /**
  * Request body for creating a broadcast
  */
-export const zCreateBroadcastInput = z.object({
+export const zCreateBroadcastInput = z.strictObject({
   name: zName,
   content: zBroadcastContentInput,
   segmentId: z.exactOptional(zEntityId.nullable()),
@@ -2633,7 +2633,7 @@ export const zCreateBroadcastInput = z.object({
 /**
  * A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon
  */
-export const zTelegramConfigInput = z.object({
+export const zTelegramConfigInput = z.strictObject({
   kind: z.enum(['telegram']),
   token: z.string()
 });
@@ -2642,7 +2642,7 @@ export const zTelegramConfigInput = z.object({
  * Request body for a test send: where the preview goes, in the field of the broadcast's Channel.
  * The field of the other Channel is not read.
  */
-export const zTestSendBroadcastInput = z.object({
+export const zTestSendBroadcastInput = z.strictObject({
   email: z.exactOptional(zEmailAddress),
   phone: z.exactOptional(z.string())
 });
@@ -2650,7 +2650,7 @@ export const zTestSendBroadcastInput = z.object({
 /**
  * Request body for sending a sample event to a webhook endpoint
  */
-export const zTestWebhookInput = z.object({
+export const zTestWebhookInput = z.strictObject({
   eventType: z.string()
 });
 
@@ -2679,7 +2679,7 @@ export const zCreateContactInput = z.object({
  * contact form sets the tags in the same save; /api tags a contact through its own operations
  * (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
-export const zSiteCreateContactInput = z.object({
+export const zSiteCreateContactInput = z.strictObject({
   subjectId: z.exactOptional(z.string().nullable()),
   email: z.exactOptional(zEmailAddress.nullable()),
   phone: z.exactOptional(z.string().nullable()),
@@ -2700,7 +2700,7 @@ export const zSiteCreateContactInput = z.object({
  * app's contact form sets the tags in the same save; /api tags a contact through its own
  * operations (`tags_apply`, `tags_remove`), which is why its body has no tags.
  */
-export const zSiteUpdateContactInput = z.object({
+export const zSiteUpdateContactInput = z.strictObject({
   revision: zRevision,
   subjectId: z.exactOptional(z.string().nullable()),
   email: z.exactOptional(zEmailAddress.nullable()),
@@ -2720,7 +2720,7 @@ export const zSiteUpdateContactInput = z.object({
 /**
  * Set the Workspace time zone
  */
-export const zSiteWorkspaceTimezoneInput = z.object({
+export const zSiteWorkspaceTimezoneInput = z.strictObject({
   revision: zRevision,
   timezone: zTimeZoneName
 });
@@ -2883,7 +2883,7 @@ export const zContactExportDocument = z.object({
 /**
  * Request body for scheduling a broadcast
  */
-export const zScheduleBroadcastInput = z.object({
+export const zScheduleBroadcastInput = z.strictObject({
   revision: zRevision,
   scheduledAt: zTimestamp
 });
@@ -3135,7 +3135,7 @@ export const zSiteCapturedMessageSummary = z.object({
  * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
  * false.
  */
-export const zSiteConditionDateLeaf = z.object({
+export const zSiteConditionDateLeaf = z.strictObject({
   kind: z.enum(['date']),
   field: z.string(),
   operator: zSiteConditionDateOperator,
@@ -3184,7 +3184,7 @@ export const zSiteContactResource = z.object({
 /**
  * Mint a Personal token of the caller's own
  */
-export const zSiteCreatePersonalTokenInput = z.object({
+export const zSiteCreatePersonalTokenInput = z.strictObject({
   name: zName,
   scopes: z.array(zPersonalScope),
   expiresAt: z.exactOptional(zTimestamp.nullable())
@@ -3193,7 +3193,7 @@ export const zSiteCreatePersonalTokenInput = z.object({
 /**
  * Create a workspace API token
  */
-export const zSiteCreateTokenInput = z.object({
+export const zSiteCreateTokenInput = z.strictObject({
   name: zName,
   scopes: z.array(zApiTokenScope),
   expiresAt: z.exactOptional(zTimestamp.nullable())
@@ -3645,7 +3645,7 @@ export const zTokenOnlyScope = z.enum([
 /**
  * A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials
  */
-export const zTwilioConfigInput = z.object({
+export const zTwilioConfigInput = z.strictObject({
   kind: z.enum(['twilio']),
   accountSid: z.string(),
   apiKeySid: z.exactOptional(z.string().nullable()),
@@ -3667,7 +3667,7 @@ export const zIntegrationConfigInput = z.discriminatedUnion('kind', [
 /**
  * Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422
  */
-export const zCreateIntegrationInput = z.object({
+export const zCreateIntegrationInput = z.strictObject({
   name: zName,
   enabled: z.exactOptional(z.boolean()),
   isDefault: z.exactOptional(z.boolean()),
@@ -3681,7 +3681,7 @@ export const zCreateIntegrationInput = z.object({
 /**
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
-export const zUpdateBroadcastInput = z.object({
+export const zUpdateBroadcastInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   content: z.exactOptional(zBroadcastContentInput),
@@ -3711,7 +3711,7 @@ export const zUpdateContactInput = z.object({
 /**
  * Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.
  */
-export const zUpdateIntegrationInput = z.object({
+export const zUpdateIntegrationInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   enabled: z.exactOptional(z.boolean()),
@@ -3727,7 +3727,7 @@ export const zUpdateIntegrationInput = z.object({
 /**
  * Request body for updating a template
  */
-export const zUpdateTemplateInput = z.object({
+export const zUpdateTemplateInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   subject: z.exactOptional(z.string()),
@@ -3738,7 +3738,7 @@ export const zUpdateTemplateInput = z.object({
 /**
  * Request body for updating a webhook endpoint
  */
-export const zUpdateWebhookInput = z.object({
+export const zUpdateWebhookInput = z.strictObject({
   revision: zRevision,
   url: z.exactOptional(z.string()),
   eventTypes: z.exactOptional(z.array(z.string())),
@@ -3781,7 +3781,7 @@ export const zUserName = z.string().max(100);
  * Verified User the body is not read: the session of that same User is the proof, and consent
  * follows the User, so nothing is asked again (ADR 0062).
  */
-export const zSiteAcceptInvitationInput = z.object({
+export const zSiteAcceptInvitationInput = z.strictObject({
   name: z.exactOptional(zUserName),
   password: z.exactOptional(z.string()),
   signupItems: z.exactOptional(z.array(zSiteSignupItemAnswer))
@@ -3792,7 +3792,7 @@ export const zSiteAcceptInvitationInput = z.object({
  * address is proven (ADR 0030); the password is trusted only when the verification link
  * is opened in the Sign-up browser.
  */
-export const zSiteSignUpInput = z.object({
+export const zSiteSignUpInput = z.strictObject({
   name: zUserName,
   email: zEmailAddress,
   password: z.exactOptional(z.string()),
@@ -3803,7 +3803,7 @@ export const zSiteSignUpInput = z.object({
  * Update the authenticated user's profile. To change the password, provide
  * both currentPassword and newPassword.
  */
-export const zSiteUpdateMeInput = z.object({
+export const zSiteUpdateMeInput = z.strictObject({
   name: z.exactOptional(zUserName),
   timezone: z.exactOptional(zTimeZoneName.nullable()),
   regionalFormat: z.exactOptional(zRegionalFormat.nullable()),
@@ -3832,7 +3832,7 @@ export const zSiteDeletedWorkspaceResource = z.object({
 /**
  * The user's decision on an authorization request
  */
-export const zSiteOAuthDecisionInput = z.object({
+export const zSiteOAuthDecisionInput = z.strictObject({
   clientId: z.string(),
   redirectUri: z.string(),
   state: z.exactOptional(z.string()),
@@ -3911,7 +3911,7 @@ export const zProblemDetails = z.object({
  * A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none).
  */
-export const zSiteConditionGroup = z.object({
+export const zSiteConditionGroup = z.strictObject({
   kind: z.enum(['group']),
   combinator: zSiteConditionCombinator,
   not: z.exactOptional(z.boolean()),
@@ -3934,7 +3934,7 @@ export const zSiteConditionNode = z.discriminatedUnion('kind', [
 /**
  * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
-export const zSiteCreateRuleInput = z.object({
+export const zSiteCreateRuleInput = z.strictObject({
   name: zName,
   triggerEvents: z.array(z.string()).min(1),
   condition: z.exactOptional(zSiteConditionGroup),
@@ -3944,7 +3944,7 @@ export const zSiteCreateRuleInput = z.object({
 /**
  * Site request body for creating a segment
  */
-export const zSiteCreateSegmentInput = z.object({
+export const zSiteCreateSegmentInput = z.strictObject({
   name: zName,
   condition: zSiteConditionGroup
 });
@@ -3952,7 +3952,7 @@ export const zSiteCreateSegmentInput = z.object({
 /**
  * Request body for previewing a condition's segment
  */
-export const zSitePreviewSegmentInput = z.object({
+export const zSitePreviewSegmentInput = z.strictObject({
   condition: z.exactOptional(zSiteConditionGroup),
   channel: z.exactOptional(zBroadcastChannel),
   integrationId: z.exactOptional(zEntityId.nullable())
@@ -4000,7 +4000,7 @@ export const zSiteSegmentResource = z.object({
 /**
  * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
-export const zSiteUpdateRuleInput = z.object({
+export const zSiteUpdateRuleInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
@@ -4011,7 +4011,7 @@ export const zSiteUpdateRuleInput = z.object({
 /**
  * Site request body for updating a segment
  */
-export const zSiteUpdateSegmentInput = z.object({
+export const zSiteUpdateSegmentInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   condition: z.exactOptional(zSiteConditionGroup)

@@ -288,7 +288,7 @@ export const zStaffSendCapChange = z.object({
 /**
  * The Send cap a Staff member sets on a Workspace
  */
-export const zStaffSendCapInput = z.object({
+export const zStaffSendCapInput = z.strictObject({
   perDay: zMaxPerDay
 });
 
@@ -398,7 +398,7 @@ export const zStaffSignupSurveyCounts = z.object({
 /**
  * Why a Workspace is being suspended; the owner is told
  */
-export const zStaffSuspendInput = z.object({
+export const zStaffSuspendInput = z.strictObject({
   reason: z.string().min(1)
 });
 

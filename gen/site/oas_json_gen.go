@@ -165,7 +165,7 @@ func (s *ApplyTagInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -1087,7 +1087,7 @@ func (s *ConsentEvidence) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"brand\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -3686,7 +3686,7 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -3897,7 +3897,7 @@ func (s *CreateIntegrationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"params\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -4010,7 +4010,7 @@ func (s *CreateSendingDomainInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"dkimSelector\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -4155,7 +4155,7 @@ func (s *CreateTemplateInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"doc\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -4298,7 +4298,7 @@ func (s *CreateWebhookInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -4849,7 +4849,7 @@ func (s *EmailBroadcastContentInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"doc\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -5193,7 +5193,7 @@ func (s *InboxConfigInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"kind\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -5586,7 +5586,7 @@ func (s *IssueTelegramStartLinkInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -10228,7 +10228,7 @@ func (s *RevisionInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"revision\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -10337,7 +10337,7 @@ func (s *ScheduleBroadcastInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"scheduledAt\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -10575,7 +10575,7 @@ func (s *SesConfigInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"endpoint\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -10709,7 +10709,7 @@ func (s *SetTrackingDomainInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"host\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -11143,7 +11143,7 @@ func (s *SiteAcceptInvitationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"signupItems\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -11217,7 +11217,7 @@ func (s *SiteAcceptPendingInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"items\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -11326,7 +11326,7 @@ func (s *SiteAcceptance) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"version\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -11550,7 +11550,7 @@ func (s *SiteAddJoinDomainInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"domain\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -15940,7 +15940,7 @@ func (s *SiteAuditRetention) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"revision\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -16221,7 +16221,7 @@ func (s *SiteAutomationHttpHeader) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -17807,7 +17807,7 @@ func (s *SiteAutomationStep) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -21355,7 +21355,7 @@ func (s *SiteConditionDateLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"at\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -21561,7 +21561,7 @@ func (s *SiteConditionDateWithinLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"withinDays\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -21759,7 +21759,7 @@ func (s *SiteConditionEventLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"withinDays\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -21990,7 +21990,7 @@ func (s *SiteConditionGroup) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"rules\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -22171,7 +22171,7 @@ func (s *SiteConditionLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -22630,7 +22630,7 @@ func (s *SiteConditionNumberLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -22860,7 +22860,7 @@ func (s *SiteConfirmEmailChangeInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"token\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -23975,7 +23975,7 @@ func (s *SiteCreateAutomationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"steps\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -24287,7 +24287,7 @@ func (s *SiteCreateContactInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"tags\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -24364,7 +24364,7 @@ func (s *SiteCreateInvitationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"role\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -24613,7 +24613,7 @@ func (s *SiteCreatePersonalTokenInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"expiresAt\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -24892,7 +24892,7 @@ func (s *SiteCreateRuleInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"actions\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -25001,7 +25001,7 @@ func (s *SiteCreateSegmentInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -25114,7 +25114,7 @@ func (s *SiteCreateSuppressionInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"destination\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -25252,7 +25252,7 @@ func (s *SiteCreateTokenInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"expiresAt\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -25457,7 +25457,7 @@ func (s *SiteCreateWorkspaceInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -26035,7 +26035,7 @@ func (s *SiteDeleteUserInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"code\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -26129,7 +26129,7 @@ func (s *SiteDeleteUserLinkInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -26225,7 +26225,7 @@ func (s *SiteDeleteWorkspaceInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -26771,7 +26771,7 @@ func (s *SiteDryRunHttpStepInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"contactId\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -26962,7 +26962,7 @@ func (s *SiteDryRunRuleInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"eventId\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -27073,7 +27073,7 @@ func (s *SiteEmailChangeInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"currentPassword\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -28526,7 +28526,7 @@ func (s *SiteForgotPasswordInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -30602,7 +30602,7 @@ func (s *SiteLoginInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"password\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -30866,7 +30866,7 @@ func (s *SiteLoginSecondFactorInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"code\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -32080,7 +32080,7 @@ func (s *SiteOAuthDecisionInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"allowSetup\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -32448,7 +32448,7 @@ func (s *SiteOptionalConsentChange) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accepted\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -33332,7 +33332,7 @@ func (s *SitePasskeyCheckInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"credential\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -34176,7 +34176,7 @@ func (s *SitePasskeyLoginInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"credential\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -34545,7 +34545,7 @@ func (s *SitePasskeyRegistrationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"credential\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -34811,7 +34811,7 @@ func (s *SitePasskeyRemoveInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"currentPassword\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -34873,7 +34873,7 @@ func (s *SitePasskeyRenameInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -35840,7 +35840,7 @@ func (s *SitePreviewSegmentInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -36600,7 +36600,7 @@ func (s *SiteRecoveryCodesInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"currentPassword\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -36662,7 +36662,7 @@ func (s *SiteResendVerificationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"email\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -36775,7 +36775,7 @@ func (s *SiteResetPasswordInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"password\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -37287,7 +37287,7 @@ func (s *SiteRuleAction) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"hasSecret\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -39041,7 +39041,7 @@ func (s *SiteSaveBrandKitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"footerText\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -39170,7 +39170,7 @@ func (s *SiteSecondFactorConfirmInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"code\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -39283,7 +39283,7 @@ func (s *SiteSecondFactorDisableInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"code\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -39523,7 +39523,7 @@ func (s *SiteSecondFactorStartInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"currentPassword\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -41268,7 +41268,7 @@ func (s *SiteSetDomainJoinInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -41714,7 +41714,7 @@ func (s *SiteSignUpInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"signupItems\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -41810,7 +41810,7 @@ func (s *SiteSigninNotMeInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"token\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -41906,7 +41906,7 @@ func (s *SiteSigninPendingDeclineInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"token\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -42030,7 +42030,7 @@ func (s *SiteSigninPendingSubmitInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"signupItems\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -42612,7 +42612,7 @@ func (s *SiteSignupItemAnswer) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"accepted\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -43019,7 +43019,7 @@ func (s *SiteSignupSurveyInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"heardFromOther\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -45992,7 +45992,7 @@ func (s *SiteUpdateAutomationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"steps\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -46320,7 +46320,7 @@ func (s *SiteUpdateContactInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"tags\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -46449,7 +46449,7 @@ func (s *SiteUpdateCustomFieldInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"type\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -46612,7 +46612,7 @@ func (s *SiteUpdateMeInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"newPassword\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -46674,7 +46674,7 @@ func (s *SiteUpdateMembershipInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"role\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -46802,7 +46802,7 @@ func (s *SiteUpdateRevenueSettingsInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"attributionWindowDays\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -46988,7 +46988,7 @@ func (s *SiteUpdateRuleInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"actions\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -47116,7 +47116,7 @@ func (s *SiteUpdateSegmentInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"condition\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -47210,7 +47210,7 @@ func (s *SiteUpdateTokenInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"name\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -47336,7 +47336,7 @@ func (s *SiteUpdateWorkspaceInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"postalAddress\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -47682,7 +47682,7 @@ func (s *SiteVerifyEmailInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"password\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -49346,7 +49346,7 @@ func (s *SiteWorkspaceTimezoneInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"timezone\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -49640,7 +49640,7 @@ func (s *SmsBroadcastContentInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -50280,7 +50280,7 @@ func (s *SmtpConfigInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"fromName\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -50846,7 +50846,7 @@ func (s *TelegramBroadcastContentInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -50997,7 +50997,7 @@ func (s *TelegramButton) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"url\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -51108,7 +51108,7 @@ func (s *TelegramConfigInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"token\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -51369,7 +51369,7 @@ func (s *TestSendBroadcastInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"phone\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -51433,7 +51433,7 @@ func (s *TestWebhookInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"eventType\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -51675,7 +51675,7 @@ func (s *TwilioConfigInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"from\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -51875,7 +51875,7 @@ func (s *UpdateBroadcastInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationId\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -52122,7 +52122,7 @@ func (s *UpdateIntegrationInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"retireSecrets\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -52285,7 +52285,7 @@ func (s *UpdateTemplateInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"doc\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -52443,7 +52443,7 @@ func (s *UpdateWebhookInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {

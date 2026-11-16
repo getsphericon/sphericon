@@ -596,3 +596,22 @@ func TestMCPTemplateUpdateAsksForTheRevisionItWasReadWith(t *testing.T) {
 	assert.Contains(t, in.Required, "revision")
 	assert.Contains(t, in.Properties["revision"].Description, "read with")
 }
+
+// A property nested in an object argument is refused as over /api (ADR 0148): the tool call is an
+// error naming its path, and no Broadcast is created.
+func TestMCPRefusesAPropertyNestedInAnObjectArgument(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite))
+	before := env.DB.Broadcast.Query().CountX(ctx)
+
+	res := call(t, s, "broadcasts_create", map[string]any{
+		"name":    "Typo",
+		"content": map[string]any{"channel": "email", "subjct": "Hello"},
+	})
+
+	require.True(t, res.IsError, text(t, res))
+	assert.Contains(t, text(t, res), "HTTP 400")
+	assert.Contains(t, text(t, res), "content.subjct")
+	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx))
+}

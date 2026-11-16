@@ -8,10 +8,12 @@
 import {
   createTypeSpecLibrary,
   getDocData,
+  getEffectiveModelType,
   getErrorsDocData,
   getReturnsDocData,
   getSourceLocation,
   getSummary,
+  isArrayModelType,
   navigateProgram,
   paramMessage,
   serializeValueAsJson,
@@ -22,6 +24,7 @@ import type {
   Enum,
   EnumMember,
   EnumValue,
+  Model,
   ModelProperty,
   Namespace,
   Operation,
@@ -93,6 +96,27 @@ export const $lib = createTypeSpecLibrary({
       severity: 'error',
       messages: {
         default: paramMessage`The description names the code behind the contract (\`${'word'}\`): say what happens to the value, in the words of the glossary, not which code does it`,
+      },
+    },
+    'open-in-request-body': {
+      severity: 'error',
+      messages: {
+        default:
+          'A map in a request body takes any key: declare it @openMap if its keys are data, or give it properties (ADR 0148)',
+      },
+    },
+    'anonymous-in-request-body': {
+      severity: 'error',
+      messages: {
+        default:
+          'An anonymous model in a request body cannot be closed: declare it as a named model (ADR 0148)',
+      },
+    },
+    'extends-in-request-body': {
+      severity: 'error',
+      messages: {
+        default:
+          'A model of a request body extends or is extended, which a closed object cannot express: spread the base model instead (ADR 0148)',
       },
     },
     'outside-workspace': {
@@ -362,6 +386,29 @@ function $everyOperationDeclares(
   context.program.stateMap(rulesKey).set(target, what)
 }
 
+/** The surfaces whose request bodies are closed, and the maps declared open. */
+const closedSurfacesKey = Symbol('sphericon.closedRequestBodies')
+const openMapsKey = Symbol('sphericon.openMap')
+
+/** `@closedRequestBodies`: every model of the surface's request bodies is closed (ADR 0148). */
+function $closedRequestBodies(context: DecoratorContext, target: Namespace) {
+  context.program.stateSet(closedSurfacesKey).add(target)
+}
+
+/** `@openMap`: a map whose keys are data, which a request body may carry any key in (ADR 0148). */
+function $openMap(context: DecoratorContext, target: Model) {
+  context.program.stateSet(openMapsKey).add(target)
+}
+
+/**
+ * Closes a model: its schema refuses a property it does not declare (`additionalProperties:
+ * false`). Not declared in TypeSpec: `$onValidate` applies it to every model of a closed surface's
+ * request bodies.
+ */
+function $closed(context: DecoratorContext, target: Model) {
+  setExtension(context.program, target, 'additionalProperties', false)
+}
+
 export const $decorators = {
   Sphericon: {
     mcp: $mcp,
@@ -375,6 +422,8 @@ export const $decorators = {
     grantable: $grantable,
     grantedWith: $grantedWith,
     everyOperationDeclares: $everyOperationDeclares,
+    closedRequestBodies: $closedRequestBodies,
+    openMap: $openMap,
   },
 }
 
@@ -567,9 +616,94 @@ function checkSurfaces(program: Program) {
   }
 }
 
+/**
+ * Closes every model reachable from a request body of a `@closedRequestBodies` surface, through
+ * properties, arrays and unions (ADR 0148). A map declared `@openMap` stays open and is not entered;
+ * any other map, an anonymous model and a model in an `extends` chain are refused, as none can be
+ * closed. The closing runs as a decorator application appended to the model, so that the copy
+ * versioning makes of every type when /api is emitted, which re-runs a type's decorators, is closed
+ * too: an extension written here directly would reach only the original.
+ */
+function closeRequestBodies(program: Program) {
+  const surfaces = program.stateSet(closedSurfacesKey)
+  if (surfaces.size === 0) {
+    return
+  }
+  const open = program.stateSet(openMapsKey)
+  const seen = new Set<Type>()
+  const visit = (type: Type, at: Type) => {
+    if (seen.has(type)) {
+      return
+    }
+    seen.add(type)
+    if (type.kind === 'Union') {
+      for (const variant of type.variants.values()) {
+        visit(variant.type, at)
+      }
+      return
+    }
+    if (type.kind === 'Tuple') {
+      for (const value of type.values) {
+        visit(value, at)
+      }
+      return
+    }
+    if (type.kind !== 'Model') {
+      return
+    }
+    // A model of properties spread from one named model (`op create(...Input)`) is emitted as it.
+    const effective = type.name === '' ? getEffectiveModelType(program, type) : type
+    if (effective !== type) {
+      visit(effective, at)
+      return
+    }
+    if (isArrayModelType(type)) {
+      visit(type.indexer.value, at)
+      return
+    }
+    if (open.has(type)) {
+      return
+    }
+    if (type.indexer !== undefined) {
+      report(program, { code: 'open-in-request-body', target: at })
+    } else if (type.name === '') {
+      report(program, { code: 'anonymous-in-request-body', target: at })
+    } else if (type.baseModel !== undefined || type.derivedModels.length > 0) {
+      report(program, { code: 'extends-in-request-body', target: type })
+    } else {
+      close(program, type)
+    }
+    for (const property of type.properties.values()) {
+      visit(property.type, property)
+    }
+  }
+  const [services] = getAllHttpServices(program)
+  for (const service of services) {
+    if (!surfaces.has(service.namespace)) {
+      continue
+    }
+    for (const httpOperation of service.operations) {
+      const body = httpOperation.parameters.body
+      if (body?.bodyKind === 'single') {
+        visit(body.type, body.property ?? httpOperation.operation)
+      }
+    }
+  }
+}
+
+/** Closes the model and appends the closing to its decorators, which a copy of it re-runs. */
+function close(program: Program, model: Model) {
+  if (model.decorators.some((application) => application.decorator === $closed)) {
+    return
+  }
+  model.decorators.push({ decorator: $closed, args: [] })
+  setExtension(program, model, 'additionalProperties', false)
+}
+
 export function $onValidate(program: Program) {
   checkGrantedWith(program)
   checkRawExtensions(program)
   checkSurfaces(program)
   checkDescriptions(program)
+  closeRequestBodies(program)
 }

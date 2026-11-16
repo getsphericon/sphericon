@@ -10,6 +10,7 @@ import { test } from 'node:test'
 import { compile, getSourceLocation, NodeHost } from '@typespec/compiler'
 import type { Program } from '@typespec/compiler'
 import { getExtensions } from '@typespec/openapi'
+import { getOpenAPI3 } from '@typespec/openapi3'
 
 const testdata = join(import.meta.dirname, 'testdata')
 
@@ -125,4 +126,31 @@ await test('@grantable lists every member with its @grantedWith, only in a @gran
     { scope: 'things:write', permission: 'webhooks:manage' },
   ])
   assert.equal(extension(program, 'Fixture.Every', 'x-grant-permissions'), undefined)
+})
+
+/**
+ * The `additionalProperties` of a component schema of the fixture's emitted OpenAPI document (of
+ * its one version, as /api is emitted from a versioned copy of every type).
+ */
+async function emittedAdditionalProperties(program: Program): Promise<(name: string) => unknown> {
+  const [record] = await getOpenAPI3(program)
+  assert.ok(record, 'no service emitted')
+  const document = record.versioned ? record.versions[0]?.document : record.document
+  assert.ok(document, 'no document emitted')
+  const schemas = new Map(Object.entries(document.components?.schemas ?? {}))
+  return (name) => {
+    const schema = schemas.get(name)
+    assert.ok(schema !== undefined && !('$ref' in schema), `no schema ${name}`)
+    return schema.additionalProperties
+  }
+}
+
+await test('every model of a request body is closed at every depth, an @openMap left open', async () => {
+  const program = await assertDiagnostics('bodies.tsp')
+  const additionalProperties = await emittedAdditionalProperties(program)
+  for (const name of ['Input', 'Content', 'Leaf', 'Group', 'Spread']) {
+    assert.equal(additionalProperties(name), false, `${name} is not closed`)
+  }
+  assert.deepEqual(additionalProperties('Properties'), {})
+  assert.equal(additionalProperties('Output'), undefined, 'a response model is closed')
 })

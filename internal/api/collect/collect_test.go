@@ -155,3 +155,26 @@ func TestCollectIdentifyStitchesAnonymousEvents(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, n, "stitched anonymous event must make the contact match the segment")
 }
+
+// /collect stays tolerant (ADR 0148): the tracker's code lives on a site longer than a release, so
+// an event with a field this release does not know is recorded, the field skipped.
+func TestCollectSkipsAFieldItDoesNotKnow(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.CollectVia(t, testhelper.EditBody(func(body map[string]any) {
+		body["sentBy"] = "tracker-next"
+		body["events"].([]any)[0].(map[string]any)["futureField"] = true
+	}))
+
+	err := c.CollectEventsCreate(t.Context(), &collectapi.CollectEventsInput{
+		Events: []collectapi.CollectEventInput{{VisitorId: "v1", Action: "page_view"}},
+	})
+
+	require.NoError(t, err)
+	queued := env.QueuedEnvelopes(t)
+	require.NotEmpty(t, queued)
+	decoded, err := events.Decode(queued[len(queued)-1])
+	require.NoError(t, err)
+	ce, ok := decoded.(*events.CollectedEvent)
+	require.Truef(t, ok, "got %T", decoded)
+	assert.Equal(t, "page_view", ce.Action)
+}

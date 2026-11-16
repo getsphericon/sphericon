@@ -1095,7 +1095,8 @@
             "description": "Messages per rolling 24 hours"
           }
         },
-        "description": "The default Send cap a Staff member sets"
+        "description": "The default Send cap a Staff member sets",
+        "additionalProperties": false
       },
       "StaffEnrolment": {
         "type": "object",
@@ -1256,7 +1257,8 @@
             "description": "The Staff member's choice"
           }
         },
-        "description": "Switch the Telemetry report on or off"
+        "description": "Switch the Telemetry report on or off",
+        "additionalProperties": false
       },
       "StaffInstanceTelemetryLock": {
         "type": "string",
@@ -1271,7 +1273,8 @@
             "$ref": "#/components/schemas/LegalDocumentMarkdown"
           }
         },
-        "description": "Save the draft of an item's Legal document"
+        "description": "Save the draft of an item's Legal document",
+        "additionalProperties": false
       },
       "StaffLegalDocumentPublishInput": {
         "type": "object",
@@ -1286,7 +1289,8 @@
             "description": "Unique among the item's versions"
           }
         },
-        "description": "Publish the draft as a new version"
+        "description": "Publish the draft as a new version",
+        "additionalProperties": false
       },
       "StaffLegalDocumentVersion": {
         "type": "object",
@@ -1343,7 +1347,8 @@
             "type": "string"
           }
         },
-        "description": "Sign in with an email and password. The email is a plain string: a malformed\naddress must answer like an unknown one."
+        "description": "Sign in with an email and password. The email is a plain string: a malformed\naddress must answer like an unknown one.",
+        "additionalProperties": false
       },
       "StaffLoginOutcome": {
         "type": "string",
@@ -1406,7 +1411,8 @@
             "description": "A current TOTP code from the authenticator app"
           }
         },
-        "description": "The second login step: the challenge from the password step and a TOTP code"
+        "description": "The second login step: the challenge from the password step and a TOTP code",
+        "additionalProperties": false
       },
       "StaffSignupItemInput": {
         "type": "object",
@@ -1436,7 +1442,8 @@
             "description": "Mark the item as consent to the operator's mailings: only an optional consent, and only\none item of the Instance"
           }
         },
-        "description": "Add a Sign-up item. It goes after the existing ones."
+        "description": "Add a Sign-up item. It goes after the existing ones.",
+        "additionalProperties": false
       },
       "StaffSignupItemList": {
         "type": "object",
@@ -1462,7 +1469,8 @@
             }
           }
         },
-        "description": "The new order of the sign-up form: the id of every Sign-up item that is not deleted, each\nonce"
+        "description": "The new order of the sign-up form: the id of every Sign-up item that is not deleted, each\nonce",
+        "additionalProperties": false
       },
       "StaffSignupItemResource": {
         "type": "object",
@@ -1555,7 +1563,8 @@
             "description": "Mark or unmark the item as consent to the operator's mailings: only an optional consent,\nand only one item of the Instance"
           }
         },
-        "description": "Change a Sign-up item"
+        "description": "Change a Sign-up item",
+        "additionalProperties": false
       },
       "TimeZoneName": {
         "type": "string"

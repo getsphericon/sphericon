@@ -162,6 +162,18 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   `typespec/lib/testdata/` (`// expect-next-line: <code>` marks a statement that must fail) and a
   case in `decorators.test.ts`; `mise run test:typespec` runs them.
 
+- **A request body is a closed object** (ADR 0148). `@closedRequestBodies` on a surface's
+  namespace (/site, /api, /staff and its Enterprise sections) makes `$onValidate` close every model
+  reachable from its request bodies, through properties, arrays, unions and a spread body:
+  `additionalProperties: false`, from which ogen generates a decoder that refuses an unexpected
+  field and openapi-ts a `z.strictObject`. The closing is appended to each model's decorators, so
+  the copy versioning makes of /api's types is closed too. A map whose keys are data (`JsonObject`,
+  `EditorDocument`, a WebAuthn response) is declared `@openMap` and left open; any other map, an
+  anonymous model and a model in an `extends` chain in a request body fail the compile, as none can
+  be closed. Responses, `/collect`, `/service` and the telemetry report are not closed. The server
+  answers an undeclared property with a 400 whose field errors name its path (`content.subjct`,
+  `internal/api/problem/decode.go`). Its fixture is `typespec/lib/testdata/bodies.tsp`.
+
 - **Descriptions say what happens, not which code does it.** `$onValidate` also refuses a
   description (a doc comment, `@doc`, `@summary`, `@returns`/`@returnsDoc`, `@errors`/`@errorsDoc`)
   that names the code behind the contract: the words module, package or use case, a Go identifier

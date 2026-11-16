@@ -50,3 +50,16 @@ extern dec everyOperationDeclares(
   target: Reflection.Namespace,
   what: valueof "scopes" | "workspacePermissions"
 );
+
+/**
+ * Every request body of the surface is a closed object at every depth (ADR 0148): a property the
+ * contract does not declare is refused. A map in a body must be declared `@openMap`.
+ */
+extern dec closedRequestBodies(target: Reflection.Namespace);
+
+/**
+ * An object whose keys the contract does not own (ADR 0148): a map whose keys are data, such as
+ * Custom field values or an Event's properties (ADR 0006), or a document another schema checks,
+ * such as the email editor's or a WebAuthn response. A request body may carry any key in it.
+ */
+extern dec openMap(target: Reflection.Model);

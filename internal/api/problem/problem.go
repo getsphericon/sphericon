@@ -157,6 +157,10 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 	if code < http.StatusInternalServerError {
 		// The client gets this text as the problem's detail; the log keeps it beside the access line.
 		p.Detail = siteapi.NewOptString(err.Error())
+		// A body that does not decode names the property it fails at (ADR 0148).
+		if path, reason := undecodedProperty(err); path != "" && code == http.StatusBadRequest {
+			p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{path: {reason}})
+		}
 	} else if ex != nil {
 		// The client is told nothing about a server fault, so the log is the only place it shows.
 		if dbg := Debug(ex.r, ex.w, err.Error(), ""); dbg != nil {

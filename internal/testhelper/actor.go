@@ -238,6 +238,15 @@ func (env *TestEnv) CollectWithKey(t *testing.T, key string) *collectapi.Client 
 	return c
 }
 
+// CollectVia is CollectAcme with the in-memory transport wrapped by wrap, for tests that change
+// the request on the wire (EditBody).
+func (env *TestEnv) CollectVia(t *testing.T, wrap func(inner ht.Client) ht.Client) *collectapi.Client {
+	t.Helper()
+	c, err := collectapi.NewClient(collectBase, collectKeySource{fixtures.AcmeCollectKey}, collectapi.WithClient(wrap(env.Transport(nil))))
+	require.NoError(t, err)
+	return c
+}
+
 func (env *TestEnv) siteClient(t *testing.T, jwtValue string) *siteapi.Client {
 	t.Helper()
 	c, err := siteapi.NewClient(siteBase, cookieSource{jwtValue}, siteapi.WithClient(env.Transport(nil)))

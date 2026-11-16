@@ -162,7 +162,7 @@ export const zStaffDefaultSendCapChange = z.object({
 /**
  * The default Send cap a Staff member sets
  */
-export const zStaffDefaultSendCapInput = z.object({
+export const zStaffDefaultSendCapInput = z.strictObject({
   perDay: zMaxPerDay
 });
 
@@ -178,7 +178,7 @@ export const zStaffEnrolment = z.object({
 /**
  * Switch the Telemetry report on or off
  */
-export const zStaffInstanceTelemetryInput = z.object({
+export const zStaffInstanceTelemetryInput = z.strictObject({
   enabled: z.boolean()
 });
 
@@ -199,14 +199,14 @@ export const zStaffInstanceTelemetry = z.object({
 /**
  * Save the draft of an item's Legal document
  */
-export const zStaffLegalDocumentDraftInput = z.object({
+export const zStaffLegalDocumentDraftInput = z.strictObject({
   markdown: zLegalDocumentMarkdown
 });
 
 /**
  * Publish the draft as a new version
  */
-export const zStaffLegalDocumentPublishInput = z.object({
+export const zStaffLegalDocumentPublishInput = z.strictObject({
   label: zLegalDocumentLabel
 });
 
@@ -214,7 +214,7 @@ export const zStaffLegalDocumentPublishInput = z.object({
  * Sign in with an email and password. The email is a plain string: a malformed
  * address must answer like an unknown one.
  */
-export const zStaffLoginInput = z.object({
+export const zStaffLoginInput = z.strictObject({
   email: z.string(),
   password: z.string()
 });
@@ -244,7 +244,7 @@ export const zStaffResource = z.object({
 /**
  * The second login step: the challenge from the password step and a TOTP code
  */
-export const zStaffSecondFactorInput = z.object({
+export const zStaffSecondFactorInput = z.strictObject({
   challenge: z.string(),
   code: z.string()
 });
@@ -252,7 +252,7 @@ export const zStaffSecondFactorInput = z.object({
 /**
  * Add a Sign-up item. It goes after the existing ones.
  */
-export const zStaffSignupItemInput = z.object({
+export const zStaffSignupItemInput = z.strictObject({
   key: zSignupItemKey,
   title: zSignupItemTitle,
   kind: zSignupItemKind,
@@ -263,14 +263,14 @@ export const zStaffSignupItemInput = z.object({
  * The new order of the sign-up form: the id of every Sign-up item that is not deleted, each
  * once
  */
-export const zStaffSignupItemOrder = z.object({
+export const zStaffSignupItemOrder = z.strictObject({
   ids: z.array(zEntityId)
 });
 
 /**
  * Change a Sign-up item
  */
-export const zStaffSignupItemUpdate = z.object({
+export const zStaffSignupItemUpdate = z.strictObject({
   title: z.exactOptional(zSignupItemTitle),
   mailingsConsent: z.exactOptional(z.boolean())
 });
