@@ -166,7 +166,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   have several such types. The fix is the shape the ADRs state: a dependency, a client or the clock is
   a parameter of the constructor, a third or an optional argument goes into a typed `XInput`, two
   values into a named result struct, and what became of a batch's items into `batch.Result`
-  (`internal/kernel/batch`). A domain package that does not keep the contract yet is listed in
+  (`internal/kernel/batch`); an unchecked subpackage, a plan and its apply, and a `<module>use`
+  reader take the shapes of docs/architecture/modules.md (Shapes under the call contract). A domain
+  package that does not keep the contract yet is listed in
   `tools/analyzers/callshape/exempt.txt`, which may only shrink: the analyzer reports nothing in a
   listed package until it keeps the contract and then reports the entry, its test refuses an entry
   that names no package of the domain tier, and `mise run check:callshape-exempt` (part of

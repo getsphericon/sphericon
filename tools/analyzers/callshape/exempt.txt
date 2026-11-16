@@ -19,11 +19,8 @@ internal/domain/contacts/contacts
 internal/domain/contacts/contacts/contactsunchecked
 internal/domain/contacts/eligibility
 internal/domain/contacts/orders
-internal/domain/contacts/segments/segmentsuse
 internal/domain/contacts/suppressions
 internal/domain/contacts/suppressions/suppressionsunchecked
-internal/domain/contacts/tags
-internal/domain/contacts/tags/tagsunchecked
 internal/domain/contacts/unsubscribes
 internal/domain/contacts/unsubscribes/unsubscribesunchecked
 internal/domain/contacts/visitors

@@ -37,12 +37,16 @@ import (
 // Module is the Removal check. Every call receives the scope of the transaction the removal runs
 // in, under the Workspace's lock (ADR 0099).
 type Module struct {
-	senders *messaging.Resolver
+	senders  *messaging.Resolver
+	segments *segmentsuse.Module
 }
 
 // New builds the Removal check over the resolver a send builds its sender with: a Sending domain's
-// check reads from it the From an Integration sends with.
-func New(senders *messaging.Resolver) *Module { return &Module{senders: senders} }
+// check reads from it the From an Integration sends with. It builds the readers itself, since
+// easement lets no other package import them.
+func New(senders *messaging.Resolver) *Module {
+	return &Module{senders: senders, segments: segmentsuse.New()}
+}
 
 // Tag checks that nothing holds the Tag with the name, in Definition use: a Segment's Condition
 // (archived ones too), a step of a kept Automation's live version or draft, a kept Rule's live
@@ -50,7 +54,7 @@ func New(senders *messaging.Resolver) *Module { return &Module{senders: senders}
 // from its Segment (ADR 0065). Each names the Tag, not its id, so it would silently stop matching
 // or applying. It returns nil, or a *liveuse.Error naming them in that order.
 func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) error {
-	segs, err := segmentsuse.UsingTag(ctx, l, name)
+	segs, err := m.segments.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
@@ -75,7 +79,7 @@ func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) e
 // type takes (notNull) does not hold the type. It returns nil, or a *liveuse.Error naming them in
 // that order.
 func (m *Module) CustomFieldRetype(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) error {
-	segs, err := segmentsuse.UnfitForCustomFieldType(ctx, l, key, t)
+	segs, err := m.segments.UnfitForCustomFieldType(ctx, l, key, t)
 	if err != nil {
 		return err
 	}

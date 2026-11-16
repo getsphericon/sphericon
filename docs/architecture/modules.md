@@ -207,3 +207,35 @@ with `errors.Is`; it never reads the violation itself. `TestEveryUniqueConstrain
 the table's owner in this map, and a refusal no test of its owner asserts with `ErrorIs`. A refusal
 that never leaves its owner, which records it as the row's state (`trackingdomains`' host held by
 another Workspace), is unexported and caught there with `errors.Is` instead.
+
+## Shapes under the call contract
+
+A domain operation keeps the call contract (ADR 0167, analyzer `callshape`). What follows says
+where its dependencies come from and the shapes that recur under it; the Tags path is their example.
+
+- **Constructor or argument.** A constructor `New…` takes what lives as long as its type: the bus
+  (`*events.Bus`), the clock, the modules it reads through, the adapter of a seam. An operation takes
+  the context, the scope and values. A client that exists for one transaction or one job is no
+  argument either: the type takes the long-lived client it comes from in its constructor, and what
+  belongs to the call reaches that client through the call. A delivery that hands its sends to a
+  scheduler takes the scheduler in its constructor, and what the adapter knew of one job (its
+  Workspace, the queue's client of the job) reaches it through the arguments and the context of
+  its method.
+- **Who builds it.** The wiring (`internal/app/container.go`), except a package easement fences to
+  its importers (`<module>unchecked`, `<module>use`, ADR 0110): each importer builds its own in its
+  constructor from what the wiring gave it, so the fence stays as it is. `tagdeletion.New` takes the
+  `*tags.Module` and builds `tagsunchecked.New(catalogue)`; `removalcheck.New` builds
+  `segmentsuse.New()`.
+- **A `<module>unchecked` subpackage** exports one type, `Module`, built by `New`, and each of its
+  unchecked operations is a method of it (`tagsunchecked.Module`).
+- **A plan, then its apply** (ADR 0145). Opening is a method `<Plan>In` of that `Module`
+  (`DeletionIn(ctx, l, id)`): it reads the row in the scope it is given and refuses what the row's
+  own rules refuse. It returns the plan (`*Deletion`), a value whose unexported fields hold what was
+  read and whose methods take no context (`Name`, `Done`): what the use case's check reads. Having
+  no operation, the plan needs no constructor. Applying is a method `Apply<Plan>` of the same
+  `Module`, which takes the scope of the transaction the plan was opened in and the plan
+  (`ApplyDeletion(ctx, l, d)`). What applying needs besides comes from `New`: the clock for a time it
+  writes, and the bus to publish an event or queue a job in the transaction its scope is bound to.
+- **A `<module>use` reader** exports one type, `Module`, built by `New`, whose methods are the
+  questions another module asks of the owner's rows (`segmentsuse.Module.UsingTag` and
+  `UnfitForCustomFieldType`). The module that asks holds it as a field its own constructor builds.
