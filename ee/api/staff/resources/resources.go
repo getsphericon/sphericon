@@ -85,7 +85,7 @@ type StaffConverter interface {
 	// goverter:ignore Warning
 	AbuseToResource(source *ent.Workspace) staffeeapi.StaffAbuse
 	// goverter:map . Rate | breachRate
-	BreachToWarning(source abusedetector.Breach) staffeeapi.StaffAbuseWarning
+	BreachToWarning(source abusedetector.Breach) staffeeapi.AbuseWarning
 
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
@@ -105,7 +105,7 @@ type StaffConverter interface {
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditlog.View) staffeeapi.StaffAuditTarget
+	AuditTargetToResource(source auditlog.View) staffeeapi.AuditTarget
 	// goverter:useEmptyOnNil:slice
 	AuditEntriesToResources(source []auditlog.View) []staffeeapi.StaffAuditEntryResource
 
@@ -133,19 +133,19 @@ type StaffConverter interface {
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.StaffAbuseMetric
+	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.AbuseMetric
 	// The review state a list is filtered by: the input direction, the one enum the console sends.
 	// goverter:enum:transform value
 	// goverter:enum:map StaffWorkspaceReviewSystemFrozen ReviewSystemFrozen
 	ReviewIn(source staffeeapi.StaffWorkspaceReview) abusedetector.Review
 	// goverter:enum:transform value
-	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.StaffSignupCompanySize
+	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.SignupCompanySize
 	// goverter:enum:transform value
-	SignupGoalToResource(source signupsurveyresponse.MainGoal) staffeeapi.StaffSignupGoal
+	SignupGoalToResource(source signupsurveyresponse.MainGoal) staffeeapi.SignupGoal
 	// goverter:enum:transform value
-	SignupRoleToResource(source signupsurveyresponse.Role) staffeeapi.StaffSignupRole
+	SignupRoleToResource(source signupsurveyresponse.Role) staffeeapi.SignupRole
 	// goverter:enum:transform value
-	SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffeeapi.StaffSignupSource
+	SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffeeapi.SignupSource
 	// goverter:enum:transform value
 	SuspensionActorKindToResource(source workspace.SuspendedByKind) staffeeapi.StaffSuspensionActorKind
 }
@@ -319,8 +319,8 @@ func nilMaxPerDay(v *int) staffeeapi.NilMaxPerDay {
 // count narrows a count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
-func optNilSource(c StaffConverter, v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
-	return convert.OptVia[staffeeapi.OptNilStaffSignupSource](v, c.SignupSourceToResource)
+func optNilSource(c StaffConverter, v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilSignupSource {
+	return convert.OptVia[staffeeapi.OptNilSignupSource](v, c.SignupSourceToResource)
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

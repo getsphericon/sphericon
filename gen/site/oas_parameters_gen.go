@@ -1294,7 +1294,7 @@ type SiteAuditExportParams struct {
 	// Only entries strictly before this time.
 	To OptTimestamp `json:",omitempty,omitzero"`
 	// Only entries by this kind of actor.
-	ActorKind OptSiteAuditActorKind `json:",omitempty,omitzero"`
+	ActorKind OptAuditActorKind `json:",omitempty,omitzero"`
 	// Only entries by the actor with this id (a User id or an API token id); ignored for the staff member
 	// kind.
 	ActorId OptString `json:",omitempty,omitzero"`
@@ -1342,7 +1342,7 @@ func unpackSiteAuditExportParams(packed middleware.Parameters) (params SiteAudit
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.ActorKind = v.(OptSiteAuditActorKind)
+			params.ActorKind = v.(OptAuditActorKind)
 		}
 	}
 	{
@@ -1570,7 +1570,7 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotActorKindVal SiteAuditActorKind
+				var paramsDotActorKindVal AuditActorKind
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -1582,7 +1582,7 @@ func decodeSiteAuditExportParams(args [1]string, argsEscaped bool, r *http.Reque
 						return err
 					}
 
-					paramsDotActorKindVal = SiteAuditActorKind(c)
+					paramsDotActorKindVal = AuditActorKind(c)
 					return nil
 				}(); err != nil {
 					return err
@@ -2048,7 +2048,7 @@ type SiteAuditListParams struct {
 	// Only entries strictly before this time.
 	To OptTimestamp `json:",omitempty,omitzero"`
 	// Only entries by this kind of actor.
-	ActorKind OptSiteAuditActorKind `json:",omitempty,omitzero"`
+	ActorKind OptAuditActorKind `json:",omitempty,omitzero"`
 	// Only entries by the actor with this id (a User id or an API token id); ignored for the staff member
 	// kind.
 	ActorId OptString `json:",omitempty,omitzero"`
@@ -2100,7 +2100,7 @@ func unpackSiteAuditListParams(packed middleware.Parameters) (params SiteAuditLi
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.ActorKind = v.(OptSiteAuditActorKind)
+			params.ActorKind = v.(OptAuditActorKind)
 		}
 	}
 	{
@@ -2346,7 +2346,7 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotActorKindVal SiteAuditActorKind
+				var paramsDotActorKindVal AuditActorKind
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -2358,7 +2358,7 @@ func decodeSiteAuditListParams(args [1]string, argsEscaped bool, r *http.Request
 						return err
 					}
 
-					paramsDotActorKindVal = SiteAuditActorKind(c)
+					paramsDotActorKindVal = AuditActorKind(c)
 					return nil
 				}(); err != nil {
 					return err
@@ -6283,7 +6283,7 @@ type SiteBroadcastsListParams struct {
 	// True lists the archived broadcasts instead of the kept ones; the default hides them.
 	Archived OptBool `json:",omitempty,omitzero"`
 	// Only the broadcasts in one of these statuses; every status when absent.
-	Status []SiteBroadcastStatus `json:",omitempty"`
+	Status []BroadcastStatus `json:",omitempty"`
 	// Only the broadcasts on this Channel; every Channel when absent.
 	Channel OptBroadcastChannel `json:",omitempty,omitzero"`
 	// The order of the list: `newest` when absent.
@@ -6331,7 +6331,7 @@ func unpackSiteBroadcastsListParams(packed middleware.Parameters) (params SiteBr
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Status = v.([]SiteBroadcastStatus)
+			params.Status = v.([]BroadcastStatus)
 		}
 	}
 	{
@@ -6612,7 +6612,7 @@ func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Re
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
 				params.Status = nil
 				return d.DecodeArray(func(d uri.Decoder) error {
-					var paramsDotStatusVal SiteBroadcastStatus
+					var paramsDotStatusVal BroadcastStatus
 					if err := func() error {
 						val, err := d.DecodeValue()
 						if err != nil {
@@ -6624,7 +6624,7 @@ func decodeSiteBroadcastsListParams(args [1]string, argsEscaped bool, r *http.Re
 							return err
 						}
 
-						paramsDotStatusVal = SiteBroadcastStatus(c)
+						paramsDotStatusVal = BroadcastStatus(c)
 						return nil
 					}(); err != nil {
 						return err

@@ -47,9 +47,9 @@ func surveyDue(t *testing.T, c *siteapi.Client) bool {
 
 func validAnswers() *siteapi.SiteSignupSurveyInput {
 	return &siteapi.SiteSignupSurveyInput{
-		Role:        siteapi.SiteSignupRoleMarketer,
-		CompanySize: siteapi.SiteSignupCompanySize210,
-		MainGoal:    siteapi.SiteSignupGoalBroadcasts,
+		Role:        siteapi.SignupRoleMarketer,
+		CompanySize: siteapi.SignupCompanySize210,
+		MainGoal:    siteapi.SignupGoalBroadcasts,
 	}
 }
 
@@ -91,7 +91,7 @@ func TestSubmittingStoresTheAnswersOfTheUser(t *testing.T) {
 	env := surveyOn(t)
 	newcomer := signUpForSurvey(t, env)
 	in := validAnswers()
-	in.HeardFrom = siteapi.NewOptSiteSignupSource(siteapi.SiteSignupSourceOther)
+	in.HeardFrom = siteapi.NewOptSignupSource(siteapi.SignupSourceOther)
 	in.HeardFromOther = siteapi.NewOptString("a podcast")
 
 	require.NoError(t, submitSurvey(t, newcomer, in))
@@ -119,7 +119,7 @@ func TestASecondSubmitIsRefusedAndKeepsTheFirstAnswers(t *testing.T) {
 	newcomer := signUpForSurvey(t, env)
 	require.NoError(t, submitSurvey(t, newcomer, validAnswers()))
 	again := validAnswers()
-	again.Role = siteapi.SiteSignupRoleFounder
+	again.Role = siteapi.SignupRoleFounder
 
 	err := submitSurvey(t, newcomer, again)
 
@@ -201,16 +201,16 @@ func TestAUserThatExistedBeforeTheSwitchIsNeverAsked(t *testing.T) {
 
 func TestASubmitOutsideTheContractStoresNothingAndKeepsTheSurveyDue(t *testing.T) {
 	cases := map[string]*siteapi.SiteSignupSurveyInput{
-		"missing role":         {CompanySize: siteapi.SiteSignupCompanySize210, MainGoal: siteapi.SiteSignupGoalTracking},
-		"unknown company size": {Role: siteapi.SiteSignupRoleFounder, CompanySize: "huge", MainGoal: siteapi.SiteSignupGoalTracking},
-		"missing goal":         {Role: siteapi.SiteSignupRoleFounder, CompanySize: siteapi.SiteSignupCompanySize210},
+		"missing role":         {CompanySize: siteapi.SignupCompanySize210, MainGoal: siteapi.SignupGoalTracking},
+		"unknown company size": {Role: siteapi.SignupRoleFounder, CompanySize: "huge", MainGoal: siteapi.SignupGoalTracking},
+		"missing goal":         {Role: siteapi.SignupRoleFounder, CompanySize: siteapi.SignupCompanySize210},
 		"unknown source": {
-			Role: siteapi.SiteSignupRoleFounder, CompanySize: siteapi.SiteSignupCompanySize210, MainGoal: siteapi.SiteSignupGoalTracking,
-			HeardFrom: siteapi.NewOptSiteSignupSource("tv"),
+			Role: siteapi.SignupRoleFounder, CompanySize: siteapi.SignupCompanySize210, MainGoal: siteapi.SignupGoalTracking,
+			HeardFrom: siteapi.NewOptSignupSource("tv"),
 		},
 		"over-long other": {
-			Role: siteapi.SiteSignupRoleOther, RoleOther: siteapi.NewOptString(strings.Repeat("x", 101)),
-			CompanySize: siteapi.SiteSignupCompanySize210, MainGoal: siteapi.SiteSignupGoalTracking,
+			Role: siteapi.SignupRoleOther, RoleOther: siteapi.NewOptString(strings.Repeat("x", 101)),
+			CompanySize: siteapi.SignupCompanySize210, MainGoal: siteapi.SignupGoalTracking,
 		},
 	}
 	for name, in := range cases {
@@ -302,7 +302,7 @@ func TestABlankOtherTextIsRefusedAndStoresNothing(t *testing.T) {
 	env := surveyOn(t)
 	newcomer := signUpForSurvey(t, env)
 	in := validAnswers()
-	in.Role = siteapi.SiteSignupRoleOther
+	in.Role = siteapi.SignupRoleOther
 	in.RoleOther = siteapi.NewOptString("   ")
 
 	err := submitSurvey(t, newcomer, in)

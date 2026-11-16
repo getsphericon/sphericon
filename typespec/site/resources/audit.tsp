@@ -1,115 +1,20 @@
-import "../../common/cursor-pages.tsp";
+import "../../common/audit-log.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** Who performed an audited change */
-enum SiteAuditActorKind {
-  user,
-  api_token,
-  staff,
-  system,
-}
-
-/** The actor of an Audit entry */
-model SiteAuditActor {
-  /** The kind of actor; a staff member is shown to the customer as "Sphericon staff" */
-  kind: SiteAuditActorKind;
-
-  /** The actor's id (a User id or an API token id); absent for the system */
-  id?: string | null;
-
-  /** Display name snapshot taken when the entry was written */
-  name?: string | null;
-}
-
-/** What an audited change was done to */
-model SiteAuditTarget {
-  /** Entity type, e.g. membership */
-  type: string;
-
-  /** The target's id */
-  id?: string | null;
-
-  /** Name snapshot taken when the entry was written; absent for a Contact */
-  name?: string | null;
-}
-
-/** One immutable Audit entry (Enterprise) */
-model SiteAuditEntryResource {
-  /** Unique identifier */
-  id: EntityId;
-
-  /** When the change happened */
-  occurredAt: Timestamp;
-
-  /** Who did it */
-  actor: SiteAuditActor;
-
-  /** What was done */
-  action: AuditAction;
-
-  /** What it was done to */
-  target: SiteAuditTarget;
-
-  /** Before/after of the changed fields; secrets appear as changed only */
-  diff?: JsonObject | null;
-
-  /** Request id of the change */
-  requestId?: string | null;
-
-  /** Client address of the change */
-  ip?: string | null;
-
-  /** Client user agent of the change */
-  userAgent?: string | null;
-}
-
-/** A page of Audit entries, newest first */
-model SiteAuditEntryList is CursorPage<SiteAuditEntryResource>;
-
 /** The values that occur in a Workspace's Audit log, offered as the choices of its filter */
 model SiteAuditFacets {
   /** Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands for the platform staff, and each actor carries its latest name snapshot */
-  actors: SiteAuditActor[];
+  actors: AuditActor[];
 
   /** Every action with an entry in the log, sorted */
   actions: AuditAction[];
 
   /** Every target type with an entry in the log, sorted */
   targetTypes: string[];
-}
-
-/** Filters shared by the Audit log list and its CSV export; every one is optional and they combine with AND */
-model SiteAuditFilter {
-  /** Only entries at or after this time */
-  @query from?: Timestamp;
-
-  /** Only entries strictly before this time */
-  @query to?: Timestamp;
-
-  /** Only entries by this kind of actor */
-  @query actorKind?: SiteAuditActorKind;
-
-  /** Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind */
-  @query actorId?: string;
-
-  /** Only entries with exactly this action */
-  @query action?: AuditAction;
-
-  /** Only entries about this target type, e.g. integration */
-  @query targetType?: string;
-
-  /** Only entries about the target with this id */
-  @query targetId?: string;
-
-  /** Only entries from this client address */
-  @query ip?: string;
-
-  /** Only entries made under this request id */
-  @query requestId?: string;
 }
 
 /** A number of days an Audit log is kept: 1 to 3650 */
@@ -134,8 +39,8 @@ namespace SiteAudit {
   /** List the workspace's Audit log, newest first (Enterprise; owner and admin only) */
   @get
   @requiresPermissions(#[Permission.auditRead])
-  op list(@path workspaceId: WorkspaceId, ...SiteAuditFilter, ...CursorQuery):
-    | SiteAuditEntryList
+  op list(@path workspaceId: WorkspaceId, ...AuditFilter, ...CursorQuery):
+    | AuditEntryList
     | Problem;
 
   /** The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner and admin only) */
@@ -148,7 +53,7 @@ namespace SiteAudit {
   @get
   @route("/export")
   @requiresPermissions(#[Permission.auditRead])
-  op export(@path workspaceId: WorkspaceId, ...SiteAuditFilter):
+  op export(@path workspaceId: WorkspaceId, ...AuditFilter):
     | {
         @header contentType: "text/csv";
         @header contentDisposition: string;

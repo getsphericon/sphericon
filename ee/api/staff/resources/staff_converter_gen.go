@@ -19,17 +19,17 @@ import (
 
 type StaffConverterImpl struct{}
 
-func (c *StaffConverterImpl) AbuseMetricToResource(source abusewarning.Metric) staffee.StaffAbuseMetric {
-	var staffeeapiStaffAbuseMetric staffee.StaffAbuseMetric
+func (c *StaffConverterImpl) AbuseMetricToResource(source abusewarning.Metric) staffee.AbuseMetric {
+	var staffeeapiAbuseMetric staffee.AbuseMetric
 	switch source {
 	case abusewarning.MetricBounce:
-		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricBounce
+		staffeeapiAbuseMetric = staffee.AbuseMetricBounce
 	case abusewarning.MetricComplaint:
-		staffeeapiStaffAbuseMetric = staffee.StaffAbuseMetricComplaint
+		staffeeapiAbuseMetric = staffee.AbuseMetricComplaint
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return staffeeapiStaffAbuseMetric
+	return staffeeapiAbuseMetric
 }
 func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.StaffAbuse {
 	var staffeeapiStaffAbuse staffee.StaffAbuse
@@ -70,19 +70,19 @@ func (c *StaffConverterImpl) AuditEntryToResource(source auditlog.View) staffee.
 	staffeeapiStaffAuditEntryResource.UserAgent = nilableString(source.UserAgent)
 	return staffeeapiStaffAuditEntryResource
 }
-func (c *StaffConverterImpl) AuditTargetToResource(source auditlog.View) staffee.StaffAuditTarget {
-	var staffeeapiStaffAuditTarget staffee.StaffAuditTarget
-	staffeeapiStaffAuditTarget.Type = source.TargetType
-	staffeeapiStaffAuditTarget.ID = nilableString(source.TargetID)
-	staffeeapiStaffAuditTarget.Name = nilableString(source.TargetName)
-	return staffeeapiStaffAuditTarget
+func (c *StaffConverterImpl) AuditTargetToResource(source auditlog.View) staffee.AuditTarget {
+	var staffeeapiAuditTarget staffee.AuditTarget
+	staffeeapiAuditTarget.Type = source.TargetType
+	staffeeapiAuditTarget.ID = nilableString(source.TargetID)
+	staffeeapiAuditTarget.Name = nilableString(source.TargetName)
+	return staffeeapiAuditTarget
 }
-func (c *StaffConverterImpl) BreachToWarning(source abusedetector.Breach) staffee.StaffAbuseWarning {
-	var staffeeapiStaffAbuseWarning staffee.StaffAbuseWarning
-	staffeeapiStaffAbuseWarning.Domain = source.Domain
-	staffeeapiStaffAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
-	staffeeapiStaffAbuseWarning.Rate = breachRate(source)
-	return staffeeapiStaffAbuseWarning
+func (c *StaffConverterImpl) BreachToWarning(source abusedetector.Breach) staffee.AbuseWarning {
+	var staffeeapiAbuseWarning staffee.AbuseWarning
+	staffeeapiAbuseWarning.Domain = source.Domain
+	staffeeapiAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
+	staffeeapiAbuseWarning.Rate = breachRate(source)
+	return staffeeapiAbuseWarning
 }
 func (c *StaffConverterImpl) DeliverabilityToResource(source abusedetector.Deliverability) staffee.StaffDeliverability {
 	var staffeeapiStaffDeliverability staffee.StaffDeliverability
@@ -155,81 +155,81 @@ func (c *StaffConverterImpl) SendCapToResource(source *ent.Workspace) staffee.St
 	}
 	return staffeeapiStaffSendCap
 }
-func (c *StaffConverterImpl) SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffee.StaffSignupCompanySize {
-	var staffeeapiStaffSignupCompanySize staffee.StaffSignupCompanySize
+func (c *StaffConverterImpl) SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffee.SignupCompanySize {
+	var staffeeapiSignupCompanySize staffee.SignupCompanySize
 	switch source {
 	case signupsurveyresponse.CompanySize1:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize1
+		staffeeapiSignupCompanySize = staffee.SignupCompanySize1
 	case signupsurveyresponse.CompanySize1000Plus:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize1000Plus
+		staffeeapiSignupCompanySize = staffee.SignupCompanySize1000Plus
 	case signupsurveyresponse.CompanySize1150:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize1150
+		staffeeapiSignupCompanySize = staffee.SignupCompanySize1150
 	case signupsurveyresponse.CompanySize2011000:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize2011000
+		staffeeapiSignupCompanySize = staffee.SignupCompanySize2011000
 	case signupsurveyresponse.CompanySize210:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize210
+		staffeeapiSignupCompanySize = staffee.SignupCompanySize210
 	case signupsurveyresponse.CompanySize51200:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySize51200
+		staffeeapiSignupCompanySize = staffee.SignupCompanySize51200
 	case signupsurveyresponse.CompanySizeOther:
-		staffeeapiStaffSignupCompanySize = staffee.StaffSignupCompanySizeOther
+		staffeeapiSignupCompanySize = staffee.SignupCompanySizeOther
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return staffeeapiStaffSignupCompanySize
+	return staffeeapiSignupCompanySize
 }
-func (c *StaffConverterImpl) SignupGoalToResource(source signupsurveyresponse.MainGoal) staffee.StaffSignupGoal {
-	var staffeeapiStaffSignupGoal staffee.StaffSignupGoal
+func (c *StaffConverterImpl) SignupGoalToResource(source signupsurveyresponse.MainGoal) staffee.SignupGoal {
+	var staffeeapiSignupGoal staffee.SignupGoal
 	switch source {
 	case signupsurveyresponse.MainGoalAutomations:
-		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalAutomations
+		staffeeapiSignupGoal = staffee.SignupGoalAutomations
 	case signupsurveyresponse.MainGoalBroadcasts:
-		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalBroadcasts
+		staffeeapiSignupGoal = staffee.SignupGoalBroadcasts
 	case signupsurveyresponse.MainGoalMigrating:
-		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalMigrating
+		staffeeapiSignupGoal = staffee.SignupGoalMigrating
 	case signupsurveyresponse.MainGoalOther:
-		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalOther
+		staffeeapiSignupGoal = staffee.SignupGoalOther
 	case signupsurveyresponse.MainGoalTracking:
-		staffeeapiStaffSignupGoal = staffee.StaffSignupGoalTracking
+		staffeeapiSignupGoal = staffee.SignupGoalTracking
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return staffeeapiStaffSignupGoal
+	return staffeeapiSignupGoal
 }
-func (c *StaffConverterImpl) SignupRoleToResource(source signupsurveyresponse.Role) staffee.StaffSignupRole {
-	var staffeeapiStaffSignupRole staffee.StaffSignupRole
+func (c *StaffConverterImpl) SignupRoleToResource(source signupsurveyresponse.Role) staffee.SignupRole {
+	var staffeeapiSignupRole staffee.SignupRole
 	switch source {
 	case signupsurveyresponse.RoleDeveloper:
-		staffeeapiStaffSignupRole = staffee.StaffSignupRoleDeveloper
+		staffeeapiSignupRole = staffee.SignupRoleDeveloper
 	case signupsurveyresponse.RoleFounder:
-		staffeeapiStaffSignupRole = staffee.StaffSignupRoleFounder
+		staffeeapiSignupRole = staffee.SignupRoleFounder
 	case signupsurveyresponse.RoleMarketer:
-		staffeeapiStaffSignupRole = staffee.StaffSignupRoleMarketer
+		staffeeapiSignupRole = staffee.SignupRoleMarketer
 	case signupsurveyresponse.RoleOther:
-		staffeeapiStaffSignupRole = staffee.StaffSignupRoleOther
+		staffeeapiSignupRole = staffee.SignupRoleOther
 	case signupsurveyresponse.RoleProduct:
-		staffeeapiStaffSignupRole = staffee.StaffSignupRoleProduct
+		staffeeapiSignupRole = staffee.SignupRoleProduct
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return staffeeapiStaffSignupRole
+	return staffeeapiSignupRole
 }
-func (c *StaffConverterImpl) SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffee.StaffSignupSource {
-	var staffeeapiStaffSignupSource staffee.StaffSignupSource
+func (c *StaffConverterImpl) SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffee.SignupSource {
+	var staffeeapiSignupSource staffee.SignupSource
 	switch source {
 	case signupsurveyresponse.HeardFromGithub:
-		staffeeapiStaffSignupSource = staffee.StaffSignupSourceGithub
+		staffeeapiSignupSource = staffee.SignupSourceGithub
 	case signupsurveyresponse.HeardFromOther:
-		staffeeapiStaffSignupSource = staffee.StaffSignupSourceOther
+		staffeeapiSignupSource = staffee.SignupSourceOther
 	case signupsurveyresponse.HeardFromRecommendation:
-		staffeeapiStaffSignupSource = staffee.StaffSignupSourceRecommendation
+		staffeeapiSignupSource = staffee.SignupSourceRecommendation
 	case signupsurveyresponse.HeardFromSearch:
-		staffeeapiStaffSignupSource = staffee.StaffSignupSourceSearch
+		staffeeapiSignupSource = staffee.SignupSourceSearch
 	case signupsurveyresponse.HeardFromSocial:
-		staffeeapiStaffSignupSource = staffee.StaffSignupSourceSocial
+		staffeeapiSignupSource = staffee.SignupSourceSocial
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return staffeeapiStaffSignupSource
+	return staffeeapiSignupSource
 }
 func (c *StaffConverterImpl) SignupSurveyCountsToResource(source signupsurveyresponses.Counts) staffee.StaffSignupSurveyCounts {
 	var staffeeapiStaffSignupSurveyCounts staffee.StaffSignupSurveyCounts
@@ -344,25 +344,25 @@ func (c *StaffConverterImpl) WorkspacesListPage(source pagination.Page[*ent.Work
 }
 func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupCompanySizeCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupCompanySizeCount {
 	var staffeeapiStaffSignupCompanySizeCount staffee.StaffSignupCompanySizeCount
-	staffeeapiStaffSignupCompanySizeCount.Choice = staffee.StaffSignupCompanySize(source.Choice)
+	staffeeapiStaffSignupCompanySizeCount.Choice = staffee.SignupCompanySize(source.Choice)
 	staffeeapiStaffSignupCompanySizeCount.Count = count(source.Count)
 	return staffeeapiStaffSignupCompanySizeCount
 }
 func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupGoalCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupGoalCount {
 	var staffeeapiStaffSignupGoalCount staffee.StaffSignupGoalCount
-	staffeeapiStaffSignupGoalCount.Choice = staffee.StaffSignupGoal(source.Choice)
+	staffeeapiStaffSignupGoalCount.Choice = staffee.SignupGoal(source.Choice)
 	staffeeapiStaffSignupGoalCount.Count = count(source.Count)
 	return staffeeapiStaffSignupGoalCount
 }
 func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupRoleCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupRoleCount {
 	var staffeeapiStaffSignupRoleCount staffee.StaffSignupRoleCount
-	staffeeapiStaffSignupRoleCount.Choice = staffee.StaffSignupRole(source.Choice)
+	staffeeapiStaffSignupRoleCount.Choice = staffee.SignupRole(source.Choice)
 	staffeeapiStaffSignupRoleCount.Count = count(source.Count)
 	return staffeeapiStaffSignupRoleCount
 }
 func (c *StaffConverterImpl) signupsurveyresponsesChoiceCountToStaffeeapiStaffSignupSourceCount(source signupsurveyresponses.ChoiceCount) staffee.StaffSignupSourceCount {
 	var staffeeapiStaffSignupSourceCount staffee.StaffSignupSourceCount
-	staffeeapiStaffSignupSourceCount.Choice = staffee.StaffSignupSource(source.Choice)
+	staffeeapiStaffSignupSourceCount.Choice = staffee.SignupSource(source.Choice)
 	staffeeapiStaffSignupSourceCount.Count = count(source.Count)
 	return staffeeapiStaffSignupSourceCount
 }

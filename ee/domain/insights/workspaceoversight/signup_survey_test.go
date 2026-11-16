@@ -22,23 +22,23 @@ func TestTheSignupSurveyCountsEveryAnswerIncludingOtherTexts(t *testing.T) {
 	// Ann, Bob and Cara answered; every other fixture User is in no count.
 	assert.EqualValues(t, 3, got.Responses)
 	assert.Equal(t, []staffeeapi.StaffSignupRoleCount{
-		{Choice: staffeeapi.StaffSignupRoleDeveloper, Count: 2},
-		{Choice: staffeeapi.StaffSignupRoleOther, Count: 1},
+		{Choice: staffeeapi.SignupRoleDeveloper, Count: 2},
+		{Choice: staffeeapi.SignupRoleOther, Count: 1},
 	}, got.Role)
 	assert.Equal(t, []staffeeapi.StaffSignupOtherTextCount{{Text: "Consultant", Count: 1}}, got.RoleOtherTexts)
 	assert.Equal(t, []staffeeapi.StaffSignupCompanySizeCount{
-		{Choice: staffeeapi.StaffSignupCompanySize1150, Count: 1},
-		{Choice: staffeeapi.StaffSignupCompanySize210, Count: 1},
-		{Choice: staffeeapi.StaffSignupCompanySizeOther, Count: 1},
+		{Choice: staffeeapi.SignupCompanySize1150, Count: 1},
+		{Choice: staffeeapi.SignupCompanySize210, Count: 1},
+		{Choice: staffeeapi.SignupCompanySizeOther, Count: 1},
 	}, got.CompanySize)
 	assert.Equal(t, []staffeeapi.StaffSignupOtherTextCount{{Text: "Just me and a cat", Count: 1}}, got.CompanySizeOtherTexts)
 	assert.Equal(t, []staffeeapi.StaffSignupGoalCount{
-		{Choice: staffeeapi.StaffSignupGoalBroadcasts, Count: 1},
-		{Choice: staffeeapi.StaffSignupGoalMigrating, Count: 2},
+		{Choice: staffeeapi.SignupGoalBroadcasts, Count: 1},
+		{Choice: staffeeapi.SignupGoalMigrating, Count: 2},
 	}, got.MainGoal)
 	assert.Empty(t, got.MainGoalOtherTexts)
 	// Bob skipped the optional question: he is absent from its counts.
-	assert.Equal(t, []staffeeapi.StaffSignupSourceCount{{Choice: staffeeapi.StaffSignupSourceOther, Count: 2}}, got.HeardFrom)
+	assert.Equal(t, []staffeeapi.StaffSignupSourceCount{{Choice: staffeeapi.SignupSourceOther, Count: 2}}, got.HeardFrom)
 	assert.Equal(t, []staffeeapi.StaffSignupOtherTextCount{{Text: "A newsletter", Count: 2}}, got.HeardFromOtherTexts)
 }
 
@@ -50,10 +50,10 @@ func TestAUsersSignupSurveyAnswersAreShownToAStaffMember(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.EqualValues(t, fixtures.SurveyAnsweredAnnID, got.UserId)
-	assert.Equal(t, staffeeapi.StaffSignupRoleDeveloper, got.Role)
-	assert.Equal(t, staffeeapi.StaffSignupCompanySize1150, got.CompanySize)
-	assert.Equal(t, staffeeapi.StaffSignupGoalMigrating, got.MainGoal)
-	assert.Equal(t, staffeeapi.StaffSignupSourceOther, got.HeardFrom.Value)
+	assert.Equal(t, staffeeapi.SignupRoleDeveloper, got.Role)
+	assert.Equal(t, staffeeapi.SignupCompanySize1150, got.CompanySize)
+	assert.Equal(t, staffeeapi.SignupGoalMigrating, got.MainGoal)
+	assert.Equal(t, staffeeapi.SignupSourceOther, got.HeardFrom.Value)
 	assert.Equal(t, "A newsletter", got.HeardFromOtherText.Value)
 	assert.False(t, got.RoleOtherText.IsSet())
 }

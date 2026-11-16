@@ -1,44 +1,8 @@
+import "../../common/signup-survey.tsp";
+
 using TypeSpec.Http;
 
 namespace Sphericon;
-
-/** What the User does (Sign-up survey, first question) */
-enum StaffSignupRole {
-  founder,
-  marketer,
-  developer,
-  product,
-  other,
-}
-
-/** How many people work at the User's company (second question) */
-enum StaffSignupCompanySize {
-  one: "1",
-  twoToTen: "2_10",
-  elevenToFifty: "11_50",
-  fiftyOneToTwoHundred: "51_200",
-  twoHundredOneToThousand: "201_1000",
-  overThousand: "1000_plus",
-  other,
-}
-
-/** What the User mainly wants to do with the product (third question) */
-enum StaffSignupGoal {
-  broadcasts,
-  automations,
-  tracking,
-  migrating,
-  other,
-}
-
-/** Where the User heard about the product (fourth question, optional) */
-enum StaffSignupSource {
-  search,
-  github,
-  social,
-  recommendation,
-  other,
-}
 
 /** One User's answers to the Sign-up survey. A User who has not answered has none. */
 model StaffSignupSurveyResponseResource {
@@ -46,25 +10,25 @@ model StaffSignupSurveyResponseResource {
   userId: EntityId;
 
   /** What the User does */
-  role: StaffSignupRole;
+  role: SignupRole;
 
   /** What the User does, when `role` is `other` */
   roleOtherText?: string | null;
 
   /** How many people work at the User's company */
-  companySize: StaffSignupCompanySize;
+  companySize: SignupCompanySize;
 
   /** The company size, when `companySize` is `other` */
   companySizeOtherText?: string | null;
 
   /** What the User mainly wants to do with the product */
-  mainGoal: StaffSignupGoal;
+  mainGoal: SignupGoal;
 
   /** The main goal, when `mainGoal` is `other` */
   mainGoalOtherText?: string | null;
 
   /** Where the User heard about the product; absent when the optional question was skipped */
-  heardFrom?: StaffSignupSource | null;
+  heardFrom?: SignupSource | null;
 
   /** Where the User heard about the product, when `heardFrom` is `other` */
   heardFromOtherText?: string | null;
@@ -75,25 +39,25 @@ model StaffSignupSurveyResponseResource {
 
 /** How many Users chose a role */
 model StaffSignupRoleCount {
-  choice: StaffSignupRole;
+  choice: SignupRole;
   count: int32;
 }
 
 /** How many Users chose a company size */
 model StaffSignupCompanySizeCount {
-  choice: StaffSignupCompanySize;
+  choice: SignupCompanySize;
   count: int32;
 }
 
 /** How many Users chose a main goal */
 model StaffSignupGoalCount {
-  choice: StaffSignupGoal;
+  choice: SignupGoal;
   count: int32;
 }
 
 /** How many Users chose a source */
 model StaffSignupSourceCount {
-  choice: StaffSignupSource;
+  choice: SignupSource;
   count: int32;
 }
 

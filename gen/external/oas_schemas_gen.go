@@ -1091,7 +1091,7 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 // The actor of an Audit entry.
 // Ref: #/components/schemas/AuditActor
 type AuditActor struct {
-	// The kind of actor; a staff member is shown as "Sphericon staff".
+	// The kind of actor; a staff member is shown to the customer as "Sphericon staff".
 	Kind AuditActorKind `json:"kind"`
 	// The actor's id (a User id or an API token id); absent for the system.
 	ID OptNilString `json:"id"`
@@ -15870,15 +15870,16 @@ func (s *ProviderLimitWarning) UnmarshalText(data []byte) error {
 	}
 }
 
-// A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is null when the
-// denominator is zero: an undefined rate is never reported as 0.
+// A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no display
+// floor: the rate is null only when the denominator is zero, an undefined rate never being reported as
+// 0.
 // Ref: #/components/schemas/RateTriple
 type RateTriple struct {
 	// Events counted against the rate.
 	Numerator int32 `json:"numerator"`
 	// The population the rate is over.
 	Denominator int32 `json:"denominator"`
-	// Numerator / denominator, null when the denominator is zero.
+	// Numerator / denominator, null when the denominator is zero, never reported as 0.
 	Rate NilFloat64 `json:"rate"`
 }
 

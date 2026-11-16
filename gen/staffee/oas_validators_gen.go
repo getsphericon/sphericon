@@ -9,6 +9,51 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+func (s AbuseMetric) Validate() error {
+	switch s {
+	case "complaint":
+		return nil
+	case "bounce":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *AbuseWarning) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Metric.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "metric",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.Rate)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "rate",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s AuditAction) Validate() error {
 	switch s {
 	case "membership.update":
@@ -376,6 +421,78 @@ func (s *ProblemDetailsStatusCode) Validate() error {
 	return nil
 }
 
+func (s SignupCompanySize) Validate() error {
+	switch s {
+	case "1":
+		return nil
+	case "2_10":
+		return nil
+	case "11_50":
+		return nil
+	case "51_200":
+		return nil
+	case "201_1000":
+		return nil
+	case "1000_plus":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SignupGoal) Validate() error {
+	switch s {
+	case "broadcasts":
+		return nil
+	case "automations":
+		return nil
+	case "tracking":
+		return nil
+	case "migrating":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SignupRole) Validate() error {
+	switch s {
+	case "founder":
+		return nil
+	case "marketer":
+		return nil
+	case "developer":
+		return nil
+	case "product":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SignupSource) Validate() error {
+	switch s {
+	case "search":
+		return nil
+	case "github":
+		return nil
+	case "social":
+		return nil
+	case "recommendation":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s *SoleOwnedWorkspace) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -420,51 +537,6 @@ func (s *StaffAbuse) Validate() error {
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "warning",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s StaffAbuseMetric) Validate() error {
-	switch s {
-	case "complaint":
-		return nil
-	case "bounce":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s *StaffAbuseWarning) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Metric.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "metric",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.Rate)); err != nil {
-			return errors.Wrap(err, "float")
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "rate",
 			Error: err,
 		})
 	}
@@ -662,29 +734,6 @@ func (s *StaffDomainRates) Validate() error {
 	return nil
 }
 
-func (s *StaffExemptionChange) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Workspace.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "workspace",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
 func (s *StaffRate) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -791,27 +840,6 @@ func (s *StaffSendCapInput) Validate() error {
 	return nil
 }
 
-func (s StaffSignupCompanySize) Validate() error {
-	switch s {
-	case "1":
-		return nil
-	case "2_10":
-		return nil
-	case "11_50":
-		return nil
-	case "51_200":
-		return nil
-	case "201_1000":
-		return nil
-	case "1000_plus":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s *StaffSignupCompanySizeCount) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -833,23 +861,6 @@ func (s *StaffSignupCompanySizeCount) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
-}
-
-func (s StaffSignupGoal) Validate() error {
-	switch s {
-	case "broadcasts":
-		return nil
-	case "automations":
-		return nil
-	case "tracking":
-		return nil
-	case "migrating":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
 }
 
 func (s *StaffSignupGoalCount) Validate() error {
@@ -875,23 +886,6 @@ func (s *StaffSignupGoalCount) Validate() error {
 	return nil
 }
 
-func (s StaffSignupRole) Validate() error {
-	switch s {
-	case "founder":
-		return nil
-	case "marketer":
-		return nil
-	case "developer":
-		return nil
-	case "product":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s *StaffSignupRoleCount) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -913,23 +907,6 @@ func (s *StaffSignupRoleCount) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
-}
-
-func (s StaffSignupSource) Validate() error {
-	switch s {
-	case "search":
-		return nil
-	case "github":
-		return nil
-	case "social":
-		return nil
-	case "recommendation":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
 }
 
 func (s *StaffSignupSourceCount) Validate() error {
@@ -1280,7 +1257,7 @@ func (s StaffSuspensionActorKind) Validate() error {
 	}
 }
 
-func (s *StaffSuspensionChange) Validate() error {
+func (s *StaffWorkspaceChange) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
 	}

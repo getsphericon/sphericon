@@ -64,7 +64,7 @@ func encodeStaffWorkspacesClearSendCapResponse(response *StaffSendCapChange, w h
 	return nil
 }
 
-func encodeStaffWorkspacesExemptResponse(response *StaffExemptionChange, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffWorkspacesExemptResponse(response *StaffWorkspaceChange, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -116,7 +116,7 @@ func encodeStaffWorkspacesSetSendCapResponse(response *StaffSendCapChange, w htt
 	return nil
 }
 
-func encodeStaffWorkspacesSuspendResponse(response *StaffSuspensionChange, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffWorkspacesSuspendResponse(response *StaffWorkspaceChange, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -129,7 +129,7 @@ func encodeStaffWorkspacesSuspendResponse(response *StaffSuspensionChange, w htt
 	return nil
 }
 
-func encodeStaffWorkspacesUnexemptResponse(response *StaffExemptionChange, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffWorkspacesUnexemptResponse(response *StaffWorkspaceChange, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -142,7 +142,7 @@ func encodeStaffWorkspacesUnexemptResponse(response *StaffExemptionChange, w htt
 	return nil
 }
 
-func encodeStaffWorkspacesUnsuspendResponse(response *StaffSuspensionChange, w http.ResponseWriter, span trace.Span) error {
+func encodeStaffWorkspacesUnsuspendResponse(response *StaffWorkspaceChange, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 

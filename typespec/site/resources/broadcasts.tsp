@@ -5,15 +5,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** Broadcast lifecycle status */
-enum SiteBroadcastStatus {
-  draft,
-  scheduled,
-  sending,
-  sent,
-  failed,
-}
-
 /** The Orders credited to one Broadcast or Automation and the net revenue of their Movements
  * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
  * lowers `amount` on its own day. Until the currency is set `reportingCurrency` is null and
@@ -163,7 +154,7 @@ model SiteBroadcastResource {
   integrationId?: EntityId | null;
 
   /** Lifecycle status */
-  status: SiteBroadcastStatus;
+  status: BroadcastStatus;
 
   /** Why sending is currently held, when it is */
   holdReason?: HoldReason | null;
@@ -233,7 +224,7 @@ model SiteBroadcastsListFilter {
   @query archived?: boolean;
 
   /** Only the broadcasts in one of these statuses; every status when absent */
-  @query(#{ explode: true }) status?: SiteBroadcastStatus[];
+  @query(#{ explode: true }) status?: BroadcastStatus[];
 
   /** Only the broadcasts on this Channel; every Channel when absent */
   @query channel?: BroadcastChannel;

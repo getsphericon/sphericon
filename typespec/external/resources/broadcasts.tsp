@@ -5,15 +5,6 @@ using TypeSpec.Rest.Resource;
 
 namespace Sphericon;
 
-/** Broadcast lifecycle status */
-enum BroadcastStatus {
-  draft,
-  scheduled,
-  sending,
-  sent,
-  failed,
-}
-
 /** Broadcast resource */
 @resource("broadcasts")
 @segment("broadcasts")

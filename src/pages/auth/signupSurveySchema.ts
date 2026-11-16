@@ -1,17 +1,17 @@
 import * as z from 'zod'
 
 import type {
-  SiteSignupCompanySize,
-  SiteSignupGoal,
-  SiteSignupRole,
-  SiteSignupSource,
+  SignupCompanySize,
+  SignupGoal,
+  SignupRole,
+  SignupSource,
   SiteSignupSurveyInput,
 } from '../../generated/site/types.gen.ts'
 import {
-  zSiteSignupCompanySize,
-  zSiteSignupGoal,
-  zSiteSignupRole,
-  zSiteSignupSource,
+  zSignupCompanySize,
+  zSignupGoal,
+  zSignupRole,
+  zSignupSource,
   zSiteSignupSurveyInput,
 } from '../../generated/site/zod.gen.ts'
 import { trimmed } from '../../resources/schemaForm.ts'
@@ -22,8 +22,7 @@ export type Question = Exclude<keyof SiteSignupSurveyInput, `${string}Other`>
 const QUESTIONS = ['role', 'companySize', 'mainGoal', 'heardFrom'] as const satisfies Question[]
 
 // The `other` choice every question offers, which asks for a text of its own.
-export const OTHER: SiteSignupRole & SiteSignupCompanySize & SiteSignupGoal & SiteSignupSource =
-  'other'
+export const OTHER: SignupRole & SignupCompanySize & SignupGoal & SignupSource = 'other'
 
 // The survey as the form holds it: each question's choice, blank until one is picked, and the
 // text of its `other` choice.
@@ -51,13 +50,13 @@ function otherText(question: Question) {
 // question left out.
 export const signupSurveySchema = z
   .object({
-    role: z.string().pipe(zSiteSignupRole),
+    role: z.string().pipe(zSignupRole),
     roleOther: otherText('role'),
-    companySize: z.string().pipe(zSiteSignupCompanySize),
+    companySize: z.string().pipe(zSignupCompanySize),
     companySizeOther: otherText('companySize'),
-    mainGoal: z.string().pipe(zSiteSignupGoal),
+    mainGoal: z.string().pipe(zSignupGoal),
     mainGoalOther: otherText('mainGoal'),
-    heardFrom: z.string().pipe(z.union([z.literal(''), zSiteSignupSource])),
+    heardFrom: z.string().pipe(z.union([z.literal(''), zSignupSource])),
     heardFromOther: otherText('heardFrom'),
   })
   .superRefine(
