@@ -8386,7 +8386,6 @@ type BindingMutation struct {
 	channel            *binding.Channel
 	destination        *string
 	chat_id            *string
-	announced          *bool
 	bound_at           *time.Time
 	clearedFields      map[string]struct{}
 	workspace          *int64
@@ -8856,42 +8855,6 @@ func (m *BindingMutation) ResetVisitorID() {
 	delete(m.clearedFields, binding.FieldVisitorID)
 }
 
-// SetAnnounced sets the "announced" field.
-func (m *BindingMutation) SetAnnounced(b bool) {
-	m.announced = &b
-}
-
-// Announced returns the value of the "announced" field in the mutation.
-func (m *BindingMutation) Announced() (r bool, exists bool) {
-	v := m.announced
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAnnounced returns the old "announced" field's value of the Binding entity.
-// If the Binding object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BindingMutation) OldAnnounced(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAnnounced is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAnnounced requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAnnounced: %w", err)
-	}
-	return oldValue.Announced, nil
-}
-
-// ResetAnnounced resets all changes to the "announced" field.
-func (m *BindingMutation) ResetAnnounced() {
-	m.announced = nil
-}
-
 // SetBoundAt sets the "bound_at" field.
 func (m *BindingMutation) SetBoundAt(t time.Time) {
 	m.bound_at = &t
@@ -9070,7 +9033,7 @@ func (m *BindingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BindingMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, binding.FieldCreatedAt)
 	}
@@ -9097,9 +9060,6 @@ func (m *BindingMutation) Fields() []string {
 	}
 	if m.visitor != nil {
 		fields = append(fields, binding.FieldVisitorID)
-	}
-	if m.announced != nil {
-		fields = append(fields, binding.FieldAnnounced)
 	}
 	if m.bound_at != nil {
 		fields = append(fields, binding.FieldBoundAt)
@@ -9130,8 +9090,6 @@ func (m *BindingMutation) Field(name string) (ent.Value, bool) {
 		return m.ContactID()
 	case binding.FieldVisitorID:
 		return m.VisitorID()
-	case binding.FieldAnnounced:
-		return m.Announced()
 	case binding.FieldBoundAt:
 		return m.BoundAt()
 	}
@@ -9161,8 +9119,6 @@ func (m *BindingMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldContactID(ctx)
 	case binding.FieldVisitorID:
 		return m.OldVisitorID(ctx)
-	case binding.FieldAnnounced:
-		return m.OldAnnounced(ctx)
 	case binding.FieldBoundAt:
 		return m.OldBoundAt(ctx)
 	}
@@ -9236,13 +9192,6 @@ func (m *BindingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetVisitorID(v)
-		return nil
-	case binding.FieldAnnounced:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAnnounced(v)
 		return nil
 	case binding.FieldBoundAt:
 		v, ok := value.(time.Time)
@@ -9344,9 +9293,6 @@ func (m *BindingMutation) ResetField(name string) error {
 		return nil
 	case binding.FieldVisitorID:
 		m.ResetVisitorID()
-		return nil
-	case binding.FieldAnnounced:
-		m.ResetAnnounced()
 		return nil
 	case binding.FieldBoundAt:
 		m.ResetBoundAt()

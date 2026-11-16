@@ -32,15 +32,29 @@ func identify(t *testing.T, env *testhelper.TestEnv, visitorID, email string) {
 	require.NoError(t, err)
 }
 
-// The tracker's link binds the chat that starts the bot to the Visitor, with no Event; Identify
-// then makes the chat the Contact's and records telegram.bound once, however often it repeats.
-func TestAVisitorStartLinkBindsTheChatToTheVisitorAndIdentifyAnnouncesIt(t *testing.T) {
+// contactChats is the Telegram chats the Contact with the email is reached through, as its card
+// lists them.
+func contactChats(t *testing.T, env *testhelper.TestEnv, email string) []siteapi.SiteBindingResource {
+	t.Helper()
+	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email(email)).OnlyX(t.Context())
+	chats, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
+		WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(contact.ID),
+	})
+	require.NoError(t, err)
+	return chats
+}
+
+// The tracker's link binds the chat that starts the bot to the Visitor, with no Event. An Identify
+// through the public collect key proves nothing (ADR 0171), so the chat stays the Visitor's and
+// reaches no Contact.
+func TestAVisitorStartLinkBindsTheChatToTheVisitorAndAClaimedIdentifyLeavesItThere(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 
 	link := startLink(t, env, "dev-tg")
 	env.StartTelegram(t, bot, 1, 6001, link.URL)
+	identify(t, env, "dev-tg", "tracker.person@example.com")
 
 	assert.Contains(t, link.URL, "https://t.me/"+testhelper.AcmeTelegramUsername+"?start=")
 	vis := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-tg")).OnlyX(t.Context())
@@ -49,32 +63,22 @@ func TestAVisitorStartLinkBindsTheChatToTheVisitorAndIdentifyAnnouncesIt(t *test
 	assert.Equal(t, vis.ID, *owned.VisitorID, "the chat is the Visitor's")
 	assert.Nil(t, owned.ContactID)
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil), "a Visitor's Binding records no Event")
-
-	identify(t, env, "dev-tg", "tracker.person@example.com")
-	identify(t, env, "dev-tg", "tracker.person@example.com")
-
-	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("tracker.person@example.com")).OnlyX(t.Context())
-	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": contact.ID, "integrationId": bot.Integration.ID}),
-		"announced for the Contact once")
-	chats, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteTelegramListBindings(t.Context(), siteapi.SiteTelegramListBindingsParams{
-		WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(contact.ID),
-	})
-	require.NoError(t, err)
-	require.Len(t, chats, 1, "the Contact is reached through its Visitor")
-	assert.Equal(t, testhelper.AcmeTelegramUsername, chats[0].BotUsername.Or(""))
+	assert.Empty(t, contactChats(t, env, "tracker.person@example.com"), "the claimed Contact is not reached")
 }
 
-// A Visitor's chat is announced to the next Contact the Visitor resolves to as well.
-func TestAVisitorBindingIsAnnouncedToAnotherContactItIsIdentifiedAs(t *testing.T) {
+// The order does not matter: a chat started after the claimed Identify is the Visitor's as well.
+func TestAChatStartedAfterAClaimedIdentifyIsTheVisitors(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
-	env.StartTelegram(t, bot, 2, 6002, startLink(t, env, "dev-shared").URL)
 
-	identify(t, env, "dev-shared", "first.person@example.com")
-	identify(t, env, "dev-shared", "second.person@example.com")
+	identify(t, env, "dev-after", "after.person@example.com")
+	env.StartTelegram(t, bot, 2, 6002, startLink(t, env, "dev-after").URL)
 
-	assert.Equal(t, 2, env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"integrationId": bot.Integration.ID}))
+	owned := env.DB.Binding.Query().Where(binding.Destination("6002")).OnlyX(t.Context())
+	assert.Nil(t, owned.ContactID)
+	assert.Empty(t, contactChats(t, env, "after.person@example.com"))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramBound, nil))
 }
 
 func TestAVisitorStartLinkIsRefusedWithoutAnEnabledDefaultBot(t *testing.T) {
@@ -88,42 +92,24 @@ func TestAVisitorStartLinkIsRefusedWithoutAnEnabledDefaultBot(t *testing.T) {
 	assert.Equal(t, before, env.DB.StartToken.Query().CountX(t.Context()), "no token is issued")
 }
 
-// A message from a chat bound through a Visitor is the Contact's once the Visitor is identified:
-// telegram.received is recorded for it.
-func TestAMessageFromAChatBoundThroughAnIdentifiedVisitorIsTheContactsMessage(t *testing.T) {
+// A message from a Visitor's chat is nobody's, before a claimed Identify and after it: no
+// telegram.received is recorded.
+func TestAMessageFromAVisitorsChatIsNobodysEvenAfterAClaimedIdentify(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
 	env.StartTelegram(t, bot, 3, 6003, startLink(t, env, "dev-received").URL)
 
 	env.PostTelegramUpdate(t, bot, `{"update_id":4,"message":{"message_id":4,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"before"}}`)
-	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil), "a Visitor with no Contact has none to record it for")
-
 	identify(t, env, "dev-received", "received.person@example.com")
 	env.PostTelegramUpdate(t, bot, `{"update_id":5,"message":{"message_id":5,"date":1767225600,"chat":{"id":6003,"type":"private"},"from":{"id":6003,"is_bot":false},"text":"after"}}`)
 
-	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("received.person@example.com")).OnlyX(t.Context())
-	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramReceived, map[string]any{"contactId": contact.ID}))
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramReceived, nil))
 }
 
-// A chat that moves from an identified Visitor to another owner is lost by the Contact the Visitor
-// was identified as: telegram.unbound is recorded for it.
-func TestAVisitorsChatMovingAwayIsAnnouncedAsUnboundToItsContact(t *testing.T) {
-	env := testhelper.Setup(t)
-	bot := env.AcmeTelegram(t)
-	env.MakeDefaultTelegram(t, bot)
-	env.StartTelegram(t, bot, 6, 6004, startLink(t, env, "dev-from").URL)
-	identify(t, env, "dev-from", "from.person@example.com")
-
-	env.StartTelegram(t, bot, 7, 6004, startLink(t, env, "dev-to").URL)
-
-	contact := env.DB.Contact.Query().Where(entcontact.WorkspaceID(fixtures.AcmeID), entcontact.Email("from.person@example.com")).OnlyX(t.Context())
-	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramUnbound, map[string]any{"contactId": contact.ID}))
-}
-
-// A chat bound through a Visitor that Identify resolved to a Contact, which then starts the bot
-// with a link issued for that Contact itself, loses and gains nothing: no telegram.unbound.
-func TestAChatStartedAgainAsTheContactItsVisitorBecameIsNotUnbound(t *testing.T) {
+// A Visitor's chat that a link issued for a Contact starts again becomes that Contact's: it is
+// announced as bound to it, and nobody lost it.
+func TestAVisitorsChatStartedAgainByAContactsLinkBecomesTheContacts(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
@@ -133,7 +119,8 @@ func TestAChatStartedAgainAsTheContactItsVisitorBecameIsNotUnbound(t *testing.T)
 
 	env.BindTelegram(t, bot, contact.ID, 6005, 9)
 
-	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramUnbound, map[string]any{"contactId": contact.ID}))
-	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": contact.ID}), "announced once, by Identify")
+	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramUnbound, nil))
+	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramBound, map[string]any{"contactId": contact.ID}))
+	assert.Len(t, contactChats(t, env, "same.person@example.com"), 1)
 	assert.Equal(t, 1, env.DB.Binding.Query().Where(binding.Destination("6005")).CountX(t.Context()))
 }

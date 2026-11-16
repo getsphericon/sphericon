@@ -13,7 +13,9 @@ import (
 
 // Fixtures: Liam has a chat of his own; Emma has none of her own but her phone (a Visitor of
 // hers) does, and a Binding of a Visitor reaches its Contact.
-func TestContactBindingsAreItsOwnAndItsVisitors(t *testing.T) {
+// A Contact's card lists its own chats, never one of its Visitor's (ADR 0171): Emma's only chat is
+// her phone Visitor's.
+func TestContactBindingsAreItsOwn(t *testing.T) {
 	env := testhelper.Setup(t)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	list := func(contactID int64) []siteapi.SiteBindingResource {
@@ -31,7 +33,7 @@ func TestContactBindingsAreItsOwnAndItsVisitors(t *testing.T) {
 	require.Len(t, liams, 1)
 	assert.Equal(t, "acme_fixture_bot", liams[0].BotUsername.Or(""))
 	assert.Equal(t, "Acme bot", liams[0].IntegrationName)
-	assert.Len(t, emmas, 1)
+	assert.Empty(t, emmas)
 	assert.Empty(t, noones)
 }
 

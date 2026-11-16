@@ -335,8 +335,8 @@ export async function identify(payload: IdentifyInput): Promise<void> {
 }
 
 // A Telegram start link for the current visitor, for a "Get updates in Telegram" button the site
-// draws: whoever presses Start in the bot with it binds their chat to this browser, and it reaches
-// the contact once identify resolves the visitor. null when there is nothing to link to: the
+// draws: whoever presses Start in the bot with it binds their chat to this browser, which reaches
+// no contact (ADR 0171). null when there is nothing to link to: the
 // tracker is not started, the workspace has no enabled default Telegram bot, or the call failed.
 export async function telegramStartLink(): Promise<string | null> {
   const runtime = delivery.getSnapshot().context.runtime

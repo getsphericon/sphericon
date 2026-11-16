@@ -205,9 +205,9 @@ func TestParseAndValidate(t *testing.T) {
 	assert.Error(t, validate(t, env, `{not json`))
 }
 
-// Fixtures: Liam (100) has a Binding of his own, Emma (101) one through her phone Visitor, Alice
-// (1) none; Globex's Contact has one in its own Workspace. "has" is true for a Binding of the
-// Contact or of a Visitor of it, "doesNotHave" is the complement, live.
+// Fixtures: Liam (100) has a Binding of his own, Emma (101) only one of her phone Visitor's, Alice (1)
+// none; Globex's Contact has one in its own Workspace. "has" is true for a Binding of the Contact,
+// never a Visitor's (ADR 0171), and "doesNotHave" is the complement, live.
 func TestTelegramConditions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -224,13 +224,13 @@ func TestTelegramConditions(t *testing.T) {
 		return ids
 	}
 
-	assert.ElementsMatch(t, []int64{liam, emma}, matching("has"), "own Binding and a Visitor's")
-	assert.ElementsMatch(t, []int64{alice}, matching("doesNotHave"))
+	assert.ElementsMatch(t, []int64{liam}, matching("has"), "a chat of Emma's Visitor is not Emma's")
+	assert.ElementsMatch(t, []int64{emma, alice}, matching("doesNotHave"))
 
 	// Live: unbinding Liam moves him to the complement.
 	env.DB.Binding.DeleteOneID(fixtures.BindingLiamID).ExecX(ctx)
-	assert.ElementsMatch(t, []int64{emma}, matching("has"))
-	assert.ElementsMatch(t, []int64{liam, alice}, matching("doesNotHave"))
+	assert.Empty(t, matching("has"))
+	assert.ElementsMatch(t, []int64{liam, emma, alice}, matching("doesNotHave"))
 
 	// Only has / doesNotHave are valid for the telegram field.
 	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"telegram","operator":"eq","value":""}]}`))

@@ -37,7 +37,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
@@ -602,11 +601,11 @@ func tagRule(op operator, value string) (predicate.Contact, error) {
 	return p, nil
 }
 
-// telegramRule is the subject has (or lacks) a Binding on a Telegram Integration of the Workspace,
-// its own or one of its Visitors'. Evaluated live; a Binding exists only for a Telegram Integration
+// telegramRule is the subject has (or lacks) a Binding on a Telegram Integration of the Workspace.
+// A Visitor's Binding is no Contact's (ADR 0171). Evaluated live; a Binding exists only for a Telegram Integration
 // and goes with it, so the existence of one is the test.
 func telegramRule(op operator) (predicate.Contact, error) {
-	p := contact.Or(contact.HasBindings(), contact.HasVisitorsWith(visitor.HasBindings()))
+	p := contact.HasBindings()
 	switch op {
 	case opHas:
 		return p, nil

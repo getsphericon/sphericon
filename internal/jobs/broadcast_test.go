@@ -242,7 +242,8 @@ func TestSendBroadcastToRuleSegment(t *testing.T) {
 }
 
 // A Broadcast whose Segment is "does not have Telegram" emails exactly the Contacts with no chat
-// bound: Liam (own Binding) and Emma (through her phone Visitor) are left out.
+// bound: Liam (own Binding) is left out, and Emma, whose only chat is her phone Visitor's, which is
+// no Contact's (ADR 0171), is in.
 func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -256,11 +257,11 @@ func TestSendBroadcastToContactsWithoutTelegram(t *testing.T) {
 	noah := env.DB.Contact.GetX(ctx, fixtures.ContactNoahID)
 	assert.Contains(t, got, *noah.Email, "a Contact with no chat is in the audience")
 	assert.NotContains(t, got, *liam.Email, "a Contact bound in person is left out")
-	assert.NotContains(t, got, *emma.Email, "a Contact bound through its Visitor is left out")
+	assert.Contains(t, got, *emma.Email, "a chat of a Contact's Visitor is not the Contact's")
 }
 
 // The start-link email of the spec: a Broadcast with {{ telegram_start_url }} to the "does not have
-// Telegram" Segment issues tokens for exactly the Contacts it emails, none for Liam and Emma.
+// Telegram" Segment issues tokens for exactly the Contacts it emails, none for Liam.
 func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -277,7 +278,7 @@ func TestABroadcastWithTheStartTagIssuesTokensOnlyForContactsWithoutTelegram(t *
 	for _, tok := range issuedTo {
 		assert.Equal(t, int64(bot.Integration.ID), tok.IntegrationID, "issued for the default bot")
 		require.NotNil(t, tok.ContactID)
-		assert.NotContains(t, []int64{fixtures.ContactLiamID, fixtures.ContactEmmaID}, *tok.ContactID, "no start link for a Contact that has Telegram")
+		assert.NotEqual(t, int64(fixtures.ContactLiamID), *tok.ContactID, "no start link for a Contact that has Telegram")
 	}
 }
 

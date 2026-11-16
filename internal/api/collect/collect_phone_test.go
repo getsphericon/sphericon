@@ -43,7 +43,9 @@ func TestCollectIdentifyWithALocalPhoneResolvesTheContactStoredInE164(t *testing
 	assert.Equal(t, int64(fixtures.ContactTexterID), *v.ContactID)
 }
 
-func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFinds(t *testing.T) {
+// A local number is read with the country of the Contact the email finds, so it is not refused; the
+// claim gives that Contact no phone (ADR 0171).
+func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFindsAndGivesItNone(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
 	ctx := context.Background()
@@ -59,8 +61,7 @@ func TestCollectIdentifyReadsALocalPhoneWithTheCountryOfTheContactItFinds(t *tes
 
 	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
 	require.NoError(t, err)
-	require.NotNil(t, alice.Phone)
-	assert.Equal(t, "+49301234567", *alice.Phone)
+	assert.Nil(t, alice.Phone, "a claim fills no alias key of a Contact that exists")
 }
 
 func TestCollectIdentifyRefusesALocalPhoneWithoutACountry(t *testing.T) {

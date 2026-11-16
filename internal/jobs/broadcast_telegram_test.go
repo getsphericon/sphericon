@@ -34,8 +34,7 @@ import (
 // Outbound module of the harness reaches as production does.
 
 // The chats of Lacuna's fixture Bindings on its bot (IntegrationLacunaTelegram): Tia's two, Ben's,
-// Eve's (her Visitor's) and Fay's. Sid's chat there is one he stopped Broadcasts in, and Cal's is
-// on the other bot.
+// Eve's and Fay's. Sid's chat there is one he stopped Broadcasts in, and Cal's is on the other bot.
 const (
 	tiaChat      = "77401"
 	tiaOtherChat = "77402"
@@ -62,9 +61,9 @@ func TestATelegramBroadcastFreezesOnlyBoundContactsAndSendsOncePerBinding(t *tes
 	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	recipients := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).Order(broadcastrecipient.ByContactID()).AllX(ctx)
-	assert.Equal(t, []int64{fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaByVisitorID, fixtures.ContactLacunaFayID},
+	assert.Equal(t, []int64{fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaEveID, fixtures.ContactLacunaFayID},
 		lo.Map(recipients, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ContactID }),
-		"only the Contacts bound on this bot (Eve by her Visitor's chat; not Sid, who stopped, nor Cal, on the other bot), once each however many Bindings")
+		"only the Contacts bound on this bot (not Sid, who stopped, nor Cal, on the other bot), once each however many Bindings")
 	assert.ElementsMatch(t, []string{tiaChat, tiaOtherChat, benChat, eveChat, fayChat}, chatsSentTo(env), "one message per Binding")
 	assert.Equal(t, broadcast.StatusSent, env.DB.Broadcast.GetX(ctx, id).Status)
 	messages := env.DB.OutboundMessage.Query().Where(outboundmessage.BroadcastID(id)).AllX(ctx)
@@ -162,14 +161,14 @@ func TestATelegramBroadcastToASegmentFreezesOnlyItsBoundContacts(t *testing.T) {
 	require.NoError(t, env.SendBroadcastThrough(t, env.OutboundModule(), id))
 
 	recipients := env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.BroadcastID(id)).AllX(ctx)
-	assert.ElementsMatch(t, []int64{fixtures.ContactLacunaBenID, fixtures.ContactLacunaByVisitorID, fixtures.ContactLacunaFayID},
+	assert.ElementsMatch(t, []int64{fixtures.ContactLacunaBenID, fixtures.ContactLacunaEveID, fixtures.ContactLacunaFayID},
 		lo.Map(recipients, func(r *ent.BroadcastRecipient, _ int) int64 { return r.ContactID }),
 		"the Segment's Contacts bound on the bot")
 	assert.ElementsMatch(t, []string{benChat, eveChat, fayChat}, chatsSentTo(env))
 }
 
-// A Binding owned by a Visitor reaches the Contact that Visitor belongs to (ADR 0075).
-func TestATelegramBroadcastReachesAContactThroughItsVisitorsBinding(t *testing.T) {
+// A Binding owned by a Visitor reaches no Contact, not even the one the Visitor belongs to (ADR 0171).
+func TestATelegramBroadcastDoesNotReachAContactThroughItsVisitorsBinding(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
@@ -178,7 +177,7 @@ func TestATelegramBroadcastReachesAContactThroughItsVisitorsBinding(t *testing.T
 	size, err := broadcasts.AudienceSize(ctx, s, b, time.Now())
 
 	require.NoError(t, err)
-	assert.Equal(t, 2, size, "Liam by his own Binding, Emma by her phone's")
+	assert.Equal(t, 1, size, "Liam by his own Binding; not Emma, whose only chat is her phone Visitor's")
 }
 
 // A Telegram Broadcast has the Message content of a step and goes through the same send path: an

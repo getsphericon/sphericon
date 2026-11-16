@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entbinding "github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -269,7 +268,7 @@ func spread(start time.Time, step time.Duration, calls []int) []time.Time {
 
 // callsPerRecipient is how many calls to the provider each of the recipients makes, in their
 // order: the Provider limit counts calls, not messages. On email it is one, on Telegram one per
-// Binding the Contact has on the routed Integration, its own and its Visitors'. A Binding that
+// Binding the Contact has on the routed Integration. A Binding that
 // turns out ineligible at send time still counts, so the estimate errs on the slow side. It is at
 // least one: a recipient with no Binding left makes none, but is still paced.
 func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, route outboundmessages.Route, recipientIDs []int64) ([]int, error) {
@@ -298,20 +297,14 @@ func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rou
 		rows, err := s.Binding().Query().
 			Where(
 				entbinding.IntegrationID(route.Integration.ID),
-				entbinding.Or(entbinding.ContactIDIn(chunk...), entbinding.HasVisitorWith(visitor.ContactIDIn(chunk...))),
+				entbinding.ContactIDIn(chunk...),
 			).
-			WithVisitor().
 			All(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("broadcasts: bindings of broadcast %d: %w", b.ID, err)
 		}
 		for _, row := range rows {
-			switch {
-			case row.ContactID != nil:
-				bound[*row.ContactID]++
-			case row.Edges.Visitor != nil && row.Edges.Visitor.ContactID != nil:
-				bound[*row.Edges.Visitor.ContactID]++
-			}
+			bound[*row.ContactID]++
 		}
 	}
 	for i, id := range recipientIDs {

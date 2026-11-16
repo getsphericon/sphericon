@@ -144,6 +144,12 @@ type UpsertInput struct {
 	SubjectID, Email, Phone        *string
 	GuessedTimeZone, GuessedLocale *string
 	CustomFields                   map[string]any
+
+	// Claimed marks an assertion nobody proved: an Identify through the public collect key
+	// without the customer's proof (ADR 0171). Its keys still resolve or create the Contact, and
+	// a Contact it creates gets everything; a Contact that exists gains no alias key and only the
+	// attributes and Custom fields it has no value of, never a replaced or cleared one.
+	Claimed bool
 }
 
 // Result is the outcome of an Upsert.
@@ -488,6 +494,9 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 		return nil, err
 	}
 	existing := locked.Contact()
+	if in.Claimed {
+		in, typed = in.claimedOver(existing), fillOnlyFields(typed, existing.CustomFields)
+	}
 	core := in.withGuesses(existing.TimeZone, existing.Locale)
 	if !enriches(existing, in, core, typed) {
 		return existing, nil
@@ -505,6 +514,38 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 		return c, err
 	}
 	return c, publishFieldChanges(ctx, pub, s.WorkspaceID(), c, existing.CustomFields)
+}
+
+// claimedOver is a claimed assertion as it may touch existing (ADR 0171): no alias key, since one
+// would hand the Contact's mail or messages to whoever claimed it, and only the core attributes
+// existing has no value of.
+func (in UpsertInput) claimedOver(existing *ent.Contact) UpsertInput {
+	in.SubjectID, in.Email, in.Phone = nil, nil, nil
+	in.Core = Core{
+		FirstName: fillOnly(in.FirstName, existing.FirstName),
+		LastName:  fillOnly(in.LastName, existing.LastName),
+		TimeZone:  fillOnly(in.TimeZone, existing.TimeZone),
+		Country:   fillOnly(in.Country, existing.Country),
+		Locale:    fillOnly(in.Locale, existing.Locale),
+		City:      fillOnly(in.City, existing.City),
+		Avatar:    fillOnly(in.Avatar, existing.Avatar),
+		Birthday:  fillOnly(in.Birthday, existing.Birthday),
+	}
+	return in
+}
+
+// fillOnly is f where the Contact has no value of the attribute, and a keep where it has one or f
+// would clear it.
+func fillOnly[T any](f patch.Field[T], have *T) patch.Field[T] {
+	if have != nil || f.IsClear() {
+		return patch.Keep[T]()
+	}
+	return f
+}
+
+// fillOnlyFields is the Custom fields of typed that stored holds no value of.
+func fillOnlyFields(typed, stored map[string]any) map[string]any {
+	return lo.PickBy(typed, func(key string, _ any) bool { return stored[key] == nil })
 }
 
 // enriches reports whether enrich writes anything into existing: an alias key it lacks, a core

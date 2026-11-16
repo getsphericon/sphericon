@@ -17,7 +17,8 @@ import (
 )
 
 // ADR 0072: a trait named after a core attribute writes the attribute, and the browser's context
-// fills only what the Contact has none of.
+// fills only what the Contact has none of. An Identify through the public collect key is a claim
+// (ADR 0171): on a Contact that exists it fills what is empty and never replaces or clears.
 func TestIdentifyWritesCoreAttributesFromTraitsAndFillsFromTheBrowser(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
@@ -63,7 +64,7 @@ func TestIdentifyWritesCoreAttributesFromTraitsAndFillsFromTheBrowser(t *testing
 
 	again, err := env.DB.Contact.Get(ctx, ct.ID)
 	require.NoError(t, err)
-	assert.Equal(t, "Augusta", lo.FromPtr(again.FirstName), "a trait overwrites")
-	assert.Nil(t, again.Country, "a null trait clears")
+	assert.Equal(t, "Ada", lo.FromPtr(again.FirstName), "a claim never replaces")
+	assert.Equal(t, "GB", lo.FromPtr(again.Country), "a claim never clears")
 	assert.Equal(t, "Europe/London", lo.FromPtr(again.TimeZone), "the browser never replaces a stored zone")
 }

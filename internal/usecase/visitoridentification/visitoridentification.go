@@ -1,7 +1,7 @@
 // Package visitoridentification is the use case of a Visitor identification, the Identify of the
-// glossary (ADR 0072, ADR 0102): the /collect call that binds a Visitor to a Contact. It spans the Contact (contacts), the Visitor (visitors), the
-// chats the Visitor started a bot with (bindings) and its anonymous Events (the bus), so it
-// composes their functions in one transaction.
+// glossary (ADR 0072, ADR 0102): the /collect call that binds a Visitor to a Contact. It spans the
+// Contact (contacts), the Visitor (visitors) and its anonymous Events (the bus), so it composes their
+// functions in one transaction.
 package visitoridentification
 
 import (
@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
-	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -45,12 +44,14 @@ func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: 
 // identify that names no alias key of the Contact is contacts.ErrIdentityRequired.
 var ErrVisitorIDRequired = validation.RefuseField(fieldname.VisitorID, "identify: visitorId is required", i18n.ErrorsVisitorIdRequired)
 
-// Identify binds a Visitor to a Contact and asserts that Contact's alias keys
-// (subject_id / email / phone) and the core attributes its traits name (ADR 0072). It
-// upserts the Contact by any present alias key, auto-creates typed Custom fields from the
-// other traits, binds the device, and stitches the device's earlier anonymous Events onto
-// the Contact so pre-identify behavior becomes visible to segmentation. A newly created
-// Contact emits contact.created.
+// Identify binds a Visitor to a Contact and claims that Contact's alias keys (subject_id / email /
+// phone), the core attributes its traits name (ADR 0072) and the defined Custom fields the other
+// traits name. It comes through the public collect key, so it proves nothing (ADR 0171): it finds or
+// creates the Contact by any present alias key, gives a Contact it creates everything and one that
+// exists only the attributes it has no value of, and writes no undefined Custom field. It binds the
+// Visitor and stitches the device's earlier anonymous Events onto the Contact only while the Visitor
+// is anonymous or already that Contact's: one that belongs to another Contact stays where it is. A
+// newly created Contact emits contact.created.
 func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) error {
 	visitorID := strings.TrimSpace(input.VisitorID)
 	if visitorID == "" {
@@ -58,7 +59,11 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 	}
 
 	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		core, fields := contacts.FromTraits(input.Traits)
+		core, traits := contacts.FromTraits(input.Traits)
+		fields, err := contacts.KnownCustomFields(ctx, ts, traits)
+		if err != nil {
+			return err
+		}
 		res, err := contacts.UpsertIn(ctx, ts, pub, contact.SourceTracker, contacts.UpsertInput{
 			SubjectID:       input.SubjectID,
 			Email:           input.Email,
@@ -67,6 +72,7 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 			GuessedTimeZone: input.TimeZone,
 			GuessedLocale:   input.Locale,
 			CustomFields:    fields,
+			Claimed:         true,
 		})
 		if err != nil {
 			return err
@@ -77,11 +83,10 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		if err != nil {
 			return err
 		}
-		if err := visitors.BindIn(ctx, ts, vis.ID, c.ID, u.now()); err != nil {
-			return err
+		if vis.ContactID != nil && *vis.ContactID != c.ID {
+			return nil
 		}
-		// The chats the Visitor started a bot with now reach the Contact: announce them.
-		if err := bindings.AnnounceVisitor(ctx, ts, pub, vis, c); err != nil {
+		if err := visitors.BindIn(ctx, ts, vis.ID, c.ID, u.now()); err != nil {
 			return err
 		}
 

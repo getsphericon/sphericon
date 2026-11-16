@@ -136,9 +136,10 @@ type Inputs interface {
 	ContactUpdate(source *externalapi.UpdateContactInput) contacts.UpdateInput
 
 	CustomFieldUpdate(source *externalapi.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput
-	// The API asserts a Contact; only the tracker sends the browser's guesses.
+	// The API asserts a Contact with the API token's authority; only the tracker sends the browser's
+	// guesses, and only the tracker claims (ADR 0171).
 	// goverter:map . Core
-	// goverter:ignore GuessedTimeZone GuessedLocale
+	// goverter:ignore GuessedTimeZone GuessedLocale Claimed
 	ContactUpsert(source externalapi.UpsertContactInput) contacts.UpsertInput
 	// An import row: the Contact it asserts and the SMS consent it carries.
 	// goverter:map . UpsertInput

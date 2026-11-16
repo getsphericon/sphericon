@@ -66,7 +66,8 @@ func TestIdentifyReusesAnExistingContactAndDevice(t *testing.T) {
 }
 
 // An Identify that changes nothing writes nothing: the Contact keeps its revision and updated_at,
-// so a console editor open on it can still save (ADR 0119). One that changes a trait moves both.
+// so a console editor open on it can still save (ADR 0119). A claim never replaces a value
+// (ADR 0171), so another plan changes nothing either; one that fills an empty attribute moves both.
 func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -93,8 +94,58 @@ func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
 	assert.True(t, updatedAt.Equal(againAt), "updated_at %v, then %v", updatedAt, againAt)
 
 	identify("free")
+	unchanged, _ := stored()
+	assert.Equal(t, revision, unchanged, "a claim never replaces")
+
+	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+		VisitorID: fixtures.EventAnonymousFirstVisitorID,
+		Email:     new("repeat@example.com"),
+		Traits:    map[string]any{"lastName": "Levi"},
+	})
+	require.NoError(t, err)
 	changed, _ := stored()
-	assert.Equal(t, revision+1, changed)
+	assert.Equal(t, revision+1, changed, "a claim fills what is empty")
+}
+
+// A claim binds only a Visitor that is anonymous or already the Contact's (ADR 0171): a Visitor of
+// another Contact stays where it is, and the Contact the claim names is still found or created.
+func TestAClaimLeavesAVisitorOfAnotherContactWhereItIs(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	identify := func(email string) {
+		t.Helper()
+		err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+			VisitorID: "dev-claimed", Email: new(email),
+		})
+		require.NoError(t, err)
+	}
+
+	identify(fixtures.ContactAliceEmail)
+	identify("someone.else@example.com")
+
+	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-claimed")).Only(ctx)
+	require.NoError(t, err)
+	assert.EqualValues(t, fixtures.ContactAliceID, lo.FromPtr(v.ContactID), "the Visitor stays Alice's")
+	n, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), contact.Email("someone.else@example.com")).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, n, "the claimed Contact is created")
+}
+
+// A claim gives a Contact that exists no alias key (ADR 0171): Alice has no phone, and a claim
+// naming her email and a phone leaves her without one.
+func TestAClaimFillsNoAliasKeyOfAContactThatExists(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+		VisitorID: "dev-phone", Email: lo.ToPtr(fixtures.ContactAliceEmail), Phone: new("+14155550199"), SubjectID: new("claimed-subject"),
+	})
+	require.NoError(t, err)
+
+	alice, err := env.DB.Contact.Get(ctx, fixtures.ContactAliceID)
+	require.NoError(t, err)
+	assert.Nil(t, alice.Phone)
+	assert.Nil(t, alice.SubjectID)
 }
 
 // Traits of every type read back from the stored JSON as another Go type than they are given in (a
@@ -123,6 +174,8 @@ func TestIdentifyRepeatingTraitsOfEveryTypeLeavesTheRevision(t *testing.T) {
 		return c.Revision
 	}
 
+	_, err := contacts.EnsureCustomFields(ctx, env.DB.Scoped(fixtures.AcmeID), traits)
+	require.NoError(t, err, "a claim writes only defined Custom fields")
 	first := identify()
 
 	assert.Equal(t, first, identify())

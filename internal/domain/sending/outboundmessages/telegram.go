@@ -14,7 +14,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -76,8 +75,9 @@ func (c telegramChannel) adapter(ctx context.Context, s *ent.Scoped, integ *ent.
 	return telegramAdapter{bot: bot}, nil
 }
 
-// targets are the Bindings the Contact has on the routed Integration, its own and its Visitors',
-// oldest first: the message goes to each chat, each passing Send-eligibility on its own.
+// targets are the Bindings the Contact has on the routed Integration, oldest first: the message goes
+// to each chat, each passing Send-eligibility on its own. A Visitor's Binding is no Contact's
+// (ADR 0171).
 func (telegramChannel) targets(ctx context.Context, s *ent.Scoped, req Request, route Route, _ string) ([]target, error) {
 	contactID := req.contactID()
 	if contactID == 0 || route.Integration == nil {
@@ -86,7 +86,7 @@ func (telegramChannel) targets(ctx context.Context, s *ent.Scoped, req Request, 
 	rows, err := s.Binding().Query().
 		Where(
 			binding.IntegrationID(route.Integration.ID),
-			binding.Or(binding.ContactID(contactID), binding.HasVisitorWith(visitor.ContactID(contactID))),
+			binding.ContactID(contactID),
 		).
 		Order(binding.ByBoundAt(), binding.ByID()).
 		All(ctx)

@@ -35,9 +35,9 @@ func identifyAs(t *testing.T, env *testhelper.TestEnv, visitorID, email string) 
 	require.NoError(t, err)
 }
 
-// An Automation step reaches a Contact through the chat its Visitor started once Identify has
-// tied them together.
-func TestATelegramStepReachesTheContactAfterIdentifyOfTheVisitorThatStartedTheBot(t *testing.T) {
+// A chat the Visitor started is not the Contact's after a claimed Identify of the Visitor
+// (ADR 0171): an Automation step finds no Destination.
+func TestATelegramStepDoesNotReachAContactThroughAClaimedVisitorsChat(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := env.AcmeTelegram(t)
 	env.MakeDefaultTelegram(t, bot)
@@ -48,11 +48,9 @@ func TestATelegramStepReachesTheContactAfterIdentifyOfTheVisitorThatStartedTheBo
 
 	runSteps(t, env)
 
-	sends := env.Telegram.RequestsOf(telegramtest.SendMessage)
-	require.Len(t, sends, 1)
-	assert.Equal(t, "555031", sends[0].String("chat_id"))
+	assert.Empty(t, env.Telegram.RequestsOf(telegramtest.SendMessage))
 	msg := env.DB.OutboundMessage.Query().Where(outboundmessage.AutomationRunID(runID)).OnlyX(t.Context())
-	assert.Equal(t, outboundmessage.StatusSent, msg.Status)
+	assert.Equal(t, outboundmessage.StatusSkipped, msg.Status)
 }
 
 // A Visitor's chat with no Contact is nobody's to send to.
