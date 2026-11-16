@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
@@ -21,13 +22,16 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/ent/rulefiring"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/ent/visitor"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/contacterasure"
@@ -77,7 +81,7 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 	assert.False(t, contactExists(t, env, fixtures.ContactErasableID))
 	assert.False(t, copies.Clone().ExistX(ctx), "no copy of the triggering Event's properties is left")
 	// Removed outright: its Visitors, Tag links, Confirmation and runs.
-	assert.False(t, env.DB.Visitor.Query().Where(visitor.VisitorID(fixtures.EventErasableAnonymousVisitorID)).ExistX(ctx), "visitors")
+	assert.False(t, env.DB.Visitor.Query().Where(visitor.VisitorID(fixtures.VisitorErasableVisitorID)).ExistX(ctx), "visitors")
 	linked := env.DB.Tag.Query().Where(tag.ID(fixtures.TagInitechID)).QueryContacts().IDsX(ctx)
 	assert.Equal(t, []int64{fixtures.ContactBystanderID}, linked, "the tag stays, only the bystander keeps it")
 	assert.False(t, env.DB.Confirmation.Query().Where(confirmation.ID(fixtures.ConfirmationErasableID)).ExistX(ctx), "confirmation")
@@ -105,8 +109,8 @@ func TestAnErasureRemovesThePersonsDataAndKeepsTheFactsAnonymous(t *testing.T) {
 		assert.NotNilf(t, e.OccurredAt, "event %d keeps its time", id)
 	}
 	// Only the non-personal delivery facts the rates are computed from survive.
-	assert.Equal(t, map[string]any{"sendingDomain": "mail.initech.test"}, env.DB.Event.GetX(ctx, fixtures.EventErasableSentID).Properties)
-	assert.Equal(t, map[string]any{"sendingDomain": "mail.initech.test", "bounceKind": "hard"}, env.DB.Event.GetX(ctx, fixtures.EventErasableBouncedID).Properties)
+	assert.Equal(t, map[string]any{"sendingDomain": fixtures.SendingDomainInitechDomain}, env.DB.Event.GetX(ctx, fixtures.EventErasableSentID).Properties)
+	assert.Equal(t, map[string]any{"sendingDomain": fixtures.SendingDomainInitechDomain, "bounceKind": "hard"}, env.DB.Event.GetX(ctx, fixtures.EventErasableBouncedID).Properties)
 	clicked := env.DB.Event.GetX(ctx, fixtures.EventErasableClickedID)
 	assert.Empty(t, clicked.Properties, "the clicked url is gone")
 	assert.Nil(t, clicked.URL, "and so is its column")
@@ -167,6 +171,8 @@ func TestAnErasureIsAllOrNothing(t *testing.T) {
 	deletesAContact := hook.And(isContact, hook.HasOp(ent.OpDelete|ent.OpDeleteOne))
 	env.Bus.Use(hook.If(hook.FixedError(errDown), deletesAContact))
 	env.EnqueueJob(t, jobs.EvaluateTriggerArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "x"})
+	env.EnqueueJob(t, jobs.EvaluateRulesArgs{WorkspaceID: fixtures.InitechID, ContactID: fixtures.ContactErasableID, Action: "rule_initech", SourceID: "evt-1"})
+	env.EnqueueJob(t, automations.RunHTTPStepArgs{WorkspaceID: fixtures.InitechID, RunID: fixtures.AutomationRunErasableID})
 
 	err := erase(t, env, fixtures.InitechID, contacterasure.Identifier{ContactID: fixtures.ContactErasableID})
 
@@ -179,11 +185,17 @@ func TestAnErasureIsAllOrNothing(t *testing.T) {
 	assert.True(t, eventExists(t, env, fixtures.EventErasableConfirmedID))
 	assert.Equal(t, fixtures.ContactErasableEmail, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageErasableBroadcastID).Destination)
 	assert.NotNil(t, env.DB.Unsubscribe.GetX(ctx, fixtures.UnsubscribeErasableID).ContactID)
-	assert.True(t, env.DB.Visitor.Query().Where(visitor.VisitorID(fixtures.EventErasableAnonymousVisitorID)).ExistX(ctx))
+	assert.True(t, env.DB.Visitor.Query().Where(visitor.VisitorID(fixtures.VisitorErasableVisitorID)).ExistX(ctx))
 	assert.True(t, env.DB.Confirmation.Query().Where(confirmation.ID(fixtures.ConfirmationErasableID)).ExistX(ctx))
 	assert.Equal(t, 2, env.DB.Suppression.Query().Where(suppression.ContactID(fixtures.ContactErasableID)).CountX(ctx), "the active and the lifted Suppression")
 	assert.True(t, env.DB.BroadcastRecipient.Query().Where(broadcastrecipient.ID(fixtures.BroadcastRecipientErasablePendingID)).ExistX(ctx), "the unsent recipient")
-	assert.Len(t, env.JobsOf(t, jobs.EvaluateTriggerArgs{}.Kind()), 1, "the queued evaluation")
+	assert.Equal(t, broadcast.StatusSending, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastInitechSendingSoloID).Status, "the Broadcast is not settled")
+	assert.True(t, env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableID)).ExistX(ctx), "the Enrollment")
+	assert.True(t, env.DB.RuleFiring.Query().Where(rulefiring.ContactID(fixtures.ContactErasableID)).ExistX(ctx), "the Rule firing")
+	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.ContactID(fixtures.ContactErasableID)).CountX(ctx))
+	assert.Len(t, env.JobsOf(t, jobs.EvaluateTriggerArgs{}.Kind()), 1, "the queued trigger evaluation")
+	assert.Len(t, env.JobsOf(t, jobkind.RuleEvaluate.Kind), 1, "the queued Rule evaluation")
+	assert.Len(t, env.JobsOf(t, jobkind.HTTPStep.Kind), 1, "the queued HTTP step call")
 	assert.Empty(t, env.QueuedEnvelopes(t, systemevent.ContactErased), "no signal")
 }
 
@@ -200,8 +212,8 @@ func TestAnErasureOfWhatTheWorkspaceDoesNotHoldIsRefused(t *testing.T) {
 	unknownVisitor := erase(t, env, fixtures.InitechID, visitorID("vis-nobody"))
 	foreignID := erase(t, env, fixtures.AcmeID, contacterasure.Identifier{ContactID: fixtures.ContactErasableID})
 	foreignEmail := erase(t, env, fixtures.AcmeID, email(fixtures.ContactErasableEmail))
-	foreignVisitor := erase(t, env, fixtures.AcmeID, visitorID(fixtures.EventErasableAnonymousVisitorID))
-	foreignAnonymous := erase(t, env, fixtures.AcmeID, visitorID(fixtures.EventAnonymousVisitorVisitorID))
+	foreignVisitor := erase(t, env, fixtures.AcmeID, visitorID(fixtures.VisitorErasableVisitorID))
+	foreignAnonymous := erase(t, env, fixtures.AcmeID, visitorID(fixtures.VisitorAnonymousVisitorID))
 
 	require.ErrorIs(t, unknownID, contacterasure.ErrContactNotFound)
 	require.ErrorIs(t, unknownEmail, contacterasure.ErrNothingFound)
@@ -285,20 +297,20 @@ func TestAnErasureOfAContactDeletesTheCapturedMessagesToItsAddress(t *testing.T)
 func TestAnErasureByAnAnonymousVisitorDeletesItAndItsEvents(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	id := fixtures.EventAnonymousVisitorVisitorID
+	id := fixtures.VisitorAnonymousVisitorID
 
 	require.NoError(t, erase(t, env, fixtures.InitechID, contacterasure.Identifier{VisitorID: &id}))
 
 	assert.False(t, env.DB.Visitor.Query().Where(visitor.ID(fixtures.VisitorAnonymousID)).ExistX(ctx))
 	assert.False(t, eventExists(t, env, fixtures.EventAnonymousVisitorID))
-	assert.True(t, env.DB.Visitor.Query().Where(visitor.VisitorID(fixtures.EventErasableAnonymousVisitorID)).ExistX(ctx), "a Contact's device is untouched")
+	assert.True(t, env.DB.Visitor.Query().Where(visitor.VisitorID(fixtures.VisitorErasableVisitorID)).ExistX(ctx), "a Contact's device is untouched")
 	assert.True(t, contactExists(t, env, fixtures.ContactErasableID))
 }
 
 // A visitor bound to a Contact erases that Contact, by the same rules as by id.
 func TestAnErasureByAVisitorOfAContactErasesTheContact(t *testing.T) {
 	env := testhelper.Setup(t)
-	id := fixtures.EventErasableAnonymousVisitorID
+	id := fixtures.VisitorErasableVisitorID
 
 	require.NoError(t, erase(t, env, fixtures.InitechID, contacterasure.Identifier{VisitorID: &id}))
 
@@ -351,12 +363,12 @@ func TestAnErasureEmitsOneContactErasedThatNamesNobody(t *testing.T) {
 	assert.EqualValues(t, fixtures.InitechID, envelopes[0].WorkspaceID)
 	body := string(envelopes[0].Data)
 	assert.NotContains(t, body, fixtures.ContactErasableEmail)
-	assert.NotContains(t, body, "14155550300")
+	assert.NotContains(t, body, fixtures.ContactErasablePhone[1:], "nor the number, in any form")
 	var data map[string]any
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
 	assert.Equal(t, "user-erin-300", data["subjectId"], "the customer's own id, for their downstream erasure")
 	assert.Equal(t, "contact_id", data["identifierKind"])
-	assert.Equal(t, contacterasure.RequesterAPIToken, data["requesterKind"])
+	assert.Equal(t, "api_token", data["requesterKind"])
 	assert.EqualValues(t, apiRequester.ID, data["requesterId"])
 	assert.Contains(t, body, sha256Hex(fixtures.ContactErasableEmail))
 	assert.Contains(t, body, sha256Hex(fixtures.ContactErasablePhone))
@@ -371,7 +383,7 @@ func TestAnErasureEmitsOneContactErasedThatNamesNobody(t *testing.T) {
 	assert.NotNil(t, stored.OccurredAt)
 	assert.NotContains(t, stored.Properties, "subjectId")
 	assert.Equal(t, "contact_id", stored.Properties["identifierKind"])
-	assert.Equal(t, contacterasure.RequesterAPIToken, stored.Properties["requesterKind"])
+	assert.Equal(t, "api_token", stored.Properties["requesterKind"])
 }
 
 // A Contact with no subject_id is named downstream by its sphericon id.
@@ -399,4 +411,20 @@ func TestAnErasureByAnAddressAloneNeverEchoesTheAddress(t *testing.T) {
 	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
 	assert.Empty(t, data["subjectId"])
 	assert.Equal(t, "email", data["identifierKind"])
+}
+
+// An active Suppression of a number keeps refusing it after the Erasure, keyed by the number's hash.
+// Fixtures: ContactLacunaSuppressed's number is suppressed on sms.
+func TestAnErasureKeepsTheSuppressionOfANumberByItsHash(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+
+	require.NoError(t, erase(t, env, fixtures.LacunaID, contacterasure.Identifier{ContactID: fixtures.ContactLacunaSuppressedID}))
+
+	kept := env.DB.Suppression.GetX(ctx, fixtures.SuppressionLacunaSalID)
+	assert.Equal(t, sha256Hex(fixtures.ContactLacunaSuppressedPhone), kept.Destination)
+	assert.Nil(t, kept.ContactID)
+	assert.Nil(t, kept.LiftedAt, "it still refuses")
+	named := env.DB.Suppression.Query().Where(suppression.Destination(fixtures.ContactLacunaSuppressedPhone)).ExistX(ctx)
+	assert.False(t, named, "no Suppression names the number")
 }

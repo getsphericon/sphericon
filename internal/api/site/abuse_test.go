@@ -18,9 +18,7 @@ import (
 // The traffic the dashboard judges is in fixtures/events.yml, one scenario per day offset (the
 // detector tests name them too): a test moves the clock back that many days, so the trailing
 // hours hold only its own scenario. The volumes are small, so the tests judge with a floor of 20.
-const (
-	warningDay = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
-)
+const warningDay = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
 
 const volumeFloor = 20
 
@@ -47,7 +45,7 @@ func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
 	require.NotNil(t, item)
 	assert.Equal(t, siteapi.SiteAttentionSeverityDegraded, item.Severity)
 	abuse := item.Abuse.Value
-	assert.Equal(t, "mail.vandelay.test", abuse.Domain)
+	assert.Equal(t, fixtures.SendingDomainVandelayDomain, abuse.Domain)
 	assert.Equal(t, siteapi.SiteAbuseMetricBounce, abuse.Metric)
 	assert.InDelta(t, 3.0/40.0, abuse.Rate, 1e-9)
 }

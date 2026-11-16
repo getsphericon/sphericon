@@ -107,9 +107,9 @@ func TestAnErasureCancelsTheQueuedWebhookDeliveriesThatNameTheContact(t *testing
 	delivery(fixtures.InitechID, fixtures.WebhookInitechID, "by-top-level-id", fmt.Sprintf(`{"contactId":%q,"data":{}}`, testhelper.ID(fixtures.ContactErasableID)))
 	delivery(fixtures.InitechID, fixtures.WebhookInitechID, "by-data-id", fmt.Sprintf(`{"data":{"contactId":%q}}`, testhelper.ID(fixtures.ContactErasableID)))
 	delivery(fixtures.InitechID, fixtures.WebhookInitechID, "by-address", `{"data":{"email":"Erin@Initech.test"}}`)
-	delivery(fixtures.InitechID, fixtures.WebhookInitechID, "bystander", fmt.Sprintf(`{"contactId":%q,"data":{"email":"ben@initech.test"}}`, testhelper.ID(fixtures.ContactBystanderID)))
+	delivery(fixtures.InitechID, fixtures.WebhookInitechID, "bystander", fmt.Sprintf(`{"contactId":%q,"data":{"email":%q}}`, testhelper.ID(fixtures.ContactBystanderID), fixtures.ContactBystanderEmail))
 	delivery(fixtures.InitechID, fixtures.WebhookInitechID, "nobody", `{"data":{}}`)
-	delivery(fixtures.GlobexID, fixtures.WebhookGlobexID, "other-tenant", `{"data":{"email":"erin@initech.test"}}`)
+	delivery(fixtures.GlobexID, fixtures.WebhookGlobexID, "other-tenant", fmt.Sprintf(`{"data":{"email":%q}}`, fixtures.ContactErasableEmail))
 
 	eraseErasable(t, env)
 
@@ -141,7 +141,7 @@ func TestAnErasureCancelsTheQueuedHTTPStepCallsOfTheContactsRuns(t *testing.T) {
 	assert.False(t, env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableHTTPFailedID)).ExistX(ctx))
 	kept := env.DB.AutomationRun.GetX(ctx, fixtures.AutomationRunBystanderHTTPFailedID)
 	require.NotNil(t, kept.FailureExcerpt)
-	assert.Equal(t, "ben@initech.test rejected", *kept.FailureExcerpt)
+	assert.Equal(t, fixtures.ContactBystanderEmail+" rejected", *kept.FailureExcerpt)
 }
 
 // An erased Contact leaves no Firing and no queued evaluation of an Event of theirs; the

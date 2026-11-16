@@ -36,7 +36,7 @@ func TestASendingDomainInTheWarningTierIsADeliverabilityWarning(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, needsattentionreport.SeverityDegraded, warning.Severity)
 	require.NotNil(t, warning.Abuse)
-	assert.Equal(t, "mail.vandelay.test", warning.Abuse.Domain)
+	assert.Equal(t, fixtures.SendingDomainVandelayDomain, warning.Abuse.Domain)
 	assert.Equal(t, abusewarning.MetricBounce, warning.Abuse.Metric)
 	assert.InDelta(t, 3.0/40.0, warning.Abuse.Rate, 1e-9)
 }
