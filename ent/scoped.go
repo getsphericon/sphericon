@@ -55492,6 +55492,14 @@ func (x *TrackingDomainScopedCreate) SetHost(v string) *TrackingDomainScopedCrea
 
 const RoleOf_TrackingDomainScopedCreate_SetHost = RoleStep
 
+// SetOwnershipToken sets the "ownership_token" field.
+func (x *TrackingDomainScopedCreate) SetOwnershipToken(v string) *TrackingDomainScopedCreate {
+	x.set = append(x.set, func(b *TrackingDomainCreate) { b.SetOwnershipToken(v) })
+	return x
+}
+
+const RoleOf_TrackingDomainScopedCreate_SetOwnershipToken = RoleStep
+
 // SetRole sets the "role" field.
 func (x *TrackingDomainScopedCreate) SetRole(v trackingdomain.Role) *TrackingDomainScopedCreate {
 	x.set = append(x.set, func(b *TrackingDomainCreate) { b.SetRole(v) })

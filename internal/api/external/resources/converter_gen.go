@@ -1074,6 +1074,13 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) ext
 	}
 	return externalapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.OwnershipRecord) external.DnsRecord {
+	var externalapiDnsRecord external.DnsRecord
+	externalapiDnsRecord.Type = ownershipRecordType(source)
+	externalapiDnsRecord.Host = source.Host
+	externalapiDnsRecord.Value = source.Value
+	return externalapiDnsRecord
+}
 func (c *ConverterImpl) PresetsListPage(source pagination.Page[external.PresetResource]) *external.PresetsListOK {
 	var externalapiPresetsListOK external.PresetsListOK
 	externalapiPresetsListOK.Items = source.Items
@@ -1622,6 +1629,7 @@ func (c *ConverterImpl) TrackingDomainToResource(source *ent.TrackingDomain) ext
 		externalapiTrackingDomainResource.State = c.TrackingStateToResource((*source).State)
 		externalapiTrackingDomainResource.Reason = optTrackingReason(c, (*source).Reason)
 		// externalapiTrackingDomainResource.Record: ignore
+		// externalapiTrackingDomainResource.OwnershipRecord: ignore
 		externalapiTrackingDomainResource.ServedAt = optNilTimestamp((*source).ServedAt)
 		externalapiTrackingDomainResource.LastCheckedAt = optNilTimestamp((*source).CheckedAt)
 		externalapiTrackingDomainResource.StateChangedAt = optNilTimestamp((*source).StateChangedAt)

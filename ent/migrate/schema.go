@@ -2839,6 +2839,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "host", Type: field.TypeString},
+		{Name: "ownership_token", Type: field.TypeString},
 		{Name: "role", Type: field.TypeEnum, Enums: []string{"current", "replacement", "retired"}},
 		{Name: "state", Type: field.TypeEnum, Enums: []string{"pending", "dns_verified", "serving"}, Default: "pending"},
 		{Name: "served_at", Type: field.TypeTime, Nullable: true},
@@ -2855,7 +2856,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "tracking_domains_workspaces_tracking_domains",
-				Columns:    []*schema.Column{TrackingDomainsColumns[10]},
+				Columns:    []*schema.Column{TrackingDomainsColumns[11]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -2864,12 +2865,12 @@ var (
 			{
 				Name:    "trackingdomain_workspace_id_host",
 				Unique:  true,
-				Columns: []*schema.Column{TrackingDomainsColumns[10], TrackingDomainsColumns[3]},
+				Columns: []*schema.Column{TrackingDomainsColumns[11], TrackingDomainsColumns[3]},
 			},
 			{
 				Name:    "trackingdomain_workspace_id_role",
 				Unique:  true,
-				Columns: []*schema.Column{TrackingDomainsColumns[10], TrackingDomainsColumns[4]},
+				Columns: []*schema.Column{TrackingDomainsColumns[11], TrackingDomainsColumns[5]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "role IN ('current', 'replacement')",
 				},

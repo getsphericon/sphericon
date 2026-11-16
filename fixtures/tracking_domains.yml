@@ -1,11 +1,14 @@
 # Tracking domains (ADR 0071). A Workspace uses one host at a time (current), may have a
-# replacement that takes over once it serves, and keeps retired hosts serving old links.
+# replacement that takes over once it serves, and keeps retired hosts serving old links. A row's
+# ownership token (ADR 0173) is fixture-<host>, the one its host's DNS publishes in the tests and
+# the dev zone; Wayne's claim on Umbrella's host has a token of its own, which no DNS publishes.
 #
 # Acme and Globex hold rows that never serve, so their mail keeps the Instance's host. Globex's
 # lowest row is a pending replacement: the generic scoped-client suites Replant it into Acme,
 # which has no replacement, and a pending host blocks no one.
 - id: 1 # fixture: TrackingDomainAcme
   host: t.acme.com
+  ownership_token: fixture-t.acme.com
   role: current
   state: pending
   workspace_id: 1
@@ -13,6 +16,7 @@
   updated_at: '{{daysAgo 2}}'
 - id: 2 # fixture: TrackingDomainGlobexReplacement
   host: go.globex.test
+  ownership_token: fixture-go.globex.test
   role: replacement
   state: pending
   workspace_id: 2
@@ -20,6 +24,7 @@
   updated_at: '{{daysAgo 1}}'
 - id: 3 # fixture: TrackingDomainGlobex
   host: t.globex.test
+  ownership_token: fixture-t.globex.test
   role: current
   state: dns_verified
   checked_at: '{{daysAgo 1}}'
@@ -34,6 +39,7 @@
 # never be blocked by (and vice versa).
 - id: 10 # fixture: TrackingDomainServing
   host: t.umbrella.test
+  ownership_token: fixture-t.umbrella.test
   role: current
   state: serving
   served_at: '{{daysAgo 3}}'
@@ -44,6 +50,7 @@
   updated_at: '{{daysAgo 1}}'
 - id: 11 # fixture: TrackingDomainReplacement
   host: go.umbrella.test
+  ownership_token: fixture-go.umbrella.test
   role: replacement
   state: pending
   workspace_id: 4
@@ -51,6 +58,7 @@
   updated_at: '{{daysAgo 1}}'
 - id: 12 # fixture: TrackingDomainRetired
   host: track.umbrella.test
+  ownership_token: fixture-track.umbrella.test
   role: retired
   state: serving
   served_at: '{{daysAgo 60}}'
@@ -61,6 +69,7 @@
   updated_at: '{{daysAgo 5}}'
 - id: 20 # fixture: TrackingDomainClaim
   host: t.umbrella.test
+  ownership_token: fixture-wayne-claim
   role: current
   state: pending
   workspace_id: 9
@@ -70,6 +79,7 @@
 # Initech (workspace 3) has a host whose CNAME is found and whose HTTPS does not answer yet.
 - id: 30 # fixture: TrackingDomainDNSVerified
   host: t.initech.test
+  ownership_token: fixture-t.initech.test
   role: current
   state: dns_verified
   checked_at: '{{daysAgo 1}}'
@@ -82,6 +92,7 @@
 # The dev DNS zone points t.brightpath.localhost at the dev stack's tracking target.
 - id: 20001
   host: t.brightpath.localhost
+  ownership_token: fixture-t.brightpath.localhost
   role: current
   state: dns_verified
   checked_at: '{{hoursAgo 1}}'

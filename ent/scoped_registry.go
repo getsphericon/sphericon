@@ -2702,6 +2702,7 @@ func ScopedEntities() []*ScopedEntity {
 				_ = remap
 				b := s.TrackingDomain().Create()
 				b.SetHost(src.Host)
+				b.SetOwnershipToken(src.OwnershipToken)
 				b.SetRole(src.Role)
 				b.SetState(src.State)
 				if src.ServedAt != nil {

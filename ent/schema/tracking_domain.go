@@ -42,6 +42,12 @@ func (TrackingDomain) Fields() []ent.Field {
 		field.String("host").
 			NotEmpty().
 			Immutable(),
+		// The host's ownership token (ADR 0173): random, made with the row, published by the host's
+		// owner in the TXT record _sphericon-tracking.<host>. Every check needs it beside the CNAME, so
+		// only the Workspace whose token the host publishes holds it.
+		field.String("ownership_token").
+			NotEmpty().
+			Immutable(),
 		// What the host does for the Workspace: current (new mail and the snippet use it while
 		// it serves), replacement (becomes current once it serves) or retired (serves what was
 		// sent and installed on it, nothing new). At most one current and one replacement.

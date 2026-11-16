@@ -56,11 +56,13 @@ func (answering) Do(req *http.Request) (*http.Response, error) {
 
 var down = probeAnswer{err: errors.New("connection refused")}
 
-// atEdge is a DNS zone in which every host given is a CNAME to the edge.
+// atEdge is a DNS zone in which every host given is a CNAME to the edge whose ownership TXT names
+// the fixture row of its owner (token fixture-<host>, ADR 0173).
 func atEdge(hosts ...string) map[string]mockdns.Zone {
 	zones := map[string]mockdns.Zone{}
 	for _, h := range hosts {
 		zones[h+"."] = mockdns.Zone{CNAME: edge + "."}
+		zones[trackingdomains.OwnershipName(h)+"."] = mockdns.Zone{TXT: []string{"sphericon-tracking=fixture-" + h}}
 	}
 	return zones
 }
@@ -69,9 +71,11 @@ func atEdge(hosts ...string) map[string]mockdns.Zone {
 // through the system mailbox.
 func module(t *testing.T, env *testhelper.TestEnv, zones map[string]mockdns.Zone, probe trackingdomains.Doer) *trackingdomains.Module {
 	t.Helper()
+	dns := dnstest.Resolver(t, zones)
 	return trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{
 		Checker: &trackingdomains.Checker{
-			Lookup: dnstest.Resolver(t, zones).LookupCNAME,
+			Lookup: dns.LookupCNAME,
+			TXT:    dns.LookupTXT,
 			Target: edge,
 			HTTP:   probe,
 			Secret: secret,
@@ -390,12 +394,29 @@ func TestAResolverFailureChangesNothing(t *testing.T) {
 	assert.False(t, clock.Equal(*row.CheckedAt))
 }
 
+// claimedBoth is a DNS zone in which the host is a CNAME to the edge and its ownership TXT names
+// both Umbrella's row and Wayne's claim: the owner of the host published Wayne's token too.
+func claimedBoth(host string) map[string]mockdns.Zone {
+	zones := atEdge(host)
+	zones[trackingdomains.OwnershipName(host)+"."] = mockdns.Zone{TXT: []string{
+		"sphericon-tracking=fixture-" + host, "sphericon-tracking=fixture-wayne-claim",
+	}}
+	return zones
+}
+
+// withTXT is a DNS zone in which the host is a CNAME to the edge and its ownership TXT holds txt.
+func withTXT(host string, txt mockdns.Zone) map[string]mockdns.Zone {
+	zones := atEdge(host)
+	zones[trackingdomains.OwnershipName(host)+"."] = txt
+	return zones
+}
+
 // Umbrella holds t.umbrella.test; Wayne's claim on the same host cannot verify while Umbrella
-// is verified, and says why.
+// is verified, even when the host names both, and says why.
 func TestASecondWorkspaceCannotVerifyAHeldHost(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	row, err := module(t, env, atEdge(fixtures.TrackingDomainClaimHost), answering{}).
+	row, err := module(t, env, claimedBoth(fixtures.TrackingDomainClaimHost), answering{}).
 		Verify(t.Context(), env.DB.Scoped(fixtures.WayneID), fixtures.TrackingDomainClaimID)
 	require.NoError(t, err)
 	assert.Equal(t, trackingdomain.StatePending, row.State)
@@ -430,6 +451,86 @@ func TestAReplacementThatServesTakesOverAndRetiresTheCurrentHost(t *testing.T) {
 	require.Len(t, msgs, 1)
 	assert.Contains(t, msgs[0].Subject, fixtures.TrackingDomainReplacementHost)
 	assert.Contains(t, msgs[0].Text, fixtures.TrackingDomainServingHost)
+}
+
+// ADR 0173: the CNAME shows only that a host points at the Instance, which every Workspace's claim of
+// it shares; the ownership TXT names the one the host is. Wayne's claim on a host whose TXT names
+// Umbrella stays pending, and not as taken: the host is not Wayne's, whoever holds it.
+func TestAClaimOnAHostWhoseTXTNamesAnotherWorkspaceStaysPending(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	row, err := module(t, env, atEdge(fixtures.TrackingDomainClaimHost), answering{}).
+		Verify(t.Context(), env.DB.Scoped(fixtures.WayneID), fixtures.TrackingDomainClaimID)
+	require.NoError(t, err)
+	assert.Equal(t, trackingdomain.StatePending, row.State)
+	assert.Nil(t, row.Reason)
+
+	owner, err := module(t, env, atEdge(fixtures.TrackingDomainClaimHost), answering{}).
+		Verify(t.Context(), env.DB.Scoped(fixtures.UmbrellaID), fixtures.TrackingDomainServingID)
+	require.NoError(t, err)
+	assert.Equal(t, trackingdomain.StateServing, owner.State, "the Workspace the TXT names keeps it")
+}
+
+// A host the CNAME reaches without its ownership TXT, or with a TXT naming no row, is pending.
+func TestAHostWithoutItsOwnershipTXTIsPending(t *testing.T) {
+	host := fixtures.TrackingDomainAcmeHost
+	for name, zones := range map[string]map[string]mockdns.Zone{
+		"missing": {host + ".": {CNAME: edge + "."}},
+		"another": withTXT(host, mockdns.Zone{TXT: []string{"sphericon-tracking=someone-else"}}),
+	} {
+		t.Run(name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+
+			row, err := module(t, env, zones, answering{}).Verify(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.TrackingDomainAcmeID)
+			require.NoError(t, err)
+			assert.Equal(t, trackingdomain.StatePending, row.State)
+		})
+	}
+}
+
+// The TXT is a standing condition: a host that changes hands, its TXT now naming Wayne, leaves
+// Umbrella at its next check, and Wayne then verifies it.
+func TestAHostThatChangesHandsLeavesTheEarlierWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	wayneOnly := withTXT(fixtures.TrackingDomainClaimHost, mockdns.Zone{TXT: []string{"sphericon-tracking=fixture-wayne-claim"}})
+
+	require.NoError(t, module(t, env, wayneOnly, answering{}).Recheck(t.Context(), fixtures.TrackingDomainServingID))
+	assert.Equal(t, trackingdomain.StatePending, get(t, env, fixtures.TrackingDomainServingID).State)
+
+	row, err := module(t, env, wayneOnly, answering{}).Verify(t.Context(), env.DB.Scoped(fixtures.WayneID), fixtures.TrackingDomainClaimID)
+	require.NoError(t, err)
+	assert.Equal(t, trackingdomain.StateServing, row.State)
+	assert.Nil(t, row.Reason)
+}
+
+// A resolver failure on the TXT, as on the CNAME, changes nothing: a serving host stays serving.
+func TestATXTResolverFailureChangesNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	dns := dnstest.Resolver(t, atEdge(fixtures.TrackingDomainServingHost))
+	m := trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{
+		Checker: &trackingdomains.Checker{
+			Lookup: dns.LookupCNAME,
+			TXT:    func(context.Context, string) ([]string, error) { return nil, errors.New("servfail") },
+			Target: edge,
+			HTTP:   answering{},
+			Secret: secret,
+		},
+		Now: func() time.Time { return clock },
+	})
+
+	_, err := m.Verify(t.Context(), env.DB.Scoped(fixtures.UmbrellaID), fixtures.TrackingDomainServingID)
+	require.Error(t, err)
+	assert.Equal(t, trackingdomain.StateServing, get(t, env, fixtures.TrackingDomainServingID).State)
+}
+
+// A retired host whose TXT no longer names its Workspace goes, as one whose CNAME left does.
+func TestARetiredHostWhoseTXTLeftGoes(t *testing.T) {
+	env := testhelper.Setup(t)
+	elsewhere := withTXT(fixtures.TrackingDomainRetiredHost, mockdns.Zone{TXT: []string{"sphericon-tracking=someone-else"}})
+
+	require.NoError(t, module(t, env, elsewhere, down).Recheck(t.Context(), fixtures.TrackingDomainRetiredID))
+
+	assert.True(t, gone(t, env, fixtures.TrackingDomainRetiredID))
 }
 
 // A retired host stays while its CNAME reaches the edge, whatever the probe says.

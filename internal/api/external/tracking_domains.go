@@ -11,11 +11,12 @@ import (
 // The Tracking domain operations are thin adapters over internal/domain/sending/trackingdomains
 // (ADR 0071), the module /site shares. No operation can set a state: only the live check does.
 
-// trackingDomainResource maps the row, then attaches the CNAME to publish, whose target the
-// module knows and the mapper cannot see.
+// trackingDomainResource maps the row, then attaches the CNAME and the ownership TXT to publish,
+// which the module builds and the mapper cannot see.
 func (h *Handlers) trackingDomainResource(d *ent.TrackingDomain) externalapi.TrackingDomainResource {
 	res := mapper.TrackingDomainToResource(d)
 	res.Record = mapper.CnameRecordToResource(h.trackingDomains.Record(d))
+	res.OwnershipRecord = mapper.OwnershipRecordToResource(h.trackingDomains.OwnershipRecord(d))
 	return res
 }
 

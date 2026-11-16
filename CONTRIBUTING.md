@@ -315,7 +315,7 @@ every other name is NXDOMAIN. Nothing reaches the internet.
 
 **Brightpath's domains need nothing from you.** `dev/dns/db.brightpath.localhost` publishes the
 DKIM record of `mail.`, `news.` and `send.brightpath.localhost` (the key the fixtures give them) and
-the CNAME of the Workspace's Tracking domain `t.brightpath.localhost`; `dev/dns/db.brightpath.example` publishes the Join domain
+the CNAME and the ownership TXT of the Workspace's Tracking domain `t.brightpath.localhost`; `dev/dns/db.brightpath.example` publishes the Join domain
 proof of `brightpath.example`. These domains are verified and stay so under the background re-check.
 `launch.brightpath.localhost` is `pending` and has no record on purpose: publish it as below and press
 **Verify** to see the flow, and a Tracking domain moves from `pending` to `dns_verified` the same way

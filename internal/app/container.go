@@ -534,6 +534,7 @@ var jobsPackage = do.Package(
 		if cfg.TrackingCNAMETarget != "" {
 			checker = &trackingdomains.Checker{
 				Lookup: dnsResolver(cfg.DNSAddr).LookupCNAME,
+				TXT:    dnsResolver(cfg.DNSAddr).LookupTXT,
 				Target: cfg.TrackingCNAMETarget,
 				// The SSRF-guarded client: a customer's DNS names the host the probe dials.
 				HTTP:   webhook.NewClient(trackingProbeTimeout),

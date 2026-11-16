@@ -9240,7 +9240,7 @@
             "description": "The record value to publish"
           }
         },
-        "description": "A DNS record the caller publishes to authenticate a Sending domain"
+        "description": "A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership"
       },
       "DryRunHttpStepInput": {
         "type": "object",
@@ -12812,7 +12812,16 @@
       },
       "TrackingDomainResource": {
         "type": "object",
-        "required": ["id", "host", "role", "state", "record", "createdAt", "updatedAt"],
+        "required": [
+          "id",
+          "host",
+          "role",
+          "state",
+          "record",
+          "ownershipRecord",
+          "createdAt",
+          "updatedAt"
+        ],
         "properties": {
           "id": {
             "allOf": [
@@ -12857,6 +12866,14 @@
               }
             ],
             "description": "The CNAME to publish"
+          },
+          "ownershipRecord": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DnsRecord"
+              }
+            ],
+            "description": "The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every\ncheck needs both (ADR 0173)"
           },
           "servedAt": {
             "type": "string",
@@ -12915,12 +12932,12 @@
       "TrackingReason": {
         "type": "string",
         "enum": ["host_taken"],
-        "description": "Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
+        "description": "Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)"
       },
       "TrackingState": {
         "type": "string",
         "enum": ["pending", "dns_verified", "serving"],
-        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers"
+        "description": "State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers"
       },
       "TransactionalSendStatus": {
         "type": "string",

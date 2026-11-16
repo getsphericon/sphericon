@@ -12,14 +12,14 @@ enum TrackingDomainRole {
   retired,
 }
 
-/** State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers */
+/** State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers */
 enum TrackingState {
   pending,
   dns_verified,
   serving,
 }
 
-/** Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038) */
+/** Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038) */
 enum TrackingReason {
   host_taken: "host_taken",
 }
@@ -55,6 +55,10 @@ model TrackingDomainResource {
 
   /** The CNAME to publish */
   record: CnameRecord;
+
+  /** The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every
+   * check needs both (ADR 0173) */
+  ownershipRecord: DnsRecord;
 
   /** When the host first served (null = never): only a host that served is retired rather than deleted */
   servedAt?: Timestamp | null;

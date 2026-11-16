@@ -1761,6 +1761,10 @@ func init() {
 	trackingdomainDescHost := trackingdomainFields[1].Descriptor()
 	// trackingdomain.HostValidator is a validator for the "host" field. It is called by the builders before save.
 	trackingdomain.HostValidator = trackingdomainDescHost.Validators[0].(func(string) error)
+	// trackingdomainDescOwnershipToken is the schema descriptor for ownership_token field.
+	trackingdomainDescOwnershipToken := trackingdomainFields[2].Descriptor()
+	// trackingdomain.OwnershipTokenValidator is a validator for the "ownership_token" field. It is called by the builders before save.
+	trackingdomain.OwnershipTokenValidator = trackingdomainDescOwnershipToken.Validators[0].(func(string) error)
 	trackinghostchangeMixin := schema.TrackingHostChange{}.Mixin()
 	trackinghostchangeMixinFields0 := trackinghostchangeMixin[0].Fields()
 	_ = trackinghostchangeMixinFields0

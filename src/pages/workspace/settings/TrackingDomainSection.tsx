@@ -85,28 +85,48 @@ function CopyValue({ value }: { value: string }) {
   )
 }
 
-// CnameRecord is the record to publish at the DNS provider of the host.
-function CnameRecord({ domain }: { domain: SiteTrackingDomainResource }) {
+// DnsRecord is one record to publish: its type, the name it goes at and what it holds.
+function DnsRecord({ type, host, value }: { type: string; host: string; value: string }) {
+  const { t } = useTranslation()
+  return (
+    <Group gap="lg" wrap="wrap">
+      <Box>
+        <Text size="xs" c="dimmed">
+          {t(($) => $.settings.trackingDomain.recordType)}
+        </Text>
+        <Text size="sm" ff="monospace">
+          {type}
+        </Text>
+      </Box>
+      <Box>
+        <Text size="xs" c="dimmed">
+          {t(($) => $.settings.trackingDomain.recordHost)}
+        </Text>
+        <CopyValue value={host} />
+      </Box>
+      <Box>
+        <Text size="xs" c="dimmed">
+          {t(($) => $.settings.trackingDomain.recordValue)}
+        </Text>
+        <CopyValue value={value} />
+      </Box>
+    </Group>
+  )
+}
+
+// DnsRecords are the two records to publish at the DNS provider of the host and keep (ADR 0173): the
+// CNAME at the edge, and the TXT that shows the host is this Workspace's.
+function DnsRecords({ domain }: { domain: SiteTrackingDomainResource }) {
   const { t } = useTranslation()
   return (
     <Stack gap={4}>
-      <Text size="sm">
-        {t(($) => $.settings.trackingDomain.recordHint, { type: domain.record.type })}
-      </Text>
-      <Group gap="lg" wrap="wrap">
-        <Box>
-          <Text size="xs" c="dimmed">
-            {t(($) => $.settings.trackingDomain.recordHost)}
-          </Text>
-          <CopyValue value={domain.record.host} />
-        </Box>
-        <Box>
-          <Text size="xs" c="dimmed">
-            {t(($) => $.settings.trackingDomain.recordTarget)}
-          </Text>
-          <CopyValue value={domain.record.target} />
-        </Box>
-      </Group>
+      <Text size="sm">{t(($) => $.settings.trackingDomain.recordHint)}</Text>
+      <DnsRecord type={domain.record.type} host={domain.record.host} value={domain.record.target} />
+      <DnsRecord
+        type={domain.ownershipRecord.type}
+        host={domain.ownershipRecord.host}
+        value={domain.ownershipRecord.value}
+      />
     </Stack>
   )
 }
@@ -248,7 +268,7 @@ function TrackingDomains({ workspaceId, canManage }: { workspaceId: string; canM
               ) : null}
             </Group>
             <HostTakenNote domain={current} />
-            <CnameRecord domain={current} />
+            <DnsRecords domain={current} />
           </Stack>
         </Card>
       ) : null}
@@ -291,7 +311,7 @@ function TrackingDomains({ workspaceId, canManage }: { workspaceId: string; canM
               </Text>
             ) : null}
             <HostTakenNote domain={replacement} />
-            <CnameRecord domain={replacement} />
+            <DnsRecords domain={replacement} />
           </Stack>
         </Card>
       ) : null}

@@ -34138,6 +34138,10 @@ func (s *TrackingDomainResource) encodeFields(e *jx.Encoder) {
 		s.Record.Encode(e)
 	}
 	{
+		e.FieldStart("ownershipRecord")
+		s.OwnershipRecord.Encode(e)
+	}
+	{
 		if s.ServedAt.Set {
 			e.FieldStart("servedAt")
 			s.ServedAt.Encode(e)
@@ -34165,18 +34169,19 @@ func (s *TrackingDomainResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfTrackingDomainResource = [11]string{
+var jsonFieldsNameOfTrackingDomainResource = [12]string{
 	0:  "id",
 	1:  "host",
 	2:  "role",
 	3:  "state",
 	4:  "reason",
 	5:  "record",
-	6:  "servedAt",
-	7:  "lastCheckedAt",
-	8:  "stateChangedAt",
-	9:  "createdAt",
-	10: "updatedAt",
+	6:  "ownershipRecord",
+	7:  "servedAt",
+	8:  "lastCheckedAt",
+	9:  "stateChangedAt",
+	10: "createdAt",
+	11: "updatedAt",
 }
 
 // Decode decodes TrackingDomainResource from json.
@@ -34250,6 +34255,16 @@ func (s *TrackingDomainResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"record\"")
 			}
+		case "ownershipRecord":
+			requiredBitSet[0] |= 1 << 6
+			if err := func() error {
+				if err := s.OwnershipRecord.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"ownershipRecord\"")
+			}
 		case "servedAt":
 			if err := func() error {
 				s.ServedAt.Reset()
@@ -34281,7 +34296,7 @@ func (s *TrackingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"stateChangedAt\"")
 			}
 		case "createdAt":
-			requiredBitSet[1] |= 1 << 1
+			requiredBitSet[1] |= 1 << 2
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -34291,7 +34306,7 @@ func (s *TrackingDomainResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[1] |= 1 << 2
+			requiredBitSet[1] |= 1 << 3
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -34310,8 +34325,8 @@ func (s *TrackingDomainResource) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [2]uint8{
-		0b00101111,
-		0b00000110,
+		0b01101111,
+		0b00001100,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

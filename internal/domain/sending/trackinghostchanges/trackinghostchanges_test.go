@@ -64,12 +64,12 @@ func TestACreatedHostIsLoggedOnlyWhenItIsAlreadyVerified(t *testing.T) {
 	env.Feed(t, func(tx *ent.Client) error {
 		// test writes: the hook fires on this write
 		return tx.Scoped(fixtures.KramericaID).TrackingDomain().Create().
-			SetHost("new-pending.kramerica.test").SetRole(trackingdomain.RoleCurrent).Exec(t.Context())
+			SetHost("new-pending.kramerica.test").SetRole(trackingdomain.RoleCurrent).SetOwnershipToken("pending-token").Exec(t.Context())
 	})
 	env.Feed(t, func(tx *ent.Client) error {
 		// test writes: the hook fires on this write
 		return tx.Scoped(fixtures.KramericaID).TrackingDomain().Create().SetHost("new-dns.kramerica.test").
-			SetRole(trackingdomain.RoleRetired).SetState(trackingdomain.StateDNSVerified).Exec(t.Context())
+			SetRole(trackingdomain.RoleRetired).SetState(trackingdomain.StateDNSVerified).SetOwnershipToken("dns-token").Exec(t.Context())
 	})
 
 	assert.Empty(t, logged(t, env, "new-pending.kramerica.test"))
