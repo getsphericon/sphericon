@@ -81,6 +81,23 @@ func TestMCPPromptsOnlyReferenceAuthoringTools(t *testing.T) {
 	}
 }
 
+// whoami names the token, not the Workspace: every prompt starts by reading the Workspace and
+// saying its name back to the human, so the agent never reports a Workspace it guessed.
+func TestMCPPromptsStartByNamingTheWorkspace(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+	step1 := regexp.MustCompile(`(?m)^1\. (.*)$`)
+
+	for _, name := range shippedPrompts {
+		body := promptText(t, s, name)
+		step := step1.FindStringSubmatch(body)
+		require.NotNilf(t, step, "%s has no step 1", name)
+		assert.Containsf(t, step[1], "`workspace_get()`", "%s reads the Workspace in step 1", name)
+		assert.Containsf(t, step[1], "Workspace's name", "%s says the Workspace's name back in step 1", name)
+		assert.NotContainsf(t, step[1], "whoami", "%s no longer confirms the Workspace with whoami", name)
+	}
+}
+
 // The prompts that write mail tell an agent that the editor's document is the format and name
 // where the Brand kit, the schema and the lint are (ADR 0040).
 func TestMCPPromptsThatWriteMailNameTheEditorTools(t *testing.T) {
