@@ -52,15 +52,24 @@ func propertyOf(err error, segments []string) (path []string, reason string, fou
 		own = strings.TrimSuffix(own, ": "+inner.Error())
 	}
 	if name, ok := quoted(unexpectedFieldMessage, own); ok {
-		return append(slices.Clip(segments), name), UnknownProperty, true
+		return append(slices.Clip(segments), segment(name)), UnknownProperty, true
 	}
 	if name, ok := quoted(decodeFieldMessage, own); ok {
-		segments = append(slices.Clip(segments), name)
+		segments = append(slices.Clip(segments), segment(name))
 	}
 	if inner != nil {
 		return propertyOf(inner, segments)
 	}
 	return segments, own, len(segments) > 0
+}
+
+// segment is a key as a segment of the path: as it is, or Go-quoted when it is empty or holds a
+// dot or a quote, so that a refused key a client chose (`""`, `a.b`) cannot read as another path.
+func segment(key string) string {
+	if key == "" || strings.ContainsAny(key, `."`) || !strconv.CanBackquote(key) {
+		return strconv.Quote(key)
+	}
+	return key
 }
 
 // quoted is the Go-quoted name message carries in the only group of pattern.
