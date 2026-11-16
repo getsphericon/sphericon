@@ -16,7 +16,7 @@ an event that is not Projected (`events.Projected`): it has no Event row, automa
 and a Webhook endpoint receives it only when it names `audit.entry`.
 The Audit table's rows are removed only through `ee/domain/insights/auditentries`, by `ee/usecase/auditlogretention`'s prune (the
 `retention` license feature, a Workspace `retention_days` window, one hourly river job
-of the Enterprise job runner `ee/jobs`, which calls `auditentries.PruneBefore`), and by the Workspace erase
+of the Enterprise job runner `ee/jobs`, which calls `auditentries.Log.PruneBefore`), and by the Workspace erase
 (`internal/usecase/workspacedeletion`), which deletes a deleted Workspace's entries directly (ADR 0110).
 An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
 change, the Audit log export `auditentries.Log.Export`), is recorded one way: `events.RecordAudit`

@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -49,9 +50,15 @@ func (p *pass) Run(ctx context.Context, at time.Time) (abusedetector.Summary, er
 // tells the owners through the platform sender.
 func newDetector(env *testhelper.TestEnv, lic *licensekey.License, limits abusedetector.Limits) *pass {
 	p := &pass{}
-	p.detector = abusedetector.NewDetector(env.DB, env.Bus, lic, suspension.NewSuspender(env.Bus, time.Now), limits,
-		func() time.Time { return p.now })
+	watch := abusedetector.NewWatch(lic, limits, reputation.New(), func() time.Time { return p.now })
+	p.detector = abusedetector.NewDetector(env.DB, env.Bus, watch, suspension.NewSuspender(env.Bus, time.Now))
 	return p
+}
+
+// watchAt is the staff-licensed Watch over the tests' limits, on a clock stopped at when.
+func watchAt(t *testing.T, when time.Time) *abusedetector.Watch {
+	t.Helper()
+	return abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits, reputation.New(), func() time.Time { return when })
 }
 
 // The traffic the tests judge is in fixtures/events.yml, one scenario per day offset: a test runs
@@ -167,7 +174,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 	d := detector(t, env)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
+	breach, err := watchAt(t, at(noDeliveryDay)).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws)
 	require.NoError(t, err)
 	summary, err := d.Run(t.Context(), at(noDeliveryDay))
 
@@ -349,7 +356,7 @@ func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
+	breach, err := watchAt(t, at(warnDay)).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws)
 
 	require.NoError(t, err)
 	assert.Equal(t, abusedetector.TierWarn, breach.Tier)
