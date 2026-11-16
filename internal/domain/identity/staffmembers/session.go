@@ -60,8 +60,10 @@ type Sessions struct {
 	ent    *ent.Client
 }
 
-// newSessions builds the issuer and verifier.
-func newSessions(client *ent.Client, cfg Config, now func() time.Time) *Sessions {
+// NewSessions builds the issuer and verifier of the sessions signed with cfg's secret, over the raw
+// client, on cfg's Instance clock. The module builds them while its sign-in is on (Module.Sessions).
+func NewSessions(client *ent.Client, cfg Config) *Sessions {
+	now := cfg.Clock
 	return &Sessions{
 		key: []byte(cfg.Secret),
 		parser: jwt.NewParser(

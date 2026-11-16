@@ -19,9 +19,7 @@ import (
 // staffSessions are the sessions of a Staff sign-in that is on.
 func staffSessions(t *testing.T) *staffmembers.Sessions {
 	t.Helper()
-	m, err := staffmembers.New(nil, nil, []string{rand.Text() + rand.Text()}, staffmembers.Config{Clock: time.Now, Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: throttle.NewAttempts(nil, time.Now)})
-	require.NoError(t, err)
-	return m.Sessions()
+	return staffmembers.NewSessions(nil, staffmembers.Config{Clock: time.Now, Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: throttle.NewAttempts(nil, time.Now)})
 }
 
 func TestTheStaffLicenseNeedsTheStaffSignIn(t *testing.T) {
