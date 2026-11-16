@@ -364,34 +364,33 @@ func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], c
 	return method, err
 }
 
-// DeletionCode is the Second factor code that confirms a User's deletion (ADR 0050, the use case
-// internal/usecase/userdeletion), spent on the deletion's transaction: NewDeletionCode builds it
-// over the publisher of that transaction, which records a Recovery code's use with the deletion.
-type DeletionCode struct {
-	factors *Module
-	pub     events.Publisher
-}
-
-// NewDeletionCode builds the deletion code of the transaction whose publisher is pub.
-func NewDeletionCode(factors *Module, pub events.Publisher) *DeletionCode {
-	return &DeletionCode{factors: factors, pub: pub}
-}
-
-// Spend spends code on the transaction tx of the deletion, whose User row locked the caller has
-// locked and freshly read: with a Second factor the code must be a current TOTP code or an unused
-// Recovery code (ErrDeletionCodeInvalid otherwise), and it is spent only if the deletion commits;
-// without one it confirms nothing. It keeps the lock order of every change of the factor: the User
-// row, the factor row, then the codes.
-func (d *DeletionCode) Spend(ctx context.Context, tx *ent.Client, locked *ent.User, code string) error {
+// DeletionCode spends code on the transaction tx of User deletion (ADR 0050, the use case
+// internal/usecase/userdeletion), a transaction of the module's bus whose User row locked the caller
+// has locked and freshly read: with a Second factor the code must be a current TOTP code or an
+// unused Recovery code (ErrDeletionCodeInvalid otherwise), and it is spent, its use recorded, only if
+// the deletion commits; without one it confirms nothing. It keeps the lock order of every change of
+// the factor: the User row, the factor row, then the codes.
+func (m *Module) DeletionCode(ctx context.Context, tx *ent.Client, locked *ent.User, code string) error {
 	f, err := factorOf(ctx, tx, locked.ID)
 	if err != nil || !active(f) {
 		return err
 	}
-	_, _, err = d.factors.verify(ctx, tx, d.pub, snapshot{User: locked, Factor: f}, code)
+	_, _, err = m.verify(ctx, tx, publisherIn{bus: m.bus, tx: tx}, snapshot{User: locked, Factor: f}, code)
 	if errors.Is(err, ErrInvalidCode) {
 		return ErrDeletionCodeInvalid
 	}
 	return err
+}
+
+// publisherIn publishes through the bus in the transaction tx is bound to (events.Bus.PublishIn),
+// for the users module's record of a User's action, which takes a publisher.
+type publisherIn struct {
+	bus *events.Bus
+	tx  *ent.Client
+}
+
+func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
+	return p.bus.PublishIn(ctx, p.tx, ev)
 }
 
 // ChallengeBinding is the value a login challenge (ADR 0020) is keyed to: it
