@@ -805,6 +805,41 @@ var (
 			},
 		},
 	}
+	// ConsentStampsColumns holds the columns for the "consent_stamps" table.
+	ConsentStampsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "channel", Type: field.TypeEnum, Enums: []string{"email", "telegram", "sms"}},
+		{Name: "destination", Type: field.TypeString},
+		{Name: "sending_source", Type: field.TypeString},
+		{Name: "opt_out_occurred_at", Type: field.TypeTime, Nullable: true},
+		{Name: "opt_out_integration_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "opt_out_sequence", Type: field.TypeInt64, Nullable: true},
+		{Name: "confirmation_occurred_at", Type: field.TypeTime, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// ConsentStampsTable holds the schema information for the "consent_stamps" table.
+	ConsentStampsTable = &schema.Table{
+		Name:       "consent_stamps",
+		Columns:    ConsentStampsColumns,
+		PrimaryKey: []*schema.Column{ConsentStampsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "consent_stamps_workspaces_consent_stamps",
+				Columns:    []*schema.Column{ConsentStampsColumns[10]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "consent_stamps_ws_channel_dest_source",
+				Unique:  true,
+				Columns: []*schema.Column{ConsentStampsColumns[10], ConsentStampsColumns[3], ConsentStampsColumns[4], ConsentStampsColumns[5]},
+			},
+		},
+	}
 	// ContactsColumns holds the columns for the "contacts" table.
 	ContactsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3217,6 +3252,7 @@ var (
 		CapturedMessagesTable,
 		ConfirmationsTable,
 		ConsentRecordsTable,
+		ConsentStampsTable,
 		ContactsTable,
 		ContactTagsTable,
 		CustomFieldsTable,
@@ -3406,6 +3442,16 @@ func init() {
 	ConsentRecordsTable.Annotation.Checks = map[string]string{
 		"consent_records_decision_check": "decision IN ('accepted', 'declined', 'withdrawn', 'shown')",
 		"consent_records_source_check":   "source IN ('sign_up_form', 'provider_screen', 'invitation', 're_acceptance', 'account_settings')",
+	}
+	ConsentStampsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	ConsentStampsTable.Annotation = &entsql.Annotation{
+		Table: "consent_stamps",
+	}
+	ConsentStampsTable.Annotation.Checks = map[string]string{
+		"consent_stamps_channel_check":      "channel IN ('email', 'telegram', 'sms')",
+		"consent_stamps_confirmation_check": "sending_source = 'everything' OR confirmation_occurred_at IS NULL",
+		"consent_stamps_destination_lower":  "destination = lower(destination)",
+		"consent_stamps_sequence_check":     "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND (opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)",
 	}
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{

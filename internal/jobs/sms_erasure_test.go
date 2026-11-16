@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -65,6 +66,8 @@ func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
 	assert.Zero(t, stops, "no opt-out by the number")
 	suppressionCount := env.DB.Suppression.Query().Where(entsuppression.Destination(number)).CountX(ctx)
 	assert.Zero(t, suppressionCount, "no Suppression by the number")
+	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(number)).CountX(ctx)
+	assert.Zero(t, stamps, "no consent stamp by the number")
 	envelopes := env.QueuedEnvelopes(t)
 	naming := lo.FilterMap(envelopes, func(e events.Envelope, _ int) (string, bool) {
 		return e.Name, strings.Contains(string(e.Data)+e.DedupKey, digits)
@@ -170,6 +173,57 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	dec, err = eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.True(t, dec.Eligible, dec.Reason)
+}
+
+// The time an erased person stopped is kept by the number's hash, as their opt-out is (ADR 0154):
+// a START that occurred before that stop, delivered after the Erasure, lifts nothing.
+func TestAStartOlderThanAnErasedPersonsStopLiftsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	number := fixtures.ContactTexterPhone
+	stopped := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStopObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: number, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: stopped,
+	}))
+
+	eraseContact(t, env, fixtures.ContactTexterID)
+
+	assertNothingNames(t, env, number)
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStartObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: number, DedupID: "start", ObservedAt: stopped.Add(-time.Minute),
+	}))
+	dec, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(number)).CountX(ctx)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	assert.Zero(t, stamps, "the START is compared with the stamp kept by the hash, and writes no number")
+}
+
+// The stamp of a number the Contact stopped and no longer has, and the Event of a START that came
+// late on it, are erased with the Contact like its opt-out: by the number's hash, or not at all.
+func TestErasingAContactHashesTheStampOfANumberItHadBefore(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	former := fixtures.ContactTexterPhone
+	stopped := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStopObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: former, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: stopped,
+	}))
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStartObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: former, DedupID: "late-start", ObservedAt: stopped.Add(-time.Minute),
+	}))
+	// The Contact moves to another number; the opt-out of the former one still names it.
+	env.DB.Contact.UpdateOneID(fixtures.ContactTexterID).SetPhone("+14155550188").ExecX(ctx)
+
+	eraseContact(t, env, fixtures.ContactTexterID)
+
+	plain := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(former)).CountX(ctx)
+	kept := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(phone.Hash(former))).CountX(ctx)
+	naming := env.DB.Event.Query().Where(event.Phone(former)).CountX(ctx)
+	assert.Zero(t, plain, "no consent stamp by the number")
+	assert.Equal(t, 1, kept, "the time of the stop stays, by the hash")
+	assert.Zero(t, naming, "no Event, the superseded START's included, names the number")
 }
 
 // A Confirmation recorded for a number before any Contact had it names no Contact; erasing the

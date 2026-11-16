@@ -86,19 +86,19 @@ func TestEachWayToStopIsTheChannelWideOptOutAndTelegramUnsubscribed(t *testing.T
 	}{
 		{"/stop", events.UnsubscribedByKeyword, func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, said(1, optOutUser, "/stop"))
+			env.PostTelegramUpdate(t, b, said(1001, optOutUser, "/stop"))
 		}},
 		{"a keyword", events.UnsubscribedByKeyword, func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, said(1, optOutUser, "  Стоп "))
+			env.PostTelegramUpdate(t, b, said(1001, optOutUser, "  Стоп "))
 		}},
 		{"the button", events.UnsubscribedByButton, func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, pressed(1, optOutUser, 77, "cb-1", "unsubscribe"))
+			env.PostTelegramUpdate(t, b, pressed(1001, optOutUser, 77, "cb-1", "unsubscribe"))
 		}},
 		{"blocking the bot", events.UnsubscribedByBlock, func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, memberStatus(1, optOutUser, "kicked"))
+			env.PostTelegramUpdate(t, b, memberStatus(1001, optOutUser, "kicked"))
 		}},
 	}
 	for _, w := range ways {
@@ -126,8 +126,8 @@ func TestStoppingTwiceRecordsOneOptOut(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := boundBob(t, env)
 
-	env.PostTelegramUpdate(t, bot, said(1, optOutUser, "STOP"))
-	env.PostTelegramUpdate(t, bot, said(2, optOutUser, "/stop"))
+	env.PostTelegramUpdate(t, bot, said(1001, optOutUser, "STOP"))
+	env.PostTelegramUpdate(t, bot, said(1002, optOutUser, "/stop"))
 
 	assert.Equal(t, 1, env.DB.Unsubscribe.Query().Where(unsubscribe.WorkspaceID(fixtures.AcmeID), unsubscribe.ChannelEQ(channels.Telegram)).CountX(t.Context()))
 	assert.Equal(t, 1, env.QueuedCount(t, systemevent.TelegramUnsubscribed, nil))
@@ -137,7 +137,7 @@ func TestAStopFromAnUnknownDestinationIsKeptAndNothingElseIsRecorded(t *testing.
 	env := testhelper.Setup(t)
 	bot := boundBob(t, env)
 
-	env.PostTelegramUpdate(t, bot, said(1, 9191, "STOP"))
+	env.PostTelegramUpdate(t, bot, said(1001, 9191, "STOP"))
 
 	assert.True(t, optedOut(t, env, 9191))
 	assert.Zero(t, env.QueuedCount(t, systemevent.TelegramUnsubscribed, nil))
@@ -151,7 +151,7 @@ func TestAStopSkipsTheNextTelegramStepAndTheEmailStepsStillSend(t *testing.T) {
 		telegramStep(bot, "Telegram"),
 		automationstep.Step{Type: automationstep.Email, Subject: "Still here", Body: "<p>mail</p>"},
 	)
-	env.PostTelegramUpdate(t, bot, said(1, optOutUser, "/stop"))
+	env.PostTelegramUpdate(t, bot, said(1001, optOutUser, "/stop"))
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
 
 	runSteps(t, env)
@@ -169,7 +169,7 @@ func TestAStopGivenToOneBotSilencesTheWorkspacesOtherBots(t *testing.T) {
 	botB := env.AcmeTelegram(t)
 	env.BindTelegram(t, botB, fixtures.ContactBobID, optOutUser, 901)
 	automationID := telegramAutomation(t, env, telegramStep(botB, "From B"))
-	env.PostTelegramUpdate(t, botA, said(1, optOutUser, "STOP"))
+	env.PostTelegramUpdate(t, botA, said(1001, optOutUser, "STOP"))
 	runID := enrollVia(t, env, automationID, fixtures.ContactBobID)
 
 	runSteps(t, env)
@@ -182,22 +182,22 @@ func TestUnblockingTheBotAndAnyLaterStartLiftTheOptOut(t *testing.T) {
 	lifts := map[string]func(*testing.T, *testhelper.TestEnv, testhelper.TelegramBot){
 		"unblocking": func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, memberStatus(2, optOutUser, "member"))
+			env.PostTelegramUpdate(t, b, memberStatus(1002, optOutUser, "member"))
 		},
 		"a bare /start": func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, said(2, optOutUser, "/start"))
+			env.PostTelegramUpdate(t, b, said(1002, optOutUser, "/start"))
 		},
 		"a /start with a token the bot does not know": func(t *testing.T, env *testhelper.TestEnv, b testhelper.TelegramBot) {
 			t.Helper()
-			env.PostTelegramUpdate(t, b, said(2, optOutUser, "/start nope"))
+			env.PostTelegramUpdate(t, b, said(1002, optOutUser, "/start nope"))
 		},
 	}
 	for name, lift := range lifts {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 			bot := boundBob(t, env)
-			env.PostTelegramUpdate(t, bot, memberStatus(1, optOutUser, "kicked"))
+			env.PostTelegramUpdate(t, bot, memberStatus(1001, optOutUser, "kicked"))
 			require.True(t, optedOut(t, env, optOutUser))
 
 			lift(t, env, bot)
@@ -244,7 +244,7 @@ func TestAPressOnTheUnsubscribeButtonIsAttributedAndAnswered(t *testing.T) {
 	require.NotNil(t, sent.ProviderMessageID, "the id Telegram gave the message is kept to resolve a press")
 	messageID := sent.ProviderMessageID
 
-	posted := env.PostTelegramUpdate(t, bot, pressed(5, optOutUser, mustInt(t, *messageID), "cb-77", "unsubscribe"))
+	posted := env.PostTelegramUpdate(t, bot, pressed(1005, optOutUser, mustInt(t, *messageID), "cb-77", "unsubscribe"))
 
 	assert.Equal(t, 200, posted.Code)
 	assert.True(t, optedOut(t, env, optOutUser))
@@ -261,7 +261,7 @@ func TestAPressOnAnotherButtonIsAnsweredAndChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	bot := boundBob(t, env)
 
-	env.PostTelegramUpdate(t, bot, pressed(5, optOutUser, 9, "cb-9", "something-else"))
+	env.PostTelegramUpdate(t, bot, pressed(1005, optOutUser, 9, "cb-9", "something-else"))
 
 	assert.False(t, optedOut(t, env, optOutUser))
 	assert.Len(t, env.Telegram.RequestsOf(telegramtest.AnswerCallbackQuery), 1)
@@ -272,7 +272,7 @@ func TestAnAnswerThatFailsDoesNotFailTheRecordedPress(t *testing.T) {
 	bot := boundBob(t, env)
 	env.Telegram.Fail(telegramtest.AnswerCallbackQuery, telegramtest.BadRequest("query is too old"))
 
-	posted := env.PostTelegramUpdate(t, bot, pressed(5, optOutUser, 9, "cb-old", "unsubscribe"))
+	posted := env.PostTelegramUpdate(t, bot, pressed(1005, optOutUser, 9, "cb-old", "unsubscribe"))
 
 	assert.Equal(t, 200, posted.Code)
 	assert.True(t, optedOut(t, env, optOutUser))
@@ -426,11 +426,14 @@ func TestATelegramLinkClickedAgainAfterAStartIsANewOptOut(t *testing.T) {
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactBobID, BroadcastID: fixtures.BroadcastArchivedID,
 		OutboundMessageID: fixtures.OutboundMessageParkedClaimID,
 	}
-	u := unsubscriberecording.New(env.Bus, time.Now)
+	clock := testhelper.NewClock(time.Now())
+	u := unsubscriberecording.New(env.Bus, clock.Now)
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, u.RecordLink(t.Context(), scope, link))
-	env.PostTelegramUpdate(t, bot, said(2, optOutUser, "/start"))
+	// The start is sent after the click (Telegram dates it, to the second), the second click after it.
+	env.PostTelegramUpdate(t, bot, saidAt(1002, optOutUser, clock.Now().Unix()+1, "/start"))
 	require.False(t, optedOut(t, env, optOutUser))
+	clock.Advance(2 * time.Second)
 
 	require.NoError(t, u.RecordLink(t.Context(), scope, link))
 

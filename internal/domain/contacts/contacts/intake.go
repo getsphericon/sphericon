@@ -3,6 +3,7 @@ package contacts
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -88,7 +89,7 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err != nil {
 			return err
 		}
-		return confirmSMS(ctx, ts, pub, res, in.SMSConsent)
+		return confirmSMS(ctx, ts, pub, res, in.SMSConsent, m.now())
 	})
 	if err != nil {
 		return Result{}, err
@@ -123,11 +124,11 @@ func admitAddress(ctx context.Context, s *ent.Scoped, email *string, mail map[st
 // confirmSMS records the SMS consent a row carries for the phone it names, or the Contact's
 // own when it names none: the evidence was collected for that number. Consent without a phone is
 // refused, so an import row never drops it silently.
-func confirmSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, res Result, ev *confirmations.Evidence) error {
+func confirmSMS(ctx context.Context, s *ent.Scoped, pub events.Publisher, res Result, ev *confirmations.Evidence, at time.Time) error {
 	if ev == nil {
 		return nil
 	}
 	number := lo.CoalesceOrEmpty(lo.FromPtr(res.Phone), lo.FromPtr(res.Contact.Phone))
-	_, err := confirmations.ConfirmContactSMSIn(ctx, s, pub, number, *ev)
+	_, err := confirmations.ConfirmContactSMSIn(ctx, s, pub, number, *ev, at)
 	return err
 }

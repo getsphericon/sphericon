@@ -3,11 +3,17 @@ package contacterasure
 import (
 	"context"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps/consentstampsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
 // detachOptOuts keeps the Unsubscribe and active Suppression rows, which are keyed by
@@ -20,6 +26,45 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 		return err
 	}
 	return suppressionsunchecked.EraseContact(ctx, s, t.ContactID, t.Phone)
+}
+
+// eraseConsentStamps leaves of the times the subject's consent observations occurred only the time
+// of a stop that still stands (ADR 0154), kept as its opt-out is: by the number's hash on sms, by
+// the address on email. It reads the opt-outs before detachOptOuts rekeys them, and comes before
+// the other deletions: an observation in flight holds its stamp first and the Contact after, so the
+// Erasure, which holds the Contact, waits for it here rather than in the middle of rows that
+// observation writes next.
+func eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	for _, address := range t.Destinations {
+		standing := func(ctx context.Context, source string) (bool, error) {
+			_, err := unsubscribes.Get(ctx, s, channels.Email, address, source)
+			if ent.IsNotFound(err) {
+				return false, nil
+			}
+			return err == nil, err
+		}
+		if err := consentstampsunchecked.Erase(ctx, s, channels.Email, address, address, standing); err != nil {
+			return err
+		}
+	}
+	// The Contact's phone, and the numbers it had before whose opt-outs still name it.
+	numbers, err := unsubscribes.SMSNumbersOf(ctx, s, t.ContactID)
+	if err != nil {
+		return err
+	}
+	if t.Phone != "" {
+		numbers = append(numbers, t.Phone)
+	}
+	for _, number := range lo.Uniq(numbers) {
+		standing := func(ctx context.Context, _ string) (bool, error) {
+			optOut, err := unsubscribes.SMSOptOut(ctx, s, number)
+			return optOut != nil, err
+		}
+		if err := consentstampsunchecked.Erase(ctx, s, channels.SMS, number, phone.Hash(number), standing); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

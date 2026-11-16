@@ -173,7 +173,8 @@ namespace Confirmations {
    * collected and the brand. The evidence is kept in the immutable `sms.confirmed` event.
    * A number already confirmed keeps its confirmation unless the new one is stronger, so the
    * answer is the confirmation that stands. It does not lift an opt-out: only the person can, by
-   * texting START.
+   * texting START. Consent recorded before the number last withdrew it changes nothing and is
+   * refused with a conflict.
    */
   @post
   @requiresScopes(#[ApiTokenScope.contactsWrite])

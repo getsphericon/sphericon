@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -1012,6 +1013,21 @@ func (_c *WorkspaceCreate) AddConfirmations(v ...*Confirmation) *WorkspaceCreate
 		ids[i] = v[i].ID
 	}
 	return _c.AddConfirmationIDs(ids...)
+}
+
+// AddConsentStampIDs adds the "consent_stamps" edge to the ConsentStamp entity by IDs.
+func (_c *WorkspaceCreate) AddConsentStampIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddConsentStampIDs(ids...)
+	return _c
+}
+
+// AddConsentStamps adds the "consent_stamps" edges to the ConsentStamp entity.
+func (_c *WorkspaceCreate) AddConsentStamps(v ...*ConsentStamp) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddConsentStampIDs(ids...)
 }
 
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
@@ -2045,6 +2061,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(confirmation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ConsentStampsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

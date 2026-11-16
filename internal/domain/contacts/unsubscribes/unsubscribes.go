@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -85,6 +86,17 @@ type OptOut struct {
 	ContactID int64
 	// Via is how the person stopped, "" when the row does not say (on email the Event does).
 	Via unsubscribe.Via
+	// At is when the person stopped (ADR 0154).
+	At consentstamps.Occurrence
+}
+
+// Change is what an observation of a stop did.
+type Change struct {
+	// ID is the opt-out the observation wrote, 0 when it wrote none: one stood already.
+	ID int64
+	// Superseded says the observation occurred before the opt-out state standing (a return that
+	// lifted it, or a later stop) and changed nothing (ADR 0154).
+	Superseded bool
 }
 
 // The unique constraint of the Unsubscribe's table (ADR 0106): one opt-out per (Channel,
@@ -97,22 +109,29 @@ var _ = db.Declare(
 
 // Add writes o unless it stands already, and returns the id of the row it wrote, 0 when it wrote
 // none: a repeated opt-out (a second click, a concurrent request) changes nothing. The id names
-// this opt-out until it is lifted, so a fact keyed by it is new for every new opt-out. A Contact
-// gone by now (erased between a send and the click) leaves the opt-out unlinked: it is keyed by
-// its Destination, which is held to the Channel's rule (Destination).
-func Add(ctx context.Context, s *ent.Scoped, o OptOut) (int64, error) {
+// this opt-out until it is lifted, so a fact keyed by it is new for every new opt-out. A stop that
+// occurred before the opt-out state standing (a return that lifted it, a later stop) is superseded
+// and writes nothing (ADR 0154). A Contact gone by now (erased between a send and the click) leaves
+// the opt-out unlinked: it is keyed by its Destination, which is held to the Channel's rule
+// (Destination).
+func Add(ctx context.Context, s *ent.Scoped, o OptOut) (Change, error) {
 	dest, err := Destination(o.Channel, o.Destination)
 	if err != nil {
-		return 0, err
+		return Change{}, err
 	}
 	o.Destination = dest
+	k := consentstamps.Key{Channel: o.Channel, Destination: dest, Source: o.Source}
+	admitted, err := consentstamps.Admit(ctx, s, k, consentstamps.OptOut, o.At, true)
+	if err != nil || !admitted {
+		return Change{Superseded: err == nil}, err
+	}
 	create := s.Unsubscribe().Create().
 		SetChannel(o.Channel).
 		SetDestination(o.Destination).
 		SetSendingSource(o.Source)
 	contactID, err := contactlock.Referenced(ctx, s, o.ContactID)
 	if err != nil {
-		return 0, fmt.Errorf("lock the opt-out's contact: %w", err)
+		return Change{}, fmt.Errorf("lock the opt-out's contact: %w", err)
 	}
 	if contactID != 0 {
 		create.SetContactID(contactID)
@@ -120,7 +139,8 @@ func Add(ctx context.Context, s *ent.Scoped, o OptOut) (int64, error) {
 	if o.Via != "" {
 		create.SetVia(o.Via)
 	}
-	return insert(ctx, create)
+	id, err := insert(ctx, create)
+	return Change{ID: id}, err
 }
 
 // insert writes create ON CONFLICT on the Unsubscribe's key DO NOTHING, and returns the id of the
@@ -153,8 +173,13 @@ func Get(ctx context.Context, s *ent.Scoped, channel channels.Channel, destinati
 // number in E.164), naming the Contact whose phone it is, unless it stands already (by the number
 // or by its hash), and returns the id of the row it wrote, 0 when it wrote none: a number already
 // opted out changes nothing, and keeps the way it first stopped. via is how the person stopped,
-// which the Contact card shows.
-func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (int64, error) {
+// which the Contact card shows, and at when: a stop older than the number's opt-out state is
+// superseded, as Add's.
+func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via, at consentstamps.Occurrence) (Change, error) {
+	admitted, err := consentstamps.Admit(ctx, s, smsKey(number), consentstamps.OptOut, at, true)
+	if err != nil || !admitted {
+		return Change{Superseded: err == nil}, err
+	}
 	// The opt-out of an erased person is kept by the hash of the number (unsubscribesunchecked.EraseSMS): a second row by
 	// the number itself would not conflict with it.
 	hashed, err := s.Unsubscribe().Query().Where(
@@ -163,10 +188,10 @@ func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.V
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
 	).Exist(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("find opt-out: %w", err)
+		return Change{}, fmt.Errorf("find opt-out: %w", err)
 	}
 	if hashed {
-		return 0, nil
+		return Change{}, nil
 	}
 	create := s.Unsubscribe().Create().
 		SetChannel(channels.SMS).
@@ -178,18 +203,30 @@ func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.V
 	case err == nil:
 		create.SetContactID(holder)
 	case !ent.IsNotFound(err):
-		return 0, fmt.Errorf("find the number's contact: %w", err)
+		return Change{}, fmt.Errorf("find the number's contact: %w", err)
 	}
-	return insert(ctx, create)
+	id, err := insert(ctx, create)
+	return Change{ID: id}, err
 }
 
-// LiftSMS lifts the Channel-wide opt-out of a phone number: the person texted START. Nothing to
-// lift is a no-op. It records no consent: the START's Confirmation is the caller's to record.
-func LiftSMS(ctx context.Context, s *ent.Scoped, number string) error {
-	if _, err := s.Unsubscribe().Delete().Where(smsEverything(number)...).Exec(ctx); err != nil {
-		return fmt.Errorf("lift opt-out: %w", err)
+// smsKey is the consent state of the Channel-wide SMS opt-out of number.
+func smsKey(number string) consentstamps.Key {
+	return consentstamps.Key{Channel: channels.SMS, Destination: number, Source: eligibility.SourceEverything}
+}
+
+// LiftSMS lifts the Channel-wide opt-out of a phone number: the person texted START, at at. Nothing
+// to lift is a no-op. It records no consent: the START's Confirmation is the caller's to record.
+// It reports false and lifts nothing for a START older than the number's opt-out state: the
+// person stopped after it (ADR 0154).
+func LiftSMS(ctx context.Context, s *ent.Scoped, number string, at consentstamps.Occurrence) (bool, error) {
+	admitted, err := consentstamps.Admit(ctx, s, smsKey(number), consentstamps.OptOut, at, false)
+	if err != nil || !admitted {
+		return false, err
 	}
-	return nil
+	if _, err := s.Unsubscribe().Delete().Where(smsEverything(number)...).Exec(ctx); err != nil {
+		return false, fmt.Errorf("lift opt-out: %w", err)
+	}
+	return true, nil
 }
 
 // SMSOptOut is the Channel-wide opt-out of a phone number, nil when it has none.
@@ -204,6 +241,20 @@ func SMSOptOut(ctx context.Context, s *ent.Scoped, number string) (*ent.Unsubscr
 	return u, nil
 }
 
+// SMSNumbersOf are the numbers of the SMS opt-outs that name the Contact: its phone's, and those of
+// numbers it had before, which an Erasure keeps by their hash (unsubscribesunchecked.EraseSMS).
+func SMSNumbersOf(ctx context.Context, s *ent.Scoped, contactID int64) ([]string, error) {
+	numbers, err := s.Unsubscribe().Query().
+		Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.ContactID(contactID)).
+		Unique(true).
+		Select(unsubscribe.FieldDestination).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list the contact's sms opt-outs: %w", err)
+	}
+	return numbers, nil
+}
+
 // smsEverything is the Channel-wide opt-out of the number: kept by the number, or by its hash once
 // the Contact whose phone it was is erased (unsubscribesunchecked.EraseSMS), so a STOP, a START and the Contact card find
 // an erased person's opt-out when the number comes back.
@@ -215,16 +266,22 @@ func smsEverything(number string) []predicate.Unsubscribe {
 	}
 }
 
-// LiftTelegram lifts the Channel-wide opt-out of a Telegram user: they asked to receive again, by
-// unblocking a bot or by starting one. Nothing to lift is a no-op. Only the `everything` scope is
-// lifted: a source-scoped opt-out the person chose by a link in a message stays.
-func LiftTelegram(ctx context.Context, s *ent.Scoped, destination string) error {
+// LiftTelegram lifts the Channel-wide opt-out of a Telegram user: they asked to receive again, at
+// at, by unblocking a bot or by starting one. Nothing to lift is a no-op. Only the `everything`
+// scope is lifted: a source-scoped opt-out the person chose by a link in a message stays. It
+// reports false and lifts nothing for a return older than the user's opt-out state (ADR 0154).
+func LiftTelegram(ctx context.Context, s *ent.Scoped, destination string, at consentstamps.Occurrence) (bool, error) {
+	k := consentstamps.Key{Channel: channels.Telegram, Destination: destination, Source: eligibility.SourceEverything}
+	admitted, err := consentstamps.Admit(ctx, s, k, consentstamps.OptOut, at, false)
+	if err != nil || !admitted {
+		return false, err
+	}
 	if _, err := s.Unsubscribe().Delete().Where(
 		unsubscribe.ChannelEQ(channels.Telegram),
 		unsubscribe.DestinationEQ(destination),
 		unsubscribe.SendingSourceEQ(eligibility.SourceEverything),
 	).Exec(ctx); err != nil {
-		return fmt.Errorf("lift opt-out: %w", err)
+		return false, fmt.Errorf("lift opt-out: %w", err)
 	}
-	return nil
+	return true, nil
 }

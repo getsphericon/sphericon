@@ -72,7 +72,12 @@ password reset, a verification link sent again) publishes in a transaction of it
 - **The subscribers** (`events.Subscriber`) run synchronously on the publishing transaction's
   scoped client. The composition root registers them; the bus imports no domain module. SMS stop
   and unreachable observations trigger their owners' consent and suppression writes. Only an
-  actual change publishes the corresponding state-transition fact (ADR 0114).
+  actual change publishes the corresponding state-transition fact (ADR 0114). A consent
+  observation applies in the order it occurred, not the order it arrived (ADR 0154): its
+  envelope's `OccurredAt` is the provider's time where it gives one, and a Telegram observation also
+  carries its bot's `update_id`. The owners compare it with the time kept for the consent state
+  (`internal/domain/contacts/consentstamps`); an older one changes nothing and is projected for the
+  Contact as `contact.consent_superseded`, at its own time, with none of a transition's reactions.
 - **The jobs**: each consumer is an entry of the consumer registry (`events.Consumer`): a filter that
   reads only the envelope and the event decoded from it, never the database, and the args of its
   job kind. The bus inserts the jobs of every entry that wants the event with one `InsertManyTx` on

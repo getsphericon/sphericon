@@ -134,6 +134,7 @@ var (
 	ErrorsConnectionNotFound                              = ID{key: "errors.connection_not_found"}
 	ErrorsConsentBrandEmpty                               = ID{key: "errors.consent_brand_empty"}
 	ErrorsConsentSourceEmpty                              = ID{key: "errors.consent_source_empty"}
+	ErrorsConsentSuperseded                               = ID{key: "errors.consent_superseded"}
 	ErrorsConsentWordingEmpty                             = ID{key: "errors.consent_wording_empty"}
 	ErrorsContactExportIdentifier                         = ID{key: "errors.contact_export_identifier"}
 	ErrorsContactIdentityRequired                         = ID{key: "errors.contact_identity_required"}

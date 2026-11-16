@@ -26,16 +26,20 @@ verify:
 # `member` (the person started or unblocked the bot) is reachable, `kicked` (or `left`) is
 # unreachable because the person blocked it. The id is the update_id, unique per bot. Ids are
 # strings: Telegram sends numbers. The engine validates update_id before this transform. Groups, channels and edits yield nothing.
+# occurred_at is the update's date (seconds) where it has one: a message's and a my_chat_member's.
+# A button press has none (the message's date is when the pressed message was sent), so it is
+# ordered by when it was received, and by its update_id among the bot's updates (ADR 0154).
 transform: |
   def keep: with_entries(select(.value != null and .value != ""));
   def private($chat): ($chat | objects | .type) == "private";
+  def time($date): ($date | numbers | todate) // null;
   [(.body | objects) as $u
    | (
      (($u.message | objects) as $m
       | select(private($m.chat) and ($m.text | type) == "string" and ($m.from | objects | .id) != null)
       | {kind: "inbound_message", id: ($u.update_id | tostring), channel: "telegram",
          destination: ($m.from.id | tostring), chat_id: ($m.chat.id | tostring),
-         message_id: ($m.message_id | tostring), text: $m.text}),
+         message_id: ($m.message_id | tostring), text: $m.text, occurred_at: time($m.date)}),
      (($u.callback_query | objects) as $q
       | ($q.message | objects) as $m
       | select(private($m.chat) and ($q.data | type) == "string" and ($q.from | objects | .id) != null and $q.id != null)
@@ -47,7 +51,7 @@ transform: |
       | ($c.new_chat_member | objects | .status) as $status
       | select($status == "member" or $status == "kicked" or $status == "left")
       | {kind: "reachability_change", id: ($u.update_id | tostring), destination: ($c.from.id | tostring),
-         reachable: ($status == "member")}
+         reachable: ($status == "member"), occurred_at: time($c.date)}
         + (if $status == "member" then {} else {reason: "blocked"} end))
    ) | keep]
 tests:
@@ -67,6 +71,7 @@ tests:
             chat_id: '4242',
             message_id: '1',
             text: /start abc_DEF-1,
+            occurred_at: '2026-01-01T00:00:00Z',
           }
   - name: a message in a group yields nothing
     params:
@@ -131,7 +136,13 @@ tests:
       body: '{"update_id":10006,"my_chat_member":{"chat":{"id":42,"type":"private","first_name":"Alice"},"from":{"id":42,"is_bot":false,"first_name":"Alice"},"date":1767225600,"old_chat_member":{"user":{"id":999,"is_bot":true},"status":"member"},"new_chat_member":{"user":{"id":999,"is_bot":true},"status":"kicked","until_date":0}}}'
     expect:
       reachability_changes:
-        - { id: '10006', destination: '42', reachable: false, reason: blocked }
+        - {
+            id: '10006',
+            destination: '42',
+            reachable: false,
+            reason: blocked,
+            occurred_at: '2026-01-01T00:00:00Z',
+          }
   - name: unblocking the bot is a Reachability change, reachable
     params:
       secret: telegram-test-secret-0123456789
@@ -141,7 +152,7 @@ tests:
       body: '{"update_id":10007,"my_chat_member":{"chat":{"id":42,"type":"private"},"from":{"id":42,"is_bot":false},"date":1767225600,"old_chat_member":{"user":{"id":999,"is_bot":true},"status":"kicked"},"new_chat_member":{"user":{"id":999,"is_bot":true},"status":"member"}}}'
     expect:
       reachability_changes:
-        - { id: '10007', destination: '42', reachable: true }
+        - { id: '10007', destination: '42', reachable: true, occurred_at: '2026-01-01T00:00:00Z' }
   - name: a membership change in a group yields nothing
     params:
       secret: telegram-test-secret-0123456789

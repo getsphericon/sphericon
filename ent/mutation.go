@@ -27,6 +27,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -119,6 +120,7 @@ const (
 	TypeCapturedMessage      = "CapturedMessage"
 	TypeConfirmation         = "Confirmation"
 	TypeConsentRecord        = "ConsentRecord"
+	TypeConsentStamp         = "ConsentStamp"
 	TypeContact              = "Contact"
 	TypeContactTag           = "ContactTag"
 	TypeCustomField          = "CustomField"
@@ -18976,6 +18978,1028 @@ func (m *ConsentRecordMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown ConsentRecord edge %s", name)
+}
+
+// ConsentStampMutation represents an operation that mutates the ConsentStamp nodes in the graph.
+type ConsentStampMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	channel                   *channels.Channel
+	destination               *string
+	sending_source            *string
+	opt_out_occurred_at       *time.Time
+	opt_out_integration_id    *int64
+	addopt_out_integration_id *int64
+	opt_out_sequence          *int64
+	addopt_out_sequence       *int64
+	confirmation_occurred_at  *time.Time
+	clearedFields             map[string]struct{}
+	workspace                 *int64
+	clearedworkspace          bool
+	done                      bool
+	oldValue                  func(context.Context) (*ConsentStamp, error)
+	predicates                []predicate.ConsentStamp
+}
+
+var _ ent.Mutation = (*ConsentStampMutation)(nil)
+
+// consentstampOption allows management of the mutation configuration using functional options.
+type consentstampOption func(*ConsentStampMutation)
+
+// newConsentStampMutation creates new mutation for the ConsentStamp entity.
+func newConsentStampMutation(c config, op Op, opts ...consentstampOption) *ConsentStampMutation {
+	m := &ConsentStampMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeConsentStamp,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withConsentStampID sets the ID field of the mutation.
+func withConsentStampID(id int64) consentstampOption {
+	return func(m *ConsentStampMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ConsentStamp
+		)
+		m.oldValue = func(ctx context.Context) (*ConsentStamp, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ConsentStamp.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withConsentStamp sets the old ConsentStamp of the mutation.
+func withConsentStamp(node *ConsentStamp) consentstampOption {
+	return func(m *ConsentStampMutation) {
+		m.oldValue = func(context.Context) (*ConsentStamp, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ConsentStampMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ConsentStampMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ConsentStamp entities.
+func (m *ConsentStampMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ConsentStampMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ConsentStampMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ConsentStamp.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ConsentStampMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ConsentStampMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ConsentStampMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ConsentStampMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ConsentStampMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ConsentStampMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *ConsentStampMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *ConsentStampMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *ConsentStampMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetChannel sets the "channel" field.
+func (m *ConsentStampMutation) SetChannel(c channels.Channel) {
+	m.channel = &c
+}
+
+// Channel returns the value of the "channel" field in the mutation.
+func (m *ConsentStampMutation) Channel() (r channels.Channel, exists bool) {
+	v := m.channel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannel returns the old "channel" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldChannel(ctx context.Context) (v channels.Channel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannel: %w", err)
+	}
+	return oldValue.Channel, nil
+}
+
+// ResetChannel resets all changes to the "channel" field.
+func (m *ConsentStampMutation) ResetChannel() {
+	m.channel = nil
+}
+
+// SetDestination sets the "destination" field.
+func (m *ConsentStampMutation) SetDestination(s string) {
+	m.destination = &s
+}
+
+// Destination returns the value of the "destination" field in the mutation.
+func (m *ConsentStampMutation) Destination() (r string, exists bool) {
+	v := m.destination
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDestination returns the old "destination" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldDestination(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDestination is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDestination requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDestination: %w", err)
+	}
+	return oldValue.Destination, nil
+}
+
+// ResetDestination resets all changes to the "destination" field.
+func (m *ConsentStampMutation) ResetDestination() {
+	m.destination = nil
+}
+
+// SetSendingSource sets the "sending_source" field.
+func (m *ConsentStampMutation) SetSendingSource(s string) {
+	m.sending_source = &s
+}
+
+// SendingSource returns the value of the "sending_source" field in the mutation.
+func (m *ConsentStampMutation) SendingSource() (r string, exists bool) {
+	v := m.sending_source
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSendingSource returns the old "sending_source" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldSendingSource(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSendingSource is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSendingSource requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSendingSource: %w", err)
+	}
+	return oldValue.SendingSource, nil
+}
+
+// ResetSendingSource resets all changes to the "sending_source" field.
+func (m *ConsentStampMutation) ResetSendingSource() {
+	m.sending_source = nil
+}
+
+// SetOptOutOccurredAt sets the "opt_out_occurred_at" field.
+func (m *ConsentStampMutation) SetOptOutOccurredAt(t time.Time) {
+	m.opt_out_occurred_at = &t
+}
+
+// OptOutOccurredAt returns the value of the "opt_out_occurred_at" field in the mutation.
+func (m *ConsentStampMutation) OptOutOccurredAt() (r time.Time, exists bool) {
+	v := m.opt_out_occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOptOutOccurredAt returns the old "opt_out_occurred_at" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldOptOutOccurredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOptOutOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOptOutOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOptOutOccurredAt: %w", err)
+	}
+	return oldValue.OptOutOccurredAt, nil
+}
+
+// ClearOptOutOccurredAt clears the value of the "opt_out_occurred_at" field.
+func (m *ConsentStampMutation) ClearOptOutOccurredAt() {
+	m.opt_out_occurred_at = nil
+	m.clearedFields[consentstamp.FieldOptOutOccurredAt] = struct{}{}
+}
+
+// OptOutOccurredAtCleared returns if the "opt_out_occurred_at" field was cleared in this mutation.
+func (m *ConsentStampMutation) OptOutOccurredAtCleared() bool {
+	_, ok := m.clearedFields[consentstamp.FieldOptOutOccurredAt]
+	return ok
+}
+
+// ResetOptOutOccurredAt resets all changes to the "opt_out_occurred_at" field.
+func (m *ConsentStampMutation) ResetOptOutOccurredAt() {
+	m.opt_out_occurred_at = nil
+	delete(m.clearedFields, consentstamp.FieldOptOutOccurredAt)
+}
+
+// SetOptOutIntegrationID sets the "opt_out_integration_id" field.
+func (m *ConsentStampMutation) SetOptOutIntegrationID(i int64) {
+	m.opt_out_integration_id = &i
+	m.addopt_out_integration_id = nil
+}
+
+// OptOutIntegrationID returns the value of the "opt_out_integration_id" field in the mutation.
+func (m *ConsentStampMutation) OptOutIntegrationID() (r int64, exists bool) {
+	v := m.opt_out_integration_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOptOutIntegrationID returns the old "opt_out_integration_id" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldOptOutIntegrationID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOptOutIntegrationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOptOutIntegrationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOptOutIntegrationID: %w", err)
+	}
+	return oldValue.OptOutIntegrationID, nil
+}
+
+// AddOptOutIntegrationID adds i to the "opt_out_integration_id" field.
+func (m *ConsentStampMutation) AddOptOutIntegrationID(i int64) {
+	if m.addopt_out_integration_id != nil {
+		*m.addopt_out_integration_id += i
+	} else {
+		m.addopt_out_integration_id = &i
+	}
+}
+
+// AddedOptOutIntegrationID returns the value that was added to the "opt_out_integration_id" field in this mutation.
+func (m *ConsentStampMutation) AddedOptOutIntegrationID() (r int64, exists bool) {
+	v := m.addopt_out_integration_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearOptOutIntegrationID clears the value of the "opt_out_integration_id" field.
+func (m *ConsentStampMutation) ClearOptOutIntegrationID() {
+	m.opt_out_integration_id = nil
+	m.addopt_out_integration_id = nil
+	m.clearedFields[consentstamp.FieldOptOutIntegrationID] = struct{}{}
+}
+
+// OptOutIntegrationIDCleared returns if the "opt_out_integration_id" field was cleared in this mutation.
+func (m *ConsentStampMutation) OptOutIntegrationIDCleared() bool {
+	_, ok := m.clearedFields[consentstamp.FieldOptOutIntegrationID]
+	return ok
+}
+
+// ResetOptOutIntegrationID resets all changes to the "opt_out_integration_id" field.
+func (m *ConsentStampMutation) ResetOptOutIntegrationID() {
+	m.opt_out_integration_id = nil
+	m.addopt_out_integration_id = nil
+	delete(m.clearedFields, consentstamp.FieldOptOutIntegrationID)
+}
+
+// SetOptOutSequence sets the "opt_out_sequence" field.
+func (m *ConsentStampMutation) SetOptOutSequence(i int64) {
+	m.opt_out_sequence = &i
+	m.addopt_out_sequence = nil
+}
+
+// OptOutSequence returns the value of the "opt_out_sequence" field in the mutation.
+func (m *ConsentStampMutation) OptOutSequence() (r int64, exists bool) {
+	v := m.opt_out_sequence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOptOutSequence returns the old "opt_out_sequence" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldOptOutSequence(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOptOutSequence is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOptOutSequence requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOptOutSequence: %w", err)
+	}
+	return oldValue.OptOutSequence, nil
+}
+
+// AddOptOutSequence adds i to the "opt_out_sequence" field.
+func (m *ConsentStampMutation) AddOptOutSequence(i int64) {
+	if m.addopt_out_sequence != nil {
+		*m.addopt_out_sequence += i
+	} else {
+		m.addopt_out_sequence = &i
+	}
+}
+
+// AddedOptOutSequence returns the value that was added to the "opt_out_sequence" field in this mutation.
+func (m *ConsentStampMutation) AddedOptOutSequence() (r int64, exists bool) {
+	v := m.addopt_out_sequence
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearOptOutSequence clears the value of the "opt_out_sequence" field.
+func (m *ConsentStampMutation) ClearOptOutSequence() {
+	m.opt_out_sequence = nil
+	m.addopt_out_sequence = nil
+	m.clearedFields[consentstamp.FieldOptOutSequence] = struct{}{}
+}
+
+// OptOutSequenceCleared returns if the "opt_out_sequence" field was cleared in this mutation.
+func (m *ConsentStampMutation) OptOutSequenceCleared() bool {
+	_, ok := m.clearedFields[consentstamp.FieldOptOutSequence]
+	return ok
+}
+
+// ResetOptOutSequence resets all changes to the "opt_out_sequence" field.
+func (m *ConsentStampMutation) ResetOptOutSequence() {
+	m.opt_out_sequence = nil
+	m.addopt_out_sequence = nil
+	delete(m.clearedFields, consentstamp.FieldOptOutSequence)
+}
+
+// SetConfirmationOccurredAt sets the "confirmation_occurred_at" field.
+func (m *ConsentStampMutation) SetConfirmationOccurredAt(t time.Time) {
+	m.confirmation_occurred_at = &t
+}
+
+// ConfirmationOccurredAt returns the value of the "confirmation_occurred_at" field in the mutation.
+func (m *ConsentStampMutation) ConfirmationOccurredAt() (r time.Time, exists bool) {
+	v := m.confirmation_occurred_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConfirmationOccurredAt returns the old "confirmation_occurred_at" field's value of the ConsentStamp entity.
+// If the ConsentStamp object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ConsentStampMutation) OldConfirmationOccurredAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConfirmationOccurredAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConfirmationOccurredAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConfirmationOccurredAt: %w", err)
+	}
+	return oldValue.ConfirmationOccurredAt, nil
+}
+
+// ClearConfirmationOccurredAt clears the value of the "confirmation_occurred_at" field.
+func (m *ConsentStampMutation) ClearConfirmationOccurredAt() {
+	m.confirmation_occurred_at = nil
+	m.clearedFields[consentstamp.FieldConfirmationOccurredAt] = struct{}{}
+}
+
+// ConfirmationOccurredAtCleared returns if the "confirmation_occurred_at" field was cleared in this mutation.
+func (m *ConsentStampMutation) ConfirmationOccurredAtCleared() bool {
+	_, ok := m.clearedFields[consentstamp.FieldConfirmationOccurredAt]
+	return ok
+}
+
+// ResetConfirmationOccurredAt resets all changes to the "confirmation_occurred_at" field.
+func (m *ConsentStampMutation) ResetConfirmationOccurredAt() {
+	m.confirmation_occurred_at = nil
+	delete(m.clearedFields, consentstamp.FieldConfirmationOccurredAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *ConsentStampMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[consentstamp.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *ConsentStampMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *ConsentStampMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *ConsentStampMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the ConsentStampMutation builder.
+func (m *ConsentStampMutation) Where(ps ...predicate.ConsentStamp) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ConsentStampMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ConsentStampMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ConsentStamp, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ConsentStampMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ConsentStampMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ConsentStamp).
+func (m *ConsentStampMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ConsentStampMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, consentstamp.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, consentstamp.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, consentstamp.FieldWorkspaceID)
+	}
+	if m.channel != nil {
+		fields = append(fields, consentstamp.FieldChannel)
+	}
+	if m.destination != nil {
+		fields = append(fields, consentstamp.FieldDestination)
+	}
+	if m.sending_source != nil {
+		fields = append(fields, consentstamp.FieldSendingSource)
+	}
+	if m.opt_out_occurred_at != nil {
+		fields = append(fields, consentstamp.FieldOptOutOccurredAt)
+	}
+	if m.opt_out_integration_id != nil {
+		fields = append(fields, consentstamp.FieldOptOutIntegrationID)
+	}
+	if m.opt_out_sequence != nil {
+		fields = append(fields, consentstamp.FieldOptOutSequence)
+	}
+	if m.confirmation_occurred_at != nil {
+		fields = append(fields, consentstamp.FieldConfirmationOccurredAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ConsentStampMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case consentstamp.FieldCreatedAt:
+		return m.CreatedAt()
+	case consentstamp.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case consentstamp.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case consentstamp.FieldChannel:
+		return m.Channel()
+	case consentstamp.FieldDestination:
+		return m.Destination()
+	case consentstamp.FieldSendingSource:
+		return m.SendingSource()
+	case consentstamp.FieldOptOutOccurredAt:
+		return m.OptOutOccurredAt()
+	case consentstamp.FieldOptOutIntegrationID:
+		return m.OptOutIntegrationID()
+	case consentstamp.FieldOptOutSequence:
+		return m.OptOutSequence()
+	case consentstamp.FieldConfirmationOccurredAt:
+		return m.ConfirmationOccurredAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ConsentStampMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case consentstamp.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case consentstamp.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case consentstamp.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case consentstamp.FieldChannel:
+		return m.OldChannel(ctx)
+	case consentstamp.FieldDestination:
+		return m.OldDestination(ctx)
+	case consentstamp.FieldSendingSource:
+		return m.OldSendingSource(ctx)
+	case consentstamp.FieldOptOutOccurredAt:
+		return m.OldOptOutOccurredAt(ctx)
+	case consentstamp.FieldOptOutIntegrationID:
+		return m.OldOptOutIntegrationID(ctx)
+	case consentstamp.FieldOptOutSequence:
+		return m.OldOptOutSequence(ctx)
+	case consentstamp.FieldConfirmationOccurredAt:
+		return m.OldConfirmationOccurredAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown ConsentStamp field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ConsentStampMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case consentstamp.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case consentstamp.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case consentstamp.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case consentstamp.FieldChannel:
+		v, ok := value.(channels.Channel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannel(v)
+		return nil
+	case consentstamp.FieldDestination:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDestination(v)
+		return nil
+	case consentstamp.FieldSendingSource:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSendingSource(v)
+		return nil
+	case consentstamp.FieldOptOutOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOptOutOccurredAt(v)
+		return nil
+	case consentstamp.FieldOptOutIntegrationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOptOutIntegrationID(v)
+		return nil
+	case consentstamp.FieldOptOutSequence:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOptOutSequence(v)
+		return nil
+	case consentstamp.FieldConfirmationOccurredAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConfirmationOccurredAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ConsentStamp field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ConsentStampMutation) AddedFields() []string {
+	var fields []string
+	if m.addopt_out_integration_id != nil {
+		fields = append(fields, consentstamp.FieldOptOutIntegrationID)
+	}
+	if m.addopt_out_sequence != nil {
+		fields = append(fields, consentstamp.FieldOptOutSequence)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ConsentStampMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case consentstamp.FieldOptOutIntegrationID:
+		return m.AddedOptOutIntegrationID()
+	case consentstamp.FieldOptOutSequence:
+		return m.AddedOptOutSequence()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ConsentStampMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case consentstamp.FieldOptOutIntegrationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOptOutIntegrationID(v)
+		return nil
+	case consentstamp.FieldOptOutSequence:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOptOutSequence(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ConsentStamp numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ConsentStampMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(consentstamp.FieldOptOutOccurredAt) {
+		fields = append(fields, consentstamp.FieldOptOutOccurredAt)
+	}
+	if m.FieldCleared(consentstamp.FieldOptOutIntegrationID) {
+		fields = append(fields, consentstamp.FieldOptOutIntegrationID)
+	}
+	if m.FieldCleared(consentstamp.FieldOptOutSequence) {
+		fields = append(fields, consentstamp.FieldOptOutSequence)
+	}
+	if m.FieldCleared(consentstamp.FieldConfirmationOccurredAt) {
+		fields = append(fields, consentstamp.FieldConfirmationOccurredAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ConsentStampMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ConsentStampMutation) ClearField(name string) error {
+	switch name {
+	case consentstamp.FieldOptOutOccurredAt:
+		m.ClearOptOutOccurredAt()
+		return nil
+	case consentstamp.FieldOptOutIntegrationID:
+		m.ClearOptOutIntegrationID()
+		return nil
+	case consentstamp.FieldOptOutSequence:
+		m.ClearOptOutSequence()
+		return nil
+	case consentstamp.FieldConfirmationOccurredAt:
+		m.ClearConfirmationOccurredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ConsentStamp nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ConsentStampMutation) ResetField(name string) error {
+	switch name {
+	case consentstamp.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case consentstamp.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case consentstamp.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case consentstamp.FieldChannel:
+		m.ResetChannel()
+		return nil
+	case consentstamp.FieldDestination:
+		m.ResetDestination()
+		return nil
+	case consentstamp.FieldSendingSource:
+		m.ResetSendingSource()
+		return nil
+	case consentstamp.FieldOptOutOccurredAt:
+		m.ResetOptOutOccurredAt()
+		return nil
+	case consentstamp.FieldOptOutIntegrationID:
+		m.ResetOptOutIntegrationID()
+		return nil
+	case consentstamp.FieldOptOutSequence:
+		m.ResetOptOutSequence()
+		return nil
+	case consentstamp.FieldConfirmationOccurredAt:
+		m.ResetConfirmationOccurredAt()
+		return nil
+	}
+	return fmt.Errorf("unknown ConsentStamp field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ConsentStampMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, consentstamp.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ConsentStampMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case consentstamp.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ConsentStampMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ConsentStampMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ConsentStampMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, consentstamp.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ConsentStampMutation) EdgeCleared(name string) bool {
+	switch name {
+	case consentstamp.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ConsentStampMutation) ClearEdge(name string) error {
+	switch name {
+	case consentstamp.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown ConsentStamp unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ConsentStampMutation) ResetEdge(name string) error {
+	switch name {
+	case consentstamp.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown ConsentStamp edge %s", name)
 }
 
 // ContactMutation represents an operation that mutates the Contact nodes in the graph.
@@ -73245,6 +74269,9 @@ type WorkspaceMutation struct {
 	confirmations                map[int64]struct{}
 	removedconfirmations         map[int64]struct{}
 	clearedconfirmations         bool
+	consent_stamps               map[int64]struct{}
+	removedconsent_stamps        map[int64]struct{}
+	clearedconsent_stamps        bool
 	outbound_messages            map[int64]struct{}
 	removedoutbound_messages     map[int64]struct{}
 	clearedoutbound_messages     bool
@@ -76766,6 +77793,60 @@ func (m *WorkspaceMutation) ResetConfirmations() {
 	m.removedconfirmations = nil
 }
 
+// AddConsentStampIDs adds the "consent_stamps" edge to the ConsentStamp entity by ids.
+func (m *WorkspaceMutation) AddConsentStampIDs(ids ...int64) {
+	if m.consent_stamps == nil {
+		m.consent_stamps = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.consent_stamps[ids[i]] = struct{}{}
+	}
+}
+
+// ClearConsentStamps clears the "consent_stamps" edge to the ConsentStamp entity.
+func (m *WorkspaceMutation) ClearConsentStamps() {
+	m.clearedconsent_stamps = true
+}
+
+// ConsentStampsCleared reports if the "consent_stamps" edge to the ConsentStamp entity was cleared.
+func (m *WorkspaceMutation) ConsentStampsCleared() bool {
+	return m.clearedconsent_stamps
+}
+
+// RemoveConsentStampIDs removes the "consent_stamps" edge to the ConsentStamp entity by IDs.
+func (m *WorkspaceMutation) RemoveConsentStampIDs(ids ...int64) {
+	if m.removedconsent_stamps == nil {
+		m.removedconsent_stamps = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.consent_stamps, ids[i])
+		m.removedconsent_stamps[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedConsentStamps returns the removed IDs of the "consent_stamps" edge to the ConsentStamp entity.
+func (m *WorkspaceMutation) RemovedConsentStampsIDs() (ids []int64) {
+	for id := range m.removedconsent_stamps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ConsentStampsIDs returns the "consent_stamps" edge IDs in the mutation.
+func (m *WorkspaceMutation) ConsentStampsIDs() (ids []int64) {
+	for id := range m.consent_stamps {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetConsentStamps resets all changes to the "consent_stamps" edge.
+func (m *WorkspaceMutation) ResetConsentStamps() {
+	m.consent_stamps = nil
+	m.clearedconsent_stamps = false
+	m.removedconsent_stamps = nil
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by ids.
 func (m *WorkspaceMutation) AddOutboundMessageIDs(ids ...int64) {
 	if m.outbound_messages == nil {
@@ -77935,7 +79016,7 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 47)
+	edges := make([]string, 0, 48)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -78052,6 +79133,9 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.confirmations != nil {
 		edges = append(edges, workspace.EdgeConfirmations)
+	}
+	if m.consent_stamps != nil {
+		edges = append(edges, workspace.EdgeConsentStamps)
 	}
 	if m.outbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
@@ -78318,6 +79402,12 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeConsentStamps:
+		ids := make([]ent.Value, 0, len(m.consent_stamps))
+		for id := range m.consent_stamps {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeOutboundMessages:
 		ids := make([]ent.Value, 0, len(m.outbound_messages))
 		for id := range m.outbound_messages {
@@ -78372,7 +79462,7 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 47)
+	edges := make([]string, 0, 48)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -78489,6 +79579,9 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedconfirmations != nil {
 		edges = append(edges, workspace.EdgeConfirmations)
+	}
+	if m.removedconsent_stamps != nil {
+		edges = append(edges, workspace.EdgeConsentStamps)
 	}
 	if m.removedoutbound_messages != nil {
 		edges = append(edges, workspace.EdgeOutboundMessages)
@@ -78755,6 +79848,12 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeConsentStamps:
+		ids := make([]ent.Value, 0, len(m.removedconsent_stamps))
+		for id := range m.removedconsent_stamps {
+			ids = append(ids, id)
+		}
+		return ids
 	case workspace.EdgeOutboundMessages:
 		ids := make([]ent.Value, 0, len(m.removedoutbound_messages))
 		for id := range m.removedoutbound_messages {
@@ -78809,7 +79908,7 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 47)
+	edges := make([]string, 0, 48)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -78927,6 +80026,9 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedconfirmations {
 		edges = append(edges, workspace.EdgeConfirmations)
 	}
+	if m.clearedconsent_stamps {
+		edges = append(edges, workspace.EdgeConsentStamps)
+	}
 	if m.clearedoutbound_messages {
 		edges = append(edges, workspace.EdgeOutboundMessages)
 	}
@@ -79036,6 +80138,8 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearedunsubscribes
 	case workspace.EdgeConfirmations:
 		return m.clearedconfirmations
+	case workspace.EdgeConsentStamps:
+		return m.clearedconsent_stamps
 	case workspace.EdgeOutboundMessages:
 		return m.clearedoutbound_messages
 	case workspace.EdgeTrackedLinks:
@@ -79184,6 +80288,9 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 		return nil
 	case workspace.EdgeConfirmations:
 		m.ResetConfirmations()
+		return nil
+	case workspace.EdgeConsentStamps:
+		m.ResetConsentStamps()
 		return nil
 	case workspace.EdgeOutboundMessages:
 		m.ResetOutboundMessages()

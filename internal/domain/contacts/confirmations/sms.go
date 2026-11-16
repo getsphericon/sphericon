@@ -2,6 +2,7 @@ package confirmations
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
@@ -42,8 +44,10 @@ var (
 // Confirm records consent a destination gave outside sphericon on channel, with its evidence, as
 // an imported Confirmation, and returns the Confirmation that stands: a stronger one already on
 // the destination stays. Only sms takes one: email is confirmed by its own double opt-in link and a
-// Telegram chat is its own opt-in. It never lifts an opt-out.
-func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channels.Channel, destination string, ev Evidence) (*ent.Confirmation, error) {
+// Telegram chat is its own opt-in. It never lifts an opt-out. at is when the consent was given:
+// the evidence reaching sphericon. One older than a withdrawal of the number's consent is
+// ErrSuperseded.
+func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channels.Channel, destination string, ev Evidence, at time.Time) (*ent.Confirmation, error) {
 	if channel != channels.SMS {
 		return nil, ErrConfirmationChannel
 	}
@@ -53,7 +57,7 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channe
 	}
 	var standing *ent.Confirmation
 	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		standing, err = ConfirmSMSIn(ctx, ts, pub, number, ev)
+		standing, err = ConfirmSMSIn(ctx, ts, pub, number, ev, at)
 		return err
 	})
 	if err != nil {
@@ -64,17 +68,17 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channe
 
 // ConfirmContactSMSIn is ConfirmSMSIn for the phone of a Contact: ErrNoPhone when the Contact has
 // none (number is empty), as the SMS consent an intake carries for a Contact.
-func ConfirmContactSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence) (*ent.Confirmation, error) {
+func ConfirmContactSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence, at time.Time) (*ent.Confirmation, error) {
 	if number == "" {
 		return nil, ErrNoPhone
 	}
-	return ConfirmSMSIn(ctx, s, pub, number, ev)
+	return ConfirmSMSIn(ctx, s, pub, number, ev, at)
 }
 
-// ConfirmSMSIn records an imported SMS Confirmation of number with its evidence, inside the
-// transaction s and pub are bound to, and returns the Confirmation that stands (see Confirm). The
-// Confirmation names the Contact whose phone the number is, when there is one.
-func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence) (*ent.Confirmation, error) {
+// ConfirmSMSIn records an imported SMS Confirmation of number with its evidence, given at at,
+// inside the transaction s and pub are bound to, and returns the Confirmation that stands (see
+// Confirm). The Confirmation names the Contact whose phone the number is, when there is one.
+func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence, at time.Time) (*ent.Confirmation, error) {
 	number, err := unsubscribes.SMSNumber(number)
 	if err != nil {
 		return nil, err
@@ -89,32 +93,39 @@ func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, numb
 	}
 	return recordIn(ctx, s, pub, grant{
 		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceImported,
-		evidence: &ev, contactID: holder,
+		evidence: &ev, contactID: holder, at: consentstamps.At(at),
 	})
 }
 
-// StartSMSIn reads a START the number texted (ADR 0077): it lifts the number's opt-out and records a
-// Confirmation with provenance keyword, since the person asked to receive again, inside the
-// transaction s and pub are bound to. A stronger Confirmation already on the number stays (recordIn),
-// so a repeated START records nothing twice. The Confirmation names the Contact whose phone the
-// number is, when there is one; a START creates no Contact.
-func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string) error {
+// StartSMSIn reads a START the number texted, which occurred at the given time (ADR 0077): it lifts
+// the number's opt-out and records a Confirmation with provenance keyword, since the person asked
+// to receive again, inside the transaction s and pub are bound to. A stronger Confirmation already on the number stays
+// (recordIn), so a repeated START records nothing twice. The Confirmation names the Contact whose
+// phone the number is, when there is one; a START creates no Contact. A START that occurred before
+// the number's opt-out state (the person stopped later) lifts nothing, records nothing and reports
+// false (ADR 0154).
+func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, at consentstamps.Occurrence) (bool, error) {
 	number, err := unsubscribes.SMSNumber(number)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if err := unsubscribes.LiftSMS(ctx, s, number); err != nil {
-		return err
+	applied, err := unsubscribes.LiftSMS(ctx, s, number, at)
+	if err != nil || !applied {
+		return false, err
 	}
 	holder, err := holderOf(ctx, s, number)
 	if err != nil {
-		return err
+		return false, err
 	}
 	_, err = recordIn(ctx, s, pub, grant{
 		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceKeyword,
-		contactID: holder,
+		contactID: holder, at: at,
 	})
-	return err
+	if errors.Is(err, ErrSuperseded) {
+		// The opt-out lifted, but a withdrawal later than the START keeps the number unconfirmed.
+		return true, nil
+	}
+	return true, err
 }
 
 // holderOf is the id of the Contact whose phone number is, 0 when no Contact has it.
@@ -177,12 +188,12 @@ func ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (Contac
 
 // ConfirmContactSMS records consent a Contact's phone gave outside sphericon (Confirm, for the
 // number the Contact has) and returns the phone's SMS consent after it.
-func ConfirmContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, ev Evidence) (ContactSMS, error) {
+func ConfirmContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, ev Evidence, at time.Time) (ContactSMS, error) {
 	number, err := ContactPhone(ctx, s, contactID)
 	if err != nil {
 		return ContactSMS{}, err
 	}
-	if _, err := Confirm(ctx, bus, s, channels.SMS, number, ev); err != nil {
+	if _, err := Confirm(ctx, bus, s, channels.SMS, number, ev, at); err != nil {
 		return ContactSMS{}, err
 	}
 	return ReadContactSMS(ctx, s, contactID)

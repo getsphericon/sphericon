@@ -1,0 +1,28 @@
+# When the stop of Lacuna's parked number occurred (UnsubscribeLacunaParked): the stamp an opt-out
+# keeps, which a later observation of the number is compared with (ADR 0154).
+- id: 1
+  channel: sms
+  destination: '+16175557799'
+  sending_source: everything
+  opt_out_occurred_at: '2026-02-02 00:00:00'
+  workspace_id: 96
+  created_at: '2026-02-02 00:00:00'
+  updated_at: '2026-02-02 00:00:00'
+# A stamp each of Acme and Globex, on addresses no Contact or test uses, for the scoped client's
+# isolation checks: an address of Acme that confirmed, one of Globex that stopped its Broadcasts.
+- id: 2
+  channel: email
+  destination: stamped@acme.example
+  sending_source: everything
+  confirmation_occurred_at: '2026-02-01 00:00:00'
+  workspace_id: 1
+  created_at: '2026-02-01 00:00:00'
+  updated_at: '2026-02-01 00:00:00'
+- id: 3
+  channel: email
+  destination: stamped@globex.example
+  sending_source: broadcasts
+  opt_out_occurred_at: '2026-02-03 00:00:00'
+  workspace_id: 2
+  created_at: '2026-02-03 00:00:00'
+  updated_at: '2026-02-03 00:00:00'

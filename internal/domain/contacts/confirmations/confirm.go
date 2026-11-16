@@ -2,9 +2,12 @@ package confirmations
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -19,8 +22,8 @@ import (
 // click. A repeated POST (mailbox retry, double click) is a complete no-op: the
 // confirmation stands and no second Event is logged. s is the scope of the token's Workspace,
 // which the entry point builds from it; the writes go through it as the ingest actor (never
-// audited), since no membership or API token stands behind them.
-func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, target linktarget.Confirmation, ip string) error {
+// audited), since no membership or API token stands behind them. at is when the link was followed.
+func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, target linktarget.Confirmation, ip string, at time.Time) error {
 	dest := emailcase.Of(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 {
 		return nil
@@ -36,8 +39,12 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, tar
 		}
 		_, err = recordIn(ctx, sc, pub, grant{
 			channel: channels.Email, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
-			contactID: target.ContactID, ip: ip,
+			contactID: target.ContactID, ip: ip, at: consentstamps.At(at),
 		})
+		if errors.Is(err, ErrSuperseded) {
+			// The address left after this link was sent and followed: nothing to record.
+			return nil
+		}
 		return err
 	})
 }

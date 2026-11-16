@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -1134,6 +1135,21 @@ func (_u *WorkspaceUpdate) AddConfirmations(v ...*Confirmation) *WorkspaceUpdate
 	return _u.AddConfirmationIDs(ids...)
 }
 
+// AddConsentStampIDs adds the "consent_stamps" edge to the ConsentStamp entity by IDs.
+func (_u *WorkspaceUpdate) AddConsentStampIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddConsentStampIDs(ids...)
+	return _u
+}
+
+// AddConsentStamps adds the "consent_stamps" edges to the ConsentStamp entity.
+func (_u *WorkspaceUpdate) AddConsentStamps(v ...*ConsentStamp) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConsentStampIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_u *WorkspaceUpdate) AddOutboundMessageIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddOutboundMessageIDs(ids...)
@@ -2076,6 +2092,27 @@ func (_u *WorkspaceUpdate) RemoveConfirmations(v ...*Confirmation) *WorkspaceUpd
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveConfirmationIDs(ids...)
+}
+
+// ClearConsentStamps clears all "consent_stamps" edges to the ConsentStamp entity.
+func (_u *WorkspaceUpdate) ClearConsentStamps() *WorkspaceUpdate {
+	_u.mutation.ClearConsentStamps()
+	return _u
+}
+
+// RemoveConsentStampIDs removes the "consent_stamps" edge to ConsentStamp entities by IDs.
+func (_u *WorkspaceUpdate) RemoveConsentStampIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveConsentStampIDs(ids...)
+	return _u
+}
+
+// RemoveConsentStamps removes "consent_stamps" edges to ConsentStamp entities.
+func (_u *WorkspaceUpdate) RemoveConsentStamps(v ...*ConsentStamp) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConsentStampIDs(ids...)
 }
 
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
@@ -4238,6 +4275,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.ConsentStampsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConsentStampsIDs(); len(nodes) > 0 && !_u.mutation.ConsentStampsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConsentStampsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.OutboundMessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -5678,6 +5760,21 @@ func (_u *WorkspaceUpdateOne) AddConfirmations(v ...*Confirmation) *WorkspaceUpd
 	return _u.AddConfirmationIDs(ids...)
 }
 
+// AddConsentStampIDs adds the "consent_stamps" edge to the ConsentStamp entity by IDs.
+func (_u *WorkspaceUpdateOne) AddConsentStampIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddConsentStampIDs(ids...)
+	return _u
+}
+
+// AddConsentStamps adds the "consent_stamps" edges to the ConsentStamp entity.
+func (_u *WorkspaceUpdateOne) AddConsentStamps(v ...*ConsentStamp) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddConsentStampIDs(ids...)
+}
+
 // AddOutboundMessageIDs adds the "outbound_messages" edge to the OutboundMessage entity by IDs.
 func (_u *WorkspaceUpdateOne) AddOutboundMessageIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddOutboundMessageIDs(ids...)
@@ -6620,6 +6717,27 @@ func (_u *WorkspaceUpdateOne) RemoveConfirmations(v ...*Confirmation) *Workspace
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveConfirmationIDs(ids...)
+}
+
+// ClearConsentStamps clears all "consent_stamps" edges to the ConsentStamp entity.
+func (_u *WorkspaceUpdateOne) ClearConsentStamps() *WorkspaceUpdateOne {
+	_u.mutation.ClearConsentStamps()
+	return _u
+}
+
+// RemoveConsentStampIDs removes the "consent_stamps" edge to ConsentStamp entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveConsentStampIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveConsentStampIDs(ids...)
+	return _u
+}
+
+// RemoveConsentStamps removes "consent_stamps" edges to ConsentStamp entities.
+func (_u *WorkspaceUpdateOne) RemoveConsentStamps(v ...*ConsentStamp) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveConsentStampIDs(ids...)
 }
 
 // ClearOutboundMessages clears all "outbound_messages" edges to the OutboundMessage entity.
@@ -8805,6 +8923,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(confirmation.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ConsentStampsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedConsentStampsIDs(); len(nodes) > 0 && !_u.mutation.ConsentStampsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ConsentStampsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.ConsentStampsTable,
+			Columns: []string{workspace.ConsentStampsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(consentstamp.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

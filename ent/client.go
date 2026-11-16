@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -128,6 +129,8 @@ type Client struct {
 	Confirmation *ConfirmationClient
 	// ConsentRecord is the client for interacting with the ConsentRecord builders.
 	ConsentRecord *ConsentRecordClient
+	// ConsentStamp is the client for interacting with the ConsentStamp builders.
+	ConsentStamp *ConsentStampClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
 	// ContactTag is the client for interacting with the ContactTag builders.
@@ -272,6 +275,7 @@ func (c *Client) init() {
 	c.CapturedMessage = NewCapturedMessageClient(c.config)
 	c.Confirmation = NewConfirmationClient(c.config)
 	c.ConsentRecord = NewConsentRecordClient(c.config)
+	c.ConsentStamp = NewConsentStampClient(c.config)
 	c.Contact = NewContactClient(c.config)
 	c.ContactTag = NewContactTagClient(c.config)
 	c.CustomField = NewCustomFieldClient(c.config)
@@ -438,6 +442,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
 		ConsentRecord:        NewConsentRecordClient(cfg),
+		ConsentStamp:         NewConsentStampClient(cfg),
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
 		CustomField:          NewCustomFieldClient(cfg),
@@ -531,6 +536,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		CapturedMessage:      NewCapturedMessageClient(cfg),
 		Confirmation:         NewConfirmationClient(cfg),
 		ConsentRecord:        NewConsentRecordClient(cfg),
+		ConsentStamp:         NewConsentStampClient(cfg),
 		Contact:              NewContactClient(cfg),
 		ContactTag:           NewContactTagClient(cfg),
 		CustomField:          NewCustomFieldClient(cfg),
@@ -622,15 +628,15 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
 		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
 		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
-		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
-		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
-		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
-		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
-		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
+		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
+		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
+		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
 		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
 		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
 		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
@@ -648,15 +654,15 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ApiToken, c.AuditEntry, c.AuthAttempt, c.Automation, c.AutomationFigure,
 		c.AutomationRun, c.AutomationVersion, c.Binding, c.BrandKit, c.Broadcast,
 		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
-		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
-		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
-		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
-		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
-		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
-		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
-		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
-		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
-		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
+		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
+		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
+		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
+		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
+		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
+		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
+		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
 		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
 		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
 		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
@@ -700,6 +706,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Confirmation.mutate(ctx, m)
 	case *ConsentRecordMutation:
 		return c.ConsentRecord.mutate(ctx, m)
+	case *ConsentStampMutation:
+		return c.ConsentStamp.mutate(ctx, m)
 	case *ContactMutation:
 		return c.Contact.mutate(ctx, m)
 	case *ContactTagMutation:
@@ -3455,6 +3463,155 @@ func (c *ConsentRecordClient) mutate(ctx context.Context, m *ConsentRecordMutati
 		return (&ConsentRecordDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ConsentRecord mutation op: %q", m.Op())
+	}
+}
+
+// ConsentStampClient is a client for the ConsentStamp schema.
+type ConsentStampClient struct {
+	config
+}
+
+// NewConsentStampClient returns a client for the ConsentStamp from the given config.
+func NewConsentStampClient(c config) *ConsentStampClient {
+	return &ConsentStampClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `consentstamp.Hooks(f(g(h())))`.
+func (c *ConsentStampClient) Use(hooks ...Hook) {
+	c.hooks.ConsentStamp = append(c.hooks.ConsentStamp, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `consentstamp.Intercept(f(g(h())))`.
+func (c *ConsentStampClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ConsentStamp = append(c.inters.ConsentStamp, interceptors...)
+}
+
+// Create returns a builder for creating a ConsentStamp entity.
+func (c *ConsentStampClient) Create() *ConsentStampCreate {
+	mutation := newConsentStampMutation(c.config, OpCreate)
+	return &ConsentStampCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ConsentStamp entities.
+func (c *ConsentStampClient) CreateBulk(builders ...*ConsentStampCreate) *ConsentStampCreateBulk {
+	return &ConsentStampCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ConsentStampClient) MapCreateBulk(slice any, setFunc func(*ConsentStampCreate, int)) *ConsentStampCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ConsentStampCreateBulk{err: fmt.Errorf("calling to ConsentStampClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ConsentStampCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ConsentStampCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ConsentStamp.
+func (c *ConsentStampClient) Update() *ConsentStampUpdate {
+	mutation := newConsentStampMutation(c.config, OpUpdate)
+	return &ConsentStampUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ConsentStampClient) UpdateOne(_m *ConsentStamp) *ConsentStampUpdateOne {
+	mutation := newConsentStampMutation(c.config, OpUpdateOne, withConsentStamp(_m))
+	return &ConsentStampUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ConsentStampClient) UpdateOneID(id int64) *ConsentStampUpdateOne {
+	mutation := newConsentStampMutation(c.config, OpUpdateOne, withConsentStampID(id))
+	return &ConsentStampUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ConsentStamp.
+func (c *ConsentStampClient) Delete() *ConsentStampDelete {
+	mutation := newConsentStampMutation(c.config, OpDelete)
+	return &ConsentStampDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ConsentStampClient) DeleteOne(_m *ConsentStamp) *ConsentStampDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ConsentStampClient) DeleteOneID(id int64) *ConsentStampDeleteOne {
+	builder := c.Delete().Where(consentstamp.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ConsentStampDeleteOne{builder}
+}
+
+// Query returns a query builder for ConsentStamp.
+func (c *ConsentStampClient) Query() *ConsentStampQuery {
+	return &ConsentStampQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeConsentStamp},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ConsentStamp entity by its id.
+func (c *ConsentStampClient) Get(ctx context.Context, id int64) (*ConsentStamp, error) {
+	return c.Query().Where(consentstamp.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ConsentStampClient) GetX(ctx context.Context, id int64) *ConsentStamp {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a ConsentStamp.
+func (c *ConsentStampClient) QueryWorkspace(_m *ConsentStamp) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(consentstamp.Table, consentstamp.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, consentstamp.WorkspaceTable, consentstamp.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ConsentStampClient) Hooks() []Hook {
+	return c.hooks.ConsentStamp
+}
+
+// Interceptors returns the client interceptors.
+func (c *ConsentStampClient) Interceptors() []Interceptor {
+	return c.inters.ConsentStamp
+}
+
+func (c *ConsentStampClient) mutate(ctx context.Context, m *ConsentStampMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ConsentStampCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ConsentStampUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ConsentStampUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ConsentStampDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ConsentStamp mutation op: %q", m.Op())
 	}
 }
 
@@ -13782,6 +13939,22 @@ func (c *WorkspaceClient) QueryConfirmations(_m *Workspace) *ConfirmationQuery {
 	return query
 }
 
+// QueryConsentStamps queries the consent_stamps edge of a Workspace.
+func (c *WorkspaceClient) QueryConsentStamps(_m *Workspace) *ConsentStampQuery {
+	query := (&ConsentStampClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(consentstamp.Table, consentstamp.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.ConsentStampsTable, workspace.ConsentStampsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryOutboundMessages queries the outbound_messages edge of a Workspace.
 func (c *WorkspaceClient) QueryOutboundMessages(_m *Workspace) *OutboundMessageQuery {
 	query := (&OutboundMessageClient{config: c.config}).Query()
@@ -13940,9 +14113,9 @@ type (
 	hooks struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
-		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
-		ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure, Event,
-		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
+		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
+		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
+		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
 		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
 		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
@@ -13956,9 +14129,9 @@ type (
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
-		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
-		ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure, Event,
-		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
+		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
+		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
+		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
 		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
 		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
 		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,

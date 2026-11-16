@@ -51,6 +51,9 @@ type Confirmation func(*sql.Selector)
 // ConsentRecord is the predicate function for consentrecord builders.
 type ConsentRecord func(*sql.Selector)
 
+// ConsentStamp is the predicate function for consentstamp builders.
+type ConsentStamp func(*sql.Selector)
+
 // Contact is the predicate function for contact builders.
 type Contact func(*sql.Selector)
 

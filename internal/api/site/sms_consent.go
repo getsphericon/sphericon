@@ -20,7 +20,7 @@ func (h *Handlers) SiteSmsConsentsGet(ctx context.Context, params siteapi.SiteSm
 
 // SiteSmsConsentsConfirm records the consent the Contact's phone gave outside sphericon.
 func (h *Handlers) SiteSmsConsentsConfirm(ctx context.Context, req *siteapi.ConsentEvidence, params siteapi.SiteSmsConsentsConfirmParams) (*siteapi.SmsConsent, error) {
-	read, err := confirmations.ConfirmContactSMS(ctx, h.bus, workspaceScope(ctx), int64(params.ContactId), inputs.ConsentEvidence(req))
+	read, err := confirmations.ConfirmContactSMS(ctx, h.bus, workspaceScope(ctx), int64(params.ContactId), inputs.ConsentEvidence(req), h.now())
 	if err != nil {
 		return nil, err
 	}

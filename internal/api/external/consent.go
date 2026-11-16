@@ -37,7 +37,7 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) ConfirmationsCreate(ctx context.Context, req *externalapi.CreateConfirmationInput) (*externalapi.ConfirmationResource, error) {
-	c, err := confirmations.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req))
+	c, err := confirmations.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req), h.now())
 	if err != nil {
 		return nil, err
 	}

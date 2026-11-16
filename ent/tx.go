@@ -44,6 +44,8 @@ type Tx struct {
 	Confirmation *ConfirmationClient
 	// ConsentRecord is the client for interacting with the ConsentRecord builders.
 	ConsentRecord *ConsentRecordClient
+	// ConsentStamp is the client for interacting with the ConsentStamp builders.
+	ConsentStamp *ConsentStampClient
 	// Contact is the client for interacting with the Contact builders.
 	Contact *ContactClient
 	// ContactTag is the client for interacting with the ContactTag builders.
@@ -308,6 +310,7 @@ func (tx *Tx) init() {
 	tx.CapturedMessage = NewCapturedMessageClient(tx.config)
 	tx.Confirmation = NewConfirmationClient(tx.config)
 	tx.ConsentRecord = NewConsentRecordClient(tx.config)
+	tx.ConsentStamp = NewConsentStampClient(tx.config)
 	tx.Contact = NewContactClient(tx.config)
 	tx.ContactTag = NewContactTagClient(tx.config)
 	tx.CustomField = NewCustomFieldClient(tx.config)

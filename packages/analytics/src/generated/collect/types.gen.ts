@@ -350,7 +350,8 @@ export const SystemEventAction = {
   SMS_UNDELIVERED: 'sms.undelivered',
   SMS_CONFIRMED: 'sms.confirmed',
   SMS_CLICKED: 'sms.clicked',
-  SMS_UNSUBSCRIBED: 'sms.unsubscribed'
+  SMS_UNSUBSCRIBED: 'sms.unsubscribed',
+  CONTACT_CONSENT_SUPERSEDED: 'contact.consent_superseded'
 } as const;
 
 /**
