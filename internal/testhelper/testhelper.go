@@ -134,9 +134,9 @@ var process = sync.OnceValues(func() (testProcess, error) {
 	if err := os.Setenv("SPHERICON_DATABASE_URL", url); err != nil {
 		return testProcess{}, err
 	}
-	// A developer's own .env may enable Sign-in providers; no test starts from them, each one
-	// enables what it needs (WithSignin, WithSigninGitHub).
-	cfg.Signin = nil
+	// A developer's own environment may enable Sign-in providers; no test starts from them, each
+	// one enables what it needs (WithSignin, WithSigninGitHub).
+	cfg.Signin = config.SigninProviders{}
 	// The dev stack serves the tracker on its own host; a test starts on the app origin.
 	cfg.TrackerURL = ""
 	return testProcess{cfg: cfg, cleaner: cleaner}, nil

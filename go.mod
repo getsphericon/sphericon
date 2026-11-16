@@ -29,7 +29,6 @@ require (
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
 	github.com/go-jose/go-jose/v4 v4.1.9
-	github.com/go-playground/validator/v10 v10.30.6
 	github.com/go-testfixtures/testfixtures/v3 v3.19.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -39,7 +38,6 @@ require (
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/jackc/puddle/v2 v2.2.3
 	github.com/jmattheis/goverter v1.11.1
-	github.com/joho/godotenv v1.5.1
 	github.com/jpillora/backoff v1.1.0
 	github.com/k3a/html2text v1.5.1
 	github.com/lmittmann/tint v1.2.1
@@ -131,6 +129,7 @@ require (
 	github.com/dlclark/regexp2/v2 v2.13.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.10.0 // indirect
+	github.com/g4s8/envdoc v1.12.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.16 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-crypt/x v0.4.17 // indirect
@@ -141,10 +140,12 @@ require (
 	github.com/go-openapi/jsonpointer v1.0.2 // indirect
 	github.com/go-playground/locales v0.14.2 // indirect
 	github.com/go-playground/universal-translator v0.18.2 // indirect
+	github.com/go-playground/validator/v10 v10.30.6 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/go-test/deep v1.0.8 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/go-webauthn/x v0.3.1 // indirect
+	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
@@ -255,6 +256,7 @@ require (
 )
 
 tool (
+	github.com/g4s8/envdoc
 	github.com/jonbaldie/go-mutesting/v2/cmd/go-mutesting
 	github.com/matryer/moq
 	github.com/ogen-go/ogen/cmd/ogen

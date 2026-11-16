@@ -151,9 +151,12 @@ The rest of this file is for maintainers and the agents they run: how work lands
   merges it makes between its implementer branches and its integration branch are allowed, and so
   is bringing `main` in before it marks the pull request ready (below). The squash of that pull
   request keeps `main` linear.
-- The configuration reference is generated: `mise run generate` writes `docs/configuration.md` from
-  the `environment` struct of `config/` (each variable's tags, the profile defaults and its field's doc
-  comment, which a new variable must have). The documentation site repository
+- The configuration reference is generated: `mise run generate` writes the variables' section of
+  `docs/configuration.md` with envdoc from `config.Environment` (each variable's `env` and
+  `envDefault` tags and its field's doc comment, which a new variable must have). The app reads the
+  process environment only: no `.env` file, no `_FILE` sibling, no defaults that depend on
+  `SPHERICON_ENV`; a value the dev stack, the tests or the end-to-end suite need is set in
+  `.mise.toml` or by the harness. The documentation site repository
   (`getsphericon/getsphericon.github.io`, served at https://getsphericon.com/docs/configuration)
   copies the file by hand to `src/content/docs/docs/configuration.md`: after changing a variable,
   copy it there too. The README links to the page; all other public documentation lives in that

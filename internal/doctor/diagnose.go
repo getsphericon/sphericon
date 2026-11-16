@@ -58,7 +58,7 @@ func Diagnose(ctx context.Context, env string, s Seams, w io.Writer, asJSON bool
 	defer cancel()
 
 	cfg, loadErr := config.Load(env)
-	w = Redactor(w, config.SecretValues(cfg))
+	w = Redactor(w, config.SecretValues())
 	in := Input{
 		Config:           cfg,
 		ConfigErr:        loadErr,

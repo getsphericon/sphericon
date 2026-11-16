@@ -227,7 +227,7 @@ func (l *lazyKeys) VerifySignature(ctx context.Context, jwt string) ([]byte, err
 // flows with its JWT secret on the Instance clock now.
 func FromConfig(cfg *config.Config, now func() time.Time, opts ...Option) *Providers {
 	opts = append([]Option{WithFlowCodec(NewFlowCodec(cfg.JWTSecret, now))}, opts...)
-	return New(cfg.Signin, cfg.AppURL, now, opts...)
+	return New(cfg.Signin.Enabled(), cfg.AppURL, now, opts...)
 }
 
 // SealFlow wraps a started flow for the browser's cookie, valid for FlowTTL.

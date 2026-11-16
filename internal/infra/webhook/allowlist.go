@@ -19,6 +19,16 @@ type Allowlist struct {
 	entries map[string]struct{}
 }
 
+// UnmarshalText reads SPHERICON_OUTBOUND_ALLOW through ParseAllowlist.
+func (a *Allowlist) UnmarshalText(text []byte) error {
+	parsed, err := ParseAllowlist(string(text))
+	if err != nil {
+		return err
+	}
+	*a = parsed
+	return nil
+}
+
 // ParseAllowlist reads a comma- or space-separated list of host:port entries (a hostname,
 // an IPv4 address or a bracketed IPv6 address, then a port). An empty value is the empty
 // allowlist; a malformed entry is an error naming it.

@@ -183,7 +183,7 @@ usage = 'arg "<name>" help="migration name"'
 run = 'go run ./cmd/db generate "${usage_name}"'
 
 ["gen:encryption-key"]
-description = "Mint a fresh SPHERICON_ENCRYPTION_KEY (base64 Tink keyset) to paste into your .env"
+description = "Mint a fresh SPHERICON_ENCRYPTION_KEY (base64 Tink keyset) to set in the environment (.mise.local.toml, a deployment's Secret)"
 run = "go run ./cmd/server genkey"
 
 # --- worktrees ----------------------------------------------------------------------
@@ -606,8 +606,8 @@ description = "internal/kernel/i18n/locales/en.json -> Go (one i18n.ID per messa
 run = "go run ./cmd/i18ngen"
 
 ["generate:configdoc"]
-description = "config (the environment struct's tags and doc comments) -> docs/configuration.md (the configuration reference)"
-run = "go run ./cmd/configdoc"
+description = "config (config.Environment's env tags and doc comments, through envdoc) -> docs/configuration.md (the configuration reference)"
+run = "go generate ./config"
 
 ["generate:scopes"]
 description = "openapi/{service,external,site,staff} (x-required-scopes, x-required-permissions, x-grant-permissions, the Permission, ApiTokenScope, ServiceScope, user scope and SystemEventAction enums, x-rate-limit; the request field names of every document) -> Go (scopegen.Tables, scopegen.FieldNames)"

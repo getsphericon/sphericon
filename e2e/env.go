@@ -112,6 +112,24 @@ func Boot() (*Env, func(), error) {
 		"SPHERICON_STAFF_JWT_SECRET":      "e2e-staff-secret-distinct-from-the-site-one",
 		"SPHERICON_INTERNAL_ADDR":         internalAddr,
 		"SPHERICON_TRACKING_CNAME_TARGET": "edge.sphericon.e2e.test",
+		// The suite polls freely: every per-policy rate limit is off (0), so a test client never
+		// trips a budget (ADR 0025).
+		"SPHERICON_RATE_LIMIT_HUMAN_PER_MINUTE":                     "0",
+		"SPHERICON_RATE_LIMIT_API_BURST_PER_SECOND":                 "0",
+		"SPHERICON_RATE_LIMIT_API_PER_MINUTE":                       "0",
+		"SPHERICON_RATE_LIMIT_FAILED_AUTH_PER_MINUTE":               "0",
+		"SPHERICON_RATE_LIMIT_TRACKING_PER_MINUTE":                  "0",
+		"SPHERICON_RATE_LIMIT_LOGIN_FAILURES":                       "0",
+		"SPHERICON_RATE_LIMIT_LOGIN_IP_PER_MINUTE":                  "0",
+		"SPHERICON_RATE_LIMIT_COLLECT_PER_MINUTE":                   "0",
+		"SPHERICON_RATE_LIMIT_COLLECT_IP_PER_MINUTE":                "0",
+		"SPHERICON_RATE_LIMIT_SERVICE_PER_MINUTE":                   "0",
+		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_PER_ADDRESS_PER_HOUR": "0",
+		"SPHERICON_RATE_LIMIT_FORGOT_PASSWORD_IP_PER_HOUR":          "0",
+		// Mailpit, the Workspaces' SMTP relay in the suite, is a loopback host.
+		"SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS": "true",
+		// The suite scrapes no metrics: no listener collides with a running dev stack's.
+		"SPHERICON_METRICS_ADDR": "",
 	} {
 		if err := os.Setenv(k, v); err != nil {
 			stopMailpit()

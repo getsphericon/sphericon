@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -173,8 +172,8 @@ func checkSecrets(r *Report, in Input) {
 		r.add("encryption key", Pass, "the encryption keyset is present and valid", "")
 	}
 
-	if err := config.ValidateJWTSecret(cfg.JWTSecret); err != nil {
-		// Development boots without it (Load only enforces it elsewhere): a warning there.
+	if err := validateJWTSecret(cfg.JWTSecret); err != nil {
+		// Development runs on a committed placeholder: a warning there.
 		status := Fail
 		if cfg.IsDev {
 			status = Warn
@@ -323,4 +322,30 @@ func isLoopback(host string) bool {
 	}
 	ip := net.ParseIP(host)
 	return ip != nil && ip.IsLoopback()
+}
+
+// minJWTSecretLength is the shortest SPHERICON_JWT_SECRET the doctor passes (32 characters = 256
+// bits when the secret is hex/random, the HS256 key size).
+const minJWTSecretLength = 32
+
+// placeholderSecretMarkers are lowercase fragments of documented example and
+// development secrets; a secret containing one was copied, not generated.
+var placeholderSecretMarkers = []string{"change-me", "changeme", "change-in-production", "dev-secret", "a-strong-secret"}
+
+// validateJWTSecret is the doctor's rule for SPHERICON_JWT_SECRET: present, long enough and not
+// a documented placeholder.
+func validateJWTSecret(secret string) error {
+	if secret == "" {
+		return errors.New("SPHERICON_JWT_SECRET is not set")
+	}
+	if len(secret) < minJWTSecretLength {
+		return fmt.Errorf("SPHERICON_JWT_SECRET must be at least %d characters (e.g. `openssl rand -hex 32`)", minJWTSecretLength)
+	}
+	lower := strings.ToLower(secret)
+	for _, m := range placeholderSecretMarkers {
+		if strings.Contains(lower, m) {
+			return errors.New("SPHERICON_JWT_SECRET looks like a placeholder; generate one with `openssl rand -hex 32`")
+		}
+	}
+	return nil
 }

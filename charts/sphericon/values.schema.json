@@ -4,31 +4,7 @@
   "properties": {
     "existingSecret": {
       "type": "string",
-      "description": "Existing Secret with SPHERICON_DATABASE_URL, SPHERICON_JWT_SECRET and SPHERICON_ENCRYPTION_KEY, as environment variables (required unless secretFiles.secretName is set)"
-    },
-    "secretFiles": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "secretName": {
-          "type": "string",
-          "description": "Existing Secret mounted at /run/secrets/sphericon, read through the <KEY>_FILE variables"
-        },
-        "keys": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "SPHERICON_DATABASE_URL",
-              "SPHERICON_JWT_SECRET",
-              "SPHERICON_ENCRYPTION_KEY",
-              "SPHERICON_SMTP_PASS",
-              "SPHERICON_LICENSE_KEY"
-            ]
-          },
-          "uniqueItems": true,
-          "description": "The Secret's keys to expose as <KEY>_FILE"
-        }
-      }
+      "description": "Existing Secret with SPHERICON_DATABASE_URL, SPHERICON_JWT_SECRET and SPHERICON_ENCRYPTION_KEY, as environment variables"
     },
     "image": {
       "type": "object",

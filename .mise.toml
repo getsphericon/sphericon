@@ -119,11 +119,14 @@ run = "go mod download"
 [settings]
 experimental = true
 
-# Dev defaults. SPHERICON_DATABASE_URL and PG* are set below, the same in every checkout (do not set
-# SPHERICON_DATABASE_URL in .env: the app reads .env too, but real env vars win). Personal overrides go
-# in the gitignored .env (read by the app) or .mise.local.toml (read by mise).
+# Dev defaults: the app reads the process environment only, so every variable a checkout's dev stack
+# and tests need is set here. SPHERICON_DATABASE_URL and PG* are set below, the same in every
+# checkout. Personal overrides go in the gitignored .mise.local.toml.
 [env]
 SPHERICON_ENV = "development"
+# Coloured human-readable logs, and Workspaces' SMTP Integrations may reach the local Mailpit.
+SPHERICON_LOG_FORMAT = "text"
+SPHERICON_SMTP_ALLOW_PRIVATE_HOSTS = "true"
 # The primary checkout is https://sphericon.localhost on :443. A linked worktree gets its own
 # origin, https://<dir-name>.sphericon.localhost:<caddy port>: browser cookies are shared across
 # ports of one host, so a per-worktree host keeps the session cookies apart.
@@ -154,7 +157,7 @@ BETTERLEAKS_CONFIG = "{{config_root}}/.betterleaks.toml"
 SPHERICON_JWT_SECRET = "dev-secret-change-in-production"
 # Dev-only Staff member secret (turns the Staff sign-in on, ADR 0063); never the site's.
 SPHERICON_STAFF_JWT_SECRET = "dev-staff-secret-change-in-production"
-# Dev-only Tink keyset (same one the old .env.docker.sample shipped); never use in prod.
+# Dev-only Tink keyset; never use in prod.
 SPHERICON_ENCRYPTION_KEY = "CIamsc4JEmQKWAowdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUuY3J5cHRvLnRpbmsuQWVzR2NtS2V5EiIaIIOWohIqGhyD2NeiOazlLrnrHqCirukTjCjD1iMFPqiEGAEQARiGprHOCSAB"
 # The demo storefront (packages/storefront) is a customer site on its own origin: brightpath.localhost
 # in the primary checkout, brightpath.<dir>.sphericon.localhost in a linked worktree. Its tracker

@@ -47,8 +47,8 @@ type deps struct {
 	// changelog is the text `upgrade-notes` reads: the one embedded in this binary.
 	changelog string
 	now       func() time.Time
-	// encryptionKey is the keyset the process is configured with (SPHERICON_ENCRYPTION_KEY or its
-	// file), for the key commands that need no database.
+	// encryptionKey is the keyset the process is configured with (SPHERICON_ENCRYPTION_KEY), for
+	// the key commands that need no database.
 	encryptionKey func() (string, error)
 	// doctor is what `doctor` reaches outside the process for.
 	doctor doctor.Seams
@@ -63,7 +63,7 @@ func newDeps(env string) deps {
 		env:           env,
 		changelog:     upgradenote.Embedded(),
 		now:           time.Now,
-		encryptionKey: func() (string, error) { return config.EncryptionKey(env) },
+		encryptionKey: config.EncryptionKey,
 		doctor:        doctor.DefaultSeams(),
 		open: func(ctx context.Context) (core, func(), error) {
 			a, err := app.NewCommandApp(env)
@@ -100,7 +100,7 @@ func newRoot(d deps) *cli.Command {
 			serviceCredentialCommand(d),
 			presetCommand(),
 			eventsCommand(d),
-			healthcheckCommand(d),
+			healthcheckCommand(),
 		},
 	}
 }

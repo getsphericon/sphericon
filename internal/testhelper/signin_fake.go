@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"log/slog"
-	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -255,7 +254,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 // WithSignin enables the provider "google" on the test Instance, pointed at the fake.
 func WithSignin(f *FakeSignin) Option {
 	return func(s *setup) {
-		enableSignin(s, "google", f.Credentials())
+		s.cfg.Signin.Google = f.Credentials()
 		s.signinOpts = append(s.signinOpts, signinprovider.WithEndpoints("google", f.Endpoints()))
 	}
 }
@@ -263,16 +262,7 @@ func WithSignin(f *FakeSignin) Option {
 // WithSigninGitHub enables the provider "github" on the test Instance, pointed at the fake.
 func WithSigninGitHub(f *FakeSignin) Option {
 	return func(s *setup) {
-		enableSignin(s, "github", f.Credentials())
+		s.cfg.Signin.GitHub = f.Credentials()
 		s.signinOpts = append(s.signinOpts, signinprovider.WithEndpoints("github", f.GitHubEndpoints()))
 	}
-}
-
-func enableSignin(s *setup, name string, c config.SigninCredentials) {
-	// The config a test starts from is shared, so the map is replaced, never written to.
-	s.cfg.Signin = maps.Clone(s.cfg.Signin)
-	if s.cfg.Signin == nil {
-		s.cfg.Signin = map[string]config.SigninCredentials{}
-	}
-	s.cfg.Signin[name] = c
 }

@@ -217,6 +217,21 @@ func TestKeysAreCheckedForPresenceAndValidity(t *testing.T) {
 	assert.Contains(t, find(t, doctor.Run(context.Background(), in), "encryption key").Detail, "not a valid keyset")
 }
 
+func TestJWTSecretMustBeLongAndGenerated(t *testing.T) {
+	cases := map[string]doctor.Status{
+		"":                                  doctor.Fail,
+		"short":                             doctor.Fail,
+		"dev-secret-change-in-production-0": doctor.Fail,
+		strings.Repeat("k3", 20):            doctor.Pass,
+	}
+	for secret, want := range cases {
+		in := healthy(t)
+		in.Config.JWTSecret = secret
+		got := find(t, doctor.Run(context.Background(), in), "jwt secret").Status
+		assert.Equal(t, want, got, "SPHERICON_JWT_SECRET=%q", secret)
+	}
+}
+
 func TestLicenseKeyStates(t *testing.T) {
 	pub, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)

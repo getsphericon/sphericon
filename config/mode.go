@@ -18,16 +18,15 @@ const (
 	ModeSaaS Mode = "saas"
 )
 
-// ParseMode reads SPHERICON_MODE: empty is selfhosted, anything but a known value is an error,
-// so a typo never starts an Instance in the wrong Mode.
-func ParseMode(v string) (Mode, error) {
-	switch m := Mode(strings.ToLower(strings.TrimSpace(v))); m {
-	case "", ModeSelfHosted:
-		return ModeSelfHosted, nil
-	case ModeSaaS:
-		return ModeSaaS, nil
+// UnmarshalText reads SPHERICON_MODE, in any case: anything but a known value is an error, so a
+// typo never starts an Instance in the wrong Mode.
+func (m *Mode) UnmarshalText(text []byte) error {
+	switch v := Mode(strings.ToLower(string(text))); v {
+	case ModeSelfHosted, ModeSaaS:
+		*m = v
+		return nil
 	default:
-		return "", fmt.Errorf("SPHERICON_MODE must be %q or %q, got %q", ModeSelfHosted, ModeSaaS, v)
+		return fmt.Errorf("SPHERICON_MODE must be %q or %q, got %q", ModeSelfHosted, ModeSaaS, text)
 	}
 }
 
@@ -50,9 +49,9 @@ func (c *Config) ApplyMode(m Mode) {
 }
 
 // TrustsDevLicense is whether a license key signed by the development key is accepted (ADR 0060):
-// in a development or end-to-end env, and never in a release build. An empty SPHERICON_ENV counts
-// as development, so the env alone would let a self-hoster who never set it unlock `ee/`; the
-// build's version, which only a release carries, closes that.
+// in a development or end-to-end env, and never in a release build: SPHERICON_ENV alone would let a
+// self-hoster who sets it to development unlock `ee/`, and the build's version, which only a
+// release carries, closes that.
 func (c *Config) TrustsDevLicense() bool {
 	return (c.IsDev || c.IsE2E) && !buildinfo.IsRelease(buildinfo.Current().Version)
 }
@@ -62,19 +61,4 @@ func (c *Config) TrustsDevLicense() bool {
 // for the reason TrustsDevLicense gives. Such a server answers 503 until the migrations run.
 func (c *Config) MigratesFromThePage() bool {
 	return c.IsDev && !buildinfo.IsRelease(buildinfo.Current().Version)
-}
-
-// validateMode refuses a saas Instance that lacks what only its deployment can give (ADR 0060):
-// without these, parts of the product silently do not work. A selfhosted one needs none of them.
-// The `staff` License key is checked where the License is read, by ee.New.
-func (c *Config) validateMode() error {
-	if !c.Mode.SaaS() {
-		return nil
-	}
-	return firstViolation([]requirement{
-		{c.StaffJWTSecret != "", "SPHERICON_STAFF_JWT_SECRET is required when SPHERICON_MODE=saas"},
-		{c.InternalAddr != "", "SPHERICON_INTERNAL_ADDR is required when SPHERICON_MODE=saas"},
-		{c.TrackingCNAMETarget != "", "SPHERICON_TRACKING_CNAME_TARGET is required when SPHERICON_MODE=saas"},
-		{c.SystemMailConfigured(), "a system email provider is required when SPHERICON_MODE=saas: set SPHERICON_SMTP_HOST, or SPHERICON_SYSTEM_EMAIL_PROVIDER=ses"},
-	})
 }

@@ -48,7 +48,7 @@ profile-*
 # mac files
 .DS_Store
 
-# env files — local overrides are gitignored, shared envs are not
+# env files: the app reads none, and a personal one never lands in git
 .env
 .env.local
 .env.*.local

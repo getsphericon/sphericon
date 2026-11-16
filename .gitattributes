@@ -20,6 +20,5 @@ packages/analytics/src/bounds.gen.ts linguist-generated=true
 packages/node/src/generated/**       linguist-generated=true
 internal/kernel/emaildoc/assets/**               linguist-generated=true
 internal/server/assets/t.js          linguist-generated=true
-docs/configuration.md                linguist-generated=true
 **/*_gen.go                          linguist-generated=true
 **/*_gen_test.go                     linguist-generated=true

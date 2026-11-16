@@ -3,6 +3,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -62,10 +63,7 @@ func newRoot() *cli.Command {
 // onDatabase runs task on the database SPHERICON_DATABASE_URL of this environment points at and logs what
 // it did.
 func onDatabase(ctx context.Context, task func(ctx context.Context, dsn string) (string, error)) error {
-	envName := os.Getenv(config.EnvVar)
-	if envName == "" {
-		envName = config.EnvDevelopment
-	}
+	envName := cmp.Or(os.Getenv(config.EnvVar), config.EnvProduction)
 	cfg, err := config.Load(envName)
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
