@@ -8,6 +8,7 @@ import {
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteAutomationResource,
@@ -15,7 +16,7 @@ import type {
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
-import { testId } from '../../test/payloads.ts'
+import { testId, workspace } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
@@ -29,9 +30,10 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
 const NOW = '2026-01-01T00:00:00Z'
 
 // The page also asks for the failed Enrollments and the Integrations to pick from: none unless a
-// test says otherwise.
+// test says otherwise; and for the Workspace, whose postal address an email step shows when missing.
 beforeEach(() => {
   worker.use(
+    handleSiteWorkspacesList({ body: [workspace()] }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),

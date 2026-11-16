@@ -1,4 +1,8 @@
-import type { SiteBrandKitResource, SiteIntegrationResource } from '../generated/site/types.gen.ts'
+import type {
+  SiteBrandKitResource,
+  SiteIntegrationResource,
+  SiteWorkspaceResource,
+} from '../generated/site/types.gen.ts'
 
 // Typed building blocks for the contract-typed `{ body }` responses of the generated MSW handlers.
 
@@ -27,6 +31,29 @@ export const UNSAVED_BRAND_KIT: SiteBrandKitResource = {
   footerText: '',
   updatedAt: null,
   revision: 1,
+}
+
+// The Workspace TestWs01 as the API lists it to its Owner, with a postal address (ADR 0156)
+// unless the test says otherwise.
+export function workspace(extra: Partial<SiteWorkspaceResource> = {}): SiteWorkspaceResource {
+  return {
+    id: 'TestWs01',
+    name: 'Acme',
+    collectKey: 'omck_test_key',
+    revision: 1,
+    postalAddress: '1 Test Street\nTestville',
+    timezone: 'UTC',
+    accountLinkAvailable: false,
+    permissions: [],
+    mcpUrl: 'https://sphericon.test',
+    trackerUrl: 'https://t.sphericon.test',
+    shortLinkLength: 35,
+    smsMaxLength: { gsm7: 1600, ucs2: 700 },
+    holds: [],
+    role: 'owner',
+    createdAt: TIMESTAMPS.createdAt,
+    ...extra,
+  }
 }
 
 // An enabled SMTP Integration of the email Channel, not the default, as the API returns it.

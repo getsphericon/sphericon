@@ -7,10 +7,11 @@ import {
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource, SiteAutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
+import { emailIntegration, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -66,6 +67,7 @@ async function editing(steps: SiteAutomationStep[]) {
       return HttpResponse.json(stored)
     }),
     handleSiteIntegrationsList({ body: INTEGRATIONS }),
+    handleSiteWorkspacesList({ body: [workspace()] }),
     handleSiteEnrollmentsList({
       body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
     }),

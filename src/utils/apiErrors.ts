@@ -129,6 +129,12 @@ export function getFieldErrors(error: unknown) {
   return asProblem(error)?.errors
 }
 
+// A 409 problem with code postal_address_required: marketing email was not armed because the
+// Workspace has no postal address (ADR 0156); the refusal points the person to the setting.
+export function isPostalAddressRequiredError(error: unknown) {
+  return isProblem(error, 409, ProblemCode.POSTAL_ADDRESS_REQUIRED)
+}
+
 // A 409 problem with code revision_changed: the edit named a revision of the resource someone has
 // changed since it was read (ADR 0119). Nothing was written; the editor says so and lets the person
 // load the saved version or save theirs over it.

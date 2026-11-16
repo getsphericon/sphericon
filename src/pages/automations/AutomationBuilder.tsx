@@ -1,4 +1,13 @@
-import { Box, Button, Group, Modal, Paper, TextInput, useComputedColorScheme } from '@mantine/core'
+import {
+  Box,
+  Button,
+  Group,
+  Modal,
+  Paper,
+  Stack,
+  TextInput,
+  useComputedColorScheme,
+} from '@mantine/core'
 import { useForm } from '@mantine/form'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -19,11 +28,13 @@ import { useTranslation } from 'react-i18next'
 import type { SnapshotFrom } from 'xstate'
 
 import { DraftActions } from '../../components/DraftControls.tsx'
+import { PostalAddressNotice } from '../../components/PostalAddressNotice.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
+import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
   SiteAutomationResource,
   SiteAutomationVersion,
@@ -230,6 +241,15 @@ function BuilderBar({
   )
 }
 
+// CanvasPostalAddressNotice is the editor's notice of the missing postal address (ADR 0156) while
+// the canvas holds an email step, saved or not: Publish is refused until the Workspace has one.
+function CanvasPostalAddressNotice({ workspaceId }: { workspaceId: string }) {
+  const sendsEmail = useStore((state) =>
+    state.nodes.some((node) => node.data.type === SiteAutomationStepType.EMAIL),
+  )
+  return sendsEmail ? <PostalAddressNotice workspaceId={workspaceId} /> : null
+}
+
 // AutomationBuilder hosts the visual flow editor. It edits the draft, or the live version when
 // there is none (ADR 0065); a save writes the draft and leaves the live version alone. The name is
 // edited in the bar over the canvas; the Trigger is the canvas's first node, which also holds the
@@ -388,8 +408,9 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
             <Box pos="absolute" top={88} left={16}>
               <WorkflowBuilder.Palette />
             </Box>
-            {session.context.changed && (
-              <Box pos="absolute" bottom={16} left={16} maw={420}>
+            <Stack pos="absolute" bottom={16} left={16} maw={420} gap="xs">
+              <CanvasPostalAddressNotice workspaceId={workspaceId} />
+              {session.context.changed && (
                 <ChangedNotice
                   isDirty={unsaved}
                   busy={!session.matches('idle')}
@@ -400,8 +421,8 @@ export function AutomationBuilder({ workspaceId, automation, edited }: Automatio
                     void stored(overwrite)
                   }}
                 />
-              </Box>
-            )}
+              )}
+            </Stack>
             <Box
               pos="absolute"
               top={{ base: 'auto', sm: 88 }}
