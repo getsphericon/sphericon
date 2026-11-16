@@ -671,7 +671,7 @@ function closeRequestBodies(program: Program) {
     } else if (type.baseModel !== undefined || type.derivedModels.length > 0) {
       report(program, { code: 'extends-in-request-body', target: type })
     } else {
-      close(program, type)
+      closeModel(program, type)
     }
     for (const property of type.properties.values()) {
       visit(property.type, property)
@@ -692,7 +692,7 @@ function closeRequestBodies(program: Program) {
 }
 
 /** Closes the model and appends the closing to its decorators, which a copy of it re-runs. */
-function close(program: Program, model: Model) {
+function closeModel(program: Program, model: Model) {
   if (model.decorators.some((application) => application.decorator === $closed)) {
     return
   }

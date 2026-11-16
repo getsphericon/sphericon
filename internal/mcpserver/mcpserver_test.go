@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -602,16 +603,22 @@ func TestMCPTemplateUpdateAsksForTheRevisionItWasReadWith(t *testing.T) {
 func TestMCPRefusesAPropertyNestedInAnObjectArgument(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite))
-	before := env.DB.Broadcast.Query().CountX(ctx)
+	scopes := []apitokens.Scope{apitokens.ScopeBroadcastsRead, apitokens.ScopeBroadcastsWrite}
+	s := env.MCPClient(t, env.ScopedBearer(t, scopes...))
+	api := env.ExternalScoped(t, scopes...)
+	before, err := api.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
+	require.NoError(t, err)
 
 	res := call(t, s, "broadcasts_create", map[string]any{
 		"name":    "Typo",
 		"content": map[string]any{"channel": "email", "subjct": "Hello"},
 	})
+	after, err := api.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
+	require.NoError(t, err)
+	answer := text(t, res)
 
-	require.True(t, res.IsError, text(t, res))
-	assert.Contains(t, text(t, res), "HTTP 400")
-	assert.Contains(t, text(t, res), "content.subjct")
-	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx))
+	require.True(t, res.IsError, answer)
+	assert.Contains(t, answer, "HTTP 400")
+	assert.Contains(t, answer, "content.subjct")
+	assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 }

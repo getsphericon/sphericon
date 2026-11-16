@@ -40,33 +40,43 @@ func TestExternalBroadcastRefusesAPropertyTheContractDoesNotDeclare(t *testing.T
 				Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hello")}),
 			})
 
+			after, listErr := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
+
+			require.NoError(t, listErr)
 			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
-			assert.Contains(t, refused.Errors.Or(nil), tc.path)
-			after, err := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
-			require.NoError(t, err)
-			assert.Equal(t, before.TotalItems, after.TotalItems)
+			reasons := refused.Errors.Or(nil)[tc.path]
+			assert.Equal(t, []string{"unknown property: the contract does not declare it"}, reasons)
+			assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 		})
 	}
 }
 
-// A property nested in a Condition is refused the same way.
+// A property nested in a Condition is refused the same way, and no Segment is stored.
 func TestExternalSegmentRefusesAPropertyNestedInItsCondition(t *testing.T) {
 	env := testhelper.Setup(t)
+	ctx := t.Context()
 	scopes := []apitokens.Scope{apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite}
-	c := env.ExternalVia(t, env.ScopedBearer(t, scopes...), testhelper.EditBody(func(body map[string]any) {
+	c := env.ExternalScoped(t, scopes...)
+	edited := env.ExternalVia(t, env.ScopedBearer(t, scopes...), testhelper.EditBody(func(body map[string]any) {
 		body["condition"].(map[string]any)["negate"] = true
 	}))
+	before, err := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
+	require.NoError(t, err)
 
-	_, err := c.SegmentsCreate(t.Context(), &externalapi.CreateSegmentInput{
+	_, err = edited.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
 		Name:      "Pros",
 		Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`),
 	})
+	after, listErr := c.SegmentsList(ctx, externalapi.SegmentsListParams{})
 
+	require.NoError(t, listErr)
 	refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
-	assert.Contains(t, refused.Errors.Or(nil), "condition.negate")
+	reasons := refused.Errors.Or(nil)["condition.negate"]
+	assert.Equal(t, []string{"unknown property: the contract does not declare it"}, reasons)
+	assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 }
 
-// The maps whose keys are data stay open: a Contact's Custom field values and an Event's
+// The maps whose keys are data stay open: a Contact upsert's Custom field values and an Event's
 // properties take a key the contract cannot know.
 func TestExternalOpenMapsTakeAnyKey(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(eventsClock))
@@ -74,12 +84,13 @@ func TestExternalOpenMapsTakeAnyKey(t *testing.T) {
 	contacts := env.ExternalScoped(t, apitokens.ScopeContactsWrite)
 	events := env.ExternalScoped(t, apitokens.ScopeEventsWrite)
 
-	created, err := contacts.ContactsCreate(ctx, &externalapi.CreateContactInput{
-		Email:        externalapi.NewOptNilEmailAddress("open-map@example.com"),
-		CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"favourite_colour": []byte(`"teal"`)}),
+	upserted, upsertErr := contacts.ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{
+		Contacts: []externalapi.UpsertContactInput{{
+			Email:        externalapi.NewOptNilEmailAddress("open-map@example.com"),
+			CustomFields: externalapi.NewOptNilJsonObject(externalapi.JsonObject{"favourite_colour": []byte(`"teal"`)}),
+		}},
 	})
-	require.NoError(t, err)
-	err = events.EventsCreate(ctx, &externalapi.RecordEventsInput{
+	eventErr := events.EventsCreate(ctx, &externalapi.RecordEventsInput{
 		Events: []externalapi.EventInput{{
 			SubjectId:  "s-1",
 			Action:     "order_paid",
@@ -87,6 +98,9 @@ func TestExternalOpenMapsTakeAnyKey(t *testing.T) {
 		}},
 	})
 
-	require.NoError(t, err)
-	assert.JSONEq(t, `"teal"`, string(created.CustomFields.Value["favourite_colour"]))
+	require.NoError(t, upsertErr)
+	require.NoError(t, eventErr)
+	require.Len(t, upserted.Results, 1)
+	result := upserted.Results[0]
+	assert.Equal(t, externalapi.ContactBatchStatusCreated, result.Status, result.Error.Or(""))
 }
