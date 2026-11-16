@@ -103,6 +103,20 @@ func TestConcurrentObservationsOfANumberApplyInTheOrderTheyOccurred(t *testing.T
 	assert.Nil(t, consent.Confirmation)
 }
 
+func TestAStopSaidAgainKeepsAnOlderStartFromLiftingIt(t *testing.T) {
+	env := testhelper.Setup(t)
+	t1 := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	publish := func(ev events.DomainEvent) { t.Helper(); require.NoError(t, env.Bus.Publish(t.Context(), ev)) }
+	publish(&events.SmsStopObserved{WorkspaceID: fixtures.AcmeID, Phone: texter, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: t1})
+	publish(&events.SmsStopObserved{WorkspaceID: fixtures.AcmeID, Phone: texter, Via: events.UnsubscribedByKeyword, DedupID: "stop-again", ObservedAt: t1.Add(2 * time.Minute)})
+	publish(&events.SmsStartObserved{WorkspaceID: fixtures.AcmeID, Phone: texter, DedupID: "start", ObservedAt: t1.Add(time.Minute)})
+
+	consent := smsConsent(t, env)
+	transitions := env.QueuedCount(t, events.NameSmsOptOutRecorded, nil)
+	assert.NotNil(t, consent.OptOut, "the person stopped again after the START")
+	assert.Equal(t, 1, transitions, "the second STOP is no transition")
+}
+
 func TestALaterObservationStillTransitions(t *testing.T) {
 	env := testhelper.Setup(t)
 	t1 := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)

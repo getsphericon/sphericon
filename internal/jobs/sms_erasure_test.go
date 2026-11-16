@@ -200,6 +200,32 @@ func TestAStartOlderThanAnErasedPersonsStopLiftsNothing(t *testing.T) {
 	assert.Zero(t, stamps, "the START is compared with the stamp kept by the hash, and writes no number")
 }
 
+// The stamp of a number the Contact stopped and no longer has, and the Event of a START that came
+// late on it, are erased with the Contact like its opt-out: by the number's hash, or not at all.
+func TestErasingAContactHashesTheStampOfANumberItHadBefore(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	former := fixtures.ContactTexterPhone
+	stopped := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStopObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: former, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: stopped,
+	}))
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStartObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: former, DedupID: "late-start", ObservedAt: stopped.Add(-time.Minute),
+	}))
+	// The Contact moves to another number; the opt-out of the former one still names it.
+	env.DB.Contact.UpdateOneID(fixtures.ContactTexterID).SetPhone("+14155550188").ExecX(ctx)
+
+	eraseContact(t, env, fixtures.ContactTexterID)
+
+	plain := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(former)).CountX(ctx)
+	kept := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(phone.Hash(former))).CountX(ctx)
+	naming := env.DB.Event.Query().Where(event.Phone(former)).CountX(ctx)
+	assert.Zero(t, plain, "no consent stamp by the number")
+	assert.Equal(t, 1, kept, "the time of the stop stays, by the hash")
+	assert.Zero(t, naming, "no Event, the superseded START's included, names the number")
+}
+
 // A Confirmation recorded for a number before any Contact had it names no Contact; erasing the
 // Contact that later took the number removes it and its sms.confirmed proof too.
 func TestErasingAContactRemovesTheConsentItsNumberGaveBeforeItWasAContact(t *testing.T) {

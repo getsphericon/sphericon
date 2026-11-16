@@ -3,6 +3,8 @@ package contacterasure
 import (
 	"context"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps/consentstampsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
@@ -45,11 +47,24 @@ func eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.
 			return err
 		}
 	}
-	standing := func(ctx context.Context, _ string) (bool, error) {
-		optOut, err := unsubscribes.SMSOptOut(ctx, s, t.Phone)
-		return optOut != nil, err
+	// The Contact's phone, and the numbers it had before whose opt-outs still name it.
+	numbers, err := unsubscribes.SMSNumbersOf(ctx, s, t.ContactID)
+	if err != nil {
+		return err
 	}
-	return consentstampsunchecked.Erase(ctx, s, channels.SMS, t.Phone, phone.Hash(t.Phone), standing)
+	if t.Phone != "" {
+		numbers = append(numbers, t.Phone)
+	}
+	for _, number := range lo.Uniq(numbers) {
+		standing := func(ctx context.Context, _ string) (bool, error) {
+			optOut, err := unsubscribes.SMSOptOut(ctx, s, number)
+			return optOut != nil, err
+		}
+		if err := consentstampsunchecked.Erase(ctx, s, channels.SMS, number, phone.Hash(number), standing); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

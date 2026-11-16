@@ -241,6 +241,20 @@ func SMSOptOut(ctx context.Context, s *ent.Scoped, number string) (*ent.Unsubscr
 	return u, nil
 }
 
+// SMSNumbersOf are the numbers of the SMS opt-outs that name the Contact: its phone's, and those of
+// numbers it had before, which an Erasure keeps by their hash (unsubscribesunchecked.EraseSMS).
+func SMSNumbersOf(ctx context.Context, s *ent.Scoped, contactID int64) ([]string, error) {
+	numbers, err := s.Unsubscribe().Query().
+		Where(unsubscribe.ChannelEQ(channels.SMS), unsubscribe.ContactID(contactID)).
+		Unique(true).
+		Select(unsubscribe.FieldDestination).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list the contact's sms opt-outs: %w", err)
+	}
+	return numbers, nil
+}
+
 // smsEverything is the Channel-wide opt-out of the number: kept by the number, or by its hash once
 // the Contact whose phone it was is erased (unsubscribesunchecked.EraseSMS), so a STOP, a START and the Contact card find
 // an erased person's opt-out when the number comes back.
