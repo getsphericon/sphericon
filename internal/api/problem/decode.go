@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"context"
 	"errors"
 	"regexp"
 	"slices"
@@ -23,21 +24,37 @@ var (
 )
 
 // undecodedProperty is the path of the request body property a decoding error is about, its
-// object keys joined by dots (`content.subjct`), and the reason it is refused: UnknownProperty for
-// a property the contract does not declare, the decoder's own message for a value it cannot read
-// (a wrong type). The path is empty when err is no request decoding error or names no property. An
-// array adds no segment: the decoders do not say which item failed.
-func undecodedProperty(err error) (path, reason string) {
-	if _, ok := errors.AsType[*ogenerrors.DecodeRequestError](err); !ok {
+// segments joined by dots (`content.subjct`, `condition.rules.1.field`), and the reason it is
+// refused: UnknownProperty for a property the contract does not declare, the decoder's own message
+// for a value it cannot read (a wrong type). The path is empty when err is no request decoding
+// error or names no property. The decoders name the object keys only; the item of each array on
+// the way is found by decoding the body again (locate), with the decoder of the operation the
+// surface's Middleware keeps, and a failure it cannot place keeps the keys alone.
+func undecodedProperty(ctx context.Context, err error) (path, reason string) {
+	request, ok := errors.AsType[*ogenerrors.DecodeRequestError](err)
+	if !ok {
 		return "", ""
 	}
-	segments, reason, _ := propertyOf(err, nil)
-	return strings.Join(segments, "."), reason
+	keys, reason, found := propertyOf(err, nil)
+	if !found {
+		return "", ""
+	}
+	steps := make([]step, 0, len(keys))
+	for _, key := range keys {
+		steps = append(steps, step{key: key})
+	}
+	body, isBody := errors.AsType[*ogenerrors.DecodeBodyError](err)
+	if decode := decoderOf(ctx, request.OperationName()); isBody && decode != nil {
+		if located, ok := locate(body.Body, failure{keys, reason}, decode); ok {
+			steps = located
+		}
+	}
+	return joinPath(steps), reason
 }
 
-// propertyOf follows err's chain, a joined error into each of its errors, collecting the fields
-// each level decodes, and stops at the first error that ends the chain under a field.
-func propertyOf(err error, segments []string) (path []string, reason string, found bool) {
+// propertyOf follows err's chain, a joined error into each of its errors, collecting the keys of
+// the fields each level decodes, and stops at the first error that ends the chain under a field.
+func propertyOf(err error, segments []string) (keys []string, reason string, found bool) {
 	if joined, ok := err.(interface{ Unwrap() []error }); ok {
 		for _, e := range joined.Unwrap() {
 			if path, reason, found := propertyOf(e, segments); found {
@@ -52,10 +69,10 @@ func propertyOf(err error, segments []string) (path []string, reason string, fou
 		own = strings.TrimSuffix(own, ": "+inner.Error())
 	}
 	if name, ok := quoted(unexpectedFieldMessage, own); ok {
-		return append(slices.Clip(segments), segment(name)), UnknownProperty, true
+		return append(slices.Clip(segments), name), UnknownProperty, true
 	}
 	if name, ok := quoted(decodeFieldMessage, own); ok {
-		segments = append(slices.Clip(segments), segment(name))
+		segments = append(slices.Clip(segments), name)
 	}
 	if inner != nil {
 		return propertyOf(inner, segments)
@@ -63,13 +80,19 @@ func propertyOf(err error, segments []string) (path []string, reason string, fou
 	return segments, own, len(segments) > 0
 }
 
-// segment is a key as a segment of the path: as it is, or Go-quoted when it is empty or holds a
-// dot or a quote, so that a refused key a client chose (`""`, `a.b`) cannot read as another path.
+// segment is a key as a segment of the path: as it is, or Go-quoted when it is empty, holds a dot
+// or a quote, or is a number, so that a refused key a client chose (`""`, `a.b`, `1`) cannot read
+// as another path or as the index of an item.
 func segment(key string) string {
-	if key == "" || strings.ContainsAny(key, `."`) || !strconv.CanBackquote(key) {
+	if key == "" || strings.ContainsAny(key, `."`) || !strconv.CanBackquote(key) || isIndex(key) {
 		return strconv.Quote(key)
 	}
 	return key
+}
+
+// isIndex reports whether key reads as the index of an item: digits only.
+func isIndex(key string) bool {
+	return strings.Trim(key, "0123456789") == ""
 }
 
 // quoted is the Go-quoted name message carries in the only group of pattern.

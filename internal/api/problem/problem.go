@@ -72,13 +72,19 @@ type exchangeKey struct{}
 type exchange struct {
 	w http.ResponseWriter
 	r *http.Request
+	// decoders are the request body decoders of the surface by operation name, with which a body
+	// that does not decode is decoded again to place the failure in its arrays.
+	decoders map[string]bodyDecoder
 }
 
-// Middleware keeps the request and its writer for Of. It wraps every ogen server, so the
-// in-process dispatch of /mcp has them too.
-func Middleware(next http.Handler) http.Handler {
+// Middleware keeps the request and its writer for Of, and the request body decoders of the
+// surface whose Handler interface is H. It wraps every ogen server, so the in-process dispatch of
+// /mcp has them too.
+func Middleware[H any](next http.Handler) http.Handler {
+	decoders := requestDecoders[H]()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), exchangeKey{}, &exchange{w: w, r: r})))
+		ex := &exchange{w: w, r: r, decoders: decoders}
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), exchangeKey{}, ex)))
 	})
 }
 
@@ -158,7 +164,7 @@ func decide(ctx context.Context, ex *exchange, err error) (int, *siteapi.Problem
 		// The client gets this text as the problem's detail; the log keeps it beside the access line.
 		p.Detail = siteapi.NewOptString(err.Error())
 		// A body that does not decode names the property it fails at (ADR 0148).
-		if path, reason := undecodedProperty(err); path != "" && code == http.StatusBadRequest {
+		if path, reason := undecodedProperty(ctx, err); path != "" && code == http.StatusBadRequest {
 			p.Errors = siteapi.NewOptProblemDetailsErrors(siteapi.ProblemDetailsErrors{path: {reason}})
 		}
 	} else if ex != nil {

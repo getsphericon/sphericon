@@ -1,7 +1,9 @@
 package external_test
 
 import (
+	"maps"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -103,4 +105,58 @@ func TestExternalOpenMapsTakeAnyKey(t *testing.T) {
 	require.Len(t, upserted.Results, 1)
 	result := upserted.Results[0]
 	assert.Equal(t, externalapi.ContactBatchStatusCreated, result.Status, result.Error.Or(""))
+}
+
+// A failure inside an array names the item it is in: the index of the item the decoder failed at,
+// counted from 0, as a segment of the path (`condition.rules.1.combinator`). The item is the one
+// that fails, not the first that holds the key: a group's `combinator` is declared, the same key
+// on a rule is not.
+func TestExternalSegmentNamesTheItemOfAnArrayItFailsAt(t *testing.T) {
+	rule := func(extra map[string]any) map[string]any {
+		r := map[string]any{"kind": "rule", "field": "custom:plan", "operator": "eq", "value": "pro"}
+		maps.Copy(r, extra)
+		return r
+	}
+	group := func(rules ...any) map[string]any {
+		return map[string]any{"kind": "group", "combinator": "and", "rules": rules}
+	}
+	cases := []struct {
+		name      string
+		condition map[string]any
+		path      string
+	}{
+		{
+			"a key another variant declares",
+			group(group(rule(nil)), rule(map[string]any{"combinator": "or"})),
+			"condition.rules.1.combinator",
+		},
+		{
+			"a value of the wrong type",
+			group(rule(nil), rule(nil), rule(map[string]any{"field": 3})),
+			"condition.rules.2.field",
+		},
+		{
+			"in a nested array",
+			group(group(rule(nil)), group(rule(nil), rule(map[string]any{"bogus": true}))),
+			"condition.rules.1.rules.1.bogus",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			env := testhelper.Setup(t)
+			ctx := t.Context()
+			scopes := []apitokens.Scope{apitokens.ScopeSegmentsRead, apitokens.ScopeSegmentsWrite}
+			edited := env.ExternalVia(t, env.ScopedBearer(t, scopes...), testhelper.EditBody(func(body map[string]any) {
+				body["condition"] = tc.condition
+			}))
+
+			_, err := edited.SegmentsCreate(ctx, &externalapi.CreateSegmentInput{
+				Name:      "Pros",
+				Condition: testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`),
+			})
+
+			refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
+			assert.Equal(t, []string{tc.path}, slices.Collect(maps.Keys(refused.Errors.Or(nil))))
+		})
+	}
 }
