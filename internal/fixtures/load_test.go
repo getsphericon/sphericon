@@ -64,3 +64,15 @@ func TestLoadClearsTheTombstonesOfTheUsersItReplaces(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, stale, "the tombstone of a User deleted before the reload is gone")
 }
+
+// The loader inserts the fixtures with the foreign keys switched off, so a row that names a missing
+// parent loads without a word, and only a later VALIDATE CONSTRAINT trips on it: a migration that
+// rebuilds that key (20261111135009_tenant_keys) failed on a seeded dev database. Every reference
+// a fixture makes must therefore point at a row, as the database would have required.
+func TestFixturesSatisfyEveryForeignKey(t *testing.T) {
+	sqlDB := testhelper.RealDB(t)
+
+	orphans := testhelper.ForeignKeyOrphans(t, sqlDB)
+
+	require.Empty(t, orphans, "fixture rows that break a foreign key")
+}
