@@ -13,7 +13,7 @@ import (
 // eventsCommand is `sphericon events`: `list` inspects the publication metadata one Workspace or
 // the Instance retained, and `replay` queues one report consumer's jobs again for the events a
 // Workspace recorded in a bounded interval.
-func eventsCommand(d deps) *cli.Command {
+func eventsCommand(env string) *cli.Command {
 	recorded := cli.TimestampConfig{Layouts: []string{time.RFC3339Nano}}
 	return group("events", "inspect publication metadata and reapply retained report inputs",
 		&cli.Command{
@@ -33,7 +33,7 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.TimestampFlag{Name: flagBefore, Usage: "exclusive recorded time, RFC3339", Config: recorded},
 				&cli.IntFlag{Name: flagLimit, Value: events.DefaultJournalLimit, Usage: "maximum entries in newest-first output; truncated reports omitted matches"},
 			},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				history, err := eventHistory(c)
 				if err != nil {
 					return err
@@ -57,7 +57,7 @@ func eventsCommand(d deps) *cli.Command {
 				&cli.IntFlag{Name: flagLimit, Value: events.MaxReplayEntries, Usage: "refuse the whole selection when it exceeds this bound"},
 				&cli.BoolFlag{Name: flagDryRun, Usage: "validate and count without queuing jobs"},
 			},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				history, err := eventHistory(c)
 				if err != nil {
 					return err

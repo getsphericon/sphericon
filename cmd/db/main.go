@@ -3,7 +3,6 @@
 package main
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -15,6 +14,10 @@ import (
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/infra/devdb"
 )
+
+// flagName is the name of the `generate` argument, declared and looked up by this constant so a
+// misspelt lookup fails to compile instead of reading a zero value.
+const flagName = "name"
 
 func main() {
 	if err := newRoot().Run(context.Background(), os.Args); err != nil {
@@ -63,8 +66,7 @@ func newRoot() *cli.Command {
 // onDatabase runs task on the database SPHERICON_DATABASE_URL of this environment points at and logs what
 // it did.
 func onDatabase(ctx context.Context, task func(ctx context.Context, dsn string) (string, error)) error {
-	envName := cmp.Or(os.Getenv(config.EnvVar), config.EnvProduction)
-	cfg, err := config.Load(envName)
+	cfg, err := config.Load(config.Env())
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}

@@ -358,7 +358,7 @@ linters:
       # from it; the access log and the document runtime measure a duration on it; httprate's
       # windows run on it, so its reset header counts from it; the doctor and a CLI command run
       # outside the container and default to it.
-      - path: ^(internal/app/container\.go|internal/server/accesslog\.go|internal/kernel/emaildoc/emaildoc\.go|internal/infra/ratelimit/ratelimit\.go|internal/doctor/diagnose\.go|cmd/server/(cli|preset)\.go)$
+      - path: ^(internal/app/container\.go|internal/server/accesslog\.go|internal/kernel/emaildoc/emaildoc\.go|internal/infra/ratelimit/ratelimit\.go|internal/doctor/diagnose\.go|cmd/server/cli\.go)$
         linters:
           - forbidigo
         text: the Instance reads one clock

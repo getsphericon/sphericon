@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -23,10 +22,8 @@ import (
 )
 
 func main() {
-	env := cmp.Or(os.Getenv(config.EnvVar), config.EnvProduction)
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	err := newRoot(newDeps(env)).Run(ctx, os.Args)
+	err := newRoot(config.Env()).Run(ctx, os.Args)
 	stop()
 	if err != nil {
 		if errors.Is(err, commandline.ErrNewerRelease) {
@@ -42,7 +39,8 @@ func main() {
 			_, _ = fmt.Fprintln(os.Stderr, shown)
 			os.Exit(1)
 		}
-		fatal("sphericon", err)
+		slog.Error("sphericon", "err", err)
+		os.Exit(1)
 	}
 }
 
@@ -72,10 +70,4 @@ func serve(env string) cli.ActionFunc {
 		}
 		return app.Serve(ctx, env)
 	}
-}
-
-// fatal logs an error and exits non-zero (slog has no Fatal helper).
-func fatal(msg string, err error) {
-	slog.Error(msg, "err", err)
-	os.Exit(1)
 }

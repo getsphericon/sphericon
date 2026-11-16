@@ -8,6 +8,7 @@
 package config
 
 import (
+	"cmp"
 	"fmt"
 	"log/slog"
 	"net"
@@ -475,6 +476,9 @@ func (c *Config) UseListener(addr net.Addr) {
 
 // EnvVar is the variable that names the environment a process runs as; unset is EnvProduction.
 const EnvVar = "SPHERICON_ENV"
+
+// Env is the environment this process runs as: the value of EnvVar, EnvProduction when it is unset.
+func Env() string { return cmp.Or(os.Getenv(EnvVar), EnvProduction) }
 
 // The environments a process runs as.
 const (

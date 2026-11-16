@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/urfave/cli/v3"
@@ -17,15 +16,12 @@ func healthcheckCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "healthcheck",
 		Usage: "exit 0 when the server on PORT answers /healthz, 1 otherwise",
-		Action: func(ctx context.Context, cmd *cli.Command) error {
-			if cmd.Args().Present() {
-				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
-			}
+		Action: noArgs(func(ctx context.Context, _ *cli.Command) error {
 			port, err := config.Port()
 			if err != nil {
 				return err
 			}
 			return healthcheck.Probe(ctx, http.DefaultClient, port)
-		},
+		}),
 	}
 }

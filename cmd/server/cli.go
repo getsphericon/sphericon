@@ -12,16 +12,13 @@ import (
 
 	"github.com/urfave/cli/v3"
 
-	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/doctor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/instance/upgradenote"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -41,92 +38,69 @@ type core interface {
 	Bus() (*events.Bus, error)
 }
 
-// deps is what the commands reach outside themselves for.
-type deps struct {
-	env string
-	// changelog is the text `upgrade-notes` reads: the one embedded in this binary.
-	changelog string
-	now       func() time.Time
-	// encryptionKey is the keyset the process is configured with (SPHERICON_ENCRYPTION_KEY), for
-	// the key commands that need no database.
-	encryptionKey func() (string, error)
-	// doctor is what `doctor` reaches outside the process for.
-	doctor doctor.Seams
-	// open boots the minimal command app (no listener, no workers) and
-	// returns its core and the function that shuts it down. It runs only once the
-	// arguments have parsed.
-	open func(ctx context.Context) (core, func(), error)
-}
-
-func newDeps(env string) deps {
-	return deps{
-		env:           env,
-		changelog:     upgradenote.Embedded(),
-		now:           time.Now,
-		encryptionKey: config.EncryptionKey,
-		doctor:        doctor.DefaultSeams(),
-		open: func(ctx context.Context) (core, func(), error) {
-			a, err := app.NewCommandApp(env)
-			if err != nil {
-				return nil, nil, err
-			}
-			return a, func() {
-				report := a.Shutdown(ctx)
-				cleanup.Shutdown(report)
-			}, nil
-		},
-	}
-}
-
-// newRoot builds the `sphericon` command tree. Without a subcommand it serves.
-func newRoot(d deps) *cli.Command {
+// newRoot builds the `sphericon` command tree for the environment env. Without a subcommand it
+// serves.
+func newRoot(env string) *cli.Command {
 	cli.VersionPrinter = printVersion
 	return &cli.Command{
 		Name:    "sphericon",
 		Usage:   "marketing automation platform",
 		Version: buildinfo.Current().Version,
-		Action:  serve(d.env),
+		Action:  serve(env),
 		Commands: []*cli.Command{
 			versionCommand(),
 			genkeyCommand(),
-			encryptionKeyCommand(d),
-			migrateCommand(d.env),
-			doctorCommand(d),
+			encryptionKeyCommand(env),
+			migrateCommand(env),
+			doctorCommand(env),
 			upgradeCommand(),
-			upgradeNotesCommand(d.changelog),
-			workspaceCommand(d),
-			userCommand(d),
-			staffCommand(d),
-			serviceCredentialCommand(d),
+			upgradeNotesCommand(),
+			workspaceCommand(env),
+			userCommand(env),
+			staffCommand(env),
+			serviceCredentialCommand(env),
 			presetCommand(),
-			eventsCommand(d),
+			eventsCommand(env),
 			healthcheckCommand(),
 		},
 	}
 }
 
+// now is the clock the commands read: they run outside the container that provides app.Clock, so
+// it is the wall clock.
+func now() time.Time { return time.Now() }
+
 // out is where a command writes its result.
 func out(cmd *cli.Command) io.Writer { return cmd.Root().Writer }
 
-// withCore runs a staff member command against the booted command app, under a timeout.
-func (d deps) withCore(run func(ctx context.Context, cmd *cli.Command, c core) error) cli.ActionFunc {
-	return d.withCoreWithin(30*time.Second, run)
+// withCore runs a staff member command against the command app of env (no listener, no
+// workers), booted once the arguments have parsed, under a timeout.
+func withCore(env string, run func(ctx context.Context, cmd *cli.Command, c core) error) cli.ActionFunc {
+	return withCoreWithin(env, 30*time.Second, run)
 }
 
 // withCoreWithin is withCore with its own timeout, for a command that walks a whole table.
-func (d deps) withCoreWithin(timeout time.Duration, run func(ctx context.Context, cmd *cli.Command, c core) error) cli.ActionFunc {
+func withCoreWithin(env string, timeout time.Duration, run func(ctx context.Context, cmd *cli.Command, c core) error) cli.ActionFunc {
+	return noArgs(func(ctx context.Context, cmd *cli.Command) error {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		a, err := app.NewCommandApp(env)
+		if err != nil {
+			return err
+		}
+		defer func() { cleanup.Shutdown(a.Shutdown(ctx)) }()
+		return run(ctx, cmd, a)
+	})
+}
+
+// noArgs is action for a command that takes no positional argument: given one, it fails instead
+// of ignoring it.
+func noArgs(action cli.ActionFunc) cli.ActionFunc {
 	return func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.Args().Present() {
 			return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 		}
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-		c, closeApp, err := d.open(ctx)
-		if err != nil {
-			return err
-		}
-		defer closeApp()
-		return run(ctx, cmd, c)
+		return action(ctx, cmd)
 	}
 }
 

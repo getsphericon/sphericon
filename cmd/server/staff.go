@@ -13,14 +13,14 @@ import (
 // one-time password, and the Staff member enrols a TOTP at first login. `reset-totp`
 // is the only way a lost TOTP is reset (no web flow can): it clears the factor and ends
 // the Staff member's sessions, and the Staff member re-enrols at next login.
-func staffCommand(d deps) *cli.Command {
+func staffCommand(env string) *cli.Command {
 	return group("staff", "manage platform Staff members",
 		&cli.Command{
 			Name:      "create",
 			Usage:     "create a Staff member and print their one-time password",
 			ArgsUsage: "<email>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				members, err := c.StaffMembers()
 				if err != nil {
 					return err
@@ -35,7 +35,7 @@ func staffCommand(d deps) *cli.Command {
 			Usage:     "clear a Staff member's TOTP and end their sessions",
 			ArgsUsage: "<email>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				members, err := c.StaffMembers()
 				if err != nil {
 					return err

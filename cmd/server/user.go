@@ -14,7 +14,7 @@ import (
 // `reset-second-factor <email>` (ADR 0020) is the way back in for a User locked out of
 // their Second factor with nobody to reset it in the product (the sole Owner of a
 // self-hosted instance).
-func userCommand(d deps) *cli.Command {
+func userCommand(env string) *cli.Command {
 	return group("user", "create a first Owner or recover a User's access",
 		&cli.Command{
 			Name:      "create-owner",
@@ -24,7 +24,7 @@ func userCommand(d deps) *cli.Command {
 				&cli.StringArg{Name: flagEmail, Required: true},
 				&cli.StringArgs{Name: flagName, Max: -1},
 			},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				email := cmd.StringArg(flagEmail)
 				name := strings.Join(cmd.StringArgs(flagName), " ")
 				signUp, err := c.SignUp()
@@ -40,7 +40,7 @@ func userCommand(d deps) *cli.Command {
 			Usage:     "clear a User's Second factor and recovery codes and end their sessions",
 			ArgsUsage: "<email>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: flagEmail, Required: true}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				factors, err := c.SecondFactors()
 				if err != nil {
 					return err
