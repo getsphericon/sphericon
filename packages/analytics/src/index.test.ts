@@ -680,3 +680,33 @@ test('an untyped snippet queue may omit the config base url and the identify pay
   expect(url).toBe(`${location.origin}/collect/identify`)
   expect(await sentBody('/collect/identify')).toMatchObject({ email: null, traits: null })
 })
+
+// reset (ADR 0171) is a site's sign-out: the browser forgets the Identity token, so the next start
+// link asks for the visitor's, and starts a visitor of its own.
+test('reset forgets the identity token and starts a new visitor', async () => {
+  document.cookie = 'om_vid=signed-in-visitor; Path=/'
+  const { initTracking, identify, reset, telegramStartLink } = await loadTracker()
+  initTracking(CONFIG)
+  await identify({ identityToken: 'signed.by.server' })
+
+  reset()
+  answerStartLink(200, START_LINK)
+  await telegramStartLink()
+
+  const body = await sentBody('/collect/telegram-start-links')
+  expect(body).toMatchObject({ identityToken: null })
+  expect(body.visitorId).not.toBe('signed-in-visitor')
+  expect(document.cookie).toContain(`om_vid=${body.visitorId}`)
+})
+
+test('reset through the queue before the tracker starts applies once it does', async () => {
+  document.cookie = 'om_vid=earlier-visitor; Path=/'
+  window._omq = [['reset']]
+  const { initTracking, identify } = await loadTracker()
+  initTracking(CONFIG)
+
+  await identify({ email: 'a@example.com' })
+
+  const body = await sentBody('/collect/identify')
+  expect(body.visitorId).not.toBe('earlier-visitor')
+})
