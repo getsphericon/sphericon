@@ -1,0 +1,21 @@
+# Contacts of the schema before a Tag was matched by its name's key: Ann holds two Tags whose names
+# differ only in case and spaces and the younger Cyrillic one, Bob holds only the youngest "vip",
+# Cleo is of another Workspace.
+- id: 1
+  workspace_id: 1
+  email: ann@example.com
+  revision: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2
+  workspace_id: 1
+  email: bob@example.com
+  revision: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 3
+  workspace_id: 2
+  email: cleo@example.com
+  revision: 1
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

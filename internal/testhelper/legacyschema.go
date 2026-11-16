@@ -2,6 +2,7 @@ package testhelper
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,4 +33,14 @@ func InsertLegacyContact(t *testing.T, sqlDB *sql.DB, workspaceID int64, phone s
 		workspaceID, phone, country).Scan(&id)
 	require.NoError(t, err)
 	return id
+}
+
+// CollateC makes column of table compare and change case byte by byte (COLLATE "C"), as on a
+// database created with the C locale, where lower() changes only ASCII letters, so a migration
+// test sees what SQL computes there whatever the test server's locale.
+func CollateC(t *testing.T, sqlDB *sql.DB, table, column string) {
+	t.Helper()
+	// raw sql: a column's collation is server DDL, which ent does not model.
+	_, err := sqlDB.ExecContext(t.Context(), fmt.Sprintf(`ALTER TABLE %q ALTER COLUMN %q TYPE character varying COLLATE "C"`, table, column))
+	require.NoError(t, err)
 }
