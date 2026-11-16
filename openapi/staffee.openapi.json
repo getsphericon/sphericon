@@ -1283,7 +1283,8 @@
             "description": "Messages per rolling 24 hours"
           }
         },
-        "description": "The Send cap a Staff member sets on a Workspace"
+        "description": "The Send cap a Staff member sets on a Workspace",
+        "additionalProperties": false
       },
       "StaffSignupCompanySize": {
         "type": "string",
@@ -1532,7 +1533,8 @@
             "description": "The reason, required: the Workspace owner is told why sending stopped"
           }
         },
-        "description": "Why a Workspace is being suspended; the owner is told"
+        "description": "Why a Workspace is being suspended; the owner is told",
+        "additionalProperties": false
       },
       "StaffSuspension": {
         "type": "object",

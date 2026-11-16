@@ -1987,7 +1987,7 @@ func (s *StaffDefaultSendCapInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"perDay\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -2799,7 +2799,7 @@ func (s *StaffInstanceTelemetryInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"enabled\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -2933,7 +2933,7 @@ func (s *StaffLegalDocumentDraftInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"markdown\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -3027,7 +3027,7 @@ func (s *StaffLegalDocumentPublishInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"label\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -3370,7 +3370,7 @@ func (s *StaffLoginInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"password\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -3760,7 +3760,7 @@ func (s *StaffSecondFactorInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"code\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -3901,7 +3901,7 @@ func (s *StaffSignupItemInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"mailingsConsent\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -4113,7 +4113,7 @@ func (s *StaffSignupItemOrder) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"ids\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {
@@ -4465,7 +4465,7 @@ func (s *StaffSignupItemUpdate) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"mailingsConsent\"")
 			}
 		default:
-			return d.Skip()
+			return errors.Errorf("unexpected field %q", k)
 		}
 		return nil
 	}); err != nil {

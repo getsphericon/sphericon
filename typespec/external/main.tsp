@@ -70,4 +70,5 @@ using TypeSpec.Versioning;
 @useAuth(BearerAuth)
 @versioned(Versions)
 @everyOperationDeclares("scopes")
+@closedRequestBodies
 namespace Sphericon;

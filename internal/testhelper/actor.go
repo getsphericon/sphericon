@@ -233,7 +233,19 @@ func (env *TestEnv) CollectAnonymous(t *testing.T) *collectapi.Client {
 // wrong-credential tests).
 func (env *TestEnv) CollectWithKey(t *testing.T, key string) *collectapi.Client {
 	t.Helper()
-	c, err := collectapi.NewClient(collectBase, collectKeySource{key}, collectapi.WithClient(env.Transport(nil)))
+	return env.collectClient(t, key, env.Transport(nil))
+}
+
+// CollectVia is CollectAcme with the in-memory transport wrapped by wrap, for tests that change
+// the request on the wire (EditBody).
+func (env *TestEnv) CollectVia(t *testing.T, wrap func(inner ht.Client) ht.Client) *collectapi.Client {
+	t.Helper()
+	return env.collectClient(t, fixtures.AcmeCollectKey, wrap(env.Transport(nil)))
+}
+
+func (env *TestEnv) collectClient(t *testing.T, key string, transport ht.Client) *collectapi.Client {
+	t.Helper()
+	c, err := collectapi.NewClient(collectBase, collectKeySource{key}, collectapi.WithClient(transport))
 	require.NoError(t, err)
 	return c
 }

@@ -70,6 +70,7 @@ model SitePasskeyCreationOptions {
 
 /** The browser's answer to the creation options: the W3C `RegistrationResponseJSON`
  * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library. */
+@openMap
 model SitePasskeyRegistrationResponse is Record<unknown>;
 
 /** One Passkey of the authenticated User (ADR 0051). Its public key and credential id are

@@ -5627,7 +5627,8 @@
             "description": "The label to apply; created on first use"
           }
         },
-        "description": "Request body for applying a tag to a contact"
+        "description": "Request body for applying a tag to a contact",
+        "additionalProperties": false
       },
       "AuditAction": {
         "type": "string",
@@ -5880,7 +5881,8 @@
             "description": "Header value. Omit it when editing to keep the stored value of the header with this name."
           }
         },
-        "description": "One request header of an HTTP step. The value is a secret: it is never returned."
+        "description": "One request header of an HTTP step. The value is a secret: it is never returned.",
+        "additionalProperties": false
       },
       "AutomationPeriodResults": {
         "type": "object",
@@ -6330,7 +6332,8 @@
             "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
           }
         },
-        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
+        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name.",
+        "additionalProperties": false
       },
       "AutomationStepFigures": {
         "type": "object",
@@ -7142,7 +7145,8 @@
             "description": "The moment the field's is compared with"
           }
         },
-        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse."
+        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse.",
+        "additionalProperties": false
       },
       "ConditionDateOperator": {
         "type": "string",
@@ -7168,7 +7172,8 @@
             "description": "The window, in days back from now"
           }
         },
-        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf."
+        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf.",
+        "additionalProperties": false
       },
       "ConditionEventLeaf": {
         "type": "object",
@@ -7203,7 +7208,8 @@
             "description": "Count only the Events of the last this many days; absent counts all time"
           }
         },
-        "description": "A test of how many times a contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted."
+        "description": "A test of how many times a contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted.",
+        "additionalProperties": false
       },
       "ConditionEventOperator": {
         "type": "string",
@@ -7238,7 +7244,8 @@
             "description": "The group's leaves and nested groups"
           }
         },
-        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
+        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none).",
+        "additionalProperties": false
       },
       "ConditionLeaf": {
         "type": "object",
@@ -7265,7 +7272,8 @@
             "description": "The value to test against: a tag name, blank for null and notNull"
           }
         },
-        "description": "One test of a condition: a field, an operator and a value"
+        "description": "One test of a condition: a field, an operator and a value",
+        "additionalProperties": false
       },
       "ConditionNode": {
         "type": "object",
@@ -7328,7 +7336,8 @@
             "description": "The number the field is compared with"
           }
         },
-        "description": "A comparison of a number: a custom field of the workspace whose type is number\n(\"custom:<key>\"), or a property of the Event that fired a rule (\"trigger:<key>\", valid only in a\nrule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the\nleaf false."
+        "description": "A comparison of a number: a custom field of the workspace whose type is number\n(\"custom:<key>\"), or a property of the Event that fired a rule (\"trigger:<key>\", valid only in a\nrule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the\nleaf false.",
+        "additionalProperties": false
       },
       "ConditionNumberOperator": {
         "type": "string",
@@ -7431,7 +7440,8 @@
             "description": "The brand the person agreed to hear from"
           }
         },
-        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request"
+        "description": "The evidence of consent collected outside sphericon (ADR 0077), kept in the immutable `sms.confirmed` Event to answer a proof request",
+        "additionalProperties": false
       },
       "ContactBatchItemResult": {
         "type": "object",
@@ -8341,7 +8351,8 @@
             ],
             "nullable": true
           }
-        }
+        },
+        "additionalProperties": false
       },
       "CreateApiTokenResponse": {
         "type": "object",
@@ -8384,7 +8395,8 @@
             }
           }
         },
-        "description": "Request body for creating an automation (always created inactive)"
+        "description": "Request body for creating an automation (always created inactive)",
+        "additionalProperties": false
       },
       "CreateBroadcastInput": {
         "type": "object",
@@ -8427,7 +8439,8 @@
             "description": "Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422."
           }
         },
-        "description": "Request body for creating a broadcast"
+        "description": "Request body for creating a broadcast",
+        "additionalProperties": false
       },
       "CreateConfirmationInput": {
         "type": "object",
@@ -8465,7 +8478,8 @@
             "description": "The brand the person agreed to hear from"
           }
         },
-        "description": "Request body for recording consent collected outside sphericon"
+        "description": "Request body for recording consent collected outside sphericon",
+        "additionalProperties": false
       },
       "CreateContactInput": {
         "type": "object",
@@ -8563,7 +8577,8 @@
             "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           }
         },
-        "description": "Request body for creating a contact"
+        "description": "Request body for creating a contact",
+        "additionalProperties": false
       },
       "CreateIntegrationInput": {
         "type": "object",
@@ -8615,7 +8630,8 @@
             "description": "The Preset's params, validated against its `paramsSchema`: read the schema first. A Telegram integration takes none; a Twilio integration takes the `twilio` Preset's `auth_token`, required"
           }
         },
-        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422"
+        "description": "Create an Integration. The provider and channel are derived from `config.kind`. A Test inbox (`inbox`) takes no credentials, never becomes the default by itself, and a second one is refused with 409. A Telegram bot (`telegram`) is checked with Telegram and its webhook set before the save; a refusal is a 422. A Twilio account (`twilio`) is checked with Twilio and its sender's callbacks set before the save; a refusal is a 422",
+        "additionalProperties": false
       },
       "CreateRuleInput": {
         "type": "object",
@@ -8643,7 +8659,8 @@
             "description": "The Actions to run, in order"
           }
         },
-        "description": "Request body for creating a Rule: it is created inactive, with its definition as the draft"
+        "description": "Request body for creating a Rule: it is created inactive, with its definition as the draft",
+        "additionalProperties": false
       },
       "CreateSegmentInput": {
         "type": "object",
@@ -8666,7 +8683,8 @@
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           }
         },
-        "description": "Request body for creating a segment"
+        "description": "Request body for creating a segment",
+        "additionalProperties": false
       },
       "CreateSendingDomainInput": {
         "type": "object",
@@ -8681,7 +8699,8 @@
             "description": "DKIM selector; defaults to \"sphericon\" when omitted"
           }
         },
-        "description": "Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish."
+        "description": "Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.",
+        "additionalProperties": false
       },
       "CreateSuppressionInput": {
         "type": "object",
@@ -8701,7 +8720,8 @@
             "description": "What to stop sending to: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164)"
           }
         },
-        "description": "Request body for suppressing a destination"
+        "description": "Request body for suppressing a destination",
+        "additionalProperties": false
       },
       "CreateTemplateInput": {
         "type": "object",
@@ -8732,7 +8752,8 @@
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           }
         },
-        "description": "Request body for creating a template"
+        "description": "Request body for creating a template",
+        "additionalProperties": false
       },
       "CreateUnsubscribeInput": {
         "type": "object",
@@ -8756,7 +8777,8 @@
             "description": "The sending source to opt out of: `broadcasts` (default), `automation:<id>`, or `everything` (leave entirely). On `telegram` and `sms` only `everything` (the default) is accepted: a person stops all of the Workspace's messages on the Channel"
           }
         },
-        "description": "Request body for recording an unsubscribe"
+        "description": "Request body for recording an unsubscribe",
+        "additionalProperties": false
       },
       "CreateWebhookInput": {
         "type": "object",
@@ -8778,7 +8800,8 @@
             "description": "Whether the endpoint receives deliveries (default true)"
           }
         },
-        "description": "Request body for creating a webhook endpoint"
+        "description": "Request body for creating a webhook endpoint",
+        "additionalProperties": false
       },
       "CurrencyCode": {
         "type": "string",
@@ -8900,7 +8923,8 @@
             "description": "The Contact whose values fill the template"
           }
         },
-        "description": "Request body for rendering an HTTP step's body for a Contact"
+        "description": "Request body for rendering an HTTP step's body for a Contact",
+        "additionalProperties": false
       },
       "DryRunHttpStepResult": {
         "type": "object",
@@ -8937,7 +8961,8 @@
             "description": "The stored Event to try the Rule on"
           }
         },
-        "description": "Request body for dry-running a Rule on a stored Event"
+        "description": "Request body for dry-running a Rule on a stored Event",
+        "additionalProperties": false
       },
       "EditorDocument": {
         "type": "object",
@@ -9040,7 +9065,8 @@
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           }
         },
-        "description": "Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on\nupdate an omitted field keeps its value and null clears it."
+        "description": "Email's content of a Broadcast (ADR 0078). On create an omitted field takes its default; on\nupdate an omitted field keeps its value and null clears it.",
+        "additionalProperties": false
       },
       "EmailSchemaAttribute": {
         "type": "object",
@@ -9351,7 +9377,8 @@
             "description": "A client-chosen id that makes a retry safe. It is unique within the Workspace: sending an\nevent again with the same id changes nothing, so a load that broke off halfway is resent\nwhole. Generate it once per event (a UUID) and reuse it on every retry. An event without\none is not deduplicated."
           }
         },
-        "description": "Event payload"
+        "description": "Event payload",
+        "additionalProperties": false
       },
       "ExportAuditRow": {
         "type": "object",
@@ -10153,7 +10180,8 @@
             "enum": ["inbox"]
           }
         },
-        "description": "The Test inbox takes no credentials: a Workspace has at most one"
+        "description": "The Test inbox takes no credentials: a Workspace has at most one",
+        "additionalProperties": false
       },
       "IntegrationChannel": {
         "type": "string",
@@ -10389,7 +10417,8 @@
             "description": "The Telegram bot the link is for; null or omitted means the workspace's default Telegram integration. A disabled or archived bot, or an integration of another channel, is refused with 422."
           }
         },
-        "description": "Request body for issuing a Telegram start link"
+        "description": "Request body for issuing a Telegram start link",
+        "additionalProperties": false
       },
       "JsonObject": {
         "type": "object",
@@ -10443,7 +10472,8 @@
             "description": "The editor's JSON document, an opaque object checked against the schema `email_schema`\nreturns. It is rendered to HTML as a save would, then linted. A document that cannot be\nrendered is an error finding with the reason."
           }
         },
-        "description": "The message to lint"
+        "description": "The message to lint",
+        "additionalProperties": false
       },
       "LintEmailResult": {
         "type": "object",
@@ -10616,7 +10646,8 @@
             "description": "Condition; absent means all contacts"
           }
         },
-        "description": "Request body for previewing a condition's segment"
+        "description": "Request body for previewing a condition's segment",
+        "additionalProperties": false
       },
       "PreviewSegmentResult": {
         "type": "object",
@@ -10866,7 +10897,8 @@
             "description": "Events to record, at most 1000"
           }
         },
-        "description": "Request body for recording events one by one with per-item results"
+        "description": "Request body for recording events one by one with per-item results",
+        "additionalProperties": false
       },
       "RecordEventsBatchResult": {
         "type": "object",
@@ -10894,7 +10926,8 @@
             "description": "Events to record"
           }
         },
-        "description": "Request body for recording events"
+        "description": "Request body for recording events",
+        "additionalProperties": false
       },
       "RegionalFormat": {
         "type": "string",
@@ -10919,7 +10952,8 @@
             "description": "The resource's `revision` the operation was made on: the one it was read with"
           }
         },
-        "description": "The body of an editor's operation on stored content (Publish, Revert): the revision of what the\neditor shows (ADR 0119)"
+        "description": "The body of an editor's operation on stored content (Publish, Revert): the revision of what the\neditor shows (ADR 0119)",
+        "additionalProperties": false
       },
       "RuleAction": {
         "type": "object",
@@ -10978,7 +11012,8 @@
             "description": "Whether a signing secret is stored (http actions, read only)"
           }
         },
-        "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call."
+        "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.",
+        "additionalProperties": false
       },
       "RuleActionResult": {
         "type": "object",
@@ -11287,7 +11322,8 @@
             "description": "When the broadcast should be sent"
           }
         },
-        "description": "Request body for scheduling a broadcast"
+        "description": "Request body for scheduling a broadcast",
+        "additionalProperties": false
       },
       "SegmentResource": {
         "type": "object",
@@ -11423,7 +11459,8 @@
             "default": false
           }
         },
-        "description": "Send a single transactional email by rendering a referenced template."
+        "description": "Send a single transactional email by rendering a referenced template.",
+        "additionalProperties": false
       },
       "SendTransactionalEmailResponse": {
         "type": "object",
@@ -11690,7 +11727,8 @@
             "description": "Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS"
           }
         },
-        "description": "SES credentials"
+        "description": "SES credentials",
+        "additionalProperties": false
       },
       "SetBroadcastSegmentInput": {
         "type": "object",
@@ -11715,7 +11753,8 @@
             "description": "The Segment to send to; null means all contacts"
           }
         },
-        "description": "Request body for setting a broadcast's Segment"
+        "description": "Request body for setting a broadcast's Segment",
+        "additionalProperties": false
       },
       "SetTrackingDomainInput": {
         "type": "object",
@@ -11727,7 +11766,8 @@
             "description": "A host below a domain of your own, e.g. \"t.example.com\": never the apex (a CNAME cannot sit\nthere) nor one of the Instance's own hosts. Stored lower case, IDN as punycode."
           }
         },
-        "description": "Set the Workspace's Tracking domain"
+        "description": "Set the Workspace's Tracking domain",
+        "additionalProperties": false
       },
       "SetupScope": {
         "type": "string",
@@ -11795,7 +11835,8 @@
             "description": "Whether each http(s) link of the text goes out as a short tracked link on the Tracking domain, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
           }
         },
-        "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted field takes its default (an empty text, link tracking on); on update an omitted field\nkeeps its value."
+        "description": "SMS's content of a Broadcast (ADR 0078), the same Message content as an SMS step. On create an\nomitted field takes its default (an empty text, link tracking on); on update an omitted field\nkeeps its value.",
+        "additionalProperties": false
       },
       "SmsConfirmation": {
         "type": "object",
@@ -11954,7 +11995,8 @@
             "nullable": true
           }
         },
-        "description": "SMTP credentials"
+        "description": "SMTP credentials",
+        "additionalProperties": false
       },
       "SoleOwnedWorkspace": {
         "type": "object",
@@ -12166,7 +12208,8 @@
             "description": "The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out. An empty string removes the button."
           }
         },
-        "description": "Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On\ncreate an omitted field takes its default (an empty text, no image, no buttons, the link preview\non, no unsubscribe button); on update an omitted field keeps its value."
+        "description": "Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On\ncreate an omitted field takes its default (an empty text, no image, no buttons, the link preview\non, no unsubscribe button); on update an omitted field keeps its value.",
+        "additionalProperties": false
       },
       "TelegramButton": {
         "type": "object",
@@ -12181,7 +12224,8 @@
             "description": "The URL it opens: absolute, http or https"
           }
         },
-        "description": "A link button under a Telegram message: an inline URL button on a row of its own"
+        "description": "A link button under a Telegram message: an inline URL button on a row of its own",
+        "additionalProperties": false
       },
       "TelegramConfig": {
         "type": "object",
@@ -12216,7 +12260,8 @@
             "description": "The bot token"
           }
         },
-        "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon"
+        "description": "A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had: use a bot dedicated to sphericon",
+        "additionalProperties": false
       },
       "TelegramStartLinkResource": {
         "type": "object",
@@ -12319,7 +12364,8 @@
             "description": "Phone number to send the rendered text of an SMS broadcast to, in international format with its country code (+14155550100); required on SMS, and a value that is no such number is a 422"
           }
         },
-        "description": "Request body for a test send: where the preview goes, in the field of the broadcast's Channel.\nThe field of the other Channel is not read."
+        "description": "Request body for a test send: where the preview goes, in the field of the broadcast's Channel.\nThe field of the other Channel is not read.",
+        "additionalProperties": false
       },
       "TestWebhookInput": {
         "type": "object",
@@ -12330,7 +12376,8 @@
             "description": "The event name the sample carries, for example `contact.created`"
           }
         },
-        "description": "Request body for sending a sample event to a webhook endpoint"
+        "description": "Request body for sending a sample event to a webhook endpoint",
+        "additionalProperties": false
       },
       "TimeZoneName": {
         "type": "string"
@@ -12531,7 +12578,8 @@
             "description": "What messages go out from: a phone number of the account in E.164 (`+15017250604`), an alphanumeric sender ID of up to 11 characters, or a Messaging Service SID (`MG…`)"
           }
         },
-        "description": "A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials"
+        "description": "A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials",
+        "additionalProperties": false
       },
       "UnsubscribeResource": {
         "type": "object",
@@ -12609,7 +12657,8 @@
             }
           }
         },
-        "description": "Request body for updating an automation. The name changes at once; the trigger, exit and\ngoal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and only publishing makes the draft live."
+        "description": "Request body for updating an automation. The name changes at once; the trigger, exit and\ngoal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live\nversion's, and only publishing makes the draft live.",
+        "additionalProperties": false
       },
       "UpdateBroadcastInput": {
         "type": "object",
@@ -12660,7 +12709,8 @@
             "description": "Sending integration, of the broadcast's Channel; null means the Channel's default. An archived integration, or one of another Channel, is refused with 422."
           }
         },
-        "description": "Request body for updating a draft broadcast: an omitted field keeps its value, null clears it"
+        "description": "Request body for updating a draft broadcast: an omitted field keeps its value, null clears it",
+        "additionalProperties": false
       },
       "UpdateContactInput": {
         "type": "object",
@@ -12767,7 +12817,8 @@
             "description": "Typed custom field values keyed by the field's machine key. A new key's first value sets the\nfield's type: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,\n`2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.\nSend a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes\nas UTC and lands on the previous day east of UTC"
           }
         },
-        "description": "Request body for updating a contact"
+        "description": "Request body for updating a contact",
+        "additionalProperties": false
       },
       "UpdateCustomFieldInput": {
         "type": "object",
@@ -12798,7 +12849,8 @@
             "description": "Value type. Stored values are not rewritten: the leaves of the new type read them as they are"
           }
         },
-        "description": "Request body for updating a custom field: its key never changes"
+        "description": "Request body for updating a custom field: its key never changes",
+        "additionalProperties": false
       },
       "UpdateIntegrationInput": {
         "type": "object",
@@ -12862,7 +12914,8 @@
             "description": "Stop accepting the retiring value of every rotating secret"
           }
         },
-        "description": "Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret."
+        "description": "Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep the stored secret.",
+        "additionalProperties": false
       },
       "UpdateRuleInput": {
         "type": "object",
@@ -12898,7 +12951,8 @@
             "description": "The Actions to run, in order"
           }
         },
-        "description": "Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's."
+        "description": "Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.",
+        "additionalProperties": false
       },
       "UpdateSegmentInput": {
         "type": "object",
@@ -12929,7 +12983,8 @@
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"
           }
         },
-        "description": "Request body for updating a segment"
+        "description": "Request body for updating a segment",
+        "additionalProperties": false
       },
       "UpdateSendingDomainInput": {
         "type": "object",
@@ -12939,7 +12994,8 @@
             "description": "New DKIM selector"
           }
         },
-        "description": "Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM\nrecord, so the domain becomes unverified until the new record is published. The app has no\nsuch edit yet, so this body is /api's own."
+        "description": "Change a Sending domain. The domain name is immutable; changing the selector moves the DKIM\nrecord, so the domain becomes unverified until the new record is published. The app has no\nsuch edit yet, so this body is /api's own.",
+        "additionalProperties": false
       },
       "UpdateTemplateInput": {
         "type": "object",
@@ -12978,7 +13034,8 @@
             "description": "The editor's JSON document, an opaque object checked by the server against the schema `email_schema` returns. The server renders the\nbody from it in the same save; a document that cannot be rendered is a 422 with the reason and nothing is stored."
           }
         },
-        "description": "Request body for updating a template"
+        "description": "Request body for updating a template",
+        "additionalProperties": false
       },
       "UpdateWebhookInput": {
         "type": "object",
@@ -13008,7 +13065,8 @@
             "description": "Whether the endpoint receives deliveries"
           }
         },
-        "description": "Request body for updating a webhook endpoint"
+        "description": "Request body for updating a webhook endpoint",
+        "additionalProperties": false
       },
       "UpsertContactInput": {
         "type": "object",
@@ -13114,7 +13172,8 @@
             "description": "The evidence of the SMS consent the contact's phone gave outside sphericon: records an\n`imported` SMS confirmation for the phone, as `POST /confirmations` does. Without it a phone\nstays unreachable on SMS. An item with it and no phone fails"
           }
         },
-        "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit."
+        "description": "One contact to upsert, matched by its alias keys (subject id, email, phone). An alias key fills\nonly a contact that has none; every other attribute given replaces the contact's, and null clears\nit.",
+        "additionalProperties": false
       },
       "UpsertContactsInput": {
         "type": "object",
@@ -13130,7 +13189,8 @@
             "description": "Contacts to upsert, at most 1000"
           }
         },
-        "description": "Request body for upserting contacts in batch"
+        "description": "Request body for upserting contacts in batch",
+        "additionalProperties": false
       },
       "UpsertContactsResult": {
         "type": "object",

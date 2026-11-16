@@ -1,4 +1,5 @@
 import "@typespec/openapi";
+import "../lib/main.tsp";
 
 using TypeSpec.OpenAPI;
 
@@ -81,10 +82,12 @@ scalar WorkspaceId extends string;
  * integration params, an audit diff. One named model, so every surface's Go code has one type for
  * it rather than one per field.
  */
+@openMap
 model JsonObject is Record<unknown>;
 
 /**
  * The email editor's JSON document, an opaque object the server checks against the schema
  * `email_schema` returns. One named model, as JsonObject.
  */
+@openMap
 model EditorDocument is Record<unknown>;

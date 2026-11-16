@@ -29,6 +29,7 @@ model SitePasskeyLoginBegun {
 
 /** The browser's answer to the request options: the W3C `AuthenticationResponseJSON`
  * dictionary (`PublicKeyCredential.toJSON()`), checked by the WebAuthn library. */
+@openMap
 model SitePasskeyAssertion is Record<unknown>;
 
 /** The browser's response to a login ceremony */
