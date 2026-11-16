@@ -18,6 +18,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      # A shutdown takes up to 30s (app.StopTimeout and the telemetry flush), the time a running job
+      # needs to be handed back; Kubernetes' default of 30s leaves no margin before the kill.
+      terminationGracePeriodSeconds: 40
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
