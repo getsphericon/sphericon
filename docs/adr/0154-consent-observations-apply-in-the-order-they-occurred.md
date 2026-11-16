@@ -55,7 +55,9 @@ providers treat the first as the violation.
 
 - Each consent state gains the time of the observation that set it, kept for a return as well.
 - A consent observation carries its time of occurrence from the adapter that read it.
-- The consent history shows an observation that changed nothing, at its own time, marked as such.
+- The consent history shows an observation that changed nothing, at its own time, marked as such:
+  it is recorded for the Contact as the System event `contact.consent_superseded` (#1448), a
+  record of the observation, not of a transition.
 - Glossary: **Consent observation**.
 
 ## Rejected

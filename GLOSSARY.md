@@ -563,8 +563,8 @@ Something that says a person gave or withdrew consent for a Destination on a Cha
 a blocked or unblocked bot, a button, a link, a member's action, a form, an import. Each is applied
 once, in the order it occurred (the provider's time or sequence where there is one, else when the
 Instance received it), never the order it arrived: one older than the state standing only joins the
-history, and of two that cannot be told apart the refusal wins. Provenance rules decide first which
-observation may replace which.
+history (the System event `contact.consent_superseded`, at its own time), and of two that cannot be
+told apart the refusal wins. Provenance rules decide first which observation may replace which.
 _Avoid_: Consent event (an Event is one record of it), opt-out message, consent update
 
 **Engagement tracking default**:

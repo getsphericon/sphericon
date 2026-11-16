@@ -6744,7 +6744,8 @@ func (s *Server) handleCapturedMessagesListRequest(args [0]string, argsEscaped b
 // as an `imported` confirmation with its evidence: the wording shown, where it was collected and the
 // brand. The evidence is kept in the immutable `sms.confirmed` event. A number already confirmed keeps
 // its confirmation unless the new one is stronger, so the answer is the confirmation that stands. It
-// does not lift an opt-out: only the person can, by texting START.
+// does not lift an opt-out: only the person can, by texting START. Consent recorded before the number
+// last withdrew it changes nothing and is refused with a conflict.
 //
 // POST /confirmations
 func (s *Server) handleConfirmationsCreateRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
