@@ -57,6 +57,8 @@ func (c *ConverterImpl) CollectCode(source site.ProblemCode) collect.ProblemCode
 		collectapiProblemCode = collect.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		collectapiProblemCode = collect.ProblemCodePermissionRequired
+	case site.ProblemCodePostalAddressRequired:
+		collectapiProblemCode = collect.ProblemCodePostalAddressRequired
 	case site.ProblemCodeRevisionChanged:
 		collectapiProblemCode = collect.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
@@ -124,6 +126,8 @@ func (c *ConverterImpl) ExternalCode(source site.ProblemCode) external.ProblemCo
 		externalapiProblemCode = external.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		externalapiProblemCode = external.ProblemCodePermissionRequired
+	case site.ProblemCodePostalAddressRequired:
+		externalapiProblemCode = external.ProblemCodePostalAddressRequired
 	case site.ProblemCodeRevisionChanged:
 		externalapiProblemCode = external.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
@@ -191,6 +195,8 @@ func (c *ConverterImpl) ServiceCode(source site.ProblemCode) service.ProblemCode
 		serviceapiProblemCode = service.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		serviceapiProblemCode = service.ProblemCodePermissionRequired
+	case site.ProblemCodePostalAddressRequired:
+		serviceapiProblemCode = service.ProblemCodePostalAddressRequired
 	case site.ProblemCodeRevisionChanged:
 		serviceapiProblemCode = service.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
@@ -274,6 +280,8 @@ func (c *ConverterImpl) StaffCode(source site.ProblemCode) staff.ProblemCode {
 		staffapiProblemCode = staff.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		staffapiProblemCode = staff.ProblemCodePermissionRequired
+	case site.ProblemCodePostalAddressRequired:
+		staffapiProblemCode = staff.ProblemCodePostalAddressRequired
 	case site.ProblemCodeRevisionChanged:
 		staffapiProblemCode = staff.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:
@@ -341,6 +349,8 @@ func (c *ConverterImpl) StaffeeCode(source site.ProblemCode) staffee.ProblemCode
 		staffeeapiProblemCode = staffee.ProblemCodeMigrationsPending
 	case site.ProblemCodePermissionRequired:
 		staffeeapiProblemCode = staffee.ProblemCodePermissionRequired
+	case site.ProblemCodePostalAddressRequired:
+		staffeeapiProblemCode = staffee.ProblemCodePostalAddressRequired
 	case site.ProblemCodeRevisionChanged:
 		staffeeapiProblemCode = staffee.ProblemCodeRevisionChanged
 	case site.ProblemCodeSecondFactorRequired:

@@ -18,6 +18,7 @@ import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as broadcastReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as emailsRoute } from '../../routes/workspaces/$workspaceId/settings/emails.tsx'
+import { Route as generalRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { Route as webhooksRoute } from '../../routes/workspaces/$workspaceId/settings/webhooks.tsx'
 import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId/suppressions/index.tsx'
 import { holdExplanation } from '../../utils/hold.ts'
@@ -83,6 +84,7 @@ const MESSAGE = {
     t(($) => $.overview.attention.kinds.webhookDisabled, { name: nameOf(item) }),
   sendingDomainNotBulkReady: (t, item) =>
     t(($) => $.overview.attention.kinds.sendingDomainNotBulkReady, { name: nameOf(item) }),
+  postalAddressMissing: (t) => t(($) => $.overview.attention.kinds.postalAddressMissing),
 } as const satisfies Record<
   SiteAttentionKind,
   (t: TFunction, item: SiteAttentionItem, format: Format) => string
@@ -186,6 +188,15 @@ function AutomationAction({ workspaceId, id, label }: ActionProps) {
   )
 }
 
+function PostalAddressAction({ workspaceId }: ActionProps) {
+  const { t } = useTranslation()
+  return (
+    <AnchorLink to={generalRoute.to} params={{ workspaceId }} size="sm">
+      {t(($) => $.overview.attention.actions.postalAddress)}
+    </AnchorLink>
+  )
+}
+
 function WebhooksAction({ workspaceId }: ActionProps) {
   const { t } = useTranslation()
   return (
@@ -221,6 +232,7 @@ const ACTION = {
   broadcastFailed: BroadcastAction,
   webhookDisabled: WebhooksAction,
   sendingDomainNotBulkReady: EmailsAction,
+  postalAddressMissing: PostalAddressAction,
 } as const satisfies Record<SiteAttentionKind, ComponentType<ActionProps> | null>
 
 // OBJECT_ACTIONS open the object an item is about rather than a page of the Workspace: in a group,

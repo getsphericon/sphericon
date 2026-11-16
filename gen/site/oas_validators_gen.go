@@ -1514,6 +1514,8 @@ func (s ProblemCode) Validate() error {
 		return nil
 	case "revision_changed":
 		return nil
+	case "postal_address_required":
+		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
@@ -2696,6 +2698,8 @@ func (s SiteAttentionKind) Validate() error {
 	case "webhookDisabled":
 		return nil
 	case "sendingDomainNotBulkReady":
+		return nil
+	case "postalAddressMissing":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)

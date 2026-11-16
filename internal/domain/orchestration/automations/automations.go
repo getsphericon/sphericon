@@ -603,7 +603,8 @@ func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, nu
 // on the step's Channel through the Integration it names (or that Channel's default), cannot send:
 // an edit may name such an Integration, only Publish is refused, and a route that stops sending
 // after it holds the sends at that step instead. A Telegram step whose text, as written, is over
-// Telegram's limit is refused too.
+// Telegram's limit is refused too, and so is an email step while the Workspace has no postal
+// address for its footer (outboundmessages.ErrPostalAddressRequired, ADR 0156).
 func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent.AutomationVersion) error {
 	if err := validateEvents(definition{trigger: version.TriggerEvent, exits: version.ExitEvents, goal: version.GoalEvent}); err != nil {
 		return err
@@ -611,6 +612,11 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	sends, err := SendSteps(version)
 	if err != nil {
 		return err
+	}
+	if slices.ContainsFunc(sends, func(st SendStep) bool { return st.Channel() == channels.Email }) {
+		if err := outboundmessages.PostalAddressArmable(ctx, ts, channels.Email); err != nil {
+			return err
+		}
 	}
 	for i := range sends {
 		st := &sends[i]

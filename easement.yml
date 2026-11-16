@@ -497,8 +497,8 @@ components:
   # that remove a checked row.
   domain-orchestration-removalcheck:
     in: internal/domain/orchestration/removalcheck
-    allow_importers: [usecase, wiring]
-    because: the Removal check runs inside a use case's transaction under the Workspace lock (ADR 0099), before its unchecked removal; a domain module never removes a row another module may hold
+    allow_importers: [usecase, usecase-raw, wiring]
+    because: the Removal check runs inside a use case's transaction under the Workspace lock (ADR 0099), before its unchecked removal; a domain module never removes a row another module may hold. The Workspace view (usecase-raw) runs it before it clears the postal address (ADR 0156)
   # The readers of the Removal check: each owner that may hold a row keeps them in a subpackage
   # `<module>use`, which may import its owner and which the owner does not import (the Definition
   # use of the Segments, Rules, Automations and armed Broadcasts, the Live use that sends of the

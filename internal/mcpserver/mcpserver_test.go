@@ -115,6 +115,23 @@ func TestMCPSendToolsAreListedOnlyWithMCPSend(t *testing.T) {
 	assert.ElementsMatch(t, append(slices.Clone(authoringTools), sendTools...), toolNames(withSend))
 }
 
+// The refusal of marketing email armed without a postal address reaches an agent over MCP with
+// its code (ADR 0156), so it asks a person to set the address instead of retrying.
+func TestMCPScheduleWithoutAPostalAddressIsRefusedWithItsCode(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.ClearPostalAddress(t, fixtures.AcmeID)
+	args := map[string]any{"id": testhelper.ID(fixtures.BroadcastDraftID), "scheduledAt": "2099-01-01T00:00:00Z", "revision": env.BroadcastRevision(t.Context(), t, fixtures.BroadcastDraftID)}
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeMcpSend, apitokens.ScopeBroadcastsSend))
+
+	res := call(t, s, "broadcasts_schedule", args)
+
+	require.True(t, res.IsError)
+	assert.Contains(t, text(t, res), "HTTP 409 Conflict")
+	assert.Contains(t, text(t, res), `"postal_address_required"`)
+	status := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastDraftID).Status
+	assert.Equal(t, broadcast.StatusDraft, status)
+}
+
 func TestMCPSendToolCallIsRefusedWithoutMCPSend(t *testing.T) {
 	env := testhelper.Setup(t)
 	// Schedule names the revision the caller read (ADR 0119).

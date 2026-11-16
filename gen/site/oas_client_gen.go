@@ -326,7 +326,8 @@ type Invoker interface {
 	// draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 	// live sends through an integration that cannot send (disabled, archived, of another channel, or no
 	// default for the step's channel): a draft may name such an integration, only publishing it is
-	// refused. 409 for an archived automation too.
+	// refused. 409 for an archived automation too, and 409 postal_address_required when the version has an
+	// email send step and the Workspace has no postal address (ADR 0156).
 	//
 	// POST /workspaces/{workspaceId}/automations/{id}/publish
 	SiteAutomationsPublish(ctx context.Context, request *RevisionInput, params SiteAutomationsPublishParams) (*SiteAutomationResource, error)
@@ -413,7 +414,8 @@ type Invoker interface {
 	// are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 	// rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 	// cannot send (disabled or archived, or no default): a draft may name such an integration, only
-	// scheduling it is refused. An archived broadcast is a 409 too.
+	// scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the
+	// Workspace has no postal address (postal_address_required, ADR 0156).
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 	SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (*SiteBroadcastResource, error)
@@ -421,7 +423,8 @@ type Invoker interface {
 	//
 	// Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
 	// resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
-	// since the `revision` it names (revision_changed): nothing is sent.
+	// since the `revision` it names (revision_changed): nothing is sent. An email broadcast is a 409
+	// postal_address_required while the Workspace has no postal address (ADR 0156).
 	//
 	// POST /workspaces/{workspaceId}/broadcasts/{id}/send
 	SiteBroadcastsSend(ctx context.Context, request *RevisionInput, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error)
@@ -6811,7 +6814,8 @@ func (c *Client) sendSiteAutomationsList(ctx context.Context, params SiteAutomat
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused. 409 for an archived automation too.
+// refused. 409 for an archived automation too, and 409 postal_address_required when the version has an
+// email send step and the Workspace has no postal address (ADR 0156).
 //
 // POST /workspaces/{workspaceId}/automations/{id}/publish
 func (c *Client) SiteAutomationsPublish(ctx context.Context, request *RevisionInput, params SiteAutomationsPublishParams) (*SiteAutomationResource, error) {
@@ -8728,7 +8732,8 @@ func (c *Client) sendSiteBroadcastsList(ctx context.Context, params SiteBroadcas
 // are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and
 // rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through
 // cannot send (disabled or archived, or no default): a draft may name such an integration, only
-// scheduling it is refused. An archived broadcast is a 409 too.
+// scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the
+// Workspace has no postal address (postal_address_required, ADR 0156).
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/schedule
 func (c *Client) SiteBroadcastsSchedule(ctx context.Context, request *ScheduleBroadcastInput, params SiteBroadcastsScheduleParams) (*SiteBroadcastResource, error) {
@@ -8890,7 +8895,8 @@ func (c *Client) sendSiteBroadcastsSchedule(ctx context.Context, request *Schedu
 //
 // Send a broadcast immediately. A draft copies its segment's condition, which its recipients are
 // resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed
-// since the `revision` it names (revision_changed): nothing is sent.
+// since the `revision` it names (revision_changed): nothing is sent. An email broadcast is a 409
+// postal_address_required while the Workspace has no postal address (ADR 0156).
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/send
 func (c *Client) SiteBroadcastsSend(ctx context.Context, request *RevisionInput, params SiteBroadcastsSendParams) (*SiteBroadcastResource, error) {

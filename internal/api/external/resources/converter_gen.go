@@ -1773,6 +1773,7 @@ func (c *ConverterImpl) WorkspaceToResource(source *ent.Workspace) external.Work
 	if source != nil {
 		externalapiWorkspaceResource.ID = external.WorkspaceId((*source).PublicID)
 		externalapiWorkspaceResource.Name = (*source).Name
+		externalapiWorkspaceResource.PostalAddress = (*source).PostalAddress
 		externalapiWorkspaceResource.Timezone = workspaceTimezone((*source).Timezone)
 		// externalapiWorkspaceResource.SendCap: ignore
 		externalapiWorkspaceResource.Revision = revision((*source).Revision)

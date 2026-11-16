@@ -15258,6 +15258,7 @@ const (
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
 	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 	ProblemCodeRevisionChanged           ProblemCode = "revision_changed"
+	ProblemCodePostalAddressRequired     ProblemCode = "postal_address_required"
 )
 
 // AllValues returns all ProblemCode values.
@@ -15269,6 +15270,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeMigrationsPending,
 		ProblemCodeAcceptancePending,
 		ProblemCodeRevisionChanged,
+		ProblemCodePostalAddressRequired,
 	}
 }
 
@@ -15286,6 +15288,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeAcceptancePending:
 		return []byte(s), nil
 	case ProblemCodeRevisionChanged:
+		return []byte(s), nil
+	case ProblemCodePostalAddressRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -15312,6 +15316,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodeRevisionChanged:
 		*s = ProblemCodeRevisionChanged
+		return nil
+	case ProblemCodePostalAddressRequired:
+		*s = ProblemCodePostalAddressRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -21577,6 +21584,11 @@ type WorkspaceResource struct {
 	ID WorkspaceId `json:"id"`
 	// Display name.
 	Name string `json:"name"`
+	// The physical postal address printed in the footer of every marketing email (ADR 0156); empty while
+	// the Workspace has none, and then Schedule of an email Broadcast and Publish of an Automation with an
+	// email send step are a 409 postal_address_required. Read-only: only a person sets it, in the
+	// console's Workspace settings.
+	PostalAddress string `json:"postalAddress"`
 	// The IANA time zone every analytics report counts its days in (ADR 0057).
 	Timezone TimeZoneName `json:"timezone"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
@@ -21594,6 +21606,11 @@ func (s *WorkspaceResource) GetID() WorkspaceId {
 // GetName returns the value of Name.
 func (s *WorkspaceResource) GetName() string {
 	return s.Name
+}
+
+// GetPostalAddress returns the value of PostalAddress.
+func (s *WorkspaceResource) GetPostalAddress() string {
+	return s.PostalAddress
 }
 
 // GetTimezone returns the value of Timezone.
@@ -21619,6 +21636,11 @@ func (s *WorkspaceResource) SetID(val WorkspaceId) {
 // SetName sets the value of Name.
 func (s *WorkspaceResource) SetName(val string) {
 	s.Name = val
+}
+
+// SetPostalAddress sets the value of PostalAddress.
+func (s *WorkspaceResource) SetPostalAddress(val string) {
+	s.PostalAddress = val
 }
 
 // SetTimezone sets the value of Timezone.

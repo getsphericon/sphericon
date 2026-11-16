@@ -49,6 +49,9 @@ const (
 	// SubjectCustomField is a Custom field whose type change was refused: what uses it is a
 	// Condition leaf the new type does not take.
 	SubjectCustomField Subject = "custom field"
+	// SubjectPostalAddress is the Workspace's postal address, whose clearing was refused: what uses
+	// it is the marketing email still to send, whose footer carries it (ADR 0156).
+	SubjectPostalAddress Subject = "postal address"
 )
 
 // User is one row that uses the row a removal was refused for.

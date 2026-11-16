@@ -276,6 +276,7 @@ var (
 	ErrorsPhoneExists                                     = ID{key: "errors.phone_exists"}
 	ErrorsPhoneExtension                                  = ID{key: "errors.phone_extension"}
 	ErrorsPhoneInvalid                                    = ID{key: "errors.phone_invalid"}
+	ErrorsPostalAddressRequired                           = ID{key: "errors.postal_address_required"}
 	ErrorsPresetParamInvalid                              = ID{key: "errors.preset_param_invalid"}
 	ErrorsPresetParamsInvalid                             = ID{key: "errors.preset_params_invalid"}
 	ErrorsPresetParamsWithoutPreset                       = ID{key: "errors.preset_params_without_preset"}

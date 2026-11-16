@@ -32,6 +32,11 @@ enum ProblemCode {
    * someone changed the resource since it was read. Nothing was written; the client reads the
    * resource again and decides */
   revisionChanged: "revision_changed",
+
+  /** The Workspace has no postal address, which every marketing email carries in its footer (ADR
+   * 0156): Schedule and Send of an email Broadcast and Publish of an Automation with an email send
+   * step are refused until a person sets one in the Workspace settings */
+  postalAddressRequired: "postal_address_required",
 }
 
 /** What a development server adds to a 500 so the page can show the fault; a production

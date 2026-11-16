@@ -102,23 +102,30 @@ func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Mod
 // Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
 // its send job in the same transaction: either both happen or neither does. revision is the one of
 // what the sender was shown (ADR 0119): a Broadcast that moved past it is ErrRevisionChanged and
-// nothing is sent, so a send never carries content the person has not seen.
+// nothing is sent, so a send never carries content the person has not seen. Sending arms the send,
+// so an email Broadcast of a Workspace with no postal address is refused with
+// outboundmessages.ErrPostalAddressRequired (ADR 0156); a Send route that cannot send holds the plan.
 func (m *Module) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, nil)
+	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, postalAddressArmable)
 }
 
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
 // job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
 // send (its Integration is disabled or archived, or the Workspace has no default) is refused with
 // outboundmessages.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
-// revision is the one of what the person scheduling was shown, as for Send.
+// An email Broadcast of a Workspace with no postal address is refused as Send refuses it. revision
+// is the one of what the person scheduling was shown, as for Send.
 func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (*ent.Broadcast, error) {
 	return m.claim(ctx, s, id, revision, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
 }
 
-// armable refuses a claimed Broadcast that cannot go out as written: its Send route cannot send, or
-// its content breaks its Channel's written-length rule.
+// armable refuses a claimed Broadcast that cannot go out as written: its Workspace has no postal
+// address for an email's footer, its Send route cannot send, or its content breaks its Channel's
+// written-length rule.
 func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
+	if err := postalAddressArmable(ctx, ts, b); err != nil {
+		return err
+	}
 	channel := b.Channel
 	route, err := m.out.Route(ctx, ts, channel, b.IntegrationID)
 	if err != nil {
@@ -128,6 +135,13 @@ func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) 
 		return err
 	}
 	return checkWritten(b)
+}
+
+// postalAddressArmable refuses a claimed email Broadcast while its Workspace has no postal address,
+// which the marketing email footer carries (ADR 0156). It reads the Workspace in the claim's
+// transaction, under the Workspace lock a clearing of the address takes too.
+func postalAddressArmable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
+	return outboundmessages.PostalAddressArmable(ctx, ts, b.Channel)
 }
 
 // checkWritten is the Channel's written-length rule (ADR 0078), checked at Schedule on the content

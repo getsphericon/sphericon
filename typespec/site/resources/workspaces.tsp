@@ -52,7 +52,8 @@ model SiteWorkspaceResource {
   collectKey: string;
 
   /** Physical postal address printed in the marketing email footer (CAN-SPAM
-   * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one. */
+   * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one; while it is empty, marketing email
+   * cannot be scheduled, sent or published (409 postal_address_required, ADR 0156). */
   postalAddress: string;
 
   /** The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days
@@ -158,8 +159,10 @@ model SiteUpdateWorkspaceInput {
   /** New display name */
   name: Name;
 
-  /** Physical postal address for the marketing email footer (CAN-SPAM). Omit to
-   * leave it unchanged; send an empty string to clear it. */
+  /** Physical postal address for the marketing email footer (CAN-SPAM): free text over several
+   * lines, trimmed. Omit to leave it unchanged; send an empty string to clear it. Clearing it is a
+   * 409 naming them in `usedBy` while an email Broadcast is scheduled or sending or an Automation
+   * still sends email (ADR 0156). */
   postalAddress?: string;
 }
 

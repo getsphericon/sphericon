@@ -53,6 +53,9 @@ const (
 	// stored one (ADR 0119): someone wrote it since the client read it, and the client reads it
 	// again.
 	KindRevisionChanged
+	// KindPostalAddressRequired is marketing email armed while its Workspace has no postal address,
+	// which its footer carries (ADR 0156): a person sets one in the Workspace settings first.
+	KindPostalAddressRequired
 )
 
 // RefusalError is a sentinel domain error that carries its kind and the text to show a user.
@@ -130,6 +133,12 @@ func Conflict(text string, key i18n.ID) *RefusalError {
 // has moved past (ADR 0119).
 func RevisionChanged(text string, key i18n.ID) *RefusalError {
 	return &RefusalError{kind: KindRevisionChanged, text: text, key: key}
+}
+
+// PostalAddressRequired makes the sentinel for marketing email armed while its Workspace has no
+// postal address (KindPostalAddressRequired).
+func PostalAddressRequired(text string, key i18n.ID) *RefusalError {
+	return &RefusalError{kind: KindPostalAddressRequired, text: text, key: key}
 }
 
 // Forbidden makes the sentinel for a caller whose Role lacks the Permission the request needs

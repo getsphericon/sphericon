@@ -347,7 +347,8 @@
           "permission_required",
           "migrations_pending",
           "acceptance_pending",
-          "revision_changed"
+          "revision_changed",
+          "postal_address_required"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },

@@ -3838,7 +3838,8 @@ export const ProblemCode = {
   PERMISSION_REQUIRED: 'permission_required',
   MIGRATIONS_PENDING: 'migrations_pending',
   ACCEPTANCE_PENDING: 'acceptance_pending',
-  REVISION_CHANGED: 'revision_changed'
+  REVISION_CHANGED: 'revision_changed',
+  POSTAL_ADDRESS_REQUIRED: 'postal_address_required'
 } as const;
 
 /**
@@ -5905,6 +5906,13 @@ export type WorkspaceResource = {
    * Display name
    */
   name: string;
+  /**
+   * The physical postal address printed in the footer of every marketing email (ADR 0156); empty
+   * while the Workspace has none, and then Schedule of an email Broadcast and Publish of an
+   * Automation with an email send step are a 409 postal_address_required. Read-only: only a person
+   * sets it, in the console's Workspace settings.
+   */
+  postalAddress: string;
   /**
    * The IANA time zone every analytics report counts its days in (ADR 0057)
    */

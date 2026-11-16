@@ -308,7 +308,8 @@ interface SiteAutomations
    * with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version
    * going live sends through an integration that cannot send (disabled, archived, of another
    * channel, or no default for the step's channel): a draft may name such an integration, only
-   * publishing it is refused. 409 for an archived automation too.
+   * publishing it is refused. 409 for an archived automation too, and 409 postal_address_required
+   * when the version has an email send step and the Workspace has no postal address (ADR 0156).
    */
   @action("publish")
   @autoRoute

@@ -120,7 +120,9 @@ func (UnimplementedHandler) AutomationsList(ctx context.Context, params Automati
 // draft, the live version is resumed. 422 with neither. 409 when any send step of the version going
 // live sends through an integration that cannot send (disabled, archived, of another channel, or no
 // default for the step's channel): a draft may name such an integration, only publishing it is
-// refused. 409 for an archived automation too. Needs the automations:publish scope.
+// refused. 409 for an archived automation too, and 409 postal_address_required when the version has an
+// email send step and the Workspace has no postal address (`postalAddress` of `GET /workspace`, set
+// only in the console, ADR 0156). Needs the automations:publish scope.
 //
 // POST /automations/{id}/publish
 func (UnimplementedHandler) AutomationsPublish(ctx context.Context, req *RevisionInput, params AutomationsPublishParams) (r *AutomationResource, _ error) {
@@ -233,8 +235,10 @@ func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params Broadca
 // segment's condition: recipients are resolved at send time from that copy, so a later edit of the
 // segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
 // the integration it sends through cannot send (disabled or archived, or no default): a draft may name
-// such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class:
-// needs the broadcasts:send scope, and mcp:send over MCP.
+// such an integration, only scheduling it is refused, and so is an archived broadcast. An email
+// broadcast is a 409 postal_address_required while the Workspace has no postal address
+// (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the
+// broadcasts:send scope, and mcp:send over MCP.
 //
 // POST /broadcasts/{id}/schedule
 func (UnimplementedHandler) BroadcastsSchedule(ctx context.Context, req *ScheduleBroadcastInput, params BroadcastsScheduleParams) (r *BroadcastResource, _ error) {
@@ -1119,9 +1123,11 @@ func (UnimplementedHandler) WebhooksUpdate(ctx context.Context, req *UpdateWebho
 
 // WorkspaceGet implements Workspace_get operation.
 //
-// Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to explain
-// a slow send or to plan one: a send larger than what remains of it in the last 24 hours goes out over
-// more than a day. Read-only: no operation changes the Send cap.
+// Read the Workspace the token acts in: its name, postal address, time zone and Send cap. Read the
+// postal address before arming marketing email: an empty one refuses it, and only a person can set it.
+// Read the Send cap to explain a slow send or to plan one: a send larger than what remains of it in
+// the last 24 hours goes out over more than a day. Read-only: no operation changes the Send cap or the
+// postal address.
 //
 // GET /workspace
 func (UnimplementedHandler) WorkspaceGet(ctx context.Context) (r *WorkspaceResource, _ error) {

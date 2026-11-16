@@ -1159,6 +1159,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeAcceptancePending
 	case ProblemCodeRevisionChanged:
 		*s = ProblemCodeRevisionChanged
+	case ProblemCodePostalAddressRequired:
+		*s = ProblemCodePostalAddressRequired
 	default:
 		*s = ProblemCode(v)
 	}

@@ -245,6 +245,8 @@ func (c *ConverterImpl) AttentionKindToResource(source needsattentionreport.Kind
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderSandbox
 	case needsattentionreport.KindIntegrationProviderStopped:
 		siteapiSiteAttentionKind = site.SiteAttentionKindIntegrationProviderStopped
+	case needsattentionreport.KindPostalAddressMissing:
+		siteapiSiteAttentionKind = site.SiteAttentionKindPostalAddressMissing
 	case needsattentionreport.KindProviderLimitSpent:
 		siteapiSiteAttentionKind = site.SiteAttentionKindProviderLimitSpent
 	case needsattentionreport.KindScheduledBroadcastOverSendCap:
