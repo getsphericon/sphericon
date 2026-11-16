@@ -91,7 +91,7 @@ func TestSiteSegmentRefusesAPropertyNestedInAConditionRule(t *testing.T) {
 
 	require.NoError(t, listErr)
 	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
-	reasons := refused.Errors.Or(nil)["condition.rules.bogus"]
+	reasons := refused.Errors.Or(nil)["condition.rules.0.bogus"]
 	assert.Equal(t, []string{unknownProperty}, reasons)
 	assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 }

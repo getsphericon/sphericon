@@ -80,7 +80,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	if err != nil {
 		return nil, err
 	}
-	mux.Handle(paths.Site+"/", problem.Middleware(siteSrv))
+	mux.Handle(paths.Site+"/", problem.Middleware[siteapi.Handler](siteSrv))
 
 	// The Account link's public key set: published only when the link is configured.
 	if site.AccountLink != nil {
@@ -123,7 +123,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 	if err != nil {
 		return nil, err
 	}
-	mux.Handle(paths.Collect+"/", problem.Middleware(colSrv))
+	mux.Handle(paths.Collect+"/", problem.Middleware[collectapi.Handler](colSrv))
 
 	// Liveness/readiness probes (no auth) for orchestrators and load balancers.
 	mux.Handle(paths.Healthz, healthzHandler())
@@ -192,7 +192,7 @@ func NewExternalAPI(deps apiexternal.Deps, security *apiauth.ExternalSecurityHan
 	if err != nil {
 		return nil, err
 	}
-	return problem.Middleware(srv), nil
+	return problem.Middleware[externalapi.Handler](srv), nil
 }
 
 // staffPrefix mounts the Staff surface (ADR 0026).
@@ -224,13 +224,13 @@ func NewStaffAPI(members *staffmembers.Module, items *signupitems.Module, inst *
 		if err != nil {
 			return nil, err
 		}
-		rest = h
+		rest = problem.Middleware[staffeeapi.Handler](h)
 	}
 	srv, err := core.Server(staffapi.WithErrorHandler(problem.ErrorHandler), staffapi.WithNotFound(rest.ServeHTTP))
 	if err != nil {
 		return nil, err
 	}
-	api := problem.Middleware(srv)
+	api := problem.Middleware[staffapi.Handler](srv)
 	if jobs == nil {
 		return api, nil
 	}
@@ -261,7 +261,7 @@ func NewInternal(cfg *config.Config, tlsAsk http.Handler, limiter *ratelimit.Lim
 		if err != nil {
 			return nil, err
 		}
-		mux.Handle(paths.Service+"/", problem.Middleware(srv))
+		mux.Handle(paths.Service+"/", problem.Middleware[serviceapi.Handler](srv))
 	}
 	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }

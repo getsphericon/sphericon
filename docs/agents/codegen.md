@@ -176,8 +176,11 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   under its plain name and the request's as `…Input` (`ConditionGroupOf<Node>`, `AutomationStepOf`),
   or `model XInput is X` for a leaf; a test that edits what it read and sends it back goes through
   the wire with `testhelper.Resend`. The server
-  answers an undeclared property with a 400 whose field errors name its path (`content.subjct`,
-  `internal/api/problem/decode.go`). Its fixture is `typespec/lib/testdata/bodies.tsp`.
+  answers an undeclared property with a 400 whose field errors name its path, an array's item by
+  its index (`content.subjct`, `condition.rules.1.field`). ogen's errors name the keys only, so
+  `internal/api/problem/items.go` finds each item by decoding the body again with its arrays cut,
+  with the request types `problem.Middleware[H]` reads off the surface's `Handler`. Its fixture is
+  `typespec/lib/testdata/bodies.tsp`.
 
 - **Descriptions say what happens, not which code does it.** `$onValidate` also refuses a
   description (a doc comment, `@doc`, `@summary`, `@returns`/`@returnsDoc`, `@errors`/`@errorsDoc`)
