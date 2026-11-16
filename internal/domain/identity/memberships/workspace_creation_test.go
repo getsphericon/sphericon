@@ -24,7 +24,7 @@ func TestAWorkspaceIsCreatedWithItsOwnerItsStartingSendCapAndItsAuditEntry(t *te
 	ctx := t.Context()
 	startingCap := suspension.NewDefaultSendCap(env.DB, true)
 	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		_, _, err := startingCap.SetIn(ctx, tx, new(500))
+		_, err := startingCap.SetIn(ctx, tx, new(500))
 		return err
 	}))
 	creator := env.DB.User.GetX(ctx, fixtures.UmbrellaOwnerRitaID)

@@ -77,9 +77,13 @@ type Config struct {
 // SignIn reports whether the Staff sign-in is on: the Instance has a Staff member secret.
 func (c Config) SignIn() bool { return c.Secret != "" }
 
-// Validate refuses a configuration the Staff sign-in cannot run on. With no secret the sign-in
-// is off and there is nothing to check.
+// Validate refuses a configuration the Staff member cannot run on, against the site's JWT secrets:
+// the wiring checks it before it builds the module (New). The clock is always required; with no
+// secret the sign-in is off and there is nothing else to check.
 func (c Config) Validate(siteSecrets []string) error {
+	if c.Clock == nil {
+		return errors.New("staffmembers: Config.Clock is required: the module reads the Instance clock")
+	}
 	if !c.SignIn() {
 		return nil
 	}
@@ -111,23 +115,17 @@ type Module struct {
 	now        func() time.Time
 }
 
-// New builds the module over the raw client, after checking cfg against the site's JWT
-// secrets (Validate).
-func New(client *ent.Client, cipher *secrets.Cipher, siteSecrets []string, cfg Config) (*Module, error) {
-	if err := cfg.Validate(siteSecrets); err != nil {
-		return nil, err
-	}
+// New builds the module over the raw client from cfg, which the wiring has checked against the
+// site's JWT secrets (Config.Validate).
+func New(client *ent.Client, cipher *secrets.Cipher, cfg Config) *Module {
 	now := cfg.Clock
-	if now == nil {
-		return nil, errors.New("staffmembers: Config.Clock is required: the module reads the Instance clock")
-	}
 	m := &Module{ent: client, cipher: cipher, passwords: cfg.Passwords, now: now}
 	if cfg.SignIn() {
 		m.challenges = authtoken.New(cfg.Secret, now)
 		m.login = m.newLogin(cfg.Attempts.For(loginKind))
-		m.sessions = newSessions(client, cfg, now)
+		m.sessions = NewSessions(client, cfg)
 	}
-	return m, nil
+	return m
 }
 
 // Sessions issues and verifies Staff member sessions, nil while the sign-in is off.
@@ -136,14 +134,15 @@ func (m *Module) Sessions() *Sessions { return m.sessions }
 // Create makes a Staff member with a random password, returned once (the platform owner
 // hands it over; there is no signup). ErrDuplicate when the email is taken, ErrSignInOff
 // without a Staff member secret.
-func (m *Module) Create(ctx context.Context, email string) (password string, err error) {
+func (m *Module) Create(ctx context.Context, email string) (string, error) {
 	if m.sessions == nil {
 		return "", ErrSignInOff
 	}
-	if email, err = validation.AccountEmail(fieldname.Email, email); err != nil {
+	email, err := validation.AccountEmail(fieldname.Email, email)
+	if err != nil {
 		return "", err
 	}
-	password = rand.Text()
+	password := rand.Text()
 	hash, err := m.passwords.Hash(password)
 	if err != nil {
 		return "", err

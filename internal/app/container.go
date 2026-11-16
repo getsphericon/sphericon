@@ -137,7 +137,7 @@ import (
 //
 // The seams below are the services a test harness replaces with do.Override or
 // do.OverrideValue before it invokes anything (an override does not reach a dependent that is
-// already built): Clock, Version, Database, SystemSender, SigninOptions,
+// already built): Clock, Version, Database, SystemSender, SigninEndpoints,
 // IntegrationOptions, OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
 // *credentials.Hasher, *messaging.Catalog, outboundmessages.Senders, domainname.TXTLookup, privaterelayranges.Source,
 // *preset.Registry, *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other
@@ -163,7 +163,7 @@ func Container(cfg *config.Config) *do.RootScope {
 	do.ProvideValue(injector, cfg)
 	do.ProvideValue(injector, Clock(time.Now))
 	do.ProvideValue(injector, Version(buildinfo.Current().Version))
-	do.ProvideValue(injector, SigninOptions{})
+	do.ProvideValue(injector, SigninEndpoints{})
 	do.ProvideValue(injector, IntegrationOptions{})
 	return injector
 }
@@ -207,8 +207,9 @@ type SystemSender struct {
 	messaging.EmailSender
 }
 
-// SigninOptions configure the Sign-in providers (ADR 0048); none in production.
-type SigninOptions []signinprovider.Option
+// SigninEndpoints replace where the Sign-in providers (ADR 0048) are reached, by name: a test's
+// fake; none in production.
+type SigninEndpoints map[string]signinprovider.Endpoints
 
 // IntegrationOptions configure the Integrations module; none in production.
 type IntegrationOptions []integrations.Option
@@ -398,10 +399,14 @@ var staffPackage = do.Package(
 	// Instance; the sign-in is off without SPHERICON_STAFF_JWT_SECRET.
 	do.Lazy(func(i do.Injector) (*staffmembers.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), cfg.JWTSecrets(), staffmembers.Config{
+		members := staffmembers.Config{
 			Secret: cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: do.MustInvoke[Clock](i),
 			Attempts: do.MustInvoke[*throttle.Attempts](i), Passwords: do.MustInvoke[*credentials.Hasher](i),
-		})
+		}
+		if err := members.Validate(cfg.JWTSecrets()); err != nil {
+			return nil, err
+		}
+		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), members), nil
 	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
@@ -981,7 +986,12 @@ var surfacesPackage = do.Package(
 	}),
 	// The Sign-in providers the Instance enabled (ADR 0048).
 	do.Lazy(func(i do.Injector) (*signinprovider.Providers, error) {
-		return signinprovider.FromConfig(do.MustInvoke[*config.Config](i), do.MustInvoke[Clock](i), do.MustInvoke[SigninOptions](i)...), nil
+		cfg := do.MustInvoke[*config.Config](i)
+		return signinprovider.New(
+			signinprovider.Config{Credentials: cfg.Signin.Enabled(), AppURL: cfg.AppURL, Endpoints: do.MustInvoke[SigninEndpoints](i)},
+			&http.Client{Timeout: signinprovider.ProviderTimeout},
+			signinprovider.NewFlowCodec(cfg.JWTSecret, do.MustInvoke[Clock](i)),
+		), nil
 	}),
 	// The error page's button that runs the migrations: a development build only (ADR 0033), nil
 	// elsewhere.

@@ -2,6 +2,7 @@ package signinprovider_test
 
 import (
 	"errors"
+	"net/http"
 	"net/url"
 	"strings"
 	"testing"
@@ -101,7 +102,7 @@ func TestGoogleTrustRefusesAnUnverifiedAddressWhateverItsDomain(t *testing.T) {
 }
 
 func TestTrustRefusesAProviderThatIsNotEnabled(t *testing.T) {
-	p := signinprovider.New(nil, "https://app.test", time.Now)
+	p := newProvidersOf(nil)
 
 	got := p.Trust("google", signinprovider.Profile{Email: "ann@gmail.com", EmailVerified: true})
 
@@ -109,7 +110,7 @@ func TestTrustRefusesAProviderThatIsNotEnabled(t *testing.T) {
 }
 
 func TestOnlyConfiguredProvidersAreListed(t *testing.T) {
-	none := signinprovider.New(nil, "https://app.test", time.Now)
+	none := newProvidersOf(nil)
 	some := newProviders()
 
 	assert.Empty(t, none.Enabled())
@@ -224,7 +225,13 @@ func FuzzOpenFlow(f *testing.F) {
 }
 
 func newProviders() *signinprovider.Providers {
-	return signinprovider.New(map[string]config.SigninCredentials{"google": {ClientID: "client-id", ClientSecret: "client-secret"}}, "https://app.test", time.Now)
+	return newProvidersOf(map[string]config.SigninCredentials{"google": {ClientID: "client-id", ClientSecret: "client-secret"}})
+}
+
+// newProvidersOf enables the providers that have credentials, on the address https://app.test.
+func newProvidersOf(creds map[string]config.SigninCredentials) *signinprovider.Providers {
+	return signinprovider.New(signinprovider.Config{Credentials: creds, AppURL: "https://app.test"},
+		http.DefaultClient, signinprovider.NewFlowCodec("secret-0123456789", time.Now))
 }
 
 func TestReasonsAreTheContractsErrorCodes(t *testing.T) {

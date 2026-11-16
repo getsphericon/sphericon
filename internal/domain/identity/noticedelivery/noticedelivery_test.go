@@ -119,7 +119,7 @@ const support = "support@sphericon.test"
 func TestASuspensionTellsTheOwners(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.SupportEmail = support }))
 
-	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate above 0.3%", time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate above 0.3%"})
 	require.NoError(t, err)
 
 	msgs := env.SystemMail.Messages()
@@ -140,7 +140,7 @@ func TestASuspensionNamesStaffForStaffAndCLI(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
 
-			_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, by, "abuse report", time.Now())
+			_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: by, Reason: "abuse report"})
 			require.NoError(t, err)
 
 			msgs := env.SystemMail.Messages()
@@ -177,9 +177,9 @@ func TestASuspensionNoticeNamesSystemOrSphericonStaffAsTheActor(t *testing.T) {
 func TestALiftedSuspensionTellsNobody(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.CLI, time.Now())
+	_, err = suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.AcmeID, suspension.CLI)
 	require.NoError(t, err)
 
 	assert.Empty(t, env.SystemMail.Messages())

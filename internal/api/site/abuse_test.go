@@ -62,7 +62,7 @@ func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
 	active := workspaceOf(t, c, fixtures.AcmePublicID)
-	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate", time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate"})
 	require.NoError(t, err)
 	suspended := workspaceOf(t, c, fixtures.AcmePublicID)
 

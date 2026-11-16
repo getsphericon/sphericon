@@ -224,12 +224,12 @@ func (m *Module) State(ctx context.Context) (State, error) {
 	if m.defaultSendCap == nil {
 		return s, nil
 	}
-	perDay, ok, err := m.defaultSendCap.Get(ctx)
+	setting, err := m.defaultSendCap.Get(ctx)
 	if err != nil {
 		return State{}, err
 	}
-	if ok {
-		s.DefaultSendCap = &DefaultSendCap{PerDay: perDay}
+	if setting.SendCaps {
+		s.DefaultSendCap = &DefaultSendCap{PerDay: setting.PerDay}
 	}
 	return s, nil
 }
@@ -261,11 +261,11 @@ func (m *Module) SetDefaultSendCap(ctx context.Context, by *ent.StaffMember, per
 // setDefaultSendCapIn changes the default on tx and records the change, unless it is the same; it
 // reports whether it changed.
 func (m *Module) setDefaultSendCapIn(ctx context.Context, tx *ent.Client, by *ent.StaffMember, perDay *int) (bool, error) {
-	change, changed, err := m.defaultSendCap.SetIn(ctx, tx, perDay)
-	if err != nil || !changed {
+	change, err := m.defaultSendCap.SetIn(ctx, tx, perDay)
+	if err != nil || !change.Changed {
 		return false, err
 	}
-	diff := map[string]any{diffDefaultSendCap: change}
+	diff := map[string]any{diffDefaultSendCap: change.Diff}
 	return true, instanceauditentries.Record(ctx, tx, by.ID, instanceauditentries.ActionDefaultSendCapChange, diff)
 }
 

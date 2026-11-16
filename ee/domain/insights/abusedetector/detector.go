@@ -108,7 +108,7 @@ func (d *Detector) Run(ctx context.Context) (Summary, error) {
 // freeze suspends the Workspace as the system, which tells its owners. Freezing is itself
 // the escalation of a warning, so no warning goes out and the episode ends.
 func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b Breach) (bool, error) {
-	changed, err := d.suspend.Suspend(ctx, ws.ID, suspension.System, b.Describe()+" (freeze)")
+	changed, err := d.suspend.Suspend(ctx, ws.ID, suspension.SuspendInput{By: suspension.System, Reason: b.Describe() + " (freeze)"})
 	if err != nil || !changed {
 		return false, err
 	}

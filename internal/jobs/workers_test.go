@@ -645,7 +645,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	assert.NotErrorAs(t, err, &snooze, "a failure is not a snooze")
 
 	// A suspended workspace holds: the job snoozes rather than fails.
-	_, err = suspension.SuspendWorkspace(ctx, e.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
+	_, err = suspension.NewSuspender(e.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 	require.NoError(t, err)
 	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
 	assert.Equal(t, outboundmessages.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
