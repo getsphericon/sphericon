@@ -236,6 +236,10 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   `Module`, which takes the scope of the transaction the plan was opened in and the plan
   (`ApplyDeletion(ctx, l, d)`). What applying needs besides comes from `New`: the clock for a time it
   writes, and the bus to publish an event or queue a job in the transaction its scope is bound to.
+  `Bus.PublishIn(ctx, s, ev)` and `Bus.EnqueueIn(ctx, s, args, opts)` do that with the publisher of
+  the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
+  to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
+  operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument.
 - **A `<module>use` reader** exports one type, `Module`, built by `New`, whose methods are the
   questions another module asks of the owner's rows (`segmentsuse.Module.UsingTag` and
   `UnfitForCustomFieldType`). The module that asks holds it as a field its own constructor builds.
