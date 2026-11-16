@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -51,6 +52,19 @@ func TestAddRefusesABlankDestination(t *testing.T) {
 	env := testhelper.Setup(t)
 	err := suppressions.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppressions.Entry{Destination: "   ", Reason: entsuppression.ReasonManual})
 	assert.ErrorIs(t, err, suppressions.ErrDestinationEmpty)
+}
+
+// A destination longer than the contract's is refused on every path that suppresses, not only the
+// one an Owner types into.
+func TestAddRefusesADestinationLongerThanTheContract(t *testing.T) {
+	env := testhelper.Setup(t)
+	long := strings.Repeat("a", 321)
+
+	err := suppressions.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppressions.Entry{
+		Channel: channels.Telegram, Destination: long, Reason: entsuppression.ReasonManual,
+	})
+
+	require.ErrorIs(t, err, validation.ErrTooLong)
 }
 
 func TestAddIsWorkspaceScoped(t *testing.T) {

@@ -268,3 +268,21 @@ func TestGenerateReadsTheBoundsOfAPlaceAndOfTheMembersOfItsComposition(t *testin
 
 	require.ErrorContains(t, err, "site NoteInput.text declares map[maxLength:10 minLength:1]")
 }
+
+// staff, staffee and telemetry are read like every document: without their entries, their bounds
+// are left over.
+func TestEveryDocumentOfTheRepositoryIsScanned(t *testing.T) {
+	specs, err := boundgen.ReadSpecs("../..")
+	require.NoError(t, err)
+	others := map[string]bool{
+		"openapi/staff.openapi.json": true, "openapi/staffee.openapi.json": true, "openapi/telemetry.openapi.json": true,
+	}
+	bounds := slices.DeleteFunc(slices.Clone(boundgen.Bounds), func(b boundgen.Bound) bool { return others[b.Spec] })
+	transport := slices.DeleteFunc(slices.Clone(boundgen.TransportOnly), func(b boundgen.TransportBound) bool { return others[b.Spec] })
+
+	_, err = boundgen.Generate(specs, bounds, transport)
+
+	require.ErrorContains(t, err, "staff operation StaffInstance_listAuditEntries parameter limit")
+	require.ErrorContains(t, err, "staffee StaffSuspendInput.reason")
+	require.ErrorContains(t, err, "telemetry TelemetryReport.instanceId")
+}

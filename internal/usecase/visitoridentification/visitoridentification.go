@@ -87,9 +87,6 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 	if visitorID == "" {
 		return ErrVisitorIDRequired
 	}
-	if err := checkBounds(input); err != nil {
-		return err
-	}
 	proven := input.IdentityToken != ""
 	if proven {
 		p, err := u.tokens.Verify(ctx, s, input.IdentityToken)
@@ -101,6 +98,10 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 			return ErrKeyMismatch
 		}
 		input.SubjectID, input.Email, input.Phone = p.SubjectID, p.Email, p.Phone
+	}
+	// The keys are checked as they are written: a proven Identify's are the token's.
+	if err := checkBounds(input); err != nil {
+		return err
 	}
 
 	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
