@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -245,6 +246,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).Visitor, visitor.IDIn),
 		stepOf((*ent.Scoped).Confirmation, confirmation.IDIn),
 		stepOf((*ent.Scoped).Unsubscribe, unsubscribe.IDIn),
+		stepOf((*ent.Scoped).ConsentStamp, consentstamp.IDIn),
 		stepOf((*ent.Scoped).Suppression, suppression.IDIn),
 		stepOf((*ent.Scoped).Usage, usage.IDIn),
 		stepOf((*ent.Scoped).Hold, hold.IDIn),

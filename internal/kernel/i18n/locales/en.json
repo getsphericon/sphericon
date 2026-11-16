@@ -359,6 +359,7 @@
   "errors.consent_wording_empty": "wording must not be empty",
   "errors.consent_source_empty": "source must not be empty",
   "errors.consent_brand_empty": "brand must not be empty",
+  "errors.consent_superseded": "the number withdrew its consent after this one was given",
   "errors.contact_phone_missing": "the contact has no phone",
   "errors.variables_invalid": "invalid variables",
   "errors.send_in_progress": "a send with this Idempotency-Key is already in progress",

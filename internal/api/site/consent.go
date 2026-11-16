@@ -24,7 +24,7 @@ func (h *Handlers) SitePublicConfirmationsPerform(ctx context.Context, params si
 	if err != nil {
 		return err
 	}
-	if err := confirmations.RecordConfirmation(ctx, h.bus, h.workspaces.LinkScope(target.WorkspaceID), target, clientip.FromContext(ctx)); err != nil {
+	if err := confirmations.RecordConfirmation(ctx, h.bus, h.workspaces.LinkScope(target.WorkspaceID), target, clientip.FromContext(ctx), h.now()); err != nil {
 		return fmt.Errorf("record confirmation: %w", err)
 	}
 	return nil

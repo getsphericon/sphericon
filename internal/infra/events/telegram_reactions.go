@@ -9,10 +9,13 @@ const (
 
 // TelegramStopObserved is an internal consent observation, consumed before the atomic stop.
 // Message attribution is an immutable scalar snapshot, never a provider error or an ent row.
+// ObservedAt is when the stop occurred, and Sequence the bot's update_id of an update (0 for a
+// refused send or a stop recorded by hand), which orders two observations of one bot (ADR 0154).
 type TelegramStopObserved struct {
 	WorkspaceID       int64     `json:"workspaceId"`
 	Destination       string    `json:"destination"`
 	IntegrationID     int64     `json:"integrationId"`
+	Sequence          int64     `json:"sequence,omitempty"`
 	Via               string    `json:"via"`
 	OutboundMessageID int64     `json:"outboundMessageId,omitempty"`
 	ContactID         int64     `json:"contactId,omitempty"`
@@ -29,10 +32,12 @@ func (e *TelegramStopObserved) EventID() string            { return e.DedupID }
 func (e *TelegramStopObserved) ObservationTime() time.Time { return e.ObservedAt }
 
 // TelegramResumeObserved consumes a start or unblock independently of whether it lifts an opt-out.
+// ObservedAt and Sequence are as a stop's.
 type TelegramResumeObserved struct {
 	WorkspaceID   int64     `json:"workspaceId"`
 	Destination   string    `json:"destination"`
 	IntegrationID int64     `json:"integrationId"`
+	Sequence      int64     `json:"sequence,omitempty"`
 	DedupID       string    `json:"dedupId,omitempty"`
 	ObservedAt    time.Time `json:"observedAt,omitzero"`
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -28,17 +29,18 @@ var ErrSMSSource = validation.RefuseField(fieldname.SendingSource, "consent: an 
 // never reactivates: only a new Confirmation (the START that lifts the opt-out) makes the number
 // reachable again; the sms.confirmed Event stays as proof. It returns the id of the opt-out it
 // wrote, 0 when the number had one already: that changes nothing, and keeps the way it first
-// stopped. via is how the person stopped, which the Contact card shows. Run it inside the
+// stopped. via is how the person stopped, which the Contact card shows, and at when: a stop older
+// than the number's opt-out state is superseded and changes nothing (ADR 0154). Run it inside the
 // transaction s is bound to.
-func stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via) (int64, error) {
-	optOutID, err := unsubscribes.AddSMS(ctx, s, number, via)
-	if err != nil || optOutID == 0 {
-		return 0, err
+func stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via, at consentstamps.Occurrence) (unsubscribes.Change, error) {
+	change, err := unsubscribes.AddSMS(ctx, s, number, via, at)
+	if err != nil || change.ID == 0 {
+		return change, err
 	}
-	if err := confirmations.Withdraw(ctx, s, channels.SMS, number); err != nil {
-		return 0, fmt.Errorf("drop confirmation: %w", err)
+	if err := confirmations.Withdraw(ctx, s, channels.SMS, number, at); err != nil {
+		return unsubscribes.Change{}, fmt.Errorf("drop confirmation: %w", err)
 	}
-	return optOutID, nil
+	return change, nil
 }
 
 // publishSMSUnsubscribed records sms.unsubscribed for the Contact whose phone the number is (a

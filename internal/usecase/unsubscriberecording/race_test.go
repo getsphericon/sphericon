@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -61,8 +63,9 @@ func firstOptOut(ctx context.Context, dest string) func(ts *ent.Scoped, _ events
 	return func(ts *ent.Scoped, _ events.Publisher) error {
 		added, err := unsubscribes.Add(ctx, ts, unsubscribes.OptOut{
 			Channel: channels.Email, Destination: dest, Source: eligibility.SourceEverything,
+			At: consentstamps.At(time.Now()),
 		})
-		if err == nil && added == 0 {
+		if err == nil && added.ID == 0 {
 			return errors.New("the first click found the opt-out already written")
 		}
 		return err

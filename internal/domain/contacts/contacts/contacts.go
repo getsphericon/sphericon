@@ -170,6 +170,7 @@ type Result struct {
 type Module struct {
 	bus  *events.Bus
 	mail addresscheck.Resolver
+	now  func() time.Time
 }
 
 // Option configures the module.
@@ -181,9 +182,10 @@ func WithMailResolver(r addresscheck.Resolver) Option {
 	return func(m *Module) { m.mail = r }
 }
 
-// New builds the module.
-func New(bus *events.Bus, opts ...Option) *Module {
-	m := &Module{bus: bus}
+// New builds the module. now is the Instance clock the intake dates the SMS consent a row carries
+// by: when it reached the Workspace (ADR 0154).
+func New(bus *events.Bus, now func() time.Time, opts ...Option) *Module {
+	m := &Module{bus: bus, now: now}
 	for _, opt := range opts {
 		opt(m)
 	}

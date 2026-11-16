@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
@@ -975,6 +976,59 @@ func ScopedEntities() []*ScopedEntity {
 					},
 				},
 			},
+		},
+		{
+			Kind:         Kinds["ConsentStamp"],
+			Name:         "ConsentStamp",
+			Wrapper:      reflect.TypeFor[*ConsentStampScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.ConsentStamp.Query().Where(consentstamp.WorkspaceID(ws)).Order(Asc(consentstamp.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.ConsentStamp().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ConsentStamp().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ConsentStamp().Update().Where(consentstamp.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.ConsentStamp().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.ConsentStamp().Delete().Where(consentstamp.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.ConsentStamp.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.ConsentStamp().Create()
+				b.SetChannel(src.Channel)
+				b.SetDestination(src.Destination)
+				b.SetSendingSource(src.SendingSource)
+				if src.OptOutOccurredAt != nil {
+					b.SetOptOutOccurredAt(*src.OptOutOccurredAt)
+				}
+				if src.OptOutIntegrationID != nil {
+					b.SetOptOutIntegrationID(*src.OptOutIntegrationID)
+				}
+				if src.OptOutSequence != nil {
+					b.SetOptOutSequence(*src.OptOutSequence)
+				}
+				if src.ConfirmationOccurredAt != nil {
+					b.SetConfirmationOccurredAt(*src.ConfirmationOccurredAt)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Kind:         Kinds["Contact"],

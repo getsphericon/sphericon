@@ -1,0 +1,10 @@
+# When the stop of Lacuna's parked number occurred (UnsubscribeLacunaParked): the stamp an opt-out
+# keeps, which a later observation of the number is compared with (ADR 0154).
+- id: 1
+  channel: sms
+  destination: '+16175557799'
+  sending_source: everything
+  opt_out_occurred_at: '2026-02-02 00:00:00'
+  workspace_id: 96
+  created_at: '2026-02-02 00:00:00'
+  updated_at: '2026-02-02 00:00:00'

@@ -106,9 +106,14 @@ func (sms) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMessage) e
 	}
 	switch {
 	case channelstop.IsStopKeyword(m.Text):
-		return tx.Pub.Publish(ctx, &events.SmsStopObserved{WorkspaceID: tx.Scoped.WorkspaceID(), Phone: number, Via: events.UnsubscribedByKeyword, DedupID: tx.DedupKey(m.ID), ObservedAt: tx.Now})
+		return tx.Pub.Publish(ctx, &events.SmsStopObserved{
+			WorkspaceID: tx.Scoped.WorkspaceID(), Phone: number, Via: events.UnsubscribedByKeyword,
+			DedupID: tx.DedupKey(m.ID), ObservedAt: occurred(tx, m.OccurredAt),
+		})
 	case channelstop.IsStartKeyword(m.Text):
-		return tx.Pub.Publish(ctx, &events.SmsStartObserved{WorkspaceID: tx.Scoped.WorkspaceID(), Phone: number, DedupID: tx.DedupKey(m.ID), ObservedAt: tx.Now})
+		return tx.Pub.Publish(ctx, &events.SmsStartObserved{
+			WorkspaceID: tx.Scoped.WorkspaceID(), Phone: number, DedupID: tx.DedupKey(m.ID), ObservedAt: occurred(tx, m.OccurredAt),
+		})
 	}
 	c, err := tx.Scoped.Contact().Query().Where(contact.Phone(number)).Only(ctx)
 	if ent.IsNotFound(err) {

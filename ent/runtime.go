@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/customfield"
 	"github.com/getsphericon/sphericon/ent/defaultsendcap"
@@ -532,6 +533,29 @@ func init() {
 	consentrecord.DefaultUpdatedAt = consentrecordDescUpdatedAt.Default.(func() time.Time)
 	// consentrecord.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	consentrecord.UpdateDefaultUpdatedAt = consentrecordDescUpdatedAt.UpdateDefault.(func() time.Time)
+	consentstampMixin := schema.ConsentStamp{}.Mixin()
+	consentstampMixinFields0 := consentstampMixin[0].Fields()
+	_ = consentstampMixinFields0
+	consentstampFields := schema.ConsentStamp{}.Fields()
+	_ = consentstampFields
+	// consentstampDescCreatedAt is the schema descriptor for created_at field.
+	consentstampDescCreatedAt := consentstampMixinFields0[0].Descriptor()
+	// consentstamp.DefaultCreatedAt holds the default value on creation for the created_at field.
+	consentstamp.DefaultCreatedAt = consentstampDescCreatedAt.Default.(func() time.Time)
+	// consentstampDescUpdatedAt is the schema descriptor for updated_at field.
+	consentstampDescUpdatedAt := consentstampMixinFields0[1].Descriptor()
+	// consentstamp.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	consentstamp.DefaultUpdatedAt = consentstampDescUpdatedAt.Default.(func() time.Time)
+	// consentstamp.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	consentstamp.UpdateDefaultUpdatedAt = consentstampDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// consentstampDescDestination is the schema descriptor for destination field.
+	consentstampDescDestination := consentstampFields[2].Descriptor()
+	// consentstamp.DestinationValidator is a validator for the "destination" field. It is called by the builders before save.
+	consentstamp.DestinationValidator = consentstampDescDestination.Validators[0].(func(string) error)
+	// consentstampDescSendingSource is the schema descriptor for sending_source field.
+	consentstampDescSendingSource := consentstampFields[3].Descriptor()
+	// consentstamp.SendingSourceValidator is a validator for the "sending_source" field. It is called by the builders before save.
+	consentstamp.SendingSourceValidator = consentstampDescSendingSource.Validators[0].(func(string) error)
 	contactMixin := schema.Contact{}.Mixin()
 	contactMixinFields0 := contactMixin[0].Fields()
 	_ = contactMixinFields0

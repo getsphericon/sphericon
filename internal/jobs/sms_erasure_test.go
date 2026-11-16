@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -65,6 +66,8 @@ func assertNothingNames(t *testing.T, env *testhelper.TestEnv, number string) {
 	assert.Zero(t, stops, "no opt-out by the number")
 	suppressionCount := env.DB.Suppression.Query().Where(entsuppression.Destination(number)).CountX(ctx)
 	assert.Zero(t, suppressionCount, "no Suppression by the number")
+	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(number)).CountX(ctx)
+	assert.Zero(t, stamps, "no consent stamp by the number")
 	envelopes := env.QueuedEnvelopes(t)
 	naming := lo.FilterMap(envelopes, func(e events.Envelope, _ int) (string, bool) {
 		return e.Name, strings.Contains(string(e.Data)+e.DedupKey, digits)
@@ -170,6 +173,29 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	dec, err = eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 	assert.True(t, dec.Eligible, dec.Reason)
+}
+
+// The time an erased person stopped is kept by the number's hash, as their opt-out is (ADR 0154):
+// a START that occurred before that stop, delivered after the Erasure, lifts nothing.
+func TestAStartOlderThanAnErasedPersonsStopLiftsNothing(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	s := env.DB.Scoped(fixtures.AcmeID)
+	number := fixtures.ContactTexterPhone
+	stopped := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStopObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: number, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: stopped,
+	}))
+
+	eraseContact(t, env, fixtures.ContactTexterID)
+
+	assertNothingNames(t, env, number)
+	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStartObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: number, DedupID: "start", ObservedAt: stopped.Add(-time.Minute),
+	}))
+	dec, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	require.NoError(t, err)
+	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
 }
 
 // A Confirmation recorded for a number before any Contact had it names no Contact; erasing the

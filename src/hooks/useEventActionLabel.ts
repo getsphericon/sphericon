@@ -17,6 +17,9 @@ export function useEventActionLabel() {
   return useMemo(() => {
     const words: Record<WordedAction, string> = {
       [SystemEventAction.CONTACT_CREATED]: t(($) => $.eventActions.contactCreated),
+      [SystemEventAction.CONTACT_CONSENT_SUPERSEDED]: t(
+        ($) => $.eventActions.contactConsentSuperseded,
+      ),
       [SystemEventAction.CONTACT_ERASED]: t(($) => $.eventActions.contactErased),
       [SystemEventAction.CONTACT_TAGGED]: t(($) => $.eventActions.contactTagged),
       [SystemEventAction.CONTACT_UNTAGGED]: t(($) => $.eventActions.contactUntagged),

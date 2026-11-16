@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
@@ -63,14 +64,23 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		if target.Channel == channels.SMS {
 			return publishSMSStop(ctx, sc, pub, target, dest, at)
 		}
-		o := unsubscribes.OptOut{Channel: target.Channel, Destination: dest, Source: target.Source, ContactID: target.ContactID}
+		o := unsubscribes.OptOut{
+			Channel: target.Channel, Destination: dest, Source: target.Source, ContactID: target.ContactID,
+			At: consentstamps.At(at),
+		}
 		if target.Channel == channels.Telegram {
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
 		}
-		optOutID, err := unsubscribes.Add(ctx, sc, o)
-		if err != nil || optOutID == 0 {
+		change, err := unsubscribes.Add(ctx, sc, o)
+		if err != nil {
 			return err
+		}
+		if change.Superseded {
+			return publishSuperseded(ctx, sc, pub, target, at)
+		}
+		if change.ID == 0 {
+			return nil
 		}
 
 		// Everything-opt-out invalidates any confirmation (ADR 0013): the deliberate
@@ -79,7 +89,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// marketing.confirmed Event is preserved as proof ("confirmed at T1, left at
 		// T2"). A narrower per-source opt-out does NOT touch confirmation.
 		if target.Source == eligibility.SourceEverything && target.Channel == channels.Email {
-			if err := confirmations.Withdraw(ctx, sc, channels.Email, dest); err != nil {
+			if err := confirmations.Withdraw(ctx, sc, channels.Email, dest, consentstamps.At(at)); err != nil {
 				return err
 			}
 		}
@@ -97,7 +107,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		}
 
 		if target.Channel == channels.Telegram {
-			return publishTelegramUnsubscribed(ctx, sc, pub, target, automationID, optOutID)
+			return publishTelegramUnsubscribed(ctx, sc, pub, target, automationID, change.ID)
 		}
 		if target.Channel != channels.Email {
 			return nil
@@ -130,6 +140,26 @@ func publishTelegramUnsubscribed(ctx context.Context, sc *ent.Scoped, pub events
 		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Via: events.UnsubscribedByLink,
 		BroadcastID: target.BroadcastID, AutomationID: automationID,
 		DedupID: fmt.Sprintf("opt-out:%d", optOutID),
+	})
+}
+
+// publishSuperseded records a click older than the opt-out state of its destination (a later
+// return stands, ADR 0154) as contact.consent_superseded for the Contact the link was issued to:
+// it changed nothing. A link with no Contact, or one whose Contact is gone, has nobody to name.
+func publishSuperseded(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, at time.Time) error {
+	if target.ContactID == 0 {
+		return nil
+	}
+	c, err := sc.Contact().Get(ctx, target.ContactID)
+	if ent.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return pub.Publish(ctx, &events.ConsentSuperseded{
+		WorkspaceID: target.WorkspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Channel: string(target.Channel),
+		Observation: events.ObservationStop, Via: events.UnsubscribedByLink, ObservedAt: at,
 	})
 }
 

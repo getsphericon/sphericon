@@ -2435,6 +2435,29 @@ func HasConfirmationsWith(preds ...predicate.Confirmation) predicate.Workspace {
 	})
 }
 
+// HasConsentStamps applies the HasEdge predicate on the "consent_stamps" edge.
+func HasConsentStamps() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ConsentStampsTable, ConsentStampsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasConsentStampsWith applies the HasEdge predicate on the "consent_stamps" edge with a given conditions (other predicates).
+func HasConsentStampsWith(preds ...predicate.ConsentStamp) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newConsentStampsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasOutboundMessages applies the HasEdge predicate on the "outbound_messages" edge.
 func HasOutboundMessages() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

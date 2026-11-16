@@ -1071,6 +1071,68 @@ const (
 	RoleOf_ConsentRecordCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for ConsentStamp.
+const (
+	TypeOf_ConsentStamp             = TypeEntity
+	TypeOf_ConsentStamps            = TypeOther
+	TypeOf_ConsentStampEdges        = TypeOther
+	EntityOf_ConsentStampEdges      = "ConsentStamp"
+	TypeOf_ConsentStampMutation     = TypeOther
+	TypeOf_ConsentStampClient       = TypeClient
+	TypeOf_ConsentStampQuery        = TypeQuery
+	TypeOf_ConsentStampSelect       = TypeQuery
+	TypeOf_ConsentStampGroupBy      = TypeQuery
+	TypeOf_ConsentStampCreate       = TypeCreate
+	TypeOf_ConsentStampCreateBulk   = TypeCreate
+	TypeOf_ConsentStampUpdate       = TypeUpdate
+	TypeOf_ConsentStampUpdateOne    = TypeUpdate
+	TypeOf_ConsentStampDelete       = TypeDelete
+	TypeOf_ConsentStampDeleteOne    = TypeDelete
+	TypeOf_ConsentStampUpsert       = TypeUpsert
+	TypeOf_ConsentStampUpsertOne    = TypeUpsert
+	TypeOf_ConsentStampUpsertBulk   = TypeUpsert
+	EntityOf_ConsentStamps          = "ConsentStamp"
+	EntityOf_ConsentStamp           = "ConsentStamp"
+	EntityOf_ConsentStampMutation   = "ConsentStamp"
+	EntityOf_ConsentStampClient     = "ConsentStamp"
+	EntityOf_ConsentStampQuery      = "ConsentStamp"
+	EntityOf_ConsentStampSelect     = "ConsentStamp"
+	EntityOf_ConsentStampGroupBy    = "ConsentStamp"
+	EntityOf_ConsentStampCreate     = "ConsentStamp"
+	EntityOf_ConsentStampCreateBulk = "ConsentStamp"
+	EntityOf_ConsentStampUpdate     = "ConsentStamp"
+	EntityOf_ConsentStampUpdateOne  = "ConsentStamp"
+	EntityOf_ConsentStampDelete     = "ConsentStamp"
+	EntityOf_ConsentStampDeleteOne  = "ConsentStamp"
+	EntityOf_ConsentStampUpsert     = "ConsentStamp"
+	EntityOf_ConsentStampUpsertOne  = "ConsentStamp"
+	EntityOf_ConsentStampUpsertBulk = "ConsentStamp"
+)
+
+// The reads and the writes ent's methods for ConsentStamp start.
+const (
+	RoleOf_ConsentStampClient_Create                = RoleStart
+	RoleOf_ConsentStampClient_CreateBulk            = RoleStart
+	RoleOf_ConsentStampClient_MapCreateBulk         = RoleStart
+	RoleOf_ConsentStampClient_Update                = RoleStart
+	RoleOf_ConsentStampClient_UpdateOne             = RoleStart
+	RoleOf_ConsentStampClient_Delete                = RoleStart
+	RoleOf_ConsentStampClient_Query                 = RoleRead
+	RoleOf_ConsentStampClient_UpdateOneID           = RoleStart
+	RoleOf_ConsentStampClient_DeleteOne             = RoleStart
+	RoleOf_ConsentStampClient_DeleteOneID           = RoleStart
+	RoleOf_ConsentStampClient_Get                   = RoleRead
+	RoleOf_ConsentStampClient_GetX                  = RoleRead
+	RoleOf_ConsentStampClient_QueryWorkspace        = RoleRead
+	RoleOf_ConsentStamp_QueryWorkspace              = RoleRead
+	RoleOf_ConsentStampQuery_QueryWorkspace         = RoleRead
+	RoleOf_ConsentStamp_Update                      = RoleStart
+	RoleOf_ConsentStampCreate_OnConflict            = RoleStart
+	RoleOf_ConsentStampCreate_OnConflictColumns     = RoleStart
+	RoleOf_ConsentStampCreateBulk_OnConflict        = RoleStart
+	RoleOf_ConsentStampCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for Contact.
 const (
 	TypeOf_Contact             = TypeEntity
@@ -5000,6 +5062,9 @@ const (
 	RoleOf_WorkspaceClient_QueryConfirmations       = RoleRead
 	RoleOf_Workspace_QueryConfirmations             = RoleRead
 	RoleOf_WorkspaceQuery_QueryConfirmations        = RoleRead
+	RoleOf_WorkspaceClient_QueryConsentStamps       = RoleRead
+	RoleOf_Workspace_QueryConsentStamps             = RoleRead
+	RoleOf_WorkspaceQuery_QueryConsentStamps        = RoleRead
 	RoleOf_WorkspaceClient_QueryOutboundMessages    = RoleRead
 	RoleOf_Workspace_QueryOutboundMessages          = RoleRead
 	RoleOf_WorkspaceQuery_QueryOutboundMessages     = RoleRead

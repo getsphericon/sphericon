@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/contacttag"
 	"github.com/getsphericon/sphericon/ent/customfield"
@@ -361,6 +362,22 @@ func (s *Scoped) verifyConfirmation(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Confirmation: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyConsentStamp fails with ErrNotInWorkspace unless every id is a ConsentStamp of the Workspace.
+func (s *Scoped) verifyConsentStamp(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.ConsentStamp.Query().Where(s.inConsentStamp(consentstamp.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("ConsentStamp: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -18837,6 +18854,1165 @@ const (
 	RoleOf_ConfirmationScopedUpdate_Modify = RoleStep
 	RoleOf_ConfirmationScopedUpdate_Save   = RoleStep
 	RoleOf_ConfirmationScopedUpdate_Exec   = RoleStep
+)
+
+// ConsentStampScoped reaches ConsentStamp entities of one Workspace.
+type ConsentStampScoped struct{ s *Scoped }
+
+// ConsentStamp returns the ConsentStamp entities of the Workspace.
+func (s *Scoped) ConsentStamp() *ConsentStampScoped { return &ConsentStampScoped{s: s} }
+
+const (
+	TypeOf_ConsentStampScoped             = TypeWrapper
+	EntityOf_ConsentStampScoped           = "ConsentStamp"
+	RoleOf_Scoped_ConsentStamp            = RoleNone
+	RoleOf_ConsentStampScoped_Query       = RoleRead
+	RoleOf_ConsentStampScoped_Get         = RoleRead
+	RoleOf_ConsentStampScoped_DeleteOneID = RoleStart
+	RoleOf_ConsentStampScoped_UpdateOneID = RoleStart
+	RoleOf_ConsentStampScoped_Delete      = RoleStart
+	RoleOf_ConsentStampScoped_Create      = RoleStart
+	RoleOf_ConsentStampScoped_CreateBulk  = RoleStart
+	RoleOf_ConsentStampScoped_Update      = RoleStart
+)
+
+// inConsentStamp confines predicates of ConsentStamp rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inConsentStamp(ps ...predicate.ConsentStamp) []predicate.ConsentStamp {
+	return append([]predicate.ConsentStamp{consentstamp.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a ConsentStamp query already confined to the Workspace.
+func (t *ConsentStampScoped) Query() *ConsentStampQuery {
+	return t.s.c.ConsentStamp.Query().Where(t.s.inConsentStamp()...)
+}
+
+// Get returns the ConsentStamp with the id; a row of another Workspace is not found.
+func (t *ConsentStampScoped) Get(ctx context.Context, id int64) (*ConsentStamp, error) {
+	return t.Query().Where(consentstamp.ID(id)).Only(ctx)
+}
+
+// writeConsentStamp runs a write of ConsentStamp rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeConsentStamp(ctx context.Context, verb string, where []predicate.ConsentStamp, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkConsentStamp verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkConsentStamp(ctx context.Context, ms ...*ConsentStampMutation) error {
+	return nil
+}
+
+// ConsentStampScopedDeleteOne deletes one ConsentStamp: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type ConsentStampScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ConsentStamp
+}
+
+// DeleteOneID deletes the ConsentStamp with the id; a row of another Workspace is not found.
+func (t *ConsentStampScoped) DeleteOneID(id int64) *ConsentStampScopedDeleteOne {
+	return &ConsentStampScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ConsentStampScopedDeleteOne) Where(ps ...predicate.ConsentStamp) *ConsentStampScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ConsentStampScopedDeleteOne       = TypeScopedDelete
+	EntityOf_ConsentStampScopedDeleteOne     = "ConsentStamp"
+	RoleOf_ConsentStampScopedDeleteOne_Where = RoleStep
+	RoleOf_ConsentStampScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *ConsentStampScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inConsentStamp(x.where...)
+	return x.s.writeConsentStamp(ctx, "delete", append([]predicate.ConsentStamp{consentstamp.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.ConsentStamp.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// ConsentStampScopedDelete deletes the ConsentStamp rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type ConsentStampScopedDelete struct {
+	s     *Scoped
+	where []predicate.ConsentStamp
+}
+
+// Delete deletes the ConsentStamp entities of the Workspace that match the predicates.
+func (t *ConsentStampScoped) Delete() *ConsentStampScopedDelete {
+	return &ConsentStampScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ConsentStampScopedDelete) Where(ps ...predicate.ConsentStamp) *ConsentStampScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_ConsentStampScopedDelete       = TypeScopedDelete
+	EntityOf_ConsentStampScopedDelete     = "ConsentStamp"
+	RoleOf_ConsentStampScopedDelete_Where = RoleStep
+	RoleOf_ConsentStampScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *ConsentStampScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inConsentStamp(x.where...)
+	var n int
+	err := x.s.writeConsentStamp(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.ConsentStamp.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// ConsentStampScopedCreate creates a ConsentStamp of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type ConsentStampScopedCreate struct {
+	s   *Scoped
+	set []func(*ConsentStampCreate)
+}
+
+// Create starts a ConsentStamp in the Workspace.
+func (t *ConsentStampScoped) Create() *ConsentStampScopedCreate {
+	return &ConsentStampScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *ConsentStampScopedCreate) raw(s *Scoped) *ConsentStampCreate {
+	b := s.c.ConsentStamp.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *ConsentStampScopedCreate) build(ctx context.Context, s *Scoped) (*ConsentStampCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkConsentStamp(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *ConsentStampScopedCreate) SetCreatedAt(v time.Time) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableCreatedAt(v *time.Time) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ConsentStampScopedCreate) SetUpdatedAt(v time.Time) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableUpdatedAt(v *time.Time) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetChannel sets the "channel" field.
+func (x *ConsentStampScopedCreate) SetChannel(v channels.Channel) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetChannel(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetChannel = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *ConsentStampScopedCreate) SetDestination(v string) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetDestination = RoleStep
+
+// SetSendingSource sets the "sending_source" field.
+func (x *ConsentStampScopedCreate) SetSendingSource(v string) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetSendingSource(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetSendingSource = RoleStep
+
+// SetOptOutOccurredAt sets the "opt_out_occurred_at" field.
+func (x *ConsentStampScopedCreate) SetOptOutOccurredAt(v time.Time) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetOptOutOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetOptOutOccurredAt = RoleStep
+
+// SetNillableOptOutOccurredAt sets the "opt_out_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableOptOutOccurredAt(v *time.Time) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetOptOutOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableOptOutOccurredAt = RoleStep
+
+// SetOptOutIntegrationID sets the "opt_out_integration_id" field.
+func (x *ConsentStampScopedCreate) SetOptOutIntegrationID(v int64) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetOptOutIntegrationID(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetOptOutIntegrationID = RoleStep
+
+// SetNillableOptOutIntegrationID sets the "opt_out_integration_id" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableOptOutIntegrationID(v *int64) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetOptOutIntegrationID(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableOptOutIntegrationID = RoleStep
+
+// SetOptOutSequence sets the "opt_out_sequence" field.
+func (x *ConsentStampScopedCreate) SetOptOutSequence(v int64) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetOptOutSequence(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetOptOutSequence = RoleStep
+
+// SetNillableOptOutSequence sets the "opt_out_sequence" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableOptOutSequence(v *int64) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetOptOutSequence(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableOptOutSequence = RoleStep
+
+// SetConfirmationOccurredAt sets the "confirmation_occurred_at" field.
+func (x *ConsentStampScopedCreate) SetConfirmationOccurredAt(v time.Time) *ConsentStampScopedCreate {
+	x.set = append(x.set, func(b *ConsentStampCreate) { b.SetConfirmationOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetConfirmationOccurredAt = RoleStep
+
+// SetNillableConfirmationOccurredAt sets the "confirmation_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedCreate) SetNillableConfirmationOccurredAt(v *time.Time) *ConsentStampScopedCreate {
+	if v != nil {
+		x.SetConfirmationOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedCreate_SetNillableConfirmationOccurredAt = RoleStep
+
+const (
+	TypeOf_ConsentStampScopedCreate                        = TypeScopedCreate
+	EntityOf_ConsentStampScopedCreate                      = "ConsentStamp"
+	RoleOf_ConsentStampScopedCreate_Save                   = RoleStep
+	RoleOf_ConsentStampScopedCreate_Exec                   = RoleStep
+	RoleOf_ConsentStampScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_ConsentStampScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the ConsentStamp.
+func (x *ConsentStampScopedCreate) Save(ctx context.Context) (*ConsentStamp, error) {
+	var created *ConsentStamp
+	err := x.s.writeConsentStamp(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ConsentStampScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// ConsentStampScopedCreateBulk creates several ConsentStamp entities of one Workspace at once.
+type ConsentStampScopedCreateBulk struct {
+	s  *Scoped
+	xs []*ConsentStampScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *ConsentStampScoped) CreateBulk(xs ...*ConsentStampScopedCreate) *ConsentStampScopedCreateBulk {
+	return &ConsentStampScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *ConsentStampScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("ConsentStamp: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *ConsentStampScopedCreateBulk) build(ctx context.Context, s *Scoped) (*ConsentStampCreateBulk, error) {
+	builders := make([]*ConsentStampCreate, len(b.xs))
+	ms := make([]*ConsentStampMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkConsentStamp(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.ConsentStamp.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the ConsentStamp entities.
+func (b *ConsentStampScopedCreateBulk) Save(ctx context.Context) ([]*ConsentStamp, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*ConsentStamp
+	err := b.s.writeConsentStamp(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *ConsentStampScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ConsentStampScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_ConsentStampScopedCreateBulk                 = "ConsentStamp"
+	RoleOf_ConsentStampScopedCreateBulk_Save              = RoleStep
+	RoleOf_ConsentStampScopedCreateBulk_Exec              = RoleStep
+	RoleOf_ConsentStampScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// ConsentStampScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type ConsentStampScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_ConsentStampScopedUpsert   = TypeScopedUpsert
+	EntityOf_ConsentStampScopedUpsert = "ConsentStamp"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *ConsentStampScopedUpsert) SetUpdatedAt(v time.Time) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateUpdatedAt() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (u *ConsentStampScopedUpsert) SetDestination(v string) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldDestination, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetDestination = RoleStep
+
+// UpdateDestination sets the "destination" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateDestination() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldDestination)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateDestination = RoleStep
+
+// SetOptOutOccurredAt sets the "opt_out_occurred_at" field.
+func (u *ConsentStampScopedUpsert) SetOptOutOccurredAt(v time.Time) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldOptOutOccurredAt, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetOptOutOccurredAt = RoleStep
+
+// UpdateOptOutOccurredAt sets the "opt_out_occurred_at" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateOptOutOccurredAt() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldOptOutOccurredAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateOptOutOccurredAt = RoleStep
+
+// ClearOptOutOccurredAt clears the value of the "opt_out_occurred_at" field.
+func (u *ConsentStampScopedUpsert) ClearOptOutOccurredAt() *ConsentStampScopedUpsert {
+	u.u.SetNull(consentstamp.FieldOptOutOccurredAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_ClearOptOutOccurredAt = RoleStep
+
+// SetOptOutIntegrationID sets the "opt_out_integration_id" field.
+func (u *ConsentStampScopedUpsert) SetOptOutIntegrationID(v int64) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldOptOutIntegrationID, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetOptOutIntegrationID = RoleStep
+
+// AddOptOutIntegrationID adds v to the "opt_out_integration_id" field.
+func (u *ConsentStampScopedUpsert) AddOptOutIntegrationID(v int64) *ConsentStampScopedUpsert {
+	u.u.Add(consentstamp.FieldOptOutIntegrationID, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_AddOptOutIntegrationID = RoleStep
+
+// UpdateOptOutIntegrationID sets the "opt_out_integration_id" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateOptOutIntegrationID() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldOptOutIntegrationID)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateOptOutIntegrationID = RoleStep
+
+// ClearOptOutIntegrationID clears the value of the "opt_out_integration_id" field.
+func (u *ConsentStampScopedUpsert) ClearOptOutIntegrationID() *ConsentStampScopedUpsert {
+	u.u.SetNull(consentstamp.FieldOptOutIntegrationID)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_ClearOptOutIntegrationID = RoleStep
+
+// SetOptOutSequence sets the "opt_out_sequence" field.
+func (u *ConsentStampScopedUpsert) SetOptOutSequence(v int64) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldOptOutSequence, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetOptOutSequence = RoleStep
+
+// AddOptOutSequence adds v to the "opt_out_sequence" field.
+func (u *ConsentStampScopedUpsert) AddOptOutSequence(v int64) *ConsentStampScopedUpsert {
+	u.u.Add(consentstamp.FieldOptOutSequence, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_AddOptOutSequence = RoleStep
+
+// UpdateOptOutSequence sets the "opt_out_sequence" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateOptOutSequence() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldOptOutSequence)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateOptOutSequence = RoleStep
+
+// ClearOptOutSequence clears the value of the "opt_out_sequence" field.
+func (u *ConsentStampScopedUpsert) ClearOptOutSequence() *ConsentStampScopedUpsert {
+	u.u.SetNull(consentstamp.FieldOptOutSequence)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_ClearOptOutSequence = RoleStep
+
+// SetConfirmationOccurredAt sets the "confirmation_occurred_at" field.
+func (u *ConsentStampScopedUpsert) SetConfirmationOccurredAt(v time.Time) *ConsentStampScopedUpsert {
+	u.u.Set(consentstamp.FieldConfirmationOccurredAt, v)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_SetConfirmationOccurredAt = RoleStep
+
+// UpdateConfirmationOccurredAt sets the "confirmation_occurred_at" field to the value that was provided on create.
+func (u *ConsentStampScopedUpsert) UpdateConfirmationOccurredAt() *ConsentStampScopedUpsert {
+	u.u.SetExcluded(consentstamp.FieldConfirmationOccurredAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_UpdateConfirmationOccurredAt = RoleStep
+
+// ClearConfirmationOccurredAt clears the value of the "confirmation_occurred_at" field.
+func (u *ConsentStampScopedUpsert) ClearConfirmationOccurredAt() *ConsentStampScopedUpsert {
+	u.u.SetNull(consentstamp.FieldConfirmationOccurredAt)
+	return u
+}
+
+const RoleOf_ConsentStampScopedUpsert_ClearConfirmationOccurredAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *ConsentStampScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(consentstamp.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// ConsentStampScopedUpsertOne is the "upsert" of one ConsentStamp: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type ConsentStampScopedUpsertOne struct {
+	x        *ConsentStampScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*ConsentStampUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_ConsentStampScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_ConsentStampScopedUpsertOne               = "ConsentStamp"
+	RoleOf_ConsentStampScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_ConsentStampScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_ConsentStampScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_ConsentStampScopedUpsertOne_Update          = RoleStep
+	RoleOf_ConsentStampScopedUpsertOne_Exec            = RoleStep
+	RoleOf_ConsentStampScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *ConsentStampScopedCreate) OnConflictColumns(columns ...string) *ConsentStampScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *ConsentStampScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *ConsentStampScopedUpsertOne {
+	return &ConsentStampScopedUpsertOne{x: x, conflict: (&ConsentStampScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ConsentStampScopedUpsertOne) UpdateNewValues() *ConsentStampScopedUpsertOne {
+	u.set = append(u.set, func(r *ConsentStampUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ConsentStampScopedUpsertOne) Ignore() *ConsentStampScopedUpsertOne {
+	u.set = append(u.set, func(r *ConsentStampUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ConsentStampScopedUpsertOne) DoNothing() *ConsentStampScopedUpsertOne {
+	u.set = append(u.set, func(r *ConsentStampUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ConsentStampScopedUpsertOne) Update(set func(*ConsentStampScopedUpsert)) *ConsentStampScopedUpsertOne {
+	u.set = append(u.set, func(r *ConsentStampUpsertOne) {
+		r.Update(func(s *ConsentStampUpsert) { set(&ConsentStampScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *ConsentStampScopedUpsertOne) build(ctx context.Context, s *Scoped) (*ConsentStampUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *ConsentStampScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *ConsentStampScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeConsentStamp(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// ConsentStampScopedUpsertBulk is the "upsert" of several ConsentStamp entities.
+type ConsentStampScopedUpsertBulk struct {
+	b       *ConsentStampScopedCreateBulk
+	t       *ConsentStampScoped
+	columns []string
+	set     []func(*ConsentStampUpsertBulk)
+}
+
+const (
+	TypeOf_ConsentStampScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_ConsentStampScopedUpsertBulk               = "ConsentStamp"
+	RoleOf_ConsentStampScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_ConsentStampScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_ConsentStampScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_ConsentStampScopedUpsertBulk_Update          = RoleStep
+	RoleOf_ConsentStampScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *ConsentStampScopedCreateBulk) OnConflictColumns(columns ...string) *ConsentStampScopedUpsertBulk {
+	return &ConsentStampScopedUpsertBulk{b: b, t: &ConsentStampScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *ConsentStampScopedUpsertBulk) UpdateNewValues() *ConsentStampScopedUpsertBulk {
+	u.set = append(u.set, func(r *ConsentStampUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *ConsentStampScopedUpsertBulk) Ignore() *ConsentStampScopedUpsertBulk {
+	u.set = append(u.set, func(r *ConsentStampUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *ConsentStampScopedUpsertBulk) DoNothing() *ConsentStampScopedUpsertBulk {
+	u.set = append(u.set, func(r *ConsentStampUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *ConsentStampScopedUpsertBulk) Update(set func(*ConsentStampScopedUpsert)) *ConsentStampScopedUpsertBulk {
+	u.set = append(u.set, func(r *ConsentStampUpsertBulk) {
+		r.Update(func(s *ConsentStampUpsert) { set(&ConsentStampScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *ConsentStampScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeConsentStamp(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// ConsentStampScopedUpdateOne updates one ConsentStamp. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type ConsentStampScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.ConsentStamp
+	set   []func(*ConsentStampUpdateOne)
+}
+
+// UpdateOneID updates the ConsentStamp with the id; a row of another Workspace is not found.
+func (t *ConsentStampScoped) UpdateOneID(id int64) *ConsentStampScopedUpdateOne {
+	return &ConsentStampScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *ConsentStampScopedUpdateOne) Where(ps ...predicate.ConsentStamp) *ConsentStampScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ConsentStampScopedUpdateOne) SetUpdatedAt(v time.Time) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *ConsentStampScopedUpdateOne) SetDestination(v string) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetDestination = RoleStep
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (x *ConsentStampScopedUpdateOne) SetNillableDestination(v *string) *ConsentStampScopedUpdateOne {
+	if v != nil {
+		x.SetDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetNillableDestination = RoleStep
+
+// SetOptOutOccurredAt sets the "opt_out_occurred_at" field.
+func (x *ConsentStampScopedUpdateOne) SetOptOutOccurredAt(v time.Time) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetOptOutOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetOptOutOccurredAt = RoleStep
+
+// SetNillableOptOutOccurredAt sets the "opt_out_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedUpdateOne) SetNillableOptOutOccurredAt(v *time.Time) *ConsentStampScopedUpdateOne {
+	if v != nil {
+		x.SetOptOutOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetNillableOptOutOccurredAt = RoleStep
+
+// ClearOptOutOccurredAt clears the value of the "opt_out_occurred_at" field.
+func (x *ConsentStampScopedUpdateOne) ClearOptOutOccurredAt() *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.ClearOptOutOccurredAt() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_ClearOptOutOccurredAt = RoleStep
+
+// SetOptOutIntegrationID sets the "opt_out_integration_id" field.
+func (x *ConsentStampScopedUpdateOne) SetOptOutIntegrationID(v int64) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetOptOutIntegrationID(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetOptOutIntegrationID = RoleStep
+
+// SetNillableOptOutIntegrationID sets the "opt_out_integration_id" field if the given value is not nil.
+func (x *ConsentStampScopedUpdateOne) SetNillableOptOutIntegrationID(v *int64) *ConsentStampScopedUpdateOne {
+	if v != nil {
+		x.SetOptOutIntegrationID(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetNillableOptOutIntegrationID = RoleStep
+
+// AddOptOutIntegrationID adds value to the "opt_out_integration_id" field.
+func (x *ConsentStampScopedUpdateOne) AddOptOutIntegrationID(v int64) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.AddOptOutIntegrationID(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_AddOptOutIntegrationID = RoleStep
+
+// ClearOptOutIntegrationID clears the value of the "opt_out_integration_id" field.
+func (x *ConsentStampScopedUpdateOne) ClearOptOutIntegrationID() *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.ClearOptOutIntegrationID() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_ClearOptOutIntegrationID = RoleStep
+
+// SetOptOutSequence sets the "opt_out_sequence" field.
+func (x *ConsentStampScopedUpdateOne) SetOptOutSequence(v int64) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetOptOutSequence(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetOptOutSequence = RoleStep
+
+// SetNillableOptOutSequence sets the "opt_out_sequence" field if the given value is not nil.
+func (x *ConsentStampScopedUpdateOne) SetNillableOptOutSequence(v *int64) *ConsentStampScopedUpdateOne {
+	if v != nil {
+		x.SetOptOutSequence(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetNillableOptOutSequence = RoleStep
+
+// AddOptOutSequence adds value to the "opt_out_sequence" field.
+func (x *ConsentStampScopedUpdateOne) AddOptOutSequence(v int64) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.AddOptOutSequence(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_AddOptOutSequence = RoleStep
+
+// ClearOptOutSequence clears the value of the "opt_out_sequence" field.
+func (x *ConsentStampScopedUpdateOne) ClearOptOutSequence() *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.ClearOptOutSequence() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_ClearOptOutSequence = RoleStep
+
+// SetConfirmationOccurredAt sets the "confirmation_occurred_at" field.
+func (x *ConsentStampScopedUpdateOne) SetConfirmationOccurredAt(v time.Time) *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.SetConfirmationOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetConfirmationOccurredAt = RoleStep
+
+// SetNillableConfirmationOccurredAt sets the "confirmation_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedUpdateOne) SetNillableConfirmationOccurredAt(v *time.Time) *ConsentStampScopedUpdateOne {
+	if v != nil {
+		x.SetConfirmationOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_SetNillableConfirmationOccurredAt = RoleStep
+
+// ClearConfirmationOccurredAt clears the value of the "confirmation_occurred_at" field.
+func (x *ConsentStampScopedUpdateOne) ClearConfirmationOccurredAt() *ConsentStampScopedUpdateOne {
+	x.set = append(x.set, func(b *ConsentStampUpdateOne) { b.ClearConfirmationOccurredAt() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdateOne_ClearConfirmationOccurredAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the ConsentStamp.
+func (x *ConsentStampScopedUpdateOne) Save(ctx context.Context) (*ConsentStamp, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ConsentStampScopedUpdateOne) build(ctx context.Context, s *Scoped) (*ConsentStampUpdateOne, error) {
+	b := s.c.ConsentStamp.UpdateOneID(x.id).Where(s.inConsentStamp(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkConsentStamp(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *ConsentStampScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*ConsentStamp, error) {
+	where := x.s.inConsentStamp(x.where...)
+	var updated *ConsentStamp
+	err := x.s.writeConsentStamp(ctx, verb, append([]predicate.ConsentStamp{consentstamp.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *ConsentStampScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ConsentStampScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_ConsentStampScopedUpdateOne     = "ConsentStamp"
+	RoleOf_ConsentStampScopedUpdateOne_Where = RoleStep
+	RoleOf_ConsentStampScopedUpdateOne_Save  = RoleStep
+	RoleOf_ConsentStampScopedUpdateOne_Exec  = RoleStep
+)
+
+// ConsentStampScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type ConsentStampScopedUpdate struct {
+	s     *Scoped
+	where []predicate.ConsentStamp
+	set   []func(*ConsentStampUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the ConsentStamp entities of the Workspace that match the predicates.
+func (t *ConsentStampScoped) Update() *ConsentStampScopedUpdate {
+	return &ConsentStampScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *ConsentStampScopedUpdate) Where(ps ...predicate.ConsentStamp) *ConsentStampScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *ConsentStampScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *ConsentStampScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(consentstamp.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *ConsentStampUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *ConsentStampScopedUpdate) SetUpdatedAt(v time.Time) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetDestination sets the "destination" field.
+func (x *ConsentStampScopedUpdate) SetDestination(v string) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetDestination(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetDestination = RoleStep
+
+// SetNillableDestination sets the "destination" field if the given value is not nil.
+func (x *ConsentStampScopedUpdate) SetNillableDestination(v *string) *ConsentStampScopedUpdate {
+	if v != nil {
+		x.SetDestination(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetNillableDestination = RoleStep
+
+// SetOptOutOccurredAt sets the "opt_out_occurred_at" field.
+func (x *ConsentStampScopedUpdate) SetOptOutOccurredAt(v time.Time) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetOptOutOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetOptOutOccurredAt = RoleStep
+
+// SetNillableOptOutOccurredAt sets the "opt_out_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedUpdate) SetNillableOptOutOccurredAt(v *time.Time) *ConsentStampScopedUpdate {
+	if v != nil {
+		x.SetOptOutOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetNillableOptOutOccurredAt = RoleStep
+
+// ClearOptOutOccurredAt clears the value of the "opt_out_occurred_at" field.
+func (x *ConsentStampScopedUpdate) ClearOptOutOccurredAt() *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.ClearOptOutOccurredAt() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_ClearOptOutOccurredAt = RoleStep
+
+// SetOptOutIntegrationID sets the "opt_out_integration_id" field.
+func (x *ConsentStampScopedUpdate) SetOptOutIntegrationID(v int64) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetOptOutIntegrationID(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetOptOutIntegrationID = RoleStep
+
+// SetNillableOptOutIntegrationID sets the "opt_out_integration_id" field if the given value is not nil.
+func (x *ConsentStampScopedUpdate) SetNillableOptOutIntegrationID(v *int64) *ConsentStampScopedUpdate {
+	if v != nil {
+		x.SetOptOutIntegrationID(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetNillableOptOutIntegrationID = RoleStep
+
+// AddOptOutIntegrationID adds value to the "opt_out_integration_id" field.
+func (x *ConsentStampScopedUpdate) AddOptOutIntegrationID(v int64) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.AddOptOutIntegrationID(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_AddOptOutIntegrationID = RoleStep
+
+// ClearOptOutIntegrationID clears the value of the "opt_out_integration_id" field.
+func (x *ConsentStampScopedUpdate) ClearOptOutIntegrationID() *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.ClearOptOutIntegrationID() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_ClearOptOutIntegrationID = RoleStep
+
+// SetOptOutSequence sets the "opt_out_sequence" field.
+func (x *ConsentStampScopedUpdate) SetOptOutSequence(v int64) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetOptOutSequence(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetOptOutSequence = RoleStep
+
+// SetNillableOptOutSequence sets the "opt_out_sequence" field if the given value is not nil.
+func (x *ConsentStampScopedUpdate) SetNillableOptOutSequence(v *int64) *ConsentStampScopedUpdate {
+	if v != nil {
+		x.SetOptOutSequence(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetNillableOptOutSequence = RoleStep
+
+// AddOptOutSequence adds value to the "opt_out_sequence" field.
+func (x *ConsentStampScopedUpdate) AddOptOutSequence(v int64) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.AddOptOutSequence(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_AddOptOutSequence = RoleStep
+
+// ClearOptOutSequence clears the value of the "opt_out_sequence" field.
+func (x *ConsentStampScopedUpdate) ClearOptOutSequence() *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.ClearOptOutSequence() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_ClearOptOutSequence = RoleStep
+
+// SetConfirmationOccurredAt sets the "confirmation_occurred_at" field.
+func (x *ConsentStampScopedUpdate) SetConfirmationOccurredAt(v time.Time) *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.SetConfirmationOccurredAt(v) })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetConfirmationOccurredAt = RoleStep
+
+// SetNillableConfirmationOccurredAt sets the "confirmation_occurred_at" field if the given value is not nil.
+func (x *ConsentStampScopedUpdate) SetNillableConfirmationOccurredAt(v *time.Time) *ConsentStampScopedUpdate {
+	if v != nil {
+		x.SetConfirmationOccurredAt(*v)
+	}
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_SetNillableConfirmationOccurredAt = RoleStep
+
+// ClearConfirmationOccurredAt clears the value of the "confirmation_occurred_at" field.
+func (x *ConsentStampScopedUpdate) ClearConfirmationOccurredAt() *ConsentStampScopedUpdate {
+	x.set = append(x.set, func(b *ConsentStampUpdate) { b.ClearConfirmationOccurredAt() })
+	return x
+}
+
+const RoleOf_ConsentStampScopedUpdate_ClearConfirmationOccurredAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *ConsentStampScopedUpdate) build(ctx context.Context, s *Scoped) (*ConsentStampUpdate, error) {
+	b := s.c.ConsentStamp.Update().Where(s.inConsentStamp(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkConsentStamp(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *ConsentStampScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inConsentStamp(x.where...)
+	var n int
+	err := x.s.writeConsentStamp(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *ConsentStampScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_ConsentStampScopedUpdate        = TypeScopedUpdate
+	EntityOf_ConsentStampScopedUpdate      = "ConsentStamp"
+	RoleOf_ConsentStampScopedUpdate_Where  = RoleStep
+	RoleOf_ConsentStampScopedUpdate_Modify = RoleStep
+	RoleOf_ConsentStampScopedUpdate_Save   = RoleStep
+	RoleOf_ConsentStampScopedUpdate_Exec   = RoleStep
 )
 
 // ContactScoped reaches Contact entities of one Workspace.

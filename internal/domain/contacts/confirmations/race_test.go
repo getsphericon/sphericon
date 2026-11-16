@@ -3,6 +3,7 @@ package confirmations_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +34,7 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 	var first *ent.Confirmation
 	release := env.HoldOpen(t, scope, func(ts *ent.Scoped, pub events.Publisher) error {
 		var err error
-		first, err = confirmations.ConfirmSMSIn(ctx, ts, pub, number, evidence)
+		first, err = confirmations.ConfirmSMSIn(ctx, ts, pub, number, evidence, time.Now())
 		return err
 	})
 
@@ -41,7 +42,7 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 	errs := env.QueueBehind(t, release,
 		testhelper.Writer{Name: "second request", Run: func() error {
 			var err error
-			second, err = confirmations.Confirm(ctx, env.Bus, scope, channels.SMS, number, evidence)
+			second, err = confirmations.Confirm(ctx, env.Bus, scope, channels.SMS, number, evidence, time.Now())
 			return err
 		}})
 
@@ -64,7 +65,7 @@ func TestAConfirmationOfAnErasedContactIsRecordedUnlinked(t *testing.T) {
 
 	err := confirmations.RecordConfirmation(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{
 		WorkspaceID: fixtures.AcmeID, ContactID: 999999, Destination: address,
-	}, "")
+	}, "", time.Now())
 
 	require.NoError(t, err)
 	got, err := env.DB.Scoped(fixtures.AcmeID).Confirmation().Query().

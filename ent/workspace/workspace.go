@@ -149,6 +149,8 @@ const (
 	EdgeUnsubscribes = "unsubscribes"
 	// EdgeConfirmations holds the string denoting the confirmations edge name in mutations.
 	EdgeConfirmations = "confirmations"
+	// EdgeConsentStamps holds the string denoting the consent_stamps edge name in mutations.
+	EdgeConsentStamps = "consent_stamps"
 	// EdgeOutboundMessages holds the string denoting the outbound_messages edge name in mutations.
 	EdgeOutboundMessages = "outbound_messages"
 	// EdgeTrackedLinks holds the string denoting the tracked_links edge name in mutations.
@@ -447,6 +449,13 @@ const (
 	ConfirmationsInverseTable = "confirmations"
 	// ConfirmationsColumn is the table column denoting the confirmations relation/edge.
 	ConfirmationsColumn = "workspace_id"
+	// ConsentStampsTable is the table that holds the consent_stamps relation/edge.
+	ConsentStampsTable = "consent_stamps"
+	// ConsentStampsInverseTable is the table name for the ConsentStamp entity.
+	// It exists in this package in order to avoid circular dependency with the "consentstamp" package.
+	ConsentStampsInverseTable = "consent_stamps"
+	// ConsentStampsColumn is the table column denoting the consent_stamps relation/edge.
+	ConsentStampsColumn = "workspace_id"
 	// OutboundMessagesTable is the table that holds the outbound_messages relation/edge.
 	OutboundMessagesTable = "outbound_messages"
 	// OutboundMessagesInverseTable is the table name for the OutboundMessage entity.
@@ -1313,6 +1322,20 @@ func ByConfirmations(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByConsentStampsCount orders the results by consent_stamps count.
+func ByConsentStampsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newConsentStampsStep(), opts...)
+	}
+}
+
+// ByConsentStamps orders the results by consent_stamps terms.
+func ByConsentStamps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newConsentStampsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByOutboundMessagesCount orders the results by outbound_messages count.
 func ByOutboundMessagesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -1702,6 +1725,13 @@ func newConfirmationsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ConfirmationsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ConfirmationsTable, ConfirmationsColumn),
+	)
+}
+func newConsentStampsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ConsentStampsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ConsentStampsTable, ConsentStampsColumn),
 	)
 }
 func newOutboundMessagesStep() *sqlgraph.Step {

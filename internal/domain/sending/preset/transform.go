@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/itchyny/gojq"
@@ -285,6 +286,7 @@ type rawInbound struct {
 	Payload     *string `json:"payload"`
 	MessageID   *string `json:"message_id"`
 	CallbackID  *string `json:"callback_id"`
+	OccurredAt  *string `json:"occurred_at"`
 }
 
 func validateInbound(raw []byte) (InboundMessage, error) {
@@ -321,7 +323,22 @@ func validateInbound(raw []byte) (InboundMessage, error) {
 	if m.Payload, err = optionalText("payload", r.Payload, MaxPayloadChars); err != nil {
 		return InboundMessage{}, err
 	}
+	if m.OccurredAt, err = optionalTime(r.OccurredAt); err != nil {
+		return InboundMessage{}, err
+	}
 	return m, nil
+}
+
+// optionalTime checks an occurred_at: an RFC 3339 time, zero when absent.
+func optionalTime(v *string) (time.Time, error) {
+	if v == nil || *v == "" {
+		return time.Time{}, nil
+	}
+	t, err := time.Parse(time.RFC3339Nano, *v)
+	if err != nil {
+		return time.Time{}, errors.New("occurred_at is not an RFC 3339 time")
+	}
+	return t.UTC(), nil
 }
 
 // rawReachability is a Reachability change as the program returns it.
@@ -331,6 +348,7 @@ type rawReachability struct {
 	Destination string  `json:"destination"`
 	Reachable   *bool   `json:"reachable"`
 	Reason      *string `json:"reason"`
+	OccurredAt  *string `json:"occurred_at"`
 }
 
 func validateReachability(raw []byte) (ReachabilityChange, error) {
@@ -349,6 +367,9 @@ func validateReachability(raw []byte) (ReachabilityChange, error) {
 		return ReachabilityChange{}, errors.New("reachable must be true or false")
 	}
 	c := ReachabilityChange{ID: r.ID, Destination: dest, Reachable: *r.Reachable}
+	if c.OccurredAt, err = optionalTime(r.OccurredAt); err != nil {
+		return ReachabilityChange{}, err
+	}
 	switch reason := Unreachability(lo.FromPtr(r.Reason)); {
 	case c.Reachable && r.Reason != nil:
 		return ReachabilityChange{}, errors.New("a reachable Destination has no reason")

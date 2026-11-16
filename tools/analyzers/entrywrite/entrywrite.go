@@ -76,6 +76,7 @@ var owners = map[string]string{
 	"CapturedMessage":      "internal/domain/sending/capturedmessages",
 	"Confirmation":         "internal/domain/contacts/confirmations",
 	"ConsentRecord":        "internal/domain/identity/consentrecords",
+	"ConsentStamp":         "internal/domain/contacts/consentstamps",
 	"Contact":              "internal/domain/contacts/contacts",
 	"ContactTag":           "internal/domain/contacts/contacts",
 	"CustomField":          "internal/domain/contacts/contacts",

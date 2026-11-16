@@ -103,4 +103,7 @@ enum SystemEventAction {
 
   /** The Contact's number opted out of the Workspace's SMS marketing */
   smsUnsubscribed: "sms.unsubscribed",
+
+  /** A stop or a start of the Contact occurred before the consent standing, and changed nothing */
+  contactConsentSuperseded: "contact.consent_superseded",
 }

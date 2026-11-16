@@ -796,7 +796,8 @@ var audiencePackage = do.Package(
 		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
-		return contacts.New(do.MustInvoke[*events.Bus](i), contacts.WithMailResolver(do.MustInvoke[addresscheck.Resolver](i))), nil
+		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i),
+			contacts.WithMailResolver(do.MustInvoke[addresscheck.Resolver](i))), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
 		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil

@@ -2595,7 +2595,8 @@ export const zSystemEventAction = z.enum([
   'sms.undelivered',
   'sms.confirmed',
   'sms.clicked',
-  'sms.unsubscribed'
+  'sms.unsubscribed',
+  'contact.consent_superseded'
 ]);
 
 /**

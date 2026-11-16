@@ -3,7 +3,9 @@ package callbackinterpretation
 import (
 	"context"
 	"log/slog"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -41,7 +43,7 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 	}
 	switch command(m.Text) {
 	case "/start":
-		return t.resume(ctx, tx, m.Destination, m.ID)
+		return t.resume(ctx, tx, m.Destination, m.ID, m.OccurredAt)
 	case "/stop":
 		return t.stop(ctx, tx, m, events.UnsubscribedByKeyword, nil)
 	}
@@ -85,8 +87,8 @@ func (t telegram) answer(ctx context.Context, tx Tx, callbackID string) {
 
 func (telegram) stop(ctx context.Context, tx Tx, m preset.InboundMessage, via string, msg *ent.OutboundMessage) error {
 	e := &events.TelegramStopObserved{
-		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: m.Destination, IntegrationID: tx.Integration.ID, Via: via,
-		ObservedAt: tx.Now, DedupID: tx.DedupKey(m.ID),
+		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: m.Destination, IntegrationID: tx.Integration.ID,
+		Sequence: sequence(m.ID), Via: via, ObservedAt: occurred(tx, m.OccurredAt), DedupID: tx.DedupKey(m.ID),
 	}
 	if msg != nil {
 		e.OutboundMessageID, e.ContactID = msg.ID, lo.FromPtr(msg.ContactID)
@@ -100,16 +102,35 @@ func (telegram) stop(ctx context.Context, tx Tx, m preset.InboundMessage, via st
 func (t telegram) ReachabilityChange(ctx context.Context, tx Tx, c preset.ReachabilityChange) error {
 	switch {
 	case c.Reachable:
-		return t.resume(ctx, tx, c.Destination, c.ID)
+		return t.resume(ctx, tx, c.Destination, c.ID, c.OccurredAt)
 	case c.Reason == preset.Deactivated:
 		return bindings.Remove(ctx, tx.Scoped, tx.Pub, tx.Integration, c.Destination, tx.DedupKey(c.ID))
 	default:
 		return tx.Pub.Publish(ctx, &events.TelegramStopObserved{
 			WorkspaceID: tx.Scoped.WorkspaceID(),
-			Destination: c.Destination, IntegrationID: tx.Integration.ID, Via: events.UnsubscribedByBlock,
-			ObservedAt: tx.Now, DedupID: tx.DedupKey(c.ID),
+			Destination: c.Destination, IntegrationID: tx.Integration.ID, Sequence: sequence(c.ID), Via: events.UnsubscribedByBlock,
+			ObservedAt: occurred(tx, c.OccurredAt), DedupID: tx.DedupKey(c.ID),
 		})
 	}
+}
+
+// sequence is the bot's update_id an update's id is (the Preset's id): it orders two observations
+// of one bot (ADR 0154). The engine has checked the id is the update's.
+func sequence(id string) int64 {
+	n, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
+// occurred is when an observation occurred: the provider's time where it gives one, else when it
+// was received.
+func occurred(tx Tx, provider time.Time) time.Time {
+	if provider.IsZero() {
+		return tx.Now
+	}
+	return provider
 }
 
 // command is the lower-cased name of the command text starts with, without the argument or a bot's
@@ -123,9 +144,9 @@ func command(text string) string {
 	return name
 }
 
-func (telegram) resume(ctx context.Context, tx Tx, destination, id string) error {
+func (telegram) resume(ctx context.Context, tx Tx, destination, id string, at time.Time) error {
 	return tx.Pub.Publish(ctx, &events.TelegramResumeObserved{
 		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: destination, IntegrationID: tx.Integration.ID,
-		DedupID: tx.DedupKey(id), ObservedAt: tx.Now,
+		Sequence: sequence(id), DedupID: tx.DedupKey(id), ObservedAt: occurred(tx, at),
 	})
 }

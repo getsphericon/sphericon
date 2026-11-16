@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -28,6 +29,8 @@ type TelegramStop struct {
 	Destination string
 	// IntegrationID is the bot the stop came through.
 	IntegrationID int64
+	// Sequence is the bot's update_id of the update the stop came in, 0 when it came in none.
+	Sequence int64
 	// Via is how the person stopped: one of events.UnsubscribedBy*.
 	Via string
 	// Message attribution is the snapshot of the message the observation refers to.
@@ -35,7 +38,7 @@ type TelegramStop struct {
 	ContactID         int64
 	BroadcastID       int64
 	AutomationID      int64
-	// Now is the clock of the fact.
+	// Now is when the stop occurred.
 	Now time.Time
 	// DedupKey is the key of the fact the stop came from: the events derive theirs from it.
 	DedupKey string
@@ -45,7 +48,9 @@ type TelegramStop struct {
 // `telegram`, the Destination) and telegram.unsubscribed for every Contact the Destination is
 // Bound to, on any bot or through a Visitor. A Destination nobody is Bound to still gets the
 // opt-out, and nothing else. It is idempotent: a user already opted out changes nothing and
-// records no second event. Run it inside the transaction s and pub are bound to.
+// records no second event. A stop older than the user's opt-out state (a return of theirs
+// occurred later) changes nothing and is recorded as contact.consent_superseded (ADR 0154). Run it
+// inside the transaction s and pub are bound to.
 func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st TelegramStop) error {
 	contactIDs, err := contactsOf(ctx, s, st.Destination)
 	if err != nil {
@@ -58,13 +63,23 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 		Channel: channels.Telegram, Destination: st.Destination, Source: eligibility.SourceEverything,
 		// The ways of stopping (events.UnsubscribedBy*) are the row's own values.
 		Via: unsubscribe.Via(st.Via),
+		At:  consentstamps.Occurrence{At: st.Now, IntegrationID: st.IntegrationID, Sequence: st.Sequence},
 	}
 	if len(contactIDs) > 0 {
 		o.ContactID = contactIDs[0]
 	}
-	added, err := unsubscribes.Add(ctx, s, o)
-	if err != nil || added == 0 {
+	change, err := unsubscribes.Add(ctx, s, o)
+	if err != nil {
 		return err
+	}
+	if change.Superseded {
+		return publishSuperseded(ctx, s, pub, contactIDs, &events.ConsentSuperseded{
+			Channel: string(channels.Telegram), Observation: events.ObservationStop, Via: st.Via,
+			IntegrationID: st.IntegrationID, DedupID: st.DedupKey, ObservedAt: st.Now,
+		})
+	}
+	if change.ID == 0 {
+		return nil
 	}
 	for _, id := range contactIDs {
 		c, err := s.Contact().Get(ctx, id)

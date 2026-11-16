@@ -189,6 +189,18 @@ func (f ConsentRecordFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ConsentRecordMutation", m)
 }
 
+// The ConsentStampFunc type is an adapter to allow the use of ordinary
+// function as ConsentStamp mutator.
+type ConsentStampFunc func(context.Context, *ent.ConsentStampMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ConsentStampFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ConsentStampMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ConsentStampMutation", m)
+}
+
 // The ContactFunc type is an adapter to allow the use of ordinary
 // function as Contact mutator.
 type ContactFunc func(context.Context, *ent.ContactMutation) (ent.Value, error)

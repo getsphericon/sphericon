@@ -35,6 +35,7 @@ var Kinds = map[string]Kind{
 	"CapturedMessage":      {Table: "captured_messages", Kind: schema.Kind{WorkspaceOwned: true}},
 	"Confirmation":         {Table: "confirmations", Kind: schema.Kind{WorkspaceOwned: true}},
 	"ConsentRecord":        {Table: "consent_records", Kind: schema.Kind{}},
+	"ConsentStamp":         {Table: "consent_stamps", Kind: schema.Kind{WorkspaceOwned: true}},
 	"Contact":              {Table: "contacts", Kind: schema.Kind{WorkspaceOwned: true, Revised: true}},
 	"ContactTag":           {Table: "contact_tags", Kind: schema.Kind{WorkspaceOwned: true}},
 	"CustomField":          {Table: "custom_fields", Kind: schema.Kind{WorkspaceOwned: true, Revised: true}},

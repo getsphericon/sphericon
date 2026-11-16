@@ -234,6 +234,7 @@ func (u *UseCase) steps() []step {
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
 			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 		},
+		eraseConsentStamps,
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {

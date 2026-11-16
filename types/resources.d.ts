@@ -1085,6 +1085,7 @@ export default interface Resources {
       "automationEnrolled": "Entered an automation",
       "automationExited": "Left an automation",
       "automationGoalReached": "Reached the goal of an automation",
+      "contactConsentSuperseded": "Consent change that arrived late and changed nothing",
       "contactCreated": "Became a contact",
       "contactErased": "Was erased",
       "contactFieldChanged": "Had a custom field changed",

@@ -158,6 +158,10 @@ type InboundMessage struct {
 	// CallbackID is the provider's id of the button press, which the provider wants answered
 	// (Telegram's callback query id, for answerCallbackQuery): "" for a written message.
 	CallbackID string `json:"callback_id,omitempty"`
+	// OccurredAt is when the provider says the person sent the message, zero when it says
+	// nothing (a button press on Telegram, a text through Twilio): a consent observation is
+	// ordered by it, else by when it was received (ADR 0154).
+	OccurredAt time.Time `json:"occurred_at,omitzero"`
 }
 
 // Unreachability is why a Destination can no longer be reached.
@@ -178,6 +182,8 @@ type ReachabilityChange struct {
 	Destination string         `json:"destination"`
 	Reachable   bool           `json:"reachable"`
 	Reason      Unreachability `json:"reason,omitempty"`
+	// OccurredAt is as an Inbound message's.
+	OccurredAt time.Time `json:"occurred_at,omitzero"`
 }
 
 // ActionKind is something the caller performs for the engine.
