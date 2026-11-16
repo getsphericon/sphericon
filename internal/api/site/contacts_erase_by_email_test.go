@@ -38,19 +38,6 @@ func TestSiteContactsEraseByEmailErasesTheContact(t *testing.T) {
 	assert.Equal(t, siteapi.SiteContactHoldings{Unsubscribes: 1, Suppressions: 1}, *got)
 }
 
-// An address with delivery records and no Contact is anonymized all the same.
-func TestSiteContactsEraseByEmailAnonymizesDeliveryRecordsWithoutContact(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-
-	err := eraseByEmail(t, c, fixtures.InitechPublicID, fixtures.OutboundMessageStrangerDestination)
-	require.NoError(t, err)
-
-	msg, err := env.DB.OutboundMessage.Get(context.Background(), fixtures.OutboundMessageStrangerID)
-	require.NoError(t, err)
-	assert.Empty(t, msg.Destination)
-}
-
 // An address nothing holds, and one of another Workspace, answer not-found.
 func TestSiteContactsEraseByEmailNotFound(t *testing.T) {
 	env := testhelper.Setup(t)

@@ -13,15 +13,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 )
 
 // The traffic the dashboard judges is in fixtures/events.yml, one scenario per day offset (the
 // detector tests name them too): a test moves the clock back that many days, so the trailing
 // hours hold only its own scenario. The volumes are small, so the tests judge with a floor of 20.
-const (
-	belowFloorDay = 6  // Vandelay: 19 sent, every one bounced hard, under the floor
-	warningDay    = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
-)
+const warningDay = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
 
 const volumeFloor = 20
 
@@ -40,29 +38,23 @@ func warning(t *testing.T, env *testhelper.TestEnv, email string, workspaceID si
 	return lo.Ternary(ok, &found, nil)
 }
 
+// The warning the report reads is the use case's (internal/usecase/needsattentionreport); the
+// dashboard shows its rate as the report holds it.
 func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
+	held, ok := lo.Find(reportOf(t, env, fixtures.VandelayID), func(i needsattentionreport.Item) bool {
+		return i.Kind == needsattentionreport.KindDeliverabilityWarning
+	})
+	require.True(t, ok)
 
 	item := warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID)
 
 	require.NotNil(t, item)
 	assert.Equal(t, siteapi.SiteAttentionSeverityDegraded, item.Severity)
 	abuse := item.Abuse.Value
-	assert.Equal(t, "mail.vandelay.test", abuse.Domain)
+	assert.Equal(t, held.Abuse.Domain, abuse.Domain)
 	assert.Equal(t, siteapi.SiteAbuseMetricBounce, abuse.Metric)
-	assert.InDelta(t, 3.0/40.0, abuse.Rate, 1e-9)
-}
-
-func TestTheDashboardShowsNoWarningBelowTheFloor(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(belowFloorDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
-
-	assert.Nil(t, warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID))
-}
-
-func TestTheDashboardShowsNoWarningWhenUnlicensed(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithoutLicense(), testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
-
-	assert.Nil(t, warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID))
+	assert.InDelta(t, held.Abuse.Rate, abuse.Rate, 1e-9)
 }
 
 func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {

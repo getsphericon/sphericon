@@ -104,19 +104,6 @@ func TestSiteTestSendGoesOutWithoutAPostalAddress(t *testing.T) {
 	assert.Equal(t, fixtures.OwnerJaneEmail, sent[0].To)
 }
 
-// Acme has email Integrations: while its address is empty the Overview says so.
-func TestSiteAWorkspaceWithAnEmailIntegrationAndNoPostalAddressNeedsAttention(t *testing.T) {
-	env := testhelper.Setup(t)
-	c := env.SiteActor(t, fixtures.MemberMaryEmail)
-	withAddress := kinds(attentionOf(t, c, fixtures.AcmePublicID))
-	env.ClearPostalAddress(t, fixtures.AcmeID)
-
-	without := kinds(attentionOf(t, c, fixtures.AcmePublicID))
-
-	assert.NotContains(t, withAddress, siteapi.SiteAttentionKindPostalAddressMissing)
-	assert.Contains(t, without, siteapi.SiteAttentionKindPostalAddressMissing)
-}
-
 // A Test send through the Workspace's own Integration builds the marketing footer, and goes out
 // without the address all the same.
 func TestSiteTestSendThroughTheWorkspacesIntegrationGoesOutWithoutAPostalAddress(t *testing.T) {

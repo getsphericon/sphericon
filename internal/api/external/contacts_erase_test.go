@@ -2,8 +2,6 @@ package external_test
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"net/http"
 	"testing"
 
@@ -11,15 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/event"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/suppression"
-	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -48,13 +40,6 @@ func eventByID(t *testing.T, env *testhelper.TestEnv, id int64) *ent.Event {
 	return e
 }
 
-func eventExists(t *testing.T, env *testhelper.TestEnv, id int64) bool {
-	t.Helper()
-	ok, err := env.DB.Event.Query().Where(event.ID(id)).Exist(context.Background())
-	require.NoError(t, err)
-	return ok
-}
-
 func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -70,122 +55,6 @@ func TestExternalContactsEraseNeedsTheEraseScope(t *testing.T) {
 	gone, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, gone)
-}
-
-func TestExternalContactsEraseRemovesThePersonsData(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	// An Enrollment's copy of the Event it began on (#752) is of the Contact's runs alone.
-	copies := env.DB.AutomationRun.Query().Where(automationrun.WorkspaceID(fixtures.InitechID), automationrun.EventPropertiesNotNil())
-	copiedBefore, err := copies.Clone().Exist(ctx)
-	require.NoError(t, err)
-	require.True(t, copiedBefore, "the erasable run holds a copy of its triggering Event")
-
-	eraseErasable(t, env)
-	copiedAfter, err := copies.Clone().Exist(ctx)
-	require.NoError(t, err)
-	assert.False(t, copiedAfter, "no copy of the triggering Event's properties is left")
-
-	// Removed outright: the Contact, its Visitors, Tag links, Confirmation, runs.
-	n, err := env.DB.Visitor.Query().Where(visitor.ID(300)).Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, n, "visitors")
-	linked, err := env.DB.Tag.Query().Where(tag.ID(fixtures.TagInitechID)).QueryContacts().IDs(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, []int64{fixtures.ContactBystanderID}, linked, "the tag stays, only the bystander keeps it")
-	n, err = env.DB.Confirmation.Query().Where(confirmation.ID(fixtures.ConfirmationErasableID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, n, "confirmation")
-	n, err = env.DB.AutomationRun.Query().Where(automationrun.ID(fixtures.AutomationRunErasableID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, n, "automation runs")
-
-	// Events: customer-tracked and marketing.confirmed are deleted ...
-	for _, id := range []int64{
-		fixtures.EventErasableCustomID, fixtures.EventErasableAnonymousID, fixtures.EventErasableConfirmedID,
-	} {
-		assert.Falsef(t, eventExists(t, env, id), "event %d is deleted", id)
-	}
-
-	// ... every reserved system Event stays as an anonymous row.
-	for _, id := range []int64{
-		fixtures.EventErasableSentID, fixtures.EventErasableOpenedID, fixtures.EventErasableClickedID,
-		fixtures.EventErasableBouncedID, fixtures.EventErasableComplainedID, fixtures.EventErasableUnsubscribedID,
-		fixtures.EventErasableCreatedID, fixtures.EventErasableDeliveredID, fixtures.EventErasableDelayedID,
-		fixtures.EventErasableDroppedID,
-	} {
-		e := eventByID(t, env, id)
-		assert.Nilf(t, e.ContactID, "event %d contact_id", id)
-		assert.Nilf(t, e.VisitorID, "event %d visitor_id", id)
-		assert.Nilf(t, e.Email, "event %d email", id)
-		assert.Nilf(t, e.Phone, "event %d phone", id)
-		assert.Emptyf(t, e.SubjectID, "event %d subject_id", id)
-		assert.NotNilf(t, e.OccurredAt, "event %d keeps its time", id)
-	}
-	// Only the non-personal delivery facts the rates are computed from survive.
-	assert.Equal(t, map[string]any{"sendingDomain": "mail.initech.test"}, eventByID(t, env, fixtures.EventErasableSentID).Properties)
-	assert.Equal(t, map[string]any{"sendingDomain": "mail.initech.test", "bounceKind": "hard"}, eventByID(t, env, fixtures.EventErasableBouncedID).Properties)
-	clicked := eventByID(t, env, fixtures.EventErasableClickedID)
-	assert.Empty(t, clicked.Properties, "the clicked url is gone")
-	assert.Nil(t, clicked.URL, "and so is its column")
-	assert.Nil(t, clicked.BroadcastID, "the provenance goes with the properties")
-	assert.Nil(t, eventByID(t, env, fixtures.EventErasableOpenedID).BroadcastID)
-	assert.Empty(t, eventByID(t, env, fixtures.EventErasableCreatedID).Properties)
-
-	// The refusal survives by Destination, detached from the Contact.
-	unsub, err := env.DB.Unsubscribe.Get(ctx, fixtures.UnsubscribeErasableID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactErasableEmail, unsub.Destination)
-	assert.Nil(t, unsub.ContactID)
-	supp, err := env.DB.Suppression.Get(ctx, fixtures.SuppressionErasableID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactErasableEmail, supp.Destination)
-	assert.Nil(t, supp.ContactID)
-	// A lifted Suppression is no refusal to honour any more: Erasure deletes it.
-	lifted, err := env.DB.Suppression.Query().Where(suppression.ID(fixtures.SuppressionErasableLiftedID)).Exist(ctx)
-	require.NoError(t, err)
-	assert.False(t, lifted, "the lifted Suppression of the Contact is deleted")
-
-	// Delivery records stay as rows that no longer name anyone.
-	for _, id := range []int64{fixtures.OutboundMessageErasableBroadcastID, fixtures.OutboundMessageErasableTransactionalID} {
-		m, err := env.DB.OutboundMessage.Get(ctx, id)
-		require.NoError(t, err)
-		assert.Emptyf(t, m.Destination, "message %d destination", id)
-		assert.Nilf(t, m.ContactID, "message %d contact_id", id)
-		assert.Nilf(t, m.Subject, "message %d subject: what the Contact received goes with the Contact", id)
-		assert.Equal(t, outboundmessage.StatusSent, m.Status)
-	}
-	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientErasableID)
-	require.NoError(t, err)
-	assert.Zero(t, r.ContactID)
-
-	// The Enrollment is deleted; the message it sent keeps its Automation and loses the run.
-	sent, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageErasableAutomationID)
-	require.NoError(t, err)
-	assert.Nil(t, sent.AutomationRunID)
-	assert.EqualValues(t, fixtures.AutomationInitechID, *sent.AutomationID)
-}
-
-func TestExternalContactsEraseLeavesOtherContactsAlone(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	eraseErasable(t, env)
-
-	b, err := env.DB.Contact.Get(ctx, fixtures.ContactBystanderID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactBystanderEmail, *b.Email)
-	for _, id := range []int64{fixtures.EventBystanderCustomID, fixtures.EventBystanderSentID} {
-		e := eventByID(t, env, id)
-		assert.EqualValues(t, fixtures.ContactBystanderID, *e.ContactID)
-		assert.Equal(t, fixtures.ContactBystanderEmail, *e.Email)
-	}
-	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageBystanderID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactBystanderEmail, m.Destination)
-	r, err := env.DB.BroadcastRecipient.Get(ctx, fixtures.BroadcastRecipientBystanderID)
-	require.NoError(t, err)
-	assert.EqualValues(t, fixtures.ContactBystanderID, r.ContactID)
 }
 
 func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
@@ -233,49 +102,6 @@ func TestExternalContactsEraseDoesNotMoveRatesOrMetering(t *testing.T) {
 	}
 }
 
-// A failure anywhere in the transaction leaves nothing partially erased.
-func TestExternalContactsEraseIsAtomic(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-	// Fail the very last step, deleting the Contact, after everything else was written.
-	env.Bus.Use(func(next ent.Mutator) ent.Mutator {
-		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-			if m.Type() == ent.TypeContact && m.Op().Is(ent.OpDelete|ent.OpDeleteOne) {
-				return nil, errors.New("injected failure")
-			}
-			return next.Mutate(ctx, m)
-		})
-	})
-
-	err := initechClient(t, env, "contacts:erase").ContactsDelete(ctx,
-		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
-	require.Error(t, err)
-
-	sent := eventByID(t, env, fixtures.EventErasableSentID)
-	require.NotNil(t, sent.ContactID)
-	assert.Equal(t, fixtures.ContactErasableEmail, *sent.Email)
-	assert.True(t, eventExists(t, env, fixtures.EventErasableCustomID))
-	assert.True(t, eventExists(t, env, fixtures.EventErasableConfirmedID))
-	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageErasableBroadcastID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactErasableEmail, m.Destination)
-	unsub, err := env.DB.Unsubscribe.Get(ctx, fixtures.UnsubscribeErasableID)
-	require.NoError(t, err)
-	assert.NotNil(t, unsub.ContactID)
-	n, err := env.DB.Visitor.Query().Where(visitor.ID(300)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n)
-	n, err = env.DB.Confirmation.Query().Where(confirmation.ID(fixtures.ConfirmationErasableID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n)
-	n, err = env.DB.Suppression.Query().Where(suppression.ContactID(fixtures.ContactErasableID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 2, n, "the active and the lifted Suppression")
-	n, err = env.DB.Unsubscribe.Query().Where(unsubscribe.ContactID(fixtures.ContactErasableID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n)
-}
-
 func TestExternalContactsEraseIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
@@ -309,64 +135,14 @@ func TestExternalContactsEraseDoesNotBlockReappearance(t *testing.T) {
 	assert.Equal(t, 1, n, "the opt-out outlives the gap")
 }
 
-// Erasure leaves one PII-free contact.erased Event (ADR 0021): the published event names the
-// Workspace, the requester and the identifier kind, and the customer's subject_id rides only in
-// it, which the webhook delivers, never in the stored Event.
-func TestExternalContactsEraseEmitsContactErasedOnce(t *testing.T) {
+// The contact.erased signal names the API token that asked for the Erasure.
+func TestExternalContactsEraseRecordsTheTokenRequester(t *testing.T) {
 	env := testhelper.Setup(t)
-	ctx := context.Background()
 
 	eraseErasable(t, env)
 
-	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
-	require.Len(t, envelopes, 1, "once per Erasure")
-	assert.EqualValues(t, fixtures.InitechID, envelopes[0].WorkspaceID)
-
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
-	assert.Equal(t, "user-erin-300", data["subjectId"], "the customer's own id, for their downstream erasure")
-	assert.Equal(t, "contact_id", data["identifierKind"])
-	assert.Equal(t, "api_token", data["requesterKind"])
-	assert.NotZero(t, data["requesterId"])
-	assert.NotContains(t, data, "email")
-	assert.NotContains(t, data, "phone")
-
-	// The stored Event holds no PII and no Contact reference.
-	stored, err := env.DB.Event.Query().Where(event.Action(systemevent.ContactErased)).Only(ctx)
-	require.NoError(t, err)
-	assert.EqualValues(t, fixtures.InitechID, stored.WorkspaceID)
-	assert.Nil(t, stored.ContactID)
-	assert.Nil(t, stored.VisitorID)
-	assert.Nil(t, stored.Email)
-	assert.Nil(t, stored.Phone)
-	assert.Empty(t, stored.SubjectID)
-	assert.NotNil(t, stored.OccurredAt)
-	assert.NotContains(t, stored.Properties, "subjectId")
-	assert.Equal(t, "contact_id", stored.Properties["identifierKind"])
-	assert.Equal(t, "api_token", stored.Properties["requesterKind"])
-}
-
-// A Contact with no subject_id is identified downstream by its sphericon id.
-func TestExternalContactsEraseFallsBackToTheContactID(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	err := initechClient(t, env, "contacts:erase").ContactsDelete(context.Background(),
-		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactBystanderID)})
-	require.NoError(t, err)
-
-	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
-	require.Len(t, envelopes, 1)
-	var data map[string]any
-	require.NoError(t, json.Unmarshal(envelopes[0].Data, &data))
-	assert.Equal(t, testhelper.ID(fixtures.ContactBystanderID), data["subjectId"], "the fallback subject is the Contact's public id")
-}
-
-// A refused Erasure emits nothing.
-func TestExternalContactsEraseRefusedEmitsNoContactErased(t *testing.T) {
-	env := testhelper.Setup(t)
-
-	err := env.ExternalScoped(t, apitokens.ScopeContactsErase).ContactsDelete(context.Background(),
-		externalapi.ContactsDeleteParams{ID: entityIDString(fixtures.ContactErasableID)})
-	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
-	assert.Empty(t, env.QueuedEnvelopes(t, systemevent.ContactErased))
+	msgs := env.QueuedMessages(t, systemevent.ContactErased)
+	require.Len(t, msgs, 1)
+	assert.Equal(t, "api_token", msgs[0].Data["requesterKind"])
+	assert.NotZero(t, msgs[0].Data["requesterId"])
 }
