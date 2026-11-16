@@ -203,6 +203,14 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 // cancels them. Every job is idempotent or fenced, so a cancelled one is simply retried.
 const SoftStopTimeout = 10 * time.Second
 
+// StopTimeout bounds a whole stop of the client: SoftStopTimeout for the running jobs, then a
+// margin for river to record each cancelled one as interrupted (available again, its attempt
+// given back) and to stop its services. The budgets are ordered SoftStopTimeout < StopTimeout <
+// app.StopTimeout: a caller that waits for the stop and then closes the pool or exits must wait
+// longer than StopTimeout, or those writes are lost and the job stays running until the rescuer
+// spends its attempt.
+const StopTimeout = SoftStopTimeout + 5*time.Second
+
 // listenerFallbackPoll is how often a client that LISTENs still polls for jobs, in case it missed
 // a notification. A poll-only client (no listener) keeps river's default of a second.
 const listenerFallbackPoll = 5 * time.Second

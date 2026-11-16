@@ -1,9 +1,6 @@
 package app_test
 
 import (
-	"context"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,8 +12,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/app"
-	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 )
 
 const customPreset = `version: 1
@@ -37,28 +32,10 @@ func writePresetDir(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// inProcess sends a client's requests straight to a handler, without a socket.
-type inProcess struct{ handler http.Handler }
-
-func (c inProcess) Do(r *http.Request) (*http.Response, error) {
-	rec := httptest.NewRecorder()
-	c.handler.ServeHTTP(rec, r)
-	return rec.Result(), nil
-}
-
-// bearer is the fixture token that carries every scope.
-type bearer struct{}
-
-func (bearer) BearerAuth(context.Context, externalapi.OperationName) (externalapi.BearerAuth, error) {
-	return externalapi.BearerAuth{Token: credentials.TokenValue(fixtures.ContractTokenPrefix, fixtures.ContractTokenSecret)}, nil
-}
-
 // presetNames lists the Presets the app's /api offers.
 func presetNames(t *testing.T, a *app.App) []string {
 	t.Helper()
-	client, err := externalapi.NewClient("http://local/api", bearer{}, externalapi.WithClient(inProcess{a.Server.Handler}))
-	require.NoError(t, err)
-	res, err := client.PresetsList(t.Context())
+	res, err := externalClient(t, a).PresetsList(t.Context())
 	require.NoError(t, err)
 	page := res
 	return lo.Map(page.Items, func(p externalapi.PresetResource, _ int) string { return p.Name })

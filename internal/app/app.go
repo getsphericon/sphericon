@@ -236,15 +236,12 @@ func (a *App) Start(ctx context.Context) error {
 	runCtx, cancel := context.WithCancel(ctx)
 	a.cancel = cancel
 	if err := a.start(runCtx); err != nil {
-		unwind, stop := context.WithTimeout(context.WithoutCancel(ctx), unwindTimeout)
+		unwind, stop := context.WithTimeout(context.WithoutCancel(ctx), StopTimeout)
 		defer stop()
 		return errors.Join(err, a.Close(unwind))
 	}
 	return nil
 }
-
-// unwindTimeout bounds the teardown of a Start that failed partway.
-const unwindTimeout = 15 * time.Second
 
 func (a *App) start(ctx context.Context) error {
 	// The first start creates the Instance state row and its random Instance id (ADR 0032).

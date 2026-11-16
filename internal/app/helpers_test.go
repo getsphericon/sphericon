@@ -3,13 +3,17 @@ package app_test
 import (
 	"context"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
+	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/app"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
+	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -63,7 +67,32 @@ func lifecycleApp(t *testing.T) (a *app.App, base string) {
 // closeCtx bounds one Close.
 func closeCtx(t *testing.T) context.Context {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), app.StopTimeout)
 	t.Cleanup(cancel)
 	return ctx
+}
+
+// inProcess sends a client's requests straight to a handler, without a socket.
+type inProcess struct{ handler http.Handler }
+
+func (c inProcess) Do(r *http.Request) (*http.Response, error) {
+	rec := httptest.NewRecorder()
+	c.handler.ServeHTTP(rec, r)
+	return rec.Result(), nil
+}
+
+// bearer is the fixture token that carries every scope.
+type bearer struct{}
+
+func (bearer) BearerAuth(context.Context, externalapi.OperationName) (externalapi.BearerAuth, error) {
+	return externalapi.BearerAuth{Token: credentials.TokenValue(fixtures.ContractTokenPrefix, fixtures.ContractTokenSecret)}, nil
+}
+
+// externalClient is the app's /api, called in process with the fixture token that carries every
+// scope.
+func externalClient(t *testing.T, a *app.App) *externalapi.Client {
+	t.Helper()
+	client, err := externalapi.NewClient("http://local/api", bearer{}, externalapi.WithClient(inProcess{a.Server.Handler}))
+	require.NoError(t, err)
+	return client
 }

@@ -250,9 +250,9 @@ type jobsClient struct {
 }
 
 // Shutdown stops the client: running jobs get jobs.SoftStopTimeout to finish and are cancelled
-// after it; the context bounds the wait for the cancelled ones to return.
+// after it; jobs.StopTimeout bounds the wait for the cancelled ones to be recorded.
 func (j *jobsClient) Shutdown() error {
-	ctx, cancel := context.WithTimeout(context.Background(), jobs.SoftStopTimeout+5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), jobs.StopTimeout)
 	defer cancel()
 	return j.Stop(ctx)
 }
