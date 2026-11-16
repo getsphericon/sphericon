@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -32,8 +33,8 @@ var (
 // module's Prove checks it once its throttle lets it.
 type proveByHash struct{}
 
-func (proveByHash) ProvePassword(_ context.Context, _, passwordHash, password string) error {
-	if credentials.VerifyPassword(passwordHash, password) {
+func (proveByHash) ProvePassword(_ context.Context, in login.ProvePasswordInput) error {
+	if credentials.VerifyPassword(in.PasswordHash, in.Password) {
 		return nil
 	}
 	return errWrongPassword
@@ -42,7 +43,7 @@ func (proveByHash) ProvePassword(_ context.Context, _, passwordHash, password st
 // proveThrottled is the proof while the throttle's delay runs: refused whatever the password.
 type proveThrottled struct{}
 
-func (proveThrottled) ProvePassword(context.Context, string, string, string) error {
+func (proveThrottled) ProvePassword(context.Context, login.ProvePasswordInput) error {
 	return errThrottled
 }
 

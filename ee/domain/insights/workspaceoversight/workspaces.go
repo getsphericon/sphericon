@@ -57,7 +57,7 @@ func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, in Suspe
 		return nil, err
 	}
 	id := w.ID
-	changed, err := m.suspend.Suspend(ctx, id, suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), in.Reason)
+	changed, err := m.suspend.Suspend(ctx, id, suspension.SuspendInput{By: suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), Reason: in.Reason})
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 		return nil, err
 	}
 	id := w.ID
-	changed, err := suspension.UnsuspendWorkspace(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), m.now())
+	changed, err := m.suspend.Unsuspend(ctx, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)))
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +234,7 @@ func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, in SetAbus
 		return nil, err
 	}
 	id := w.ID
-	changed, err := suspension.SetAbuseExempt(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), in.Exempt)
+	changed, err := m.suspend.SetAbuseExempt(ctx, id, suspension.SetAbuseExemptInput{By: suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), Exempt: in.Exempt})
 	if err != nil {
 		return nil, err
 	}

@@ -73,7 +73,7 @@ func userEntry(t *testing.T, entries []serviceapi.ServiceUserResource, id int64)
 func markMailings(t *testing.T, h *harness) {
 	t.Helper()
 	h.env.PutSignupItemsInEffect(t.Context(), fixtures.OperatorNewsID)
-	_, err := testhelper.SignupItems(h.env.DB, h.env.Bus).Update(t.Context(), fixtures.StaffEnrolledID, fixtures.OperatorNewsID, signupitems.UpdateInput{MailingsConsent: new(true)})
+	_, err := testhelper.SignupItems(h.env.DB, h.env.Bus).Update(t.Context(), fixtures.StaffEnrolledID, signupitems.UpdateInput{ID: fixtures.OperatorNewsID, MailingsConsent: new(true)})
 	require.NoError(t, err)
 }
 
@@ -228,14 +228,14 @@ func TestMarkingOrUnmarkingTheMailingsItemPutsItsAnswerersBackInTheFeed(t *testi
 
 	// MemberMary declined OperatorNews at sign-up: once it stands for the mailings consent, that
 	// decline is her consent.
-	_, err := items.Update(t.Context(), fixtures.StaffEnrolledID, fixtures.OperatorNewsID, signupitems.UpdateInput{MailingsConsent: new(true)})
+	_, err := items.Update(t.Context(), fixtures.StaffEnrolledID, signupitems.UpdateInput{ID: fixtures.OperatorNewsID, MailingsConsent: new(true)})
 	require.NoError(t, err)
 	got, saved := usersFrom(t, c, saved)
 	require.Equal(t, []int64{fixtures.MemberMaryID}, userIDs(got))
 	assert.False(t, got[0].MailingsConsent)
 	assert.True(t, got[0].MailingsConsentChangedAt.IsSet(), "she has answered the item")
 
-	_, err = items.Update(t.Context(), fixtures.StaffEnrolledID, fixtures.OperatorNewsID, signupitems.UpdateInput{MailingsConsent: new(false)})
+	_, err = items.Update(t.Context(), fixtures.StaffEnrolledID, signupitems.UpdateInput{ID: fixtures.OperatorNewsID, MailingsConsent: new(false)})
 	require.NoError(t, err)
 	got, _ = usersFrom(t, c, saved)
 	require.Equal(t, []int64{fixtures.MemberMaryID}, userIDs(got))

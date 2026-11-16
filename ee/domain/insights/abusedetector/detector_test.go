@@ -312,7 +312,7 @@ func TestAnExemptWorkspaceIsNeitherWarnedNorFrozenButCanBeSuspendedByHand(t *tes
 	assert.NotContains(t, summary.Warned, fixtures.KramericaID)
 	assert.False(t, suspended(t, env, fixtures.KramericaID))
 	assert.NotContains(t, recipients(env), fixtures.KramericaOwnerNewmanEmail)
-	changed, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.CLI, "verified abuse", time.Now())
+	changed, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.KramericaID, suspension.SuspendInput{By: suspension.CLI, Reason: "verified abuse"})
 	require.NoError(t, err)
 	assert.True(t, changed, "an exemption is not a loophole for real abuse")
 }
@@ -328,7 +328,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 	_, err := d.Run(t.Context(), now)
 	require.NoError(t, err)
 	require.True(t, suspended(t, env, fixtures.KramericaID))
-	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.StaffMember("1"), time.Now())
+	_, err = suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.KramericaID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	immediately, err := d.Run(t.Context(), now.Add(time.Minute))
@@ -346,7 +346,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 
 func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.StaffMember("1"), time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.HooliID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	assert.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.HooliID).ClearedAt)
@@ -371,7 +371,7 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
 
-	_, err = suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.CLI, "manual", time.Now())
+	_, err = suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.VandelayID, suspension.SuspendInput{By: suspension.CLI, Reason: "manual"})
 	require.NoError(t, err)
 	_, err = d.Run(t.Context(), at(warnDay).Add(time.Minute))
 

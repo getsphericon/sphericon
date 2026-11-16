@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 )
 
@@ -255,7 +256,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func WithSignin(f *FakeSignin) Option {
 	return func(s *setup) {
 		s.cfg.Signin.Google = f.Credentials()
-		s.signinOpts = append(s.signinOpts, signinprovider.WithEndpoints("google", f.Endpoints()))
+		s.pointSignin("google", f.Endpoints())
 	}
 }
 
@@ -263,6 +264,14 @@ func WithSignin(f *FakeSignin) Option {
 func WithSigninGitHub(f *FakeSignin) Option {
 	return func(s *setup) {
 		s.cfg.Signin.GitHub = f.Credentials()
-		s.signinOpts = append(s.signinOpts, signinprovider.WithEndpoints("github", f.GitHubEndpoints()))
+		s.pointSignin("github", f.GitHubEndpoints())
 	}
+}
+
+// pointSignin points the Sign-in provider name at a fake's endpoints.
+func (s *setup) pointSignin(name string, e signinprovider.Endpoints) {
+	if s.signinEndpoints == nil {
+		s.signinEndpoints = app.SigninEndpoints{}
+	}
+	s.signinEndpoints[name] = e
 }

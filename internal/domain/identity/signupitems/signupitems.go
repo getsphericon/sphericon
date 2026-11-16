@@ -389,8 +389,9 @@ func (m *Module) Get(ctx context.Context, id int64) (Item, error) {
 	return item(row, current[row.ID]), nil
 }
 
-// UpdateInput is a change to a Sign-up item; a nil field is left as it is.
+// UpdateInput is a change to the Sign-up item ID; a nil field is left as it is.
 type UpdateInput struct {
+	ID int64
 	// Title is a new title: what the form shows at once, not a new version of the document.
 	Title           *string
 	MailingsConsent *bool
@@ -399,7 +400,8 @@ type UpdateInput struct {
 // Update changes a Sign-up item, recorded in the Instance audit log as the Staff member staffID's
 // unless it changes nothing. ErrNotFound for an unknown or a deleted id, ErrTitleBlank for a blank
 // title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the item cannot hold.
-func (m *Module) Update(ctx context.Context, staffID, id int64, u UpdateInput) (Item, error) {
+func (m *Module) Update(ctx context.Context, staffID int64, u UpdateInput) (Item, error) {
+	id := u.ID
 	row, err := m.inUse(ctx, id)
 	if err != nil {
 		return Item{}, err
@@ -622,11 +624,18 @@ func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item
 	return m.Get(ctx, id)
 }
 
-// Publish makes the item's draft a new version under label, published by the Staff member
+// PublishInput is the item whose draft is published and the label of the new version.
+type PublishInput struct {
+	ID    int64
+	Label string
+}
+
+// Publish makes the item's draft a new version under its label, published by the Staff member
 // staffID now: it takes effect at once and is never changed afterwards. ErrNotFound for an
 // unknown or a deleted id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the
 // item has. It is recorded in the Instance audit log too, beside the version's own publisher.
-func (m *Module) Publish(ctx context.Context, id int64, label string, staffID int64) (Item, error) {
+func (m *Module) Publish(ctx context.Context, staffID int64, in PublishInput) (Item, error) {
+	id, label := in.ID, in.Label
 	if err := validation.Length(fieldname.Label, label, bounds.LegalDocumentLabelMinLength, bounds.LegalDocumentLabelMaxLength); err != nil {
 		return Item{}, err
 	}

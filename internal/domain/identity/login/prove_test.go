@@ -16,7 +16,7 @@ import (
 // proveErr is the refusal of a proof that does not hold.
 func (r rig) proveErr(t *testing.T, address, hash, password string) error {
 	t.Helper()
-	err := r.module.ProvePassword(t.Context(), address, hash, password)
+	err := r.module.ProvePassword(t.Context(), login.ProvePasswordInput{Address: address, PasswordHash: hash, Password: password})
 	require.Error(t, err)
 	return err
 }
@@ -24,7 +24,7 @@ func (r rig) proveErr(t *testing.T, address, hash, password string) error {
 func TestProvingTheRightPasswordHolds(t *testing.T) {
 	r := newRig(t)
 	hash := hashOf(t, fixtures.OwnerJohnPassword)
-	require.NoError(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, fixtures.OwnerJohnPassword))
+	require.NoError(t, r.module.ProvePassword(t.Context(), login.ProvePasswordInput{Address: fixtures.OwnerJohnEmail, PasswordHash: hash, Password: fixtures.OwnerJohnPassword}))
 }
 
 func TestProofFailuresShareTheLoginBudget(t *testing.T) {
@@ -55,11 +55,11 @@ func hashOf(t *testing.T, password string) string {
 func TestProvingAPasswordAnswersARunningDelayAsTheLoginAccountsRateLimit(t *testing.T) {
 	r := newRig(t)
 	hash := hashOf(t, fixtures.OwnerJohnPassword)
-	require.NoError(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, fixtures.OwnerJohnPassword))
-	require.ErrorIs(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, "wrong"), login.ErrPasswordIncorrect)
-	require.ErrorIs(t, r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, "wrong"), login.ErrPasswordIncorrect)
+	require.NoError(t, r.module.ProvePassword(t.Context(), login.ProvePasswordInput{Address: fixtures.OwnerJohnEmail, PasswordHash: hash, Password: fixtures.OwnerJohnPassword}))
+	require.ErrorIs(t, r.module.ProvePassword(t.Context(), login.ProvePasswordInput{Address: fixtures.OwnerJohnEmail, PasswordHash: hash, Password: "wrong"}), login.ErrPasswordIncorrect)
+	require.ErrorIs(t, r.module.ProvePassword(t.Context(), login.ProvePasswordInput{Address: fixtures.OwnerJohnEmail, PasswordHash: hash, Password: "wrong"}), login.ErrPasswordIncorrect)
 
-	err := r.module.ProvePassword(t.Context(), fixtures.OwnerJohnEmail, hash, fixtures.OwnerJohnPassword)
+	err := r.module.ProvePassword(t.Context(), login.ProvePasswordInput{Address: fixtures.OwnerJohnEmail, PasswordHash: hash, Password: fixtures.OwnerJohnPassword})
 
 	wait, ok := errors.AsType[*ratelimit.WaitError](err)
 	require.True(t, ok, "a right password is refused while the delay runs, got %v", err)

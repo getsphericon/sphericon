@@ -21,7 +21,7 @@ func TestSuspendAndUnsuspendAWorkspaceByItsID(t *testing.T) {
 	suspender := suspension.NewSuspender(env.Bus, time.Now)
 	ctx := t.Context()
 
-	changed, err := suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.StaffMember("op-42"), "complaint rate")
+	changed, err := suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "complaint rate"})
 	require.NoError(t, err)
 	assert.True(t, changed)
 	ws := env.DB.Workspace.GetX(ctx, fixtures.KramericaID)
@@ -31,7 +31,7 @@ func TestSuspendAndUnsuspendAWorkspaceByItsID(t *testing.T) {
 	assert.Equal(t, "complaint rate", *ws.SuspensionReason)
 	require.Len(t, env.QueuedEnvelopes(t, events.NameWorkspaceSuspended), 1, "the owner is told")
 
-	changed, err = suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.CLI, "again")
+	changed, err = suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.SuspendInput{By: suspension.CLI, Reason: "again"})
 	require.NoError(t, err)
 	assert.False(t, changed, "already suspended: nothing changes")
 	assert.Len(t, env.QueuedEnvelopes(t, events.NameWorkspaceSuspended), 1, "and the owner is not told twice")
@@ -52,12 +52,12 @@ func TestSuspendAndUnsuspendByIDRejectBadInput(t *testing.T) {
 	suspender := suspension.NewSuspender(env.Bus, time.Now)
 	ctx := t.Context()
 
-	_, err := suspender.SuspendByPublicID(ctx, "NoSuchId", suspension.CLI, "why")
+	_, err := suspender.SuspendByPublicID(ctx, "NoSuchId", suspension.SuspendInput{By: suspension.CLI, Reason: "why"})
 	require.ErrorContains(t, err, `workspace "NoSuchId"`)
 	_, err = suspender.UnsuspendByPublicID(ctx, "NoSuchId", suspension.CLI)
 	require.ErrorContains(t, err, `workspace "NoSuchId"`)
 
-	changed, err := suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.Actor{}, "reason")
+	changed, err := suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.SuspendInput{By: suspension.Actor{}, Reason: "reason"})
 	require.ErrorContains(t, err, "an actor is required")
 	assert.False(t, changed)
 	assert.Nil(t, env.DB.Workspace.GetX(ctx, fixtures.KramericaID).SuspendedAt)

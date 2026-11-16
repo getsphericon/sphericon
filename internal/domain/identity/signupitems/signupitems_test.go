@@ -44,11 +44,11 @@ func TestAddRefusesATakenKey(t *testing.T) {
 func TestASecondMailingsConsentIsRefused(t *testing.T) {
 	env, m := setup(t)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.OperatorNewsID, fixtures.PartnerOffersID)
-	_, err := m.Update(t.Context(), fixtures.StaffEnrolledID, fixtures.OperatorNewsID, signupitems.UpdateInput{MailingsConsent: new(true)})
+	_, err := m.Update(t.Context(), fixtures.StaffEnrolledID, signupitems.UpdateInput{ID: fixtures.OperatorNewsID, MailingsConsent: new(true)})
 	require.NoError(t, err)
 
 	_, added := m.Add(t.Context(), fixtures.StaffEnrolledID, signupitems.Input{Key: "events", Title: "Events", Kind: signupitem.KindOptionalConsent, MailingsConsent: true})
-	_, marked := m.Update(t.Context(), fixtures.StaffEnrolledID, fixtures.PartnerOffersID, signupitems.UpdateInput{MailingsConsent: new(true)})
+	_, marked := m.Update(t.Context(), fixtures.StaffEnrolledID, signupitems.UpdateInput{ID: fixtures.PartnerOffersID, MailingsConsent: new(true)})
 
 	require.ErrorIs(t, added, signupitems.ErrMailingsTaken)
 	require.ErrorIs(t, marked, signupitems.ErrMailingsTaken)
@@ -64,7 +64,7 @@ func TestPublishRefusesALabelTheItemHas(t *testing.T) {
 	_, err := m.SaveDraft(t.Context(), fixtures.ServiceTermsID, "a new text")
 	require.NoError(t, err)
 
-	_, err = m.Publish(t.Context(), fixtures.ServiceTermsID, fixtures.ServiceTermsCurrentLabel, fixtures.StaffEnrolledID)
+	_, err = m.Publish(t.Context(), fixtures.StaffEnrolledID, signupitems.PublishInput{ID: fixtures.ServiceTermsID, Label: fixtures.ServiceTermsCurrentLabel})
 
 	require.ErrorIs(t, err, signupitems.ErrLabelTaken)
 	doc, err := m.Document(t.Context(), fixtures.ServiceTermsKey)
@@ -119,9 +119,9 @@ func TestEveryChangeOfTheItemsIsRecordedInTheInstanceAuditLog(t *testing.T) {
 
 	added, err := m.Add(ctx, staff, signupitems.Input{Key: "events", Title: "Events", Kind: signupitem.KindNotice})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, staff, added.ID, signupitems.UpdateInput{Title: new("Events")})
+	_, err = m.Update(ctx, staff, signupitems.UpdateInput{ID: added.ID, Title: new("Events")})
 	require.NoError(t, err, "the same title changes nothing")
-	_, err = m.Update(ctx, staff, added.ID, signupitems.UpdateInput{Title: new("Upcoming events")})
+	_, err = m.Update(ctx, staff, signupitems.UpdateInput{ID: added.ID, Title: new("Upcoming events")})
 	require.NoError(t, err)
 	_, err = m.Reorder(ctx, staff, []int64{added.ID, fixtures.OperatorNewsID})
 	require.NoError(t, err)
@@ -129,7 +129,7 @@ func TestEveryChangeOfTheItemsIsRecordedInTheInstanceAuditLog(t *testing.T) {
 	require.NoError(t, err, "the same order changes nothing")
 	_, err = m.SaveDraft(ctx, added.ID, "the text")
 	require.NoError(t, err)
-	_, err = m.Publish(ctx, added.ID, "v1", staff)
+	_, err = m.Publish(ctx, staff, signupitems.PublishInput{ID: added.ID, Label: "v1"})
 	require.NoError(t, err)
 	require.NoError(t, m.Delete(ctx, staff, added.ID))
 

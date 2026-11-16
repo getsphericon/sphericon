@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -30,11 +31,12 @@ type ProfileChange struct {
 
 // Prover proves a User's current password the way a login does (ADR 0025): the login module's one
 // prove path (login.Module.ProvePassword), its throttle first, the decoy hash, a failure counted on
-// the Login budget. It returns nil when password is the account's and its refusal otherwise (a
+// the Login budget. It returns nil when the password is the account's and its refusal otherwise (a
 // wrong password, or, while the throttle's delay runs, the delay even for a right password). The
-// login module sits above this one, so the composition root hands it in (WithProver).
+// login module is built over the Login throttle, which this module does not hold, so the
+// composition root hands it in (WithProver).
 type Prover interface {
-	ProvePassword(ctx context.Context, address, passwordHash, password string) error
+	ProvePassword(ctx context.Context, in login.ProvePasswordInput) error
 }
 
 // WithProver gives the module the proof of a User's current password, which every step that asks
@@ -45,7 +47,7 @@ func WithProver(p Prover) Option {
 
 // provePassword proves that password is u's current one (Prover).
 func (a *Module) provePassword(ctx context.Context, u *ent.User, password string) error {
-	return a.prover.ProvePassword(ctx, u.Email, u.PasswordHash, password)
+	return a.prover.ProvePassword(ctx, login.ProvePasswordInput{Address: u.Email, PasswordHash: u.PasswordHash, Password: password})
 }
 
 // ErrIdentityProofRequired is a step that asks for the password, of a User who has none and
