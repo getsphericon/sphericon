@@ -262,6 +262,13 @@ type Environment struct {
 	// Comma-separated CIDRs the edge connects from: the only peers whose
 	// `SPHERICON_TRACKING_HOST_HEADER` is believed. A proxy on another machine must be listed.
 	TrackingEdgeCIDRs []netip.Prefix `env:"SPHERICON_TRACKING_EDGE_CIDRS" envSeparator:"," envDefault:"127.0.0.0/8,::1/128"`
+	// Comma-separated CIDRs of the reverse proxies in front of the Instance (ADR 0175): a request's
+	// `X-Forwarded-For` is read only when it comes from one of them, and its rightmost address
+	// outside them is the client's, the one the rate limits key on and consent records keep. The
+	// default trusts loopback and the private networks, where a proxy on the same host, in a
+	// container network or in a cluster connects from; list a proxy on a public address. Empty trusts
+	// none: the connection's own address is the client's.
+	TrustedProxyCIDRs []netip.Prefix `env:"SPHERICON_TRUSTED_PROXY_CIDRS" envSeparator:"," envDefault:"127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"`
 
 	// The provider of the Instance's own mail (verification, password reset, invitations): `smtp`,
 	// through `SPHERICON_SMTP_HOST`, or `ses`, through the `SPHERICON_SES_*` credentials.
