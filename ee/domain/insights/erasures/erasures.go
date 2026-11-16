@@ -25,13 +25,29 @@ var _ = db.Declare(
 	db.Fault("erasures_workspace_id_erasure_key", "a row is inserted ON CONFLICT (workspace_id, erasure_key), the Event's envelope id"),
 )
 
+// Module is the Erasures stream's store: the consumer that adds an Erasure and the prune that
+// removes the old ones.
+type Module struct {
+	client *ent.Client
+	lic    *licensekey.License
+	cipher *secrets.Cipher
+	now    func() time.Time
+}
+
+// New builds the module over the raw client (an envelope carries only a Workspace id, ADR 0017),
+// the license whose `export` feature switches it on, the Instance's cipher, which seals the
+// hashes a row stores, and the Instance clock the prune measures the retention from.
+func New(client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, now func() time.Time) *Module {
+	return &Module{client: client, lic: lic, cipher: cipher, now: now}
+}
+
 // Record adds the Erasure a contact.erased event carries to the Erasures stream, once:
 // deduplicated by the envelope id, so a redelivered event writes one row. It is a raw-client entry
 // like the Audit log's (an envelope carries only a Workspace id, ADR 0017), run by the stream's
 // consumer of the domain events (ADR 0101). Unlicensed, it consumes and discards: an instance
 // without the `export` feature stores nothing (ADR 0045).
-func Record(ctx context.Context, client *ent.Client, lic *licensekey.License, cipher *secrets.Cipher, env events.Envelope) error {
-	if !lic.Has(licensekey.FeatureExport) {
+func (m *Module) Record(ctx context.Context, env events.Envelope) error {
+	if !m.lic.Has(licensekey.FeatureExport) {
 		return nil
 	}
 	ev, err := events.Decode(env)
@@ -42,7 +58,7 @@ func Record(ctx context.Context, client *ent.Client, lic *licensekey.License, ci
 	if !ok {
 		return nil
 	}
-	return record(ctx, client, cipher, env, erased)
+	return record(ctx, m.client, m.cipher, env, erased)
 }
 
 func record(ctx context.Context, client *ent.Client, cipher *secrets.Cipher, env events.Envelope, e *events.ContactErased) error {
@@ -118,16 +134,16 @@ func SecretSweeps(c *ent.Client) []secrets.Sweep {
 // Interval is how often the Edition prunes the stream; the window is in days, so hourly is ample.
 const Interval = time.Hour
 
-// Prune deletes the Erasures rows of every Workspace that are older than retention before now
-// and returns how many it removed. Rows live for the Event retention window: past it the Events
+// Prune deletes the Erasures rows of every Workspace that are older than retention before the
+// clock's now and returns how many it removed. Rows live for the Event retention window: past it the Events
 // they announce are gone from a fresh read anyway, and a consumer that was away longer re-seeds
 // from an empty cursor. A retention of zero or less keeps every row for good. Without the
 // `export` license it removes nothing.
-func Prune(ctx context.Context, client *ent.Client, lic *licensekey.License, retention time.Duration, now time.Time) (int, error) {
-	if retention <= 0 || !lic.Has(licensekey.FeatureExport) {
+func (m *Module) Prune(ctx context.Context, retention time.Duration) (int, error) {
+	if retention <= 0 || !m.lic.Has(licensekey.FeatureExport) {
 		return 0, nil
 	}
-	n, err := client.Erasure.Delete().Where(erasure.ErasedAtLT(now.Add(-retention))).Exec(ctx)
+	n, err := m.client.Erasure.Delete().Where(erasure.ErasedAtLT(m.now().Add(-retention))).Exec(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("prune erasures: %w", err)
 	}

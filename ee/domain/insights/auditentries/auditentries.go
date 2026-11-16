@@ -30,25 +30,6 @@ var _ = db.Declare(
 	db.Fault("audit_entries_workspace_id_entry_key", "an entry is inserted ON CONFLICT (workspace_id, entry_key), the Event's envelope id"),
 )
 
-// Record stores the Audit entry an event carries, once: deduplicated by the envelope id, so a
-// redelivered event writes one row. It is a raw-client entry (an envelope carries only a Workspace
-// id, ADR 0017), run by the Audit log's consumer of the domain events (ADR 0101). Unlicensed, it
-// consumes and discards.
-func Record(ctx context.Context, client *ent.Client, lic *licensekey.License, env events.Envelope) error {
-	if !lic.Has(licensekey.FeatureAudit) {
-		return nil
-	}
-	ev, err := events.Decode(env)
-	if err != nil {
-		return err
-	}
-	entry, ok := ev.(*events.AuditEntry)
-	if !ok {
-		return nil
-	}
-	return persist(ctx, client, env, entry)
-}
-
 // Forwarder wraps the webhook dispatcher so `audit.entry` reaches Webhook endpoints
 // only under a license that includes the audit feature (ADR 0022); without one nothing
 // is delivered, whatever an endpoint's free-form event types list. Customer events pass
@@ -109,32 +90,55 @@ func persist(ctx context.Context, client *ent.Client, env events.Envelope, e *ev
 	return nil
 }
 
+// Log is the Audit log: the consumer that stores an entry, the read side, the export, which
+// records itself through the bus, and the Retention's prune. Its zero value is unlicensed.
+type Log struct {
+	client *ent.Client
+	lic    *licensekey.License
+	bus    *events.Bus
+}
+
+// NewLog builds the log under a license over the raw client its consumer stores an entry with,
+// recording an export through bus.
+func NewLog(client *ent.Client, lic *licensekey.License, bus *events.Bus) *Log {
+	return &Log{client: client, lic: lic, bus: bus}
+}
+
+// Record stores the Audit entry an event carries, once: deduplicated by the envelope id, so a
+// redelivered event writes one row. It is a raw-client entry (an envelope carries only a Workspace
+// id, ADR 0017), run by the Audit log's consumer of the domain events (ADR 0101). Unlicensed, it
+// consumes and discards.
+func (l *Log) Record(ctx context.Context, env events.Envelope) error {
+	if !l.Licensed() {
+		return nil
+	}
+	ev, err := events.Decode(env)
+	if err != nil {
+		return err
+	}
+	entry, ok := ev.(*events.AuditEntry)
+	if !ok {
+		return nil
+	}
+	return persist(ctx, l.client, env, entry)
+}
+
 // PruneBefore deletes the scoped Workspace's Audit entries that occurred before cutoff and returns
 // how many it removed: the advanced-retention control's prune (ee/usecase/auditlogretention), the one remover of
 // entries besides the erasure of a deleted Workspace.
-func PruneBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
+func (l *Log) PruneBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
 	return s.AuditEntry().Delete().Where(auditentry.OccurredAtLT(cutoff)).Exec(ctx)
 }
 
 // ForgetClientsBefore clears the client's address and user agent of the scoped Workspace's Audit
 // entries that occurred before cutoff and returns how many it changed: the one change an entry
 // takes (ADR 0050), made by ee/usecase/auditlogretention.
-func ForgetClientsBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
+func (l *Log) ForgetClientsBefore(ctx context.Context, s *ent.Scoped, cutoff time.Time) (int, error) {
 	return s.AuditEntry().Update().
 		Where(auditentry.OccurredAtLT(cutoff), auditentry.Or(auditentry.IPNotNil(), auditentry.UserAgentNotNil())).
 		ClearIP().ClearUserAgent().
 		Save(ctx)
 }
-
-// Log is the read side of the Audit log, and the export, which records itself through the bus.
-// Its zero value is unlicensed.
-type Log struct {
-	lic *licensekey.License
-	bus *events.Bus
-}
-
-// NewLog builds the reader under a license, recording an export through bus.
-func NewLog(lic *licensekey.License, bus *events.Bus) *Log { return &Log{lic: lic, bus: bus} }
 
 // Licensed reports whether this instance may show an Audit log.
 func (l *Log) Licensed() bool { return l != nil && l.lic.Has(licensekey.FeatureAudit) }
@@ -142,20 +146,20 @@ func (l *Log) Licensed() bool { return l != nil && l.lic.Has(licensekey.FeatureA
 // RetentionLicensed reports whether this instance may set an Audit log retention window.
 func (l *Log) RetentionLicensed() bool { return l != nil && l.lic.Has(licensekey.FeatureRetention) }
 
-// Entries is a page of the scoped Workspace's entries matching the filter, newest first: up to
-// limit entries that precede the cursor (an entry id; 0 starts from the newest), and the cursor
+// Entries is a page of the scoped Workspace's entries matching in.Filter, newest first: up to
+// in.Limit entries that precede in.Cursor (an entry id; 0 starts from the newest), and the cursor
 // of the next page (0 on the last page). The caller has already checked Licensed and the
 // reader's role.
-func (l *Log) Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error) {
-	q := s.AuditEntry().Query().Where(predicates(f)...).Order(ent.Desc(auditentry.FieldID)).Limit(limit + 1)
-	if cursor > 0 {
-		q = q.Where(auditentry.IDLT(cursor))
+func (l *Log) Entries(ctx context.Context, s *ent.Scoped, in auditlog.EntriesInput) (pagination.IDPage[*ent.AuditEntry], error) {
+	q := s.AuditEntry().Query().Where(predicates(in.Filter)...).Order(ent.Desc(auditentry.FieldID)).Limit(in.Limit + 1)
+	if in.Cursor > 0 {
+		q = q.Where(auditentry.IDLT(in.Cursor))
 	}
 	rows, err := q.All(ctx)
 	if err != nil {
 		return pagination.IDPage[*ent.AuditEntry]{}, err
 	}
-	return pagination.ByID(rows, limit, func(e *ent.AuditEntry) int64 { return e.ID }), nil
+	return pagination.ByID(rows, in.Limit, func(e *ent.AuditEntry) int64 { return e.ID }), nil
 }
 
 // Facets returns the values that occur in the scoped Workspace's Audit log, sorted, for its

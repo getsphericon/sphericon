@@ -14,9 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	telemetryapi "github.com/getsphericon/sphericon/gen/telemetry"
+	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -85,9 +85,9 @@ func TestRenewingTheKeyRestoresTheAuditLogWithItsData(t *testing.T) {
 	// Renewal: the same database read under the renewed key, as after a restart.
 	renewed, err := licensekey.Parse(l.valid, l.pub, lapseNow)
 	require.NoError(t, err)
-	log := auditentries.NewLog(renewed, env.Bus)
+	log := auditentries.NewLog(env.DB, renewed, env.Bus)
 	require.True(t, log.Licensed())
-	page, err := log.Entries(t.Context(), acme, events.AuditFilter{}, 0, rows+1)
+	page, err := log.Entries(t.Context(), acme, auditlog.EntriesInput{Limit: rows + 1})
 	require.NoError(t, err)
 	assert.Len(t, page.Items, rows, "nothing was deleted or altered while lapsed")
 }

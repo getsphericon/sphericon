@@ -33,6 +33,15 @@ func moment(n, day, hour int) time.Time {
 	return month(n).AddDate(0, 0, day-1).Add(time.Duration(hour) * time.Hour)
 }
 
+// refresh is a Refresh under lic, on a clock stopped at now.
+func refresh(t *testing.T, env *testhelper.TestEnv, lic *licensekey.License, now time.Time) error {
+	t.Helper()
+	return usages.New(env.DB, lic, func() time.Time { return now }).Refresh(t.Context())
+}
+
+// usage is the module whose reads the tests check what a refresh stored with.
+func usage(env *testhelper.TestEnv) *usages.Module { return usages.New(env.DB, nil, time.Now) }
+
 // settle moves a pending fixture message of Meter to sent at `when`: the send arrives after the
 // moment a test first measured.
 func settle(t *testing.T, env *testhelper.TestEnv, key string, when time.Time) {
@@ -56,7 +65,7 @@ func figureOf(t *testing.T, env *testhelper.TestEnv, period time.Time, metric us
 
 func figureFor(t *testing.T, env *testhelper.TestEnv, workspaceID int64, period time.Time, metric usages.Metric) usages.Figure {
 	t.Helper()
-	page, err := usages.List(t.Context(), env.DB, period, pagination.Params{Page: 1, PageSize: 100})
+	page, err := usage(env).List(t.Context(), period, pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	for _, w := range page.Items {
 		if w.WorkspaceID != workspaceID {
@@ -84,7 +93,7 @@ func TestEmailsSentCountsOnePerRecipientOverAllSurfacesAndNeverASkippedOrFailedO
 	env := testhelper.Setup(t)
 	// Meter's month 17 holds three sends (a Broadcast, an Automation, a Transactional), one skipped
 	// and one failed; the first instant of the next month holds a fourth.
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), month(16).Add(time.Hour)))
+	require.NoError(t, refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), month(16).Add(time.Hour)))
 
 	f := figure(t, env, month(17))
 	assert.EqualValues(t, 3, f.Value)
@@ -95,7 +104,7 @@ func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 	env := testhelper.Setup(t)
 	now := moment(14, 10, 12)
 
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), now))
+	require.NoError(t, refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), now))
 
 	f := figure(t, env, month(14))
 	assert.EqualValues(t, 1, f.Value, "an in-flight send is not yet sent")
@@ -109,25 +118,25 @@ func TestLiveUsageReportsSendsStillInFlightApartFromEmailsSent(t *testing.T) {
 func TestLiveUsageIsRefreshedAndNeverRecountedOnRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := testhelper.License(t, licensekey.FeatureStaff)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, moment(12, 10, 12)))
+	require.NoError(t, refresh(t, env, lic, moment(12, 10, 12)))
 	settle(t, env, "late", moment(12, 10, 13))
 
 	assert.EqualValues(t, 0, figure(t, env, month(12)).Value, "a read does not recount")
 
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, moment(12, 10, 14)))
+	require.NoError(t, refresh(t, env, lic, moment(12, 10, 14)))
 	assert.EqualValues(t, 1, figure(t, env, month(12)).Value)
 }
 
 func TestAClosedSnapshotNeverChangesAndARerunIsTheSame(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := testhelper.License(t, licensekey.FeatureStaff)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(9).Add(time.Minute)))
+	require.NoError(t, refresh(t, env, lic, month(9).Add(time.Minute)))
 	closed := figure(t, env, month(10))
 
 	// A message dated inside the closed month is accepted after the close, and the job runs again.
 	settle(t, env, "closed-straggler", moment(10, 20, 10))
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(9).Add(time.Hour)))
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(9).Add(2*time.Hour)))
+	require.NoError(t, refresh(t, env, lic, month(9).Add(time.Hour)))
+	require.NoError(t, refresh(t, env, lic, month(9).Add(2*time.Hour)))
 
 	assert.Equal(t, closed.Value, figure(t, env, month(10)).Value)
 	assert.EqualValues(t, 1, figure(t, env, month(10)).Value)
@@ -137,9 +146,9 @@ func TestAClosedSnapshotNeverChangesAndARerunIsTheSame(t *testing.T) {
 func TestALateRunClosesEveryElapsedPeriodWithTheSameFiguresAsAnOnTimeRun(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := testhelper.License(t, licensekey.FeatureStaff)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(7).Add(24*time.Hour)), "an early run leaves the first month open")
+	require.NoError(t, refresh(t, env, lic, month(7).Add(24*time.Hour)), "an early run leaves the first month open")
 
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, moment(4, 9, 0)))
+	require.NoError(t, refresh(t, env, lic, moment(4, 9, 0)))
 
 	for period, want := range map[time.Time]int64{month(7): 1, month(6): 2, month(5): 1} {
 		f := figure(t, env, period)
@@ -151,11 +160,11 @@ func TestALateRunClosesEveryElapsedPeriodWithTheSameFiguresAsAnOnTimeRun(t *test
 func TestAMessageInFlightAtTheCloseIsCountedInThePeriodItWasSentIn(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := testhelper.License(t, licensekey.FeatureStaff)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(2).Add(time.Minute)))
+	require.NoError(t, refresh(t, env, lic, month(2).Add(time.Minute)))
 	assert.EqualValues(t, 0, figure(t, env, month(3)).Value, "a send not yet accepted is not in a snapshot")
 
 	settle(t, env, "close-inflight", month(2).Add(2*time.Minute))
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(2).Add(time.Hour)))
+	require.NoError(t, refresh(t, env, lic, month(2).Add(time.Hour)))
 
 	assert.EqualValues(t, 0, figure(t, env, month(3)).Value)
 	assert.EqualValues(t, 1, figure(t, env, month(2)).Value)
@@ -164,21 +173,21 @@ func TestAMessageInFlightAtTheCloseIsCountedInThePeriodItWasSentIn(t *testing.T)
 func TestNothingIsMaterializedWithoutTheStaffLicense(t *testing.T) {
 	env := testhelper.Setup(t)
 	for _, lic := range []*licensekey.License{nil, testhelper.License(t), testhelper.License(t, licensekey.FeatureAudit)} {
-		require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(5)))
+		require.NoError(t, refresh(t, env, lic, month(5)))
 	}
 
-	page, err := usages.List(t.Context(), env.DB, month(7), pagination.Params{Page: 1, PageSize: 25})
+	page, err := usage(env).List(t.Context(), month(7), pagination.Params{Page: 1, PageSize: 25})
 	require.NoError(t, err)
 	assert.Empty(t, page.Items)
 }
 
 func TestListPagesEveryWorkspaceByIdAndDefaultsNothingItselfToARowlessPeriod(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), month(6).Add(time.Hour)))
+	require.NoError(t, refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), month(6).Add(time.Hour)))
 
-	first, err := usages.List(t.Context(), env.DB, month(6), pagination.Params{Page: 1, PageSize: 1})
+	first, err := usage(env).List(t.Context(), month(6), pagination.Params{Page: 1, PageSize: 1})
 	require.NoError(t, err)
-	second, err := usages.List(t.Context(), env.DB, month(6), pagination.Params{Page: 2, PageSize: 1})
+	second, err := usage(env).List(t.Context(), month(6), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)
 
 	require.Len(t, first.Items, 1)
@@ -202,10 +211,10 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 		})
 	})
 
-	err := usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), month(6).Add(time.Hour))
+	err := refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), month(6).Add(time.Hour))
 
 	require.ErrorIs(t, err, boom, "the failure is still reported")
-	page, listErr := usages.List(t.Context(), env.DB, month(6), pagination.Params{Page: 1, PageSize: 100})
+	page, listErr := usage(env).List(t.Context(), month(6), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, listErr)
 	assert.NotEmpty(t, page.Items, "Workspaces after the failing one are still refreshed")
 	for _, w := range page.Items {
@@ -216,9 +225,9 @@ func TestOneFailingWorkspaceDoesNotStopTheOthersFromClosing(t *testing.T) {
 func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	env := testhelper.Setup(t) // Bluth has been in its deletion window for 5 days
 
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), time.Now()))
+	require.NoError(t, refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), time.Now()))
 
-	page, err := usages.List(t.Context(), env.DB, month(1), pagination.Params{Page: 1, PageSize: 25})
+	page, err := usage(env).List(t.Context(), month(1), pagination.Params{Page: 1, PageSize: 25})
 	require.NoError(t, err)
 	ids := make([]int64, 0, len(page.Items))
 	for _, w := range page.Items {

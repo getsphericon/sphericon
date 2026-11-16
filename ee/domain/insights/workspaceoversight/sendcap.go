@@ -24,12 +24,19 @@ func (m *Module) sentLast24h(ctx context.Context, w *ent.Workspace) (int, error)
 	return providerlimit.SentLast24h(ctx, m.ent.Scoped(w.ID), m.now())
 }
 
-// SetSendCap sets the Workspace's Send cap to perDay messages per rolling 24 hours, or clears it
-// with nil, as the Staff member, through the same core mechanism as suspension, audited with the
+// SetSendCapInput is who sets a Workspace's Send cap, and the cap: PerDay messages per rolling 24
+// hours, or nil for none.
+type SetSendCapInput struct {
+	By     *ent.StaffMember
+	PerDay *int
+}
+
+// SetSendCap sets the Workspace's Send cap to in.PerDay messages per rolling 24 hours, or clears it
+// with nil, as the Staff member in.By, through the same core mechanism as suspension, audited with the
 // old and the new value. It reports whether the value changed, and the Workspace's sends over the
 // last 24 hours. providerlimit.ErrNoSendCaps on an Instance without Send caps;
 // ErrWorkspaceNotFound for an unknown Workspace.
-func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffMember, perDay *int) (*SendCapChange, error) {
+func (m *Module) SetSendCap(ctx context.Context, publicID string, in SetSendCapInput) (*SendCapChange, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
@@ -40,7 +47,7 @@ func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffM
 	if err != nil {
 		return nil, err
 	}
-	changed, err := suspension.SetSendCap(ctx, m.bus, w.ID, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), perDay)
+	changed, err := suspension.SetSendCap(ctx, m.bus, w.ID, suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), in.PerDay)
 	if err != nil {
 		return nil, err
 	}
