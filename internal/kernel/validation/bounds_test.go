@@ -59,6 +59,11 @@ func TestItemsRefusesTooManyAndTooFew(t *testing.T) {
 	require.ErrorIs(t, validation.Items(fieldname.TriggerEvents, 0, 1, 10), validation.ErrTooFew)
 }
 
+func TestMinItemsRefusesOnlyTooFew(t *testing.T) {
+	require.NoError(t, validation.MinItems(fieldname.TriggerEvents, 1000, 1))
+	require.ErrorIs(t, validation.MinItems(fieldname.TriggerEvents, 0, 1), validation.ErrTooFew)
+}
+
 func TestPatternRefusesAValueTheContractsPatternDoesNotMatch(t *testing.T) {
 	require.NoError(t, validation.Pattern(fieldname.ReasonCode, "review_1", `^[a-z0-9_]+$`))
 	require.ErrorIs(t, validation.Pattern(fieldname.ReasonCode, "Review", `^[a-z0-9_]+$`), validation.ErrPatternMismatch)

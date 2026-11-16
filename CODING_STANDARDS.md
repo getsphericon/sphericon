@@ -94,7 +94,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   against a constant generated into `internal/kernel/bounds`: a line of `boundgen.Bounds` names the bound,
   where the contract declares it and its owner, the ent entity whose table holds the field or the package
   that owns it when no column does. The owner checks every write through the kernel's
-  `validation.Length`, `Range`, `Min`, `Items` and `Pattern`; there is no Go copy of a bound, so
+  `validation.Length`, `Range`, `Min`, `Items`, `MinItems` and `Pattern`; there is no Go copy of a bound, so
   `check:copies` reads no Go constant. `TestEveryBoundIsCheckedByItsOwner` (`tools/analyzers/entrywrite`)
   refuses a listed bound that no non-test code of its owner uses. Every bound of every OpenAPI document on
   what a client sends (a request body, a parameter, the schemas they reach) is accounted for: a line of
