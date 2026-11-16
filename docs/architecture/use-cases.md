@@ -88,9 +88,10 @@ when its check needs a module its owner may not call: one in a higher context, o
 once; otherwise the check moves into the owner. It still checks its own input (ADR 0107); what it
 leaves to the use case is the rule across modules, and it keeps every rule of its owner's rows
 (ADR 0145): where the use case's rule reads the row, the write is an operation opened on the row,
-checked, then applied, otherwise a package-level function. Either lives in a subpackage of its
-owner named `<module>unchecked`
-(`internal/domain/contacts/tags/tagsunchecked`), which may import its owner and which the owner
+checked, then applied, otherwise a single call. Either is a method of the `Module` of a subpackage
+of its owner named `<module>unchecked`
+(`internal/domain/contacts/tags/tagsunchecked`, built by the use case in its `New`, see
+[Shapes under the call contract](modules.md#shapes-under-the-call-contract)), which may import its owner and which the owner
 does not import; the owner exports for it only what writes nothing (a state table such as
 `workspaces.DeletionCycle`, a compare-and-swap condition, an Audit
 entry, a read under a lock), and the write itself is the subpackage's, which `entrywrite` takes as

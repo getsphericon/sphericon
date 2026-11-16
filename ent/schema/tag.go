@@ -38,7 +38,7 @@ func (Tag) Fields() []ent.Field {
 		field.String(NameColumn).
 			NotEmpty(),
 		// The name as Tags are matched (tagname.Key): trimmed and lower-cased, so "VIP" and "vip"
-		// are one Tag, which keeps the name it was first written with. Set once, by tags.EnsureIn.
+		// are one Tag, which keeps the name it was first written with. Set once, by tags.Module.EnsureIn.
 		field.String("name_key").
 			NotEmpty().
 			Immutable().

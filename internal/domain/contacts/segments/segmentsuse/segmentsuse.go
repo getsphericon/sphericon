@@ -1,8 +1,9 @@
 // Package segmentsuse reads the Definition use the Segments make of a row (GLOSSARY "Definition
 // use"): the Segments whose Condition names a Tag or tests a Custom field with a leaf a type does
 // not take. It is a reader of the Removal check (internal/domain/orchestration/removalcheck), the
-// one package easement lets import it, so every removal that checks a row reads every holder. It
-// imports its owner's context only; the segments module does not import it.
+// one package easement lets import it, and which builds its Module, so every removal that checks a
+// row reads every holder. It imports its owner's context only; the segments module does not import
+// it.
 package segmentsuse
 
 import (
@@ -16,10 +17,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 )
 
+// Module is the Segments' reader of their Definition use (docs/architecture/modules.md, the
+// <module>use readers).
+type Module struct{}
+
+// New builds the reader.
+func New() *Module { return &Module{} }
+
 // UsingTag returns the Workspace's Segments whose Condition names the Tag by its name, in id order.
 // Archived ones count: restoring one must not leave it naming a missing Tag. A Condition keeps the
 // name, not an id, so deleting the Tag would leave it matching nothing.
-func UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Segment, error) {
+func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Segment, error) {
 	all, err := l.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
@@ -38,7 +46,7 @@ func UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.
 // Custom field key with a leaf a field of type t does not take, so they would stop compiling were
 // the field retyped. Archived ones count, as for a Tag: restoring one must not bring back a
 // Condition that no longer compiles.
-func UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Segment, error) {
+func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLocked, key string, t customfield.Type) ([]*ent.Segment, error) {
 	all, err := l.Segment().QueryWithArchived().Order(ent.Asc(segment.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
