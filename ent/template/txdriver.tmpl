@@ -1,0 +1,24 @@
+{{/*
+The transaction a client is bound to, for the events bus to publish and queue in it
+(events.Bus.PublishIn, EnqueueIn): a domain operation takes the scope, not the transaction's
+publisher (ADR 0167), so the bus reaches that publisher through the scope's driver. The driver comes
+out only as the TxBound marker, which the bus asserts to its own driver type.
+*/}}
+{{ define "txdriver" }}
+{{ template "header" $ }}
+
+const (
+	RoleOf_Client_TxDriver = RoleNone
+	RoleOf_Scoped_TxDriver = RoleNone
+)
+
+// TxDriver returns the driver of the transaction the client is bound to, which another layer opened
+// and owns (the events bus's). ok is false for a client on the pool or in ent's own Tx.
+func (c *Client) TxDriver() (_ TxBound, ok bool) {
+	d, ok := c.driver.(TxBound)
+	return d, ok
+}
+
+// TxDriver is Client.TxDriver on the client the scope writes through.
+func (s *Scoped) TxDriver() (_ TxBound, ok bool) { return s.c.TxDriver() }
+{{ end }}
