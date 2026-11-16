@@ -22,7 +22,9 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -38,6 +40,11 @@ type Module struct {
 	passwords *credentials.Hasher
 	// defaultSendCap gives the Send cap a first Workspace starts with.
 	defaultSendCap *suspension.DefaultSendCap
+	// tokens revokes the User's Personal tokens and Connections, and factors clears their Second
+	// factor and Passkeys, when the first proof of an address drops them (ADR 0170); factors also
+	// says whether a User signing in through a provider has a Second factor due (ADR 0020).
+	tokens  *apitokens.Module
+	factors *secondfactors.Module
 	// signUp is what a Sign-up needs besides the modules.
 	signUp SignUpConfig
 	// providers is what a sign-in through a Sign-in provider needs besides the users module.
@@ -54,16 +61,17 @@ type Module struct {
 // of each step, consents checks the answers to the Sign-up items and makes their Consent records
 // (consentrecords.Module.Check), links reads the verification and reset links, passwords hashes
 // the password of an Owner made from a shell, defaultSendCap says the Send cap a Workspace starts
-// with (suspension.DefaultSendCap.StartingIn, ADR 0067, ADR 0146), cfg is what a Sign-up needs
+// with (suspension.DefaultSendCap.StartingIn, ADR 0067, ADR 0146), tokens and factors drop the
+// credentials set up before the first proof of an address (ADR 0170), cfg is what a Sign-up needs
 // (ADR 0030, ADR 0031), signIn what a sign-in through a Sign-in provider needs (ADR 0048) and now
 // is the Instance clock.
 func New(bus *events.Bus, usersModule *users.Module, consents *consentrecords.Module, links *users.Links,
-	passwords *credentials.Hasher, defaultSendCap *suspension.DefaultSendCap, cfg SignUpConfig, signIn SignInConfig,
-	now func() time.Time,
+	passwords *credentials.Hasher, defaultSendCap *suspension.DefaultSendCap, tokens *apitokens.Module,
+	factors *secondfactors.Module, cfg SignUpConfig, signIn SignInConfig, now func() time.Time,
 ) *Module {
 	m := &Module{
 		bus: bus, users: usersModule, consents: consents, links: links, passwords: passwords,
-		defaultSendCap: defaultSendCap, signUp: cfg, providers: signIn, now: now,
+		defaultSendCap: defaultSendCap, tokens: tokens, factors: factors, signUp: cfg, providers: signIn, now: now,
 	}
 	m.lookup = m.lookupUser
 	return m

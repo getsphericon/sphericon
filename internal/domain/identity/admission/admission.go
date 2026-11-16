@@ -101,5 +101,5 @@ func (m *Module) admit(ctx context.Context, r Request, ms *ent.Membership) error
 	if ms == nil || r.WhileWithheld || r.StrongSession {
 		return nil
 	}
-	return m.factors.CheckRequirement(ctx, ms.UserID, ms.Edges.Workspace.SecondFactorRequiredAt, ms.CreatedAt, r.At)
+	return m.factors.CheckRequirement(ctx, ms, r.At)
 }

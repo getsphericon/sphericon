@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -19,11 +20,12 @@ import (
 
 func TestMintStoresAHashedTokenAndReturnsTheValueOnce(t *testing.T) {
 	env := testhelper.Setup(t)
+	tokens := testhelper.Module[*apitokens.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	expires := time.Now().Add(time.Hour)
 
-	got, err := apitokens.Mint(ctx, s, apitokens.Input{
+	got, err := tokens.Mint(ctx, s, apitokens.Input{
 		Name: "  CI  ", Scopes: []string{"contacts:read", "contacts:read", "events:write"}, ExpiresAt: &expires,
 	})
 	require.NoError(t, err)
@@ -42,13 +44,14 @@ func TestMintStoresAHashedTokenAndReturnsTheValueOnce(t *testing.T) {
 
 func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 	env := testhelper.Setup(t)
+	tokens := testhelper.Module[*apitokens.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := apitokens.Mint(ctx, s, apitokens.Input{Name: "  ", Scopes: []string{"contacts:read"}})
+	_, err := tokens.Mint(ctx, s, apitokens.Input{Name: "  ", Scopes: []string{"contacts:read"}})
 	require.ErrorIs(t, err, validation.ErrNameBlank)
 
-	_, err = apitokens.Mint(ctx, s, apitokens.Input{Name: "x", Scopes: []string{"contacts:read", "root:all"}})
+	_, err = tokens.Mint(ctx, s, apitokens.Input{Name: "x", Scopes: []string{"contacts:read", "root:all"}})
 	require.ErrorIs(t, err, apitokens.ErrUnknownScope)
 	unknown, ok := errors.AsType[*validation.RefusalError](err)
 	require.True(t, ok, "got %v", err)
@@ -57,21 +60,22 @@ func TestMintRefusesABlankNameAndUnknownScopes(t *testing.T) {
 
 func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {
 	env := testhelper.Setup(t)
+	tokens := testhelper.Module[*apitokens.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	minter := []string{"tokens:write", "contacts:read"}
 
-	ok, err := apitokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "child", Scopes: []string{"contacts:read"}})
+	ok, err := tokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "child", Scopes: []string{"contacts:read"}})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"contacts:read"}, ok.Token.Scopes)
 
-	_, err = apitokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "child", Scopes: []string{"contacts:read", "emails:send"}})
+	_, err = tokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "child", Scopes: []string{"contacts:read", "emails:send"}})
 	require.ErrorIs(t, err, apitokens.ErrScopeEscalation)
 
 	count, err := s.ApiToken().Query().Count(ctx)
 	require.NoError(t, err)
 	before := count
-	_, err = apitokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "denied", Scopes: []string{"mcp:send"}})
+	_, err = tokens.MintWithin(ctx, s, minter, apitokens.Input{Name: "denied", Scopes: []string{"mcp:send"}})
 	require.Error(t, err)
 	count, err = s.ApiToken().Query().Count(ctx)
 	require.NoError(t, err)
@@ -80,28 +84,29 @@ func TestMintWithinNeverGrantsAScopeTheMinterLacks(t *testing.T) {
 
 func TestRevokeRetiresOnceAndIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
+	tokens := testhelper.Module[*apitokens.Module](env)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	minted, err := apitokens.Mint(ctx, s, apitokens.Input{Name: "short-lived", Scopes: []string{"contacts:read"}})
+	minted, err := tokens.Mint(ctx, s, apitokens.Input{Name: "short-lived", Scopes: []string{"contacts:read"}})
 	require.NoError(t, err)
 	id := minted.Token.ID
 
-	require.ErrorIs(t, apitokens.Revoke(ctx, env.DB.Scoped(fixtures.GlobexID), id, time.Now()), apitokens.ErrNotFound,
+	require.ErrorIs(t, tokens.Revoke(ctx, env.DB.Scoped(fixtures.GlobexID), id), apitokens.ErrNotFound,
 		"another Workspace cannot revoke it")
 
-	require.NoError(t, apitokens.Revoke(ctx, s, id, time.Now()))
+	require.NoError(t, tokens.Revoke(ctx, s, id))
 	got, err := s.ApiToken().Get(ctx, id)
 	require.NoError(t, err)
 	assert.NotNil(t, got.RevokedAt, "revoked, not removed")
 
-	require.ErrorIs(t, apitokens.Revoke(ctx, s, id, time.Now()), apitokens.ErrNotFound, "already revoked")
-	assert.ErrorIs(t, apitokens.Revoke(ctx, s, 999999, time.Now()), apitokens.ErrNotFound)
+	require.ErrorIs(t, tokens.Revoke(ctx, s, id), apitokens.ErrNotFound, "already revoked")
+	assert.ErrorIs(t, tokens.Revoke(ctx, s, 999999), apitokens.ErrNotFound)
 }
 
 // bootstrapModule is the module of an Instance whose bootstrap token is configured ("" for none).
 func bootstrapModule(env *testhelper.TestEnv, configured string) *apitokens.Module {
-	return apitokens.New(env.DB, testhelper.Module[*workspaces.Module](env), configured, time.Now)
+	return apitokens.New(env.DB, testhelper.Module[*workspaces.Module](env), testhelper.Module[*oauthclients.Module](env), configured, time.Now)
 }
 
 // The bootstrap mints the first token, with no caller token to name a Workspace: into the oldest

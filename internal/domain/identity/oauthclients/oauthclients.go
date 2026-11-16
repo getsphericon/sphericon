@@ -138,20 +138,28 @@ type Decision struct {
 	AllowSetup    bool
 }
 
+// Authorization is an authorization request as the client sent it: the client, the redirect URI
+// and the scope asked for (empty for the default).
+type Authorization struct {
+	ClientID    string
+	RedirectURI string
+	Scope       string
+}
+
 // Describe validates the client and redirect URI of an authorization request and
 // reports what it asks for.
-func (s *Module) Describe(ctx context.Context, clientID, redirectURI, scope string) (*Request, error) {
-	client, err := s.Client(ctx, clientID, redirectURI)
+func (s *Module) Describe(ctx context.Context, a Authorization) (*Request, error) {
+	client, err := s.Client(ctx, a.ClientID, a.RedirectURI)
 	if err != nil {
 		return nil, err
 	}
-	granted, send, setup := requestedScopes(scope)
-	if strings.TrimSpace(scope) != "" && len(granted)+len(send)+len(setup) == 0 {
+	granted, send, setup := requestedScopes(a.Scope)
+	if strings.TrimSpace(a.Scope) != "" && len(granted)+len(send)+len(setup) == 0 {
 		return nil, ErrInvalidRequest.With("no supported scope requested")
 	}
 	return &Request{
-		ClientName: client.Name, ClientHost: ClientHost(clientID), LocalRedirect: IsLoopback(redirectURI),
-		RedirectURI: redirectURI, Scopes: granted, SendScopes: send, SetupScopes: setup,
+		ClientName: client.Name, ClientHost: ClientHost(a.ClientID), LocalRedirect: IsLoopback(a.RedirectURI),
+		RedirectURI: a.RedirectURI, Scopes: granted, SendScopes: send, SetupScopes: setup,
 		RequiredPermissions: memberships.GrantRequires(slices.Concat(granted, send, setup)),
 	}, nil
 }
@@ -325,14 +333,15 @@ type CodeClaim struct {
 	Verifier    string
 }
 
-// ClaimCodeIn spends the authorization code of the claim c at now on the transaction tx and returns
-// it with its client loaded: the grant the consent recorded, whose Workspace it names. The code is
+// ClaimCodeIn spends the authorization code of the claim c on the transaction tx, at the module's
+// clock, and returns it with its client loaded: the grant the consent recorded, whose Workspace it names. The code is
 // read by its secret on the raw client, the Workspace coming from the row. It checks the request
 // first (the client and the redirect URI of the authorization request, and the PKCE verifier against
 // the code's challenge), so a refused request leaves the code to the right one; then it marks the
 // code used through the scope of the code's Workspace, so it is exchanged once. ErrInvalidGrant for an unknown, expired or
 // used code, one a concurrent request claimed first, or a request it was not issued for.
-func ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim, now time.Time) (*ent.OAuthCode, error) {
+func (s *Module) ClaimCodeIn(ctx context.Context, tx *ent.Client, c CodeClaim) (*ent.OAuthCode, error) {
+	now := s.now()
 	grant, err := tx.OAuthCode.Query().
 		Where(oauthcode.CodeHash(credentials.HashSecret(c.Code))).
 		WithClient().

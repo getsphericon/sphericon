@@ -3,7 +3,6 @@ package passkeys
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -12,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/narrow"
@@ -30,25 +30,19 @@ var (
 	ErrCheckFailed = validation.Denied("passkeys: passkey check failed", i18n.ErrorsPasskeyCheckFailed)
 )
 
-// BeginLogin starts a usernameless Passkey login: the request options for the browser (JSON)
-// and the sealed ceremony cookie value. The User is not known yet, so the options allow no
+// BeginLogin starts a usernameless Passkey login: the request options for the browser and the
+// sealed ceremony cookie value. The User is not known yet, so the options allow no
 // credential in particular and the browser offers the Passkeys it holds for this host. It
 // writes nothing: the challenge's single use comes from the row FinishLogin inserts.
-func (p *Module) BeginLogin() (options []byte, ceremony string, err error) {
+func (p *Module) BeginLogin() (Begun, error) {
 	if !p.Available() {
-		return nil, "", ErrPasskeysUnavailable
+		return Begun{}, ErrPasskeysUnavailable
 	}
-	assertion, session, err := p.wa.BeginDiscoverableLogin()
+	assertion, session, err := p.party.wa.BeginDiscoverableLogin()
 	if err != nil {
-		return nil, "", err
+		return Begun{}, err
 	}
-	if options, err = json.Marshal(assertion.Response); err != nil {
-		return nil, "", err
-	}
-	if ceremony, err = p.seal(PurposeLogin, nil, session); err != nil {
-		return nil, "", err
-	}
-	return options, ceremony, nil
+	return p.begun(PurposeLogin, nil, assertion.Response, session)
 }
 
 // FindLogin returns the User a login response belongs to, by the credential id it carries.
@@ -72,8 +66,8 @@ func (p *Module) FindLogin(ctx context.Context, response []byte) (*ent.User, err
 	return row.Edges.User, nil
 }
 
-// FinishLogin verifies the authenticator's response (the browser's AuthenticationResponseJSON)
-// against the ceremony cookie for User u, whom FindLogin named. The response must be signed
+// FinishLogin verifies the assertion's response (the browser's AuthenticationResponseJSON)
+// against its ceremony cookie for User u, whom FindLogin named. The response must be signed
 // for the cookie's challenge and this Instance's origin, by a credential u owns, with the user
 // verified. One transaction spends the challenge, advances the signature counter and records
 // the use.
@@ -81,40 +75,34 @@ func (p *Module) FindLogin(ctx context.Context, response []byte) (*ent.User, err
 // ErrCeremony for an unusable cookie, ErrChallengeSpent when the ceremony already finished,
 // ErrPasskeyRefused for any response that does not verify (including one made without user
 // verification, and one whose signature counter went backwards: a cloned authenticator).
-func (p *Module) FinishLogin(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
-	return p.finishAssertion(ctx, u, PurposeLogin, ceremony, response)
+func (p *Module) FinishLogin(ctx context.Context, u *ent.User, a login.PasskeyAssertion) error {
+	return p.finishAssertion(ctx, u, PurposeLogin, a)
 }
 
 // BeginCheck starts a fresh Passkey check of the signed-in User u (ADR 0052): the request
-// options for the browser (JSON), which allow only u's own Passkeys, and the sealed ceremony
+// options for the browser, which allow only u's own Passkeys, and the sealed ceremony
 // cookie value, bound to u and their session epoch. It writes nothing. ErrNoPasskeys when u
 // holds no Passkey.
-func (p *Module) BeginCheck(ctx context.Context, u *ent.User) (options []byte, ceremony string, err error) {
+func (p *Module) BeginCheck(ctx context.Context, u *ent.User) (Begun, error) {
 	if !p.Available() {
-		return nil, "", ErrPasskeysUnavailable
+		return Begun{}, ErrPasskeysUnavailable
 	}
 	rows, err := p.List(ctx, u.ID)
 	if err != nil {
-		return nil, "", err
+		return Begun{}, err
 	}
 	if len(rows) == 0 {
-		return nil, "", ErrNoPasskeys
+		return Begun{}, ErrNoPasskeys
 	}
-	assertion, session, err := p.wa.BeginDiscoverableLogin()
+	assertion, session, err := p.party.wa.BeginDiscoverableLogin()
 	if err != nil {
-		return nil, "", err
+		return Begun{}, err
 	}
 	for _, r := range rows {
 		assertion.Response.AllowedCredentials = append(assertion.Response.AllowedCredentials,
 			protocol.CredentialDescriptor{Type: protocol.PublicKeyCredentialType, CredentialID: r.CredentialID})
 	}
-	if options, err = json.Marshal(assertion.Response); err != nil {
-		return nil, "", err
-	}
-	if ceremony, err = p.seal(PurposeCheck, u, session); err != nil {
-		return nil, "", err
-	}
-	return options, ceremony, nil
+	return p.begun(PurposeCheck, u, assertion.Response, session)
 }
 
 // Check verifies a fresh Passkey check of the signed-in User u (ADR 0052): the response must be
@@ -122,33 +110,33 @@ func (p *Module) BeginCheck(ctx context.Context, u *ent.User) (options []byte, c
 // u's and of u's current session epoch. It takes no part in the Login throttle: the caller is
 // already signed in, and a guess cannot succeed without the private key. Every refusal is
 // ErrCheckFailed, wrapping the cause of a ceremony that cannot finish.
-func (p *Module) Check(ctx context.Context, u *ent.User, ceremony string, response []byte) error {
-	owner, err := p.FindLogin(ctx, response)
+func (p *Module) Check(ctx context.Context, u *ent.User, a login.PasskeyAssertion) error {
+	owner, err := p.FindLogin(ctx, a.Response)
 	if errors.Is(err, ErrPasskeyUnknown) || (err == nil && owner.ID != u.ID) {
 		return ErrCheckFailed
 	}
 	if err != nil {
 		return err
 	}
-	err = p.finishAssertion(ctx, u, PurposeCheck, ceremony, response)
+	err = p.finishAssertion(ctx, u, PurposeCheck, a)
 	if CeremonyFailed(err) {
 		return fmt.Errorf("%w: %w", ErrCheckFailed, err)
 	}
 	return err
 }
 
-func (p *Module) finishAssertion(ctx context.Context, u *ent.User, purpose ceremonyPurpose, ceremony string, response []byte) error {
+func (p *Module) finishAssertion(ctx context.Context, u *ent.User, purpose ceremonyPurpose, a login.PasskeyAssertion) error {
 	if !p.Available() {
 		return ErrPasskeysUnavailable
 	}
-	claims, session, err := p.open(ceremony, purpose)
+	claims, session, err := p.open(a.Ceremony, purpose)
 	if err != nil {
 		return err
 	}
 	if purpose == PurposeCheck && (claims.UID != u.ID || claims.Epoch != u.SessionEpoch) {
 		return ErrCeremony
 	}
-	parsed, err := protocol.ParseCredentialRequestResponseBytes(response)
+	parsed, err := protocol.ParseCredentialRequestResponseBytes(a.Response)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrPasskeyRefused, err)
 	}
@@ -164,7 +152,7 @@ func (p *Module) finishAssertion(ctx context.Context, u *ent.User, purpose cerem
 			}
 			return waCredentials{waUser: waUser{u}, credentials: credentialsOf(rows)}, nil
 		}
-		_, cred, err := p.wa.ValidatePasskeyLogin(handler, *session, parsed)
+		_, cred, err := p.party.wa.ValidatePasskeyLogin(handler, *session, parsed)
 		if err != nil {
 			return fmt.Errorf("%w: %w", ErrPasskeyRefused, err)
 		}

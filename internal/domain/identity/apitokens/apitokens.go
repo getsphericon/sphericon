@@ -6,7 +6,7 @@
 // the caller (scope, role), call, map errors.
 //
 // OAuth issuing keeps its own rules: its scopes are fixed by the consent screen, and the token
-// endpoint's exchange of a code or a refresh token (Module.ExchangeCode, Module.Refresh) issues,
+// endpoint's exchange of a code or a refresh token (ExchangeCode, Refresh) issues,
 // rotates and revokes a Connection and its refresh tokens, which this package owns (ADR 0110). A
 // Connection is an API token tied to the approving User's Membership and naming the client
 // approved (ADR 0061). A Personal token
@@ -66,7 +66,7 @@ func (m *Module) Bootstrap(ctx context.Context, presented string, in Input) (Min
 	}
 	// The bootstrap token names the Workspace rather than a login, so the scope is the ingest
 	// actor's: no one is audited for the first token.
-	return Mint(ctx, events.Ingest(m.ent.Scoped(id)), in)
+	return m.Mint(ctx, events.Ingest(m.ent.Scoped(id)), in)
 }
 
 // ErrUnknownScope is a scope that is not in the vocabulary (Scopes).
@@ -93,8 +93,8 @@ type Minted struct {
 
 // Mint creates a token with any scope of the vocabulary. The caller has already
 // been authorized to hold that power: a Membership whose Role holds tokens:manage on /site,
-// or the bootstrap token (Module.Bootstrap). A token minting another token goes through MintWithin.
-func Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
+// or the bootstrap token (Bootstrap). A token minting another token goes through MintWithin.
+func (m *Module) Mint(ctx context.Context, s *ent.Scoped, in Input) (Minted, error) {
 	name, scopes, err := checked(in)
 	if err != nil {
 		return Minted{}, err
@@ -140,26 +140,26 @@ func mint(ctx context.Context, s *ent.Scoped, name string, scopes []string, expi
 // MintWithin is Mint for a token acting as minter: every requested scope must be
 // among the minter's own, so tokens:write cannot be turned into send or any other
 // power the minter does not already have.
-func MintWithin(ctx context.Context, s *ent.Scoped, minter []string, in Input) (Minted, error) {
+func (m *Module) MintWithin(ctx context.Context, s *ent.Scoped, minter []string, in Input) (Minted, error) {
 	for _, sc := range in.Scopes {
 		if !slices.Contains(minter, sc) {
 			return Minted{}, ErrScopeEscalation
 		}
 	}
-	return Mint(ctx, s, in)
+	return m.Mint(ctx, s, in)
 }
 
 // List returns the Workspace's API tokens in display order, oldest first; Connections are
 // not among them. A revoked token stays listed, marked by its revoked_at. Both the /site
 // settings screen and the /api token read call it, so the shape of the query is written once.
-func List(ctx context.Context, s *ent.Scoped) ([]*ent.ApiToken, error) {
+func (m *Module) List(ctx context.Context, s *ent.Scoped) ([]*ent.ApiToken, error) {
 	return s.ApiToken().Query().Where(isWorkspaceToken()).Order(ent.Asc(apitoken.FieldID)).All(ctx)
 }
 
 // Get returns the Workspace's token with the id, revoked or not and Connection or not (the
 // credential a request presents, read back by /api's "me"), or ErrNotFound when the Workspace
 // has none with that id.
-func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
+func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
 	token, err := s.ApiToken().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrNotFound
@@ -170,14 +170,14 @@ func Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.ApiToken, error) {
 	return token, nil
 }
 
-// Revoke retires an active API token (it stays listed with revoked_at). A token that is unknown,
+// Revoke retires an active API token now (it stays listed with revoked_at). A token that is unknown,
 // belongs to another Workspace, is a User's (a Connection or a Personal token) or is already
 // revoked is ErrNotFound.
-func Revoke(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
+func (m *Module) Revoke(ctx context.Context, s *ent.Scoped, id int64) error {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := s.ApiToken().Update().
 			Where(apitoken.ID(id), isWorkspaceToken(), apitoken.RevokedAtIsNil()).
-			SetRevokedAt(at).
+			SetRevokedAt(m.now()).
 			Save(ctx)
 		return n > 0, err
 	})
@@ -190,7 +190,7 @@ func Revoke(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 // Rename changes the name of an active API token and returns the updated row. A token that is
 // unknown, belongs to another Workspace, is a User's (a Connection or a Personal token) or is
 // revoked is ErrNotFound; a name the name rule refuses is its refusal (validation.Name).
-func Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.ApiToken, error) {
+func (m *Module) Rename(ctx context.Context, s *ent.Scoped, id int64, name string) (*ent.ApiToken, error) {
 	name, err := validation.Name(name)
 	if err != nil {
 		return nil, err

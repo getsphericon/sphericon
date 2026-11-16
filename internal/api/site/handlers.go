@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
@@ -109,6 +110,7 @@ type Handlers struct {
 	automations           *automations.Module
 	rules                 *rules.Module
 	oauth                 *oauthclients.Module
+	apiTokens             *apitokens.Module
 	audit                 *auditlog.Log
 	attention             *needsattentionreport.UseCase
 	setupChecklist        *setupchecklist.Module
@@ -168,8 +170,11 @@ type Deps struct {
 	// Attempts counts the password-reset mails per account (ADR 0025).
 	Attempts *throttle.Attempts
 	OAuth    *oauthclients.Module
-	Bus      *events.Bus
-	Webhooks *webhookendpoints.Module
+	// APITokens mints, lists and revokes the Workspace's API tokens, its Connections and the
+	// Personal tokens of its members (ADR 0061).
+	APITokens *apitokens.Module
+	Bus       *events.Bus
+	Webhooks  *webhookendpoints.Module
 	// IdentityTokens keeps the Identity secret (ADR 0171).
 	IdentityTokens *identitytokens.Module
 	Outbound       *outboundmessages.Module
@@ -270,7 +275,7 @@ func NewHandlers(d *Deps) *Handlers {
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

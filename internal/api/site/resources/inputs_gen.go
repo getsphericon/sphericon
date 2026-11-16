@@ -18,6 +18,7 @@ import (
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	passkeys "github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	secondfactors "github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	signup "github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
@@ -472,6 +473,20 @@ func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.R
 	}
 	return membershipRole
 }
+func (c *InputsImpl) PasskeyRemove(source site.SitePasskeysRemoveParams) passkeys.RemoveInput {
+	var passkeysRemoveInput passkeys.RemoveInput
+	passkeysRemoveInput.ID = int64(source.ID)
+	// passkeysRemoveInput.Proof: ignore
+	return passkeysRemoveInput
+}
+func (c *InputsImpl) PasskeyRename(source *site.SitePasskeyRenameInput) passkeys.RenameInput {
+	var passkeysRenameInput passkeys.RenameInput
+	if source != nil {
+		// passkeysRenameInput.ID: ignore
+		passkeysRenameInput.Name = nameIn((*source).Name)
+	}
+	return passkeysRenameInput
+}
 func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.PersonalScope {
 	var tokenscopePersonalScope tokenscope.PersonalScope
 	switch source {
@@ -631,8 +646,17 @@ func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInp
 	if source != nil {
 		secondfactorsConfirmInput.EnrollmentID = int64((*source).EnrollmentId)
 		secondfactorsConfirmInput.Code = (*source).Code
+		// secondfactorsConfirmInput.Proof: ignore
 	}
 	return secondfactorsConfirmInput
+}
+func (c *InputsImpl) SecondFactorDisable(source *site.SiteSecondFactorDisableInput) secondfactors.DisableInput {
+	var secondfactorsDisableInput secondfactors.DisableInput
+	if source != nil {
+		secondfactorsDisableInput.Code = (*source).Code
+		// secondfactorsDisableInput.Proof: ignore
+	}
+	return secondfactorsDisableInput
 }
 func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspaceview.SetSecondFactorRequirementInput {
 	var workspaceviewSetSecondFactorRequirementInput workspaceview.SetSecondFactorRequirementInput

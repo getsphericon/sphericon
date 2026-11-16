@@ -231,7 +231,7 @@ func (m *Module) findPasskey(ctx context.Context, a login.PasskeyAssertion) (log
 
 // verifyPasskey is the login module's PasskeyVerify.
 func (m *Module) verifyPasskey(ctx context.Context, p login.Pending[*ent.User], a login.PasskeyAssertion) error {
-	err := m.passkeys.FinishLogin(ctx, p.Principal, a.Ceremony, a.Response)
+	err := m.passkeys.FinishLogin(ctx, p.Principal, a)
 	if passkeys.CeremonyFailed(err) || errors.Is(err, passkeys.ErrPasskeysUnavailable) {
 		return login.ErrPasskeyInvalid
 	}

@@ -146,7 +146,7 @@ func TestTheUsersOwnStepsAreRefusedWithoutTheirPassword(t *testing.T) {
 
 	_, start := testhelper.Module[*secondfactors.Module](env).StartEnrollment(t.Context(), john, wrong)
 	_, regenerate := testhelper.Module[*secondfactors.Module](env).RegenerateRecoveryCodes(t.Context(), sam, wrong)
-	_, disable := testhelper.Module[*secondfactors.Module](env).Disable(t.Context(), sam, wrong, samCode(t, c))
+	_, disable := testhelper.Module[*secondfactors.Module](env).Disable(t.Context(), sam, secondfactors.DisableInput{Proof: wrong, Code: samCode(t, c)})
 
 	require.ErrorIs(t, start, login.ErrPasswordIncorrect)
 	require.ErrorIs(t, regenerate, login.ErrPasswordIncorrect)

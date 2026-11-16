@@ -8,6 +8,7 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
+	"github.com/getsphericon/sphericon/internal/domain/identity/login"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 )
 
@@ -34,16 +35,16 @@ func (h *Handlers) SitePasskeysBeginRegistration(ctx context.Context) (*siteapi.
 	if err != nil {
 		return nil, err
 	}
-	raw, ceremony, err := h.passkeys.BeginRegistration(ctx, u)
+	begun, err := h.passkeys.BeginRegistration(ctx, u)
 	if err != nil {
 		return nil, err
 	}
-	options, err := decodeOptions[siteapi.SitePasskeyCreationOptions](raw)
+	options, err := decodeOptions[siteapi.SitePasskeyCreationOptions](begun.Options)
 	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SitePasskeyRegistrationBegunHeaders{
-		SetCookie: h.ceremonyCookie(auth.PasskeyRegistrationPath, ceremony),
+		SetCookie: h.ceremonyCookie(auth.PasskeyRegistrationPath, begun.Ceremony),
 		Response:  siteapi.SitePasskeyRegistrationBegun{Options: options},
 	}, nil
 }
@@ -60,7 +61,7 @@ func (h *Handlers) SitePasskeysFinishRegistration(ctx context.Context, req *site
 	if err != nil {
 		return nil, err
 	}
-	_, row, err := h.passkeys.FinishRegistration(ctx, u, proof, passkeys.Registration{Ceremony: params.PASSKEY.Or(""), Response: response, Name: string(req.Name)})
+	row, err := h.passkeys.FinishRegistration(ctx, u, passkeys.Registration{Proof: proof, Ceremony: params.PASSKEY.Or(""), Response: response, Name: string(req.Name)})
 	if err != nil {
 		return nil, err
 	}
@@ -75,16 +76,16 @@ func (h *Handlers) SitePasskeysBeginCheck(ctx context.Context) (*siteapi.SitePas
 	if err != nil {
 		return nil, err
 	}
-	raw, ceremony, err := h.passkeys.BeginCheck(ctx, u)
+	begun, err := h.passkeys.BeginCheck(ctx, u)
 	if err != nil {
 		return nil, err
 	}
-	options, err := decodeOptions[siteapi.SitePasskeyRequestOptions](raw)
+	options, err := decodeOptions[siteapi.SitePasskeyRequestOptions](begun.Options)
 	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SitePasskeyCheckBegunHeaders{
-		SetCookie: h.ceremonyCookie(auth.PasskeyCheckPath, ceremony),
+		SetCookie: h.ceremonyCookie(auth.PasskeyCheckPath, begun.Ceremony),
 		Response:  siteapi.SitePasskeyCheckBegun{Options: options},
 	}, nil
 }
@@ -102,7 +103,7 @@ func (h *Handlers) SitePasskeysFinishCheck(ctx context.Context, req *siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	if err := h.passkeys.Check(ctx, u, params.PASSKEY.Or(""), response); err != nil {
+	if err := h.passkeys.Check(ctx, u, login.PasskeyAssertion{Ceremony: params.PASSKEY.Or(""), Response: response}); err != nil {
 		return nil, err
 	}
 	sess := currentSession(ctx)
@@ -143,7 +144,9 @@ func (h *Handlers) SitePasskeysRename(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	row, err := h.passkeys.Rename(ctx, userID, int64(params.ID), string(req.Name))
+	in := inputs.PasskeyRename(req)
+	in.ID = int64(params.ID)
+	row, err := h.passkeys.Rename(ctx, userID, in)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +162,9 @@ func (h *Handlers) SitePasskeysRemove(ctx context.Context, req *siteapi.SitePass
 	if err != nil {
 		return nil, err
 	}
-	removal, err := h.passkeys.Remove(ctx, u, proof, int64(params.ID))
+	in := inputs.PasskeyRemove(params)
+	in.Proof = proof
+	removal, err := h.passkeys.Remove(ctx, u, in)
 	if err != nil {
 		return nil, err
 	}

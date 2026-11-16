@@ -77,7 +77,7 @@ Audit entry, moves a deleted one back through
 the edit takes away an address that marketing email still to send needs (ADR 0156); and User deletion
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
-`secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
+`secondfactors.DeletionCode.Spend` in its transaction, a wrong one counted on the Login throttle),
 opens the deletion on the locked User row (`usersunchecked.DeletionIn`, which refuses a proof made
 before a password was set or removed), locks the Owner rows of its Workspaces
 (`memberships.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace

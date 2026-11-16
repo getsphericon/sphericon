@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
@@ -111,7 +112,21 @@ import (
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 type Inputs interface {
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
 	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactors.ConfirmInput
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
+	SecondFactorDisable(source *siteapi.SiteSecondFactorDisableInput) secondfactors.DisableInput
+	// The Passkey is the path's, which the handler assigns.
+	// goverter:ignore ID
+	PasskeyRename(source *siteapi.SitePasskeyRenameInput) passkeys.RenameInput
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
+	PasskeyRemove(source siteapi.SitePasskeysRemoveParams) passkeys.RemoveInput
 
 	// The restoring User, the actor the Audit log records and whether the session is strong come
 	// from the session, which the handler assigns.

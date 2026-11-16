@@ -14,7 +14,7 @@
 // resetting bump the User's session epoch inside the change's transaction, so the module sits
 // above internal/domain/identity/users: it reads the User's session epoch and password hash and
 // bumps the epoch through it. A Second factor reset also removes the User's Passkeys
-// (passkeys.RemoveAllIn): internal/domain/identity/passkeys sits beside this module in identity,
+// (passkeys.Module.RemoveAllIn): internal/domain/identity/passkeys sits beside this module in identity,
 // so the reset is this module's operation (ADR 0112), checked here and written by its lifecycle
 // like every other change of the factor.
 //
@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -82,16 +83,19 @@ type Users interface {
 
 // Module enrolls, verifies and removes Second factors, and reads them.
 type Module struct {
-	ent    *ent.Client
-	bus    *events.Bus
-	cipher *secrets.Cipher
-	users  Users
-	now    func() time.Time
+	ent      *ent.Client
+	bus      *events.Bus
+	cipher   *secrets.Cipher
+	users    Users
+	passkeys *passkeys.Module
+	now      func() time.Time
 }
 
-// New builds the module. u proves the identity of the User's own steps; now is the Instance clock TOTP codes and the Two-factor grace are checked against.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, now func() time.Time) *Module {
-	return &Module{ent: client, bus: bus, cipher: cipher, users: u, now: now}
+// New builds the module. u proves the identity of the User's own steps; keys are the Passkeys a
+// Second factor reset removes; now is the Instance clock TOTP codes, the Two-factor grace and its
+// reminders are checked against.
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, keys *passkeys.Module, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, cipher: cipher, users: u, passkeys: keys, now: now}
 }
 
 // factorOf reads the User's factor row on client, nil when the User never enrolled.
@@ -193,19 +197,21 @@ func (m *Module) StartEnrollment(ctx context.Context, u *ent.User, proof users.I
 	return enrollment, err
 }
 
-// ConfirmInput binds the code to the enrollment whose secret the caller received.
+// ConfirmInput binds the code to the enrollment whose secret the caller received, with the proof
+// of identity the confirmation takes.
 type ConfirmInput struct {
 	EnrollmentID int64
 	Code         string
+	Proof        users.IdentityProof
 }
 
 // ConfirmEnrollment activates the pending secret of the User u, once they prove their identity
-// (users.Module.ProveIdentity), when code is a current code for it. It issues the Recovery codes (returned once), bumps the session epoch and
+// with in.Proof (users.Module.ProveIdentity), when in.Code is a current code for it. It issues the Recovery codes (returned once), bumps the session epoch and
 // records `user.second_factor_enroll`, all in one transaction, and returns the
 // stored User for reissuing the acting session with the codes. ErrNoPending without a pending
 // enrollment, ErrInvalidCode on a wrong code.
-func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, proof users.IdentityProof, in ConfirmInput) (*CodesIssued, error) {
-	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, in ConfirmInput) (*CodesIssued, error) {
+	if err := m.users.ProveIdentity(ctx, u, in.Proof); err != nil {
 		return nil, err
 	}
 	userID := u.ID
@@ -274,14 +280,21 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, u *ent.User, proof
 	return issued, err
 }
 
-// Disable removes the Second factor of the User u, once they prove their identity
-// (users.Module.ProveIdentity), when code is a current TOTP code or an unused Recovery code. It
+// DisableInput is the code that confirms disabling the Second factor, with the proof of identity it
+// takes.
+type DisableInput struct {
+	Code  string
+	Proof users.IdentityProof
+}
+
+// Disable removes the Second factor of the User u, once they prove their identity with in.Proof
+// (users.Module.ProveIdentity), when in.Code is a current TOTP code or an unused Recovery code. It
 // clears the factor
 // and its Recovery codes, bumps the session epoch and records
 // `user.second_factor_disable`. ErrNotActive without a Second factor,
 // ErrInvalidCode on a wrong code.
-func (m *Module) Disable(ctx context.Context, u *ent.User, proof users.IdentityProof, code string) (*ent.User, error) {
-	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+func (m *Module) Disable(ctx context.Context, u *ent.User, in DisableInput) (*ent.User, error) {
+	if err := m.users.ProveIdentity(ctx, u, in.Proof); err != nil {
 		return nil, err
 	}
 	userID := u.ID
@@ -298,7 +311,7 @@ func (m *Module) Disable(ctx context.Context, u *ent.User, proof users.IdentityP
 		if !active(f) {
 			return ErrNotActive
 		}
-		_, verified, err := m.verify(ctx, tx, pub, snapshot{User: locked, Factor: f}, code)
+		_, verified, err := m.verify(ctx, tx, pub, snapshot{User: locked, Factor: f}, in.Code)
 		if err != nil {
 			return err
 		}
@@ -351,18 +364,30 @@ func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], c
 	return method, err
 }
 
-// DeletionCode spends code on the transaction tx of User deletion (ADR 0050, the use case
-// internal/usecase/userdeletion), whose User row locked the caller has locked and freshly read:
-// with a Second factor the code must be a current TOTP code or an unused Recovery code
-// (ErrDeletionCodeInvalid otherwise), and it is spent only if the deletion commits; without one
-// it confirms nothing. It keeps the lock order of every change of the factor: the User row, the
-// factor row, then the codes.
-func (m *Module) DeletionCode(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User, code string) error {
+// DeletionCode is the Second factor code that confirms a User's deletion (ADR 0050, the use case
+// internal/usecase/userdeletion), spent on the deletion's transaction: NewDeletionCode builds it
+// over the publisher of that transaction, which records a Recovery code's use with the deletion.
+type DeletionCode struct {
+	factors *Module
+	pub     events.Publisher
+}
+
+// NewDeletionCode builds the deletion code of the transaction whose publisher is pub.
+func NewDeletionCode(factors *Module, pub events.Publisher) *DeletionCode {
+	return &DeletionCode{factors: factors, pub: pub}
+}
+
+// Spend spends code on the transaction tx of the deletion, whose User row locked the caller has
+// locked and freshly read: with a Second factor the code must be a current TOTP code or an unused
+// Recovery code (ErrDeletionCodeInvalid otherwise), and it is spent only if the deletion commits;
+// without one it confirms nothing. It keeps the lock order of every change of the factor: the User
+// row, the factor row, then the codes.
+func (d *DeletionCode) Spend(ctx context.Context, tx *ent.Client, locked *ent.User, code string) error {
 	f, err := factorOf(ctx, tx, locked.ID)
 	if err != nil || !active(f) {
 		return err
 	}
-	_, _, err = m.verify(ctx, tx, pub, snapshot{User: locked, Factor: f}, code)
+	_, _, err = d.factors.verify(ctx, tx, d.pub, snapshot{User: locked, Factor: f}, code)
 	if errors.Is(err, ErrInvalidCode) {
 		return ErrDeletionCodeInvalid
 	}

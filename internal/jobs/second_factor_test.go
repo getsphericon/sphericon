@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -30,7 +31,9 @@ var (
 // sent when the test reads env.SystemMail.
 func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	sweep := jobs.NewRemindSecondFactorWorker(testhelper.Module[*secondfactors.Module](env), func() time.Time { return now })
+	keys := testhelper.Module[*passkeys.Module](env)
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.Module[*users.Module](env), keys, func() time.Time { return now })
+	sweep := jobs.NewRemindSecondFactorWorker(factors)
 	require.NoError(t, sweep.Work(context.Background(), job(jobs.RemindSecondFactorArgs{})))
 }
 
@@ -84,7 +87,7 @@ func TestNoSecondFactorReminderForAUserWhoEnrolledOrWhoseGraceEnded(t *testing.T
 	require.NoError(t, err)
 	code, err := totp.GenerateCode(enrollment.Secret, time.Now())
 	require.NoError(t, err)
-	_, err = testhelper.Module[*secondfactors.Module](env).ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.UmbrellaMemberNinaID), users.IdentityProof{Password: fixtures.UmbrellaMemberNinaPassword}, secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code})
+	_, err = testhelper.Module[*secondfactors.Module](env).ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.UmbrellaMemberNinaID), secondfactors.ConfirmInput{EnrollmentID: enrollment.ID, Code: code, Proof: users.IdentityProof{Password: fixtures.UmbrellaMemberNinaPassword}})
 	require.NoError(t, err)
 
 	remind(t, env, ninaDeadline.Add(-12*time.Hour))

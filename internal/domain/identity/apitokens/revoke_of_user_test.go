@@ -3,7 +3,6 @@ package apitokens_test
 import (
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,7 +21,7 @@ func TestRevokeOfUserRetiresOnlyThatUsersCredentials(t *testing.T) {
 	marys := env.ExternalWithToken(t, env.ConnectionBearer(t, fixtures.MemberMaryEmail, apitokens.ScopeContactsRead))
 	workspaces := env.ExternalWithToken(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
 
-	err := apitokens.RevokeOfUser(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.OwnerJohnID, time.Now())
+	err := testhelper.Module[*apitokens.Module](env).RevokeOfUser(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.OwnerJohnID)
 
 	require.NoError(t, err)
 	_, err = johns.ContactsList(t.Context(), externalapi.ContactsListParams{})

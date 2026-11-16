@@ -11,7 +11,7 @@ import (
 
 func (h *Handlers) AuthMeGet(ctx context.Context) (*externalapi.ApiTokenInfo, error) {
 	// The security handler admitted the token, so the request carries it.
-	token, err := apitokens.Get(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).TokenID)
+	token, err := h.tokens.Get(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).TokenID)
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,7 @@ func (h *Handlers) AuthMeGet(ctx context.Context) (*externalapi.ApiTokenInfo, er
 }
 
 func (h *Handlers) AuthTokensList(ctx context.Context) (*externalapi.ApiTokenListResponse, error) {
-	tokens, err := apitokens.List(ctx, auth.TokenScoped(ctx))
+	tokens, err := h.tokens.List(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (h *Handlers) AuthTokensList(ctx context.Context) (*externalapi.ApiTokenLis
 func (h *Handlers) AuthTokensCreate(ctx context.Context, req *externalapi.CreateApiTokenInput) (*externalapi.CreateApiTokenResponse, error) {
 	// A token can only mint scopes it holds itself (tokens:write is not a way to
 	// gain send or any other power).
-	minted, err := apitokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, inputs.ApiTokenCreate(req))
+	minted, err := h.tokens.MintWithin(ctx, auth.TokenScoped(ctx), auth.GetTokenAuth(ctx).Scopes, inputs.ApiTokenCreate(req))
 	if err != nil {
 		return nil, fmt.Errorf("create token: %w", err)
 	}
@@ -53,7 +53,7 @@ func (h *Handlers) AuthTokensBootstrap(ctx context.Context, req *externalapi.Cre
 func (h *Handlers) AuthTokensDelete(ctx context.Context, params externalapi.AuthTokensDeleteParams) error {
 	id := int64(params.ID)
 
-	err := apitokens.Revoke(ctx, auth.TokenScoped(ctx), id, h.now())
+	err := h.tokens.Revoke(ctx, auth.TokenScoped(ctx), id)
 	if err != nil {
 		return err
 	}

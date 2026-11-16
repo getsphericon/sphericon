@@ -131,7 +131,7 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 	if len(live) > 0 {
 		return users.RefuseSoleOwner(live)
 	}
-	if err := uc.factors.DeletionCode(ctx, tx, pub, deletion.User(), code); err != nil {
+	if err := secondfactors.NewDeletionCode(uc.factors, pub).Spend(ctx, tx, deletion.User(), code); err != nil {
 		return err
 	}
 	for _, m := range held {

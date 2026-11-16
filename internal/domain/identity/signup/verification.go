@@ -159,7 +159,7 @@ func (m *Module) ResetPasswordLink(ctx context.Context, token, password string) 
 		if err != nil {
 			return err
 		}
-		reset, err = afterProofIn(ctx, tx, u, firstProof, now)
+		reset, err = m.afterProofIn(ctx, tx, u, firstProof)
 		return err
 	})
 	if err != nil {
