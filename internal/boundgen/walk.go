@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 )
@@ -185,7 +186,11 @@ func (w *walker) schema(at place, raw json.RawMessage) error {
 		return fmt.Errorf("%s %w", at, err)
 	}
 	if len(values) > 0 {
-		w.found[at] = values
+		// A member of a composition at the same place adds its keywords to the place's own.
+		if w.found[at] == nil {
+			w.found[at] = map[string]string{}
+		}
+		maps.Copy(w.found[at], values)
 	}
 	if raw, ok := s["properties"]; ok {
 		var props map[string]json.RawMessage

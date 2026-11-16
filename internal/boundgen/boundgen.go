@@ -289,8 +289,12 @@ func account(docs map[string]document, bounds []Bound, values map[string]map[str
 		if t.Doc == "" {
 			problems = append(problems, fmt.Sprintf("TransportOnly %s says no reason", where(t.Spec, p)))
 		}
-		if _, err := read(docs[t.Spec], p); err != nil {
+		values, err := read(docs[t.Spec], p)
+		switch {
+		case err != nil:
 			problems = append(problems, fmt.Sprintf("TransportOnly %s: %v", where(t.Spec, p), err))
+		case !bounded(values):
+			problems = append(problems, fmt.Sprintf("TransportOnly %s declares only a default, which bounds nothing", where(t.Spec, p)))
 		}
 	}
 	for _, path := range slices.Sorted(maps.Keys(docs)) {
@@ -316,6 +320,11 @@ func account(docs map[string]document, bounds []Bound, values map[string]map[str
 		return fmt.Errorf("boundgen: a bound of the contract is not accounted for:\n\t%s", strings.Join(problems, "\n\t"))
 	}
 	return nil
+}
+
+// bounded reports whether values hold a bound keyword, not only a default.
+func bounded(values map[string]string) bool {
+	return slices.ContainsFunc(keywords, func(k string) bool { _, ok := values[k]; return ok })
 }
 
 // matches reports whether a place declares the bound keywords of a bound's values; the default is

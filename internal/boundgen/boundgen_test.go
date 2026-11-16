@@ -247,3 +247,24 @@ func TestReadSpecsReadsEveryDocument(t *testing.T) {
 	paths := slices.Sorted(maps.Keys(specs))
 	require.Equal(t, []string{"openapi/site.openapi.json", "openapi/staffee.openapi.json", "openapi/telemetry.openapi.json"}, paths)
 }
+
+func TestGenerateRefusesATransportEntryWhosePlaceKeepsOnlyADefault(t *testing.T) {
+	doc := bytes.Replace(ruleDoc, []byte(`"minimum":1,"maximum":100`), []byte(`"default":25`), 1)
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: doc}, ruleBounds, ruleTransport)
+
+	require.ErrorContains(t, err, "TransportOnly site operation Rules_list parameter limit")
+}
+
+func TestGenerateReadsTheBoundsOfAPlaceAndOfTheMembersOfItsComposition(t *testing.T) {
+	doc := []byte(`{
+	 "paths":{"/notes":{"post":{"operationId":"Notes_create",
+	  "requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/NoteInput"}}}}}}},
+	 "components":{"schemas":{"NoteInput":{"type":"object","properties":{
+	  "text":{"type":"string","maxLength":10,"allOf":[{"minLength":1}]}}}}}}`)
+	bounds := []boundgen.Bound{{Name: "NoteText", Spec: rulesSpec, Schema: "NoteInput", Property: "text", Owners: []string{"Note"}}}
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: doc}, bounds, nil)
+
+	require.ErrorContains(t, err, "site NoteInput.text declares map[maxLength:10 minLength:1]")
+}
