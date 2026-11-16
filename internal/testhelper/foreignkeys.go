@@ -16,14 +16,15 @@ func ForeignKeyOrphans(t *testing.T, sqlDB *sql.DB) []string {
 	t.Helper()
 	type foreignKey struct{ name, child, parent, childCols, parentCols string }
 	var keys []foreignKey
-	// raw sql: the foreign keys and their columns are only in the catalog (pg_constraint).
+	// raw sql: the foreign keys and their columns are only in the catalog (pg_constraint). A key
+	// with a parent (conparentid) is the copy Postgres keeps per partition; its parent covers it.
 	rows, err := sqlDB.QueryContext(t.Context(), `SELECT con.conname, con.conrelid::regclass::text, con.confrelid::regclass::text,
 	  array_to_string(ARRAY(SELECT quote_ident(a.attname) FROM unnest(con.conkey) WITH ORDINALITY AS k(num, ord)
 	    JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = k.num ORDER BY k.ord), ','),
 	  array_to_string(ARRAY(SELECT quote_ident(a.attname) FROM unnest(con.confkey) WITH ORDINALITY AS k(num, ord)
 	    JOIN pg_attribute a ON a.attrelid = con.confrelid AND a.attnum = k.num ORDER BY k.ord), ',')
 	FROM pg_constraint con JOIN pg_namespace n ON n.oid = con.connamespace
-	WHERE n.nspname = 'public' AND con.contype = 'f' ORDER BY con.conname`)
+	WHERE n.nspname = 'public' AND con.contype = 'f' AND con.conparentid = 0 ORDER BY con.conname`)
 	require.NoError(t, err)
 	defer func() {
 		closeErr := rows.Close()

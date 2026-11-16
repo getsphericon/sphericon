@@ -58,7 +58,9 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 	assert.Equal(t, 1, n, "an unseen device is recorded on first event")
 }
 
-func TestCollectTreatsAVanishedContactAsAnonymous(t *testing.T) {
+// Deleting a Contact clears its Visitors' contact_id (ON DELETE SET NULL), so the device of a
+// deleted Contact is anonymous again.
+func TestCollectTreatsTheDeviceOfADeletedContactAsAnonymous(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
