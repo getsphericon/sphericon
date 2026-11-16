@@ -40,14 +40,15 @@ func TestAnSMSStartOlderThanTheStopItFollowsLeavesTheNumberOptedOut(t *testing.T
 		WorkspaceID: fixtures.AcmeID, Phone: texter, DedupID: "early-start", ObservedAt: t1,
 	}))
 	consent := smsConsent(t, env)
+	history := superseded(t, env, fixtures.ContactTexterID)
+	confirmed := env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID), event.Action(systemevent.SmsConfirmed)).CountX(t.Context())
+
 	require.NotNil(t, consent.OptOut, "the person's last word was stop")
 	assert.Nil(t, consent.Confirmation, "the older START records no consent")
-
-	history := superseded(t, env, fixtures.ContactTexterID)
+	assert.Zero(t, confirmed)
 	require.Len(t, history, 1, "the START is in the Contact's history, as changing nothing")
-	assert.True(t, t1.Equal(history[0].OccurredAt), "at the time it occurred")
+	assert.Equal(t, t1, history[0].OccurredAt.UTC(), "at the time it occurred")
 	assert.Equal(t, map[string]any{"channel": "sms", "observation": "start"}, history[0].Properties)
-	assert.Zero(t, env.DB.Event.Query().Where(event.ContactID(fixtures.ContactTexterID), event.Action(systemevent.SmsConfirmed)).CountX(t.Context()))
 }
 
 func TestAStopOlderThanTheReturnThatLiftedAnOptOutChangesNothing(t *testing.T) {
@@ -59,14 +60,17 @@ func TestAStopOlderThanTheReturnThatLiftedAnOptOutChangesNothing(t *testing.T) {
 	publish(&events.SmsStopObserved{WorkspaceID: fixtures.AcmeID, Phone: texter, Via: events.UnsubscribedByKeyword, DedupID: "late-stop", ObservedAt: t1.Add(time.Minute)})
 
 	consent := smsConsent(t, env)
+	unsubscribed := env.QueuedCount(t, systemevent.SmsUnsubscribed, nil)
+	transitions := env.QueuedCount(t, events.NameSmsOptOutRecorded, nil)
+	history := superseded(t, env, fixtures.ContactTexterID)
+
 	assert.Nil(t, consent.OptOut, "the return lifted the opt-out after the late STOP occurred")
 	assert.NotNil(t, consent.Confirmation)
-	assert.Equal(t, 1, env.QueuedCount(t, systemevent.SmsUnsubscribed, nil), "the late STOP is no transition")
-	assert.Equal(t, 1, env.QueuedCount(t, events.NameSmsOptOutRecorded, nil))
-	history := superseded(t, env, fixtures.ContactTexterID)
+	assert.Equal(t, 1, unsubscribed, "the late STOP is no transition")
+	assert.Equal(t, 1, transitions)
 	require.Len(t, history, 1)
 	assert.Equal(t, map[string]any{"channel": "sms", "observation": "stop", "via": events.UnsubscribedByKeyword}, history[0].Properties)
-	assert.True(t, t1.Add(time.Minute).Equal(history[0].OccurredAt))
+	assert.Equal(t, t1.Add(time.Minute), history[0].OccurredAt.UTC())
 }
 
 func TestAStopOfTheSameMomentAsAReturnStands(t *testing.T) {
@@ -76,7 +80,8 @@ func TestAStopOfTheSameMomentAsAReturnStands(t *testing.T) {
 	require.NoError(t, env.Bus.Publish(t.Context(), &events.SmsStopObserved{
 		WorkspaceID: fixtures.AcmeID, Phone: texter, Via: events.UnsubscribedByKeyword, DedupID: "stop", ObservedAt: t1,
 	}))
-	assert.NotNil(t, smsConsent(t, env).OptOut, "a tie goes to the refusal")
+	consent := smsConsent(t, env)
+	assert.NotNil(t, consent.OptOut, "a tie goes to the refusal")
 }
 
 func TestConcurrentObservationsOfANumberApplyInTheOrderTheyOccurred(t *testing.T) {
@@ -108,9 +113,10 @@ func TestALaterObservationStillTransitions(t *testing.T) {
 		WorkspaceID: fixtures.AcmeID, Phone: texter, DedupID: "start", ObservedAt: t1.Add(time.Second),
 	}))
 	consent := smsConsent(t, env)
+	history := superseded(t, env, fixtures.ContactTexterID)
 	assert.Nil(t, consent.OptOut)
 	assert.NotNil(t, consent.Confirmation)
-	assert.Empty(t, superseded(t, env, fixtures.ContactTexterID))
+	assert.Empty(t, history)
 }
 
 // superseded are the contact.consent_superseded Events of a Contact: its observations that

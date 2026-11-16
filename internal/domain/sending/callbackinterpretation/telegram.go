@@ -2,6 +2,7 @@ package callbackinterpretation
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -86,9 +87,13 @@ func (t telegram) answer(ctx context.Context, tx Tx, callbackID string) {
 }
 
 func (telegram) stop(ctx context.Context, tx Tx, m preset.InboundMessage, via string, msg *ent.OutboundMessage) error {
+	seq, err := sequence(m.ID)
+	if err != nil {
+		return err
+	}
 	e := &events.TelegramStopObserved{
 		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: m.Destination, IntegrationID: tx.Integration.ID,
-		Sequence: sequence(m.ID), Via: via, ObservedAt: occurred(tx, m.OccurredAt), DedupID: tx.DedupKey(m.ID),
+		Sequence: seq, Via: via, ObservedAt: occurred(tx, m.OccurredAt), DedupID: tx.DedupKey(m.ID),
 	}
 	if msg != nil {
 		e.OutboundMessageID, e.ContactID = msg.ID, lo.FromPtr(msg.ContactID)
@@ -106,28 +111,33 @@ func (t telegram) ReachabilityChange(ctx context.Context, tx Tx, c preset.Reacha
 	case c.Reason == preset.Deactivated:
 		return bindings.Remove(ctx, tx.Scoped, tx.Pub, tx.Integration, c.Destination, tx.DedupKey(c.ID))
 	default:
+		seq, err := sequence(c.ID)
+		if err != nil {
+			return err
+		}
 		return tx.Pub.Publish(ctx, &events.TelegramStopObserved{
 			WorkspaceID: tx.Scoped.WorkspaceID(),
-			Destination: c.Destination, IntegrationID: tx.Integration.ID, Sequence: sequence(c.ID), Via: events.UnsubscribedByBlock,
+			Destination: c.Destination, IntegrationID: tx.Integration.ID, Sequence: seq, Via: events.UnsubscribedByBlock,
 			ObservedAt: occurred(tx, c.OccurredAt), DedupID: tx.DedupKey(c.ID),
 		})
 	}
 }
 
 // sequence is the bot's update_id an update's id is (the Preset's id): it orders two observations
-// of one bot (ADR 0154). The engine has checked the id is the update's.
-func sequence(id string) int64 {
+// of one bot (ADR 0154). An id that is no update_id is refused, as a fact the Preset made wrong.
+func sequence(id string) (int64, error) {
 	n, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		return 0
+	if err != nil || n <= 0 {
+		return 0, fmt.Errorf("ingest: the telegram update id %q is not an update_id", id)
 	}
-	return n
+	return n, nil
 }
 
 // occurred is when an observation occurred: the provider's time where it gives one, else when it
-// was received.
+// was received. A time after the receipt is the provider's clock or the Preset gone wrong, and is
+// read as the receipt: no observation is ordered after what really happened later.
 func occurred(tx Tx, provider time.Time) time.Time {
-	if provider.IsZero() {
+	if provider.IsZero() || provider.After(tx.Now) {
 		return tx.Now
 	}
 	return provider
@@ -145,8 +155,12 @@ func command(text string) string {
 }
 
 func (telegram) resume(ctx context.Context, tx Tx, destination, id string, at time.Time) error {
+	seq, err := sequence(id)
+	if err != nil {
+		return err
+	}
 	return tx.Pub.Publish(ctx, &events.TelegramResumeObserved{
 		WorkspaceID: tx.Scoped.WorkspaceID(), Destination: destination, IntegrationID: tx.Integration.ID,
-		Sequence: sequence(id), DedupID: tx.DedupKey(id), ObservedAt: occurred(tx, at),
+		Sequence: seq, DedupID: tx.DedupKey(id), ObservedAt: occurred(tx, at),
 	})
 }

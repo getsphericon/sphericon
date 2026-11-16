@@ -21,10 +21,14 @@ type ConsentStamp struct {
 	ent.Schema
 }
 
+// Annotations checks what the comments of the columns say: a bot's number comes with the bot and
+// only on a stamped opt-out, and a Confirmation's time only on the `everything` source.
 func (ConsentStamp) Annotations() []schema.Annotation {
-	return []schema.Annotation{
-		WithLowerCheck(TableWithEnumChecks("consent_stamps", ConsentStamp{}.Fields()), "destination"),
-	}
+	a := WithLowerCheck(TableWithEnumChecks("consent_stamps", ConsentStamp{}.Fields()), "destination")
+	a.Checks["consent_stamps_sequence_check"] = "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND " +
+		"(opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)"
+	a.Checks["consent_stamps_confirmation_check"] = "sending_source = 'everything' OR confirmation_occurred_at IS NULL"
+	return []schema.Annotation{a}
 }
 
 func (ConsentStamp) Mixin() []ent.Mixin {

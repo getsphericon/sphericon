@@ -68,9 +68,15 @@ var _ = db.Declare(
 // Hold locks the stamp row of k to the end of the transaction, making it if there is none, and
 // returns it: the observations of one key are handled one at a time, so a comparison and the write
 // it allows are one step. An owner holds it before it reads the state it decides on, and before
-// the Contact's lock (contactlock), which its write may take.
+// the Contact's lock (contactlock), which its write may take. On sms the stamp an Erasure kept by
+// the number's hash is the number's: it is held and stamped as it is, so the number never comes
+// back in plain (ADR 0021).
 func Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentStamp, error) {
-	err := s.ConsentStamp().Create().
+	k, err := kept(ctx, s, k)
+	if err != nil {
+		return nil, err
+	}
+	err = s.ConsentStamp().Create().
 		SetChannel(k.Channel).
 		SetDestination(k.Destination).
 		SetSendingSource(k.Source).
@@ -89,12 +95,29 @@ func Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentStamp, error) 
 	return row, nil
 }
 
+// kept is k, or on sms the key an Erasure kept the number's stamp by, its hash, when it did.
+func kept(ctx context.Context, s *ent.Scoped, k Key) (Key, error) {
+	if k.Channel != channels.SMS {
+		return k, nil
+	}
+	hashed := Key{Channel: k.Channel, Destination: phone.Hash(k.Destination), Source: k.Source}
+	erased, err := s.ConsentStamp().Query().Where(of(hashed)...).Exist(ctx)
+	switch {
+	case err != nil:
+		return Key{}, fmt.Errorf("find the erased consent stamp: %w", err)
+	case erased:
+		return hashed, nil
+	default:
+		return k, nil
+	}
+}
+
 // Admit reports whether an observation that occurred at o may set fact of k, and stamps it when it
 // may: when nothing has set the state yet, or o occurred later than what did. Within one bot the
 // later is the higher number; otherwise the later time, and of two of the same moment the refusal
 // wins (refusal: o stops or withdraws consent), so a tie leaves an opt-out standing. A state
 // already as o would set it is stamped too: the person said it again, later. An observation not
-// admitted changes nothing. On sms the stamp an Erasure kept by the number's hash counts as well.
+// admitted changes nothing. The stamp is Hold's: on sms, the one an Erasure kept by the hash.
 func Admit(ctx context.Context, s *ent.Scoped, k Key, fact Fact, o Occurrence, refusal bool) (bool, error) {
 	if o.At.IsZero() {
 		return false, ErrNoOccurrence
@@ -105,20 +128,8 @@ func Admit(ctx context.Context, s *ent.Scoped, k Key, fact Fact, o Occurrence, r
 	if err != nil {
 		return false, err
 	}
-	standing := []*ent.ConsentStamp{row}
-	if k.Channel == channels.SMS {
-		hashed, err := s.ConsentStamp().Query().Where(of(Key{Channel: k.Channel, Destination: phone.Hash(k.Destination), Source: k.Source})...).Only(ctx)
-		switch {
-		case err == nil:
-			standing = append(standing, hashed)
-		case !ent.IsNotFound(err):
-			return false, fmt.Errorf("read the erased consent stamp: %w", err)
-		}
-	}
-	for _, st := range standing {
-		if !later(o, stampOf(st, fact), refusal) {
-			return false, nil
-		}
+	if !later(o, stampOf(row, fact), refusal) {
+		return false, nil
 	}
 	update := s.ConsentStamp().UpdateOneID(row.ID)
 	switch fact {

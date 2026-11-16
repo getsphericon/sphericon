@@ -195,7 +195,9 @@ func TestAStartOlderThanAnErasedPersonsStopLiftsNothing(t *testing.T) {
 	}))
 	dec, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
+	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(number)).CountX(ctx)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
+	assert.Zero(t, stamps, "the START is compared with the stamp kept by the hash, and writes no number")
 }
 
 // A Confirmation recorded for a number before any Contact had it names no Contact; erasing the
