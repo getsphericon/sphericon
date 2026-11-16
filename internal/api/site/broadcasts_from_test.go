@@ -25,8 +25,9 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 
 	create := func(from string) error {
 		_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-			Name:    "from check",
-			Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(from))}),
+			Name:      "from check",
+			Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{FromEmail: siteapi.NewOptNilEmailAddress(siteapi.EmailAddress(from))}),
+			SegmentId: siteapi.NilEntityId{Null: true},
 		}, createParams)
 		return err
 	}
@@ -43,7 +44,7 @@ func TestSiteBroadcastsFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 	problem := testhelper.SiteRefusal(t, refused, http.StatusUnprocessableEntity)
 	assert.Contains(t, problem.Detail.Or(""), fixtures.SendingDomainUnverifiedDomain, "the refusal names the domain")
 
-	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}, createParams)
+	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "no from", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: siteapi.NilEntityId{Null: true}}, createParams)
 	require.NoError(t, err)
 
 	_, err = c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(updateParams.ID))),

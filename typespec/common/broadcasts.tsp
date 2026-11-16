@@ -158,8 +158,8 @@ model CreateBroadcastInput {
   /** What the broadcast says. Its `channel` is the Channel the broadcast sends on, fixed from now on: a broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS integration is refused with 422. */
   content: BroadcastContentInput;
 
-  /** Target segment; null or omitted means all contacts. An archived segment is refused with 422. */
-  segmentId?: EntityId | null;
+  /** Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as such. A body without it is refused with 400. An archived segment is refused with 422. */
+  segmentId: EntityId | null;
 
   /** Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422. */
   integrationId?: EntityId | null;

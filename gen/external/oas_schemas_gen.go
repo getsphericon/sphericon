@@ -3593,6 +3593,11 @@ type BroadcastResource struct {
 	Status BroadcastStatus `json:"status"`
 	// When the broadcast is scheduled to send.
 	ScheduledAt OptNilTimestamp `json:"scheduledAt"`
+	// The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with
+	// a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by
+	// Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from
+	// the condition copied then (ADR 0065).
+	Recipients OptInt32 `json:"recipients"`
 	// When the broadcast finished sending.
 	SentAt OptNilTimestamp `json:"sentAt"`
 	// When the broadcast failed.
@@ -3642,6 +3647,11 @@ func (s *BroadcastResource) GetStatus() BroadcastStatus {
 // GetScheduledAt returns the value of ScheduledAt.
 func (s *BroadcastResource) GetScheduledAt() OptNilTimestamp {
 	return s.ScheduledAt
+}
+
+// GetRecipients returns the value of Recipients.
+func (s *BroadcastResource) GetRecipients() OptInt32 {
+	return s.Recipients
 }
 
 // GetSentAt returns the value of SentAt.
@@ -3707,6 +3717,11 @@ func (s *BroadcastResource) SetStatus(val BroadcastStatus) {
 // SetScheduledAt sets the value of ScheduledAt.
 func (s *BroadcastResource) SetScheduledAt(val OptNilTimestamp) {
 	s.ScheduledAt = val
+}
+
+// SetRecipients sets the value of Recipients.
+func (s *BroadcastResource) SetRecipients(val OptInt32) {
+	s.Recipients = val
 }
 
 // SetSentAt sets the value of SentAt.
@@ -8241,8 +8256,9 @@ type CreateBroadcastInput struct {
 	// broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS
 	// integration is refused with 422.
 	Content BroadcastContentInput `json:"content"`
-	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
-	SegmentId OptNilEntityId `json:"segmentId"`
+	// Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as
+	// such. A body without it is refused with 400. An archived segment is refused with 422.
+	SegmentId NilEntityId `json:"segmentId"`
 	// Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An
 	// archived integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
@@ -8259,7 +8275,7 @@ func (s *CreateBroadcastInput) GetContent() BroadcastContentInput {
 }
 
 // GetSegmentId returns the value of SegmentId.
-func (s *CreateBroadcastInput) GetSegmentId() OptNilEntityId {
+func (s *CreateBroadcastInput) GetSegmentId() NilEntityId {
 	return s.SegmentId
 }
 
@@ -8279,7 +8295,7 @@ func (s *CreateBroadcastInput) SetContent(val BroadcastContentInput) {
 }
 
 // SetSegmentId sets the value of SegmentId.
-func (s *CreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
+func (s *CreateBroadcastInput) SetSegmentId(val NilEntityId) {
 	s.SegmentId = val
 }
 
@@ -15239,6 +15255,12 @@ func (s *PresetsListOK) SetTotalPages(val int32) {
 type PreviewSegmentInput struct {
 	// Condition; absent means all contacts.
 	Condition OptConditionGroupInput `json:"condition"`
+	// The Channel of a Broadcast the audience is asked for (ADR 0149). When given, the result also counts
+	// the recipients the Broadcast would take now.
+	Channel OptBroadcastChannel `json:"channel"`
+	// The Integration the Broadcast routes through; null or absent is the Channel's default. Only read
+	// with a channel.
+	IntegrationId OptNilEntityId `json:"integrationId"`
 }
 
 // GetCondition returns the value of Condition.
@@ -15246,16 +15268,40 @@ func (s *PreviewSegmentInput) GetCondition() OptConditionGroupInput {
 	return s.Condition
 }
 
+// GetChannel returns the value of Channel.
+func (s *PreviewSegmentInput) GetChannel() OptBroadcastChannel {
+	return s.Channel
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *PreviewSegmentInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
 // SetCondition sets the value of Condition.
 func (s *PreviewSegmentInput) SetCondition(val OptConditionGroupInput) {
 	s.Condition = val
 }
 
+// SetChannel sets the value of Channel.
+func (s *PreviewSegmentInput) SetChannel(val OptBroadcastChannel) {
+	s.Channel = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *PreviewSegmentInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
 // Result of a segment preview.
 // Ref: #/components/schemas/PreviewSegmentResult
 type PreviewSegmentResult struct {
-	// Number of contacts matching the condition.
+	// Number of contacts matching the condition, before Suppression and Unsubscribe.
 	Count int32 `json:"count"`
+	// Number of matching contacts a Broadcast on the asked Channel would take now: those with a
+	// Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding on
+	// the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
+	Recipients OptInt32 `json:"recipients"`
 }
 
 // GetCount returns the value of Count.
@@ -15263,9 +15309,19 @@ func (s *PreviewSegmentResult) GetCount() int32 {
 	return s.Count
 }
 
+// GetRecipients returns the value of Recipients.
+func (s *PreviewSegmentResult) GetRecipients() OptInt32 {
+	return s.Recipients
+}
+
 // SetCount sets the value of Count.
 func (s *PreviewSegmentResult) SetCount(val int32) {
 	s.Count = val
+}
+
+// SetRecipients sets the value of Recipients.
+func (s *PreviewSegmentResult) SetRecipients(val OptInt32) {
+	s.Recipients = val
 }
 
 // A machine-readable reason a client branches on, beyond the HTTP status.

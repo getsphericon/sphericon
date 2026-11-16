@@ -84,12 +84,12 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "blank name", want: "name must not be empty",
 			site: func(c *siteapi.Client) error {
-				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " ", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
+				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: " ", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: siteapi.NilEntityId{Null: true}},
 					siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return err
 			},
 			ext: func(c *externalapi.Client) error {
-				_, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{Name: " ", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
+				_, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{Name: " ", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{}), SegmentId: externalapi.NilEntityId{Null: true}})
 				return err
 			},
 		},
@@ -97,15 +97,17 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			name: "body and document together", want: "write a body or a doc, not both",
 			site: func(c *siteapi.Client) error {
 				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-					Name:    "x",
-					Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc)}),
+					Name:      "x",
+					Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(badDoc)}),
+					SegmentId: siteapi.NilEntityId{Null: true},
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return err
 			},
 			ext: func(c *externalapi.Client) error {
 				_, err := c.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
-					Name:    "x",
-					Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc)}),
+					Name:      "x",
+					Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<p>x</p>"), Doc: externalapi.NewOptEditorDocument(badDoc)}),
+					SegmentId: externalapi.NilEntityId{Null: true},
 				})
 				return err
 			},
@@ -116,7 +118,7 @@ func TestBroadcastRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 				_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
 					Name:      "x",
 					Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
-					SegmentId: siteapi.NewOptNilEntityId(missing),
+					SegmentId: siteapi.NewNilEntityId(missing),
 				}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 				return err
 			},
@@ -145,6 +147,7 @@ func TestBroadcastUnknownIntegrationReadsWithoutAPrefix(t *testing.T) {
 		Name:          "x",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: siteapi.NewOptNilEntityId(99999),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	assert.Equal(t, "integration not found", problemDetail(t, err))
 }
@@ -225,12 +228,14 @@ func TestInvalidContentReadsTheSameOnBothSurfaces(t *testing.T) {
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	_, err1 := site.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-		Name:    "x",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badDoc)}),
+		Name:      "x",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badDoc)}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: ws})
 	_, err2 := ext.BroadcastsCreate(t.Context(), &externalapi.CreateBroadcastInput{
-		Name:    "x",
-		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badDoc)}),
+		Name:      "x",
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Doc: externalapi.NewOptEditorDocument(badDoc)}),
+		SegmentId: externalapi.NilEntityId{Null: true},
 	})
 	_, err3 := site.SiteTemplatesCreate(t.Context(), &siteapi.CreateTemplateInput{
 		Name: "x", Doc: siteapi.NewOptEditorDocument(badDoc),

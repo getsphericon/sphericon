@@ -12,7 +12,8 @@ import { sendCapDays } from './sendCapDays.ts'
 
 interface SendCapWarningProps {
   workspaceId: string
-  segmentId: string | null | undefined
+  // The chosen Segment, null for all contacts, blank while no audience is chosen (ADR 0149).
+  segmentId: string | null
   segments: SiteSegmentResource[] | undefined
   // A Channel whose audience is narrower than the Segment's match (Telegram: only the Contacts
   // with a Binding on the bot): the count is then the recipients the Broadcast would take through
@@ -31,16 +32,16 @@ export function SendCapWarning(props: SendCapWarningProps) {
   )
 }
 
-// The audience is the segment preview's count of the chosen Segment, or of all contacts for a blank
-// one, or its recipients on the Channel the Broadcast is for; nothing is asked, and nothing renders, while the Workspace has no Send cap or the audience
-// goes out within 24 hours.
+// The audience is the segment preview's count of the chosen Segment, or of all contacts, or its
+// recipients on the Channel the Broadcast is for; nothing is asked, and nothing renders, while no
+// audience is chosen, the Workspace has no Send cap or the audience goes out within 24 hours.
 function Warning({ workspaceId, segmentId, segments, reach }: SendCapWarningProps) {
   const { t } = useTranslation()
   const { data: workspaces } = useSuspenseQuery(siteWorkspacesListOptions())
   const sendCap = workspaces.find((w) => w.id === workspaceId)?.sendCap
-  // A blank Segment is all contacts; a chosen one counts by its condition, once it is known.
+  // All contacts are counted at once; a chosen Segment by its condition, once it is known.
   const segment = segmentId ? segments?.find((s) => s.id === segmentId) : undefined
-  const resolved = !segmentId || segment !== undefined
+  const resolved = segmentId === null || segment !== undefined
   const condition = segment?.condition
 
   const preview = useQuery({

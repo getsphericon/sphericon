@@ -1021,6 +1021,10 @@ export type BroadcastResource = {
    */
   scheduledAt?: Timestamp | null;
   /**
+   * The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065).
+   */
+  recipients?: number;
+  /**
    * When the broadcast finished sending
    */
   sentAt?: Timestamp | null;
@@ -2337,9 +2341,9 @@ export type CreateBroadcastInput = {
    */
   content: BroadcastContentInput;
   /**
-   * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
+   * Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as such. A body without it is refused with 400. An archived segment is refused with 422.
    */
-  segmentId?: EntityId | null;
+  segmentId: EntityId | null;
   /**
    * Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422.
    */
@@ -3820,6 +3824,15 @@ export type PreviewSegmentInput = {
    * Condition; absent means all contacts
    */
   condition?: ConditionGroupInput;
+  /**
+   * The Channel of a Broadcast the audience is asked for (ADR 0149). When given, the result also
+   * counts the recipients the Broadcast would take now.
+   */
+  channel?: BroadcastChannel;
+  /**
+   * The Integration the Broadcast routes through; null or absent is the Channel's default. Only read with a channel
+   */
+  integrationId?: EntityId | null;
 };
 
 /**
@@ -3827,9 +3840,15 @@ export type PreviewSegmentInput = {
  */
 export type PreviewSegmentResult = {
   /**
-   * Number of contacts matching the condition
+   * Number of contacts matching the condition, before Suppression and Unsubscribe
    */
   count: number;
+  /**
+   * Number of matching contacts a Broadcast on the asked Channel would take now: those with a
+   * Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding
+   * on the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
+   */
+  recipients?: number;
 };
 
 /**

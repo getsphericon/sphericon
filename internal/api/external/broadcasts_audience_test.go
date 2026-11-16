@@ -144,3 +144,78 @@ func TestExternalRescheduledBroadcastTakesTheSegmentsCurrentCondition(t *testing
 	assert.Contains(t, got, fixtures.ContactNoahEmail, "a free Contact matches the Condition copied at the second schedule")
 	assert.NotContains(t, got, fixtures.ContactLiamEmail, "a pro Contact matches only the Segment's later edit")
 }
+
+// A Broadcast's audience is always named (ADR 0149): a create that leaves segmentId out is refused
+// and stores nothing, null is all contacts chosen as such, and an id is that Segment.
+func TestExternalBroadcastCreateNamesItsAudience(t *testing.T) {
+	draft := func(segment externalapi.NilEntityId) *externalapi.CreateBroadcastInput {
+		return &externalapi.CreateBroadcastInput{
+			Name:      "Spring news",
+			Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Spring")}),
+			SegmentId: segment,
+		}
+	}
+
+	t.Run("left out is refused", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		c := env.ExternalScoped(t, audienceScopes...)
+		unnamed := env.ExternalVia(t, env.ScopedBearer(t, audienceScopes...), testhelper.EditBody(func(body map[string]any) {
+			delete(body, "segmentId")
+		}))
+		before, err := c.BroadcastsList(t.Context(), externalapi.BroadcastsListParams{})
+		require.NoError(t, err)
+
+		_, err = unnamed.BroadcastsCreate(t.Context(), draft(externalapi.NilEntityId{Null: true}))
+
+		after, listErr := c.BroadcastsList(t.Context(), externalapi.BroadcastsListParams{})
+		require.NoError(t, listErr)
+		refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
+		assert.Contains(t, refused.Detail.Or(""), "segmentId (field required)", "the refusal names the missing audience")
+		assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
+	})
+
+	t.Run("null is all contacts", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		c := env.ExternalScoped(t, audienceScopes...)
+
+		created, err := c.BroadcastsCreate(t.Context(), draft(externalapi.NilEntityId{Null: true}))
+
+		require.NoError(t, err)
+		_, named := created.SegmentId.Get()
+		assert.False(t, named, "null targets all contacts: no Segment")
+	})
+
+	t.Run("an id is that segment", func(t *testing.T) {
+		env := testhelper.Setup(t)
+		c := env.ExternalScoped(t, audienceScopes...)
+
+		created, err := c.BroadcastsCreate(t.Context(), draft(externalapi.NewNilEntityId(proSegment)))
+
+		require.NoError(t, err)
+		assert.Equal(t, proSegment, created.SegmentId.Value)
+		assert.False(t, created.SegmentId.Null)
+	})
+}
+
+// Schedule answers the Recipients the Broadcast would take at that moment (ADR 0149): the figure
+// the preview gives for its audience on its Channel, which leaves a suppressed Contact out.
+func TestExternalScheduleAnswersTheRecipientsAtThatMoment(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, audienceScopes...)
+	env.SuppressDestination(t.Context(), fixtures.ContactLiamEmail)
+	preview, err := c.SegmentsPreview(t.Context(), &externalapi.PreviewSegmentInput{
+		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, proPlanCondition)),
+		Channel:   externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail),
+	})
+	require.NoError(t, err)
+	require.Less(t, preview.Recipients.Value, preview.Count, "the suppressed pro Contact is matched but not reached")
+	id := entityIDString(fixtures.BroadcastProSegmentID)
+	read, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: id})
+	require.NoError(t, err)
+
+	scheduled, err := c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{Revision: read.Revision, ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+		externalapi.BroadcastsScheduleParams{ID: id})
+
+	require.NoError(t, err)
+	assert.Equal(t, preview.Recipients, scheduled.Recipients)
+}

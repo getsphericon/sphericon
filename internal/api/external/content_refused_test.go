@@ -25,8 +25,9 @@ func TestExternalRefusesContentThatCannotRender(t *testing.T) {
 	assert.Contains(t, refused.Detail.Or(""), "render body")
 
 	_, err = c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name:    "Broken",
-		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<table><tr><td>hi</td></tr>")}),
+		Name:      "Broken",
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString("<table><tr><td>hi</td></tr>")}),
+		SegmentId: externalapi.NilEntityId{Null: true},
 	})
 	refusedBroadcast := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedBroadcast.Detail.Or(""), "<table> is never closed")

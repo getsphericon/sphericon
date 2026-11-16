@@ -29,6 +29,7 @@ func TestSiteTelegramBroadcastIsCreatedWithItsTextAndReportsFiguresPerChannel(t 
 		Name:          "News",
 		Content:       testhelper.SiteTelegram("Hello <b>{{ first_name }}</b>"),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	got, err := c.SiteBroadcastsGet(ctx, siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: made.ID})
@@ -60,10 +61,12 @@ func TestSiteTelegramBroadcastRefusesAnEmailIntegrationAndAContentOfTheOtherChan
 	_, onEmail := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "News", Content: testhelper.SiteTelegram("Hello"),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeDefaultID)),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, params)
 	b, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name: "News", Content: testhelper.SiteTelegram("Hello"),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, params)
 	require.NoError(t, err)
 	_, asEmail := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(b.ID))),
@@ -81,7 +84,7 @@ func TestSiteTelegramBroadcastScheduleChecksTheRouteAndTheWrittenLengthAndHasNoT
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	botID := idStr(int64(bot.Integration.ID))
 	create := func(text string, integration *siteapi.EntityId) siteapi.EntityId {
-		in := &siteapi.CreateBroadcastInput{Name: "News", Content: testhelper.SiteTelegram(text)}
+		in := &siteapi.CreateBroadcastInput{Name: "News", Content: testhelper.SiteTelegram(text), SegmentId: siteapi.NilEntityId{Null: true}}
 		if integration != nil {
 			in.IntegrationId = siteapi.NewOptNilEntityId(*integration)
 		}
@@ -129,6 +132,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 			LinkPreview:       siteapi.NewOptBool(false),
 			UnsubscribeButton: siteapi.NewOptString("Stop"),
 		}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	read := func() siteapi.TelegramBroadcastContent {
@@ -185,7 +189,8 @@ func TestSiteTelegramBroadcastScheduleKnowsTheCaptionLimit(t *testing.T) {
 		}
 		b, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 			Name: "News", IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(bot.Integration.ID))),
-			Content: testhelper.SiteTelegramContent(in),
+			Content:   testhelper.SiteTelegramContent(in),
+			SegmentId: siteapi.NilEntityId{Null: true},
 		}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		require.NoError(t, err)
 		_, err = c.SiteBroadcastsSchedule(ctx, &siteapi.ScheduleBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(b.ID))), ScheduledAt: siteapi.Timestamp(time.Now().Add(time.Hour))},

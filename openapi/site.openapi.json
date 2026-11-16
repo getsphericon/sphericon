@@ -4553,7 +4553,7 @@
     "/workspaces/{workspaceId}/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "SiteBroadcasts_schedule",
-        "description": "Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156).",
+        "description": "Schedule a broadcast to send at a future time. The answer carries `recipients`, the recipients it would take at that moment (ADR 0149). A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156).",
         "parameters": [
           {
             "$ref": "#/components/parameters/SiteBroadcastResourceKey.workspaceId"
@@ -11490,7 +11490,7 @@
       },
       "CreateBroadcastInput": {
         "type": "object",
-        "required": ["name", "content"],
+        "required": ["name", "content", "segmentId"],
         "properties": {
           "name": {
             "allOf": [
@@ -11516,7 +11516,7 @@
               }
             ],
             "nullable": true,
-            "description": "Target segment; null or omitted means all contacts. An archived segment is refused with 422."
+            "description": "Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as such. A body without it is refused with 400. An archived segment is refused with 422."
           },
           "integrationId": {
             "type": "string",
@@ -14550,6 +14550,11 @@
             ],
             "nullable": true,
             "description": "When the broadcast is scheduled to send"
+          },
+          "recipients": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065)."
           },
           "sentAt": {
             "type": "string",

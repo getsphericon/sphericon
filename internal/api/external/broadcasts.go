@@ -8,6 +8,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -103,11 +104,12 @@ func (h *Handlers) BroadcastsSetSegment(ctx context.Context, req *externalapi.Se
 // MCP they additionally need mcp:send (the x-mcp send flag).
 func (h *Handlers) BroadcastsSchedule(ctx context.Context, req *externalapi.ScheduleBroadcastInput, params externalapi.BroadcastsScheduleParams) (*externalapi.BroadcastResource, error) {
 	id := int64(params.ID)
-	b, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, int64(req.Revision), time.Time(req.ScheduledAt))
+	scheduled, err := h.broadcasts.Schedule(ctx, auth.TokenScoped(ctx), id, int64(req.Revision), time.Time(req.ScheduledAt))
 	if err != nil {
 		return nil, err
 	}
-	res := mapper.BroadcastToResource(b)
+	res := mapper.BroadcastToResource(scheduled.Broadcast)
+	res.Recipients = externalapi.NewOptInt32(narrow.Int32(scheduled.Recipients))
 	return &res, nil
 }
 

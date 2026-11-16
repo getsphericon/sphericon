@@ -8,10 +8,12 @@ import type {
   SiteBroadcastResource,
   ScheduleBroadcastInput,
 } from '../../generated/site/types.gen.ts'
+import { useActionModal } from '../../hooks/useActionModal.tsx'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import type { ResourceEditor } from '../../resources/defineResource.tsx'
 import { Route as broadcastsReportRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/report.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
+import { ScheduleConfirmation } from './ScheduleConfirmation.tsx'
 
 // The operations of a Broadcast's editor session that deliver it.
 export type BroadcastDelivery = 'SEND' | 'SCHEDULE'
@@ -20,7 +22,8 @@ export type BroadcastDelivery = 'SEND' | 'SCHEDULE'
 // editor's session: they deliver the saved content, so they wait for a pending Save and for the
 // form's unsaved edits to be saved, and are only possible for drafts. Test send works for any
 // status of an email Broadcast, to an address, and of an SMS one, to a phone number: Telegram has
-// none, so its action is not offered (ADR 0080).
+// none, so its action is not offered (ADR 0080). Schedule first shows the Recipients it would take
+// now and schedules once that is confirmed (ADR 0149).
 export function DeliveryBlock({
   broadcast,
   editor,
@@ -48,6 +51,20 @@ export function DeliveryBlock({
       })
     }
   }
+
+  const confirmSchedule = useActionModal(
+    t(($) => $.broadcasts.scheduleConfirm.title),
+    (close) => (
+      <ScheduleConfirmation
+        broadcast={broadcast}
+        onCancel={close}
+        onConfirm={() => {
+          close()
+          void deliver('SCHEDULE', { scheduledAt: new Date(scheduledAt).toISOString() })
+        }}
+      />
+    ),
+  )
 
   const testSendMutation = useResourceMutation({
     mutation: siteBroadcastsTestSendMutation(),
@@ -90,13 +107,12 @@ export function DeliveryBlock({
           variant="light"
           disabled={!editor.can('SCHEDULE') || scheduledAt === ''}
           loading={editor.operation === 'SCHEDULE'}
-          onClick={() => {
-            void deliver('SCHEDULE', { scheduledAt: new Date(scheduledAt).toISOString() })
-          }}
+          onClick={confirmSchedule.open}
         >
           {t(($) => $.broadcasts.schedule)}
         </Button>
       </Group>
+      {confirmSchedule.modal}
 
       {broadcast.channel === 'email' && (
         <>

@@ -37,8 +37,9 @@ func TestExternalBroadcastsAreCreatedAsDraftsAndEditedWhileDraft(t *testing.T) {
 	ctx := context.Background()
 
 	b, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name:    "Spring sale",
-		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Big news")}),
+		Name:      "Spring sale",
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Big news")}),
+		SegmentId: externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.BroadcastStatusDraft, b.Status)
@@ -172,7 +173,7 @@ func TestExternalBroadcastsRequireScopes(t *testing.T) {
 	require.NoError(t, err)
 
 	// ...but cannot write, set the Segment or test-send.
-	_, err = readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{})})
+	_, err = readOnly.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{Name: "x", Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{}), SegmentId: externalapi.NilEntityId{Null: true}})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)
 	_, err = readOnly.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(draftBroadcast)))}, externalapi.BroadcastsUpdateParams{ID: draftBroadcast})
 	testhelper.ExternalRefusal(t, err, http.StatusForbidden)

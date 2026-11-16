@@ -507,6 +507,8 @@ export default interface Resources {
       "audience": {
         "all": "Audience: all contacts",
         "copied": "Its audience is the segment's conditions as they were when it was scheduled or sent: editing the segment since changes nothing for it.",
+        "label": "Audience",
+        "placeholder": "Choose a segment or all contacts",
         "segment": "Audience: segment {{name}}"
       },
       "channelAll": "Every channel",
@@ -554,9 +556,14 @@ export default interface Resources {
       "recipientsLabel": "Recipients",
       "report": "Report",
       "schedule": "Schedule",
+      "scheduleConfirm": {
+        "confirm": "Schedule broadcast",
+        "countError": "Could not count the recipients",
+        "recipients": "It would reach {{count, number}} recipient now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends." | "It would reach {{count, number}} recipients now: the contacts of its audience who can receive it on its channel. Who receives it is settled when it sends.",
+        "title": "Schedule this broadcast?"
+      },
       "scheduleLabel": "Schedule for",
       "segmentAll": "All contacts",
-      "segmentLabel": "Segment",
       "segmentNote": "Unsubscribed contacts are always excluded.",
       "segmentNoteSms": "It goes to the contacts whose phone has an SMS confirmation and has not opted out of texts. Each number is checked again when its text is sent.",
       "segmentNoteTelegram": "It goes to the contacts with a Telegram chat bound to this bot who have not stopped Telegram messages. A contact with several chats gets one message in each and counts once.",

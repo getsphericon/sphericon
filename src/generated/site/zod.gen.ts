@@ -2755,7 +2755,7 @@ export const zBroadcastContentInput = z.discriminatedUnion('channel', [
 export const zCreateBroadcastInput = z.strictObject({
   name: zName,
   content: zBroadcastContentInput,
-  segmentId: z.exactOptional(zEntityId.nullable()),
+  segmentId: zEntityId.nullable(),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
 
@@ -3194,6 +3194,7 @@ export const zSiteBroadcastResource = z.object({
   status: zSiteBroadcastStatus,
   holdReason: z.exactOptional(zHoldReason.nullable()),
   scheduledAt: z.exactOptional(zTimestamp.nullable()),
+  recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   sentAt: z.exactOptional(zTimestamp.nullable()),
   failedAt: z.exactOptional(zTimestamp.nullable()),
   stats: zSiteBroadcastStats,

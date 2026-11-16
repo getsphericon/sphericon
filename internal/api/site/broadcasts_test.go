@@ -23,8 +23,9 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Spring sale",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Big news"), Body: siteapi.NewOptString("<p>Hi {{ first_name }}</p>")}),
+		Name:      "Spring sale",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Big news"), Body: siteapi.NewOptString("<p>Hi {{ first_name }}</p>")}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
@@ -143,7 +144,7 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "forged",
 		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
-		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentGlobexID)),
+		SegmentId: siteapi.NewNilEntityId(idStr(fixtures.SegmentGlobexID)),
 	}, workspaceID)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -151,6 +152,7 @@ func TestSiteBroadcastsCreateRefusesAForeignSegmentOrIntegration(t *testing.T) {
 		Name:          "forged",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, workspaceID)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 

@@ -1270,7 +1270,7 @@
     "/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "Broadcasts_schedule",
-        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
+        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. The answer carries `recipients`, the recipients it would take at that moment (ADR 0149). A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -3842,7 +3842,7 @@
     "/segments/preview": {
       "post": {
         "operationId": "Segments_preview",
-        "description": "Count the contacts matching an unsaved rule definition",
+        "description": "Count the contacts matching an unsaved rule definition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149).",
         "parameters": [],
         "responses": {
           "200": {
@@ -6851,6 +6851,11 @@
             "nullable": true,
             "description": "When the broadcast is scheduled to send"
           },
+          "recipients": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065)."
+          },
           "sentAt": {
             "type": "string",
             "allOf": [
@@ -8736,7 +8741,7 @@
       },
       "CreateBroadcastInput": {
         "type": "object",
-        "required": ["name", "content"],
+        "required": ["name", "content", "segmentId"],
         "properties": {
           "name": {
             "allOf": [
@@ -8762,7 +8767,7 @@
               }
             ],
             "nullable": true,
-            "description": "Target segment; null or omitted means all contacts. An archived segment is refused with 422."
+            "description": "Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as such. A body without it is refused with 400. An archived segment is refused with 422."
           },
           "integrationId": {
             "type": "string",
@@ -10980,6 +10985,24 @@
               }
             ],
             "description": "Condition; absent means all contacts"
+          },
+          "channel": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BroadcastChannel"
+              }
+            ],
+            "description": "The Channel of a Broadcast the audience is asked for (ADR 0149). When given, the result also\ncounts the recipients the Broadcast would take now."
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration the Broadcast routes through; null or absent is the Channel's default. Only read with a channel"
           }
         },
         "description": "Request body for previewing a condition's segment",
@@ -10992,7 +11015,12 @@
           "count": {
             "type": "integer",
             "format": "int32",
-            "description": "Number of contacts matching the condition"
+            "description": "Number of contacts matching the condition, before Suppression and Unsubscribe"
+          },
+          "recipients": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of matching contacts a Broadcast on the asked Channel would take now: those with a\nDestination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding\non the routed Integration). The figure Schedule answers too. Absent unless a channel was given."
           }
         },
         "description": "Result of a segment preview"

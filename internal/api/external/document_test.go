@@ -141,8 +141,9 @@ func TestExternalBroadcastsSaveADocumentAndRefuseAnInvalidOne(t *testing.T) {
 	ctx := context.Background()
 
 	res, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name:    "Authored",
-		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hi"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
+		Name:      "Authored",
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hi"), Doc: externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
+		SegmentId: externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
 	assert.Contains(t, testhelper.ExternalEmailOf(res).Body, "Hello {{ first_name }}")

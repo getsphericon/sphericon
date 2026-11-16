@@ -279,7 +279,7 @@ export const broadcastsReport = <ThrowOnError extends boolean = false>(options: 
 });
 
 /**
- * Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
+ * Schedule a draft or scheduled broadcast to send to its audience at a future time. The answer carries `recipients`, the recipients it would take at that moment (ADR 0149). A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the broadcasts:send scope, and mcp:send over MCP.
  */
 export const broadcastsSchedule = <ThrowOnError extends boolean = false>(options: Options<BroadcastsScheduleData, ThrowOnError>): RequestResult<BroadcastsScheduleResponses, BroadcastsScheduleErrors, ThrowOnError> => (options.client ?? client).post<BroadcastsScheduleResponses, BroadcastsScheduleErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
@@ -905,7 +905,7 @@ export const segmentsCreate = <ThrowOnError extends boolean = false>(options: Op
 });
 
 /**
- * Count the contacts matching an unsaved rule definition
+ * Count the contacts matching an unsaved rule definition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149).
  */
 export const segmentsPreview = <ThrowOnError extends boolean = false>(options: Options<SegmentsPreviewData, ThrowOnError>): RequestResult<SegmentsPreviewResponses, SegmentsPreviewErrors, ThrowOnError> => (options.client ?? client).post<SegmentsPreviewResponses, SegmentsPreviewErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],

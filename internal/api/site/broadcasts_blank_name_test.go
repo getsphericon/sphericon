@@ -20,7 +20,7 @@ func TestSiteBroadcastsRefuseABlankNameWith422(t *testing.T) {
 			env := testhelper.Setup(t)
 			c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-			_, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: siteapi.Name(name), Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})},
+			_, err := c.SiteBroadcastsCreate(context.Background(), &siteapi.CreateBroadcastInput{Name: siteapi.Name(name), Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: siteapi.NilEntityId{Null: true}},
 				siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 			refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 			assert.Equal(t, "name must not be empty", refused.Detail.Value)

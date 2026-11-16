@@ -628,8 +628,9 @@ func TestMCPRefusesAPropertyNestedInAnObjectArgument(t *testing.T) {
 	require.NoError(t, err)
 
 	res := call(t, s, "broadcasts_create", map[string]any{
-		"name":    "Typo",
-		"content": map[string]any{"channel": "email", "subjct": "Hello"},
+		"name":      "Typo",
+		"segmentId": nil,
+		"content":   map[string]any{"channel": "email", "subjct": "Hello"},
 	})
 	after, err := api.BroadcastsList(ctx, externalapi.BroadcastsListParams{})
 	require.NoError(t, err)

@@ -22,8 +22,9 @@ func TestSiteBroadcastsSaveADocumentWithItsBody(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Authored",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi {{ first_name }}"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
+		Name:      "Authored",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi {{ first_name }}"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}"))}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
@@ -76,8 +77,9 @@ func TestSiteBroadcastsRefuseADocumentThatCannotBeRendered(t *testing.T) {
 		"content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`),
 	}
 	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Bad",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badLevel)}),
+		Name:      "Bad",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Doc: siteapi.NewOptEditorDocument(badLevel)}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Value, "level")
@@ -99,8 +101,9 @@ func TestSiteBroadcastsRefuseABodyAndADocumentTogether(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Both",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
+		Name:      "Both",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<p>x</p>"), Doc: siteapi.NewOptEditorDocument(paragraphDoc("x"))}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 

@@ -28,6 +28,7 @@ func TestExternalSMSBroadcastIsCreatedTestSentScheduledAndKeepsItsIntegrationInU
 	made, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name: "Flash sale", Content: testhelper.ExternalSMS("Hi {{ first_name }}"),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(twilio)),
+		SegmentId:     externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
 	tested := c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Phone: externalapi.NewOptString("+14155550199")},

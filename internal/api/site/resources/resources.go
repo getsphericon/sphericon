@@ -304,6 +304,8 @@ type Converter interface {
 	// Warnings are the lint of the content just saved (ADR 0040): the handler attaches them
 	// to the response of a save.
 	// goverter:ignore Warnings
+	// Recipients are counted by Schedule (ADR 0149): the handler attaches them to its answer.
+	// goverter:ignore Recipients
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.

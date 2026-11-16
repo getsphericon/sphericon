@@ -6,17 +6,21 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/kernel/narrow"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // broadcastResource maps a Broadcast's view and attaches what the converter cannot see: its
-// delivery figures, its progress while it is sending (ADR 0023) and the lint warnings of a save
-// (ADR 0040).
+// delivery figures, its progress while it is sending (ADR 0023), the lint warnings of a save
+// (ADR 0040) and the Recipients counted at Schedule (ADR 0149).
 func broadcastResource(v broadcasts.View) siteapi.SiteBroadcastResource {
 	res := mapper.BroadcastToResource(v.Broadcast)
 	res.Stats = mapper.BroadcastStatsToResource(v.Stats.Figures())
 	if v.Progress != nil {
 		res.Progress = siteapi.NewOptNilSiteBroadcastProgress(mapper.BroadcastProgressToResource(*v.Progress))
+	}
+	if v.Recipients != nil {
+		res.Recipients = siteapi.NewOptInt32(narrow.Int32(*v.Recipients))
 	}
 	res.Warnings = mapper.LintFindingsToResource(v.Warnings)
 	return res

@@ -245,12 +245,28 @@ model UpdateSegmentInput {
 model PreviewSegmentInput {
   /** Condition; absent means all contacts */
   condition?: ConditionGroupInput;
+
+  /**
+   * The Channel of a Broadcast the audience is asked for (ADR 0149). When given, the result also
+   * counts the recipients the Broadcast would take now.
+   */
+  channel?: BroadcastChannel;
+
+  /** The Integration the Broadcast routes through; null or absent is the Channel's default. Only read with a channel */
+  integrationId?: EntityId | null;
 }
 
 /** Result of a segment preview */
 model PreviewSegmentResult {
-  /** Number of contacts matching the condition */
+  /** Number of contacts matching the condition, before Suppression and Unsubscribe */
   count: int32;
+
+  /**
+   * Number of matching contacts a Broadcast on the asked Channel would take now: those with a
+   * Destination on it that is neither suppressed nor unsubscribed (on Telegram, an eligible Binding
+   * on the routed Integration). The figure Schedule answers too. Absent unless a channel was given.
+   */
+  recipients?: int32;
 }
 
 @tag("Segments")
@@ -262,7 +278,7 @@ interface Segments
       ApiTokenScope.segmentsRead,
       ApiTokenScope.segmentsWrite
     > {
-  /** Count the contacts matching an unsaved rule definition */
+  /** Count the contacts matching an unsaved rule definition, or all contacts without one. With a `channel` it also counts the recipients a Broadcast there would take now: read it back before a Broadcast is handed over for scheduling (ADR 0149). */
   @collectionAction(SegmentResource, "preview")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.segmentsRead])

@@ -23,7 +23,7 @@ func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 	_, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "retired",
 		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
-		SegmentId: siteapi.NewOptNilEntityId(idStr(fixtures.SegmentArchivedID)),
+		SegmentId: siteapi.NewNilEntityId(idStr(fixtures.SegmentArchivedID)),
 	}, workspaceID)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
@@ -31,6 +31,7 @@ func TestSiteBroadcastsCreateRefusesAnArchivedSegmentOrIntegration(t *testing.T)
 		Name:          "retired",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeArchivedID)),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, workspaceID)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 

@@ -175,7 +175,7 @@ func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (bro
 			return broadcastsCreateInput, err
 		}
 		broadcastsCreateInput.Content = broadcastsContentInput
-		broadcastsCreateInput.SegmentID = nilEntityIDPtrIn((*source).SegmentId)
+		broadcastsCreateInput.SegmentID = requiredNilEntityIDPtrIn((*source).SegmentId)
 		broadcastsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return broadcastsCreateInput, nil
@@ -481,8 +481,8 @@ func (c *InputsImpl) SegmentPreview(source *external.PreviewSegmentInput) (segme
 			return segmentsPreviewInput, err
 		}
 		segmentsPreviewInput.Condition = pString
-		// segmentsPreviewInput.Channel: ignore
-		// segmentsPreviewInput.IntegrationID: ignore
+		segmentsPreviewInput.Channel = broadcastChannelPtrIn(c, (*source).Channel)
+		segmentsPreviewInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return segmentsPreviewInput, nil
 }

@@ -27,8 +27,9 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	assert.Contains(t, refused.Detail.Or(""), "render body")
 
 	_, err = c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Broken",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<div><span>hi</div>")}),
+		Name:      "Broken",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString("<div><span>hi</div>")}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	refusedBroadcast := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedBroadcast.Detail.Or(""), "<span> is never closed")

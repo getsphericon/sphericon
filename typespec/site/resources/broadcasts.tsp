@@ -171,6 +171,9 @@ model SiteBroadcastResource {
   /** When the broadcast is scheduled to send */
   scheduledAt?: Timestamp | null;
 
+  /** The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065). */
+  recipients?: int32;
+
   /** When the broadcast finished sending */
   sentAt?: Timestamp | null;
 
@@ -282,7 +285,7 @@ interface SiteBroadcasts
     @body body: RevisionInput,
   ): SiteBroadcastResource | Problem;
 
-  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156). */
+  /** Schedule a broadcast to send at a future time. The answer carries `recipients`, the recipients it would take at that moment (ADR 0149). A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156). */
   @action("schedule")
   @autoRoute
   @requiresPermissions(#[])
