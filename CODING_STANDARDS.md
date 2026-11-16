@@ -48,7 +48,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `rule <n>: <what is wrong>; fix: <what to do instead>`. Build it with `rule.Message(n, what, fix)`
   (`tools/analyzers/rule`), never by hand.
 - **A check is on at once.** Run it over the repository and fix every finding in the same change; there
-  is no baseline of known violations and no ignore list.
+  is no baseline of known violations and no ignore list. The one exception is the domain tier's call
+  contract (ADR 0167): `callshape` ratchets in over `tools/analyzers/callshape/exempt.txt`, a list that
+  may only shrink and goes when it is empty (Rule 5 below).
 - **Rule 1, `handmapper`.** A function that takes an ent entity and returns a type of a `gen/*` package
   must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in

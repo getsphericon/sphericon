@@ -698,9 +698,9 @@ git show "$base:$list" | grep -Ev '^[[:space:]]*(#|$)' | sort -u > "$tmp/base"
 { cat "$list" 2>/dev/null || true; } | grep -Ev '^[[:space:]]*(#|$)' | sort -u > "$tmp/head"
 added=$(comm -13 "$tmp/base" "$tmp/head")
 if [ -n "$added" ]; then
-  echo "error: $list gained entries, and it may only shrink (ADR 0167):"
+  echo "rule 5: $list gained entries, and it may only shrink (ADR 0167):"
   echo "$added" | sed 's/^/  /'
-  echo "fix: make the package keep the call contract instead (review rule 5, tools/analyzers/callshape)"
+  echo "fix: make the package keep the call contract instead of listing it (tools/analyzers/callshape)"
   exit 1
 fi
 '''

@@ -48,3 +48,13 @@ type Result struct {
 
 // Normalize is a pure helper: it takes no context.
 func Normalize(s string) string { return s }
+
+// Stamp reads the clock: the use case tier's own rule, which does not bind a domain module (another
+// analyzer bans reading the wall clock everywhere).
+func Stamp() time.Time { return time.Now() }
+
+// store implements an interface whose signature it does not choose: a method of an unexported type
+// is no operation of the module, whatever its shape.
+type store struct{}
+
+func (store) Lookup(context.Context, string, string, string) (int, bool, error) { return 0, false, nil }

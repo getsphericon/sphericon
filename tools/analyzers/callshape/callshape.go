@@ -251,8 +251,8 @@ func (c *checker) checkConstructors() {
 		if !ok || !tn.Exported() || tn.IsAlias() || c.inTestFile(tn.Pos()) || !hasOperations(tn.Type()) {
 			continue
 		}
-		var partial *types.Func
-		built := false
+		var returnsMore *types.Func
+		returnsAlone := false
 		for _, ctor := range []string{"New", "New" + name} {
 			f, ok := scope.Lookup(ctor).(*types.Func)
 			if !ok {
@@ -265,15 +265,15 @@ func (c *checker) checkConstructors() {
 			res := sig.Results()
 			switch {
 			case res.Len() == 1 && isPtrTo(res.At(0).Type(), tn):
-				built = true
+				returnsAlone = true
 			case res.Len() > 1 && isPtrTo(res.At(0).Type(), tn):
-				partial = f
+				returnsMore = f
 			}
 		}
 		switch {
-		case built:
-		case partial != nil:
-			c.add(partial.Pos(), partial.Name()+" returns more than *"+name,
+		case returnsAlone:
+		case returnsMore != nil:
+			c.add(returnsMore.Pos(), returnsMore.Name()+" returns more than *"+name,
 				"return *"+name+" alone; the wiring builds and checks a dependency that can fail and hands it in")
 		default:
 			c.add(tn.Pos(), name+" has operations but no constructor New or New"+name+" that returns *"+name,
