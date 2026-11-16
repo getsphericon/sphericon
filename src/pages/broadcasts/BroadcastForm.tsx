@@ -141,8 +141,6 @@ function AudienceSelect({
   segments: SiteSegmentResource[] | undefined
 }) {
   const { t } = useTranslation()
-  // The form's blur validation and error, around a value the picker maps to and from null.
-  const { error, onBlur, onFocus } = form.getInputProps('segmentId')
   const { segmentId } = form.values
   return (
     <Select
@@ -154,9 +152,9 @@ function AudienceSelect({
         ...(segments ?? []).map((s) => ({ value: s.id, label: s.name })),
       ]}
       allowDeselect={false}
-      error={error}
-      onBlur={onBlur}
-      onFocus={onFocus}
+      // The form's props (blur validation, the error, the path Save focuses on an error), with the
+      // value mapped to and from null below.
+      {...form.getInputProps('segmentId')}
       value={segmentId === null ? ALL_CONTACTS : segmentId || null}
       onChange={(next) => {
         form.setFieldValue('segmentId', next === ALL_CONTACTS ? null : (next ?? ''))

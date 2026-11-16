@@ -104,8 +104,11 @@ func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64,
 		return View{}, err
 	}
 	view, err := v.figured(ctx, s, scheduled.Broadcast)
+	if err != nil {
+		return View{}, err
+	}
 	view.Recipients = &scheduled.Recipients
-	return view, err
+	return view, nil
 }
 
 // Archive puts a draft, sent or failed Broadcast aside (Module.Archive) and returns its view: its

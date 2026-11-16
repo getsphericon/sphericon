@@ -219,6 +219,7 @@ test('a new broadcast is not saved until its audience is chosen', async () => {
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect.element(screen.getByText('This field is required')).toBeVisible()
+  await expect.element(screen.getByRole('combobox', { name: /^Audience/ })).toHaveFocus()
   expect(bodies).toEqual([])
   await screen.getByRole('combobox', { name: /^Audience/ }).click()
   await screen.getByRole('option', { name: 'All contacts' }).click()

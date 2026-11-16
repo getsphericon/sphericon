@@ -21,17 +21,24 @@ func TestSiteBroadcastCreateWithoutAnAudienceIsRefused(t *testing.T) {
 	unnamed := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
 		delete(body, "segmentId")
 	}))
-	before := env.DB.Broadcast.Query().CountX(ctx)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	list := siteapi.SiteBroadcastsListParams{WorkspaceId: fixtures.AcmePublicID}
+	before, err := c.SiteBroadcastsList(ctx, list)
+	require.NoError(t, err)
 
-	_, err := unnamed.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
+	_, err = unnamed.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
 		Name:      "Spring news",
 		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 
+	after, listErr := c.SiteBroadcastsList(ctx, list)
+
+	require.NoError(t, listErr)
 	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
-	assert.Contains(t, refused.Detail.Or(""), "segmentId (field required)")
-	assert.Equal(t, before, env.DB.Broadcast.Query().CountX(ctx), "a refused create stores nothing")
+	detail := refused.Detail.Or("")
+	assert.Contains(t, detail, "segmentId (field required)")
+	assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 }
 
 // Schedule answers the Recipients the Broadcast would take at that moment (ADR 0149): the figure

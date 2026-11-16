@@ -91,8 +91,9 @@ func TestExternalSegmentsPreviewCountsTheRecipientsOfABroadcast(t *testing.T) {
 	alone, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: paying.Condition})
 	require.NoError(t, err)
 
+	wantRecipients := before.Recipients.Value - 2
 	assert.Equal(t, before.Count, after.Count, "the Condition still matches both")
-	assert.Equal(t, before.Recipients.Value-2, after.Recipients.Value, "the suppressed and the unsubscribed Contact are no Recipients")
+	assert.Equal(t, wantRecipients, after.Recipients.Value, "the suppressed and the unsubscribed Contact are no Recipients")
 	assert.Equal(t, after.Count, alone.Count)
 	assert.False(t, alone.Recipients.Set, "no Channel, no recipients")
 }

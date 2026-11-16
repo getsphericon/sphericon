@@ -170,7 +170,8 @@ func TestExternalBroadcastCreateNamesItsAudience(t *testing.T) {
 		after, listErr := c.BroadcastsList(t.Context(), externalapi.BroadcastsListParams{})
 		require.NoError(t, listErr)
 		refused := testhelper.ExternalRefusal(t, err, http.StatusBadRequest)
-		assert.Contains(t, refused.Detail.Or(""), "segmentId (field required)", "the refusal names the missing audience")
+		detail := refused.Detail.Or("")
+		assert.Contains(t, detail, "segmentId (field required)", "the refusal names the missing audience")
 		assert.Equal(t, before.TotalItems, after.TotalItems, "a refused create stores nothing")
 	})
 
