@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -135,6 +136,9 @@ func add(ctx context.Context, s *ent.Scoped, e Entry) (bool, error) {
 func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (*ent.Suppression, error) {
 	if channel == "" {
 		channel = channels.Email
+	}
+	if err := validation.MaxLength(fieldname.Destination, destination, bounds.ConsentDestinationMaxLength); err != nil {
+		return nil, err
 	}
 	// Someone typed it: the address must be one (the suppression job's addresses come from
 	// providers), and a number is stored in E.164, read with the country code it must carry.

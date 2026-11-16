@@ -2,6 +2,7 @@ package eventrecording_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -49,13 +51,14 @@ func TestRecordIsAtomicAcrossTheBatch(t *testing.T) {
 func TestRecordEachIsolatesItems(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	errs := newModule(env).RecordEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+	errs, err := newModule(env).RecordEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
 		{SubjectID: "s-1", Action: "page_view"},
 		{SubjectID: "  ", Action: "page_view"},
 		{SubjectID: "s-3", Action: ""},
 		{SubjectID: "s-4", Action: "page_view", Properties: unserializable()},
 		{SubjectID: "s-5", Action: "purchase"},
 	})
+	require.NoError(t, err)
 
 	require.Len(t, errs.Items, 5)
 	require.NoError(t, errs.Items[0].Err)
@@ -71,9 +74,35 @@ func TestRecordEachIsolatesItems(t *testing.T) {
 	assert.Equal(t, "s-5", got[1].SubjectID)
 }
 
-func TestRecordEachWithNoInputs(t *testing.T) {
+// A batch holds at least one Event and at most the contract's EventBatch, and one outside them is
+// refused whole: none of it is recorded.
+func TestRecordEachRefusesABatchOutsideTheContractsBounds(t *testing.T) {
 	env := testhelper.Setup(t)
-	assert.Empty(t, newModule(env).RecordEach(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil).Items)
+	m := newModule(env)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	tooMany := make([]eventrecording.Input, 1001)
+	for i := range tooMany {
+		tooMany[i] = eventrecording.Input{SubjectID: "s-1", Action: "page_view"}
+	}
+
+	_, empty := m.RecordEach(context.Background(), acme, nil)
+	_, overfull := m.RecordEach(context.Background(), acme, tooMany)
+
+	require.ErrorIs(t, empty, validation.ErrTooFew)
+	require.ErrorIs(t, overfull, validation.ErrTooMany)
+	assert.Empty(t, queuedCollected(t, env), "none of the batch is accepted")
+}
+
+// A client event id longer than the contract's is refused, whichever driver records the Event.
+func TestRecordRefusesAClientEventIDTooLong(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	err := newModule(env).Record(context.Background(), env.DB.Scoped(fixtures.AcmeID), []eventrecording.Input{
+		{SubjectID: "s-1", Action: "page_view", ClientEventID: strings.Repeat("a", 256)},
+	})
+
+	require.ErrorIs(t, err, validation.ErrTooLong)
+	assert.Empty(t, queuedCollected(t, env), "the Event is not accepted")
 }
 
 func TestRecordMarksBackfilledEvents(t *testing.T) {
@@ -160,11 +189,12 @@ func TestBackfillNeedsATimeThatHasPassed(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
-	errs := m.RecordEach(ctx, acme, []eventrecording.Input{
+	errs, err := m.RecordEach(ctx, acme, []eventrecording.Input{
 		{SubjectID: "s-1", Action: "purchase", Backfill: true},
 		{SubjectID: "s-2", Action: "purchase", Backfill: true, OccurredAt: testNow.Add(time.Hour)},
 		{SubjectID: "s-3", Action: "purchase", Backfill: true, OccurredAt: testNow.Add(-2 * liveWindow)},
 	})
+	require.NoError(t, err)
 
 	noTime, future := rejected(t, errs.Items[0].Err), rejected(t, errs.Items[1].Err)
 	assert.Contains(t, noTime, "needs occurredAt")

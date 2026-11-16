@@ -10,6 +10,15 @@ const (
 	telemetry = "openapi/telemetry.openapi.json"
 )
 
+// The names the lists repeat: a bound's, an owner's, a parameter's and a schema's.
+const (
+	contactCity     = "ContactCity"
+	city            = "city"
+	contactOwner    = "Contact"
+	limit           = "limit"
+	telemetryReport = "TelemetryReport"
+)
+
 // Bounds are the contract's bounds on the input of a domain write, in the order they are written.
 // A bound added here is checked by each of its owners: the bound-ownership test refuses one that an
 // owner's code does not use. An entry that repeats a Name is another place of that bound.
@@ -62,24 +71,24 @@ var Bounds = []Bound{
 	{Name: "HTTPCallHeaders", Spec: site, Schema: "SiteAutomationStepInput", Property: "headers"},
 	{Name: "HTTPCallHeaders", Spec: external, Schema: "AutomationStepInput", Property: "headers"},
 	{
-		Name: "ContactCity", Doc: "is a Contact's city.",
-		Spec: external, Schema: "UpsertContactInput", Property: "city", Owners: []string{"Contact"},
+		Name: contactCity, Doc: "is a Contact's city.",
+		Spec: external, Schema: "UpsertContactInput", Property: city, Owners: []string{contactOwner},
 	},
-	{Name: "ContactCity", Spec: external, Schema: "CreateContactInput", Property: "city"},
-	{Name: "ContactCity", Spec: external, Schema: "UpdateContactInput", Property: "city"},
-	{Name: "ContactCity", Spec: site, Schema: "SiteCreateContactInput", Property: "city"},
-	{Name: "ContactCity", Spec: site, Schema: "SiteUpdateContactInput", Property: "city"},
+	{Name: contactCity, Spec: external, Schema: "CreateContactInput", Property: city},
+	{Name: contactCity, Spec: external, Schema: "UpdateContactInput", Property: city},
+	{Name: contactCity, Spec: site, Schema: "SiteCreateContactInput", Property: city},
+	{Name: contactCity, Spec: site, Schema: "SiteUpdateContactInput", Property: city},
 	{
 		Name: "LocaleTag", Doc: "is a BCP 47 language tag, a Contact's locale.",
-		Spec: site, Schema: "LocaleTag", Owners: []string{"Contact"},
+		Spec: site, Schema: "LocaleTag", Owners: []string{contactOwner},
 	},
 	{
 		Name: "CountryCode", Doc: "is an ISO 3166-1 alpha-2 country code, a Contact's country.",
-		Spec: site, Schema: "CountryCode", Owners: []string{"Contact"},
+		Spec: site, Schema: "CountryCode", Owners: []string{contactOwner},
 	},
 	{
 		Name: "ImageURL", Doc: "is the https URL of an image, a Contact's avatar.",
-		Spec: site, Schema: "ImageUrl", Owners: []string{"Contact"},
+		Spec: site, Schema: "ImageUrl", Owners: []string{contactOwner},
 	},
 	{
 		Name: "BrandKitLogoURL", Doc: "is the URL of a Brand kit's logo.",
@@ -184,7 +193,7 @@ var Bounds = []Bound{
 	},
 	{
 		Name: "ContactBatch", Doc: "are the Contacts one request of the external API upserts.",
-		Spec: external, Schema: "UpsertContactsInput", Property: "contacts", Owners: []string{"Contact"},
+		Spec: external, Schema: "UpsertContactsInput", Property: "contacts", Owners: []string{contactOwner},
 	},
 	{
 		Name: "IdentifyPhone", Doc: "is the phone an Identify of the tracker names its Contact by.",
@@ -255,17 +264,17 @@ var TransportOnly = []TransportBound{
 	{Spec: site, Schema: "WorkspaceId", Doc: "is the form of a Workspace's id in a path, which ogen parses before a module sees the number."},
 	{Spec: site, Schema: "Revision", Doc: "is the revision a write expects, a number the module compares and never stores as sent."},
 	{Spec: external, Parameter: "ExportPageQuery.limit", Doc: "is the size of a page an export reads."},
-	{Spec: external, Operation: "AuditEntries_list", Parameter: "limit", Doc: "is the size of a page of the Audit log a read returns."},
+	{Spec: external, Operation: "AuditEntries_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
 	{Spec: external, Operation: "SendingDomainRates_list", Parameter: "windowDays", Doc: "is how many days of a Sending domain's rates a read returns."},
-	{Spec: site, Operation: "SiteAudit_list", Parameter: "limit", Doc: "is the size of a page of the Audit log a read returns."},
+	{Spec: site, Operation: "SiteAudit_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
 	{Spec: site, Operation: "SiteContacts_lookup", Parameter: "email", Doc: "is the address a read looks a Contact up by."},
 	{Spec: site, Operation: "SiteContacts_erase", Parameter: "email", Doc: "is the address an erasure finds its Contact by; it writes no address."},
 	{Spec: service, Parameter: "UsagePeriodQuery", Doc: "is the period a read of the usage covers."},
-	{Spec: service, Operation: "ServiceTrackingHostFeed_list", Parameter: "limit", Doc: "is the size of a page of a /changes read."},
-	{Spec: service, Operation: "ServiceUserFeed_list", Parameter: "limit", Doc: "is the size of a page of a /changes read."},
-	{Spec: service, Operation: "ServiceWorkspaceFeed_list", Parameter: "limit", Doc: "is the size of a page of a /changes read."},
-	{Spec: staff, Operation: "StaffInstance_listAuditEntries", Parameter: "limit", Doc: "is the size of a page of the Audit log a read returns."},
-	{Spec: staffee, Operation: "StaffWorkspaceAudit_list", Parameter: "limit", Doc: "is the size of a page of the Audit log a read returns."},
+	{Spec: service, Operation: "ServiceTrackingHostFeed_list", Parameter: limit, Doc: "is the size of a page of a /changes read."},
+	{Spec: service, Operation: "ServiceUserFeed_list", Parameter: limit, Doc: "is the size of a page of a /changes read."},
+	{Spec: service, Operation: "ServiceWorkspaceFeed_list", Parameter: limit, Doc: "is the size of a page of a /changes read."},
+	{Spec: staff, Operation: "StaffInstance_listAuditEntries", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
+	{Spec: staffee, Operation: "StaffWorkspaceAudit_list", Parameter: limit, Doc: "is the size of a page of the Audit log a read returns."},
 	{
 		Spec: collect, Schema: "CollectIdentifyInput", Property: "identityToken",
 		Doc: "is an Identity token, which the module verifies and never stores: its length caps only what the transport reads.",
@@ -274,14 +283,14 @@ var TransportOnly = []TransportBound{
 		Spec: collect, Schema: "CollectTelegramStartLinkInput", Property: "identityToken",
 		Doc: "is an Identity token, which the module verifies and never stores: its length caps only what the transport reads.",
 	},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "appVersion", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "arch", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "instanceAgeDays", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "instanceId", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "integrationKinds", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "os", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "postgresMajor", Doc: telemetryDoc},
-	{Spec: telemetry, Schema: "TelemetryReport", Property: "schemaVersion", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "appVersion", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "arch", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "instanceAgeDays", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "instanceId", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "integrationKinds", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "os", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "postgresMajor", Doc: telemetryDoc},
+	{Spec: telemetry, Schema: telemetryReport, Property: "schemaVersion", Doc: telemetryDoc},
 }
 
 // telemetryDoc is why only the transport checks a field of the Telemetry report: the Instance sends

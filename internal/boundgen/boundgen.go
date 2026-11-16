@@ -280,10 +280,10 @@ func account(docs map[string]document, bounds []Bound, values map[string]map[str
 	for _, t := range transport {
 		p := t.place()
 		if _, ok := generated[p]; ok {
-			problems = append(problems, fmt.Sprintf("%s is named by both Bounds and TransportOnly", where(t.Spec, p)))
+			problems = append(problems, where(t.Spec, p)+" is named by both Bounds and TransportOnly")
 		}
 		if checked[p] {
-			problems = append(problems, fmt.Sprintf("%s is named twice by TransportOnly", where(t.Spec, p)))
+			problems = append(problems, where(t.Spec, p)+" is named twice by TransportOnly")
 		}
 		checked[p] = true
 		if t.Doc == "" {

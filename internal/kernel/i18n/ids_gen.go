@@ -362,6 +362,7 @@ var (
 	ErrorsTooLong                                         = ID{key: "errors.too_long"}
 	ErrorsTooMany                                         = ID{key: "errors.too_many"}
 	ErrorsTooShort                                        = ID{key: "errors.too_short"}
+	ErrorsTooSmall                                        = ID{key: "errors.too_small"}
 	ErrorsTrackingDomainInvalid                           = ID{key: "errors.tracking_domain_invalid"}
 	ErrorsTrackingDomainNotFound                          = ID{key: "errors.tracking_domain_not_found"}
 	ErrorsTrackingDomainOwnHost                           = ID{key: "errors.tracking_domain_own_host"}

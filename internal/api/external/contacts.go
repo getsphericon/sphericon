@@ -84,7 +84,11 @@ func (h *Handlers) ContactsEraseBy(ctx context.Context, params externalapi.Conta
 
 // ContactsBatchUpsert upserts each Contact independently and reports a per-item result.
 func (h *Handlers) ContactsBatchUpsert(ctx context.Context, req *externalapi.UpsertContactsInput) (*externalapi.UpsertContactsResult, error) {
-	outcomes := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts)).Items
+	upserted, err := h.contacts.UpsertBatch(ctx, auth.TokenScoped(ctx), contact.SourceAPI, inputs.ContactIntakes(req.Contacts))
+	if err != nil {
+		return nil, err
+	}
+	outcomes := upserted.Items
 
 	results := make([]externalapi.ContactBatchItemResult, len(outcomes))
 	for i, o := range outcomes {

@@ -2,6 +2,8 @@ package visitors_test
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
@@ -70,4 +73,27 @@ func TestCollectTreatsTheDeviceOfADeletedContactAsAnonymous(t *testing.T) {
 	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Zero(t, got[0].ContactID)
+}
+
+// A collected event outside the contract's bounds (its visitor id, action or client event id)
+// refuses the whole batch, whichever driver collects it: no event of it is accepted.
+func TestCollectRefusesABatchWithAnEventOutsideTheContractsBounds(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	ok := visitors.CollectEventInput{VisitorID: "dev-bounded", Action: "login"}
+
+	for name, bad := range map[string]visitors.CollectEventInput{
+		"a blank visitor id":         {VisitorID: " ", Action: "login"},
+		"a visitor id too long":      {VisitorID: strings.Repeat("v", 256), Action: "login"},
+		"no action":                  {VisitorID: "dev-bounded"},
+		"an action too long":         {VisitorID: "dev-bounded", Action: strings.Repeat("a", 256)},
+		"a client event id too long": {VisitorID: "dev-bounded", Action: "login", ClientEventID: strings.Repeat("c", 256)},
+	} {
+		err := visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{ok, bad}, time.Now())
+
+		refusal, isRefusal := errors.AsType[*validation.RefusalError](err)
+		require.True(t, isRefusal, "%s: %v", name, err)
+		assert.Equal(t, validation.KindRefused, refusal.Kind(), name)
+	}
+	assert.Empty(t, queuedCollected(t, env), "no event of a refused batch is accepted")
 }

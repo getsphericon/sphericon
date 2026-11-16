@@ -126,8 +126,9 @@ func CheckZone(name string) error {
 }
 
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
-// as it is, ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency, and a window
-// outside the contract's bounds (bounds.AttributionWindowDays) too.
+// as it is, ADR 0064). A code not in the contract's form (bounds.CurrencyCode) is refused, one
+// outside ISO 4217 with ErrUnknownCurrency, and a window outside the contract's bounds
+// (bounds.AttributionWindowDays) too.
 // It is an edit made on revision, as every edit of its settings is (ADR 0119): one that names neither writes nothing.
 func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision int64, code *string, windowDays *int) (*ent.Workspace, error) {
 	if windowDays != nil {
@@ -137,6 +138,9 @@ func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision
 		}
 	}
 	if code != nil {
+		if err := validation.Pattern(fieldname.ReportingCurrency, *code, bounds.CurrencyCodePattern); err != nil {
+			return nil, err
+		}
 		unit, err := currency.ParseISO(*code)
 		if err != nil {
 			return nil, ErrUnknownCurrency

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -34,6 +35,20 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	persisted, err := env.DB.Scoped(fixtures.AcmeID).Segment().Query().Where(segment.Name("Bad")).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, persisted, "nothing persisted")
+}
+
+// A leaf that looks back no days is below the contract's minimum, whichever driver saves it.
+func TestCreateRefusesAWindowOfNoDays(t *testing.T) {
+	env := testhelper.Setup(t)
+	m := testhelper.Module[*segments.Module](env)
+	ctx := context.Background()
+	def := `{"kind":"group","combinator":"and","rules":[` +
+		`{"kind":"event","action":"signup","operator":"atLeast","times":1,"withinDays":0}]}`
+
+	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "No days", Condition: new(def)})
+
+	require.ErrorIs(t, err, segments.ErrInvalidCondition)
+	assert.Contains(t, validation.Message(err), "withinDays must be at least 1")
 }
 
 func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {

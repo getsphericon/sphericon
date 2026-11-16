@@ -20,6 +20,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/batch"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // Module records a customer's Events.
@@ -61,14 +64,20 @@ type Input struct {
 }
 
 // validate refuses an Event the module must not publish: one without an identity or an
-// action, one that claims a reserved action, a Backfill without a time that has passed,
-// and a live Event old enough to be history.
+// action, one that claims a reserved action, a client event id outside the contract's bounds, a
+// Backfill without a time that has passed, and a live Event old enough to be history.
 func (m *Module) validate(in Input) error {
 	if strings.TrimSpace(in.SubjectID) == "" {
 		return events.Reject("subject id and action are required")
 	}
 	if err := events.CheckAction(in.Action); err != nil {
 		return err
+	}
+	if in.ClientEventID != "" {
+		if err := validation.Length(fieldname.ClientEventID, in.ClientEventID,
+			bounds.ClientEventIDMinLength, bounds.ClientEventIDMaxLength); err != nil {
+			return err
+		}
 	}
 	now := m.live.Now()
 	switch {
@@ -137,9 +146,13 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 
 // RecordEach records each Event in its own transaction, so an invalid or failing item
 // does not affect the others (Record, by contrast, is all-or-nothing). The outcomes are in the
-// order of inputs; an outcome without an error is an accepted Event.
-func (m *Module) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) batch.Result[struct{}] {
+// order of inputs; an outcome without an error is an accepted Event. A batch of fewer or more
+// Events than the contract's EventBatch is refused whole.
+func (m *Module) RecordEach(ctx context.Context, s *ent.Scoped, inputs []Input) (batch.Result[struct{}], error) {
+	if err := validation.Items(fieldname.Events, len(inputs), bounds.EventBatchMinItems, bounds.EventBatchMaxItems); err != nil {
+		return batch.Result[struct{}]{}, err
+	}
 	return batch.Each(inputs, func(in Input) (struct{}, error) {
 		return struct{}{}, m.Record(ctx, s, []Input{in})
-	})
+	}), nil
 }

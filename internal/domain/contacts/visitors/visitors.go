@@ -14,6 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/samber/lo"
 )
 
@@ -37,6 +40,9 @@ func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) 
 // exists is left as it is. A chat started on its behalf binds to it
 // (internal/domain/sending/bindings).
 func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
+	if err := checkVisitorID(visitorID); err != nil {
+		return nil, err
+	}
 	// A Visitor already there is left as it is, and read below like a new one.
 	err := s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(now).
 		OnConflictColumns(visitor.FieldWorkspaceID, visitor.FieldVisitorID).
@@ -64,10 +70,14 @@ func BindIn(ctx context.Context, s *ent.Scoped, id, contactID int64, now time.Ti
 		Exec(ctx)
 }
 
-// Collect refuses the whole batch with events.ErrRejected when an event claims a
-// reserved action: delivery, consent and Contact lifecycle facts are the system's alone.
+// Collect refuses the whole batch when an event is outside the contract's bounds (its visitor id,
+// action or client event id), and with events.ErrRejected when one claims a reserved action:
+// delivery, consent and Contact lifecycle facts are the system's alone.
 func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []CollectEventInput, now time.Time) error {
 	for _, evt := range evts {
+		if err := checkEvent(evt); err != nil {
+			return err
+		}
 		if events.ReservedAction(evt.Action) {
 			return events.CheckAction(evt.Action)
 		}
@@ -158,9 +168,32 @@ func resolveIdentity(ctx context.Context, s *ent.Scoped, visitorID string, now t
 	}, nil
 }
 
+// checkVisitorID refuses a Visitor id outside the contract's bounds (bounds.VisitorID).
+func checkVisitorID(visitorID string) error {
+	return validation.Length(fieldname.VisitorID, visitorID, bounds.VisitorIDMinLength, bounds.VisitorIDMaxLength)
+}
+
+// checkEvent refuses a collected event outside the contract's bounds: its visitor id, its action
+// (bounds.CollectEventAction) and its client event id when it has one (bounds.ClientEventID).
+func checkEvent(evt CollectEventInput) error {
+	if err := checkVisitorID(strings.TrimSpace(evt.VisitorID)); err != nil {
+		return err
+	}
+	if err := validation.Length(fieldname.Action, evt.Action, bounds.CollectEventActionMinLength, bounds.CollectEventActionMaxLength); err != nil {
+		return err
+	}
+	if evt.ClientEventID == "" {
+		return nil
+	}
+	return validation.Length(fieldname.ClientEventID, evt.ClientEventID, bounds.ClientEventIDMinLength, bounds.ClientEventIDMaxLength)
+}
+
 // findOrCreateVisitor creates the Visitor visitorID seen now, or marks the one there seen now: one
 // statement, so two batches of a new device do not race to create it.
 func findOrCreateVisitor(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
+	if err := checkVisitorID(visitorID); err != nil {
+		return nil, err
+	}
 	id, err := s.Visitor().Create().
 		SetVisitorID(visitorID).
 		SetLastSeenAt(now).

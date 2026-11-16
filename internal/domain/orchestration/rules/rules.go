@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 	"time"
@@ -36,6 +37,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -507,8 +510,8 @@ func cleanTriggers(in []string) ([]string, error) {
 		a = strings.TrimSpace(a)
 		return a, a != ""
 	}))
-	if len(out) == 0 {
-		return nil, ErrInvalid.With("a Rule needs at least one Trigger event")
+	if err := validation.Items(fieldname.TriggerEvents, len(out), bounds.RuleTriggerEventsMinItems, math.MaxInt); err != nil {
+		return nil, err
 	}
 	return out, nil
 }
