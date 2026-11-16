@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"sync"
@@ -371,6 +372,10 @@ func testConfig(base *config.Config) config.Config {
 	cfg.ApplyMode(config.ModeSaaS)
 	cfg.RateLimits = config.RateLimits{}
 	cfg.TrackingCNAMETarget = TrackingCNAMETarget
+	// The in-memory transport's requests come from httptest's address, 192.0.2.1: the harness
+	// stands where the Instance's reverse proxy stands, so a test's X-Forwarded-For is believed
+	// (ADR 0175).
+	cfg.TrustedProxyCIDRs = []netip.Prefix{netip.MustParsePrefix("192.0.2.1/32")}
 	return cfg
 }
 

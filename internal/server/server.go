@@ -166,7 +166,7 @@ func New(cfg *config.Config, db *sql.DB, schema PendingMigrations, client *ent.C
 		// whole protection.
 		outer = append(outer, SchemaGuard(schema))
 	}
-	inner := chi.Middlewares{clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
+	inner := chi.Middlewares{clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL, collectEventLimit(cfg.BodyLimits.CollectEvent), guard}
 	return chi.Chain(append(outer, inner...)...).Handler(trackingHostGate(cfg, domains, mux, links)), nil
 }
 
@@ -263,7 +263,7 @@ func NewInternal(cfg *config.Config, tlsAsk http.Handler, limiter *ratelimit.Lim
 		}
 		mux.Handle(paths.Service+"/", problem.Middleware[serviceapi.Handler](srv))
 	}
-	return chi.Chain(recoverer, requestID, accessLog, clientip.Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
+	return chi.Chain(recoverer, requestID, accessLog, clientip.New(cfg.TrustedProxyCIDRs).Middleware, limiter.Middleware, middleware.Timeout(requestTimeout), bodyLimit(cfg.BodyLimits), noNUL).Handler(mux), nil
 }
 
 func writeProblem(ctx context.Context, w http.ResponseWriter, status int, detail string) {
