@@ -8,6 +8,7 @@ import (
 	"github.com/pressly/goose/v3"
 
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
+	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 )
 
 // goMigrations are the migrations written in Go, run by goose in version order among the SQL
@@ -21,6 +22,7 @@ import (
 func goMigrations() []*goose.Migration {
 	return []*goose.Migration{
 		goose.NewGoMigration(PhonesToE164Version, &goose.GoFunc{RunTx: lockBounded(phonesToE164)}, nil),
+		goose.NewGoMigration(TagNameKeysVersion, &goose.GoFunc{RunTx: lockBounded(tagNameKeys)}, nil),
 	}
 }
 
@@ -108,6 +110,87 @@ func storedPhones(ctx context.Context, tx *sql.Tx) ([]storedPhone, error) {
 	for rows.Next() {
 		var s storedPhone
 		if err := rows.Scan(&s.id, &s.workspaceID, &s.phone, &s.country); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}
+
+// TagNameKeysVersion is the version of the Go migration that keys every Tag by its name, between
+// 20261112165107_tag_name_key, which adds the column, and 20261116190001_tag_name_key_required.
+const TagNameKeysVersion = 20261116190000
+
+// storedTag is one Tag as the migration reads it.
+type storedTag struct {
+	id, workspaceID int64
+	name            string
+	nameKey         sql.NullString
+}
+
+// tagNameKeys gives every Tag its name's key as tagname.Key computes it, which SQL cannot: lower()
+// follows the database's locale. Tags of a Workspace whose names share a key were distinct while
+// the name as written was unique; they merge into the oldest (lowest id), which keeps its name: its
+// Contacts gain it where they held a younger one, and deleting the younger cascades their
+// contact_tags. Rules and Automations name a Tag and match it by key (tagname.Same), so they follow
+// the merged Tag. The younger Tags go before any key is written, so the unique index a database may
+// already have never refuses a write. A second run changes nothing.
+func tagNameKeys(ctx context.Context, tx *sql.Tx) error {
+	stored, err := storedTags(ctx, tx)
+	if err != nil {
+		return err
+	}
+	type key struct {
+		workspaceID int64
+		nameKey     string
+	}
+	keeper := map[key]int64{}
+	merged := map[int64]int64{}
+	for _, s := range stored { // in id order: the oldest of a key keeps it
+		k := key{s.workspaceID, tagname.Key(s.name)}
+		if id, taken := keeper[k]; taken {
+			merged[s.id] = id
+			continue
+		}
+		keeper[k] = s.id
+	}
+	for id, into := range merged {
+		// raw sql: a Go migration runs on the frozen schema, see phonesToE164.
+		if _, err := tx.ExecContext(ctx, `INSERT INTO "contact_tags" ("contact_id", "tag_id", "workspace_id")
+			SELECT "contact_id", $1, "workspace_id" FROM "contact_tags" WHERE "tag_id" = $2
+			ON CONFLICT DO NOTHING`, into, id); err != nil {
+			return fmt.Errorf("move the contacts of tag %d to tag %d: %w", id, into, err)
+		}
+		// raw sql: a Go migration runs on the frozen schema, see phonesToE164.
+		if _, err := tx.ExecContext(ctx, `DELETE FROM "tags" WHERE "id" = $1`, id); err != nil {
+			return fmt.Errorf("delete tag %d merged into tag %d: %w", id, into, err)
+		}
+	}
+	for _, s := range stored {
+		k := tagname.Key(s.name)
+		if _, gone := merged[s.id]; gone || s.nameKey.Valid && s.nameKey.String == k {
+			continue
+		}
+		// raw sql: a Go migration runs on the frozen schema, see phonesToE164.
+		if _, err := tx.ExecContext(ctx, `UPDATE "tags" SET "name_key" = $1 WHERE "id" = $2`, k, s.id); err != nil {
+			return fmt.Errorf("key tag %d: %w", s.id, err)
+		}
+	}
+	return nil
+}
+
+// storedTags is every Tag, by id.
+func storedTags(ctx context.Context, tx *sql.Tx) ([]storedTag, error) {
+	// raw sql: a Go migration runs on the frozen schema, see phonesToE164.
+	rows, err := tx.QueryContext(ctx, `SELECT "id", "workspace_id", "name", "name_key" FROM "tags" ORDER BY "id"`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []storedTag
+	for rows.Next() {
+		var s storedTag
+		if err := rows.Scan(&s.id, &s.workspaceID, &s.name, &s.nameKey); err != nil {
 			return nil, err
 		}
 		out = append(out, s)
