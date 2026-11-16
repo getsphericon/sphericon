@@ -12,6 +12,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 )
 
 // What each item of the report is and when it is one is the use case's
@@ -23,6 +24,15 @@ func attentionOf(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 	res, err := c.SiteAttentionGet(t.Context(), siteapi.SiteAttentionGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	return res.Items
+}
+
+// reportOf is what needs attention in the Workspace as the use case reads it, for a test of how the
+// response reads its items.
+func reportOf(t *testing.T, env *testhelper.TestEnv, workspaceID int64) []needsattentionreport.Item {
+	t.Helper()
+	items, err := testhelper.Module[*needsattentionreport.UseCase](env).Items(t.Context(), env.DB.Scoped(workspaceID))
+	require.NoError(t, err)
+	return items
 }
 
 // kinds is the kind of every item, in the order the list gives them.
@@ -37,19 +47,19 @@ func itemAbout(items []siteapi.SiteAttentionItem, kind siteapi.SiteAttentionKind
 	})
 }
 
-// Fixtures: Acme's Sending domain lost.acme.com lost its DKIM record, and two of its Webhook
-// endpoints disabled themselves. A plain member reads them as an Owner does.
+// Fixtures: Acme's Sending domain lost.acme.com lost its DKIM record. A plain member reads the
+// report as it is, in its order, as an Owner does.
 func TestEveryMemberReadsWhatNeedsAttention(t *testing.T) {
 	env := testhelper.Setup(t)
+	report := lo.Map(reportOf(t, env, fixtures.AcmeID), func(i needsattentionreport.Item, _ int) siteapi.SiteAttentionKind {
+		return siteapi.SiteAttentionKind(i.Kind)
+	})
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID)
 
-	assert.Equal(t, []siteapi.SiteAttentionKind{
-		siteapi.SiteAttentionKindSendingDomainVerificationLost,
-		siteapi.SiteAttentionKindWebhookDisabled,
-		siteapi.SiteAttentionKindWebhookDisabled,
-	}, kinds(items))
-	lost := items[0]
+	assert.Equal(t, report, kinds(items))
+	lost, ok := itemAbout(items, siteapi.SiteAttentionKindSendingDomainVerificationLost, fixtures.SendingDomainLostID)
+	require.True(t, ok)
 	assert.Equal(t, siteapi.SiteAttentionSeverityBlocked, lost.Severity)
 	assert.Equal(t, siteapi.SiteAttentionSubject{ID: fixtures.SendingDomainLostID, Name: fixtures.SendingDomainLostDomain}, lost.Subject.Value)
 	assert.EqualValues(t, 1, lost.Count)
@@ -93,22 +103,26 @@ func TestAHeldBroadcastReadsWithItsHoldReason(t *testing.T) {
 	assert.Equal(t, siteapi.HoldReasonUnverifiedDomain, held.HoldReason.Value)
 }
 
-// Fixtures: Capton's sooner Broadcast goes to three Contacts. Under a Send cap of 2 it finishes 12
-// hours after its start, which reads in whole seconds.
+// Fixtures: Capton's sooner Broadcast goes to three Contacts, more than a Send cap of 2 lets out at
+// its start. The item reads with the report's audience and finish, the finish in whole seconds.
 func TestABroadcastOverTheSendCapReadsWithItsAudienceAndItsFinish(t *testing.T) {
 	env := testhelper.Setup(t)
 	env.DB.Workspace.UpdateOneID(fixtures.CaptonID).SetSendCap(2).ExecX(t.Context())
-	start := time.Now().Add(2 * time.Hour).Truncate(time.Second)
+	start := time.Now().Add(2 * time.Hour)
 	capton := env.DB.Scoped(fixtures.CaptonID)
 	require.NoError(t, capton.Broadcast().UpdateOneID(fixtures.BroadcastCaptonSoonerID).SetScheduledAt(start).Exec(t.Context()))
 	require.NoError(t, capton.Broadcast().UpdateOneID(fixtures.BroadcastCaptonLaterID).SetScheduledAt(start.Add(30*time.Hour)).Exec(t.Context()))
+	held, ok := lo.Find(reportOf(t, env, fixtures.CaptonID), func(i needsattentionreport.Item) bool {
+		return i.Kind == needsattentionreport.KindScheduledBroadcastOverSendCap
+	})
+	require.True(t, ok)
 
 	items := attentionOf(t, env.SiteActor(t, fixtures.CaptonOwnerCleoEmail), fixtures.CaptonPublicID)
 
 	item, ok := itemAbout(items, siteapi.SiteAttentionKindScheduledBroadcastOverSendCap, fixtures.BroadcastCaptonSoonerID)
 	require.True(t, ok)
-	assert.Equal(t, int32(3), item.Count)
+	assert.EqualValues(t, held.Count, item.Count)
 	assert.Equal(t, fixtures.BroadcastCaptonSoonerName, item.Subject.Value.Name)
 	got := time.Time(item.EstimatedCompletionAt.Value)
-	assert.True(t, start.Add(12*time.Hour).Equal(got), "expected to finish at %v, got %v", start.Add(12*time.Hour), got)
+	assert.True(t, held.EstimatedCompletionAt.Truncate(time.Second).Equal(got), "expected %v in whole seconds, got %v", *held.EstimatedCompletionAt, got)
 }

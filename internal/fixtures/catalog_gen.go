@@ -1079,26 +1079,38 @@ const (
 	CaptonPublicID = "CaptnW63"
 	// CapturedMessageAcmeArchivedInboxID is from fixtures/captured_messages.
 	CapturedMessageAcmeArchivedInboxID = 4
+	// CapturedMessageAcmeArchivedInboxRecipient is from fixtures/captured_messages.
+	CapturedMessageAcmeArchivedInboxRecipient = "export.subject@example.com"
 	// CapturedMessageAcmeArchivedInboxSubject is from fixtures/captured_messages.
 	CapturedMessageAcmeArchivedInboxSubject = "Old test"
 	// CapturedMessageGlobexNewsletterID is from fixtures/captured_messages.
 	CapturedMessageGlobexNewsletterID = 2
+	// CapturedMessageGlobexNewsletterRecipient is from fixtures/captured_messages.
+	CapturedMessageGlobexNewsletterRecipient = "grace@globex.test"
 	// CapturedMessageGlobexNewsletterSubject is from fixtures/captured_messages.
 	CapturedMessageGlobexNewsletterSubject = "This month at Globex"
 	// CapturedMessageGlobexWelcomeID is from fixtures/captured_messages.
 	CapturedMessageGlobexWelcomeID = 1
+	// CapturedMessageGlobexWelcomeRecipient is from fixtures/captured_messages.
+	CapturedMessageGlobexWelcomeRecipient = "ada@globex.test"
 	// CapturedMessageGlobexWelcomeSubject is from fixtures/captured_messages.
 	CapturedMessageGlobexWelcomeSubject = "Welcome to Globex"
 	// CapturedMessageUmbrellaExpiredOneID is from fixtures/captured_messages.
 	CapturedMessageUmbrellaExpiredOneID = 5
+	// CapturedMessageUmbrellaExpiredOneRecipient is from fixtures/captured_messages.
+	CapturedMessageUmbrellaExpiredOneRecipient = "sam@umbrella.test"
 	// CapturedMessageUmbrellaExpiredOneSubject is from fixtures/captured_messages.
 	CapturedMessageUmbrellaExpiredOneSubject = "Old hello from Umbrella"
 	// CapturedMessageUmbrellaExpiredTwoID is from fixtures/captured_messages.
 	CapturedMessageUmbrellaExpiredTwoID = 6
+	// CapturedMessageUmbrellaExpiredTwoRecipient is from fixtures/captured_messages.
+	CapturedMessageUmbrellaExpiredTwoRecipient = "sam@umbrella.test"
 	// CapturedMessageUmbrellaExpiredTwoSubject is from fixtures/captured_messages.
 	CapturedMessageUmbrellaExpiredTwoSubject = "Older hello from Umbrella"
 	// CapturedMessageUmbrellaID is from fixtures/captured_messages.
 	CapturedMessageUmbrellaID = 3
+	// CapturedMessageUmbrellaRecipient is from fixtures/captured_messages.
+	CapturedMessageUmbrellaRecipient = "sam@umbrella.test"
 	// CapturedMessageUmbrellaSubject is from fixtures/captured_messages.
 	CapturedMessageUmbrellaSubject = "Hello from Umbrella"
 	// CaraSurveyResponseID is from fixtures/signup_survey_responses.

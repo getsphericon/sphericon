@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
+	"github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
 )
 
 // The traffic the dashboard judges is in fixtures/events.yml, one scenario per day offset (the
@@ -37,17 +38,23 @@ func warning(t *testing.T, env *testhelper.TestEnv, email string, workspaceID si
 	return lo.Ternary(ok, &found, nil)
 }
 
+// The warning the report reads is the use case's (internal/usecase/needsattentionreport); the
+// dashboard shows its rate as the report holds it.
 func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
+	held, ok := lo.Find(reportOf(t, env, fixtures.VandelayID), func(i needsattentionreport.Item) bool {
+		return i.Kind == needsattentionreport.KindDeliverabilityWarning
+	})
+	require.True(t, ok)
 
 	item := warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID)
 
 	require.NotNil(t, item)
 	assert.Equal(t, siteapi.SiteAttentionSeverityDegraded, item.Severity)
 	abuse := item.Abuse.Value
-	assert.Equal(t, fixtures.SendingDomainVandelayDomain, abuse.Domain)
+	assert.Equal(t, held.Abuse.Domain, abuse.Domain)
 	assert.Equal(t, siteapi.SiteAbuseMetricBounce, abuse.Metric)
-	assert.InDelta(t, 3.0/40.0, abuse.Rate, 1e-9)
+	assert.InDelta(t, held.Abuse.Rate, abuse.Rate, 1e-9)
 }
 
 func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {

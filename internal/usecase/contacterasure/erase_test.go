@@ -263,15 +263,12 @@ func TestAnErasureByAnAddressWithoutAContactAnonymizesItsDeliveryRecords(t *test
 	assert.Equal(t, fixtures.ContactBystanderEmail, env.DB.OutboundMessage.GetX(ctx, fixtures.OutboundMessageBystanderID).Destination)
 }
 
-// The address of fixtures' CapturedMessageGlobexWelcome: no Contact and no delivery record holds it.
-const capturedOnlyAddress = "ada@globex.test"
-
 // An address held only by a Captured message is a subject, and its Erasure takes that message and
 // no other.
 func TestAnErasureByAnAddressHeldOnlyByACapturedMessageDeletesIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	address := capturedOnlyAddress
+	address := fixtures.CapturedMessageGlobexWelcomeRecipient
 
 	require.NoError(t, erase(t, env, fixtures.GlobexID, contacterasure.Identifier{Email: &address}))
 

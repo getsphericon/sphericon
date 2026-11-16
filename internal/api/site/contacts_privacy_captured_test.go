@@ -12,9 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// The address of fixtures' CapturedMessageGlobexWelcome: no Contact and no delivery record holds it.
-const capturedOnlyAddress = "ada@globex.test"
-
 // A Privacy request lookup counts the Captured messages sent to an address, also those kept by an
 // archived Test inbox, and carries no content (the holdings are counts).
 func TestSiteContactsLookupCountsTheCapturedMessagesOfAnAddress(t *testing.T) {
@@ -31,7 +28,7 @@ func TestSiteContactsLookupAddressHeldOnlyByACapturedMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	got := lookup(t, c, fixtures.GlobexPublicID, capturedOnlyAddress)
+	got := lookup(t, c, fixtures.GlobexPublicID, fixtures.CapturedMessageGlobexWelcomeRecipient)
 	assert.Equal(t, siteapi.SiteContactHoldings{CapturedMessages: 1}, *got)
 }
 
