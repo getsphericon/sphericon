@@ -9,10 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/phone"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -115,6 +117,21 @@ func TestAStopSaidAgainKeepsAnOlderStartFromLiftingIt(t *testing.T) {
 	transitions := env.QueuedCount(t, events.NameSmsOptOutRecorded, nil)
 	assert.NotNil(t, consent.OptOut, "the person stopped again after the START")
 	assert.Equal(t, 1, transitions, "the second STOP is no transition")
+}
+
+// The time a number's consent was set is kept by the number's hash, never by the number: an
+// Erasure has nothing of it left to find (ADR 0021).
+func TestTheStampOfANumberKeepsOnlyItsHash(t *testing.T) {
+	env := testhelper.Setup(t)
+	require.NoError(t, env.Bus.Publish(t.Context(), &events.SmsStopObserved{
+		WorkspaceID: fixtures.AcmeID, Phone: texter, Via: events.UnsubscribedByKeyword, DedupID: "stop",
+	}))
+
+	plain := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(texter)).CountX(t.Context())
+	hashed := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(phone.Hash(texter))).CountX(t.Context())
+
+	assert.Zero(t, plain)
+	assert.Equal(t, 1, hashed)
 }
 
 func TestALaterObservationStillTransitions(t *testing.T) {

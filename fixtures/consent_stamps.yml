@@ -1,8 +1,9 @@
-# When the stop of Lacuna's parked number occurred (UnsubscribeLacunaParked): the stamp an opt-out
-# keeps, which a later observation of the number is compared with (ADR 0154).
+# When the stop of Lacuna's parked number (+16175557799, UnsubscribeLacunaParked) occurred: the
+# stamp an opt-out keeps, which a later observation of the number is compared with (ADR 0154). An
+# sms stamp is stored by the number's hash, its lowercase hex SHA-256.
 - id: 1
   channel: sms
-  destination: '+16175557799'
+  destination: 30e7c583dd484809d5f300d2eab4b34f430f74d816f55a04e03c52f796258dd3
   sending_source: everything
   opt_out_occurred_at: '2026-02-02 00:00:00'
   workspace_id: 96

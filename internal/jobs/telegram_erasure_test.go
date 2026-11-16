@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/binding"
+	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/starttoken"
 	"github.com/getsphericon/sphericon/ent/trackedlink"
@@ -33,6 +34,23 @@ func eraseContact(t *testing.T, env *testhelper.TestEnv, contactID int64) {
 	t.Helper()
 	require.NoError(t, contacterasure.New(env.Bus, time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{ContactID: contactID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
+}
+
+// The time a bound user returned is erased with the Contact: no opt-out stands to keep it for
+// (ADR 0154), so nothing keeps the user id.
+func TestErasingABoundContactRemovesTheStampOfItsReturn(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	bot := env.AcmeTelegram(t)
+	const user = 801002
+	env.BindTelegram(t, bot, fixtures.ContactTelegramErasableID, user, 1)
+	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, sayTG(2, user, "STOP")).Code)
+	require.Equal(t, http.StatusOK, env.PostTelegramUpdate(t, bot, sayTG(3, user, "/start")).Code)
+
+	eraseContact(t, env, fixtures.ContactTelegramErasableID)
+
+	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination("801002")).CountX(ctx)
+	assert.Zero(t, stamps, "no consent stamp keeps the user id")
 }
 
 func TestErasingABoundContactRemovesItsTelegramDataAndKeepsItsOptOut(t *testing.T) {

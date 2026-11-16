@@ -68,15 +68,10 @@ var _ = db.Declare(
 // Hold locks the stamp row of k to the end of the transaction, making it if there is none, and
 // returns it: the observations of one key are handled one at a time, so a comparison and the write
 // it allows are one step. An owner holds it before it reads the state it decides on, and before
-// the Contact's lock (contactlock), which its write may take. On sms the stamp an Erasure kept by
-// the number's hash is the number's: it is held and stamped as it is, so the number never comes
-// back in plain (ADR 0021).
+// the Contact's lock (contactlock), which its write may take.
 func Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentStamp, error) {
-	k, err := kept(ctx, s, k)
-	if err != nil {
-		return nil, err
-	}
-	err = s.ConsentStamp().Create().
+	k = Stored(k)
+	err := s.ConsentStamp().Create().
 		SetChannel(k.Channel).
 		SetDestination(k.Destination).
 		SetSendingSource(k.Source).
@@ -95,21 +90,14 @@ func Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentStamp, error) 
 	return row, nil
 }
 
-// kept is k, or on sms the key an Erasure kept the number's stamp by, its hash, when it did.
-func kept(ctx context.Context, s *ent.Scoped, k Key) (Key, error) {
-	if k.Channel != channels.SMS {
-		return k, nil
+// Stored is the key k's stamp is stored by: on sms the number's hash (phone.Hash), never the
+// number, so a stamp holds nothing an Erasure would have to find and remove (ADR 0021); on the
+// other Channels the Destination, as its opt-out is kept.
+func Stored(k Key) Key {
+	if k.Channel == channels.SMS {
+		k.Destination = phone.Hash(k.Destination)
 	}
-	hashed := Key{Channel: k.Channel, Destination: phone.Hash(k.Destination), Source: k.Source}
-	erased, err := s.ConsentStamp().Query().Where(of(hashed)...).Exist(ctx)
-	switch {
-	case err != nil:
-		return Key{}, fmt.Errorf("find the erased consent stamp: %w", err)
-	case erased:
-		return hashed, nil
-	default:
-		return k, nil
-	}
+	return k
 }
 
 // Admit reports whether an observation that occurred at o may set fact of k, and stamps it when it
@@ -117,7 +105,7 @@ func kept(ctx context.Context, s *ent.Scoped, k Key) (Key, error) {
 // later is the higher number; otherwise the later time, and of two of the same moment the refusal
 // wins (refusal: o stops or withdraws consent), so a tie leaves an opt-out standing. A state
 // already as o would set it is stamped too: the person said it again, later. An observation not
-// admitted changes nothing. The stamp is Hold's: on sms, the one an Erasure kept by the hash.
+// admitted changes nothing. The stamp is Hold's, stored by Stored's key.
 func Admit(ctx context.Context, s *ent.Scoped, k Key, fact Fact, o Occurrence, refusal bool) (bool, error) {
 	if o.At.IsZero() {
 		return false, ErrNoOccurrence

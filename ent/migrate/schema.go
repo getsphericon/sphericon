@@ -3452,6 +3452,7 @@ func init() {
 		"consent_stamps_confirmation_check": "sending_source = 'everything' OR confirmation_occurred_at IS NULL",
 		"consent_stamps_destination_lower":  "destination = lower(destination)",
 		"consent_stamps_sequence_check":     "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND (opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)",
+		"consent_stamps_sms_hash_check":     "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'",
 	}
 	ContactsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	ContactsTable.Annotation = &entsql.Annotation{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
+	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -42,9 +43,27 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, tar
 			contactID: target.ContactID, ip: ip, at: consentstamps.At(at),
 		})
 		if errors.Is(err, ErrSuperseded) {
-			// The address left after this link was sent and followed: nothing to record.
-			return nil
+			// The address left after the link was followed: the click changed nothing, and is in the
+			// Contact's history as such (ADR 0154).
+			return publishSuperseded(ctx, sc, pub, target.ContactID, dest, at)
 		}
 		return err
+	})
+}
+
+// publishSuperseded records a double opt-in click older than the address's withdrawal as
+// contact.consent_superseded for the Contact the link was issued to; one gone by now has nobody to
+// name.
+func publishSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, address string, at time.Time) error {
+	if contactID == 0 {
+		return nil
+	}
+	exists, err := s.Contact().Query().Where(contact.ID(contactID)).Exist(ctx)
+	if err != nil || !exists {
+		return err
+	}
+	return pub.Publish(ctx, &events.ConsentSuperseded{
+		WorkspaceID: s.WorkspaceID(), ContactID: contactID, Email: address,
+		Channel: string(channels.Email), Observation: events.ObservationStart, ObservedAt: at,
 	})
 }
