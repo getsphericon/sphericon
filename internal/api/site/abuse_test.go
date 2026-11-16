@@ -19,8 +19,7 @@ import (
 // detector tests name them too): a test moves the clock back that many days, so the trailing
 // hours hold only its own scenario. The volumes are small, so the tests judge with a floor of 20.
 const (
-	belowFloorDay = 6  // Vandelay: 19 sent, every one bounced hard, under the floor
-	warningDay    = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
+	warningDay = 30 // Vandelay: 3 of 40 bounced hard, in the warning tier
 )
 
 const volumeFloor = 20
@@ -51,18 +50,6 @@ func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
 	assert.Equal(t, "mail.vandelay.test", abuse.Domain)
 	assert.Equal(t, siteapi.SiteAbuseMetricBounce, abuse.Metric)
 	assert.InDelta(t, 3.0/40.0, abuse.Rate, 1e-9)
-}
-
-func TestTheDashboardShowsNoWarningBelowTheFloor(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithClock(daysAgo(belowFloorDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
-
-	assert.Nil(t, warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID))
-}
-
-func TestTheDashboardShowsNoWarningWhenUnlicensed(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithoutLicense(), testhelper.WithClock(daysAgo(warningDay)), testhelper.WithStaffVolumeFloor(volumeFloor))
-
-	assert.Nil(t, warning(t, env, fixtures.VandelayOwnerArtEmail, fixtures.VandelayPublicID))
 }
 
 func TestASuspendedWorkspaceCarriesTheSupportContactForItsBanner(t *testing.T) {

@@ -15,7 +15,6 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -88,34 +87,6 @@ func TestExportErasuresAnnouncesAnErasureByAddressAlone(t *testing.T) {
 	assert.Nil(t, row["phone_hash"])
 	assert.Empty(t, row["subject_id"], "the address is not echoed as a subject id")
 	assert.Equal(t, []any{}, row["visitor_ids"])
-}
-
-func TestContactErasedMessageHoldsNoAddressOrPhone(t *testing.T) {
-	env := testhelper.Setup(t)
-	eraseErasable(t, env)
-
-	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
-
-	require.Len(t, envelopes, 1)
-	body := string(envelopes[0].Data)
-	assert.NotContains(t, body, fixtures.ContactErasableEmail)
-	assert.NotContains(t, body, "14155550300")
-	assert.Contains(t, body, hexSHA256(fixtures.ContactErasableEmail))
-}
-
-func TestContactErasedMessageOfAnAddressAloneHoldsNoAddress(t *testing.T) {
-	env := testhelper.Setup(t)
-	olga := env.SiteActor(t, fixtures.InitechOwnerOlgaEmail)
-	err := olga.SiteContactsErase(context.Background(), siteapi.SiteContactsEraseParams{
-		WorkspaceId: fixtures.InitechPublicID,
-		Email:       fixtures.OutboundMessageStrangerDestination,
-	})
-	require.NoError(t, err)
-
-	envelopes := env.QueuedEnvelopes(t, systemevent.ContactErased)
-
-	require.Len(t, envelopes, 1)
-	assert.NotContains(t, string(envelopes[0].Data), fixtures.OutboundMessageStrangerDestination)
 }
 
 func TestExportErasuresRedeliveryWritesOneRow(t *testing.T) {

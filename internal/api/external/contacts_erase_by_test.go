@@ -9,20 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/contact"
-	"github.com/getsphericon/sphericon/ent/outboundmessage"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestExternalContactsEraseByEmailAppliesTheRulesOfById(t *testing.T) {
+// An address names the Contact that holds it; what its Erasure leaves is the use case's.
+func TestExternalContactsEraseByEmailErasesTheContact(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	c := initechClient(t, env, "contacts:erase")
 
-	err := c.ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
+	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
 		Email: externalapi.NewOptEmailAddress(fixtures.ContactErasableEmail),
 	})
 	require.NoError(t, err)
@@ -30,56 +28,6 @@ func TestExternalContactsEraseByEmailAppliesTheRulesOfById(t *testing.T) {
 	gone, err := env.DB.Contact.Query().Where(contact.ID(fixtures.ContactErasableID)).Exist(ctx)
 	require.NoError(t, err)
 	assert.False(t, gone)
-	assert.False(t, eventExists(t, env, fixtures.EventErasableCustomID))
-	sent := eventByID(t, env, fixtures.EventErasableSentID)
-	assert.Nil(t, sent.ContactID)
-	assert.Nil(t, sent.Email)
-	unsub, err := env.DB.Unsubscribe.Get(ctx, fixtures.UnsubscribeErasableID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactErasableEmail, unsub.Destination)
-	assert.Nil(t, unsub.ContactID)
-	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageErasableTransactionalID)
-	require.NoError(t, err)
-	assert.Empty(t, m.Destination)
-	b, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageBystanderID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactBystanderEmail, b.Destination)
-}
-
-func TestExternalContactsEraseByEmailAnonymizesContactlessTransactionalSends(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
-		Email: externalapi.NewOptEmailAddress(fixtures.OutboundMessageStrangerDestination),
-	})
-	require.NoError(t, err)
-
-	m, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageStrangerID)
-	require.NoError(t, err)
-	assert.Empty(t, m.Destination)
-	assert.Equal(t, outboundmessage.StatusSent, m.Status, "the row stays for the totals")
-	other, err := env.DB.OutboundMessage.Get(ctx, fixtures.OutboundMessageBystanderID)
-	require.NoError(t, err)
-	assert.Equal(t, fixtures.ContactBystanderEmail, other.Destination)
-}
-
-func TestExternalContactsEraseByVisitorWithoutContact(t *testing.T) {
-	env := testhelper.Setup(t)
-	ctx := context.Background()
-
-	err := initechClient(t, env, "contacts:erase").ContactsEraseBy(ctx, externalapi.ContactsEraseByParams{
-		VisitorId: externalapi.NewOptString("vis-anonymous-301"),
-	})
-	require.NoError(t, err)
-
-	n, err := env.DB.Visitor.Query().Where(visitor.ID(fixtures.VisitorAnonymousID)).Count(ctx)
-	require.NoError(t, err)
-	assert.Zero(t, n)
-	assert.False(t, eventExists(t, env, fixtures.EventAnonymousVisitorID))
-	n, err = env.DB.Visitor.Query().Where(visitor.ID(300)).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, n, "a Contact's device is untouched")
 }
 
 func TestExternalContactsEraseByNeedsExactlyOneKnownIdentifier(t *testing.T) {

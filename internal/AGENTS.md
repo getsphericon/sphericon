@@ -130,8 +130,11 @@ Removal check reads under the Workspace lock, `internal/usecase/customfieldretyp
 edit's, `internal/usecase/integrationdeletion` the Integration's and
 `internal/usecase/sendingdomaindeletion` the Sending domain's, while what the Removal check finds is
 tested in `internal/domain/orchestration/removalcheck` against `Module[*removalcheck.Module](env)`,
-`internal/usecase/unsubscriberecording` the refusals of an opt-out the API records and
-`internal/usecase/visitoridentification` what Identify binds and stitches). An operation that is
+`internal/usecase/unsubscriberecording` the refusals of an opt-out the API records,
+`internal/usecase/visitoridentification` what Identify binds and stitches,
+`internal/usecase/contacterasure` what an Erasure leaves behind, the work it cancels and that it is
+all or nothing, and `internal/usecase/needsattentionreport` every Kind of the report, while the
+surfaces keep who may call them and how a refusal or an item reads). An operation that is
 only a driver's work leaves the tier with its tests (#1361): `internal/commandline` holds the tests of
 a re-encryption run of every stored secret and its report, and the Event history's reads and
 replays of a Workspace an operator names by its id. An operation that moves
