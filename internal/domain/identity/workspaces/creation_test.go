@@ -1,15 +1,19 @@
 package workspaces_test
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -70,4 +74,19 @@ func TestCreateInGivesTheWorkspaceItsStandingWithAFeedPosition(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, top+1, standing.FeedPosition)
 	assert.Nil(t, standing.SetupCompletedAt)
+}
+
+// On a new Instance no Workspace holds a feed position yet: the top one is 0, so the first Workspace
+// takes 1.
+func TestTheTopFeedPositionOfAnInstanceWithoutWorkspacesIsZero(t *testing.T) {
+	sqlDB, err := sql.Open("pgx", testhelper.EmptyDBURL(t))
+	require.NoError(t, err)
+	t.Cleanup(func() { cleanup.Close(sqlDB, "empty instance") })
+	_, err = db.Migrate(t.Context(), sqlDB)
+	require.NoError(t, err)
+
+	top, err := workspaces.TopFeedPosition(t.Context(), entclient.Core.New(sqlDB))
+
+	require.NoError(t, err)
+	assert.Zero(t, top)
 }

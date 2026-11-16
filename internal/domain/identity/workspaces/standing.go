@@ -180,10 +180,16 @@ func SetFeedPosition(ctx context.Context, client *ent.Client, position int64, id
 		Exec(ctx)
 }
 
-// TopFeedPosition is the highest service feed position any Workspace holds, 0 when none took one.
+// TopFeedPosition is the highest service feed position any Workspace holds, 0 when none took one
+// (on a new Instance, the first Workspace has no standing yet when it takes its position).
 func TopFeedPosition(ctx context.Context, client *ent.Client) (int64, error) {
-	top, err := client.WorkspaceStanding.Query().Aggregate(ent.Max(workspacestanding.FieldFeedPosition)).Int(ctx)
-	return int64(top), err
+	top, err := client.WorkspaceStanding.Query().
+		Order(ent.Desc(workspacestanding.FieldFeedPosition)).Limit(1).
+		Select(workspacestanding.FieldFeedPosition).Ints(ctx)
+	if err != nil || len(top) == 0 {
+		return 0, err
+	}
+	return int64(top[0]), nil
 }
 
 // StandingOf is what the service keeps about ws for itself (ADR 0168), read through its standing
