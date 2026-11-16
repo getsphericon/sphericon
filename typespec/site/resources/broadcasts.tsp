@@ -245,7 +245,7 @@ model SiteBroadcastsListFilter {
  */
 @tag("Site Broadcasts")
 interface SiteBroadcasts
-  extends WorkspaceCrudKept<
+  extends WorkspaceCrudArchivable<
       SiteBroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
@@ -253,26 +253,6 @@ interface SiteBroadcasts
       #[],
       SiteBroadcastsListFilter
     > {
-  /**
-   * Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
-   * figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot
-   * be archived (409). Archiving an archived broadcast changes nothing.
-   */
-  @action("archive")
-  @autoRoute
-  @requiresPermissions(#[])
-  archive(...ResourceParameters<SiteBroadcastResource>):
-    | SiteBroadcastResource
-    | Problem;
-
-  /** Bring an archived broadcast back to the list, in the status it had */
-  @action("unarchive")
-  @autoRoute
-  @requiresPermissions(#[])
-  unarchive(...ResourceParameters<SiteBroadcastResource>):
-    | SiteBroadcastResource
-    | Problem;
-
   /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed since the `revision` it names (revision_changed): nothing is sent. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (ADR 0156). */
   @action("send")
   @autoRoute
@@ -308,6 +288,20 @@ interface SiteBroadcasts
     @body body: TestSendBroadcastInput,
   ): SiteTestSendBroadcastResult | Problem;
 }
+
+@@doc(
+  SiteBroadcasts.archive,
+  """
+    Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
+    figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot
+    be archived (409). Archiving an archived broadcast changes nothing.
+    """
+);
+
+@@doc(
+  SiteBroadcasts.unarchive,
+  "Bring an archived broadcast back to the list, in the status it had"
+);
 
 /** A broadcast's per-link click figures, most clicked first */
 model SiteBroadcastLinkClicksList {

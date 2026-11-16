@@ -140,7 +140,7 @@ model BroadcastsListFilter {
  * is unarchived: an update, a change of its Segment or a schedule of one is a 409. */
 @tag("Broadcasts")
 interface Broadcasts
-  extends ExternalCrudKept<
+  extends ExternalCrudArchivable<
       BroadcastResource,
       CreateBroadcastInput,
       UpdateBroadcastInput,
@@ -148,22 +148,6 @@ interface Broadcasts
       ApiTokenScope.broadcastsWrite,
       BroadcastsListFilter
     > {
-  /** Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing. */
-  @action("archive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.broadcastsWrite])
-  archive(...ResourceParameters<BroadcastResource>):
-    | BroadcastResource
-    | Problem;
-
-  /** Bring an archived broadcast back to the list, in the status it had */
-  @action("unarchive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.broadcastsWrite])
-  unarchive(...ResourceParameters<BroadcastResource>):
-    | BroadcastResource
-    | Problem;
-
   /** Set the Segment of a draft broadcast, or null for all contacts. Does not send. An archived broadcast is a 409. */
   @action("segment")
   @put
@@ -207,3 +191,13 @@ interface Broadcasts
   @requiresScopes(#[ApiTokenScope.broadcastsRead])
   report(...ResourceParameters<BroadcastResource>): BroadcastReport | Problem;
 }
+
+@@doc(
+  Broadcasts.archive,
+  "Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing."
+);
+
+@@doc(
+  Broadcasts.unarchive,
+  "Bring an archived broadcast back to the list, in the status it had"
+);

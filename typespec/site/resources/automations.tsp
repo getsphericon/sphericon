@@ -277,7 +277,7 @@ model SiteAutomationsListFilter {
  */
 @tag("Site Automations")
 interface SiteAutomations
-  extends WorkspaceCrudKept<
+  extends WorkspaceCrudArchivable<
       SiteAutomationResource,
       SiteCreateAutomationInput,
       SiteUpdateAutomationInput,
@@ -285,26 +285,6 @@ interface SiteAutomations
       #[],
       SiteAutomationsListFilter
     > {
-  /**
-   * Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
-   * keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active
-   * enrollments or an active rule enrolls contacts in it (`usedBy` names them).
-   */
-  @action("archive")
-  @autoRoute
-  @requiresPermissions(#[])
-  archive(...ResourceParameters<SiteAutomationResource>):
-    | SiteAutomationResource
-    | Problem;
-
-  /** Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again */
-  @action("unarchive")
-  @autoRoute
-  @requiresPermissions(#[])
-  unarchive(...ResourceParameters<SiteAutomationResource>):
-    | SiteAutomationResource
-    | Problem;
-
   /**
    * Publish an automation: the draft becomes live and the automation active, enrolling contacts;
    * with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version
@@ -484,6 +464,20 @@ namespace SiteAutomationReports {
     period?: SiteAutomationReportPeriod = SiteAutomationReportPeriod.`30d`,
   ): SiteAutomationReport | Problem;
 }
+
+@@doc(
+  SiteAutomations.archive,
+  """
+    Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and
+    keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active
+    enrollments or an active rule enrolls contacts in it (`usedBy` names them).
+    """
+);
+
+@@doc(
+  SiteAutomations.unarchive,
+  "Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again"
+);
 
 @@doc(
   SiteAutomations.update,

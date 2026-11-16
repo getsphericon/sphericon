@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -66,12 +68,7 @@ model AuditEntryResource {
 }
 
 /** A page of Audit entries, newest first */
-model AuditEntryList {
-  items: AuditEntryResource[];
-
-  /** Pass as `cursor` for the next page; absent on the last page */
-  nextCursor?: string | null;
-}
+model AuditEntryList is CursorPage<AuditEntryResource>;
 
 /** Filters of the Audit log read; every one is optional and they combine with AND */
 model AuditFilter {
@@ -109,16 +106,5 @@ namespace AuditEntries {
   /** List the Workspace's Audit log, newest first (Enterprise; needs the `audit:read` scope) */
   @get
   @requiresScopes(#[ApiTokenScope.auditRead])
-  op list(
-    ...AuditFilter,
-
-    /** Cursor from a previous page */
-    @query cursor?: string,
-
-    /** Page size */
-    @query
-    @minValue(1)
-    @maxValue(100)
-    limit?: int32 = 25,
-  ): AuditEntryList | Problem;
+  op list(...AuditFilter, ...CursorQuery): AuditEntryList | Problem;
 }

@@ -104,60 +104,15 @@ model SiteWebhookTestResult {
  * signing secret, so every operation, reads included, is refused to a member with 403.
  */
 @tag("Site Webhooks")
-interface SiteWebhooks {
-  /** List webhook endpoints. Owners and admins only. */
-  @listsResource(SiteWebhookEndpointResource)
-  @get
-  @autoRoute
-  @requiresPermissions(#[Permission.webhooksManage])
-  list(
-    ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
-    ...PageQuery,
-  ): Page<SiteWebhookEndpointResource> | Problem;
-
-  /** Create a webhook endpoint. Owners and admins only. */
-  @createsResource(SiteWebhookEndpointResource)
-  @post
-  @autoRoute
-  @requiresPermissions(#[Permission.webhooksManage])
-  create(
-    ...ResourceCollectionParameters<SiteWebhookEndpointResource>,
-    @body body: CreateWebhookInput,
-  ):
-    | {
-        @statusCode statusCode: 201;
-        @body body: SiteWebhookEndpointResource;
-      }
-    | Problem;
-
-  /** Get a webhook endpoint by ID. Owners and admins only. */
-  @readsResource(SiteWebhookEndpointResource)
-  @get
-  @autoRoute
-  @requiresPermissions(#[Permission.webhooksManage])
-  get(...ResourceParameters<SiteWebhookEndpointResource>):
-    | SiteWebhookEndpointResource
-    | Problem;
-
-  /** Update a webhook endpoint. Owners and admins only. */
-  @updatesResource(SiteWebhookEndpointResource)
-  @put
-  @autoRoute
-  @requiresPermissions(#[Permission.webhooksManage])
-  update(
-    ...ResourceParameters<SiteWebhookEndpointResource>,
-    @body body: UpdateWebhookInput,
-  ): SiteWebhookEndpointResource | Problem;
-
-  /** Delete a webhook endpoint. Owners and admins only. */
-  @deletesResource(SiteWebhookEndpointResource)
-  @delete
-  @autoRoute
-  @requiresPermissions(#[Permission.webhooksManage])
-  delete(...ResourceParameters<SiteWebhookEndpointResource>):
-    | NoContentResponse
-    | Problem;
-
+interface SiteWebhooks
+  extends WorkspaceCrud<
+      SiteWebhookEndpointResource,
+      CreateWebhookInput,
+      UpdateWebhookInput,
+      #[Permission.webhooksManage],
+      #[Permission.webhooksManage],
+      #[Permission.webhooksManage]
+    > {
   /** Replace the signing secret. The old one stops verifying at once; the new one is in the response. Owners and admins only. */
   @action("regenerate-secret")
   @autoRoute
@@ -175,3 +130,21 @@ interface SiteWebhooks {
     @body body: TestWebhookInput,
   ): SiteWebhookTestResult | Problem;
 }
+
+@@doc(SiteWebhooks.list, "List webhook endpoints. Owners and admins only.");
+@@doc(
+  SiteWebhooks.create,
+  "Create a webhook endpoint. Owners and admins only."
+);
+@@doc(
+  SiteWebhooks.get,
+  "Get a webhook endpoint by ID. Owners and admins only."
+);
+@@doc(
+  SiteWebhooks.update,
+  "Update a webhook endpoint. Owners and admins only."
+);
+@@doc(
+  SiteWebhooks.delete,
+  "Delete a webhook endpoint. Owners and admins only."
+);
