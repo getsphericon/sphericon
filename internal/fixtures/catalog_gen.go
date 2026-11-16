@@ -675,6 +675,8 @@ const (
 	BindingEmmaPhoneDestination = "70002"
 	// BindingEmmaPhoneID is from fixtures/bindings.
 	BindingEmmaPhoneID = 2
+	// BindingEmmaPhoneVisitorID is from fixtures/bindings.
+	BindingEmmaPhoneVisitorID = "101"
 	// BindingGlobexDestination is from fixtures/bindings.
 	BindingGlobexDestination = "80001"
 	// BindingGlobexID is from fixtures/bindings.
