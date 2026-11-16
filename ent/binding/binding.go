@@ -33,8 +33,6 @@ const (
 	FieldContactID = "contact_id"
 	// FieldVisitorID holds the string denoting the visitor_id field in the database.
 	FieldVisitorID = "visitor_id"
-	// FieldAnnounced holds the string denoting the announced field in the database.
-	FieldAnnounced = "announced"
 	// FieldBoundAt holds the string denoting the bound_at field in the database.
 	FieldBoundAt = "bound_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
@@ -89,7 +87,6 @@ var Columns = []string{
 	FieldChatID,
 	FieldContactID,
 	FieldVisitorID,
-	FieldAnnounced,
 	FieldBoundAt,
 }
 
@@ -114,8 +111,6 @@ var (
 	DestinationValidator func(string) error
 	// ChatIDValidator is a validator for the "chat_id" field. It is called by the builders before save.
 	ChatIDValidator func(string) error
-	// DefaultAnnounced holds the default value on creation for the "announced" field.
-	DefaultAnnounced bool
 )
 
 // Channel defines the type for the "channel" enum field.
@@ -191,11 +186,6 @@ func ByContactID(opts ...sql.OrderTermOption) OrderOption {
 // ByVisitorID orders the results by the visitor_id field.
 func ByVisitorID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVisitorID, opts...).ToFunc()
-}
-
-// ByAnnounced orders the results by the announced field.
-func ByAnnounced(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAnnounced, opts...).ToFunc()
 }
 
 // ByBoundAt orders the results by the bound_at field.

@@ -294,6 +294,7 @@ func (c *InputsImpl) ContactUpsert(source external.UpsertContactInput) contacts.
 	// contactsUpsertInput.GuessedTimeZone: ignore
 	// contactsUpsertInput.GuessedLocale: ignore
 	contactsUpsertInput.CustomFields = nilObjectIn(source.CustomFields)
+	// contactsUpsertInput.Claimed: ignore
 	return contactsUpsertInput
 }
 func (c *InputsImpl) CustomFieldUpdate(source *external.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {

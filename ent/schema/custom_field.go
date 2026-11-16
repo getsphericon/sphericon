@@ -10,8 +10,9 @@ import (
 // CustomField is the workspace-scoped, typed, named definition of a Contact
 // attribute beyond the core fields (email / phone / subject_id / name). It is the
 // one attribute concept — there is no schemaless "trait". An unknown key arriving
-// from Identify is auto-created here with an inferred type (declared-by-use), but is
-// a first-class, renameable definition from the first sight. Per-contact values live
+// through the API or an import is auto-created here with an inferred type (declared-by-use);
+// Identify through the public collect key creates none (ADR 0171). It is a first-class,
+// renameable definition from the first sight. Per-contact values live
 // in Contact.custom_fields keyed by this field's `key`.
 type CustomField struct {
 	ent.Schema

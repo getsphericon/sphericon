@@ -299,10 +299,9 @@ func bindingAudience(t *testing.T, env *testhelper.TestEnv, integrationID int64,
 	return ids
 }
 
-// On a Channel of Bindings a Contact is reached at each Binding on the Integration, its own and its
-// Visitors', each one checked on its own (ADR 0075): Lacuna's bot reaches Tia (two chats), Ben, Fay
-// and Eve (through her Visitor's chat), not Sid, whose one chat stopped Broadcasts, nor Cal, who is
-// on the other bot only, nor the texters, who have no Binding at all. A transactional send ignores
+// On a Channel of Bindings a Contact is reached at each of its own Bindings on the Integration, each
+// one checked on its own (ADR 0075): Lacuna's bot reaches Tia (two chats), Ben, Fay and Eve, not
+// Sid, whose one chat stopped Broadcasts, nor Cal, who is on the other bot only, nor the texters, who have no Binding at all. A transactional send ignores
 // Sid's opt-out, and an Integration of 0 reaches nobody.
 func TestBindingAudienceReachesTheContactsBoundOnTheIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
@@ -313,10 +312,10 @@ func TestBindingAudienceReachesTheContactsBoundOnTheIntegration(t *testing.T) {
 		want        []int64
 	}{
 		"broadcasts on the bot": {fixtures.IntegrationLacunaTelegramID, eligibility.SourceBroadcasts, []int64{
-			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaByVisitorID,
+			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaEveID,
 		}},
 		"transactional on the bot": {fixtures.IntegrationLacunaTelegramID, "", []int64{
-			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaByVisitorID,
+			fixtures.ContactLacunaTwoChatsID, fixtures.ContactLacunaBenID, fixtures.ContactLacunaFayID, fixtures.ContactLacunaEveID,
 			fixtures.ContactLacunaStoppedID,
 		}},
 		"broadcasts on the other bot": {fixtures.IntegrationLacunaOtherTelegramID, eligibility.SourceBroadcasts, []int64{fixtures.ContactLacunaOtherBotID}},

@@ -13,7 +13,8 @@ const ownerCheck = "(contact_id IS NULL) <> (visitor_id IS NULL)"
 
 // Binding is the record that one Integration can reach one Destination and whose it is (ADR 0075):
 // a Telegram chat, made only by what the bot receives (a `/start` with a Start token), never
-// written through an API. The owner is a Contact or a Visitor, the latest owner wins, and it dies
+// written through an API. The owner is a Contact or a Visitor, the latest owner wins; a Visitor's
+// Binding reaches nobody until a proven Identify hands it to the Contact (ADR 0171). It dies
 // with its owner and its Integration (an Integration is archived, never deleted, so only Workspace
 // deletion removes one).
 type Binding struct {
@@ -56,11 +57,6 @@ func (Binding) Fields() []ent.Field {
 		field.Int64("visitor_id").
 			Optional().
 			Nillable(),
-		// Whether telegram.bound was recorded for the Contact the Binding reaches. A Contact's own
-		// Binding is announced when it is made; a Visitor's when Identify resolves the Visitor.
-		field.Bool("announced").
-			Annotations(Attribute("whether the bound event was published; it carries a dedup id, and a rebind resets the flag")).
-			Default(false),
 		// When the current owner got the Binding: creation, or the latest move to another owner.
 		field.Time("bound_at").
 			Annotations(Attribute("the latest binding of the chat; a rebind moves it")),

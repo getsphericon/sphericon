@@ -70,6 +70,20 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 	return out, nil
 }
 
+// KnownCustomFields is the part of kv whose keys are defined Custom fields: what an Identify through
+// the public collect key may write, since it creates no definition (ADR 0171). The rest is dropped,
+// as an invalid value of a core attribute is (ADR 0072).
+func KnownCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
+	if len(kv) == 0 {
+		return nil, nil
+	}
+	var defined []string
+	if err := s.CustomField().Query().Where(customfield.KeyIn(lo.Keys(kv)...)).Select(customfield.FieldKey).Scan(ctx, &defined); err != nil {
+		return nil, err
+	}
+	return lo.PickByKeys(kv, defined), nil
+}
+
 // Domain errors of a Custom field's edit. Callers match with errors.Is.
 var (
 	// ErrCustomFieldNotFound means no such Custom field in this Workspace.

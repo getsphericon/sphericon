@@ -9,7 +9,7 @@ model CollectTelegramStartLinkInput {
   visitorId: string;
 }
 
-/** A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, and it reaches the contact once the visitor is identified. The link works once. */
+/** A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, which reaches no contact. The link works once. */
 model CollectTelegramStartLink {
   /** `https://t.me/<bot>?start=<token>` */
   url: string;

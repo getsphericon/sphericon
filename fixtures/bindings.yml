@@ -1,5 +1,5 @@
-# Telegram chats (ADR 0075). Acme: Liam's own chat, and a chat of Emma's phone (a Visitor of
-# Contact 101), which reaches Emma. Globex: its Contact's chat.
+# Telegram chats (ADR 0075). Acme: Liam's own chat, and a chat started from Emma's phone (a Visitor
+# of Contact 101), which reaches no Contact (ADR 0171). Globex: its Contact's chat.
 - id: 1 # fixture: BindingLiam
   integration_id: 9
   channel: telegram
@@ -61,8 +61,8 @@
   workspace_id: 94
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
-# Lacuna (workspace 96), on its bot: Tia in two chats, Ben and Fay in one each, Eve through her
-# Visitor's phone and Sid in the chat he stopped Broadcasts in; Cal on its other bot only.
+# Lacuna (workspace 96), on its bot: Tia in two chats, Ben, Eve (the chat of her phone) and Fay in one
+# each and Sid in the chat he stopped Broadcasts in; Cal on its other bot only.
 - id: 7740
   integration_id: 7741
   channel: telegram
@@ -98,7 +98,7 @@
   channel: telegram
   destination: '77404'
   chat_id: '77404'
-  visitor_id: 7740
+  contact_id: 7752
   bound_at: '2026-01-01 00:00:00'
   workspace_id: 96
   created_at: '2026-01-01 00:00:00'

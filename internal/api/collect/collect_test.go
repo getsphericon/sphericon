@@ -57,30 +57,28 @@ func TestCollectIdentifyAndEvents(t *testing.T) {
 		VisitorId: "v1",
 		Email:     collectapi.NewOptNilEmailAddress("trav@example.com"),
 		Traits: collectapi.NewOptNilJsonObject(collectapi.JsonObject{
-			"plan":   jx.Raw(`"pro"`),
-			"visits": jx.Raw(`3`),
+			"plan":              jx.Raw(`"pro"`),
+			"courses_completed": jx.Raw(`3`),
+			"visits":            jx.Raw(`3`),
 		}),
 	})
 	require.NoError(t, err)
 
-	// Identify upserts a Contact (not a separate tracking profile) and merges the
-	// traits as typed custom field values.
+	// Identify upserts a Contact (not a separate tracking profile) and merges the traits of the
+	// defined Custom fields as their values.
 	ct, err := env.DB.Contact.Query().
 		Where(contact.Email("trav@example.com")).Only(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "pro", ct.CustomFields["plan"])
-	assert.InDelta(t, 3, ct.CustomFields["visits"], 0)      // JSON numbers → float64
+	assert.InDelta(t, 3, ct.CustomFields["courses_completed"], 0) // JSON numbers → float64
+	assert.NotContains(t, ct.CustomFields, "visits")
 	assert.Equal(t, int64(fixtures.AcmeID), ct.WorkspaceID) // scoped to the key's workspace
 
-	// Each trait key auto-created a typed CustomField definition (declared-by-use).
-	planDef, err := env.DB.CustomField.Query().
-		Where(customfield.WorkspaceID(fixtures.AcmeID), customfield.Key("plan")).Only(ctx)
+	// A trait no Custom field is defined for is dropped: the public collect key defines none (ADR 0171).
+	visitsDefined, err := env.DB.CustomField.Query().
+		Where(customfield.WorkspaceID(fixtures.AcmeID), customfield.Key("visits")).Exist(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, customfield.TypeString, planDef.Type)
-	visitsDef, err := env.DB.CustomField.Query().
-		Where(customfield.WorkspaceID(fixtures.AcmeID), customfield.Key("visits")).Only(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, customfield.TypeNumber, visitsDef.Type)
+	assert.False(t, visitsDefined)
 
 	// Events with properties — same conversion path.
 	err = c.CollectEventsCreate(ctx, &collectapi.CollectEventsInput{

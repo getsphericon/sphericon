@@ -386,7 +386,6 @@ var (
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"telegram"}},
 		{Name: "destination", Type: field.TypeString},
 		{Name: "chat_id", Type: field.TypeString},
-		{Name: "announced", Type: field.TypeBool, Default: false},
 		{Name: "bound_at", Type: field.TypeTime},
 		{Name: "contact_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "integration_id", Type: field.TypeInt64},
@@ -401,25 +400,25 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "bindings_contacts_bindings",
-				Columns:    []*schema.Column{BindingsColumns[8]},
+				Columns:    []*schema.Column{BindingsColumns[7]},
 				RefColumns: []*schema.Column{ContactsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bindings_integrations_bindings",
-				Columns:    []*schema.Column{BindingsColumns[9]},
+				Columns:    []*schema.Column{BindingsColumns[8]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bindings_visitors_bindings",
-				Columns:    []*schema.Column{BindingsColumns[10]},
+				Columns:    []*schema.Column{BindingsColumns[9]},
 				RefColumns: []*schema.Column{VisitorsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 			{
 				Symbol:     "bindings_workspaces_bindings",
-				Columns:    []*schema.Column{BindingsColumns[11]},
+				Columns:    []*schema.Column{BindingsColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -428,17 +427,17 @@ var (
 			{
 				Name:    "bindings_workspace_id_integration_destination",
 				Unique:  true,
-				Columns: []*schema.Column{BindingsColumns[11], BindingsColumns[9], BindingsColumns[4]},
+				Columns: []*schema.Column{BindingsColumns[10], BindingsColumns[8], BindingsColumns[4]},
 			},
 			{
 				Name:    "bindings_workspace_id_contact_id",
 				Unique:  false,
-				Columns: []*schema.Column{BindingsColumns[11], BindingsColumns[8]},
+				Columns: []*schema.Column{BindingsColumns[10], BindingsColumns[7]},
 			},
 			{
 				Name:    "bindings_workspace_id_visitor_id",
 				Unique:  false,
-				Columns: []*schema.Column{BindingsColumns[11], BindingsColumns[10]},
+				Columns: []*schema.Column{BindingsColumns[10], BindingsColumns[9]},
 			},
 		},
 	}

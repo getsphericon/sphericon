@@ -1319,8 +1319,6 @@ const (
 	ContactLacunaBeaPhone = "+16175557741"
 	// ContactLacunaBenID is from fixtures/contacts.
 	ContactLacunaBenID = 7751
-	// ContactLacunaByVisitorID is from fixtures/contacts.
-	ContactLacunaByVisitorID = 7752
 	// ContactLacunaCydID is from fixtures/contacts.
 	ContactLacunaCydID = 7742
 	// ContactLacunaCydPhone is from fixtures/contacts.
@@ -1329,6 +1327,8 @@ const (
 	ContactLacunaDotID = 7743
 	// ContactLacunaDotPhone is from fixtures/contacts.
 	ContactLacunaDotPhone = "+16175557743"
+	// ContactLacunaEveID is from fixtures/contacts.
+	ContactLacunaEveID = 7752
 	// ContactLacunaFayID is from fixtures/contacts.
 	ContactLacunaFayID = 7753
 	// ContactLacunaOtherBotID is from fixtures/contacts.

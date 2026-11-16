@@ -41,6 +41,11 @@ export type CollectIdentifyContext = {
   locale?: string | null;
 };
 
+/**
+ * An identify claims who the visitor is: it finds or creates the contact by its keys, but gives a
+ * contact that exists no key it lacks and replaces none of its values, and binds the visitor only
+ * while it belongs to no other contact
+ */
 export type CollectIdentifyInput = {
   visitorId: string;
   email?: EmailAddress | null;
@@ -53,12 +58,13 @@ export type CollectIdentifyInput = {
   subjectId?: string | null;
   /**
    * Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`,
-   * `country`, `locale`, `birthday`, `city`, `avatar`) writes it, null clears it, and an invalid
-   * value of one is dropped. Any other trait is a custom field, whose type a new key's first value
-   * sets: a boolean, a number, a date (an ISO string: `2026-01-15T10:00:00Z`,
-   * `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the Workspace time zone) or text.
-   * Send a date without time as a `YYYY-MM-DD` string, not a JavaScript `Date`: that serializes
-   * as UTC and lands on the previous day east of UTC
+   * `country`, `locale`, `birthday`, `city`, `avatar`) writes it, and an invalid value of one is
+   * dropped. Any other trait writes the custom field of its key when the workspace has defined one,
+   * and is dropped otherwise: the collect key defines none. A date is an ISO string
+   * (`2026-01-15T10:00:00Z`, `2026-01-15T10:00:00` or `2026-01-15`, the last two read in the
+   * Workspace time zone): send a date without time as a `YYYY-MM-DD` string, not a JavaScript
+   * `Date`, which serializes as UTC and lands on the previous day east of UTC. The call proves
+   * nothing, so on a contact that exists it only fills what the contact has no value of
    */
   traits?: JsonObject | null;
   /**
@@ -73,7 +79,7 @@ export type CollectOkResponse = {
 };
 
 /**
- * A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, and it reaches the contact once the visitor is identified. The link works once.
+ * A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, which reaches no contact. The link works once.
  */
 export type CollectTelegramStartLink = {
   /**

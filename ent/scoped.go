@@ -9124,24 +9124,6 @@ func (x *BindingScopedCreate) SetNillableVisitorID(v *int64) *BindingScopedCreat
 
 const RoleOf_BindingScopedCreate_SetNillableVisitorID = RoleStep
 
-// SetAnnounced sets the "announced" field.
-func (x *BindingScopedCreate) SetAnnounced(v bool) *BindingScopedCreate {
-	x.set = append(x.set, func(b *BindingCreate) { b.SetAnnounced(v) })
-	return x
-}
-
-const RoleOf_BindingScopedCreate_SetAnnounced = RoleStep
-
-// SetNillableAnnounced sets the "announced" field if the given value is not nil.
-func (x *BindingScopedCreate) SetNillableAnnounced(v *bool) *BindingScopedCreate {
-	if v != nil {
-		x.SetAnnounced(*v)
-	}
-	return x
-}
-
-const RoleOf_BindingScopedCreate_SetNillableAnnounced = RoleStep
-
 // SetBoundAt sets the "bound_at" field.
 func (x *BindingScopedCreate) SetBoundAt(v time.Time) *BindingScopedCreate {
 	x.set = append(x.set, func(b *BindingCreate) { b.SetBoundAt(v) })
@@ -9350,22 +9332,6 @@ func (u *BindingScopedUpsert) ClearVisitorID() *BindingScopedUpsert {
 }
 
 const RoleOf_BindingScopedUpsert_ClearVisitorID = RoleStep
-
-// SetAnnounced sets the "announced" field.
-func (u *BindingScopedUpsert) SetAnnounced(v bool) *BindingScopedUpsert {
-	u.u.Set(binding.FieldAnnounced, v)
-	return u
-}
-
-const RoleOf_BindingScopedUpsert_SetAnnounced = RoleStep
-
-// UpdateAnnounced sets the "announced" field to the value that was provided on create.
-func (u *BindingScopedUpsert) UpdateAnnounced() *BindingScopedUpsert {
-	u.u.SetExcluded(binding.FieldAnnounced)
-	return u
-}
-
-const RoleOf_BindingScopedUpsert_UpdateAnnounced = RoleStep
 
 // SetBoundAt sets the "bound_at" field.
 func (u *BindingScopedUpsert) SetBoundAt(v time.Time) *BindingScopedUpsert {
@@ -9660,24 +9626,6 @@ func (x *BindingScopedUpdateOne) ClearVisitorID() *BindingScopedUpdateOne {
 
 const RoleOf_BindingScopedUpdateOne_ClearVisitorID = RoleStep
 
-// SetAnnounced sets the "announced" field.
-func (x *BindingScopedUpdateOne) SetAnnounced(v bool) *BindingScopedUpdateOne {
-	x.set = append(x.set, func(b *BindingUpdateOne) { b.SetAnnounced(v) })
-	return x
-}
-
-const RoleOf_BindingScopedUpdateOne_SetAnnounced = RoleStep
-
-// SetNillableAnnounced sets the "announced" field if the given value is not nil.
-func (x *BindingScopedUpdateOne) SetNillableAnnounced(v *bool) *BindingScopedUpdateOne {
-	if v != nil {
-		x.SetAnnounced(*v)
-	}
-	return x
-}
-
-const RoleOf_BindingScopedUpdateOne_SetNillableAnnounced = RoleStep
-
 // SetBoundAt sets the "bound_at" field.
 func (x *BindingScopedUpdateOne) SetBoundAt(v time.Time) *BindingScopedUpdateOne {
 	x.set = append(x.set, func(b *BindingUpdateOne) { b.SetBoundAt(v) })
@@ -9888,24 +9836,6 @@ func (x *BindingScopedUpdate) ClearVisitorID() *BindingScopedUpdate {
 }
 
 const RoleOf_BindingScopedUpdate_ClearVisitorID = RoleStep
-
-// SetAnnounced sets the "announced" field.
-func (x *BindingScopedUpdate) SetAnnounced(v bool) *BindingScopedUpdate {
-	x.set = append(x.set, func(b *BindingUpdate) { b.SetAnnounced(v) })
-	return x
-}
-
-const RoleOf_BindingScopedUpdate_SetAnnounced = RoleStep
-
-// SetNillableAnnounced sets the "announced" field if the given value is not nil.
-func (x *BindingScopedUpdate) SetNillableAnnounced(v *bool) *BindingScopedUpdate {
-	if v != nil {
-		x.SetAnnounced(*v)
-	}
-	return x
-}
-
-const RoleOf_BindingScopedUpdate_SetNillableAnnounced = RoleStep
 
 // SetBoundAt sets the "bound_at" field.
 func (x *BindingScopedUpdate) SetBoundAt(v time.Time) *BindingScopedUpdate {

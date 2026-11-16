@@ -41,7 +41,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
-	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -165,9 +164,9 @@ func (phoneDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate
 }
 
 // BindingDestination is the Destination of a Channel of Bindings (ADR 0075): the Contact is reached
-// at each Binding on the Integration, its own and its Visitors', and each one's Destination is
-// checked on its own, so a Contact with one eligible Binding is in the audience however many it
-// has. An Integration of 0 names none and reaches nobody.
+// at each of its own Bindings on the Integration (a Visitor's is no Contact's, ADR 0171), and each
+// one's Destination is checked on its own, so a Contact with one eligible Binding is in the audience
+// however many it has. An Integration of 0 names none and reaches nobody.
 func BindingDestination(channel channels.Channel, integrationID int64) Destination {
 	return bindingDestination{ch: channel, integration: integrationID}
 }
@@ -181,20 +180,14 @@ func (d bindingDestination) channel() channels.Channel { return d.ch }
 
 func (d bindingDestination) reach(s *sql.Selector, eligible func(ref) *sql.Predicate) {
 	b := sql.Table(entbinding.Table)
-	v := sql.Table(visitor.Table)
 	sub := sql.Select(b.C(entbinding.FieldID)).From(b)
-	ofVisitors := sql.Select(v.C(visitor.FieldID)).From(v)
-	ofVisitors.Where(sql.ColumnsEQ(v.C(visitor.FieldContactID), s.C(contact.FieldID)))
 	r := ref{
 		workspace:   func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldWorkspaceID)) },
 		destination: func(w *sql.Builder) { w.WriteString(b.C(entbinding.FieldDestination)) },
 	}
 	sub.Where(sql.And(
 		sql.EQ(b.C(entbinding.FieldIntegrationID), d.integration),
-		sql.Or(
-			sql.ColumnsEQ(b.C(entbinding.FieldContactID), s.C(contact.FieldID)),
-			sql.In(b.C(entbinding.FieldVisitorID), ofVisitors),
-		),
+		sql.ColumnsEQ(b.C(entbinding.FieldContactID), s.C(contact.FieldID)),
 		eligible(r),
 	))
 	s.Where(sql.Exists(sub))

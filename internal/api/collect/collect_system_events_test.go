@@ -8,14 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/customfield"
 	collectapi "github.com/getsphericon/sphericon/gen/collect"
+	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// An Identify records contact.field_changed for each Custom field whose stored value it changes
-// (#897): a value set where there was none, a new value, or a clear, which carries no value. One
-// repeating the stored value records nothing.
+// An Identify records contact.field_changed for the defined Custom field whose stored value it
+// changes (#897). It is a claim (ADR 0171): it sets a value where there was none, and never replaces
+// or clears one, so nothing after the first records anything. A trait no Custom field is defined for
+// is dropped, and no definition is made.
 func TestIdentifyRecordsCustomFieldChanges(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.CollectAcme(t)
@@ -24,7 +27,7 @@ func TestIdentifyRecordsCustomFieldChanges(t *testing.T) {
 		_, err := c.CollectIdentifyCreate(t.Context(), &collectapi.CollectIdentifyInput{
 			VisitorId: "dev-plan",
 			Email:     collectapi.NewOptNilEmailAddress("planner@example.com"),
-			Traits:    collectapi.NewOptNilJsonObject(collectapi.JsonObject{"plan": jx.Raw(plan)}),
+			Traits:    collectapi.NewOptNilJsonObject(collectapi.JsonObject{"plan": jx.Raw(plan), "undefined_trait": jx.Raw(`"x"`)}),
 		})
 		require.NoError(t, err)
 	}
@@ -32,21 +35,14 @@ func TestIdentifyRecordsCustomFieldChanges(t *testing.T) {
 	identify(`"pro"`)
 	afterSet := env.FieldChanges(t)
 	identify(`"pro"`)
-	afterRepeat := env.FieldChanges(t)
 	identify(`"team"`)
 	identify(`null`)
-	afterClear := env.FieldChanges(t)
-	identify(`null`)
-	afterClearAgain := env.FieldChanges(t)
+	afterRest := env.FieldChanges(t)
 
 	assert.Equal(t, []map[string]any{{"key": "plan", "value": "pro"}}, afterSet, "a value where there was none")
-	assert.Equal(t, afterSet, afterRepeat, "the same value again records nothing")
-	assert.Equal(t, []map[string]any{
-		{"key": "plan", "value": "pro"},
-		{"key": "plan", "value": "team"},
-		{"key": "plan", "value": nil},
-	}, afterClear, "a new value, then a clear with no value")
-	assert.Equal(t, afterClear, afterClearAgain, "clearing a cleared field records nothing")
+	assert.Equal(t, afterSet, afterRest, "a claim neither repeats, replaces nor clears")
+	assert.False(t, env.DB.CustomField.Query().Where(customfield.WorkspaceID(fixtures.AcmeID), customfield.Key("undefined_trait")).ExistX(t.Context()),
+		"no Custom field is defined through the collect key")
 }
 
 // A customer's Event never claims an Enrollment's action.
