@@ -2,6 +2,7 @@ package bad
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -9,7 +10,9 @@ import (
 
 type UseCase struct{}
 
-func New() *UseCase { return &UseCase{} }
+type Option func(*UseCase)
+
+func New(opts ...Option) *UseCase { return &UseCase{} } // want `rule 5: New takes functional options; .*\(ADR 0104\)`
 
 func Operation(context.Context) error { return nil } // want `rule 5: Operation is an exported function of a use case package`
 
@@ -38,5 +41,7 @@ func (*UseCase) Stamp(context.Context) time.Time {
 }
 
 var clock = time.Now // want `rule 5: the use case reads time.Now`
+
+func (*UseCase) Fetching(context.Context, *ent.Scoped, *http.Client) error { return nil } // want `rule 5: Fetching takes a client \(\*http.Client\); .*\(ADR 0104\)`
 
 func (*UseCase) unexported(context.Context) (int, int, error) { return 0, 0, nil }

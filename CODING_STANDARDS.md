@@ -146,16 +146,29 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   Workspace scope (ADR 0017): a method that starts a write on a type the manifest calls an entity is a
   finding in every package of the module, test code and `ent/schema` included, but the generated
   `ent` package itself. Update by id through the scoped client instead: `s.Tag().UpdateOneID(id)`.
-- **Rule 5, `usecaseshape`.** A use case is called one way (ADR 0104). In a package under
-  `internal/usecase` or `ee/usecase` (test files are not read) the analyzer refuses an exported function
-  other than `New`, a `New` that returns anything but `*UseCase`, an exported type other than `UseCase`
-  with a method that takes a `context.Context`, a method that returns `*UseCase` (a builder), an exported
-  method with more than two results, a second result that is not `error` or named results, more than two
-  arguments after `ctx` and the scope (`*ent.Scoped` or `*ent.Client`), a `now` argument, a
-  `func() time.Time` argument, a `[]error` result and any use of `time.Now`. The
-  fix is the shape the ADR states: a dependency or the clock is a parameter of `New`, a third or an
-  optional argument goes into a typed `XInput`, two values into a named result struct, and what became of a batch's items
-  into `batch.Result` (`internal/kernel/batch`). An `io.Writer` is `nowriter`'s.
+- **Rule 5, `callshape`.** An operation is called one way: a use case's (ADR 0104) and a domain
+  module's (ADR 0167). In a package of the use case tier (`internal/usecase`, `ee/usecase`) or the domain
+  tier (`internal/domain`, `ee/domain`), test files not read, the analyzer refuses, on an exported
+  operation (a method that takes a `context.Context`): more than two results, a second result that is
+  not `error`, named results, a `[]error` result, more than two arguments after `ctx` and the scope
+  (`*ent.Scoped`, `*ent.WorkspaceLocked` or `*ent.Client`), a `now` argument, a `func() time.Time`
+  argument and a client argument: a type with a method that takes a context, an `*http.Client` or an
+  `*ent.Client` past the scope's slot (an entity or another type of the generated `ent` package is no
+  client; a write through an entity is rule 18's). It refuses a constructor `New…` that takes
+  functional options. In the use case tier it refuses any exported function other than `New`, a `New`
+  that returns anything but `*UseCase`, an exported type other than `UseCase` with a method that takes
+  a context, a method that returns `*UseCase` (a builder), the result and argument shapes above on every
+  exported method of `UseCase`, and any use of `time.Now`. In the domain tier it refuses an exported
+  function that takes a context (a constructor `New…` and a function without one are allowed) and an
+  exported type with operations that no `New` or `New<Type>` returns as `*Type` alone; a module may
+  have several such types. The fix is the shape the ADRs state: a dependency, a client or the clock is
+  a parameter of the constructor, a third or an optional argument goes into a typed `XInput`, two
+  values into a named result struct, and what became of a batch's items into `batch.Result`
+  (`internal/kernel/batch`). A domain package that does not keep the contract yet is listed in
+  `tools/analyzers/callshape/exempt.txt`, which may only shrink: the analyzer reports nothing in a
+  listed package until it keeps the contract and then reports the entry, its test refuses an entry
+  that names no package of the domain tier, and `mise run check:callshape-exempt` (part of
+  `check:lint`) refuses an entry the merge base with `origin/main` lacks. An `io.Writer` is `nowriter`'s.
 - **Rule 5, `nowriter`.** The domain and the use case tiers write to no `io.Writer` (ADR 0104, ADR 0111).
   In a package under `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` (test files are
   not read) the analyzer refuses an `io.Writer` parameter of a function, a method, a function literal or

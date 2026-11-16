@@ -46,7 +46,9 @@ or `AGENTS.md`.
    contexts, ADR 0102); an operation that needs a module above is a use case. A use case is called
    one way (ADR 0104): its `New` takes every dependency and the clock, and each method takes the
    context, the scope and at most two required arguments (the rest in a typed input, the actor
-   among them) and returns one value or a named result, with errors of the shared taxonomy.
+   among them) and returns one value or a named result, with errors of the shared taxonomy. A domain
+   operation is called the same way (ADR 0167): a method of an exported type that a constructor `New…`
+   builds from every dependency, its clients and the clock included.
    Every exported write of a domain module normalises and checks all of its input itself (ADR 0107):
    no doc comment says "the caller has checked", and a driver checks no rule of a row. The contract's
    bounds reach the owner generated from the contract, never as a copy; the rules every owner shares
