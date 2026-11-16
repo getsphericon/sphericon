@@ -2,7 +2,7 @@
 // email-ready HTML with Liquid merge tags (ADR 0040); the pipeline is: Liquid
 // merge tags → derived plain-text part. Each step is a maintained library
 // (osteele/liquid, k3a/html2text, x/net/html) — we don't hand-roll templating or
-// HTML stripping.
+// HTML stripping. A render is bounded (budget.go, ADR 0174): what it may loop and build is counted.
 //
 // Tracking (open pixel, click rewriting, unsubscribe footer) is deliberately NOT
 // done here: the caller layers it on AFTER this pipeline so re-parsing can never
@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/k3a/html2text"
-	"github.com/osteele/liquid"
 	"github.com/osteele/liquid/render"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -35,7 +34,7 @@ var ErrInvalidContent = errors.New("message content cannot be rendered")
 // HTML on purpose). jsonEngine renders a JSON body (an HTTP call's, ADR 0039): the value of every
 // {{ }} is written as the inside of a JSON string, so a value holding quotes cannot change the
 // structure, and {{ value | safe }} is the explicit raw output (a {% capture %} block, whose
-// values were escaped when it was captured). All are safe for concurrent ParseAndRender calls.
+// values were escaped when it was captured). All are safe for concurrent renders.
 var (
 	engine     = newEngine(nil)
 	bodyEngine = newEngine(render.HtmlEscaper)
@@ -64,17 +63,6 @@ type noFiles struct{}
 
 func (noFiles) ReadTemplate(string) ([]byte, error) { return nil, errFileTags }
 
-// newEngine is a Liquid engine with no file tags that escapes each value it writes with escaper,
-// or writes it as it is when escaper is nil.
-func newEngine(escaper render.Replacer) *liquid.Engine {
-	e := liquid.NewEngine()
-	e.RegisterTemplateStore(noFiles{})
-	if escaper != nil {
-		e.SetAutoEscapeReplacer(escaper)
-	}
-	return e
-}
-
 // Email is a fully-rendered message ready for tracking + delivery.
 type Email struct {
 	Subject string
@@ -102,7 +90,7 @@ func renderBoth(subject, body string, bindings map[string]any) (renderedSubject,
 	if err != nil {
 		return "", "", fmt.Errorf("render subject: %w", err)
 	}
-	rendered, err := bodyEngine.ParseAndRenderString(body, bindings)
+	rendered, err := bodyEngine.render(body, bindings)
 	if err != nil {
 		return "", "", fmt.Errorf("render body: %w", err)
 	}
@@ -112,20 +100,20 @@ func renderBoth(subject, body string, bindings map[string]any) (renderedSubject,
 // RenderBody renders a Liquid template as markup: the value of every {{ }} is HTML-escaped as it
 // is written, as in an email body. Another Channel's markup text (Telegram's) renders through it.
 func RenderBody(tmpl string, bindings map[string]any) (string, error) {
-	return bodyEngine.ParseAndRenderString(tmpl, bindings)
+	return bodyEngine.render(tmpl, bindings)
 }
 
 // RenderJSON renders a Liquid template as JSON text: the value of every {{ }} is written as the
 // inside of a JSON string, so the template places it between quotes (or bare, for a number).
 func RenderJSON(tmpl string, bindings map[string]any) (string, error) {
-	return jsonEngine.ParseAndRenderString(tmpl, bindings)
+	return jsonEngine.render(tmpl, bindings)
 }
 
 // Render renders a Liquid template with the given bindings. On a template error
 // it returns the original template unchanged together with the error (useful for
 // previews); RenderEmail treats that error as fatal.
 func Render(tmpl string, bindings map[string]any) (string, error) {
-	out, err := engine.ParseAndRenderString(tmpl, bindings)
+	out, err := engine.render(tmpl, bindings)
 	if err != nil {
 		return tmpl, err
 	}
