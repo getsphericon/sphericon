@@ -311,6 +311,12 @@ func (s AuditAction) Validate() error {
 		return nil
 	case "hold.delete":
 		return nil
+	case "identity_secret.create":
+		return nil
+	case "identity_secret.update":
+		return nil
+	case "identity_secret.delete":
+		return nil
 	case "integration.create":
 		return nil
 	case "integration.update":

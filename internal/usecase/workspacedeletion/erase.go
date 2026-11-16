@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -250,6 +251,7 @@ func eraseSteps() []eraseStep {
 		stepOf((*ent.Scoped).ProviderLimiter, providerlimiter.IDIn),
 		stepOf((*ent.Scoped).SendCapLimiter, sendcaplimiter.IDIn),
 		stepOf((*ent.Scoped).WebhookEndpoint, webhookendpoint.IDIn),
+		stepOf((*ent.Scoped).IdentitySecret, identitysecret.IDIn),
 		stepOf((*ent.Scoped).Invitation, invitation.IDIn),
 		stepOf((*ent.Scoped).OAuthCode, oauthcode.IDIn),
 		stepOf((*ent.Scoped).ApiToken, apitoken.IDIn),

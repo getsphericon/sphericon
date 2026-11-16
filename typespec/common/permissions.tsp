@@ -26,7 +26,7 @@ enum Permission {
   /** The Audit log retention */
   auditConfigure: "audit:configure",
 
-  /** API tokens */
+  /** API tokens and the Identity secret */
   tokensManage: "tokens:manage",
 
   /** Writing Integrations, regenerating an ingest key */

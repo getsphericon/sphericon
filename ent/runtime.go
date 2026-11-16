@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -797,6 +798,21 @@ func init() {
 	holdDescSetBy := holdFields[6].Descriptor()
 	// hold.SetByValidator is a validator for the "set_by" field. It is called by the builders before save.
 	hold.SetByValidator = holdDescSetBy.Validators[0].(func(string) error)
+	identitysecretMixin := schema.IdentitySecret{}.Mixin()
+	identitysecretMixinFields0 := identitysecretMixin[0].Fields()
+	_ = identitysecretMixinFields0
+	identitysecretFields := schema.IdentitySecret{}.Fields()
+	_ = identitysecretFields
+	// identitysecretDescCreatedAt is the schema descriptor for created_at field.
+	identitysecretDescCreatedAt := identitysecretMixinFields0[0].Descriptor()
+	// identitysecret.DefaultCreatedAt holds the default value on creation for the created_at field.
+	identitysecret.DefaultCreatedAt = identitysecretDescCreatedAt.Default.(func() time.Time)
+	// identitysecretDescUpdatedAt is the schema descriptor for updated_at field.
+	identitysecretDescUpdatedAt := identitysecretMixinFields0[1].Descriptor()
+	// identitysecret.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	identitysecret.DefaultUpdatedAt = identitysecretDescUpdatedAt.Default.(func() time.Time)
+	// identitysecret.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	identitysecret.UpdateDefaultUpdatedAt = identitysecretDescUpdatedAt.UpdateDefault.(func() time.Time)
 	instanceauditentryMixin := schema.InstanceAuditEntry{}.Mixin()
 	instanceauditentryMixinFields0 := instanceauditentryMixin[0].Fields()
 	_ = instanceauditentryMixinFields0

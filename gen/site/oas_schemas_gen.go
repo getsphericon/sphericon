@@ -418,6 +418,9 @@ const (
 	AuditActionHoldCreate                  AuditAction = "hold.create"
 	AuditActionHoldUpdate                  AuditAction = "hold.update"
 	AuditActionHoldDelete                  AuditAction = "hold.delete"
+	AuditActionIdentitySecretCreate        AuditAction = "identity_secret.create"
+	AuditActionIdentitySecretUpdate        AuditAction = "identity_secret.update"
+	AuditActionIdentitySecretDelete        AuditAction = "identity_secret.delete"
 	AuditActionIntegrationCreate           AuditAction = "integration.create"
 	AuditActionIntegrationUpdate           AuditAction = "integration.update"
 	AuditActionIntegrationDelete           AuditAction = "integration.delete"
@@ -509,6 +512,9 @@ func (AuditAction) AllValues() []AuditAction {
 		AuditActionHoldCreate,
 		AuditActionHoldUpdate,
 		AuditActionHoldDelete,
+		AuditActionIdentitySecretCreate,
+		AuditActionIdentitySecretUpdate,
+		AuditActionIdentitySecretDelete,
 		AuditActionIntegrationCreate,
 		AuditActionIntegrationUpdate,
 		AuditActionIntegrationDelete,
@@ -657,6 +663,12 @@ func (s AuditAction) MarshalText() ([]byte, error) {
 	case AuditActionHoldUpdate:
 		return []byte(s), nil
 	case AuditActionHoldDelete:
+		return []byte(s), nil
+	case AuditActionIdentitySecretCreate:
+		return []byte(s), nil
+	case AuditActionIdentitySecretUpdate:
+		return []byte(s), nil
+	case AuditActionIdentitySecretDelete:
 		return []byte(s), nil
 	case AuditActionIntegrationCreate:
 		return []byte(s), nil
@@ -894,6 +906,15 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 		return nil
 	case AuditActionHoldDelete:
 		*s = AuditActionHoldDelete
+		return nil
+	case AuditActionIdentitySecretCreate:
+		*s = AuditActionIdentitySecretCreate
+		return nil
+	case AuditActionIdentitySecretUpdate:
+		*s = AuditActionIdentitySecretUpdate
+		return nil
+	case AuditActionIdentitySecretDelete:
+		*s = AuditActionIdentitySecretDelete
 		return nil
 	case AuditActionIntegrationCreate:
 		*s = AuditActionIntegrationCreate
@@ -19289,6 +19310,24 @@ func (s *SiteIdentitiesUnlinkNoContent) GetSetCookie() string {
 // SetSetCookie sets the value of SetCookie.
 func (s *SiteIdentitiesUnlinkNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
+}
+
+// The workspace's identity secret (ADR 0171): its server signs identity tokens with it (HS256), so an
+// identify from its site proves who is signed in. Owners and admins only.
+// Ref: #/components/schemas/SiteIdentitySecretResource
+type SiteIdentitySecretResource struct {
+	// The secret; absent until an owner or admin generates one.
+	Secret OptString `json:"secret"`
+}
+
+// GetSecret returns the value of Secret.
+func (s *SiteIdentitySecretResource) GetSecret() OptString {
+	return s.Secret
+}
+
+// SetSecret sets the value of Secret.
+func (s *SiteIdentitySecretResource) SetSecret(val OptString) {
+	s.Secret = val
 }
 
 // The Test inbox has no settings.

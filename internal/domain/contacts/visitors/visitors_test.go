@@ -30,7 +30,7 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 	// A claim gives a Contact that exists no alias key (ADR 0171): Alice holds hers already.
 	require.NoError(t, env.DB.Contact.UpdateOneID(fixtures.ContactAliceID).SetSubjectID("alice-1").Exec(ctx))
 
-	require.NoError(t, visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+	require.NoError(t, testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "dev-id", Email: lo.ToPtr(fixtures.ContactAliceEmail), SubjectID: new("alice-1"),
 	}))
 

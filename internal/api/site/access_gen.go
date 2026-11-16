@@ -92,6 +92,8 @@ var operationAccess = map[siteapi.OperationName]access{
 	siteapi.SiteIdentitiesLinkOperation:                        {},
 	siteapi.SiteIdentitiesListOperation:                        {},
 	siteapi.SiteIdentitiesUnlinkOperation:                      {},
+	siteapi.SiteIdentitySecretGetOperation:                     {workspace: true, permissions: []memberships.Permission{memberships.PermTokensManage}},
+	siteapi.SiteIdentitySecretRegenerateOperation:              {workspace: true, permissions: []memberships.Permission{memberships.PermTokensManage}},
 	siteapi.SiteInstanceGetReleaseOperation:                    {},
 	siteapi.SiteIntegrationsCreateOperation:                    {workspace: true, permissions: []memberships.Permission{memberships.PermIntegrationsManage}},
 	siteapi.SiteIntegrationsDeleteOperation:                    {workspace: true, permissions: []memberships.Permission{memberships.PermIntegrationsManage}},

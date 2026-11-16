@@ -2097,6 +2097,10 @@ const (
 	HooliSallyMembershipID = 17
 	// HooliStaleUnverifiedMembershipID is from fixtures/memberships.
 	HooliStaleUnverifiedMembershipID = 5700
+	// IdentitySecretAcmeID is from fixtures/identity_secrets.
+	IdentitySecretAcmeID = 1
+	// IdentitySecretGlobexID is from fixtures/identity_secrets.
+	IdentitySecretGlobexID = 900
 	// InitechAdminAdaEmail is from fixtures/users.
 	InitechAdminAdaEmail = "ada@initech.test"
 	// InitechAdminAdaID is from fixtures/users.

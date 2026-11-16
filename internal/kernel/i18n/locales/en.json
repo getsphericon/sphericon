@@ -338,6 +338,8 @@
   "errors.erasure_nothing_found": "nothing found for this email address or visitor id",
   "errors.erasure_identifier": "pass exactly one of email or visitorId",
   "errors.visitor_id_required": "visitorId is required: identify binds a visitor to a contact",
+  "errors.identity_token_invalid": "the identity token does not verify: it must be an HS256 token signed with the workspace's identity secret, name a subject, email or phone, and expire within a day",
+  "errors.identity_token_key_mismatch": "a key sent with the identity token differs from the one the token proves",
   "errors.privacy_email_invalid": "not a valid email address",
   "errors.contact_export_identifier": "pass exactly one of id or email",
   "errors.captured_message_not_found": "captured message not found",

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -1398,6 +1399,45 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				b.SetExpiresAt(src.ExpiresAt)
 				b.SetSetBy(src.SetBy)
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{},
+		},
+		{
+			Kind:         Kinds["IdentitySecret"],
+			Name:         "IdentitySecret",
+			Wrapper:      reflect.TypeFor[*IdentitySecretScoped](),
+			AuditActions: []string{"identity_secret.create", "identity_secret.update", "identity_secret.delete"},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.IdentitySecret.Query().Where(identitysecret.WorkspaceID(ws)).Order(Asc(identitysecret.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.IdentitySecret().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.IdentitySecret().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.IdentitySecret().Update().Where(identitysecret.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.IdentitySecret().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.IdentitySecret().Delete().Where(identitysecret.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.IdentitySecret.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.IdentitySecret().Create()
+				b.SetSecretEncrypted(src.SecretEncrypted)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

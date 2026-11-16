@@ -2159,6 +2159,29 @@ func HasBrandKitsWith(preds ...predicate.BrandKit) predicate.Workspace {
 	})
 }
 
+// HasIdentitySecrets applies the HasEdge predicate on the "identity_secrets" edge.
+func HasIdentitySecrets() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, IdentitySecretsTable, IdentitySecretsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIdentitySecretsWith applies the HasEdge predicate on the "identity_secrets" edge with a given conditions (other predicates).
+func HasIdentitySecretsWith(preds ...predicate.IdentitySecret) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newIdentitySecretsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasAutomations applies the HasEdge predicate on the "automations" edge.
 func HasAutomations() predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {

@@ -153,7 +153,9 @@ func (s *CollectIdentifyContext) SetLocale(val OptNilString) {
 
 // An identify claims who the visitor is: it finds or creates the contact by its keys, but gives a
 // contact that exists no key it lacks and replaces none of its values, and binds the visitor only
-// while it belongs to no other contact.
+// while it belongs to no other contact. With an identity token it is proven: the token's keys are the
+// contact's, it fills keys and replaces values, moves the visitor and hands the contact the chats the
+// visitor started.
 // Ref: #/components/schemas/CollectIdentifyInput
 type CollectIdentifyInput struct {
 	VisitorId string             `json:"visitorId"`
@@ -163,6 +165,11 @@ type CollectIdentifyInput struct {
 	// refused.
 	Phone     OptNilString `json:"phone"`
 	SubjectId OptNilString `json:"subjectId"`
+	// An identity token: a JWT the site's server signs with HS256 under the workspace's identity secret,
+	// naming the signed-in person's keys (`sub` for the subjectId, `email`, `phone`) and an `exp` at most
+	// a day ahead. A token that does not verify refuses the call with 422. A key sent beside it must be
+	// the token's.
+	IdentityToken OptNilString `json:"identityToken"`
 	// Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`, `country`,
 	// `locale`, `birthday`, `city`, `avatar`) writes it, and an invalid value of one is dropped. Any other
 	// trait writes the custom field of its key when the workspace has defined one, and is dropped
@@ -196,6 +203,11 @@ func (s *CollectIdentifyInput) GetSubjectId() OptNilString {
 	return s.SubjectId
 }
 
+// GetIdentityToken returns the value of IdentityToken.
+func (s *CollectIdentifyInput) GetIdentityToken() OptNilString {
+	return s.IdentityToken
+}
+
 // GetTraits returns the value of Traits.
 func (s *CollectIdentifyInput) GetTraits() OptNilJsonObject {
 	return s.Traits
@@ -224,6 +236,11 @@ func (s *CollectIdentifyInput) SetPhone(val OptNilString) {
 // SetSubjectId sets the value of SubjectId.
 func (s *CollectIdentifyInput) SetSubjectId(val OptNilString) {
 	s.SubjectId = val
+}
+
+// SetIdentityToken sets the value of IdentityToken.
+func (s *CollectIdentifyInput) SetIdentityToken(val OptNilString) {
+	s.IdentityToken = val
 }
 
 // SetTraits sets the value of Traits.
@@ -265,7 +282,8 @@ func (CollectOkResponseOk) AllValues() []CollectOkResponseOk {
 }
 
 // A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, which
-// reaches no contact. The link works once.
+// reaches no contact until a proven identify hands it over, or to the contact an identity token
+// proves. The link works once.
 // Ref: #/components/schemas/CollectTelegramStartLink
 type CollectTelegramStartLink struct {
 	// `https://t.me/<bot>?start=<token>`.
@@ -298,6 +316,11 @@ func (s *CollectTelegramStartLink) SetExpiresAt(val Timestamp) {
 type CollectTelegramStartLinkInput struct {
 	// The tracker's id of the visitor the link is for, created when it has not been seen.
 	VisitorId string `json:"visitorId"`
+	// An identity token: a JWT the site's server signs with HS256 under the workspace's identity secret,
+	// naming the signed-in person's keys (`sub` for the subjectId, `email`, `phone`) and an `exp` at most
+	// a day ahead. A token that does not verify refuses the call with 422. With it the link is for the
+	// contact the token proves, when there is one.
+	IdentityToken OptNilString `json:"identityToken"`
 }
 
 // GetVisitorId returns the value of VisitorId.
@@ -305,9 +328,19 @@ func (s *CollectTelegramStartLinkInput) GetVisitorId() string {
 	return s.VisitorId
 }
 
+// GetIdentityToken returns the value of IdentityToken.
+func (s *CollectTelegramStartLinkInput) GetIdentityToken() OptNilString {
+	return s.IdentityToken
+}
+
 // SetVisitorId sets the value of VisitorId.
 func (s *CollectTelegramStartLinkInput) SetVisitorId(val string) {
 	s.VisitorId = val
+}
+
+// SetIdentityToken sets the value of IdentityToken.
+func (s *CollectTelegramStartLinkInput) SetIdentityToken(val OptNilString) {
+	s.IdentityToken = val
 }
 
 type EmailAddress string

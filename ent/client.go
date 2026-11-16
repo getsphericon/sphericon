@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -149,6 +150,8 @@ type Client struct {
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
+	// IdentitySecret is the client for interacting with the IdentitySecret builders.
+	IdentitySecret *IdentitySecretClient
 	// InstanceAuditEntry is the client for interacting with the InstanceAuditEntry builders.
 	InstanceAuditEntry *InstanceAuditEntryClient
 	// InstanceState is the client for interacting with the InstanceState builders.
@@ -280,6 +283,7 @@ func (c *Client) init() {
 	c.EventReceipt = NewEventReceiptClient(c.config)
 	c.HeldOrderEvent = NewHeldOrderEventClient(c.config)
 	c.Hold = NewHoldClient(c.config)
+	c.IdentitySecret = NewIdentitySecretClient(c.config)
 	c.InstanceAuditEntry = NewInstanceAuditEntryClient(c.config)
 	c.InstanceState = NewInstanceStateClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
@@ -445,6 +449,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EventReceipt:         NewEventReceiptClient(cfg),
 		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
+		IdentitySecret:       NewIdentitySecretClient(cfg),
 		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
 		InstanceState:        NewInstanceStateClient(cfg),
 		Integration:          NewIntegrationClient(cfg),
@@ -537,6 +542,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EventReceipt:         NewEventReceiptClient(cfg),
 		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
 		Hold:                 NewHoldClient(cfg),
+		IdentitySecret:       NewIdentitySecretClient(cfg),
 		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
 		InstanceState:        NewInstanceStateClient(cfg),
 		Integration:          NewIntegrationClient(cfg),
@@ -618,17 +624,18 @@ func (c *Client) Use(hooks ...Hook) {
 		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
 		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
 		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
-		c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration,
-		c.Invitation, c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order,
-		c.OrderMovement, c.OutboundMessage, c.Passkey, c.PasskeyChallenge,
-		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
-		c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState,
-		c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
+		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
+		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
+		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
+		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
+		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
+		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Use(hooks...)
 	}
@@ -643,17 +650,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.BroadcastFigure, c.BroadcastRecipient, c.CapturedMessage, c.Confirmation,
 		c.ConsentRecord, c.Contact, c.ContactTag, c.CustomField, c.DefaultSendCap,
 		c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry, c.EventReceipt,
-		c.HeldOrderEvent, c.Hold, c.InstanceAuditEntry, c.InstanceState, c.Integration,
-		c.Invitation, c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion,
-		c.Membership, c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order,
-		c.OrderMovement, c.OutboundMessage, c.Passkey, c.PasskeyChallenge,
-		c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode,
-		c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger, c.SchemaState,
-		c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
-		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
-		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
-		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
-		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.Workspace,
+		c.HeldOrderEvent, c.Hold, c.IdentitySecret, c.InstanceAuditEntry,
+		c.InstanceState, c.Integration, c.Invitation, c.JoinDomain,
+		c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership, c.OAuthClient,
+		c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage,
+		c.Passkey, c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange,
+		c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion,
+		c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
+		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
+		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
+		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
+		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
+		c.Workspace,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -714,6 +722,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.HeldOrderEvent.mutate(ctx, m)
 	case *HoldMutation:
 		return c.Hold.mutate(ctx, m)
+	case *IdentitySecretMutation:
+		return c.IdentitySecret.mutate(ctx, m)
 	case *InstanceAuditEntryMutation:
 		return c.InstanceAuditEntry.mutate(ctx, m)
 	case *InstanceStateMutation:
@@ -5186,6 +5196,155 @@ func (c *HoldClient) mutate(ctx context.Context, m *HoldMutation) (Value, error)
 		return (&HoldDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Hold mutation op: %q", m.Op())
+	}
+}
+
+// IdentitySecretClient is a client for the IdentitySecret schema.
+type IdentitySecretClient struct {
+	config
+}
+
+// NewIdentitySecretClient returns a client for the IdentitySecret from the given config.
+func NewIdentitySecretClient(c config) *IdentitySecretClient {
+	return &IdentitySecretClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `identitysecret.Hooks(f(g(h())))`.
+func (c *IdentitySecretClient) Use(hooks ...Hook) {
+	c.hooks.IdentitySecret = append(c.hooks.IdentitySecret, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `identitysecret.Intercept(f(g(h())))`.
+func (c *IdentitySecretClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IdentitySecret = append(c.inters.IdentitySecret, interceptors...)
+}
+
+// Create returns a builder for creating a IdentitySecret entity.
+func (c *IdentitySecretClient) Create() *IdentitySecretCreate {
+	mutation := newIdentitySecretMutation(c.config, OpCreate)
+	return &IdentitySecretCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IdentitySecret entities.
+func (c *IdentitySecretClient) CreateBulk(builders ...*IdentitySecretCreate) *IdentitySecretCreateBulk {
+	return &IdentitySecretCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IdentitySecretClient) MapCreateBulk(slice any, setFunc func(*IdentitySecretCreate, int)) *IdentitySecretCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IdentitySecretCreateBulk{err: fmt.Errorf("calling to IdentitySecretClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IdentitySecretCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IdentitySecretCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IdentitySecret.
+func (c *IdentitySecretClient) Update() *IdentitySecretUpdate {
+	mutation := newIdentitySecretMutation(c.config, OpUpdate)
+	return &IdentitySecretUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IdentitySecretClient) UpdateOne(_m *IdentitySecret) *IdentitySecretUpdateOne {
+	mutation := newIdentitySecretMutation(c.config, OpUpdateOne, withIdentitySecret(_m))
+	return &IdentitySecretUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IdentitySecretClient) UpdateOneID(id int64) *IdentitySecretUpdateOne {
+	mutation := newIdentitySecretMutation(c.config, OpUpdateOne, withIdentitySecretID(id))
+	return &IdentitySecretUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IdentitySecret.
+func (c *IdentitySecretClient) Delete() *IdentitySecretDelete {
+	mutation := newIdentitySecretMutation(c.config, OpDelete)
+	return &IdentitySecretDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IdentitySecretClient) DeleteOne(_m *IdentitySecret) *IdentitySecretDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IdentitySecretClient) DeleteOneID(id int64) *IdentitySecretDeleteOne {
+	builder := c.Delete().Where(identitysecret.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IdentitySecretDeleteOne{builder}
+}
+
+// Query returns a query builder for IdentitySecret.
+func (c *IdentitySecretClient) Query() *IdentitySecretQuery {
+	return &IdentitySecretQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIdentitySecret},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IdentitySecret entity by its id.
+func (c *IdentitySecretClient) Get(ctx context.Context, id int64) (*IdentitySecret, error) {
+	return c.Query().Where(identitysecret.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IdentitySecretClient) GetX(ctx context.Context, id int64) *IdentitySecret {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a IdentitySecret.
+func (c *IdentitySecretClient) QueryWorkspace(_m *IdentitySecret) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(identitysecret.Table, identitysecret.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, identitysecret.WorkspaceTable, identitysecret.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IdentitySecretClient) Hooks() []Hook {
+	return c.hooks.IdentitySecret
+}
+
+// Interceptors returns the client interceptors.
+func (c *IdentitySecretClient) Interceptors() []Interceptor {
+	return c.inters.IdentitySecret
+}
+
+func (c *IdentitySecretClient) mutate(ctx context.Context, m *IdentitySecretMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IdentitySecretCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IdentitySecretUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IdentitySecretUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IdentitySecretDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IdentitySecret mutation op: %q", m.Op())
 	}
 }
 
@@ -13431,6 +13590,22 @@ func (c *WorkspaceClient) QueryBrandKits(_m *Workspace) *BrandKitQuery {
 	return query
 }
 
+// QueryIdentitySecrets queries the identity_secrets edge of a Workspace.
+func (c *WorkspaceClient) QueryIdentitySecrets(_m *Workspace) *IdentitySecretQuery {
+	query := (&IdentitySecretClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(identitysecret.Table, identitysecret.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.IdentitySecretsTable, workspace.IdentitySecretsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAutomations queries the automations edge of a Workspace.
 func (c *WorkspaceClient) QueryAutomations(_m *Workspace) *AutomationQuery {
 	query := (&AutomationClient{config: c.config}).Query()
@@ -13767,32 +13942,33 @@ type (
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
 		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
 		ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure, Event,
-		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry,
-		InstanceState, Integration, Invitation, JoinDomain, LegalDocumentDraft,
-		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
-		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
-		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
-		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
+		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
 		AutomationVersion, Binding, BrandKit, Broadcast, BroadcastFigure,
 		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, Contact,
 		ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure, Event,
-		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, InstanceAuditEntry,
-		InstanceState, Integration, Invitation, JoinDomain, LegalDocumentDraft,
-		LegalDocumentVersion, Membership, OAuthClient, OAuthCode, OAuthRefreshToken,
-		Order, OrderMovement, OutboundMessage, Passkey, PasskeyChallenge,
-		PendingSignup, PrivateRelayRange, ProviderLimiter, RecoveryCode, Rule,
-		RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState, SecondFactor,
-		Segment, SendCapLimiter, SendingDomain, ServiceCredential, SignupItem,
-		SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag, TrackedLink,
-		TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User, UserIdentity,
-		UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Interceptor
+		EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
+		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
+		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
+		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
+		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
+		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
+		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
+		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
+		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
+		UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
+		Workspace []ent.Interceptor
 	}
 )
 

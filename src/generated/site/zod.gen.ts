@@ -114,6 +114,9 @@ export const zAuditAction = z.enum([
   'hold.create',
   'hold.update',
   'hold.delete',
+  'identity_secret.create',
+  'identity_secret.update',
+  'identity_secret.delete',
   'integration.create',
   'integration.update',
   'integration.delete',
@@ -1320,6 +1323,14 @@ export const zSiteEventActionsResult = z.object({
  */
 export const zSiteForgotPasswordInput = z.strictObject({
   email: zEmailAddress
+});
+
+/**
+ * The workspace's identity secret (ADR 0171): its server signs identity tokens with it (HS256), so
+ * an identify from its site proves who is signed in. Owners and admins only
+ */
+export const zSiteIdentitySecretResource = z.object({
+  secret: z.exactOptional(z.string())
 });
 
 /**
@@ -5903,6 +5914,24 @@ export const zSiteEventsActionsPath = z.object({
  * The request has succeeded.
  */
 export const zSiteEventsActionsResponse = zSiteEventActionsResult;
+
+export const zSiteIdentitySecretGetPath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteIdentitySecretGetResponse = zSiteIdentitySecretResource;
+
+export const zSiteIdentitySecretRegeneratePath = z.object({
+  workspaceId: zWorkspaceId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteIdentitySecretRegenerateResponse = zSiteIdentitySecretResource;
 
 export const zSiteIntegrationsListPath = z.object({
   workspaceId: zWorkspaceId

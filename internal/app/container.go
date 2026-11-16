@@ -41,6 +41,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
@@ -851,8 +852,13 @@ var contentPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
 		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
 	}),
+	// The Identity secret and the check of an Identity token (ADR 0171).
+	do.Lazy(func(i do.Injector) (*identitytokens.Module, error) {
+		return identitytokens.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
+	}),
 	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
-		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*identitytokens.Module](i),
+			do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
@@ -1053,8 +1059,8 @@ var surfacesPackage = do.Package(
 	}),
 	// The handlers of the Collect API, over the Visitor identification use case (ADR 0111).
 	do.Lazy(func(i do.Injector) (*apicollect.Handlers, error) {
-		return apicollect.NewHandlers(do.MustInvoke[*events.Bus](i), do.MustInvoke[*bindings.Module](i),
-			do.MustInvoke[*visitoridentification.UseCase](i), do.MustInvoke[Clock](i)), nil
+		return apicollect.NewHandlers(do.MustInvoke[*events.Bus](i), do.MustInvoke[*visitoridentification.UseCase](i),
+			do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*hooksHandler, error) {
 		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.Module](i))}, nil
@@ -1152,6 +1158,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		OAuth:                 do.MustInvoke[*oauthclients.Module](i),
 		Bus:                   bus,
 		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
+		IdentityTokens:        do.MustInvoke[*identitytokens.Module](i),
 		Outbound:              do.MustInvoke[*outboundmessages.Module](i),
 		Segments:              do.MustInvoke[*segments.Module](i),
 		Contacts:              do.MustInvoke[*contacts.Module](i),

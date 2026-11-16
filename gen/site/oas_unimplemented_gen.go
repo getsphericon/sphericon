@@ -845,6 +845,25 @@ func (UnimplementedHandler) SiteIdentitiesUnlink(ctx context.Context, params Sit
 	return r, ht.ErrNotImplemented
 }
 
+// SiteIdentitySecretGet implements SiteIdentitySecret_get operation.
+//
+// The workspace's identity secret. Owners and admins only.
+//
+// GET /workspaces/{workspaceId}/identity-secret
+func (UnimplementedHandler) SiteIdentitySecretGet(ctx context.Context, params SiteIdentitySecretGetParams) (r *SiteIdentitySecretResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteIdentitySecretRegenerate implements SiteIdentitySecret_regenerate operation.
+//
+// Generate the identity secret, or replace it: the one before stops verifying at once, and the new one
+// is in the response. Owners and admins only.
+//
+// POST /workspaces/{workspaceId}/identity-secret/regenerate
+func (UnimplementedHandler) SiteIdentitySecretRegenerate(ctx context.Context, params SiteIdentitySecretRegenerateParams) (r *SiteIdentitySecretResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SiteInstanceGetRelease implements SiteInstance_getRelease operation.
 //
 // The newer release the Release check found, for its banner. Refused (403) to a User who holds

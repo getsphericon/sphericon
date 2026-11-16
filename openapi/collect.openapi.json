@@ -232,6 +232,12 @@
             "nullable": true,
             "maxLength": 255
           },
+          "identityToken": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 4096,
+            "description": "An identity token: a JWT the site's server signs with HS256 under the workspace's identity\nsecret, naming the signed-in person's keys (`sub` for the subjectId, `email`, `phone`) and an\n`exp` at most a day ahead. A token that does not verify refuses the call with 422. A key sent beside it must be the token's"
+          },
           "traits": {
             "type": "object",
             "allOf": [
@@ -253,7 +259,7 @@
             "description": "What the browser tells of the visitor: it fills only a time zone or locale the contact has\nnone of"
           }
         },
-        "description": "An identify claims who the visitor is: it finds or creates the contact by its keys, but gives a\ncontact that exists no key it lacks and replaces none of its values, and binds the visitor only\nwhile it belongs to no other contact"
+        "description": "An identify claims who the visitor is: it finds or creates the contact by its keys, but gives a\ncontact that exists no key it lacks and replaces none of its values, and binds the visitor only\nwhile it belongs to no other contact. With an identity token it is proven: the token's keys are\nthe contact's, it fills keys and replaces values, moves the visitor and hands the contact the\nchats the visitor started"
       },
       "CollectOkResponse": {
         "type": "object",
@@ -282,7 +288,7 @@
             "description": "When the link lapses, 30 days after it is issued"
           }
         },
-        "description": "A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, which reaches no contact. The link works once."
+        "description": "A Telegram start link for a visitor: pressing Start in the bot binds the chat to the visitor, which reaches no contact until a proven identify hands it over, or to the contact an identity token proves. The link works once."
       },
       "CollectTelegramStartLinkInput": {
         "type": "object",
@@ -293,6 +299,12 @@
             "minLength": 1,
             "maxLength": 255,
             "description": "The tracker's id of the visitor the link is for, created when it has not been seen"
+          },
+          "identityToken": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 4096,
+            "description": "An identity token: a JWT the site's server signs with HS256 under the workspace's identity\nsecret, naming the signed-in person's keys (`sub` for the subjectId, `email`, `phone`) and an\n`exp` at most a day ahead. A token that does not verify refuses the call with 422. With it the link is for the contact the token proves, when there is one"
           }
         }
       },

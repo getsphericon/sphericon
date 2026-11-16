@@ -171,6 +171,8 @@ var (
 	ErrorsHoldTooLong                                     = ID{key: "errors.hold_too_long"}
 	ErrorsIdentityInUse                                   = ID{key: "errors.identity_in_use"}
 	ErrorsIdentityProofRequired                           = ID{key: "errors.identity_proof_required"}
+	ErrorsIdentityTokenInvalid                            = ID{key: "errors.identity_token_invalid"}
+	ErrorsIdentityTokenKeyMismatch                        = ID{key: "errors.identity_token_key_mismatch"}
 	ErrorsIntegrationConfigInvalid                        = ID{key: "errors.integration_config_invalid"}
 	ErrorsIntegrationDefaultConflict                      = ID{key: "errors.integration_default_conflict"}
 	ErrorsIntegrationInvalid                              = ID{key: "errors.integration_invalid"}

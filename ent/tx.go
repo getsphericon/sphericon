@@ -66,6 +66,8 @@ type Tx struct {
 	HeldOrderEvent *HeldOrderEventClient
 	// Hold is the client for interacting with the Hold builders.
 	Hold *HoldClient
+	// IdentitySecret is the client for interacting with the IdentitySecret builders.
+	IdentitySecret *IdentitySecretClient
 	// InstanceAuditEntry is the client for interacting with the InstanceAuditEntry builders.
 	InstanceAuditEntry *InstanceAuditEntryClient
 	// InstanceState is the client for interacting with the InstanceState builders.
@@ -317,6 +319,7 @@ func (tx *Tx) init() {
 	tx.EventReceipt = NewEventReceiptClient(tx.config)
 	tx.HeldOrderEvent = NewHeldOrderEventClient(tx.config)
 	tx.Hold = NewHoldClient(tx.config)
+	tx.IdentitySecret = NewIdentitySecretClient(tx.config)
 	tx.InstanceAuditEntry = NewInstanceAuditEntryClient(tx.config)
 	tx.InstanceState = NewInstanceStateClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)

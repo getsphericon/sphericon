@@ -84,6 +84,7 @@ const (
 	ID                    = "id"
 	IDs                   = "ids"
 	IdempotencyKey        = "Idempotency-Key"
+	IdentityToken         = "identityToken"
 	ImageURL              = "imageUrl"
 	IncludeMachine        = "includeMachine"
 	IntegrationID         = "integrationId"

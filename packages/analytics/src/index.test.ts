@@ -126,6 +126,7 @@ test('identify posts the visitor id with nulls for missing fields', async () => 
     email: 'a@example.com',
     phone: null,
     subjectId: null,
+    identityToken: null,
     traits: null,
   })
   expect(body.visitorId).toEqual(expect.any(String))
@@ -154,6 +155,19 @@ test('telegramStartLink asks for a link for the current visitor and returns its 
   expect(request?.headers.get('x-collect-key')).toBe('ck_test')
   expect(await sentBody('/collect/telegram-start-links')).toMatchObject({
     visitorId: 'existing-visitor',
+  })
+})
+
+test("telegramStartLink carries the Identity token of the page's latest identify", async () => {
+  const { initTracking, identify, telegramStartLink } = await loadTracker()
+  initTracking(CONFIG)
+  await identify({ identityToken: 'signed.by.server' })
+  answerStartLink(200, START_LINK)
+
+  await telegramStartLink()
+
+  expect(await sentBody('/collect/telegram-start-links')).toMatchObject({
+    identityToken: 'signed.by.server',
   })
 })
 

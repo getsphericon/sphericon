@@ -88,7 +88,8 @@ func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID in
 
 // IssueVisitorStartLink issues a single-use Start token for the Visitor with the tracker's id
 // visitorID, creating the Visitor when it has not been seen, on the default Telegram Integration.
-// The chat that starts with it binds to the Visitor and reaches no Contact (ADR 0171).
+// The chat that starts with it binds to the Visitor and reaches no Contact until a proven Identify
+// hands it over (ADR 0171).
 // ErrNoIntegration and ErrBotOff when there is no bot to link to.
 func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visitorID string) (StartLink, error) {
 	vis, err := visitors.EnsureIn(ctx, s, visitorID, m.now())
@@ -411,6 +412,34 @@ func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.
 		WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email), IntegrationID: bot.ID,
 		Text: events.ReceivedText(m.Text), DedupID: m.DedupKey,
 	})
+}
+
+// HandOver gives the Contact c every Binding of the Visitor vis, which a proven Identify has just
+// bound to c (ADR 0171), and records telegram.bound for each. Run it in the transaction s and pub
+// are bound to. A Visitor with no Binding hands over nothing, so a repeated Identify records
+// nothing.
+func HandOver(ctx context.Context, s *ent.Scoped, pub events.Publisher, vis *ent.Visitor, c *ent.Contact, now time.Time) error {
+	rows, err := s.Binding().Query().Where(binding.VisitorID(vis.ID)).Order(binding.ByID()).All(ctx)
+	if err != nil {
+		return fmt.Errorf("list visitor bindings: %w", err)
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	ids := lo.Map(rows, func(b *ent.Binding, _ int) int64 { return b.ID })
+	if err := s.Binding().Update().Where(binding.IDIn(ids...)).SetContactID(c.ID).ClearVisitorID().SetBoundAt(now).Exec(ctx); err != nil {
+		return fmt.Errorf("hand over bindings: %w", err)
+	}
+	for _, b := range rows {
+		err := pub.Publish(ctx, &events.BindingChange{
+			Action: systemevent.TelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
+			IntegrationID: b.IntegrationID, DedupID: fmt.Sprintf("telegram:binding:%d:contact:%d/bound", b.ID, c.ID),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // PruneStartTokens deletes the Start tokens that lapsed by now or were used, in every Workspace,
