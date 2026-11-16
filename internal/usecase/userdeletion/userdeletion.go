@@ -89,7 +89,7 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 	}
 	hadPassword := u.PasswordHash != ""
 	if hadPassword {
-		if err := uc.login.ProvePassword(ctx, u.Email, u.PasswordHash, req.Password); err != nil {
+		if err := uc.login.ProvePassword(ctx, login.ProvePasswordInput{Address: u.Email, PasswordHash: u.PasswordHash, Password: req.Password}); err != nil {
 			return err
 		}
 	} else {

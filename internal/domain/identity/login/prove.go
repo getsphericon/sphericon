@@ -6,20 +6,29 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 )
 
+// ProvePasswordInput is the account a password is proven against and the password as typed.
+type ProvePasswordInput struct {
+	// Address is the account's throttle key (normalized again by the module).
+	Address string
+	// PasswordHash is the account's stored hash, empty for an account without a password.
+	PasswordHash string
+	Password     string
+}
+
 // ProvePassword is the one path every password-gated action takes (second-factor enrol, disable
 // and regenerate, a profile password or email change, User deletion): the same throttle as the
 // first step (consulted first, so a right password is refused while the delay runs, with the
 // *ratelimit.WaitError every surface answers as the password step's 429), the same decoy for an
 // account without a password, and a failure counted on the same budget as a login failure. The
 // caller holds the account (users.Prover), so it passes its address and hash. It is nil when
-// password is the account's, and ErrPasswordIncorrect when it is not.
-func (m *Module[P]) ProvePassword(ctx context.Context, address, passwordHash, password string) error {
-	address = emailcase.Of(address)
+// the password is the account's, and ErrPasswordIncorrect when it is not.
+func (m *Module[P]) ProvePassword(ctx context.Context, in ProvePasswordInput) error {
+	address := emailcase.Of(in.Address)
 
 	if err := m.throttle(ctx, address); err != nil {
 		return err
 	}
-	if m.verify(passwordHash, password) {
+	if m.verify(in.PasswordHash, in.Password) {
 		return nil
 	}
 	if err := m.cfg.Throttle.RecordFailure(ctx, address); err != nil {
