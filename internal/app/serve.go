@@ -10,11 +10,17 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/logging"
 	"github.com/getsphericon/sphericon/internal/infra/telemetry"
+	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/buildinfo"
 )
 
-// stopTimeout bounds the shutdown of the app and the flush of the telemetry.
-const stopTimeout = 10 * time.Second
+// StopTimeout is the budget Close is given, by the server binary and by a Start that unwinds. It is
+// longer than jobs.StopTimeout (see there for the order of the budgets), so the job queue has
+// recorded its interrupted jobs before Close stops waiting for it and the process exits.
+const StopTimeout = jobs.StopTimeout + 5*time.Second
+
+// telemetryFlushTimeout bounds the flush of the last spans and metrics, after Close.
+const telemetryFlushTimeout = 10 * time.Second
 
 // Serve is `sphericon` without a subcommand: it runs the server of env until ctx ends or the
 // server stops by itself. An error means the server could not start.
@@ -38,7 +44,7 @@ func Serve(ctx context.Context, env string) error {
 		return fmt.Errorf("init telemetry: %w", err)
 	}
 	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stopTimeout)
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), telemetryFlushTimeout)
 		defer cancel()
 		if err := telShutdown(shutdownCtx); err != nil {
 			slog.ErrorContext(shutdownCtx, "telemetry shutdown", "err", err)
@@ -75,7 +81,7 @@ func Serve(ctx context.Context, env string) error {
 		}
 	}
 
-	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stopTimeout)
+	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), StopTimeout)
 	defer cancel()
 	if err := application.Close(shutdownCtx); err != nil {
 		slog.ErrorContext(shutdownCtx, "shutdown incomplete", "err", err)
