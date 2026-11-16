@@ -31,9 +31,10 @@ type ProfileChange struct {
 
 // Prover proves a User's current password the way a login does (ADR 0025): the login module's one
 // prove path (login.Module.ProvePassword), its throttle first, the decoy hash, a failure counted on
-// the Login budget. It returns nil when password is the account's and its refusal otherwise (a
+// the Login budget. It returns nil when the password is the account's and its refusal otherwise (a
 // wrong password, or, while the throttle's delay runs, the delay even for a right password). The
-// login module sits above this one, so the composition root hands it in (WithProver).
+// login module is built over the Login throttle, which this module does not hold, so the
+// composition root hands it in (WithProver).
 type Prover interface {
 	ProvePassword(ctx context.Context, in login.ProvePasswordInput) error
 }
