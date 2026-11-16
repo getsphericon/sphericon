@@ -74,7 +74,7 @@ func (c *InputsImpl) AutomationReportPeriod(source external.AutomationsReportPer
 	}
 	return automationsReportPeriod
 }
-func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationstep.Step {
+func (c *InputsImpl) AutomationStep(source external.AutomationStepInput) automationstep.Step {
 	var automationstepStep automationstep.Step
 	automationstepStep.Type = c.AutomationStepType(source.Type)
 	automationstepStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
@@ -100,7 +100,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStep) automationst
 	if source.Headers != nil {
 		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationstepStep.Secret = stringIn(source.Secret)
@@ -129,7 +129,7 @@ func (c *InputsImpl) AutomationStepType(source external.AutomationStepType) auto
 	}
 	return automationstepKind
 }
-func (c *InputsImpl) AutomationSteps(source []external.AutomationStep) []automationstep.Step {
+func (c *InputsImpl) AutomationSteps(source []external.AutomationStepInput) []automationstep.Step {
 	var automationstepStepList []automationstep.Step
 	if source != nil {
 		automationstepStepList = make([]automationstep.Step, len(source))
@@ -417,12 +417,12 @@ func (c *InputsImpl) RuleActionType(source external.RuleActionType) rules.Action
 	}
 	return rulesActionType
 }
-func (c *InputsImpl) RuleActions(source []external.RuleAction) []rules.Action {
+func (c *InputsImpl) RuleActions(source []external.RuleActionInput) []rules.Action {
 	var rulesActionList []rules.Action
 	if source != nil {
 		rulesActionList = make([]rules.Action, len(source))
 		for i := 0; i < len(source); i++ {
-			rulesActionList[i] = c.externalapiRuleActionToRulesAction(source[i])
+			rulesActionList[i] = c.externalapiRuleActionInputToRulesAction(source[i])
 		}
 	}
 	return rulesActionList
@@ -558,7 +558,7 @@ func (c *InputsImpl) TelegramBroadcastContentPatch(source external.TelegramBroad
 	broadcastsTelegramContentPatch.UnsubscribeButton = stringPatch(source.UnsubscribeButton)
 	return broadcastsTelegramContentPatch
 }
-func (c *InputsImpl) TelegramButton(source external.TelegramButton) telegramrender.Button {
+func (c *InputsImpl) TelegramButton(source external.TelegramButtonInput) telegramrender.Button {
 	var telegramrenderButton telegramrender.Button
 	telegramrenderButton.Label = source.Label
 	telegramrenderButton.URL = source.URL
@@ -618,13 +618,13 @@ func (c *InputsImpl) WebhookUpdate(source *external.UpdateWebhookInput) webhooke
 	}
 	return webhookendpointsUpdateInput
 }
-func (c *InputsImpl) externalapiAutomationHttpHeaderToHttpcallHeader(source external.AutomationHttpHeader) httpcall.Header {
+func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpcallHeader(source external.AutomationHttpHeaderInput) httpcall.Header {
 	var httpcallHeader httpcall.Header
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
 }
-func (c *InputsImpl) externalapiRuleActionToRulesAction(source external.RuleAction) rules.Action {
+func (c *InputsImpl) externalapiRuleActionInputToRulesAction(source external.RuleActionInput) rules.Action {
 	var rulesAction rules.Action
 	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
@@ -634,7 +634,7 @@ func (c *InputsImpl) externalapiRuleActionToRulesAction(source external.RuleActi
 	if source.Headers != nil {
 		rulesAction.Headers = make([]httpcall.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			rulesAction.Headers[i] = c.externalapiAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+			rulesAction.Headers[i] = c.externalapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
 		}
 	}
 	rulesAction.Body = stringIn(source.Body)

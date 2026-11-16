@@ -129,6 +129,8 @@ model SiteAuditRetention {
   revision: Revision;
 }
 
+model SiteAuditRetentionInput is SiteAuditRetention;
+
 @route("/workspaces/{workspaceId}/audit-entries")
 @tag("Site Audit")
 namespace SiteAudit {
@@ -179,6 +181,6 @@ namespace SiteAudit {
   @requiresPermissions(#[Permission.auditConfigure])
   op setRetention(
     @path workspaceId: WorkspaceId,
-    @body body: SiteAuditRetention,
+    @body body: SiteAuditRetentionInput,
   ): SiteAuditRetention | Problem;
 }

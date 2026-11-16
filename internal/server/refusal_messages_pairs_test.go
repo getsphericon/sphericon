@@ -52,11 +52,11 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 			name: "invalid rule", want: "invalid rule: ", head: len("invalid rule: "),
 			site: func(c *siteapi.Client) error {
 				return refusalOf(c.SiteRulesCreate(t.Context(), &siteapi.SiteCreateRuleInput{Name: "x", TriggerEvents: []string{"  "},
-					Actions: []siteapi.SiteRuleAction{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString("x")}}}, siteapi.SiteRulesCreateParams{WorkspaceId: ws}))
+					Actions: []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString("x")}}}, siteapi.SiteRulesCreateParams{WorkspaceId: ws}))
 			},
 			ext: func(c *externalapi.Client) error {
 				return refusalOf(c.RulesCreate(t.Context(), &externalapi.CreateRuleInput{Name: "x", TriggerEvents: []string{"  "},
-					Actions: []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("x")}}}))
+					Actions: []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("x")}}}))
 			},
 		},
 		{

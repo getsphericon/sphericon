@@ -93,7 +93,7 @@ func (h *Handlers) SiteAuditGetRetention(ctx context.Context, _ siteapi.SiteAudi
 
 // SiteAuditSetRetention sets or clears the Audit log retention window and records the
 // change as a `workspace.update` Audit entry. Owner and admin only.
-func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetention, _ siteapi.SiteAuditSetRetentionParams) (*siteapi.SiteAuditRetention, error) {
+func (h *Handlers) SiteAuditSetRetention(ctx context.Context, req *siteapi.SiteAuditRetentionInput, _ siteapi.SiteAuditSetRetentionParams) (*siteapi.SiteAuditRetention, error) {
 	var days *int
 	if !req.RetentionDays.Null {
 		d := int(req.RetentionDays.Value)

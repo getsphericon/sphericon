@@ -69,7 +69,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Tag newcomers",
 		TriggerEvent: "newcomer",
-		Steps: []externalapi.AutomationStep{
+		Steps: []externalapi.AutomationStepInput{
 			{Type: externalapi.AutomationStepTypeApplyTag, Tag: externalapi.NewOptString("newcomer")},
 			{Type: externalapi.AutomationStepTypeWait, Seconds: externalapi.NewOptInt32(60)},
 		},
@@ -82,13 +82,13 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 
 	_, err = c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Bad", TriggerEvent: "x",
-		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeApplyTag, Tag: externalapi.NewOptString("  ")}},
+		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeApplyTag, Tag: externalapi.NewOptString("  ")}},
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 
 	updated, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID))),
 		Name:  externalapi.NewOptName("Tag newcomers 2"),
-		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeRemoveTag, Tag: externalapi.NewOptString("vip")}},
+		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeRemoveTag, Tag: externalapi.NewOptString("vip")}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	require.NoError(t, err)
 	assert.Equal(t, "Tag newcomers 2", updated.Name)
@@ -96,7 +96,7 @@ func TestExternalAutomationsCreateUpdateDelete(t *testing.T) {
 	assert.Equal(t, externalapi.AutomationStepTypeRemoveTag, updated.Draft.Value.Steps[0].Type)
 
 	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(a.ID))),
-		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeApplyTag}},
+		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeApplyTag}},
 	}, externalapi.AutomationsUpdateParams{ID: a.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 

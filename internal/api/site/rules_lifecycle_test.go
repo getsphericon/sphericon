@@ -60,7 +60,7 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	actions := make([]siteapi.SiteRuleAction, rules.MaxActions+1)
+	actions := make([]siteapi.SiteRuleActionInput, rules.MaxActions+1)
 	for i := range actions {
 		actions[i] = tagAction(siteapi.SiteRuleActionTypeApplyTag, "t"+strconv.Itoa(i))
 	}
@@ -79,7 +79,7 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	body.WriteString(leaf + `]}`)
 	_, bigCondition := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "wide", TriggerEvents: []string{"a"},
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, body.String())),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, body.String())),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	refusedCondition := testhelper.SiteRefusal(t, bigCondition, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedCondition.Detail.Or(""), "Condition")

@@ -88,3 +88,16 @@ model Derived extends Base {
 @route("/derived")
 @post
 op derived(@body body: Derived): void;
+
+// expect-next-line: sphericon/closed-in-response
+model Shared {
+  a: string;
+}
+
+model WithShared {
+  shared: Shared;
+}
+
+@route("/shared")
+@post
+op shared(@body body: WithShared): Shared[];

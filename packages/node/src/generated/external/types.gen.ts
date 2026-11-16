@@ -307,6 +307,20 @@ export type AutomationHttpHeader = {
 };
 
 /**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export type AutomationHttpHeaderInput = {
+  /**
+   * Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+   */
+  name: string;
+  /**
+   * Header value. Omit it when editing to keep the stored value of the header with this name.
+   */
+  value?: string;
+};
+
+/**
  * One period of an automation's results. Each count is what happened in the period: an
  * enrollment counts as entered on the Report day it began and under its outcome on the Report day
  * it ended, whenever it began, so an enrollment still running counts as entered only.
@@ -661,6 +675,100 @@ export type AutomationStepFigures = {
    * was suppressed. The enrollment moved on to the next step.
    */
   skipped: number;
+};
+
+/**
+ * One node in an automation's ordered, linear sequence. A flat shape: email
+ * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
+ */
+export type AutomationStepInput = {
+  /**
+   * Step kind
+   */
+  type: AutomationStepType;
+  /**
+   * Email subject (email steps)
+   */
+  subject?: string;
+  /**
+   * Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it
+   */
+  body?: string;
+  /**
+   * The editor's JSON document an email step's body was built from, an opaque object checked by the
+   * server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
+   * server renders the body from it in the same save, and a document that cannot be rendered refuses
+   * the whole save, naming the step. Writing only a body clears the step's document.
+   */
+  doc?: EditorDocument;
+  /**
+   * Version of the editor that rendered the document (email steps, read only)
+   */
+  editorVersion?: string;
+  /**
+   * Delay before the next step, in seconds (wait steps)
+   */
+  seconds?: number;
+  /**
+   * Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)
+   */
+  tag?: string;
+  /**
+   * Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+   */
+  id?: string;
+  /**
+   * Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
+   */
+  url?: string;
+  /**
+   * Up to 5 request headers (HTTP steps). On read, only the names are returned.
+   */
+  headers?: Array<AutomationHttpHeaderInput>;
+  /**
+   * Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
+   */
+  secret?: string;
+  /**
+   * Remove the signing secret on save (HTTP steps)
+   */
+  clearSecret?: boolean;
+  /**
+   * Whether a signing secret is stored (HTTP steps, read only)
+   */
+  hasSecret?: boolean;
+  /**
+   * The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or
+   * omitted is that Channel's default. Each send step names its own, so one automation may send
+   * through several (ADR 0081).
+   */
+  integrationId?: EntityId | null;
+  /**
+   * The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.
+   *
+   * The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links.
+   */
+  text?: string;
+  /**
+   * The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+   */
+  unsubscribeButton?: string;
+  /**
+   * An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message.
+   */
+  imageUrl?: string;
+  /**
+   * Up to 8 link buttons under a Telegram step's message, one per row, in order.
+   */
+  buttons?: Array<TelegramButtonInput>;
+  /**
+   * Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image.
+   */
+  linkPreview?: boolean;
+  /**
+   * Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted.
+   */
+  linkTracking?: boolean;
 };
 
 /**
@@ -1187,6 +1295,28 @@ export type ConditionDateLeaf = {
 };
 
 /**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
+ * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
+ * false.
+ */
+export type ConditionDateLeafInput = {
+  kind: 'date';
+  /**
+   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
+   */
+  field: string;
+  /**
+   * Which side of `at` the moment is on
+   */
+  operator: ConditionDateOperator;
+  /**
+   * The moment the field's is compared with
+   */
+  at: Timestamp;
+};
+
+/**
  * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
  * two split time at `at`
  */
@@ -1216,12 +1346,55 @@ export type ConditionDateWithinLeaf = {
 };
 
 /**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
+ * date-time with a UTC offset is a moment, as for the date leaf.
+ */
+export type ConditionDateWithinLeafInput = {
+  kind: 'dateWithin';
+  /**
+   * What it tests: "birthday" or "custom:<key>" for a datetime custom field
+   */
+  field: string;
+  /**
+   * The window, in days back from now
+   */
+  withinDays: number;
+};
+
+/**
  * A test of how many times a contact performed an Event action, over all time or within the
  * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
  * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
  * longer than Event retention is capped by it: expired Events are no longer counted.
  */
 export type ConditionEventLeaf = {
+  kind: 'event';
+  /**
+   * The Event action counted
+   */
+  action: string;
+  /**
+   * How the count is bounded
+   */
+  operator: ConditionEventOperator;
+  /**
+   * The bound: atLeast takes 1 or more, atMost 0 or more
+   */
+  times: number;
+  /**
+   * Count only the Events of the last this many days; absent counts all time
+   */
+  withinDays?: number;
+};
+
+/**
+ * A test of how many times a contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export type ConditionEventLeafInput = {
   kind: 'event';
   /**
    * The Event action counted
@@ -1272,9 +1445,54 @@ export type ConditionGroup = {
 };
 
 /**
+ * A group of tests combined with and/or, optionally negated. An empty group matches every
+ * contact (an empty negated group matches none).
+ */
+export type ConditionGroupInput = {
+  kind: 'group';
+  /**
+   * How the entries combine
+   */
+  combinator: ConditionCombinator;
+  /**
+   * Negate the whole group
+   */
+  not?: boolean;
+  /**
+   * The group's leaves and nested groups
+   */
+  rules: Array<ConditionNodeInput>;
+};
+
+/**
  * One test of a condition: a field, an operator and a value
  */
 export type ConditionLeaf = {
+  kind: 'rule';
+  /**
+   * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
+   * time_zone, country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a Visitor; the value is
+   * ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or
+   * Suppression; the value is ignored), "custom:<key>" for a custom field of the workspace,
+   * or "trigger:<key>" (a property of the Event that fired a rule: valid only in a rule, refused in
+   * a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+   * that is not text; a number property is compared by a number leaf)
+   */
+  field: string;
+  /**
+   * How the field is tested
+   */
+  operator: ConditionOperator;
+  /**
+   * The value to test against: a tag name, blank for null and notNull
+   */
+  value?: string;
+};
+
+/**
+ * One test of a condition: a field, an operator and a value
+ */
+export type ConditionLeafInput = {
   kind: 'rule';
   /**
    * What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,
@@ -1315,12 +1533,52 @@ export type ConditionNode = ({
 } & ConditionGroup);
 
 /**
+ * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
+ * group inside a condition group, discriminated by `kind`.
+ */
+export type ConditionNodeInput = ({
+  kind: 'rule';
+} & ConditionLeafInput) | ({
+  kind: 'event';
+} & ConditionEventLeafInput) | ({
+  kind: 'number';
+} & ConditionNumberLeafInput) | ({
+  kind: 'date';
+} & ConditionDateLeafInput) | ({
+  kind: 'dateWithin';
+} & ConditionDateWithinLeafInput) | ({
+  kind: 'group';
+} & ConditionGroupInput);
+
+/**
  * A comparison of a number: a custom field of the workspace whose type is number
  * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
  * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
  * leaf false.
  */
 export type ConditionNumberLeaf = {
+  kind: 'number';
+  /**
+   * What it compares: "custom:<key>" for a number custom field, or "trigger:<key>"
+   */
+  field: string;
+  /**
+   * How the field compares with `value`
+   */
+  operator: ConditionNumberOperator;
+  /**
+   * The number the field is compared with
+   */
+  value: number;
+};
+
+/**
+ * A comparison of a number: a custom field of the workspace whose type is number
+ * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
+ * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
+ * leaf false.
+ */
+export type ConditionNumberLeafInput = {
   kind: 'number';
   /**
    * What it compares: "custom:<key>" for a number custom field, or "trigger:<key>"
@@ -2060,7 +2318,7 @@ export type CreateAutomationInput = {
    * an exit event. Null or omitted is none.
    */
   goalEvent?: string | null;
-  steps?: Array<AutomationStep>;
+  steps?: Array<AutomationStepInput>;
 };
 
 /**
@@ -2205,11 +2463,11 @@ export type CreateRuleInput = {
    * The Event actions that make the Rule fire; at least one
    */
   triggerEvents: Array<string>;
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
   /**
    * The Actions to run, in order
    */
-  actions?: Array<RuleAction>;
+  actions?: Array<RuleActionInput>;
 };
 
 /**
@@ -2223,7 +2481,7 @@ export type CreateSegmentInput = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition: ConditionGroup;
+  condition: ConditionGroupInput;
 };
 
 /**
@@ -3558,7 +3816,7 @@ export type PreviewSegmentInput = {
   /**
    * Condition; absent means all contacts
    */
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
 };
 
 /**
@@ -3850,6 +4108,52 @@ export type RuleAction = {
    * Up to 5 request headers (http actions). On read, only the names are returned.
    */
   headers?: Array<AutomationHttpHeader>;
+  /**
+   * Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON
+   */
+  body?: string;
+  /**
+   * Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret.
+   */
+  secret?: string;
+  /**
+   * Remove the signing secret on save (http actions)
+   */
+  clearSecret?: boolean;
+  /**
+   * Whether a signing secret is stored (http actions, read only)
+   */
+  hasSecret?: boolean;
+};
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
+ */
+export type RuleActionInput = {
+  /**
+   * Action kind
+   */
+  type: RuleActionType;
+  /**
+   * Tag name to apply to or remove from the Contact (apply_tag and remove_tag)
+   */
+  tag?: string;
+  /**
+   * Automation to enroll the Contact in, once ever (enroll_automation)
+   */
+  automationId?: EntityId;
+  /**
+   * Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
+   */
+  id?: string;
+  /**
+   * URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https.
+   */
+  url?: string;
+  /**
+   * Up to 5 request headers (http actions). On read, only the names are returned.
+   */
+  headers?: Array<AutomationHttpHeaderInput>;
   /**
    * Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON
    */
@@ -4711,7 +5015,7 @@ export type TelegramBroadcastContentInput = {
   /**
    * Up to 8 link buttons under the message, one per row, in order. An empty list removes them.
    */
-  buttons?: Array<TelegramButton>;
+  buttons?: Array<TelegramButtonInput>;
   /**
    * Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
    */
@@ -4726,6 +5030,20 @@ export type TelegramBroadcastContentInput = {
  * A link button under a Telegram message: an inline URL button on a row of its own
  */
 export type TelegramButton = {
+  /**
+   * The button's label
+   */
+  label: string;
+  /**
+   * The URL it opens: absolute, http or https
+   */
+  url: string;
+};
+
+/**
+ * A link button under a Telegram message: an inline URL button on a row of its own
+ */
+export type TelegramButtonInput = {
   /**
    * The button's label
    */
@@ -5063,7 +5381,7 @@ export type UpdateAutomationInput = {
    * Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it
    */
   goalEvent?: string | null;
-  steps?: Array<AutomationStep>;
+  steps?: Array<AutomationStepInput>;
 };
 
 /**
@@ -5220,11 +5538,11 @@ export type UpdateRuleInput = {
    * The Event actions that make the Rule fire; at least one
    */
   triggerEvents?: Array<string>;
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
   /**
    * The Actions to run, in order
    */
-  actions?: Array<RuleAction>;
+  actions?: Array<RuleActionInput>;
 };
 
 /**
@@ -5242,7 +5560,7 @@ export type UpdateSegmentInput = {
   /**
    * Segment condition: the tree of tests; an empty group matches all contacts
    */
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
 };
 
 /**

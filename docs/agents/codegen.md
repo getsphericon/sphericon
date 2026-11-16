@@ -170,7 +170,12 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   the copy versioning makes of /api's types is closed too. A map whose keys are data (`JsonObject`,
   `EditorDocument`, a WebAuthn response) is declared `@openMap` and left open; any other map, an
   anonymous model and a model in an `extends` chain in a request body fail the compile, as none can
-  be closed. Responses, `/collect`, `/service` and the telemetry report are not closed. The server
+  be closed. Responses, `/collect`, `/service` and the telemetry report are not closed, and a
+  closed model a response also reaches fails the compile (`closed-in-response`): one schema would
+  close the response too. Such a shape is a template instantiated twice, the response's model
+  under its plain name and the request's as `…Input` (`ConditionGroupOf<Node>`, `AutomationStepOf`),
+  or `model XInput is X` for a leaf; a test that edits what it read and sends it back goes through
+  the wire with `testhelper.Resend`. The server
   answers an undeclared property with a 400 whose field errors name its path (`content.subjct`,
   `internal/api/problem/decode.go`). Its fixture is `typespec/lib/testdata/bodies.tsp`.
 

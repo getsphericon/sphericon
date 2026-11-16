@@ -96,7 +96,7 @@ type Handler interface {
 	// only).
 	//
 	// PUT /workspaces/{workspaceId}/audit-entries/retention
-	SiteAuditSetRetention(ctx context.Context, req *SiteAuditRetention, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error)
+	SiteAuditSetRetention(ctx context.Context, req *SiteAuditRetentionInput, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error)
 	// SiteAuthConfirmEmailChange implements SiteAuth_confirmEmailChange operation.
 	//
 	// Confirm an email change from the token sent to the new address. Public: the link may be opened from

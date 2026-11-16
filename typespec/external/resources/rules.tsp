@@ -20,7 +20,7 @@ enum RuleActionType {
 }
 
 /** One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call. */
-model RuleAction {
+model RuleActionOf<Header> {
   /** Action kind */
   type: RuleActionType;
 
@@ -38,7 +38,7 @@ model RuleAction {
 
   /** Up to 5 request headers (http actions). On read, only the names are returned. */
   @maxItems(5)
-  headers?: AutomationHttpHeader[];
+  headers?: Header[];
 
   /** Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON */
   body?: string;
@@ -52,6 +52,12 @@ model RuleAction {
   /** Whether a signing secret is stored (http actions, read only) */
   hasSecret?: boolean;
 }
+
+model RuleAction is RuleActionOf<AutomationHttpHeader>;
+
+// The action a request sends is closed at every depth, the one a response returns stays open (ADR
+// 0148): one shape, two models.
+model RuleActionInput is RuleActionOf<AutomationHttpHeaderInput>;
 
 /** One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions */
 model RuleVersion {
@@ -135,10 +141,10 @@ model CreateRuleInput {
   @minItems(1)
   triggerEvents: string[];
 
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
 
   /** The Actions to run, in order */
-  actions?: RuleAction[];
+  actions?: RuleActionInput[];
 }
 
 /** Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
@@ -152,10 +158,10 @@ model UpdateRuleInput {
   @minItems(1)
   triggerEvents?: string[];
 
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
 
   /** The Actions to run, in order */
-  actions?: RuleAction[];
+  actions?: RuleActionInput[];
 }
 
 /** Request body for dry-running a Rule on a stored Event */

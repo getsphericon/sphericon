@@ -15,8 +15,8 @@ import (
 )
 
 // emailStepVia is an email step through the Integration id names; an unset one is the default.
-func emailStepVia(id externalapi.OptNilEntityId) externalapi.AutomationStep {
-	return externalapi.AutomationStep{
+func emailStepVia(id externalapi.OptNilEntityId) externalapi.AutomationStepInput {
+	return externalapi.AutomationStepInput{
 		Type: externalapi.AutomationStepTypeEmail, Subject: externalapi.NewOptString("Hi"),
 		Body: externalapi.NewOptString("<p>Hi</p>"), IntegrationId: id,
 	}
@@ -32,16 +32,16 @@ func TestExternalAutomationStepsNameTheirIntegration(t *testing.T) {
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Onboarding", TriggerEvent: "signup",
-		Steps: []externalapi.AutomationStep{emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})},
+		Steps: []externalapi.AutomationStepInput{emailStepVia(mailgun), emailStepVia(externalapi.OptNilEntityId{})},
 	})
 	require.NoError(t, err)
 	steps := res.Draft.Value.Steps
 
 	bad := externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationGlobexID)) // another Workspace's
 	_, refusedCreate := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
-		Name: "x", TriggerEvent: "signup", Steps: []externalapi.AutomationStep{emailStepVia(bad)},
+		Name: "x", TriggerEvent: "signup", Steps: []externalapi.AutomationStepInput{emailStepVia(bad)},
 	})
-	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStep{emailStepVia(bad)}},
+	_, refusedUpdate := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{emailStepVia(bad)}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 
 	require.Len(t, steps, 2)

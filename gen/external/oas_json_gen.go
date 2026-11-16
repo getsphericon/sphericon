@@ -1497,7 +1497,7 @@ func (s *AutomationHttpHeader) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -1548,6 +1548,119 @@ func (s *AutomationHttpHeader) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *AutomationHttpHeader) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AutomationHttpHeaderInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AutomationHttpHeaderInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("name")
+		e.Str(s.Name)
+	}
+	{
+		if s.Value.Set {
+			e.FieldStart("value")
+			s.Value.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfAutomationHttpHeaderInput = [2]string{
+	0: "name",
+	1: "value",
+}
+
+// Decode decodes AutomationHttpHeaderInput from json.
+func (s *AutomationHttpHeaderInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationHttpHeaderInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "name":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Name = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"name\"")
+			}
+		case "value":
+			if err := func() error {
+				s.Value.Reset()
+				if err := s.Value.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AutomationHttpHeaderInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAutomationHttpHeaderInput) {
+					name = jsonFieldsNameOfAutomationHttpHeaderInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AutomationHttpHeaderInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationHttpHeaderInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -3066,7 +3179,7 @@ func (s *AutomationStep) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"linkTracking\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -3249,6 +3362,447 @@ func (s *AutomationStepFigures) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *AutomationStepFigures) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *AutomationStepInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *AutomationStepInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		if s.Subject.Set {
+			e.FieldStart("subject")
+			s.Subject.Encode(e)
+		}
+	}
+	{
+		if s.Body.Set {
+			e.FieldStart("body")
+			s.Body.Encode(e)
+		}
+	}
+	{
+		if s.Doc.Set {
+			e.FieldStart("doc")
+			s.Doc.Encode(e)
+		}
+	}
+	{
+		if s.EditorVersion.Set {
+			e.FieldStart("editorVersion")
+			s.EditorVersion.Encode(e)
+		}
+	}
+	{
+		if s.Seconds.Set {
+			e.FieldStart("seconds")
+			s.Seconds.Encode(e)
+		}
+	}
+	{
+		if s.Tag.Set {
+			e.FieldStart("tag")
+			s.Tag.Encode(e)
+		}
+	}
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		if s.URL.Set {
+			e.FieldStart("url")
+			s.URL.Encode(e)
+		}
+	}
+	{
+		if s.Headers != nil {
+			e.FieldStart("headers")
+			e.ArrStart()
+			for _, elem := range s.Headers {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.Secret.Set {
+			e.FieldStart("secret")
+			s.Secret.Encode(e)
+		}
+	}
+	{
+		if s.ClearSecret.Set {
+			e.FieldStart("clearSecret")
+			s.ClearSecret.Encode(e)
+		}
+	}
+	{
+		if s.HasSecret.Set {
+			e.FieldStart("hasSecret")
+			s.HasSecret.Encode(e)
+		}
+	}
+	{
+		if s.IntegrationId.Set {
+			e.FieldStart("integrationId")
+			s.IntegrationId.Encode(e)
+		}
+	}
+	{
+		if s.Text.Set {
+			e.FieldStart("text")
+			s.Text.Encode(e)
+		}
+	}
+	{
+		if s.UnsubscribeButton.Set {
+			e.FieldStart("unsubscribeButton")
+			s.UnsubscribeButton.Encode(e)
+		}
+	}
+	{
+		if s.ImageUrl.Set {
+			e.FieldStart("imageUrl")
+			s.ImageUrl.Encode(e)
+		}
+	}
+	{
+		if s.Buttons != nil {
+			e.FieldStart("buttons")
+			e.ArrStart()
+			for _, elem := range s.Buttons {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.LinkPreview.Set {
+			e.FieldStart("linkPreview")
+			s.LinkPreview.Encode(e)
+		}
+	}
+	{
+		if s.LinkTracking.Set {
+			e.FieldStart("linkTracking")
+			s.LinkTracking.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfAutomationStepInput = [20]string{
+	0:  "type",
+	1:  "subject",
+	2:  "body",
+	3:  "doc",
+	4:  "editorVersion",
+	5:  "seconds",
+	6:  "tag",
+	7:  "id",
+	8:  "url",
+	9:  "headers",
+	10: "secret",
+	11: "clearSecret",
+	12: "hasSecret",
+	13: "integrationId",
+	14: "text",
+	15: "unsubscribeButton",
+	16: "imageUrl",
+	17: "buttons",
+	18: "linkPreview",
+	19: "linkTracking",
+}
+
+// Decode decodes AutomationStepInput from json.
+func (s *AutomationStepInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode AutomationStepInput to nil")
+	}
+	var requiredBitSet [3]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "type":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "subject":
+			if err := func() error {
+				s.Subject.Reset()
+				if err := s.Subject.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"subject\"")
+			}
+		case "body":
+			if err := func() error {
+				s.Body.Reset()
+				if err := s.Body.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "doc":
+			if err := func() error {
+				s.Doc.Reset()
+				if err := s.Doc.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"doc\"")
+			}
+		case "editorVersion":
+			if err := func() error {
+				s.EditorVersion.Reset()
+				if err := s.EditorVersion.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"editorVersion\"")
+			}
+		case "seconds":
+			if err := func() error {
+				s.Seconds.Reset()
+				if err := s.Seconds.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"seconds\"")
+			}
+		case "tag":
+			if err := func() error {
+				s.Tag.Reset()
+				if err := s.Tag.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "url":
+			if err := func() error {
+				s.URL.Reset()
+				if err := s.URL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		case "headers":
+			if err := func() error {
+				s.Headers = make([]AutomationHttpHeaderInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationHttpHeaderInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Headers = append(s.Headers, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"headers\"")
+			}
+		case "secret":
+			if err := func() error {
+				s.Secret.Reset()
+				if err := s.Secret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"secret\"")
+			}
+		case "clearSecret":
+			if err := func() error {
+				s.ClearSecret.Reset()
+				if err := s.ClearSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clearSecret\"")
+			}
+		case "hasSecret":
+			if err := func() error {
+				s.HasSecret.Reset()
+				if err := s.HasSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"hasSecret\"")
+			}
+		case "integrationId":
+			if err := func() error {
+				s.IntegrationId.Reset()
+				if err := s.IntegrationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"integrationId\"")
+			}
+		case "text":
+			if err := func() error {
+				s.Text.Reset()
+				if err := s.Text.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"text\"")
+			}
+		case "unsubscribeButton":
+			if err := func() error {
+				s.UnsubscribeButton.Reset()
+				if err := s.UnsubscribeButton.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"unsubscribeButton\"")
+			}
+		case "imageUrl":
+			if err := func() error {
+				s.ImageUrl.Reset()
+				if err := s.ImageUrl.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"imageUrl\"")
+			}
+		case "buttons":
+			if err := func() error {
+				s.Buttons = make([]TelegramButtonInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem TelegramButtonInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Buttons = append(s.Buttons, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"buttons\"")
+			}
+		case "linkPreview":
+			if err := func() error {
+				s.LinkPreview.Reset()
+				if err := s.LinkPreview.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkPreview\"")
+			}
+		case "linkTracking":
+			if err := func() error {
+				s.LinkTracking.Reset()
+				if err := s.LinkTracking.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"linkTracking\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode AutomationStepInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [3]uint8{
+		0b00000001,
+		0b00000000,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfAutomationStepInput) {
+					name = jsonFieldsNameOfAutomationStepInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *AutomationStepInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *AutomationStepInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -6523,7 +7077,7 @@ func (s *ConditionDateLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"at\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -6574,6 +7128,185 @@ func (s *ConditionDateLeaf) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionDateLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionDateLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionDateLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("at")
+		s.At.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfConditionDateLeafInput = [4]string{
+	0: "kind",
+	1: "field",
+	2: "operator",
+	3: "at",
+}
+
+// Decode decodes ConditionDateLeafInput from json.
+func (s *ConditionDateLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionDateLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "at":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				if err := s.At.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"at\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionDateLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionDateLeafInput) {
+					name = jsonFieldsNameOfConditionDateLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionDateLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionDateLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionDateLeafInputKind as json.
+func (s ConditionDateLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionDateLeafInputKind from json.
+func (s *ConditionDateLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionDateLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionDateLeafInputKind(v) {
+	case ConditionDateLeafInputKindDate:
+		*s = ConditionDateLeafInputKindDate
+	default:
+		*s = ConditionDateLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionDateLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionDateLeafInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -6729,7 +7462,7 @@ func (s *ConditionDateWithinLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"withinDays\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -6780,6 +7513,172 @@ func (s *ConditionDateWithinLeaf) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionDateWithinLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionDateWithinLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionDateWithinLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("withinDays")
+		e.Int32(s.WithinDays)
+	}
+}
+
+var jsonFieldsNameOfConditionDateWithinLeafInput = [3]string{
+	0: "kind",
+	1: "field",
+	2: "withinDays",
+}
+
+// Decode decodes ConditionDateWithinLeafInput from json.
+func (s *ConditionDateWithinLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionDateWithinLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "withinDays":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				v, err := d.Int32()
+				s.WithinDays = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"withinDays\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionDateWithinLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionDateWithinLeafInput) {
+					name = jsonFieldsNameOfConditionDateWithinLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionDateWithinLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionDateWithinLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionDateWithinLeafInputKind as json.
+func (s ConditionDateWithinLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionDateWithinLeafInputKind from json.
+func (s *ConditionDateWithinLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionDateWithinLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionDateWithinLeafInputKind(v) {
+	case ConditionDateWithinLeafInputKindDateWithin:
+		*s = ConditionDateWithinLeafInputKindDateWithin
+	default:
+		*s = ConditionDateWithinLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionDateWithinLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionDateWithinLeafInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -6927,7 +7826,7 @@ func (s *ConditionEventLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"withinDays\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -6978,6 +7877,204 @@ func (s *ConditionEventLeaf) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionEventLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionEventLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionEventLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("action")
+		e.Str(s.Action)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("times")
+		e.Int32(s.Times)
+	}
+	{
+		if s.WithinDays.Set {
+			e.FieldStart("withinDays")
+			s.WithinDays.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfConditionEventLeafInput = [5]string{
+	0: "kind",
+	1: "action",
+	2: "operator",
+	3: "times",
+	4: "withinDays",
+}
+
+// Decode decodes ConditionEventLeafInput from json.
+func (s *ConditionEventLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionEventLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "action":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Action = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"action\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "times":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Int32()
+				s.Times = int32(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"times\"")
+			}
+		case "withinDays":
+			if err := func() error {
+				s.WithinDays.Reset()
+				if err := s.WithinDays.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"withinDays\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionEventLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionEventLeafInput) {
+					name = jsonFieldsNameOfConditionEventLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionEventLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionEventLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionEventLeafInputKind as json.
+func (s ConditionEventLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionEventLeafInputKind from json.
+func (s *ConditionEventLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionEventLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionEventLeafInputKind(v) {
+	case ConditionEventLeafInputKindEvent:
+		*s = ConditionEventLeafInputKindEvent
+	default:
+		*s = ConditionEventLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionEventLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionEventLeafInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -7158,7 +8255,7 @@ func (s *ConditionGroup) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"rules\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -7209,6 +8306,197 @@ func (s *ConditionGroup) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionGroup) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionGroupInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionGroupInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("combinator")
+		s.Combinator.Encode(e)
+	}
+	{
+		if s.Not.Set {
+			e.FieldStart("not")
+			s.Not.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("rules")
+		e.ArrStart()
+		for _, elem := range s.Rules {
+			elem.Encode(e)
+		}
+		e.ArrEnd()
+	}
+}
+
+var jsonFieldsNameOfConditionGroupInput = [4]string{
+	0: "kind",
+	1: "combinator",
+	2: "not",
+	3: "rules",
+}
+
+// Decode decodes ConditionGroupInput from json.
+func (s *ConditionGroupInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionGroupInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "combinator":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.Combinator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"combinator\"")
+			}
+		case "not":
+			if err := func() error {
+				s.Not.Reset()
+				if err := s.Not.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"not\"")
+			}
+		case "rules":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				s.Rules = make([]ConditionNodeInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem ConditionNodeInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Rules = append(s.Rules, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"rules\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionGroupInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionGroupInput) {
+					name = jsonFieldsNameOfConditionGroupInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionGroupInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionGroupInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionGroupInputKind as json.
+func (s ConditionGroupInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionGroupInputKind from json.
+func (s *ConditionGroupInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionGroupInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionGroupInputKind(v) {
+	case ConditionGroupInputKindGroup:
+		*s = ConditionGroupInputKindGroup
+	default:
+		*s = ConditionGroupInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionGroupInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionGroupInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -7339,7 +8627,7 @@ func (s *ConditionLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -7390,6 +8678,187 @@ func (s *ConditionLeaf) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		if s.Value.Set {
+			e.FieldStart("value")
+			s.Value.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfConditionLeafInput = [4]string{
+	0: "kind",
+	1: "field",
+	2: "operator",
+	3: "value",
+}
+
+// Decode decodes ConditionLeafInput from json.
+func (s *ConditionLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "value":
+			if err := func() error {
+				s.Value.Reset()
+				if err := s.Value.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionLeafInput) {
+					name = jsonFieldsNameOfConditionLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionLeafInputKind as json.
+func (s ConditionLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionLeafInputKind from json.
+func (s *ConditionLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionLeafInputKind(v) {
+	case ConditionLeafInputKindRule:
+		*s = ConditionLeafInputKindRule
+	default:
+		*s = ConditionLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionLeafInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -7478,6 +8947,284 @@ func (s *ConditionNode) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionNode) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionNodeInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionNodeInput) encodeFields(e *jx.Encoder) {
+	s.OneOf.encodeFields(e)
+}
+
+var jsonFieldsNameOfConditionNodeInput = [0]string{}
+
+// Decode decodes ConditionNodeInput from json.
+func (s *ConditionNodeInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionNodeInput to nil")
+	}
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return s.OneOf.Decode(d)
+	}); err != nil {
+		return errors.Wrap(err, "decode field OneOf")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		default:
+			return d.Skip()
+		}
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionNodeInput")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionNodeInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionNodeInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionNodeInputSum as json.
+func (s ConditionNodeInputSum) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+func (s ConditionNodeInputSum) encodeFields(e *jx.Encoder) {
+	switch s.Type {
+	case ConditionLeafInputConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("rule")
+		{
+			s := s.ConditionLeafInput
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				if s.Value.Set {
+					e.FieldStart("value")
+					s.Value.Encode(e)
+				}
+			}
+		}
+	case ConditionEventLeafInputConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("event")
+		{
+			s := s.ConditionEventLeafInput
+			{
+				e.FieldStart("action")
+				e.Str(s.Action)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("times")
+				e.Int32(s.Times)
+			}
+			{
+				if s.WithinDays.Set {
+					e.FieldStart("withinDays")
+					s.WithinDays.Encode(e)
+				}
+			}
+		}
+	case ConditionNumberLeafInputConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("number")
+		{
+			s := s.ConditionNumberLeafInput
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("value")
+				e.Float64(s.Value)
+			}
+		}
+	case ConditionDateLeafInputConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("date")
+		{
+			s := s.ConditionDateLeafInput
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("operator")
+				s.Operator.Encode(e)
+			}
+			{
+				e.FieldStart("at")
+				s.At.Encode(e)
+			}
+		}
+	case ConditionDateWithinLeafInputConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("dateWithin")
+		{
+			s := s.ConditionDateWithinLeafInput
+			{
+				e.FieldStart("field")
+				e.Str(s.Field)
+			}
+			{
+				e.FieldStart("withinDays")
+				e.Int32(s.WithinDays)
+			}
+		}
+	case ConditionGroupInputConditionNodeInputSum:
+		e.FieldStart("kind")
+		e.Str("group")
+		{
+			s := s.ConditionGroupInput
+			{
+				e.FieldStart("combinator")
+				s.Combinator.Encode(e)
+			}
+			{
+				if s.Not.Set {
+					e.FieldStart("not")
+					s.Not.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("rules")
+				e.ArrStart()
+				for _, elem := range s.Rules {
+					elem.Encode(e)
+				}
+				e.ArrEnd()
+			}
+		}
+	}
+}
+
+// Decode decodes ConditionNodeInputSum from json.
+func (s *ConditionNodeInputSum) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionNodeInputSum to nil")
+	}
+	// Sum type discriminator.
+	if typ := d.Next(); typ != jx.Object {
+		return errors.Errorf("unexpected json type %q", typ)
+	}
+
+	var found bool
+	if err := d.Capture(func(d *jx.Decoder) error {
+		return d.ObjBytes(func(d *jx.Decoder, key []byte) error {
+			if found {
+				return d.Skip()
+			}
+			switch string(key) {
+			case "kind":
+				typ, err := d.Str()
+				if err != nil {
+					return err
+				}
+				switch typ {
+				case "rule":
+					s.Type = ConditionLeafInputConditionNodeInputSum
+					found = true
+				case "event":
+					s.Type = ConditionEventLeafInputConditionNodeInputSum
+					found = true
+				case "number":
+					s.Type = ConditionNumberLeafInputConditionNodeInputSum
+					found = true
+				case "date":
+					s.Type = ConditionDateLeafInputConditionNodeInputSum
+					found = true
+				case "dateWithin":
+					s.Type = ConditionDateWithinLeafInputConditionNodeInputSum
+					found = true
+				case "group":
+					s.Type = ConditionGroupInputConditionNodeInputSum
+					found = true
+				default:
+					return errors.Errorf("unknown type %s", typ)
+				}
+				return nil
+			}
+			return d.Skip()
+		})
+	}); err != nil {
+		return errors.Wrap(err, "capture")
+	}
+	if !found {
+		return errors.New("unable to detect sum type variant")
+	}
+	switch s.Type {
+	case ConditionLeafInputConditionNodeInputSum:
+		if err := s.ConditionLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case ConditionEventLeafInputConditionNodeInputSum:
+		if err := s.ConditionEventLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case ConditionNumberLeafInputConditionNodeInputSum:
+		if err := s.ConditionNumberLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case ConditionDateLeafInputConditionNodeInputSum:
+		if err := s.ConditionDateLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case ConditionDateWithinLeafInputConditionNodeInputSum:
+		if err := s.ConditionDateWithinLeafInput.Decode(d); err != nil {
+			return err
+		}
+	case ConditionGroupInputConditionNodeInputSum:
+		if err := s.ConditionGroupInput.Decode(d); err != nil {
+			return err
+		}
+	default:
+		return errors.Errorf("inferred invalid type: %s", s.Type)
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionNodeInputSum) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionNodeInputSum) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -7798,7 +9545,7 @@ func (s *ConditionNumberLeaf) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"value\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -7849,6 +9596,187 @@ func (s *ConditionNumberLeaf) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *ConditionNumberLeaf) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConditionNumberLeafInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConditionNumberLeafInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("kind")
+		s.Kind.Encode(e)
+	}
+	{
+		e.FieldStart("field")
+		e.Str(s.Field)
+	}
+	{
+		e.FieldStart("operator")
+		s.Operator.Encode(e)
+	}
+	{
+		e.FieldStart("value")
+		e.Float64(s.Value)
+	}
+}
+
+var jsonFieldsNameOfConditionNumberLeafInput = [4]string{
+	0: "kind",
+	1: "field",
+	2: "operator",
+	3: "value",
+}
+
+// Decode decodes ConditionNumberLeafInput from json.
+func (s *ConditionNumberLeafInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionNumberLeafInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "kind":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Kind.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"kind\"")
+			}
+		case "field":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.Field = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"field\"")
+			}
+		case "operator":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.Operator.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"operator\"")
+			}
+		case "value":
+			requiredBitSet[0] |= 1 << 3
+			if err := func() error {
+				v, err := d.Float64()
+				s.Value = float64(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"value\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConditionNumberLeafInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00001111,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConditionNumberLeafInput) {
+					name = jsonFieldsNameOfConditionNumberLeafInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConditionNumberLeafInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionNumberLeafInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode encodes ConditionNumberLeafInputKind as json.
+func (s ConditionNumberLeafInputKind) Encode(e *jx.Encoder) {
+	e.Str(string(s))
+}
+
+// Decode decodes ConditionNumberLeafInputKind from json.
+func (s *ConditionNumberLeafInputKind) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConditionNumberLeafInputKind to nil")
+	}
+	v, err := d.StrBytes()
+	if err != nil {
+		return err
+	}
+	// Try to use constant string.
+	switch ConditionNumberLeafInputKind(v) {
+	case ConditionNumberLeafInputKindNumber:
+		*s = ConditionNumberLeafInputKindNumber
+	default:
+		*s = ConditionNumberLeafInputKind(v)
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s ConditionNumberLeafInputKind) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConditionNumberLeafInputKind) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -12003,9 +13931,9 @@ func (s *CreateAutomationInput) Decode(d *jx.Decoder) error {
 			}
 		case "steps":
 			if err := func() error {
-				s.Steps = make([]AutomationStep, 0)
+				s.Steps = make([]AutomationStepInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationStep
+					var elem AutomationStepInput
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -12937,9 +14865,9 @@ func (s *CreateRuleInput) Decode(d *jx.Decoder) error {
 			}
 		case "actions":
 			if err := func() error {
-				s.Actions = make([]RuleAction, 0)
+				s.Actions = make([]RuleActionInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem RuleAction
+					var elem RuleActionInput
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -20199,6 +22127,39 @@ func (s *OptConditionGroup) UnmarshalJSON(data []byte) error {
 	return s.Decode(d)
 }
 
+// Encode encodes ConditionGroupInput as json.
+func (o OptConditionGroupInput) Encode(e *jx.Encoder) {
+	if !o.Set {
+		return
+	}
+	o.Value.Encode(e)
+}
+
+// Decode decodes ConditionGroupInput from json.
+func (o *OptConditionGroupInput) Decode(d *jx.Decoder) error {
+	if o == nil {
+		return errors.New("invalid: unable to decode OptConditionGroupInput to nil")
+	}
+	o.Set = true
+	if err := o.Value.Decode(d); err != nil {
+		return err
+	}
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s OptConditionGroupInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *OptConditionGroupInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
 // Encode encodes ConsentChannel as json.
 func (o OptConsentChannel) Encode(e *jx.Encoder) {
 	if !o.Set {
@@ -24203,7 +26164,7 @@ func (s *RuleAction) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"hasSecret\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -24255,6 +26216,265 @@ func (s *RuleAction) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *RuleAction) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *RuleActionInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *RuleActionInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("type")
+		s.Type.Encode(e)
+	}
+	{
+		if s.Tag.Set {
+			e.FieldStart("tag")
+			s.Tag.Encode(e)
+		}
+	}
+	{
+		if s.AutomationId.Set {
+			e.FieldStart("automationId")
+			s.AutomationId.Encode(e)
+		}
+	}
+	{
+		if s.ID.Set {
+			e.FieldStart("id")
+			s.ID.Encode(e)
+		}
+	}
+	{
+		if s.URL.Set {
+			e.FieldStart("url")
+			s.URL.Encode(e)
+		}
+	}
+	{
+		if s.Headers != nil {
+			e.FieldStart("headers")
+			e.ArrStart()
+			for _, elem := range s.Headers {
+				elem.Encode(e)
+			}
+			e.ArrEnd()
+		}
+	}
+	{
+		if s.Body.Set {
+			e.FieldStart("body")
+			s.Body.Encode(e)
+		}
+	}
+	{
+		if s.Secret.Set {
+			e.FieldStart("secret")
+			s.Secret.Encode(e)
+		}
+	}
+	{
+		if s.ClearSecret.Set {
+			e.FieldStart("clearSecret")
+			s.ClearSecret.Encode(e)
+		}
+	}
+	{
+		if s.HasSecret.Set {
+			e.FieldStart("hasSecret")
+			s.HasSecret.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfRuleActionInput = [10]string{
+	0: "type",
+	1: "tag",
+	2: "automationId",
+	3: "id",
+	4: "url",
+	5: "headers",
+	6: "body",
+	7: "secret",
+	8: "clearSecret",
+	9: "hasSecret",
+}
+
+// Decode decodes RuleActionInput from json.
+func (s *RuleActionInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode RuleActionInput to nil")
+	}
+	var requiredBitSet [2]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "type":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				if err := s.Type.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"type\"")
+			}
+		case "tag":
+			if err := func() error {
+				s.Tag.Reset()
+				if err := s.Tag.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"tag\"")
+			}
+		case "automationId":
+			if err := func() error {
+				s.AutomationId.Reset()
+				if err := s.AutomationId.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"automationId\"")
+			}
+		case "id":
+			if err := func() error {
+				s.ID.Reset()
+				if err := s.ID.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"id\"")
+			}
+		case "url":
+			if err := func() error {
+				s.URL.Reset()
+				if err := s.URL.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		case "headers":
+			if err := func() error {
+				s.Headers = make([]AutomationHttpHeaderInput, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem AutomationHttpHeaderInput
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					s.Headers = append(s.Headers, elem)
+					return nil
+				}); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"headers\"")
+			}
+		case "body":
+			if err := func() error {
+				s.Body.Reset()
+				if err := s.Body.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"body\"")
+			}
+		case "secret":
+			if err := func() error {
+				s.Secret.Reset()
+				if err := s.Secret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"secret\"")
+			}
+		case "clearSecret":
+			if err := func() error {
+				s.ClearSecret.Reset()
+				if err := s.ClearSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"clearSecret\"")
+			}
+		case "hasSecret":
+			if err := func() error {
+				s.HasSecret.Reset()
+				if err := s.HasSecret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"hasSecret\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode RuleActionInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [2]uint8{
+		0b00000001,
+		0b00000000,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfRuleActionInput) {
+					name = jsonFieldsNameOfRuleActionInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *RuleActionInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *RuleActionInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -30438,9 +32658,9 @@ func (s *TelegramBroadcastContentInput) Decode(d *jx.Decoder) error {
 			}
 		case "buttons":
 			if err := func() error {
-				s.Buttons = make([]TelegramButton, 0)
+				s.Buttons = make([]TelegramButtonInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem TelegramButton
+					var elem TelegramButtonInput
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -30625,7 +32845,7 @@ func (s *TelegramButton) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"url\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
@@ -30676,6 +32896,119 @@ func (s *TelegramButton) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *TelegramButton) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *TelegramButtonInput) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *TelegramButtonInput) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("label")
+		e.Str(s.Label)
+	}
+	{
+		e.FieldStart("url")
+		e.Str(s.URL)
+	}
+}
+
+var jsonFieldsNameOfTelegramButtonInput = [2]string{
+	0: "label",
+	1: "url",
+}
+
+// Decode decodes TelegramButtonInput from json.
+func (s *TelegramButtonInput) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode TelegramButtonInput to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "label":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Str()
+				s.Label = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"label\"")
+			}
+		case "url":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				v, err := d.Str()
+				s.URL = string(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"url\"")
+			}
+		default:
+			return errors.Errorf("unexpected field %q", k)
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode TelegramButtonInput")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfTelegramButtonInput) {
+					name = jsonFieldsNameOfTelegramButtonInput[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *TelegramButtonInput) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *TelegramButtonInput) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
@@ -32881,9 +35214,9 @@ func (s *UpdateAutomationInput) Decode(d *jx.Decoder) error {
 			}
 		case "steps":
 			if err := func() error {
-				s.Steps = make([]AutomationStep, 0)
+				s.Steps = make([]AutomationStepInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem AutomationStep
+					var elem AutomationStepInput
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -33904,9 +36237,9 @@ func (s *UpdateRuleInput) Decode(d *jx.Decoder) error {
 			}
 		case "actions":
 			if err := func() error {
-				s.Actions = make([]RuleAction, 0)
+				s.Actions = make([]RuleActionInput, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem RuleAction
+					var elem RuleActionInput
 					if err := elem.Decode(d); err != nil {
 						return err
 					}

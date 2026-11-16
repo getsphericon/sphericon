@@ -1415,6 +1415,35 @@ func (s *AutomationHttpHeader) SetValue(val OptString) {
 	s.Value = val
 }
 
+// One request header of an HTTP step. The value is a secret: it is never returned.
+// Ref: #/components/schemas/AutomationHttpHeaderInput
+type AutomationHttpHeaderInput struct {
+	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+	Name string `json:"name"`
+	// Header value. Omit it when editing to keep the stored value of the header with this name.
+	Value OptString `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *AutomationHttpHeaderInput) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *AutomationHttpHeaderInput) GetValue() OptString {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *AutomationHttpHeaderInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *AutomationHttpHeaderInput) SetValue(val OptString) {
+	s.Value = val
+}
+
 // One period of an automation's results. Each count is what happened in the period: an enrollment
 // counts as entered on the Report day it began and under its outcome on the Report day it ended,
 // whenever it began, so an enrollment still running counts as entered only.
@@ -2319,6 +2348,275 @@ func (s *AutomationStepFigures) SetSent(val int32) {
 // SetSkipped sets the value of Skipped.
 func (s *AutomationStepFigures) SetSkipped(val int32) {
 	s.Skipped = val
+}
+
+// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
+// wait steps carry seconds, tag steps carry the tag name.
+// Ref: #/components/schemas/AutomationStepInput
+type AutomationStepInput struct {
+	// Step kind.
+	Type AutomationStepType `json:"type"`
+	// Email subject (email steps).
+	Subject OptString `json:"subject"`
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
+	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
+	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
+	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
+	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
+	// server renders the body from it in the same save, and a document that cannot be rendered refuses the
+	// whole save, naming the step. Writing only a body clears the step's document.
+	Doc OptEditorDocument `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
+	// Delay before the next step, in seconds (wait steps).
+	Seconds OptInt32 `json:"seconds"`
+	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
+	Tag OptString `json:"tag"`
+	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+	ID OptString `json:"id"`
+	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
+	Headers []AutomationHttpHeaderInput `json:"headers"`
+	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
+	// Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (HTTP steps).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (HTTP steps, read only).
+	HasSecret OptBool `json:"hasSecret"`
+	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
+	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
+	// through several (ADR 0081).
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
+	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
+	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
+	// one is refused.
+	//
+	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
+	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
+	// short links.
+	Text OptString `json:"text"`
+	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
+	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
+	// message.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
+	Buttons []TelegramButtonInput `json:"buttons"`
+	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
+	// image.
+	LinkPreview OptBool `json:"linkPreview"`
+	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
+	// `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
+}
+
+// GetType returns the value of Type.
+func (s *AutomationStepInput) GetType() AutomationStepType {
+	return s.Type
+}
+
+// GetSubject returns the value of Subject.
+func (s *AutomationStepInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *AutomationStepInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *AutomationStepInput) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *AutomationStepInput) GetEditorVersion() OptString {
+	return s.EditorVersion
+}
+
+// GetSeconds returns the value of Seconds.
+func (s *AutomationStepInput) GetSeconds() OptInt32 {
+	return s.Seconds
+}
+
+// GetTag returns the value of Tag.
+func (s *AutomationStepInput) GetTag() OptString {
+	return s.Tag
+}
+
+// GetID returns the value of ID.
+func (s *AutomationStepInput) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *AutomationStepInput) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *AutomationStepInput) GetHeaders() []AutomationHttpHeaderInput {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *AutomationStepInput) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *AutomationStepInput) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *AutomationStepInput) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationStepInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// GetText returns the value of Text.
+func (s *AutomationStepInput) GetText() OptString {
+	return s.Text
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *AutomationStepInput) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *AutomationStepInput) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *AutomationStepInput) GetButtons() []TelegramButtonInput {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *AutomationStepInput) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *AutomationStepInput) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
+// SetType sets the value of Type.
+func (s *AutomationStepInput) SetType(val AutomationStepType) {
+	s.Type = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *AutomationStepInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *AutomationStepInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *AutomationStepInput) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *AutomationStepInput) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
+// SetSeconds sets the value of Seconds.
+func (s *AutomationStepInput) SetSeconds(val OptInt32) {
+	s.Seconds = val
+}
+
+// SetTag sets the value of Tag.
+func (s *AutomationStepInput) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// SetID sets the value of ID.
+func (s *AutomationStepInput) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *AutomationStepInput) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *AutomationStepInput) SetHeaders(val []AutomationHttpHeaderInput) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *AutomationStepInput) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *AutomationStepInput) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *AutomationStepInput) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationStepInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// SetText sets the value of Text.
+func (s *AutomationStepInput) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *AutomationStepInput) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *AutomationStepInput) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *AutomationStepInput) SetButtons(val []TelegramButtonInput) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *AutomationStepInput) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *AutomationStepInput) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
 }
 
 // Kind of automation step.
@@ -4202,6 +4500,94 @@ func (s *ConditionDateLeaf) SetAt(val Timestamp) {
 	s.At = val
 }
 
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
+// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
+// a date-time without an offset or a value that is not a date-time makes the leaf false.
+// Ref: #/components/schemas/ConditionDateLeafInput
+type ConditionDateLeafInput struct {
+	Kind ConditionDateLeafInputKind `json:"kind"`
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// Which side of `at` the moment is on.
+	Operator ConditionDateOperator `json:"operator"`
+	// The moment the field's is compared with.
+	At Timestamp `json:"at"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionDateLeafInput) GetKind() ConditionDateLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionDateLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionDateLeafInput) GetOperator() ConditionDateOperator {
+	return s.Operator
+}
+
+// GetAt returns the value of At.
+func (s *ConditionDateLeafInput) GetAt() Timestamp {
+	return s.At
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionDateLeafInput) SetKind(val ConditionDateLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionDateLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionDateLeafInput) SetOperator(val ConditionDateOperator) {
+	s.Operator = val
+}
+
+// SetAt sets the value of At.
+func (s *ConditionDateLeafInput) SetAt(val Timestamp) {
+	s.At = val
+}
+
+type ConditionDateLeafInputKind string
+
+const (
+	ConditionDateLeafInputKindDate ConditionDateLeafInputKind = "date"
+)
+
+// AllValues returns all ConditionDateLeafInputKind values.
+func (ConditionDateLeafInputKind) AllValues() []ConditionDateLeafInputKind {
+	return []ConditionDateLeafInputKind{
+		ConditionDateLeafInputKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateLeafInputKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionDateLeafInputKind(data) {
+	case ConditionDateLeafInputKindDate:
+		*s = ConditionDateLeafInputKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type ConditionDateLeafKind string
 
 const (
@@ -4322,6 +4708,82 @@ func (s *ConditionDateWithinLeaf) SetWithinDays(val int32) {
 	s.WithinDays = val
 }
 
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
+// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
+// a UTC offset is a moment, as for the date leaf.
+// Ref: #/components/schemas/ConditionDateWithinLeafInput
+type ConditionDateWithinLeafInput struct {
+	Kind ConditionDateWithinLeafInputKind `json:"kind"`
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// The window, in days back from now.
+	WithinDays int32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionDateWithinLeafInput) GetKind() ConditionDateWithinLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionDateWithinLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionDateWithinLeafInput) GetWithinDays() int32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionDateWithinLeafInput) SetKind(val ConditionDateWithinLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionDateWithinLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionDateWithinLeafInput) SetWithinDays(val int32) {
+	s.WithinDays = val
+}
+
+type ConditionDateWithinLeafInputKind string
+
+const (
+	ConditionDateWithinLeafInputKindDateWithin ConditionDateWithinLeafInputKind = "dateWithin"
+)
+
+// AllValues returns all ConditionDateWithinLeafInputKind values.
+func (ConditionDateWithinLeafInputKind) AllValues() []ConditionDateWithinLeafInputKind {
+	return []ConditionDateWithinLeafInputKind{
+		ConditionDateWithinLeafInputKindDateWithin,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateWithinLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateWithinLeafInputKindDateWithin:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateWithinLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionDateWithinLeafInputKind(data) {
+	case ConditionDateWithinLeafInputKindDateWithin:
+		*s = ConditionDateWithinLeafInputKindDateWithin
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type ConditionDateWithinLeafKind string
 
 const (
@@ -4421,6 +4883,107 @@ func (s *ConditionEventLeaf) SetTimes(val int32) {
 // SetWithinDays sets the value of WithinDays.
 func (s *ConditionEventLeaf) SetWithinDays(val OptInt32) {
 	s.WithinDays = val
+}
+
+// A test of how many times a contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/ConditionEventLeafInput
+type ConditionEventLeafInput struct {
+	Kind ConditionEventLeafInputKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator ConditionEventOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionEventLeafInput) GetKind() ConditionEventLeafInputKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *ConditionEventLeafInput) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionEventLeafInput) GetOperator() ConditionEventOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *ConditionEventLeafInput) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionEventLeafInput) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionEventLeafInput) SetKind(val ConditionEventLeafInputKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *ConditionEventLeafInput) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionEventLeafInput) SetOperator(val ConditionEventOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *ConditionEventLeafInput) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionEventLeafInput) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+type ConditionEventLeafInputKind string
+
+const (
+	ConditionEventLeafInputKindEvent ConditionEventLeafInputKind = "event"
+)
+
+// AllValues returns all ConditionEventLeafInputKind values.
+func (ConditionEventLeafInputKind) AllValues() []ConditionEventLeafInputKind {
+	return []ConditionEventLeafInputKind{
+		ConditionEventLeafInputKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionEventLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionEventLeafInputKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionEventLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionEventLeafInputKind(data) {
+	case ConditionEventLeafInputKindEvent:
+		*s = ConditionEventLeafInputKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type ConditionEventLeafKind string
@@ -4553,6 +5116,93 @@ func (s *ConditionGroup) SetRules(val []ConditionNode) {
 	s.Rules = val
 }
 
+// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
+// empty negated group matches none).
+// Ref: #/components/schemas/ConditionGroupInput
+type ConditionGroupInput struct {
+	Kind ConditionGroupInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's leaves and nested groups.
+	Rules []ConditionNodeInput `json:"rules"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionGroupInput) GetKind() ConditionGroupInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *ConditionGroupInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *ConditionGroupInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetRules returns the value of Rules.
+func (s *ConditionGroupInput) GetRules() []ConditionNodeInput {
+	return s.Rules
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionGroupInput) SetKind(val ConditionGroupInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *ConditionGroupInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *ConditionGroupInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetRules sets the value of Rules.
+func (s *ConditionGroupInput) SetRules(val []ConditionNodeInput) {
+	s.Rules = val
+}
+
+type ConditionGroupInputKind string
+
+const (
+	ConditionGroupInputKindGroup ConditionGroupInputKind = "group"
+)
+
+// AllValues returns all ConditionGroupInputKind values.
+func (ConditionGroupInputKind) AllValues() []ConditionGroupInputKind {
+	return []ConditionGroupInputKind{
+		ConditionGroupInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionGroupInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionGroupInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionGroupInputKind) UnmarshalText(data []byte) error {
+	switch ConditionGroupInputKind(data) {
+	case ConditionGroupInputKindGroup:
+		*s = ConditionGroupInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type ConditionGroupKind string
 
 const (
@@ -4645,6 +5295,98 @@ func (s *ConditionLeaf) SetValue(val OptString) {
 	s.Value = val
 }
 
+// One test of a condition: a field, an operator and a value.
+// Ref: #/components/schemas/ConditionLeafInput
+type ConditionLeafInput struct {
+	Kind ConditionLeafInputKind `json:"kind"`
+	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
+	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
+	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
+	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
+	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
+	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+	// that is not text; a number property is compared by a number leaf).
+	Field string `json:"field"`
+	// How the field is tested.
+	Operator ConditionOperator `json:"operator"`
+	// The value to test against: a tag name, blank for null and notNull.
+	Value OptString `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionLeafInput) GetKind() ConditionLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionLeafInput) GetOperator() ConditionOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionLeafInput) GetValue() OptString {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionLeafInput) SetKind(val ConditionLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionLeafInput) SetOperator(val ConditionOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionLeafInput) SetValue(val OptString) {
+	s.Value = val
+}
+
+type ConditionLeafInputKind string
+
+const (
+	ConditionLeafInputKindRule ConditionLeafInputKind = "rule"
+)
+
+// AllValues returns all ConditionLeafInputKind values.
+func (ConditionLeafInputKind) AllValues() []ConditionLeafInputKind {
+	return []ConditionLeafInputKind{
+		ConditionLeafInputKindRule,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionLeafInputKindRule:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionLeafInputKind(data) {
+	case ConditionLeafInputKindRule:
+		*s = ConditionLeafInputKindRule
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type ConditionLeafKind string
 
 const (
@@ -4694,6 +5436,204 @@ func (s *ConditionNode) GetOneOf() ConditionNodeSum {
 // SetOneOf sets the value of OneOf.
 func (s *ConditionNode) SetOneOf(val ConditionNodeSum) {
 	s.OneOf = val
+}
+
+// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
+// inside a condition group, discriminated by `kind`.
+// Ref: #/components/schemas/ConditionNodeInput
+type ConditionNodeInput struct {
+	OneOf ConditionNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *ConditionNodeInput) GetOneOf() ConditionNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *ConditionNodeInput) SetOneOf(val ConditionNodeInputSum) {
+	s.OneOf = val
+}
+
+// ConditionNodeInputSum represents sum type.
+type ConditionNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                         ConditionNodeInputSumType
+	ConditionLeafInput           ConditionLeafInput
+	ConditionEventLeafInput      ConditionEventLeafInput
+	ConditionNumberLeafInput     ConditionNumberLeafInput
+	ConditionDateLeafInput       ConditionDateLeafInput
+	ConditionDateWithinLeafInput ConditionDateWithinLeafInput
+	ConditionGroupInput          ConditionGroupInput
+}
+
+// ConditionNodeInputSumType is oneOf type of ConditionNodeInputSum.
+type ConditionNodeInputSumType string
+
+// Possible values for ConditionNodeInputSumType.
+const (
+	ConditionLeafInputConditionNodeInputSum           ConditionNodeInputSumType = "rule"
+	ConditionEventLeafInputConditionNodeInputSum      ConditionNodeInputSumType = "event"
+	ConditionNumberLeafInputConditionNodeInputSum     ConditionNodeInputSumType = "number"
+	ConditionDateLeafInputConditionNodeInputSum       ConditionNodeInputSumType = "date"
+	ConditionDateWithinLeafInputConditionNodeInputSum ConditionNodeInputSumType = "dateWithin"
+	ConditionGroupInputConditionNodeInputSum          ConditionNodeInputSumType = "group"
+)
+
+// IsConditionLeafInput reports whether ConditionNodeInputSum is ConditionLeafInput.
+func (s ConditionNodeInputSum) IsConditionLeafInput() bool {
+	return s.Type == ConditionLeafInputConditionNodeInputSum
+}
+
+// IsConditionEventLeafInput reports whether ConditionNodeInputSum is ConditionEventLeafInput.
+func (s ConditionNodeInputSum) IsConditionEventLeafInput() bool {
+	return s.Type == ConditionEventLeafInputConditionNodeInputSum
+}
+
+// IsConditionNumberLeafInput reports whether ConditionNodeInputSum is ConditionNumberLeafInput.
+func (s ConditionNodeInputSum) IsConditionNumberLeafInput() bool {
+	return s.Type == ConditionNumberLeafInputConditionNodeInputSum
+}
+
+// IsConditionDateLeafInput reports whether ConditionNodeInputSum is ConditionDateLeafInput.
+func (s ConditionNodeInputSum) IsConditionDateLeafInput() bool {
+	return s.Type == ConditionDateLeafInputConditionNodeInputSum
+}
+
+// IsConditionDateWithinLeafInput reports whether ConditionNodeInputSum is ConditionDateWithinLeafInput.
+func (s ConditionNodeInputSum) IsConditionDateWithinLeafInput() bool {
+	return s.Type == ConditionDateWithinLeafInputConditionNodeInputSum
+}
+
+// IsConditionGroupInput reports whether ConditionNodeInputSum is ConditionGroupInput.
+func (s ConditionNodeInputSum) IsConditionGroupInput() bool {
+	return s.Type == ConditionGroupInputConditionNodeInputSum
+}
+
+// SetConditionLeafInput sets ConditionNodeInputSum to ConditionLeafInput.
+func (s *ConditionNodeInputSum) SetConditionLeafInput(v ConditionLeafInput) {
+	s.Type = ConditionLeafInputConditionNodeInputSum
+	s.ConditionLeafInput = v
+}
+
+// GetConditionLeafInput returns ConditionLeafInput and true boolean if ConditionNodeInputSum is ConditionLeafInput.
+func (s ConditionNodeInputSum) GetConditionLeafInput() (v ConditionLeafInput, ok bool) {
+	if !s.IsConditionLeafInput() {
+		return v, false
+	}
+	return s.ConditionLeafInput, true
+}
+
+// NewConditionLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionLeafInput.
+func NewConditionLeafInputConditionNodeInputSum(v ConditionLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionLeafInput(v)
+	return s
+}
+
+// SetConditionEventLeafInput sets ConditionNodeInputSum to ConditionEventLeafInput.
+func (s *ConditionNodeInputSum) SetConditionEventLeafInput(v ConditionEventLeafInput) {
+	s.Type = ConditionEventLeafInputConditionNodeInputSum
+	s.ConditionEventLeafInput = v
+}
+
+// GetConditionEventLeafInput returns ConditionEventLeafInput and true boolean if ConditionNodeInputSum is ConditionEventLeafInput.
+func (s ConditionNodeInputSum) GetConditionEventLeafInput() (v ConditionEventLeafInput, ok bool) {
+	if !s.IsConditionEventLeafInput() {
+		return v, false
+	}
+	return s.ConditionEventLeafInput, true
+}
+
+// NewConditionEventLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionEventLeafInput.
+func NewConditionEventLeafInputConditionNodeInputSum(v ConditionEventLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionEventLeafInput(v)
+	return s
+}
+
+// SetConditionNumberLeafInput sets ConditionNodeInputSum to ConditionNumberLeafInput.
+func (s *ConditionNodeInputSum) SetConditionNumberLeafInput(v ConditionNumberLeafInput) {
+	s.Type = ConditionNumberLeafInputConditionNodeInputSum
+	s.ConditionNumberLeafInput = v
+}
+
+// GetConditionNumberLeafInput returns ConditionNumberLeafInput and true boolean if ConditionNodeInputSum is ConditionNumberLeafInput.
+func (s ConditionNodeInputSum) GetConditionNumberLeafInput() (v ConditionNumberLeafInput, ok bool) {
+	if !s.IsConditionNumberLeafInput() {
+		return v, false
+	}
+	return s.ConditionNumberLeafInput, true
+}
+
+// NewConditionNumberLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionNumberLeafInput.
+func NewConditionNumberLeafInputConditionNodeInputSum(v ConditionNumberLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionNumberLeafInput(v)
+	return s
+}
+
+// SetConditionDateLeafInput sets ConditionNodeInputSum to ConditionDateLeafInput.
+func (s *ConditionNodeInputSum) SetConditionDateLeafInput(v ConditionDateLeafInput) {
+	s.Type = ConditionDateLeafInputConditionNodeInputSum
+	s.ConditionDateLeafInput = v
+}
+
+// GetConditionDateLeafInput returns ConditionDateLeafInput and true boolean if ConditionNodeInputSum is ConditionDateLeafInput.
+func (s ConditionNodeInputSum) GetConditionDateLeafInput() (v ConditionDateLeafInput, ok bool) {
+	if !s.IsConditionDateLeafInput() {
+		return v, false
+	}
+	return s.ConditionDateLeafInput, true
+}
+
+// NewConditionDateLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionDateLeafInput.
+func NewConditionDateLeafInputConditionNodeInputSum(v ConditionDateLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionDateLeafInput(v)
+	return s
+}
+
+// SetConditionDateWithinLeafInput sets ConditionNodeInputSum to ConditionDateWithinLeafInput.
+func (s *ConditionNodeInputSum) SetConditionDateWithinLeafInput(v ConditionDateWithinLeafInput) {
+	s.Type = ConditionDateWithinLeafInputConditionNodeInputSum
+	s.ConditionDateWithinLeafInput = v
+}
+
+// GetConditionDateWithinLeafInput returns ConditionDateWithinLeafInput and true boolean if ConditionNodeInputSum is ConditionDateWithinLeafInput.
+func (s ConditionNodeInputSum) GetConditionDateWithinLeafInput() (v ConditionDateWithinLeafInput, ok bool) {
+	if !s.IsConditionDateWithinLeafInput() {
+		return v, false
+	}
+	return s.ConditionDateWithinLeafInput, true
+}
+
+// NewConditionDateWithinLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionDateWithinLeafInput.
+func NewConditionDateWithinLeafInputConditionNodeInputSum(v ConditionDateWithinLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionDateWithinLeafInput(v)
+	return s
+}
+
+// SetConditionGroupInput sets ConditionNodeInputSum to ConditionGroupInput.
+func (s *ConditionNodeInputSum) SetConditionGroupInput(v ConditionGroupInput) {
+	s.Type = ConditionGroupInputConditionNodeInputSum
+	s.ConditionGroupInput = v
+}
+
+// GetConditionGroupInput returns ConditionGroupInput and true boolean if ConditionNodeInputSum is ConditionGroupInput.
+func (s ConditionNodeInputSum) GetConditionGroupInput() (v ConditionGroupInput, ok bool) {
+	if !s.IsConditionGroupInput() {
+		return v, false
+	}
+	return s.ConditionGroupInput, true
+}
+
+// NewConditionGroupInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionGroupInput.
+func NewConditionGroupInputConditionNodeInputSum(v ConditionGroupInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionGroupInput(v)
+	return s
 }
 
 // ConditionNodeSum represents sum type.
@@ -4925,6 +5865,94 @@ func (s *ConditionNumberLeaf) SetOperator(val ConditionNumberOperator) {
 // SetValue sets the value of Value.
 func (s *ConditionNumberLeaf) SetValue(val float64) {
 	s.Value = val
+}
+
+// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
+// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
+// value that is not a number (text, a boolean, null, a list), makes the leaf false.
+// Ref: #/components/schemas/ConditionNumberLeafInput
+type ConditionNumberLeafInput struct {
+	Kind ConditionNumberLeafInputKind `json:"kind"`
+	// What it compares: "custom:" for a number custom field, or "trigger:".
+	Field string `json:"field"`
+	// How the field compares with `value`.
+	Operator ConditionNumberOperator `json:"operator"`
+	// The number the field is compared with.
+	Value float64 `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionNumberLeafInput) GetKind() ConditionNumberLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionNumberLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionNumberLeafInput) GetOperator() ConditionNumberOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionNumberLeafInput) GetValue() float64 {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionNumberLeafInput) SetKind(val ConditionNumberLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionNumberLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionNumberLeafInput) SetOperator(val ConditionNumberOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionNumberLeafInput) SetValue(val float64) {
+	s.Value = val
+}
+
+type ConditionNumberLeafInputKind string
+
+const (
+	ConditionNumberLeafInputKindNumber ConditionNumberLeafInputKind = "number"
+)
+
+// AllValues returns all ConditionNumberLeafInputKind values.
+func (ConditionNumberLeafInputKind) AllValues() []ConditionNumberLeafInputKind {
+	return []ConditionNumberLeafInputKind{
+		ConditionNumberLeafInputKindNumber,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionNumberLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionNumberLeafInputKindNumber:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionNumberLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionNumberLeafInputKind(data) {
+	case ConditionNumberLeafInputKindNumber:
+		*s = ConditionNumberLeafInputKindNumber
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 type ConditionNumberLeafKind string
@@ -7129,8 +8157,8 @@ type CreateAutomationInput struct {
 	ExitEvents []string `json:"exitEvents"`
 	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
 	// exit event. Null or omitted is none.
-	GoalEvent OptNilString     `json:"goalEvent"`
-	Steps     []AutomationStep `json:"steps"`
+	GoalEvent OptNilString          `json:"goalEvent"`
+	Steps     []AutomationStepInput `json:"steps"`
 }
 
 // GetName returns the value of Name.
@@ -7154,7 +8182,7 @@ func (s *CreateAutomationInput) GetGoalEvent() OptNilString {
 }
 
 // GetSteps returns the value of Steps.
-func (s *CreateAutomationInput) GetSteps() []AutomationStep {
+func (s *CreateAutomationInput) GetSteps() []AutomationStepInput {
 	return s.Steps
 }
 
@@ -7179,7 +8207,7 @@ func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
 }
 
 // SetSteps sets the value of Steps.
-func (s *CreateAutomationInput) SetSteps(val []AutomationStep) {
+func (s *CreateAutomationInput) SetSteps(val []AutomationStepInput) {
 	s.Steps = val
 }
 
@@ -7571,10 +8599,10 @@ func (s *CreateIntegrationInput) SetParams(val OptJsonObject) {
 type CreateRuleInput struct {
 	Name Name `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
-	TriggerEvents []string          `json:"triggerEvents"`
-	Condition     OptConditionGroup `json:"condition"`
+	TriggerEvents []string               `json:"triggerEvents"`
+	Condition     OptConditionGroupInput `json:"condition"`
 	// The Actions to run, in order.
-	Actions []RuleAction `json:"actions"`
+	Actions []RuleActionInput `json:"actions"`
 }
 
 // GetName returns the value of Name.
@@ -7588,12 +8616,12 @@ func (s *CreateRuleInput) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *CreateRuleInput) GetCondition() OptConditionGroup {
+func (s *CreateRuleInput) GetCondition() OptConditionGroupInput {
 	return s.Condition
 }
 
 // GetActions returns the value of Actions.
-func (s *CreateRuleInput) GetActions() []RuleAction {
+func (s *CreateRuleInput) GetActions() []RuleActionInput {
 	return s.Actions
 }
 
@@ -7608,12 +8636,12 @@ func (s *CreateRuleInput) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *CreateRuleInput) SetCondition(val OptConditionGroup) {
+func (s *CreateRuleInput) SetCondition(val OptConditionGroupInput) {
 	s.Condition = val
 }
 
 // SetActions sets the value of Actions.
-func (s *CreateRuleInput) SetActions(val []RuleAction) {
+func (s *CreateRuleInput) SetActions(val []RuleActionInput) {
 	s.Actions = val
 }
 
@@ -7623,7 +8651,7 @@ type CreateSegmentInput struct {
 	// Segment name.
 	Name Name `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition ConditionGroup `json:"condition"`
+	Condition ConditionGroupInput `json:"condition"`
 }
 
 // GetName returns the value of Name.
@@ -7632,7 +8660,7 @@ func (s *CreateSegmentInput) GetName() Name {
 }
 
 // GetCondition returns the value of Condition.
-func (s *CreateSegmentInput) GetCondition() ConditionGroup {
+func (s *CreateSegmentInput) GetCondition() ConditionGroupInput {
 	return s.Condition
 }
 
@@ -7642,7 +8670,7 @@ func (s *CreateSegmentInput) SetName(val Name) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *CreateSegmentInput) SetCondition(val ConditionGroup) {
+func (s *CreateSegmentInput) SetCondition(val ConditionGroupInput) {
 	s.Condition = val
 }
 
@@ -11541,6 +12569,52 @@ func (o OptConditionGroup) Or(d ConditionGroup) ConditionGroup {
 	return d
 }
 
+// NewOptConditionGroupInput returns new OptConditionGroupInput with value set to v.
+func NewOptConditionGroupInput(v ConditionGroupInput) OptConditionGroupInput {
+	return OptConditionGroupInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConditionGroupInput is optional ConditionGroupInput.
+type OptConditionGroupInput struct {
+	Value ConditionGroupInput
+	Set   bool
+}
+
+// IsSet returns true if OptConditionGroupInput was set.
+func (o OptConditionGroupInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConditionGroupInput) Reset() {
+	var v ConditionGroupInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConditionGroupInput) SetTo(v ConditionGroupInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConditionGroupInput) Get() (v ConditionGroupInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConditionGroupInput) Or(d ConditionGroupInput) ConditionGroupInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptConsentChannel returns new OptConsentChannel with value set to v.
 func NewOptConsentChannel(v ConsentChannel) OptConsentChannel {
 	return OptConsentChannel{
@@ -14143,16 +15217,16 @@ func (s *PresetsListOK) SetTotalPages(val int32) {
 // Ref: #/components/schemas/PreviewSegmentInput
 type PreviewSegmentInput struct {
 	// Condition; absent means all contacts.
-	Condition OptConditionGroup `json:"condition"`
+	Condition OptConditionGroupInput `json:"condition"`
 }
 
 // GetCondition returns the value of Condition.
-func (s *PreviewSegmentInput) GetCondition() OptConditionGroup {
+func (s *PreviewSegmentInput) GetCondition() OptConditionGroupInput {
 	return s.Condition
 }
 
 // SetCondition sets the value of Condition.
-func (s *PreviewSegmentInput) SetCondition(val OptConditionGroup) {
+func (s *PreviewSegmentInput) SetCondition(val OptConditionGroupInput) {
 	s.Condition = val
 }
 
@@ -14965,6 +16039,135 @@ func (s *RuleAction) SetClearSecret(val OptBool) {
 
 // SetHasSecret sets the value of HasSecret.
 func (s *RuleAction) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
+// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
+// name, http actions the call.
+// Ref: #/components/schemas/RuleActionInput
+type RuleActionInput struct {
+	// Action kind.
+	Type RuleActionType `json:"type"`
+	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
+	Tag OptString `json:"tag"`
+	// Automation to enroll the Contact in, once ever (enroll_automation).
+	AutomationId OptEntityId `json:"automationId"`
+	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
+	ID OptString `json:"id"`
+	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (http actions). On read, only the names are returned.
+	Headers []AutomationHttpHeaderInput `json:"headers"`
+	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
+	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
+	Body OptString `json:"body"`
+	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
+	// returned. Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (http actions).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (http actions, read only).
+	HasSecret OptBool `json:"hasSecret"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleActionInput) GetType() RuleActionType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *RuleActionInput) GetTag() OptString {
+	return s.Tag
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *RuleActionInput) GetAutomationId() OptEntityId {
+	return s.AutomationId
+}
+
+// GetID returns the value of ID.
+func (s *RuleActionInput) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *RuleActionInput) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *RuleActionInput) GetHeaders() []AutomationHttpHeaderInput {
+	return s.Headers
+}
+
+// GetBody returns the value of Body.
+func (s *RuleActionInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetSecret returns the value of Secret.
+func (s *RuleActionInput) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *RuleActionInput) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *RuleActionInput) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
+// SetType sets the value of Type.
+func (s *RuleActionInput) SetType(val RuleActionType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *RuleActionInput) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *RuleActionInput) SetAutomationId(val OptEntityId) {
+	s.AutomationId = val
+}
+
+// SetID sets the value of ID.
+func (s *RuleActionInput) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *RuleActionInput) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *RuleActionInput) SetHeaders(val []AutomationHttpHeaderInput) {
+	s.Headers = val
+}
+
+// SetBody sets the value of Body.
+func (s *RuleActionInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *RuleActionInput) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *RuleActionInput) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *RuleActionInput) SetHasSecret(val OptBool) {
 	s.HasSecret = val
 }
 
@@ -17744,7 +18947,7 @@ type TelegramBroadcastContentInput struct {
 	// written. An empty string removes the image.
 	ImageUrl OptString `json:"imageUrl"`
 	// Up to 8 link buttons under the message, one per row, in order. An empty list removes them.
-	Buttons []TelegramButton `json:"buttons"`
+	Buttons []TelegramButtonInput `json:"buttons"`
 	// Whether a link in the text unfolds a preview. On when omitted; no effect with an image.
 	LinkPreview OptBool `json:"linkPreview"`
 	// The label of an unsubscribe button under the message, up to 64 characters. Pressing it is the
@@ -17768,7 +18971,7 @@ func (s *TelegramBroadcastContentInput) GetImageUrl() OptString {
 }
 
 // GetButtons returns the value of Buttons.
-func (s *TelegramBroadcastContentInput) GetButtons() []TelegramButton {
+func (s *TelegramBroadcastContentInput) GetButtons() []TelegramButtonInput {
 	return s.Buttons
 }
 
@@ -17798,7 +19001,7 @@ func (s *TelegramBroadcastContentInput) SetImageUrl(val OptString) {
 }
 
 // SetButtons sets the value of Buttons.
-func (s *TelegramBroadcastContentInput) SetButtons(val []TelegramButton) {
+func (s *TelegramBroadcastContentInput) SetButtons(val []TelegramButtonInput) {
 	s.Buttons = val
 }
 
@@ -17873,6 +19076,35 @@ func (s *TelegramButton) SetLabel(val string) {
 
 // SetURL sets the value of URL.
 func (s *TelegramButton) SetURL(val string) {
+	s.URL = val
+}
+
+// A link button under a Telegram message: an inline URL button on a row of its own.
+// Ref: #/components/schemas/TelegramButtonInput
+type TelegramButtonInput struct {
+	// The button's label.
+	Label string `json:"label"`
+	// The URL it opens: absolute, http or https.
+	URL string `json:"url"`
+}
+
+// GetLabel returns the value of Label.
+func (s *TelegramButtonInput) GetLabel() string {
+	return s.Label
+}
+
+// GetURL returns the value of URL.
+func (s *TelegramButtonInput) GetURL() string {
+	return s.URL
+}
+
+// SetLabel sets the value of Label.
+func (s *TelegramButtonInput) SetLabel(val string) {
+	s.Label = val
+}
+
+// SetURL sets the value of URL.
+func (s *TelegramButtonInput) SetURL(val string) {
 	s.URL = val
 }
 
@@ -18895,8 +20127,8 @@ type UpdateAutomationInput struct {
 	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
 	ExitEvents []string `json:"exitEvents"`
 	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
-	GoalEvent OptNilString     `json:"goalEvent"`
-	Steps     []AutomationStep `json:"steps"`
+	GoalEvent OptNilString          `json:"goalEvent"`
+	Steps     []AutomationStepInput `json:"steps"`
 }
 
 // GetRevision returns the value of Revision.
@@ -18925,7 +20157,7 @@ func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
 }
 
 // GetSteps returns the value of Steps.
-func (s *UpdateAutomationInput) GetSteps() []AutomationStep {
+func (s *UpdateAutomationInput) GetSteps() []AutomationStepInput {
 	return s.Steps
 }
 
@@ -18955,7 +20187,7 @@ func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
 }
 
 // SetSteps sets the value of Steps.
-func (s *UpdateAutomationInput) SetSteps(val []AutomationStep) {
+func (s *UpdateAutomationInput) SetSteps(val []AutomationStepInput) {
 	s.Steps = val
 }
 
@@ -19368,10 +20600,10 @@ type UpdateRuleInput struct {
 	Revision Revision `json:"revision"`
 	Name     OptName  `json:"name"`
 	// The Event actions that make the Rule fire; at least one.
-	TriggerEvents []string          `json:"triggerEvents"`
-	Condition     OptConditionGroup `json:"condition"`
+	TriggerEvents []string               `json:"triggerEvents"`
+	Condition     OptConditionGroupInput `json:"condition"`
 	// The Actions to run, in order.
-	Actions []RuleAction `json:"actions"`
+	Actions []RuleActionInput `json:"actions"`
 }
 
 // GetRevision returns the value of Revision.
@@ -19390,12 +20622,12 @@ func (s *UpdateRuleInput) GetTriggerEvents() []string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *UpdateRuleInput) GetCondition() OptConditionGroup {
+func (s *UpdateRuleInput) GetCondition() OptConditionGroupInput {
 	return s.Condition
 }
 
 // GetActions returns the value of Actions.
-func (s *UpdateRuleInput) GetActions() []RuleAction {
+func (s *UpdateRuleInput) GetActions() []RuleActionInput {
 	return s.Actions
 }
 
@@ -19415,12 +20647,12 @@ func (s *UpdateRuleInput) SetTriggerEvents(val []string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *UpdateRuleInput) SetCondition(val OptConditionGroup) {
+func (s *UpdateRuleInput) SetCondition(val OptConditionGroupInput) {
 	s.Condition = val
 }
 
 // SetActions sets the value of Actions.
-func (s *UpdateRuleInput) SetActions(val []RuleAction) {
+func (s *UpdateRuleInput) SetActions(val []RuleActionInput) {
 	s.Actions = val
 }
 
@@ -19432,7 +20664,7 @@ type UpdateSegmentInput struct {
 	// Segment name.
 	Name OptName `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptConditionGroup `json:"condition"`
+	Condition OptConditionGroupInput `json:"condition"`
 }
 
 // GetRevision returns the value of Revision.
@@ -19446,7 +20678,7 @@ func (s *UpdateSegmentInput) GetName() OptName {
 }
 
 // GetCondition returns the value of Condition.
-func (s *UpdateSegmentInput) GetCondition() OptConditionGroup {
+func (s *UpdateSegmentInput) GetCondition() OptConditionGroupInput {
 	return s.Condition
 }
 
@@ -19461,7 +20693,7 @@ func (s *UpdateSegmentInput) SetName(val OptName) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *UpdateSegmentInput) SetCondition(val OptConditionGroup) {
+func (s *UpdateSegmentInput) SetCondition(val OptConditionGroupInput) {
 	s.Condition = val
 }
 

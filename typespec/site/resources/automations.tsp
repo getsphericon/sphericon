@@ -31,6 +31,8 @@ model SiteAutomationHttpHeader {
   value?: string;
 }
 
+model SiteAutomationHttpHeaderInput is SiteAutomationHttpHeader;
+
 /** Closed error kind of an HTTP step's body */
 enum SiteAutomationHttpErrorKind {
   invalid_body,
@@ -59,7 +61,7 @@ model SiteDryRunHttpStepResult {
 
 /** One node in an automation's ordered, linear sequence. A flat shape: email
  * steps carry subject/body, wait steps carry seconds. */
-model SiteAutomationStep {
+model SiteAutomationStepOf<Header, Button> {
   /** Step kind */
   type: SiteAutomationStepType;
 
@@ -92,7 +94,7 @@ model SiteAutomationStep {
 
   /** Up to 5 request headers (HTTP steps). On read, only the names are returned. */
   @maxItems(5)
-  headers?: SiteAutomationHttpHeader[];
+  headers?: Header[];
 
   /** Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */
   secret?: string;
@@ -122,7 +124,7 @@ model SiteAutomationStep {
 
   /** Up to 8 link buttons under a Telegram step's message, one per row, in order. */
   @maxItems(8)
-  buttons?: TelegramButton[];
+  buttons?: Button[];
 
   /** Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image. */
   linkPreview?: boolean;
@@ -130,6 +132,18 @@ model SiteAutomationStep {
   /** Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted. */
   linkTracking?: boolean;
 }
+
+model SiteAutomationStep is SiteAutomationStepOf<
+  SiteAutomationHttpHeader,
+  TelegramButton
+>;
+
+// The step a request sends is closed at every depth, the one a response returns stays open (ADR
+// 0148): one shape, two models.
+model SiteAutomationStepInput is SiteAutomationStepOf<
+  SiteAutomationHttpHeaderInput,
+  TelegramButtonInput
+>;
 
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */
 model SiteAutomationVersion {
@@ -203,7 +217,7 @@ model SiteCreateAutomationInput {
    * an exit event. Null or omitted is none. */
   goalEvent?: string | null;
 
-  steps?: SiteAutomationStep[];
+  steps?: SiteAutomationStepInput[];
 }
 
 /** Site request body for updating an automation. The name changes at once; the trigger, exit and
@@ -222,7 +236,7 @@ model SiteUpdateAutomationInput {
   /** Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it */
   goalEvent?: string | null;
 
-  steps?: SiteAutomationStep[];
+  steps?: SiteAutomationStepInput[];
 }
 
 /** The state an automation is in, as the list shows it: draft until it is first published, then

@@ -51,7 +51,7 @@ model TelegramBroadcastContentInput {
 
   /** Up to 8 link buttons under the message, one per row, in order. An empty list removes them. */
   @maxItems(8)
-  buttons?: TelegramButton[];
+  buttons?: TelegramButtonInput[];
 
   /** Whether a link in the text unfolds a preview. On when omitted; no effect with an image. */
   linkPreview?: boolean;

@@ -16,8 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func docStep(subject string, doc map[string]jx.Raw) siteapi.SiteAutomationStep {
-	return siteapi.SiteAutomationStep{
+func docStep(subject string, doc map[string]jx.Raw) siteapi.SiteAutomationStepInput {
+	return siteapi.SiteAutomationStepInput{
 		Type:    siteapi.SiteAutomationStepTypeEmail,
 		Subject: siteapi.NewOptString(subject),
 		Doc:     siteapi.NewOptEditorDocument(doc),
@@ -32,7 +32,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Authored", TriggerEvent: "authored.signup",
-		Steps: []siteapi.SiteAutomationStep{
+		Steps: []siteapi.SiteAutomationStepInput{
 			docStep("Hi {{ first_name }}", paragraphDoc("Hello {{ first_name }}")),
 			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Plain"), Body: siteapi.NewOptString("<p>HTML only</p>")},
@@ -55,7 +55,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 
 	// Saving another document rebuilds that step's body.
 	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
-		Steps: []siteapi.SiteAutomationStep{docStep("Hi", paragraphDoc("Second"))},
+		Steps: []siteapi.SiteAutomationStepInput{docStep("Hi", paragraphDoc("Second"))},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated
@@ -64,7 +64,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 
 	// A body-only write to the step clears its document.
 	cleared, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
-		Steps: []siteapi.SiteAutomationStep{{
+		Steps: []siteapi.SiteAutomationStepInput{{
 			Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>Plain now</p>"),
 		}},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
@@ -87,7 +87,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	bad := map[string]jx.Raw{"type": jx.Raw(`"doc"`), "content": jx.Raw(`[{"type":"heading","attrs":{"level":9},"content":[{"type":"text","text":"x"}]}]`)}
 	_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Refused", TriggerEvent: "refused.signup",
-		Steps: []siteapi.SiteAutomationStep{
+		Steps: []siteapi.SiteAutomationStepInput{
 			docStep("Fine", paragraphDoc("Fine")),
 			docStep("Broken", bad),
 		},
@@ -99,7 +99,7 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	both := docStep("Both", paragraphDoc("x"))
 	both.Body = siteapi.NewOptString("<p>x</p>")
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
-		Name: "Both", TriggerEvent: "both.signup", Steps: []siteapi.SiteAutomationStep{both},
+		Name: "Both", TriggerEvent: "both.signup", Steps: []siteapi.SiteAutomationStepInput{both},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 

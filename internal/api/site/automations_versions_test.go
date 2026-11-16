@@ -37,7 +37,7 @@ func TestSiteAutomationsReadLiveAndDraftAndUpdateWritesTheDraft(t *testing.T) {
 	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(id))),
 		Name:         siteapi.NewOptName("Hold demo, edited"),
 		TriggerEvent: siteapi.NewOptString("hold_demo_v2"),
-		Steps:        []siteapi.SiteAutomationStep{{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)}},
+		Steps:        []siteapi.SiteAutomationStepInput{{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)}},
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: id})
 	require.NoError(t, err)
 	edited := get()

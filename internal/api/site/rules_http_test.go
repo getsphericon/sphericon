@@ -25,10 +25,10 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 
 	created, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "Call Slack", TriggerEvents: []string{"signup"},
-		Actions: []siteapi.SiteRuleAction{{
+		Actions: []siteapi.SiteRuleActionInput{{
 			Type: siteapi.SiteRuleActionTypeHTTP, Body: siteapi.NewOptString(`{"text":"{{ first_name }}"}`),
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
-			Headers: []siteapi.SiteAutomationHttpHeader{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
+			Headers: []siteapi.SiteAutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
 			Secret:  siteapi.NewOptString("whsec_topsecret"),
 		}},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
@@ -46,7 +46,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 
 	// Resending only the action id keeps the stored secrets.
 	action.Body = siteapi.NewOptString(`{"text":"edited"}`)
-	updated, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))), Actions: []siteapi.SiteRuleAction{action}},
+	updated, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))), Actions: []siteapi.SiteRuleActionInput{testhelper.Resend[siteapi.SiteRuleActionInput](t, &action)}},
 		siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated

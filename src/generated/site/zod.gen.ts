@@ -852,7 +852,15 @@ export const zSiteAuditFacets = z.object({
 /**
  * How long the Audit log is kept; the Enterprise advanced-retention control
  */
-export const zSiteAuditRetention = z.strictObject({
+export const zSiteAuditRetention = z.object({
+  retentionDays: zRetentionDays.nullable(),
+  revision: zRevision
+});
+
+/**
+ * How long the Audit log is kept; the Enterprise advanced-retention control
+ */
+export const zSiteAuditRetentionInput = z.strictObject({
   retentionDays: zRetentionDays.nullable(),
   revision: zRevision
 });
@@ -874,7 +882,15 @@ export const zSiteAutomationHttpErrorKind = z.enum(['invalid_body']);
 /**
  * One request header of an HTTP step. The value is a secret: it is never returned.
  */
-export const zSiteAutomationHttpHeader = z.strictObject({
+export const zSiteAutomationHttpHeader = z.object({
+  name: z.string(),
+  value: z.exactOptional(z.string())
+});
+
+/**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export const zSiteAutomationHttpHeaderInput = z.strictObject({
   name: z.string(),
   value: z.exactOptional(z.string())
 });
@@ -1022,7 +1038,18 @@ export const zSiteConditionDateOperator = z.enum(['before', 'after']);
  * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
  * date-time with a UTC offset is a moment, as for the date leaf.
  */
-export const zSiteConditionDateWithinLeaf = z.strictObject({
+export const zSiteConditionDateWithinLeaf = z.object({
+  kind: z.enum(['dateWithin']),
+  field: z.string(),
+  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
+ * date-time with a UTC offset is a moment, as for the date leaf.
+ */
+export const zSiteConditionDateWithinLeafInput = z.strictObject({
   kind: z.enum(['dateWithin']),
   field: z.string(),
   withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
@@ -1039,7 +1066,21 @@ export const zSiteConditionEventOperator = z.enum(['atLeast', 'atMost']);
  * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
  * longer than Event retention is capped by it: expired Events are no longer counted.
  */
-export const zSiteConditionEventLeaf = z.strictObject({
+export const zSiteConditionEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zSiteConditionEventOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * A test of how many times a contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export const zSiteConditionEventLeafInput = z.strictObject({
   kind: z.enum(['event']),
   action: z.string(),
   operator: zSiteConditionEventOperator,
@@ -1064,7 +1105,20 @@ export const zSiteConditionNumberOperator = z.enum([
  * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
  * leaf false.
  */
-export const zSiteConditionNumberLeaf = z.strictObject({
+export const zSiteConditionNumberLeaf = z.object({
+  kind: z.enum(['number']),
+  field: z.string(),
+  operator: zSiteConditionNumberOperator,
+  value: z.number()
+});
+
+/**
+ * A comparison of a number: a custom field of the workspace whose type is number
+ * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
+ * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
+ * leaf false.
+ */
+export const zSiteConditionNumberLeafInput = z.strictObject({
   kind: z.enum(['number']),
   field: z.string(),
   operator: zSiteConditionNumberOperator,
@@ -1091,7 +1145,17 @@ export const zSiteConditionOperator = z.enum([
 /**
  * One test of a condition: a field, an operator and a value
  */
-export const zSiteConditionLeaf = z.strictObject({
+export const zSiteConditionLeaf = z.object({
+  kind: z.enum(['rule']),
+  field: z.string(),
+  operator: zSiteConditionOperator,
+  value: z.exactOptional(z.string())
+});
+
+/**
+ * One test of a condition: a field, an operator and a value
+ */
+export const zSiteConditionLeafInput = z.strictObject({
   kind: z.enum(['rule']),
   field: z.string(),
   operator: zSiteConditionOperator,
@@ -1862,13 +1926,29 @@ export const zSiteRuleActionType = z.enum([
 /**
  * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
  */
-export const zSiteRuleAction = z.strictObject({
+export const zSiteRuleAction = z.object({
   type: zSiteRuleActionType,
   tag: z.exactOptional(z.string()),
   automationId: z.exactOptional(zEntityId),
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
   headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
+  body: z.exactOptional(z.string()),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
+});
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
+ */
+export const zSiteRuleActionInput = z.strictObject({
+  type: zSiteRuleActionType,
+  tag: z.exactOptional(z.string()),
+  automationId: z.exactOptional(zEntityId),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeaderInput).max(5)),
   body: z.exactOptional(z.string()),
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
@@ -2508,7 +2588,7 @@ export const zSystemEventAction = z.enum([
 /**
  * A link button under a Telegram message: an inline URL button on a row of its own
  */
-export const zTelegramButton = z.strictObject({
+export const zTelegramButton = z.object({
   label: z.string(),
   url: z.string()
 });
@@ -2517,7 +2597,7 @@ export const zTelegramButton = z.strictObject({
  * One node in an automation's ordered, linear sequence. A flat shape: email
  * steps carry subject/body, wait steps carry seconds.
  */
-export const zSiteAutomationStep = z.strictObject({
+export const zSiteAutomationStep = z.object({
   type: zSiteAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
@@ -2552,31 +2632,6 @@ export const zSiteAutomationVersion = z.object({
 });
 
 /**
- * Site request body for creating an automation
- */
-export const zSiteCreateAutomationInput = z.strictObject({
-  name: zName,
-  triggerEvent: z.string(),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep))
-});
-
-/**
- * Site request body for updating an automation. The name changes at once; the trigger, exit and
- * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
- * version's, and publishing makes the draft live.
- */
-export const zSiteUpdateAutomationInput = z.strictObject({
-  revision: zRevision,
-  name: z.exactOptional(zName),
-  triggerEvent: z.exactOptional(z.string()),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStep))
-});
-
-/**
  * Telegram's content of a Broadcast as stored
  */
 export const zTelegramBroadcastContent = z.object({
@@ -2598,6 +2653,66 @@ export const zBroadcastContent = z.discriminatedUnion('channel', [
 ]);
 
 /**
+ * A link button under a Telegram message: an inline URL button on a row of its own
+ */
+export const zTelegramButtonInput = z.strictObject({
+  label: z.string(),
+  url: z.string()
+});
+
+/**
+ * One node in an automation's ordered, linear sequence. A flat shape: email
+ * steps carry subject/body, wait steps carry seconds.
+ */
+export const zSiteAutomationStepInput = z.strictObject({
+  type: zSiteAutomationStepType,
+  subject: z.exactOptional(z.string()),
+  body: z.exactOptional(z.string()),
+  doc: z.exactOptional(zEditorDocument),
+  editorVersion: z.exactOptional(z.string()),
+  seconds: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  tag: z.exactOptional(z.string()),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zSiteAutomationHttpHeaderInput).max(5)),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean()),
+  integrationId: z.exactOptional(zEntityId.nullable()),
+  text: z.exactOptional(z.string()),
+  unsubscribeButton: z.exactOptional(z.string().max(64)),
+  imageUrl: z.exactOptional(z.string()),
+  buttons: z.exactOptional(z.array(zTelegramButtonInput).max(8)),
+  linkPreview: z.exactOptional(z.boolean()),
+  linkTracking: z.exactOptional(z.boolean())
+});
+
+/**
+ * Site request body for creating an automation
+ */
+export const zSiteCreateAutomationInput = z.strictObject({
+  name: zName,
+  triggerEvent: z.string(),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zSiteAutomationStepInput))
+});
+
+/**
+ * Site request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and publishing makes the draft live.
+ */
+export const zSiteUpdateAutomationInput = z.strictObject({
+  revision: zRevision,
+  name: z.exactOptional(zName),
+  triggerEvent: z.exactOptional(z.string()),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zSiteAutomationStepInput))
+});
+
+/**
  * Telegram's content of a Broadcast (ADR 0078), the same Message content as a Telegram step. On
  * create an omitted field takes its default (an empty text, no image, no buttons, the link preview
  * on, no unsubscribe button); on update an omitted field keeps its value.
@@ -2606,7 +2721,7 @@ export const zTelegramBroadcastContentInput = z.strictObject({
   channel: z.enum(['telegram']),
   text: z.exactOptional(z.string()),
   imageUrl: z.exactOptional(z.string()),
-  buttons: z.exactOptional(z.array(zTelegramButton).max(8)),
+  buttons: z.exactOptional(z.array(zTelegramButtonInput).max(8)),
   linkPreview: z.exactOptional(z.boolean()),
   unsubscribeButton: z.exactOptional(z.string().max(64))
 });
@@ -3135,7 +3250,20 @@ export const zSiteCapturedMessageSummary = z.object({
  * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
  * false.
  */
-export const zSiteConditionDateLeaf = z.strictObject({
+export const zSiteConditionDateLeaf = z.object({
+  kind: z.enum(['date']),
+  field: z.string(),
+  operator: zSiteConditionDateOperator,
+  at: zTimestamp
+});
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
+ * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
+ * false.
+ */
+export const zSiteConditionDateLeafInput = z.strictObject({
   kind: z.enum(['date']),
   field: z.string(),
   operator: zSiteConditionDateOperator,
@@ -3911,11 +4039,22 @@ export const zProblemDetails = z.object({
  * A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none).
  */
-export const zSiteConditionGroup = z.strictObject({
+export const zSiteConditionGroup = z.object({
   kind: z.enum(['group']),
   combinator: zSiteConditionCombinator,
   not: z.exactOptional(z.boolean()),
   rules: z.array(z.lazy((): any => zSiteConditionNode))
+});
+
+/**
+ * A group of tests combined with and/or, optionally negated. An empty group matches every
+ * contact (an empty negated group matches none).
+ */
+export const zSiteConditionGroupInput = z.strictObject({
+  kind: z.enum(['group']),
+  combinator: zSiteConditionCombinator,
+  not: z.exactOptional(z.boolean()),
+  rules: z.array(z.lazy((): any => zSiteConditionNodeInput))
 });
 
 /**
@@ -3932,13 +4071,26 @@ export const zSiteConditionNode = z.discriminatedUnion('kind', [
 ]);
 
 /**
+ * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
+ * group inside a condition group, discriminated by `kind`.
+ */
+export const zSiteConditionNodeInput = z.discriminatedUnion('kind', [
+  zSiteConditionLeafInput.extend({ kind: z.literal('rule') }),
+  zSiteConditionEventLeafInput.extend({ kind: z.literal('event') }),
+  zSiteConditionNumberLeafInput.extend({ kind: z.literal('number') }),
+  zSiteConditionDateLeafInput.extend({ kind: z.literal('date') }),
+  zSiteConditionDateWithinLeafInput.extend({ kind: z.literal('dateWithin') }),
+  zSiteConditionGroupInput.extend({ kind: z.literal('group') })
+]);
+
+/**
  * Site request body for creating a Rule: it is created inactive, with its definition as the draft
  */
 export const zSiteCreateRuleInput = z.strictObject({
   name: zName,
   triggerEvents: z.array(z.string()).min(1),
-  condition: z.exactOptional(zSiteConditionGroup),
-  actions: z.exactOptional(z.array(zSiteRuleAction))
+  condition: z.exactOptional(zSiteConditionGroupInput),
+  actions: z.exactOptional(z.array(zSiteRuleActionInput))
 });
 
 /**
@@ -3946,14 +4098,14 @@ export const zSiteCreateRuleInput = z.strictObject({
  */
 export const zSiteCreateSegmentInput = z.strictObject({
   name: zName,
-  condition: zSiteConditionGroup
+  condition: zSiteConditionGroupInput
 });
 
 /**
  * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.strictObject({
-  condition: z.exactOptional(zSiteConditionGroup),
+  condition: z.exactOptional(zSiteConditionGroupInput),
   channel: z.exactOptional(zBroadcastChannel),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -4004,8 +4156,8 @@ export const zSiteUpdateRuleInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
-  condition: z.exactOptional(zSiteConditionGroup),
-  actions: z.exactOptional(z.array(zSiteRuleAction))
+  condition: z.exactOptional(zSiteConditionGroupInput),
+  actions: z.exactOptional(z.array(zSiteRuleActionInput))
 });
 
 /**
@@ -4014,7 +4166,7 @@ export const zSiteUpdateRuleInput = z.strictObject({
 export const zSiteUpdateSegmentInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
-  condition: z.exactOptional(zSiteConditionGroup)
+  condition: z.exactOptional(zSiteConditionGroupInput)
 });
 
 /**
@@ -5044,7 +5196,7 @@ export const zSiteAuditGetRetentionPath = z.object({
  */
 export const zSiteAuditGetRetentionResponse = zSiteAuditRetention;
 
-export const zSiteAuditSetRetentionBody = zSiteAuditRetention;
+export const zSiteAuditSetRetentionBody = zSiteAuditRetentionInput;
 
 export const zSiteAuditSetRetentionPath = z.object({
   workspaceId: zWorkspaceId

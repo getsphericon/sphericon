@@ -31,9 +31,9 @@ func (w *Workspace) PublishRule(r Rule) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	ws := siteapi.WorkspaceId(w.publicID)
-	actions := []siteapi.SiteRuleAction{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString(r.Tag)}}
+	actions := []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString(r.Tag)}}
 	if r.EnrollIn != 0 {
-		actions = append(actions, siteapi.SiteRuleAction{
+		actions = append(actions, siteapi.SiteRuleActionInput{
 			Type:         siteapi.SiteRuleActionTypeEnrollAutomation,
 			AutomationId: siteapi.NewOptEntityId(siteapi.EntityId(r.EnrollIn)),
 		})

@@ -15,7 +15,7 @@ import (
 )
 
 func (s *Server) decodeSiteAuditSetRetentionRequest(r *http.Request) (
-	req *SiteAuditRetention,
+	req *SiteAuditRetentionInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -62,7 +62,7 @@ func (s *Server) decodeSiteAuditSetRetentionRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteAuditRetention
+		var request SiteAuditRetentionInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err

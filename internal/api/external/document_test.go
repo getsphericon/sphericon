@@ -182,7 +182,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Authored", TriggerEvent: "authored.signup",
-		Steps: []externalapi.AutomationStep{{
+		Steps: []externalapi.AutomationStepInput{{
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString("Hi"),
 			Doc:     externalapi.NewOptEditorDocument(paragraphDoc("Hello {{ first_name }}")),
@@ -198,23 +198,23 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	step.Body = externalapi.OptString{}
 	step.EditorVersion = externalapi.OptString{}
 	step.Doc = externalapi.NewOptEditorDocument(paragraphDoc("Second"))
-	upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStep{step}},
+	upd, err := c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{testhelper.Resend[externalapi.AutomationStepInput](t, &step)}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	require.NoError(t, err)
 	assert.Contains(t, upd.Draft.Value.Steps[0].Body.Value, "Second")
 	assert.True(t, upd.Draft.Value.Steps[0].Doc.Set)
 
 	// Writing the body with the document is refused, naming the step.
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStep{upd.Draft.Value.Steps[0]}},
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{testhelper.Resend[externalapi.AutomationStepInput](t, &upd.Draft.Value.Steps[0])}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	refused := testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "step 1")
 
 	// An invalid document refuses the save; the stored step is unchanged.
-	bad := upd.Draft.Value.Steps[0]
+	bad := testhelper.Resend[externalapi.AutomationStepInput](t, &upd.Draft.Value.Steps[0])
 	bad.Body = externalapi.OptString{}
 	bad.Doc = externalapi.NewOptEditorDocument(badHeadingDoc())
-	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStep{bad}},
+	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{bad}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	stored, err := automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))

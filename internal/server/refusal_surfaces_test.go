@@ -155,8 +155,8 @@ func newKindSurfaces(t *testing.T) kindSurfaces {
 func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 	const missing = 99999
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	untagged := []siteapi.SiteRuleAction{{Type: siteapi.SiteRuleActionTypeApplyTag}}
-	untaggedExt := []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag}}
+	untagged := []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag}}
+	untaggedExt := []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag}}
 
 	cases := []struct {
 		name   string

@@ -114,7 +114,7 @@ func (c *InputsImpl) AutomationState(source site.SiteAutomationState) automation
 	}
 	return automationsState
 }
-func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationstep.Step {
+func (c *InputsImpl) AutomationStep(source site.SiteAutomationStepInput) automationstep.Step {
 	var automationstepStep automationstep.Step
 	automationstepStep.Type = c.AutomationStepType(source.Type)
 	automationstepStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
@@ -140,7 +140,7 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStep) automationst
 	if source.Headers != nil {
 		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationstepStep.Secret = stringIn(source.Secret)
@@ -169,7 +169,7 @@ func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) auto
 	}
 	return automationstepKind
 }
-func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStep) []automationstep.Step {
+func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStepInput) []automationstep.Step {
 	var automationstepStepList []automationstep.Step
 	if source != nil {
 		automationstepStepList = make([]automationstep.Step, len(source))
@@ -582,12 +582,12 @@ func (c *InputsImpl) RuleActionType(source site.SiteRuleActionType) rules.Action
 	}
 	return rulesActionType
 }
-func (c *InputsImpl) RuleActions(source []site.SiteRuleAction) []rules.Action {
+func (c *InputsImpl) RuleActions(source []site.SiteRuleActionInput) []rules.Action {
 	var rulesActionList []rules.Action
 	if source != nil {
 		rulesActionList = make([]rules.Action, len(source))
 		for i := 0; i < len(source); i++ {
-			rulesActionList[i] = c.siteapiSiteRuleActionToRulesAction(source[i])
+			rulesActionList[i] = c.siteapiSiteRuleActionInputToRulesAction(source[i])
 		}
 	}
 	return rulesActionList
@@ -861,7 +861,7 @@ func (c *InputsImpl) TelegramBroadcastContentPatch(source site.TelegramBroadcast
 	broadcastsTelegramContentPatch.UnsubscribeButton = stringPatch(source.UnsubscribeButton)
 	return broadcastsTelegramContentPatch
 }
-func (c *InputsImpl) TelegramButton(source site.TelegramButton) telegramrender.Button {
+func (c *InputsImpl) TelegramButton(source site.TelegramButtonInput) telegramrender.Button {
 	var telegramrenderButton telegramrender.Button
 	telegramrenderButton.Label = source.Label
 	telegramrenderButton.URL = source.URL
@@ -984,13 +984,13 @@ func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source si
 	consentrecordsReAcceptance.Version = string(source.Version)
 	return consentrecordsReAcceptance
 }
-func (c *InputsImpl) siteapiSiteAutomationHttpHeaderToHttpcallHeader(source site.SiteAutomationHttpHeader) httpcall.Header {
+func (c *InputsImpl) siteapiSiteAutomationHttpHeaderInputToHttpcallHeader(source site.SiteAutomationHttpHeaderInput) httpcall.Header {
 	var httpcallHeader httpcall.Header
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
 }
-func (c *InputsImpl) siteapiSiteRuleActionToRulesAction(source site.SiteRuleAction) rules.Action {
+func (c *InputsImpl) siteapiSiteRuleActionInputToRulesAction(source site.SiteRuleActionInput) rules.Action {
 	var rulesAction rules.Action
 	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
@@ -1000,7 +1000,7 @@ func (c *InputsImpl) siteapiSiteRuleActionToRulesAction(source site.SiteRuleActi
 	if source.Headers != nil {
 		rulesAction.Headers = make([]httpcall.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			rulesAction.Headers[i] = c.siteapiSiteAutomationHttpHeaderToHttpcallHeader(source.Headers[i])
+			rulesAction.Headers[i] = c.siteapiSiteAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
 		}
 	}
 	rulesAction.Body = stringIn(source.Body)

@@ -10,3 +10,5 @@ model TelegramButton {
   /** The URL it opens: absolute, http or https */
   url: string;
 }
+
+model TelegramButtonInput is TelegramButton;

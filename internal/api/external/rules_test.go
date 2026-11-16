@@ -75,7 +75,7 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	res, err := author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Tag who clicks",
 		TriggerEvents: []string{systemevent.EmailClicked},
-		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("clicker")}},
+		Actions:       []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("clicker")}},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.RuleStatusInactive, res.Status)
@@ -90,7 +90,7 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Typo",
 		TriggerEvents: []string{systemevent.EmailClicked},
-		Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t,
+		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t,
 			`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`)),
 	})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
@@ -98,8 +98,8 @@ func TestExternalRulesCreatePublishAndDeactivate(t *testing.T) {
 	_, err = author.RulesCreate(ctx, &externalapi.CreateRuleInput{
 		Name:          "Clicked twice this week",
 		TriggerEvents: []string{systemevent.EmailClicked},
-		Actions:       []externalapi.RuleAction{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
-		Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t,
+		Actions:       []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag, Tag: externalapi.NewOptString("keen")}},
+		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t,
 			`{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"email.clicked","operator":"atLeast","times":2,"withinDays":7}]}`)),
 	})
 	require.NoError(t, err)

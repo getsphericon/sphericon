@@ -33,6 +33,7 @@ import type {
   Value,
 } from '@typespec/compiler'
 import { getAllHttpServices } from '@typespec/http'
+import type { HttpOperation } from '@typespec/http'
 import { $extension, getExtensions, setExtension } from '@typespec/openapi'
 
 export const $lib = createTypeSpecLibrary({
@@ -117,6 +118,13 @@ export const $lib = createTypeSpecLibrary({
       messages: {
         default:
           'A model of a request body extends or is extended, which a closed object cannot express: spread the base model instead (ADR 0148)',
+      },
+    },
+    'closed-in-response': {
+      severity: 'error',
+      messages: {
+        default:
+          'A model of a request body is also in a response, where it must stay open: give the request a model of its own, such as an `Input` instance of a shared template (ADR 0148)',
       },
     },
     'outside-workspace': {
@@ -678,22 +686,73 @@ function closeRequestBodies(program: Program) {
     }
   }
   const [services] = getAllHttpServices(program)
-  for (const service of services) {
-    if (!surfaces.has(service.namespace)) {
-      continue
+  const operations = services
+    .filter((service) => surfaces.has(service.namespace))
+    .flatMap((service) => service.operations)
+  for (const httpOperation of operations) {
+    const body = httpOperation.parameters.body
+    if (body?.bodyKind === 'single') {
+      visit(body.type, body.property ?? httpOperation.operation)
     }
-    for (const httpOperation of service.operations) {
-      const body = httpOperation.parameters.body
-      if (body?.bodyKind === 'single') {
-        visit(body.type, body.property ?? httpOperation.operation)
+  }
+  refuseClosedInResponses(program, operations)
+}
+
+/**
+ * Refuses a closed model a response also reaches: one schema serves both, and a response stays
+ * open to its readers, so a client ignores a property a later release adds (ADR 0148).
+ */
+function refuseClosedInResponses(program: Program, operations: HttpOperation[]) {
+  const reached = new Set<Type>()
+  const reach = (type: Type) => {
+    if (reached.has(type)) {
+      return
+    }
+    reached.add(type)
+    if (type.kind === 'Union') {
+      for (const variant of type.variants.values()) {
+        reach(variant.type)
+      }
+    } else if (type.kind === 'Tuple') {
+      for (const value of type.values) {
+        reach(value)
+      }
+    } else if (type.kind === 'Model') {
+      const effective = type.name === '' ? getEffectiveModelType(program, type) : type
+      if (effective !== type) {
+        reach(effective)
+        return
+      }
+      if (type.indexer !== undefined) {
+        reach(type.indexer.value)
+      }
+      for (const property of type.properties.values()) {
+        reach(property.type)
+      }
+      if (isClosed(type)) {
+        report(program, { code: 'closed-in-response', target: type })
+      }
+    }
+  }
+  for (const httpOperation of operations) {
+    for (const response of httpOperation.responses) {
+      for (const content of response.responses) {
+        if (content.body?.bodyKind === 'single') {
+          reach(content.body.type)
+        }
       }
     }
   }
 }
 
+/** Whether the closing has been applied to the model. */
+function isClosed(model: Model) {
+  return model.decorators.some((application) => application.decorator === $closed)
+}
+
 /** Closes the model and appends the closing to its decorators, which a copy of it re-runs. */
 function closeModel(program: Program, model: Model) {
-  if (model.decorators.some((application) => application.decorator === $closed)) {
+  if (isClosed(model)) {
     return
   }
   model.decorators.push({ decorator: $closed, args: [] })

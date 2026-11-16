@@ -17,8 +17,8 @@ import (
 
 const vipCondition = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}`
 
-func tagAction(kind siteapi.SiteRuleActionType, name string) siteapi.SiteRuleAction {
-	return siteapi.SiteRuleAction{Type: kind, Tag: siteapi.NewOptString(name)}
+func tagAction(kind siteapi.SiteRuleActionType, name string) siteapi.SiteRuleActionInput {
+	return siteapi.SiteRuleActionInput{Type: kind, Tag: siteapi.NewOptString(name)}
 }
 
 func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
@@ -30,8 +30,8 @@ func TestSiteRulesCRUDPublishAndDeactivate(t *testing.T) {
 	created, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name:          "Tag the vips who clicked",
 		TriggerEvents: []string{systemevent.EmailClicked, "link_followed", systemevent.EmailClicked},
-		Condition:     siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, vipCondition)),
-		Actions:       []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "clicker"), tagAction(siteapi.SiteRuleActionTypeRemoveTag, "cold")},
+		Condition:     siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, vipCondition)),
+		Actions:       []siteapi.SiteRuleActionInput{tagAction(siteapi.SiteRuleActionTypeApplyTag, "clicker"), tagAction(siteapi.SiteRuleActionTypeRemoveTag, "cold")},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
@@ -108,17 +108,17 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	unknownField := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:no_such_field","operator":"eq","value":"x"}]}`
-	apply := []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")}
+	apply := []siteapi.SiteRuleActionInput{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")}
 
 	_, unknown := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "Typo", TriggerEvents: []string{"a"}, Actions: apply,
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, unknownField)),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, unknownField)),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, unknown, http.StatusUnprocessableEntity, "a custom field the Workspace does not have is refused on save")
 
 	_, noTag := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "No tag", TriggerEvents: []string{"a"},
-		Actions: []siteapi.SiteRuleAction{{Type: siteapi.SiteRuleActionTypeApplyTag}},
+		Actions: []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag}},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	testhelper.SiteRefusal(t, noTag, http.StatusUnprocessableEntity)
 
@@ -128,7 +128,7 @@ func TestSiteRulesAreRefusedWhenInvalid(t *testing.T) {
 	testhelper.SiteRefusal(t, blankTrigger, http.StatusUnprocessableEntity)
 
 	_, typoUpdate := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(fixtures.RuleTagClickedID))),
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, unknownField)),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, unknownField)),
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: fixtures.RuleTagClickedID})
 	testhelper.SiteRefusal(t, typoUpdate, http.StatusUnprocessableEntity)
 }
@@ -142,8 +142,8 @@ func TestSiteTriggerLeafIsAcceptedInARuleAndRefusedInASegment(t *testing.T) {
 
 	_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 		Name: "Pricing", TriggerEvents: []string{"a"},
-		Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")},
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, leaf)),
+		Actions:   []siteapi.SiteRuleActionInput{tagAction(siteapi.SiteRuleActionTypeApplyTag, "x")},
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, leaf)),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 
@@ -164,8 +164,8 @@ func TestSiteRuleConditionComparesATriggerNumber(t *testing.T) {
 		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
 		_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 			Name: "Promoters", TriggerEvents: []string{"nps_submitted"},
-			Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "promoter")},
-			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+			Actions:   []siteapi.SiteRuleActionInput{tagAction(siteapi.SiteRuleActionTypeApplyTag, "promoter")},
+			Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		return err
 	}
@@ -187,8 +187,8 @@ func TestSiteRuleConditionCountsEvents(t *testing.T) {
 		def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
 		_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
 			Name: "Pricing twice", TriggerEvents: []string{"pricing_viewed"},
-			Actions:   []siteapi.SiteRuleAction{tagAction(siteapi.SiteRuleActionTypeApplyTag, "keen")},
-			Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+			Actions:   []siteapi.SiteRuleActionInput{tagAction(siteapi.SiteRuleActionTypeApplyTag, "keen")},
+			Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 		}, siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 		return err
 	}

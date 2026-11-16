@@ -20,7 +20,7 @@ enum SiteRuleActionType {
 }
 
 /** One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call. */
-model SiteRuleAction {
+model SiteRuleActionOf<Header> {
   /** Action kind */
   type: SiteRuleActionType;
 
@@ -38,7 +38,7 @@ model SiteRuleAction {
 
   /** Up to 5 request headers (http actions). On read, only the names are returned. */
   @maxItems(5)
-  headers?: SiteAutomationHttpHeader[];
+  headers?: Header[];
 
   /** Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON */
   body?: string;
@@ -52,6 +52,12 @@ model SiteRuleAction {
   /** Whether a signing secret is stored (http actions, read only) */
   hasSecret?: boolean;
 }
+
+model SiteRuleAction is SiteRuleActionOf<SiteAutomationHttpHeader>;
+
+// The action a request sends is closed at every depth, the one a response returns stays open (ADR
+// 0148): one shape, two models.
+model SiteRuleActionInput is SiteRuleActionOf<SiteAutomationHttpHeaderInput>;
 
 /** One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions */
 model SiteRuleVersion {
@@ -133,10 +139,10 @@ model SiteCreateRuleInput {
   @minItems(1)
   triggerEvents: string[];
 
-  condition?: SiteConditionGroup;
+  condition?: SiteConditionGroupInput;
 
   /** The Actions to run, in order */
-  actions?: SiteRuleAction[];
+  actions?: SiteRuleActionInput[];
 }
 
 /** Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's. */
@@ -150,10 +156,10 @@ model SiteUpdateRuleInput {
   @minItems(1)
   triggerEvents?: string[];
 
-  condition?: SiteConditionGroup;
+  condition?: SiteConditionGroupInput;
 
   /** The Actions to run, in order */
-  actions?: SiteRuleAction[];
+  actions?: SiteRuleActionInput[];
 }
 
 /** Site request body for dry-running a Rule on a stored Event */

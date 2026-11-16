@@ -14,7 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func buttonsOf(b ...siteapi.TelegramButton) []siteapi.TelegramButton { return b }
+func buttonsOf(b ...siteapi.TelegramButtonInput) []siteapi.TelegramButtonInput { return b }
 
 // A Telegram Broadcast on the site API (ADR 0080): its content is a text, the Channel an email
 // Broadcast's Integration is refused for, no Test send, and figures without open or delivery.
@@ -125,7 +125,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 		Content: testhelper.SiteTelegramContent(siteapi.TelegramBroadcastContentInput{
 			Text:              siteapi.NewOptString("Hi"),
 			ImageUrl:          siteapi.NewOptString("https://cdn.example.com/a.png"),
-			Buttons:           buttonsOf(siteapi.TelegramButton{Label: "Open", URL: "https://example.com/a"}),
+			Buttons:           buttonsOf(siteapi.TelegramButtonInput{Label: "Open", URL: "https://example.com/a"}),
 			LinkPreview:       siteapi.NewOptBool(false),
 			UnsubscribeButton: siteapi.NewOptString("Stop"),
 		}),
@@ -144,7 +144,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 
 	stored := read()
 	assert.Equal(t, "https://cdn.example.com/a.png", stored.ImageUrl.Value)
-	assert.Equal(t, buttonsOf(siteapi.TelegramButton{Label: "Open", URL: "https://example.com/a"}), stored.Buttons)
+	assert.Equal(t, []siteapi.TelegramButton{{Label: "Open", URL: "https://example.com/a"}}, stored.Buttons)
 	assert.False(t, stored.LinkPreview)
 	assert.Equal(t, "Stop", stored.UnsubscribeButton.Value)
 
@@ -156,7 +156,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 	assert.False(t, kept.LinkPreview)
 
 	require.NoError(t, edit(siteapi.TelegramBroadcastContentInput{
-		ImageUrl: siteapi.NewOptString(""), Buttons: []siteapi.TelegramButton{}, LinkPreview: siteapi.NewOptBool(true),
+		ImageUrl: siteapi.NewOptString(""), Buttons: []siteapi.TelegramButtonInput{}, LinkPreview: siteapi.NewOptBool(true),
 		UnsubscribeButton: siteapi.NewOptString(" "),
 	}))
 	cleared := read()
@@ -166,7 +166,7 @@ func TestSiteTelegramBroadcastCarriesTheMessageContentOfAStep(t *testing.T) {
 	assert.Empty(t, cleared.UnsubscribeButton.Value, "a blank label removes the button")
 
 	badImage := edit(siteapi.TelegramBroadcastContentInput{ImageUrl: siteapi.NewOptString("http://example.com/a.png")})
-	badButton := edit(siteapi.TelegramBroadcastContentInput{Buttons: buttonsOf(siteapi.TelegramButton{Label: "x", URL: "javascript:1"})})
+	badButton := edit(siteapi.TelegramBroadcastContentInput{Buttons: buttonsOf(siteapi.TelegramButtonInput{Label: "x", URL: "javascript:1"})})
 	testhelper.SiteRefusal(t, badImage, http.StatusUnprocessableEntity, "an image is an https URL")
 	testhelper.SiteRefusal(t, badButton, http.StatusUnprocessableEntity, "a button URL is http or https")
 }

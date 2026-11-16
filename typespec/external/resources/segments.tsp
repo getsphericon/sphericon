@@ -138,6 +138,16 @@ model ConditionDateWithinLeaf {
   withinDays: int32;
 }
 
+model ConditionLeafInput is ConditionLeaf;
+
+model ConditionEventLeafInput is ConditionEventLeaf;
+
+model ConditionNumberLeafInput is ConditionNumberLeaf;
+
+model ConditionDateLeafInput is ConditionDateLeaf;
+
+model ConditionDateWithinLeafInput is ConditionDateWithinLeaf;
+
 /** A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
  * group inside a condition group, discriminated by `kind`. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
@@ -150,9 +160,21 @@ union ConditionNode {
   group: ConditionGroup,
 }
 
+/** A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
+ * group inside a condition group, discriminated by `kind`. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union ConditionNodeInput {
+  rule: ConditionLeafInput,
+  event: ConditionEventLeafInput,
+  number: ConditionNumberLeafInput,
+  date: ConditionDateLeafInput,
+  dateWithin: ConditionDateWithinLeafInput,
+  group: ConditionGroupInput,
+}
+
 /** A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none). */
-model ConditionGroup {
+model ConditionGroupOf<Node> {
   kind: "group";
 
   /** How the entries combine */
@@ -162,8 +184,14 @@ model ConditionGroup {
   not?: boolean;
 
   /** The group's leaves and nested groups */
-  rules: ConditionNode[];
+  rules: Node[];
 }
+
+model ConditionGroup is ConditionGroupOf<ConditionNode>;
+
+// The group a request sends is closed at every depth, the one a response returns stays open (ADR
+// 0148): one shape, two models.
+model ConditionGroupInput is ConditionGroupOf<ConditionNodeInput>;
 
 /** Segment resource */
 @resource("segments")
@@ -198,7 +226,7 @@ model CreateSegmentInput {
   name: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition: ConditionGroup;
+  condition: ConditionGroupInput;
 }
 
 /** Request body for updating a segment */
@@ -210,13 +238,13 @@ model UpdateSegmentInput {
   name?: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
 }
 
 /** Request body for previewing a condition's segment */
 model PreviewSegmentInput {
   /** Condition; absent means all contacts */
-  condition?: ConditionGroup;
+  condition?: ConditionGroupInput;
 }
 
 /** Result of a segment preview */
