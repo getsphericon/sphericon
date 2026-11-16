@@ -220,3 +220,24 @@ func TestExternalScheduleAnswersTheRecipientsAtThatMoment(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, preview.Recipients, scheduled.Recipients)
 }
+
+// A Broadcast whose audience cannot be counted at Schedule (its Segment's rule names a field that
+// no longer exists) is refused with the reason and stays a draft: Schedule never arms a send its
+// plan would fail.
+func TestExternalScheduleRefusesAnAudienceItCannotCount(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.ExternalScoped(t, audienceScopes...)
+	broken := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`
+	require.NoError(t, env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition(broken).Exec(t.Context()))
+	id := entityIDString(fixtures.BroadcastProSegmentID)
+	read, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: id})
+	require.NoError(t, err)
+
+	_, err = c.BroadcastsSchedule(t.Context(), &externalapi.ScheduleBroadcastInput{Revision: read.Revision, ScheduledAt: externalapi.Timestamp(time.Now().Add(time.Hour))},
+		externalapi.BroadcastsScheduleParams{ID: id})
+	after, getErr := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: id})
+
+	require.NoError(t, getErr)
+	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity, "audience cannot be counted")
+	assert.Equal(t, externalapi.BroadcastStatusDraft, after.Status)
+}
