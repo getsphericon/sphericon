@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -78,6 +79,9 @@ const (
 	// KindSendingDomainNotBulkReady: a verified Sending domain's last check found no published
 	// DMARC record, which bulk mail needs (ADR 0012); it still sends.
 	KindSendingDomainNotBulkReady Kind = "sendingDomainNotBulkReady"
+	// KindPostalAddressMissing: the Workspace has an email Integration and no postal address, so its
+	// marketing email cannot be armed (ADR 0156).
+	KindPostalAddressMissing Kind = "postalAddressMissing"
 )
 
 // Severity orders the items: what stops mail, then what slows it or puts it at risk, then what
@@ -102,7 +106,8 @@ func (k Kind) severity() Severity {
 	case KindDeliverabilityWarning, KindSendCapSpent, KindScheduledBroadcastOverSendCap, KindProviderLimitSpent,
 		KindIntegrationProviderProbation, KindIntegrationProviderSandbox:
 		return SeverityDegraded
-	case KindEnrollmentsFailed, KindBroadcastFailed, KindWebhookDisabled, KindSendingDomainNotBulkReady:
+	case KindEnrollmentsFailed, KindBroadcastFailed, KindWebhookDisabled, KindSendingDomainNotBulkReady,
+		KindPostalAddressMissing:
 		return SeverityNotice
 	}
 	panic("needsattentionreport: no severity for kind " + string(k))
@@ -121,7 +126,8 @@ type Subject struct {
 type Item struct {
 	Kind     Kind
 	Severity Severity
-	// Subject is the object the item is about; nil for the Workspace's own Send cap.
+	// Subject is the object the item is about; nil for the Workspace's own Send cap and postal
+	// address.
 	Subject *Subject
 	// Count is how many the item stands for: failed runs of an Automation, the estimated audience
 	// of a Broadcast over the Send cap, 1 for the rest.
@@ -166,6 +172,7 @@ func (m *UseCase) Items(ctx context.Context, s *ent.Scoped) ([]Item, error) {
 		failedBroadcasts,
 		disabledWebhooks,
 		domainsNotBulkReady,
+		postalAddressMissing,
 	}
 	var items []Item
 	for _, read := range readers {
@@ -364,6 +371,26 @@ func (m *UseCase) sendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]
 		return nil, err
 	}
 	return append(items, over...), nil
+}
+
+// postalAddressMissing reads whether the Workspace has an email Integration and no postal address:
+// its marketing email cannot be scheduled, sent or published until a person sets one (ADR 0156). A
+// Workspace that sends no email needs none. Nothing stores when the address went missing, so the
+// item has no since.
+func postalAddressMissing(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return nil, err
+	}
+	has := workspaces.HasPostalAddress(ws)
+	if has {
+		return nil, nil
+	}
+	emails, err := s.Integration().Query().Where(integration.ChannelEQ(channels.Email)).Exist(ctx)
+	if err != nil || !emails {
+		return nil, err
+	}
+	return []Item{{Kind: KindPostalAddressMissing, Count: 1}}, nil
 }
 
 // overCapWindow is how far ahead a scheduled Broadcast is judged against the Send cap; one further

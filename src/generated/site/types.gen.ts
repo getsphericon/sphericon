@@ -1226,7 +1226,8 @@ export const ProblemCode = {
   PERMISSION_REQUIRED: 'permission_required',
   MIGRATIONS_PENDING: 'migrations_pending',
   ACCEPTANCE_PENDING: 'acceptance_pending',
-  REVISION_CHANGED: 'revision_changed'
+  REVISION_CHANGED: 'revision_changed',
+  POSTAL_ADDRESS_REQUIRED: 'postal_address_required'
 } as const;
 
 /**
@@ -2046,7 +2047,8 @@ export type SiteAttentionItem = {
   kind: SiteAttentionKind;
   severity: SiteAttentionSeverity;
   /**
-   * The object the item is about; absent for the Workspace's own Send cap and a deliverability warning
+   * The object the item is about; absent for the Workspace's own Send cap, a deliverability
+   * warning and a missing postal address
    */
   subject?: SiteAttentionSubject | null;
   /**
@@ -2094,7 +2096,8 @@ export const SiteAttentionKind = {
   ENROLLMENTS_FAILED: 'enrollmentsFailed',
   BROADCAST_FAILED: 'broadcastFailed',
   WEBHOOK_DISABLED: 'webhookDisabled',
-  SENDING_DOMAIN_NOT_BULK_READY: 'sendingDomainNotBulkReady'
+  SENDING_DOMAIN_NOT_BULK_READY: 'sendingDomainNotBulkReady',
+  POSTAL_ADDRESS_MISSING: 'postalAddressMissing'
 } as const;
 
 /**
@@ -7143,8 +7146,10 @@ export type SiteUpdateWorkspaceInput = {
    */
   name: Name;
   /**
-   * Physical postal address for the marketing email footer (CAN-SPAM). Omit to
-   * leave it unchanged; send an empty string to clear it.
+   * Physical postal address for the marketing email footer (CAN-SPAM): free text over several
+   * lines, trimmed. Omit to leave it unchanged; send an empty string to clear it. Clearing it is a
+   * 409 naming them in `usedBy` while an email Broadcast is scheduled or sending or an Automation
+   * still sends email (ADR 0156).
    */
   postalAddress?: string;
 };
@@ -7404,7 +7409,8 @@ export type SiteWorkspaceResource = {
   collectKey: string;
   /**
    * Physical postal address printed in the marketing email footer (CAN-SPAM
-   * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one.
+   * 15 U.S.C. §7704(a)(5)). Empty until the workspace sets one; while it is empty, marketing email
+   * cannot be scheduled, sent or published (409 postal_address_required, ADR 0156).
    */
   postalAddress: string;
   /**

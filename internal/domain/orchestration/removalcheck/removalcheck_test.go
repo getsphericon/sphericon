@@ -2,11 +2,14 @@ package removalcheck_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/customfield"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -146,4 +149,36 @@ func TestASendingDomainIsRefusedThroughABroadcastsOwnFromAndNotByHistory(t *test
 		{Kind: liveuse.Broadcast, ID: fixtures.BroadcastMeridianFromNewsID, Name: fixtures.BroadcastMeridianFromNewsName},
 	}}, news)
 	assert.NoError(t, mail)
+}
+
+// The postal address is held by the marketing email still to send, whose footer carries it (ADR
+// 0156): Acme's scheduled email Broadcast and its active Automation with an email step.
+func TestThePostalAddressIsHeldByTheMarketingEmailStillToSend(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	refused := underLock(t, env, fixtures.AcmeID, func(s *ent.WorkspaceLocked) error {
+		return testhelper.Module[*removalcheck.Module](env).PostalAddress(t.Context(), s)
+	})
+
+	used, ok := liveuse.As(refused)
+	require.True(t, ok, "a *liveuse.Error")
+	assert.Equal(t, liveuse.SubjectPostalAddress, used.What)
+	assert.Contains(t, used.Users, liveuse.User{Kind: liveuse.Broadcast, ID: fixtures.BroadcastScheduledID, Name: fixtures.BroadcastScheduledName})
+	assert.Contains(t, used.Users, liveuse.User{Kind: liveuse.Automation, ID: fixtures.AutomationHoldDemoID, Name: fixtures.AutomationHoldDemoName})
+}
+
+// A text carries no address: a scheduled SMS Broadcast does not hold it.
+func TestATextStillToSendDoesNotHoldThePostalAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	env.LacunaTwilio(t)
+	s := env.DB.Scoped(fixtures.LacunaID)
+	revision := testhelper.BroadcastRevisionIn(t.Context(), t, s, fixtures.BroadcastLacunaSmsHelloID)
+	_, err := testhelper.Module[*broadcasts.Module](env).Schedule(t.Context(), s, fixtures.BroadcastLacunaSmsHelloID, revision, time.Now().Add(time.Hour))
+	require.NoError(t, err)
+
+	answer := underLock(t, env, fixtures.LacunaID, func(s *ent.WorkspaceLocked) error {
+		return testhelper.Module[*removalcheck.Module](env).PostalAddress(t.Context(), s)
+	})
+
+	assert.NoError(t, answer)
 }

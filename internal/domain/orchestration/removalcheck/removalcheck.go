@@ -1,7 +1,8 @@
 // Package removalcheck is the Removal check (GLOSSARY "Removal check", ADR 0049, ADR 0099): before
 // a row is removed, or changed in a way that would break what uses it (a Custom field's type), it
 // asks every module that may hold the row whether it does, and refuses with a *liveuse.Error naming
-// them. A Tag and a Custom field are held through Definition use (a Segment's Condition, the live
+// them. The Workspace's postal address is held the same way by the marketing email still to send
+// (ADR 0156), so it is not cleared while that work is live. A Tag and a Custom field are held through Definition use (a Segment's Condition, the live
 // version or the draft of a kept Automation or Rule, the Condition an armed Broadcast copied), an
 // Integration and a Sending domain through Live use (the work that will still send through them).
 //
@@ -133,6 +134,21 @@ func (m *Module) SendingDomain(ctx context.Context, l *ent.WorkspaceLocked, doma
 		}
 	}
 	return refusal(liveuse.SubjectSendingDomain, liveuse.SendUsers(onDomain))
+}
+
+// PostalAddress checks that no Live use sends marketing email (ADR 0099, ADR 0156), whose footer
+// carries the Workspace's postal address: a scheduled or sending email Broadcast, the live version
+// of an active Automation with an email send step, or a version with one that an unfinished
+// Enrollment stands on, since it still sends through it. Clearing the address would send them
+// without one. It returns nil, or a *liveuse.Error naming that work, Broadcasts first, then
+// Automations.
+func (m *Module) PostalAddress(ctx context.Context, l *ent.WorkspaceLocked) error {
+	sends, err := liveSends(ctx, l)
+	if err != nil {
+		return err
+	}
+	email := lo.Filter(sends, func(send liveuse.Send, _ int) bool { return send.Channel == channels.Email })
+	return refusal(liveuse.SubjectPostalAddress, liveuse.SendUsers(email))
 }
 
 // liveSends is the Live use that sends (ADR 0099): the Broadcasts' sends, then the Automations'.

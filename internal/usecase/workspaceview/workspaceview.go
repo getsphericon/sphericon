@@ -29,6 +29,8 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -83,7 +85,7 @@ type Caller struct {
 }
 
 // UpdateInput renames the Workspace and, when PostalAddress is set, sets its postal address (""
-// clears it).
+// clears it, refused while marketing email is armed).
 type UpdateInput struct {
 	// Revision is the Workspace's revision the edit was made on (ADR 0119).
 	Revision      int64
@@ -114,12 +116,14 @@ type UseCase struct {
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
 	defaultSendCap  *suspension.DefaultSendCap
+	removalCheck    *removalcheck.Module
 	now             func() time.Time
 }
 
 // Modules are the modules the use case reads and changes the Workspace through. DefaultSendCap
 // gives the Send cap a new Workspace starts with (suspension.DefaultSendCap.StartingIn, ADR 0067,
-// ADR 0146).
+// ADR 0146). RemovalCheck finds the marketing email still to send that holds the postal address
+// (ADR 0156).
 type Modules struct {
 	Workspaces      *workspaces.Module
 	Memberships     *memberships.Module
@@ -128,6 +132,7 @@ type Modules struct {
 	Outbound        *outboundmessages.Module
 	TrackingDomains *trackingdomains.Module
 	DefaultSendCap  *suspension.DefaultSendCap
+	RemovalCheck    *removalcheck.Module
 }
 
 // New builds the use case over the bus whose transactions create and restore a Workspace and the
@@ -137,7 +142,7 @@ func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, defaultSendCap: mods.DefaultSendCap,
-		now: now,
+		removalCheck: mods.RemovalCheck, now: now,
 	}
 }
 
@@ -181,10 +186,27 @@ func (u *UseCase) One(ctx context.Context, s *ent.Scoped, c Caller) (View, error
 	return u.view(ctx, s, c, ws)
 }
 
-// Update renames the Workspace of s and sets its postal address (workspaces.Module.Update) and
-// answers its View for the caller.
+// Update renames the Workspace of s and sets its postal address (workspacesunchecked.EditIn) and
+// answers its View for the caller. Clearing an address the Workspace has is refused with the
+// Removal check's *liveuse.Error naming them while marketing email is armed (ADR 0156); saving an
+// empty address over none, as a rename does, is not checked. The check and the edit run in one
+// transaction under the Workspace lock, which Schedule, Send and Publish take too, so none of them
+// arms an email between the check and the write.
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in UpdateInput) (View, error) {
-	ws, err := u.workspaces.Update(ctx, s, in.Revision, in.Name, in.PostalAddress)
+	var ws *ent.Workspace
+	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		edit, err := workspacesunchecked.EditIn(ctx, wl, in.Revision, in.Name, in.PostalAddress)
+		if err != nil {
+			return err
+		}
+		if edit.ClearsPostalAddress() {
+			if err := u.removalCheck.PostalAddress(ctx, wl); err != nil {
+				return err
+			}
+		}
+		ws, err = edit.Apply(ctx)
+		return err
+	})
 	if err != nil {
 		return View{}, err
 	}

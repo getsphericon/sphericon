@@ -9505,6 +9505,8 @@ func (s *ProblemCode) Decode(d *jx.Decoder) error {
 		*s = ProblemCodeAcceptancePending
 	case ProblemCodeRevisionChanged:
 		*s = ProblemCodeRevisionChanged
+	case ProblemCodePostalAddressRequired:
+		*s = ProblemCodePostalAddressRequired
 	default:
 		*s = ProblemCode(v)
 	}
@@ -14960,6 +14962,8 @@ func (s *SiteAttentionKind) Decode(d *jx.Decoder) error {
 		*s = SiteAttentionKindWebhookDisabled
 	case SiteAttentionKindSendingDomainNotBulkReady:
 		*s = SiteAttentionKindSendingDomainNotBulkReady
+	case SiteAttentionKindPostalAddressMissing:
+		*s = SiteAttentionKindPostalAddressMissing
 	default:
 		*s = SiteAttentionKind(v)
 	}

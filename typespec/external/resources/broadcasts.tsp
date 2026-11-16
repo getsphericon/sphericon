@@ -183,7 +183,7 @@ interface Broadcasts
     @body body: TestSendBroadcastInput,
   ): NoContentResponse | Problem;
 
-  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
+  /** Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the broadcasts:send scope, and mcp:send over MCP. */
   @action("schedule")
   @autoRoute
   @requiresScopes(#[ApiTokenScope.broadcastsSend])

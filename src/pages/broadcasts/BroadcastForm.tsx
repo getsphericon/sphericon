@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MessageEditor } from '../../components/MessageEditor.tsx'
+import { PostalAddressNotice } from '../../components/PostalAddressNotice.tsx'
 import { AnchorLink, ButtonLink } from '../../components/RouterLink.tsx'
 import { SmsContentEditor } from '../../components/sms/SmsContentEditor.tsx'
 import { TelegramContentEditor } from '../../components/telegram/TelegramContentEditor.tsx'
@@ -401,6 +402,7 @@ function EmailBroadcastForm({
           required
           {...form.getInputProps('name')}
         />
+        <PostalAddressNotice workspaceId={workspaceId} />
         <TextInput label={t(($) => $.broadcasts.subjectLabel)} {...form.getInputProps('subject')} />
         <Group grow align="flex-start">
           <TextInput

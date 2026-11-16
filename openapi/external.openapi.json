@@ -796,7 +796,7 @@
     "/automations/{id}/publish": {
       "post": {
         "operationId": "Automations_publish",
-        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too. Needs the automations:publish scope.",
+        "description": "Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too, and 409 postal_address_required when the version has an email send step and the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Needs the automations:publish scope.",
         "parameters": [
           {
             "$ref": "#/components/parameters/AutomationResourceKey"
@@ -1270,7 +1270,7 @@
     "/broadcasts/{id}/schedule": {
       "post": {
         "operationId": "Broadcasts_schedule",
-        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
+        "description": "Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused, and so is an archived broadcast. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the broadcasts:send scope, and mcp:send over MCP.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -5198,7 +5198,7 @@
     "/workspace": {
       "get": {
         "operationId": "Workspace_get",
-        "description": "Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to\nexplain a slow send or to plan one: a send larger than what remains of it in the last 24 hours\ngoes out over more than a day. Read-only: no operation changes the Send cap.",
+        "description": "Read the Workspace the token acts in: its name, postal address, time zone and Send cap. Read\nthe postal address before arming marketing email: an empty one refuses it, and only a person\ncan set it. Read the Send cap to explain a slow send or to plan one: a send larger than what\nremains of it in the last 24 hours goes out over more than a day. Read-only: no operation\nchanges the Send cap or the postal address.",
         "parameters": [],
         "responses": {
           "200": {
@@ -11002,7 +11002,8 @@
           "permission_required",
           "migrations_pending",
           "acceptance_pending",
-          "revision_changed"
+          "revision_changed",
+          "postal_address_required"
         ],
         "description": "A machine-readable reason a client branches on, beyond the HTTP status"
       },
@@ -13814,7 +13815,7 @@
       },
       "WorkspaceResource": {
         "type": "object",
-        "required": ["id", "name", "timezone", "revision"],
+        "required": ["id", "name", "postalAddress", "timezone", "revision"],
         "properties": {
           "id": {
             "allOf": [
@@ -13827,6 +13828,11 @@
           "name": {
             "type": "string",
             "description": "Display name",
+            "x-untrusted": true
+          },
+          "postalAddress": {
+            "type": "string",
+            "description": "The physical postal address printed in the footer of every marketing email (ADR 0156); empty\nwhile the Workspace has none, and then Schedule of an email Broadcast and Publish of an\nAutomation with an email send step are a 409 postal_address_required. Read-only: only a person\nsets it, in the console's Workspace settings.",
             "x-untrusted": true
           },
           "timezone": {

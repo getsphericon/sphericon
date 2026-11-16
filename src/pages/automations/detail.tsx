@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { DraftControls } from '../../components/DraftControls.tsx'
 import { EventActionBadge } from '../../components/EventActionName.tsx'
 import { PagedTable } from '../../components/PagedTable.tsx'
+import { PostalAddressNotice } from '../../components/PostalAddressNotice.tsx'
 import { QueryBoundary } from '../../components/QueryBoundary.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
 import { PageSkeleton } from '../../components/Skeletons.tsx'
@@ -145,6 +146,9 @@ function AutomationDetail() {
   const automation = useSuspenseQuery(
     siteAutomationsGetOptions({ path: { workspaceId, id: automationId } }),
   ).data
+  // The version Publish arms: the draft, else the live version made active again (ADR 0156).
+  const armed = automation.draft ?? automation.live
+  const sendsEmail = armed?.steps.some((step) => step.type === SiteAutomationStepType.EMAIL)
 
   return (
     <Stack>
@@ -176,6 +180,10 @@ function AutomationDetail() {
           </ButtonLink>
         </Group>
       </Group>
+
+      {sendsEmail && !automation.archivedAt ? (
+        <PostalAddressNotice workspaceId={workspaceId} />
+      ) : null}
 
       {automation.live ? (
         <AutomationVersionSummary workspaceId={workspaceId} version={automation.live} />

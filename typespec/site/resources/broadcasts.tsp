@@ -271,7 +271,7 @@ interface SiteBroadcasts
     | SiteBroadcastResource
     | Problem;
 
-  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed since the `revision` it names (revision_changed): nothing is sent. */
+  /** Send a broadcast immediately. A draft copies its segment's condition, which its recipients are resolved from; an archived segment is refused. An archived broadcast is a 409, and so is one changed since the `revision` it names (revision_changed): nothing is sent. An email broadcast is a 409 postal_address_required while the Workspace has no postal address (ADR 0156). */
   @action("send")
   @autoRoute
   @requiresPermissions(#[])
@@ -280,7 +280,7 @@ interface SiteBroadcasts
     @body body: RevisionInput,
   ): SiteBroadcastResource | Problem;
 
-  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too. */
+  /** Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156). */
   @action("schedule")
   @autoRoute
   @requiresPermissions(#[])

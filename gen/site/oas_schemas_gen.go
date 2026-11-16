@@ -8931,6 +8931,7 @@ const (
 	ProblemCodeMigrationsPending         ProblemCode = "migrations_pending"
 	ProblemCodeAcceptancePending         ProblemCode = "acceptance_pending"
 	ProblemCodeRevisionChanged           ProblemCode = "revision_changed"
+	ProblemCodePostalAddressRequired     ProblemCode = "postal_address_required"
 )
 
 // AllValues returns all ProblemCode values.
@@ -8942,6 +8943,7 @@ func (ProblemCode) AllValues() []ProblemCode {
 		ProblemCodeMigrationsPending,
 		ProblemCodeAcceptancePending,
 		ProblemCodeRevisionChanged,
+		ProblemCodePostalAddressRequired,
 	}
 }
 
@@ -8959,6 +8961,8 @@ func (s ProblemCode) MarshalText() ([]byte, error) {
 	case ProblemCodeAcceptancePending:
 		return []byte(s), nil
 	case ProblemCodeRevisionChanged:
+		return []byte(s), nil
+	case ProblemCodePostalAddressRequired:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -8985,6 +8989,9 @@ func (s *ProblemCode) UnmarshalText(data []byte) error {
 		return nil
 	case ProblemCodeRevisionChanged:
 		*s = ProblemCodeRevisionChanged
+		return nil
+	case ProblemCodePostalAddressRequired:
+		*s = ProblemCodePostalAddressRequired
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -11102,7 +11109,8 @@ func (s *SiteApiTokenResource) SetCreatedAt(val Timestamp) {
 type SiteAttentionItem struct {
 	Kind     SiteAttentionKind     `json:"kind"`
 	Severity SiteAttentionSeverity `json:"severity"`
-	// The object the item is about; absent for the Workspace's own Send cap and a deliverability warning.
+	// The object the item is about; absent for the Workspace's own Send cap, a deliverability warning and
+	// a missing postal address.
 	Subject OptNilSiteAttentionSubject `json:"subject"`
 	// How many the item stands for: failed runs of an Automation, the estimated audience of a
 	// `scheduledBroadcastOverSendCap` Broadcast, 1 for every other kind.
@@ -11221,6 +11229,7 @@ const (
 	SiteAttentionKindBroadcastFailed               SiteAttentionKind = "broadcastFailed"
 	SiteAttentionKindWebhookDisabled               SiteAttentionKind = "webhookDisabled"
 	SiteAttentionKindSendingDomainNotBulkReady     SiteAttentionKind = "sendingDomainNotBulkReady"
+	SiteAttentionKindPostalAddressMissing          SiteAttentionKind = "postalAddressMissing"
 )
 
 // AllValues returns all SiteAttentionKind values.
@@ -11241,6 +11250,7 @@ func (SiteAttentionKind) AllValues() []SiteAttentionKind {
 		SiteAttentionKindBroadcastFailed,
 		SiteAttentionKindWebhookDisabled,
 		SiteAttentionKindSendingDomainNotBulkReady,
+		SiteAttentionKindPostalAddressMissing,
 	}
 }
 
@@ -11276,6 +11286,8 @@ func (s SiteAttentionKind) MarshalText() ([]byte, error) {
 	case SiteAttentionKindWebhookDisabled:
 		return []byte(s), nil
 	case SiteAttentionKindSendingDomainNotBulkReady:
+		return []byte(s), nil
+	case SiteAttentionKindPostalAddressMissing:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -11329,6 +11341,9 @@ func (s *SiteAttentionKind) UnmarshalText(data []byte) error {
 		return nil
 	case SiteAttentionKindSendingDomainNotBulkReady:
 		*s = SiteAttentionKindSendingDomainNotBulkReady
+		return nil
+	case SiteAttentionKindPostalAddressMissing:
+		*s = SiteAttentionKindPostalAddressMissing
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -27834,8 +27849,10 @@ type SiteUpdateWorkspaceInput struct {
 	Revision Revision `json:"revision"`
 	// New display name.
 	Name Name `json:"name"`
-	// Physical postal address for the marketing email footer (CAN-SPAM). Omit to leave it unchanged; send
-	// an empty string to clear it.
+	// Physical postal address for the marketing email footer (CAN-SPAM): free text over several lines,
+	// trimmed. Omit to leave it unchanged; send an empty string to clear it. Clearing it is a 409 naming
+	// them in `usedBy` while an email Broadcast is scheduled or sending or an Automation still sends email
+	// (ADR 0156).
 	PostalAddress OptString `json:"postalAddress"`
 }
 
@@ -28627,7 +28644,8 @@ type SiteWorkspaceResource struct {
 	// Per-workspace collect write-key (x-collect-key) for the tracking snippet.
 	CollectKey string `json:"collectKey"`
 	// Physical postal address printed in the marketing email footer (CAN-SPAM 15 U.S.C. §7704(a)(5)).
-	// Empty until the workspace sets one.
+	// Empty until the workspace sets one; while it is empty, marketing email cannot be scheduled, sent or
+	// published (409 postal_address_required, ADR 0156).
 	PostalAddress string `json:"postalAddress"`
 	// The Workspace time zone (ADR 0057): the IANA name every analytics report counts its days in. UTC
 	// until an Owner or Admin sets it.

@@ -110,6 +110,7 @@ func TestBroadcastWrittenInTheEditorIsDelivered(t *testing.T) {
 	assert.NotContains(t, msg.HTML, `href="https://example.com/news"`)
 	assert.Contains(t, msg.HTML, env.BaseURL+"/e/o/", "the open pixel is added")
 	assert.Contains(t, msg.HTML, "unsubscribe</a>", "the unsubscribe footer is added")
+	assert.Contains(t, msg.HTML, "1 E2E Street<br>Testville", "the footer carries the postal address")
 }
 
 func TestTestSendBeforeAnyDomainReachesTheOwnerFromTheSystemSender(t *testing.T) {

@@ -917,7 +917,7 @@ var contentPackage = do.Package(
 			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i),
+			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i), RemovalCheck: do.MustInvoke[*removalcheck.Module](i),
 		}, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {

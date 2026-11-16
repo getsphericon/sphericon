@@ -1384,6 +1384,7 @@ export default interface Resources {
           "broadcast": "Open the broadcast",
           "credentials": "Save its credentials",
           "emails": "Open email settings",
+          "postalAddress": "Set the postal address",
           "suppressions": "Review suppressions",
           "webhooks": "Open webhooks"
         },
@@ -1410,6 +1411,7 @@ export default interface Resources {
           "integrationProviderRefused": "{{name}}'s credentials or account were refused by its provider: nothing sends through it until it is saved again with working ones.",
           "integrationProviderSandbox": "{{name}} is in the provider's sandbox: it sends only to addresses verified with the provider.",
           "integrationProviderStopped": "Your provider has stopped the account behind {{name}}: nothing sends through it until the provider reinstates it.",
+          "postalAddressMissing": "This workspace has no postal address: its marketing email can't be scheduled, sent or published until you add one.",
           "providerLimitSpent": "{{name}} has sent its daily limit: the rest goes out as the limit refills.",
           "scheduledBroadcastOverSendCap": "This workspace's daily sending limit will slow {{name}} (about {{count, number}} contact), together with what is scheduled before it: it is expected to finish by {{finish}}." | "This workspace's daily sending limit will slow {{name}} (about {{count, number}} contacts), together with what is scheduled before it: it is expected to finish by {{finish}}.",
           "sendCapSpent": "This workspace has sent its daily sending limit: the rest goes out as it refills over the next 24 hours.",
@@ -1479,6 +1481,11 @@ export default interface Resources {
         "upcomingEmpty": "Nothing is sending or scheduled.",
         "upcomingTitle": "Sending and scheduled"
       }
+    },
+    "postalAddressNotice": {
+      "link": "Set the postal address",
+      "loadError": "Could not read the postal address",
+      "text": "This workspace has no postal address, which every marketing email carries in its footer: it can't be scheduled, sent or published until one is set. A test send still goes out."
     },
     "profile": {
       "changeEmailButton": "Send confirmation link",
@@ -2027,7 +2034,7 @@ export default interface Resources {
         "title": "Personal tokens",
         "user": "Member"
       },
-      "postalAddressDescription": "Shown in the footer of every marketing email. US law (CAN-SPAM) requires a valid physical postal address.",
+      "postalAddressDescription": "Shown in the footer of every marketing email, which can't be scheduled, sent or published without it. US law (CAN-SPAM) requires a valid physical postal address; a PO box will do. It can't be cleared while marketing email is scheduled or an automation sends email.",
       "postalAddressLabel": "Postal address",
       "postalAddressPlaceholder": "Acme Inc, 123 Main St, Springfield, IL 62704, USA",
       "privacy": {

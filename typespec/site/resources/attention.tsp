@@ -55,6 +55,10 @@ enum SiteAttentionKind {
   /** A verified Sending domain whose last DMARC lookup found no published record: it is not
    * bulk-ready (ADR 0012), and Gmail and Yahoo reject or spam-folder bulk mail from it */
   sendingDomainNotBulkReady,
+
+  /** The Workspace has an email Integration and no postal address: marketing email cannot be
+   * scheduled, sent or published until one is set in the Workspace settings (ADR 0156) */
+  postalAddressMissing,
 }
 
 /** How urgent an item is */
@@ -83,7 +87,8 @@ model SiteAttentionItem {
   kind: SiteAttentionKind;
   severity: SiteAttentionSeverity;
 
-  /** The object the item is about; absent for the Workspace's own Send cap and a deliverability warning */
+  /** The object the item is about; absent for the Workspace's own Send cap, a deliverability
+   * warning and a missing postal address */
   subject?: SiteAttentionSubject | null;
 
   /** How many the item stands for: failed runs of an Automation, the estimated audience of a

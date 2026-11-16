@@ -85,7 +85,8 @@ export const zProblemCode = z.enum([
   'permission_required',
   'migrations_pending',
   'acceptance_pending',
-  'revision_changed'
+  'revision_changed',
+  'postal_address_required'
 ]);
 
 /**

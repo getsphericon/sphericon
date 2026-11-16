@@ -130,13 +130,33 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	return w
 }
 
-// Ready is the common setup: an Integration pointing at Mailpit and a verified Sending
-// domain, so a Broadcast can leave. Scenarios that need less call the steps themselves.
+// Ready is the common setup: an Integration pointing at Mailpit, a verified Sending domain and
+// the postal address marketing email is armed with (ADR 0156), so a Broadcast can leave. Scenarios
+// that need less call the steps themselves.
 func (w *Workspace) Ready() *Workspace {
 	w.t.Helper()
 	w.CreateMailpitIntegration()
 	w.AddVerifiedSendingDomain()
+	w.SetPostalAddress(PostalAddress)
 	return w
+}
+
+// PostalAddress is the address Ready gives a Workspace, which every marketing email's footer
+// carries.
+const PostalAddress = "1 E2E Street\nTestville"
+
+// SetPostalAddress saves the Workspace's postal address as its owner does in the settings: only a
+// person sets it, so the step goes through the SPA's API.
+func (w *Workspace) SetPostalAddress(address string) {
+	w.t.Helper()
+	ctx := w.t.Context()
+	params := siteapi.SiteWorkspacesGetParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)}
+	read, err := w.site.SiteWorkspacesGet(ctx, params)
+	require.NoError(w.t, err, "read the workspace")
+	_, err = w.site.SiteWorkspacesUpdate(ctx, &siteapi.SiteUpdateWorkspaceInput{
+		Revision: read.Revision, Name: siteapi.Name(read.Name), PostalAddress: siteapi.NewOptString(address),
+	}, siteapi.SiteWorkspacesUpdateParams{WorkspaceId: siteapi.WorkspaceId(w.publicID)})
+	require.NoError(w.t, err, "set the postal address")
 }
 
 // NewRecipient returns an address unique to this call, so mail can be matched to the test.

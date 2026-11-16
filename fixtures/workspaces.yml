@@ -1,8 +1,13 @@
+# Every Workspace has a postal address, so its marketing email can be armed (ADR 0156); a test of
+# the gate clears it first.
 - id: 1 # fixture: Acme
   revision: 1
   name: Acme
   public_id: AcmeWs01
   collect_key: omck_test_acme_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Anchor second tenant (Globex) — DO NOT change. It holds the minimal foreign rows
@@ -15,6 +20,9 @@
   name: Globex
   public_id: GlobxWs2
   collect_key: omck_test_globex_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Third tenant (Initech) - holds the all-dependents Contact the Erasure tests use
@@ -25,6 +33,9 @@
   name: Initech
   public_id: InitcWs3
   collect_key: omck_test_initech_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Fourth tenant (Umbrella) - requires a Second factor of every member since 2026-03-01
@@ -48,6 +59,9 @@
   name: Hooli
   public_id: HooliWs5
   collect_key: omck_test_hooli_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   suspended_at: '2026-02-01 00:00:00'
   suspended_by_kind: staff
   suspended_by_id: op-fixture
@@ -64,6 +78,9 @@
   name: Soylent
   public_id: SoylnWs6
   collect_key: omck_test_soylent_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Seventh tenant (Vandelay) - the abuse detector's subject (ADR 0026): two owners and two
@@ -73,6 +90,9 @@
   name: Vandelay
   public_id: VandlWs7
   collect_key: omck_test_vandelay_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Eighth tenant (Kramerica) - exempt from the abuse detector by a Staff member (ADR 0026).
@@ -81,6 +101,9 @@
   name: Kramerica
   public_id: KramrWs8
   collect_key: omck_test_kramerica_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   abuse_exempt: true
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -91,6 +114,9 @@
   name: Wayne
   public_id: WayneWs9
   collect_key: omck_test_wayne_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Tenth and eleventh tenants (PiedPiper, Aviato) - Dora is the only Owner of both, so User
@@ -100,6 +126,9 @@
   name: Pied Piper
   public_id: PiperW10
   collect_key: omck_test_piedpiper_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 - id: 11 # fixture: Aviato
@@ -107,6 +136,9 @@
   name: Aviato
   public_id: AviatW11
   collect_key: omck_test_aviato_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Twelfth tenant (Bluth) - in its 30-day deletion window since 5 days ago (ADR 0043); Dan is
@@ -117,6 +149,9 @@
   name: Bluth
   public_id: BluthW12
   collect_key: omck_test_bluth_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   discarded_at: '{{daysAgo 5}}'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -127,6 +162,9 @@
   name: Cyberdyne
   public_id: CyberW13
   collect_key: omck_test_cyberdyne_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
@@ -136,6 +174,9 @@
   name: 'Brightpath'
   public_id: 'BrghtW20'
   collect_key: 'omck_test_brightpath_collect_key'
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '{{daysAgo 120}}'
   updated_at: '{{daysAgo 120}}'
 # --- Eligibility and segment scenarios (#555). Each scenario owns a Workspace, so its rows never move another suite's counts. ---
@@ -145,6 +186,9 @@
   name: Lumon
   public_id: LumonW55
   collect_key: omck_test_lumon_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   require_confirmed_opt_in: true
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -154,6 +198,9 @@
   name: Tyrell
   public_id: TyrelW56
   collect_key: omck_test_tyrell_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Segment operator matrix over plain Contact columns.
@@ -162,6 +209,9 @@
   name: Oscorp
   public_id: OscorW57
   collect_key: omck_test_oscorp_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Segment rule groups and Event conditions over a small audience.
@@ -170,6 +220,9 @@
   name: Massive
   public_id: MassvW58
   collect_key: omck_test_massive_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Segment operators over Custom fields and the Custom field catalogue.
@@ -178,6 +231,9 @@
   name: Initrode
   public_id: InitrW59
   collect_key: omck_test_initrode_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Segment preview through the site API; Dwight (DunderOwnerDwight) owns it.
@@ -186,6 +242,9 @@
   name: Dunder
   public_id: DundrW60
   collect_key: omck_test_dunder_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 
@@ -195,6 +254,9 @@
   name: Meter
   public_id: MeterW80
   collect_key: omck_test_meter_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '{{monthAgo 22 1 0 0}}'
   updated_at: '{{monthAgo 22 1 0 0}}'
 
@@ -206,6 +268,9 @@
   name: Gotham
   public_id: GothmW61
   collect_key: omck_test_gotham_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   timezone: America/New_York
   reporting_currency: USD
   created_at: '2026-01-01 00:00:00'
@@ -216,6 +281,9 @@
   name: Wonka
   public_id: WonkaW62
   collect_key: omck_test_wonka_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Capton: two Broadcasts scheduled within the next day to one Segment of three Contacts, for the Send
@@ -225,6 +293,9 @@
   name: Capton
   public_id: CaptnW63
   collect_key: omck_test_capton_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Stark: the Contacts the contacts and visitors module tests change (every attribute set, a phone
@@ -234,6 +305,9 @@
   name: Stark
   public_id: StarkW87
   collect_key: omck_test_stark_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Sabre: its one Integration is a Telegram bot (IntegrationSabreTelegram), so its Setup checklist
@@ -243,6 +317,9 @@
   name: Sabre
   public_id: SabreW79
   collect_key: omck_test_sabre_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Meridian: the Live use that blocks removing an Integration or a Sending domain (ADR 0049, ADR 0099)
@@ -254,6 +331,9 @@
   name: Meridian
   public_id: MonrcW83
   collect_key: omck_test_meridian_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Babel: Contacts whose own text is hostile (ADR 0016): an instruction to an agent, and quotes that
@@ -263,6 +343,9 @@
   name: Babel
   public_id: BabelW84
   collect_key: omck_test_babel_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Pinewood: sends its marketing through its default, a Test inbox (ADR 0058), to its one Contact.
@@ -271,6 +354,9 @@
   name: Pinewood
   public_id: PinewW85
   collect_key: omck_test_pinewood_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Revenue of messages (ADR 0064), Reporting currency USD, each tenant for one report so its
@@ -281,6 +367,9 @@
   name: Bazaar
   public_id: BazarW75
   collect_key: omck_test_bazaar_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   reporting_currency: USD
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -291,6 +380,9 @@
   name: Emporium
   public_id: EmporW76
   collect_key: omck_test_emporium_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   reporting_currency: USD
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -300,6 +392,9 @@
   name: Mercado
   public_id: MercdW77
   collect_key: omck_test_mercado_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   reporting_currency: USD
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -309,6 +404,9 @@
   name: Souk
   public_id: SoukWs78
   collect_key: omck_test_souk_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Suspended tenants (ADR 0026), one per actor kind the console and the owner notice tell apart,
@@ -320,6 +418,9 @@
   name: Nakatomi
   public_id: NakatW71
   collect_key: omck_test_nakatomi_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   suspended_at: '{{daysAgo 1}}'
   suspended_by_kind: system
   suspension_reason: complaint rate
@@ -330,6 +431,9 @@
   name: Sirius
   public_id: SiriuW72
   collect_key: omck_test_sirius_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   suspended_at: '{{daysAgo 1}}'
   suspended_by_kind: cli
   suspension_reason: complaint rate
@@ -340,6 +444,9 @@
   name: Monarch
   public_id: MonarW73
   collect_key: omck_test_monarch_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   suspended_at: '{{daysAgo 1}}'
   suspended_by_kind: staff
   suspended_by_id: op-7
@@ -352,6 +459,9 @@
   name: Virtucon
   public_id: VirtcW74
   collect_key: omck_test_virtucon_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Duff: the site lists a test filters, kept off Acme so its lists and counts stay as they are: three
@@ -362,6 +472,9 @@
   name: Duff
   public_id: DuffWs94
   collect_key: omck_test_duff_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Krusty: SMS through a Twilio account of its own, kept off Acme's SMS audiences: a phone with no
@@ -371,6 +484,9 @@
   name: Krusty
   public_id: KrstyW95
   collect_key: omck_test_krusty_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Vehement: the Personal tokens and the Connections (ADR 0061) the token and OAuth tests use, of
@@ -380,6 +496,9 @@
   name: Vehement
   public_id: VhmntW91
   collect_key: omck_test_vehement_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Quahog: the receiver tests of the HTTP Actions and steps (internal/jobs). Its Rule and
@@ -389,6 +508,9 @@
   name: Quahog
   public_id: QuahgW92
   collect_key: omck_test_quahog_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
 # Lacuna: SMS and Telegram Broadcasts to every Contact of their Workspace, kept off Acme so its
@@ -400,5 +522,8 @@
   name: Lacuna
   public_id: LacnaW96
   collect_key: omck_test_lacuna_collect_key
+  postal_address: |-
+    100 Market Street
+    Springfield
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

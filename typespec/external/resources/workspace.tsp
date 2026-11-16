@@ -25,6 +25,13 @@ model WorkspaceResource {
   @untrusted
   name: string;
 
+  /** The physical postal address printed in the footer of every marketing email (ADR 0156); empty
+   * while the Workspace has none, and then Schedule of an email Broadcast and Publish of an
+   * Automation with an email send step are a 409 postal_address_required. Read-only: only a person
+   * sets it, in the console's Workspace settings. */
+  @untrusted
+  postalAddress: string;
+
   /** The IANA time zone every analytics report counts its days in (ADR 0057) */
   timezone: TimeZoneName;
 
@@ -39,9 +46,11 @@ model WorkspaceResource {
 @route("/workspace")
 @tag("Workspace")
 namespace Workspace {
-  /** Read the Workspace the token acts in: its name, time zone and Send cap. Read the Send cap to
-   * explain a slow send or to plan one: a send larger than what remains of it in the last 24 hours
-   * goes out over more than a day. Read-only: no operation changes the Send cap. */
+  /** Read the Workspace the token acts in: its name, postal address, time zone and Send cap. Read
+   * the postal address before arming marketing email: an empty one refuses it, and only a person
+   * can set it. Read the Send cap to explain a slow send or to plan one: a send larger than what
+   * remains of it in the last 24 hours goes out over more than a day. Read-only: no operation
+   * changes the Send cap or the postal address. */
   @get
   @requiresScopes(#[])
   op get(): WorkspaceResource | Problem;

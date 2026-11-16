@@ -71,8 +71,10 @@ job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePu
 Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace for a Verified User
 through `memberships.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
 starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146) and its `workspace.create`
-Audit entry, and moves a deleted one back through
-`workspacesunchecked.RestoreIn`; and User deletion
+Audit entry, moves a deleted one back through
+`workspacesunchecked.RestoreIn`, and renames one or changes its postal address through
+`workspacesunchecked.EditIn`, which it applies after the Removal check under the Workspace lock when
+the edit takes away an address that marketing email still to send needs (ADR 0156); and User deletion
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
 `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),

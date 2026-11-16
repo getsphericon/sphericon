@@ -1,0 +1,35 @@
+package outboundmessages
+
+import (
+	"context"
+
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
+)
+
+// ErrPostalAddressRequired refuses to arm marketing email (Schedule or Send of an email Broadcast,
+// Publish of an Automation with an email send step) while the Workspace has no postal address,
+// which the footer of every marketing email carries (ADR 0156). It is checked where the send is
+// armed, never at send time, so nothing stops halfway through a send; a Transactional send and a
+// Test send need no address.
+var ErrPostalAddressRequired = validation.PostalAddressRequired("outbound: the workspace has no postal address", i18n.ErrorsPostalAddressRequired)
+
+// RequirePostalAddress refuses to arm marketing email on ch while the Workspace of s has no postal
+// address (ErrPostalAddressRequired). Only email carries the address: the other Channels are never
+// refused.
+func RequirePostalAddress(ctx context.Context, s *ent.Scoped, ch channels.Channel) error {
+	if ch != channels.Email {
+		return nil
+	}
+	ws, err := s.Workspace(ctx)
+	if err != nil {
+		return err
+	}
+	if !workspaces.HasPostalAddress(ws) {
+		return ErrPostalAddressRequired
+	}
+	return nil
+}

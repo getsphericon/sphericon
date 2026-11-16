@@ -158,7 +158,8 @@ export const ProblemCode = {
   PERMISSION_REQUIRED: 'permission_required',
   MIGRATIONS_PENDING: 'migrations_pending',
   ACCEPTANCE_PENDING: 'acceptance_pending',
-  REVISION_CHANGED: 'revision_changed'
+  REVISION_CHANGED: 'revision_changed',
+  POSTAL_ADDRESS_REQUIRED: 'postal_address_required'
 } as const;
 
 /**
