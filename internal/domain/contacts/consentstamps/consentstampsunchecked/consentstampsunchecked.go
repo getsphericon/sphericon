@@ -10,24 +10,25 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentstamp"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
 // Erase is the consent stamp part of the Erasure of a Contact that held destination on channel,
 // run inside the Erasure's transaction. The stamps follow the opt-outs (ADR 0154): where an opt-out
 // of a sending source still stands (standing reports it), the time the person stopped keeps
-// ordering the observations that come later, kept by keptAs as the opt-out is kept (the number's
-// hash on sms, the address itself on email); otherwise nothing of the stamp stays, and neither
-// does the time of a Confirmation, whose proof the Erasure deletes. A stamp keptAs already holds (a
-// person erased before with the number) keeps the later of the two.
-func Erase(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination, keptAs string,
+// ordering the observations that come later, kept by what the stamp is stored by
+// (consentstamps.Stored: the number's hash on sms, the Destination elsewhere); otherwise nothing of
+// the stamp stays, and neither does the time of a Confirmation, whose proof the Erasure deletes.
+func Erase(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string,
 	standing func(ctx context.Context, source string) (bool, error),
 ) error {
 	if destination == "" {
 		return nil
 	}
+	stored := consentstamps.Stored(consentstamps.Key{Channel: channel, Destination: destination}).Destination
 	rows, err := s.ConsentStamp().Query().Where(
-		consentstamp.ChannelEQ(channel), consentstamp.DestinationEQ(destination),
+		consentstamp.ChannelEQ(channel), consentstamp.DestinationEQ(stored),
 	).All(ctx)
 	if err != nil {
 		return fmt.Errorf("find consent stamps: %w", err)
@@ -37,54 +38,14 @@ func Erase(ctx context.Context, s *ent.Scoped, channel channels.Channel, destina
 		if err != nil {
 			return err
 		}
-		if !stands || row.OptOutOccurredAt == nil {
-			err = deleteStamp(ctx, s, row.ID)
+		if stands && row.OptOutOccurredAt != nil {
+			err = s.ConsentStamp().UpdateOneID(row.ID).ClearConfirmationOccurredAt().Exec(ctx)
 		} else {
-			err = keep(ctx, s, row, keptAs)
+			err = s.ConsentStamp().DeleteOneID(row.ID).Exec(ctx)
 		}
 		if err != nil {
-			return err
+			return fmt.Errorf("erase consent stamp: %w", err)
 		}
-	}
-	return nil
-}
-
-// keep keeps of row only when its stop occurred, by keptAs.
-func keep(ctx context.Context, s *ent.Scoped, row *ent.ConsentStamp, keptAs string) error {
-	if keptAs == row.Destination {
-		err := s.ConsentStamp().UpdateOneID(row.ID).ClearConfirmationOccurredAt().Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("keep the consent stamp: %w", err)
-		}
-		return nil
-	}
-	twin, err := s.ConsentStamp().Query().Where(
-		consentstamp.ChannelEQ(row.Channel), consentstamp.DestinationEQ(keptAs), consentstamp.SendingSourceEQ(row.SendingSource),
-	).Only(ctx)
-	switch {
-	case ent.IsNotFound(err):
-		err = s.ConsentStamp().UpdateOneID(row.ID).SetDestination(keptAs).ClearConfirmationOccurredAt().
-			ClearOptOutIntegrationID().ClearOptOutSequence().Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("rekey the consent stamp: %w", err)
-		}
-		return nil
-	case err != nil:
-		return fmt.Errorf("find the kept consent stamp: %w", err)
-	}
-	if twin.OptOutOccurredAt == nil || row.OptOutOccurredAt.After(*twin.OptOutOccurredAt) {
-		err := s.ConsentStamp().UpdateOneID(twin.ID).SetOptOutOccurredAt(*row.OptOutOccurredAt).
-			ClearOptOutIntegrationID().ClearOptOutSequence().Exec(ctx)
-		if err != nil {
-			return fmt.Errorf("keep the later consent stamp: %w", err)
-		}
-	}
-	return deleteStamp(ctx, s, row.ID)
-}
-
-func deleteStamp(ctx context.Context, s *ent.Scoped, id int64) error {
-	if err := s.ConsentStamp().DeleteOneID(id).Exec(ctx); err != nil {
-		return fmt.Errorf("erase consent stamp: %w", err)
 	}
 	return nil
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/starttoken"
+	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -341,6 +342,20 @@ func createBinding(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now
 		return false, fmt.Errorf("create binding: %w", err)
 	}
 	return created, nil
+}
+
+// DestinationsOf are the Telegram user ids Bound to the Contact on any bot of the Workspace, its own
+// or through one of its Visitors.
+func DestinationsOf(ctx context.Context, s *ent.Scoped, contactID int64) ([]string, error) {
+	ids, err := s.Binding().Query().
+		Where(binding.Or(binding.ContactID(contactID), binding.HasVisitorWith(visitor.ContactID(contactID)))).
+		Unique(true).
+		Select(binding.FieldDestination).
+		Strings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list the contact's bindings: %w", err)
+	}
+	return ids, nil
 }
 
 // Remove deletes the Binding of the Destination on bot, a chat Telegram says no longer reaches a

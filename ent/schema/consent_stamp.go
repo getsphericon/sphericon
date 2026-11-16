@@ -16,7 +16,8 @@ import (
 // older stop is compared with the return. A new observation changes a state only when it occurred
 // later. The row is also what serializes the observations of its key: each takes it FOR UPDATE
 // first. Only internal/domain/contacts/consentstamps writes it. Keyed by the Destination like the
-// Unsubscribe: an Erasure keeps an SMS stamp by the number's hash (ADR 0021).
+// Unsubscribe, but an sms stamp by the number's hash (lowercase hex SHA-256), never the number, so
+// it holds nothing an Erasure must find (ADR 0021).
 type ConsentStamp struct {
 	ent.Schema
 }
@@ -28,6 +29,7 @@ func (ConsentStamp) Annotations() []schema.Annotation {
 	a.Checks["consent_stamps_sequence_check"] = "(opt_out_integration_id IS NULL) = (opt_out_sequence IS NULL) AND " +
 		"(opt_out_occurred_at IS NOT NULL OR opt_out_integration_id IS NULL)"
 	a.Checks["consent_stamps_confirmation_check"] = "sending_source = 'everything' OR confirmation_occurred_at IS NULL"
+	a.Checks["consent_stamps_sms_hash_check"] = "channel <> 'sms' OR destination ~ '^[0-9a-f]{64}$'"
 	return []schema.Annotation{a}
 }
 
