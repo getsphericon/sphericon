@@ -136,55 +136,37 @@ type provider struct {
 	verifier *oidc.IDTokenVerifier
 }
 
-// Option tunes New.
-type Option func(*options)
-
-type options struct {
-	endpoints map[string]Endpoints
-	http      *http.Client
-	flows     *FlowCodec
+// Config is what the Instance enables its providers with.
+type Config struct {
+	// Credentials are the client id and secret of each provider the Instance configured, by name: a
+	// catalog entry without them is not enabled.
+	Credentials map[string]config.SigninCredentials
+	// AppURL is the public address of the Instance, which the redirect URI each provider is told to
+	// use derives from.
+	AppURL string
+	// Endpoints replace where a provider is reached, by name. A test points a provider at its fake;
+	// nothing else does, so it is nil in production.
+	Endpoints map[string]Endpoints
 }
 
-// WithFlowCodec sets what seals the flow cookie. Without it the codec is keyed by a secret
-// drawn at start, which only a single process can open: an Instance passes its JWT secret
-// (FromConfig).
-func WithFlowCodec(c *FlowCodec) Option { return func(o *options) { o.flows = c } }
-
-// WithEndpoints replaces where one provider is reached. A test uses it to point a provider
-// at its fake; nothing else does.
-func WithEndpoints(name string, e Endpoints) Option {
-	return func(o *options) { o.endpoints[name] = e }
-}
-
-// WithHTTPClient replaces the client that talks to the providers.
-func WithHTTPClient(c *http.Client) Option { return func(o *options) { o.http = c } }
-
-// providerTimeout bounds every call to a provider.
-const providerTimeout = 15 * time.Second
+// ProviderTimeout bounds every call to a provider: the wiring gives New an HTTP client with it.
+const ProviderTimeout = 15 * time.Second
 
 // FlowTTL is how long a started flow stays valid: the time a person takes at the provider.
 const FlowTTL = 10 * time.Minute
 
-// New enables the catalog entries that have credentials. appURL is the public address of
-// the Instance, which the redirect URI each provider is told to use derives from; now is the
-// Instance clock a flow expires by.
-func New(creds map[string]config.SigninCredentials, appURL string, now func() time.Time, opts ...Option) *Providers {
-	o := options{endpoints: map[string]Endpoints{}, http: &http.Client{Timeout: providerTimeout}}
-	for _, opt := range opts {
-		opt(&o)
-	}
-	if o.flows == nil {
-		o.flows = NewFlowCodec(rand.Text()+rand.Text(), now)
-	}
-	p := &Providers{http: o.http, flows: o.flows}
+// New enables the catalog entries that have credentials in cfg. client talks to the providers, and
+// flows seals the flow cookie (an Instance's is keyed by its JWT secret, NewFlowCodec).
+func New(cfg Config, client *http.Client, flows *FlowCodec) *Providers {
+	p := &Providers{http: client, flows: flows}
 	entries := catalog()
 	for i := range entries {
 		entry := &entries[i]
-		c, ok := creds[entry.Name]
+		c, ok := cfg.Credentials[entry.Name]
 		if !ok {
 			continue
 		}
-		if e, ok := o.endpoints[entry.Name]; ok {
+		if e, ok := cfg.Endpoints[entry.Name]; ok {
 			entry.Endpoints = e
 		}
 		live := &provider{
@@ -193,12 +175,12 @@ func New(creds map[string]config.SigninCredentials, appURL string, now func() ti
 				ClientID:     c.ClientID,
 				ClientSecret: c.ClientSecret,
 				Endpoint:     oauth2.Endpoint{AuthURL: entry.Endpoints.AuthURL, TokenURL: entry.Endpoints.TokenURL, AuthStyle: oauth2.AuthStyleInParams},
-				RedirectURL:  RedirectURL(appURL, entry.Name),
+				RedirectURL:  RedirectURL(cfg.AppURL, entry.Name),
 				Scopes:       entry.Scopes,
 			},
 		}
 		if entry.Endpoints.Issuer != "" {
-			keys := &lazyKeys{url: entry.Endpoints.JWKSURL, http: o.http}
+			keys := &lazyKeys{url: entry.Endpoints.JWKSURL, http: client}
 			live.verifier = oidc.NewVerifier(entry.Endpoints.Issuer, keys, &oidc.Config{ClientID: c.ClientID})
 		}
 		p.live = append(p.live, live)
@@ -221,13 +203,6 @@ func (l *lazyKeys) VerifySignature(ctx context.Context, jwt string) ([]byte, err
 		l.keys = oidc.NewRemoteKeySet(oidc.ClientContext(context.WithoutCancel(ctx), l.http), l.url)
 	})
 	return l.keys.VerifySignature(ctx, jwt)
-}
-
-// FromConfig enables the providers the Instance configured, on its public address, sealing
-// flows with its JWT secret on the Instance clock now.
-func FromConfig(cfg *config.Config, now func() time.Time, opts ...Option) *Providers {
-	opts = append([]Option{WithFlowCodec(NewFlowCodec(cfg.JWTSecret, now))}, opts...)
-	return New(cfg.Signin.Enabled(), cfg.AppURL, now, opts...)
 }
 
 // SealFlow wraps a started flow for the browser's cookie, valid for FlowTTL.

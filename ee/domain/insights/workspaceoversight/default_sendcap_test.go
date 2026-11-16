@@ -107,7 +107,7 @@ func TestASignedUpUsersFirstWorkspaceStartsWithTheDefaultSendCap(t *testing.T) {
 // dump) is not copied onto a new Workspace.
 func TestASelfHostedInstanceGivesANewWorkspaceNoSendCap(t *testing.T) {
 	h := newHarness(t, testhelper.WithMode(config.ModeSelfHosted))
-	_, _, err := suspension.NewDefaultSendCap(h.env.DB, true).SetIn(t.Context(), h.env.DB, new(500))
+	_, err := suspension.NewDefaultSendCap(h.env.DB, true).SetIn(t.Context(), h.env.DB, new(500))
 	require.NoError(t, err)
 
 	id := h.createWorkspace(t, "Self-hosted")

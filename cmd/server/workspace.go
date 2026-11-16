@@ -30,7 +30,7 @@ func workspaceCommand(env string) *cli.Command {
 				if err != nil {
 					return err
 				}
-				changed, err := suspender.SuspendByPublicID(ctx, id, suspension.CLI, reason)
+				changed, err := suspender.SuspendByPublicID(ctx, id, suspension.SuspendInput{By: suspension.CLI, Reason: reason})
 				return commandline.Suspension.Report(out(cmd), id, changed, err)
 			}),
 		},

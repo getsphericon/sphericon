@@ -18,30 +18,34 @@ var (
 )
 
 func TestWithoutASecretTheStaffSignInIsOff(t *testing.T) {
-	m, err := staffmembers.New(nil, nil, []string{siteSecret}, staffmembers.Config{Clock: time.Now})
+	cfg := staffmembers.Config{Clock: time.Now}
 
-	require.NoError(t, err, "an Instance needs no Staff member secret to start")
-	assert.Nil(t, m.Sessions(), "and then issues no Staff member session")
+	require.NoError(t, cfg.Validate([]string{siteSecret}), "an Instance needs no Staff member secret to start")
+	assert.Nil(t, staffmembers.New(nil, nil, cfg).Sessions(), "and then issues no Staff member session")
 }
 
 func TestTheStaffSecretMustDifferFromTheSiteSecretAndBeLongEnough(t *testing.T) {
-	_, err := staffmembers.New(nil, nil, []string{siteSecret}, staffmembers.Config{Clock: time.Now, Secret: siteSecret, SessionTTL: time.Hour, Attempts: attempts})
+	err := staffmembers.Config{Clock: time.Now, Secret: siteSecret, SessionTTL: time.Hour, Attempts: attempts}.Validate([]string{siteSecret})
 	require.Error(t, err, "a StaffMember session must never verify as a User's")
 
-	_, err = staffmembers.New(nil, nil, []string{siteSecret}, staffmembers.Config{Clock: time.Now, Secret: "short", SessionTTL: time.Hour, Attempts: attempts})
+	err = staffmembers.Config{Clock: time.Now, Secret: "short", SessionTTL: time.Hour, Attempts: attempts}.Validate([]string{siteSecret})
 	require.Error(t, err)
 
 	secondary := rand.Text() + rand.Text()
-	_, err = staffmembers.New(nil, nil, []string{siteSecret, secondary}, staffmembers.Config{Clock: time.Now, Secret: secondary, SessionTTL: time.Hour, Attempts: attempts})
+	err = staffmembers.Config{Clock: time.Now, Secret: secondary, SessionTTL: time.Hour, Attempts: attempts}.Validate([]string{siteSecret, secondary})
 	require.Error(t, err, "a rotation's secondary JWT secret verifies User sessions too")
 
-	m, err := staffmembers.New(nil, nil, []string{siteSecret}, staffmembers.Config{Clock: time.Now, Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts})
-	require.NoError(t, err)
-	assert.NotNil(t, m.Sessions())
+	cfg := staffmembers.Config{Clock: time.Now, Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour, Attempts: attempts}
+	require.NoError(t, cfg.Validate([]string{siteSecret}))
+	assert.NotNil(t, staffmembers.New(nil, nil, cfg).Sessions())
 }
 
 func TestTheStaffLoginCounterIsRequiredWithASecret(t *testing.T) {
-	_, err := staffmembers.New(nil, nil, []string{siteSecret}, staffmembers.Config{Clock: time.Now, Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour})
+	err := staffmembers.Config{Clock: time.Now, Secret: rand.Text() + rand.Text(), SessionTTL: time.Hour}.Validate([]string{siteSecret})
 
 	require.Error(t, err, "a missing counter must not silently leave the login unthrottled")
+}
+
+func TestTheStaffMemberNeedsTheInstanceClock(t *testing.T) {
+	require.Error(t, staffmembers.Config{}.Validate([]string{siteSecret}), "the module reads the Instance clock, sign-in on or off")
 }

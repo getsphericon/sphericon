@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -49,9 +50,15 @@ func (p *pass) Run(ctx context.Context, at time.Time) (abusedetector.Summary, er
 // tells the owners through the platform sender.
 func newDetector(env *testhelper.TestEnv, lic *licensekey.License, limits abusedetector.Limits) *pass {
 	p := &pass{}
-	p.detector = abusedetector.NewDetector(env.DB, env.Bus, lic, suspension.NewSuspender(env.Bus, time.Now), limits,
-		func() time.Time { return p.now })
+	watch := abusedetector.NewWatch(lic, limits, reputation.New(), func() time.Time { return p.now })
+	p.detector = abusedetector.NewDetector(env.DB, env.Bus, watch, suspension.NewSuspender(env.Bus, time.Now))
 	return p
+}
+
+// watchAt is the staff-licensed Watch over the tests' limits, on a clock stopped at when.
+func watchAt(t *testing.T, when time.Time) *abusedetector.Watch {
+	t.Helper()
+	return abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits, reputation.New(), func() time.Time { return when })
 }
 
 // The traffic the tests judge is in fixtures/events.yml, one scenario per day offset: a test runs
@@ -167,7 +174,7 @@ func TestWithNoDeliveryNoticesTheComplaintRateIsNotJudged(t *testing.T) {
 	d := detector(t, env)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(noDeliveryDay))
+	breach, err := watchAt(t, at(noDeliveryDay)).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws)
 	require.NoError(t, err)
 	summary, err := d.Run(t.Context(), at(noDeliveryDay))
 
@@ -305,7 +312,7 @@ func TestAnExemptWorkspaceIsNeitherWarnedNorFrozenButCanBeSuspendedByHand(t *tes
 	assert.NotContains(t, summary.Warned, fixtures.KramericaID)
 	assert.False(t, suspended(t, env, fixtures.KramericaID))
 	assert.NotContains(t, recipients(env), fixtures.KramericaOwnerNewmanEmail)
-	changed, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.CLI, "verified abuse", time.Now())
+	changed, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.KramericaID, suspension.SuspendInput{By: suspension.CLI, Reason: "verified abuse"})
 	require.NoError(t, err)
 	assert.True(t, changed, "an exemption is not a loophole for real abuse")
 }
@@ -321,7 +328,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 	_, err := d.Run(t.Context(), now)
 	require.NoError(t, err)
 	require.True(t, suspended(t, env, fixtures.KramericaID))
-	_, err = suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.KramericaID, suspension.StaffMember("1"), time.Now())
+	_, err = suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.KramericaID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	immediately, err := d.Run(t.Context(), now.Add(time.Minute))
@@ -339,7 +346,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 
 func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.StaffMember("1"), time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.HooliID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	assert.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.HooliID).ClearedAt)
@@ -349,7 +356,7 @@ func TestTheDashboardWarningIsTheDetectorsOwnComputation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ws := env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID)
 
-	breach, err := abusedetector.NewWatch(testhelper.License(t, licensekey.FeatureStaff), limits).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws, at(warnDay))
+	breach, err := watchAt(t, at(warnDay)).Warning(t.Context(), env.DB.Scoped(fixtures.VandelayID), ws)
 
 	require.NoError(t, err)
 	assert.Equal(t, abusedetector.TierWarn, breach.Tier)
@@ -364,7 +371,7 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
 
-	_, err = suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.CLI, "manual", time.Now())
+	_, err = suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.VandelayID, suspension.SuspendInput{By: suspension.CLI, Reason: "manual"})
 	require.NoError(t, err)
 	_, err = d.Run(t.Context(), at(warnDay).Add(time.Minute))
 

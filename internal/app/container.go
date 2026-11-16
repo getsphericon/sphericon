@@ -137,7 +137,7 @@ import (
 //
 // The seams below are the services a test harness replaces with do.Override or
 // do.OverrideValue before it invokes anything (an override does not reach a dependent that is
-// already built): Clock, Version, Database, SystemSender, SigninOptions,
+// already built): Clock, Version, Database, SystemSender, SigninEndpoints,
 // IntegrationOptions, OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
 // *credentials.Hasher, *messaging.Catalog, outboundmessages.Senders, domainname.TXTLookup, privaterelayranges.Source,
 // *preset.Registry, *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other
@@ -163,7 +163,7 @@ func Container(cfg *config.Config) *do.RootScope {
 	do.ProvideValue(injector, cfg)
 	do.ProvideValue(injector, Clock(time.Now))
 	do.ProvideValue(injector, Version(buildinfo.Current().Version))
-	do.ProvideValue(injector, SigninOptions{})
+	do.ProvideValue(injector, SigninEndpoints{})
 	do.ProvideValue(injector, IntegrationOptions{})
 	return injector
 }
@@ -207,8 +207,9 @@ type SystemSender struct {
 	messaging.EmailSender
 }
 
-// SigninOptions configure the Sign-in providers (ADR 0048); none in production.
-type SigninOptions []signinprovider.Option
+// SigninEndpoints replace where the Sign-in providers (ADR 0048) are reached, by name: a test's
+// fake; none in production.
+type SigninEndpoints map[string]signinprovider.Endpoints
 
 // IntegrationOptions configure the Integrations module; none in production.
 type IntegrationOptions []integrations.Option
@@ -398,10 +399,14 @@ var staffPackage = do.Package(
 	// Instance; the sign-in is off without SPHERICON_STAFF_JWT_SECRET.
 	do.Lazy(func(i do.Injector) (*staffmembers.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), cfg.JWTSecrets(), staffmembers.Config{
+		members := staffmembers.Config{
 			Secret: cfg.StaffJWTSecret, SessionTTL: cfg.StaffSessionTTL, SecureCookies: cfg.SecureCookies(), Clock: do.MustInvoke[Clock](i),
 			Attempts: do.MustInvoke[*throttle.Attempts](i), Passwords: do.MustInvoke[*credentials.Hasher](i),
-		})
+		}
+		if err := members.Validate(cfg.JWTSecrets()); err != nil {
+			return nil, err
+		}
+		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), members), nil
 	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
@@ -448,6 +453,7 @@ var editionPackage = do.Package(
 			StaffSessions: members.Sessions(),
 			Suspender:     do.MustInvoke[*suspension.Suspender](i),
 			Reputation:    do.MustInvoke[*reputation.Module](i),
+			Cipher:        do.MustInvoke[*secrets.Cipher](i),
 		}, workspaceoversight.Config{
 			Abuse:         abusedetector.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail:  cfg.SupportEmail,
@@ -462,7 +468,7 @@ var editionPackage = do.Package(
 		return do.MustInvoke[*ee.Edition](i).Abuse(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*auditlogretention.UseCase, error) {
-		return auditlogretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i)), nil
+		return auditlogretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*ee.Edition](i).Audit, do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// A Workspace's freezes on the send chokepoint (ADR 0009, 0015), gated by the license: one
 	// module for the send path and every read of a hold shown to a Workspace.
@@ -577,13 +583,12 @@ var jobsPackage = do.Package(
 			Webhooks:         edition.Webhooks,
 			Instance:         do.MustInvoke[*instancestates.Module](i),
 		}, eejobs.Extension(eejobs.Deps{
-			Client:          do.MustInvoke[*ent.Client](i),
-			License:         do.MustInvoke[*licensekey.License](i),
 			Retention:       do.MustInvoke[*auditlogretention.UseCase](i),
 			Detector:        do.MustInvoke[*abusedetector.Detector](i),
+			Audit:           edition.Audit,
+			Erasures:        edition.Erasures,
+			Usage:           edition.Usage,
 			EventsRetention: cfg.EventsRetention,
-			Clock:           do.MustInvoke[Clock](i),
-			Cipher:          do.MustInvoke[*secrets.Cipher](i),
 		}))
 		if err != nil {
 			return nil, err
@@ -981,7 +986,12 @@ var surfacesPackage = do.Package(
 	}),
 	// The Sign-in providers the Instance enabled (ADR 0048).
 	do.Lazy(func(i do.Injector) (*signinprovider.Providers, error) {
-		return signinprovider.FromConfig(do.MustInvoke[*config.Config](i), do.MustInvoke[Clock](i), do.MustInvoke[SigninOptions](i)...), nil
+		cfg := do.MustInvoke[*config.Config](i)
+		return signinprovider.New(
+			signinprovider.Config{Credentials: cfg.Signin.Enabled(), AppURL: cfg.AppURL, Endpoints: do.MustInvoke[SigninEndpoints](i)},
+			&http.Client{Timeout: signinprovider.ProviderTimeout},
+			signinprovider.NewFlowCodec(cfg.JWTSecret, do.MustInvoke[Clock](i)),
+		), nil
 	}),
 	// The error page's button that runs the migrations: a development build only (ADR 0033), nil
 	// elsewhere.

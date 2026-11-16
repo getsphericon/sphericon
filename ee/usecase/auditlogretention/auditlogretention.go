@@ -33,14 +33,15 @@ const ClientWindow = 90 * 24 * time.Hour
 // a window, then scopes to each one.
 type UseCase struct {
 	client *ent.Client
+	log    *auditentries.Log
 	lic    *licensekey.License
 	now    func() time.Time
 }
 
-// New builds the use case over the raw client, the license that switches the retention on and
-// the Instance clock the windows are measured on.
-func New(client *ent.Client, lic *licensekey.License, now func() time.Time) *UseCase {
-	return &UseCase{client: client, lic: lic, now: now}
+// New builds the use case over the raw client, the Audit log whose entries it prunes, the license
+// that switches the retention on and the Instance clock the windows are measured on.
+func New(client *ent.Client, log *auditentries.Log, lic *licensekey.License, now func() time.Time) *UseCase {
+	return &UseCase{client: client, log: log, lic: lic, now: now}
 }
 
 // Prune deletes, in every Workspace that set a retention window, the Audit entries that
@@ -61,7 +62,7 @@ func (u *UseCase) Prune(ctx context.Context) (int, error) {
 	var total int
 	for _, ws := range live {
 		cutoff := now.AddDate(0, 0, -*ws.RetentionDays)
-		n, err := auditentries.PruneBefore(ctx, u.client.Scoped(ws.ID), cutoff)
+		n, err := u.log.PruneBefore(ctx, u.client.Scoped(ws.ID), cutoff)
 		if err != nil {
 			return total, fmt.Errorf("prune audit entries of workspace %d: %w", ws.ID, err)
 		}
@@ -90,7 +91,7 @@ func (u *UseCase) ForgetClients(ctx context.Context) (int, error) {
 	cutoff := u.now().Add(-ClientWindow)
 	var total int
 	for _, id := range ids {
-		n, err := auditentries.ForgetClientsBefore(ctx, u.client.Scoped(id), cutoff)
+		n, err := u.log.ForgetClientsBefore(ctx, u.client.Scoped(id), cutoff)
 		if err != nil {
 			return total, fmt.Errorf("forget the clients of the audit entries of workspace %d: %w", id, err)
 		}

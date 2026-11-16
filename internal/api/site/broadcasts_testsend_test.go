@@ -133,7 +133,7 @@ func TestSiteTestSendFromTheSystemSenderIsCappedPerWorkspacePerDay(t *testing.T)
 
 func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.UnsuspendWorkspace(t.Context(), env.Bus, fixtures.HooliID, suspension.CLI, time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.HooliID, suspension.CLI)
 	require.NoError(t, err)
 	c := env.SiteActor(t, fixtures.OwnerSallyEmail)
 
@@ -152,7 +152,7 @@ func TestSiteTestSendLeavesTheSentEmailStepTodo(t *testing.T) {
 func TestSiteTestSendFromASuspendedWorkspaceIsRefusedWithItsReason(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
-	_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.GlobexID, suspension.System, "abuse", time.Now())
+	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.GlobexID, suspension.SuspendInput{By: suspension.System, Reason: "abuse"})
 	require.NoError(t, err)
 
 	_, err = testSendAsJane(env, c, fixtures.OwnerJaneEmail)

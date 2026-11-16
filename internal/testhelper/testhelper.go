@@ -37,7 +37,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
-	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -245,8 +244,8 @@ type setup struct {
 	// mail is the DNS the Contact intake reads an address's domain from; nil is
 	// addresscheck.AllAccept (WithMailResolver).
 	mail addresscheck.Resolver
-	// signinOpts point the Sign-in registry at a fake provider (WithSignin).
-	signinOpts []signinprovider.Option
+	// signinEndpoints point the Sign-in registry at a fake provider (WithSignin).
+	signinEndpoints app.SigninEndpoints
 }
 
 // WithTXTLookup replaces the TXT resolver of Sending domain and Join domain verification, so a
@@ -468,7 +467,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	// under the test's transaction.
 	do.OverrideValue[apisite.Migrations](injector, nil)
 	do.OverrideValue(injector, app.OAuthFetcher{Doer: oauthFetcher})
-	do.OverrideValue(injector, app.SigninOptions(st.signinOpts))
+	do.OverrideValue(injector, st.signinEndpoints)
 	do.OverrideValue(injector, app.IntegrationOptions{integrations.WithSubscriptionConfirmer(confirmations.confirm)})
 	// A Workspace's mail lands in CustomerMail unless its Integration is a Test inbox.
 	do.Override(injector, func(i do.Injector) (outboundmessages.Senders, error) {
@@ -504,8 +503,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.Module](injector), systemSender))
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
 		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
-		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(client, lic))
-		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(client, lic, do.MustInvoke[*secrets.Cipher](injector)))
+		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(edition.Audit))
+		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(edition.Erasures))
 		return p
 	}
 

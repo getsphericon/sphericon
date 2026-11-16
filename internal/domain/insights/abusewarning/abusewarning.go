@@ -5,7 +5,6 @@ package abusewarning
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 )
@@ -28,7 +27,7 @@ type Warning struct {
 
 // Watch reads a Workspace's standing with the detector.
 type Watch interface {
-	// Warning is the Workspace's warning at now, or nil when it is in no warning tier
-	// (exempt and suspended Workspaces are never in one).
-	Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*Warning, error)
+	// Warning is the Workspace's warning at the Instance clock's now, or nil when it is in no
+	// warning tier (exempt and suspended Workspaces are never in one).
+	Warning(ctx context.Context, s *ent.Scoped) (*Warning, error)
 }

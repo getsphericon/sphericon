@@ -21,7 +21,7 @@ func TestWithoutALicenseSendingAndContactChangesWriteNoUsageRows(t *testing.T) {
 	require.NoError(t, h.env.DB.Scoped(fixtures.AcmeID).Contact().Create().SetEmail("new@example.com").Exec(t.Context()))
 	h.sendOnAPI(t, "unlicensed@example.com")
 
-	require.NoError(t, usages.Refresh(t.Context(), h.env.DB, nil, time.Now()))
+	require.NoError(t, usages.New(h.env.DB, nil, time.Now).Refresh(t.Context()))
 
 	assert.Equal(t, fixtureRows, h.env.DB.Usage.Query().CountX(t.Context()), "no snapshot, counter or live row is written")
 }

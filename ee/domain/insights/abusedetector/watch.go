@@ -19,11 +19,13 @@ type Watch struct {
 	lic    *licensekey.License
 	limits Limits
 	rep    *reputation.Module
+	now    func() time.Time
 }
 
-// NewWatch builds a Watch over the limits (zero Limits are the defaults).
-func NewWatch(lic *licensekey.License, limits Limits) *Watch {
-	return &Watch{lic: lic, limits: limits.orDefault(), rep: reputation.New()}
+// NewWatch builds a Watch over the limits (zero Limits are the defaults), reading a Workspace's
+// rates through rep at the Instance clock now.
+func NewWatch(lic *licensekey.License, limits Limits, rep *reputation.Module, now func() time.Time) *Watch {
+	return &Watch{lic: lic, limits: limits.orDefault(), rep: rep, now: now}
 }
 
 // Limits are the limits in force.
@@ -42,8 +44,9 @@ func WindowFor(ws *ent.Workspace, now time.Time) reputation.Window {
 	return reputation.Window{Since: since, Until: now}
 }
 
-// Standing is the Workspace's breach at now, whatever its state.
-func (w *Watch) Standing(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (Breach, error) {
+// standing is the Workspace's breach at now, whatever its state: the detector's pass judges every
+// Workspace at the one moment it read.
+func (w *Watch) standing(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (Breach, error) {
 	rates, err := w.rep.Rates(ctx, s, WindowFor(ws, now))
 	if err != nil {
 		return Breach{}, err
@@ -51,14 +54,14 @@ func (w *Watch) Standing(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, 
 	return w.limits.Classify(rates), nil
 }
 
-// Warning is the Workspace's breach for display: the detector's standing, but none for an
-// unlicensed instance, an exempt Workspace (never warned or frozen automatically) or one
-// that is already suspended.
-func (w *Watch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace, now time.Time) (Breach, error) {
+// Warning is the Workspace's breach for display, at the clock's now: the detector's standing, but
+// none for an unlicensed instance, an exempt Workspace (never warned or frozen automatically) or
+// one that is already suspended.
+func (w *Watch) Warning(ctx context.Context, s *ent.Scoped, ws *ent.Workspace) (Breach, error) {
 	if !w.Licensed() || ws.AbuseExempt || suspension.Is(ws) {
 		return Breach{}, nil
 	}
-	return w.Standing(ctx, s, ws, now)
+	return w.standing(ctx, s, ws, w.now())
 }
 
 // Review narrows the console's Workspace list to the ones the abuse detector surfaces

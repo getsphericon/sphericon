@@ -27,14 +27,22 @@ var (
 type Reader interface {
 	Licensed() bool
 	RetentionLicensed() bool
-	// Entries returns up to limit entries matching the filter, newest first, preceding the cursor
-	// entry id (0 = from the newest), and the next page's cursor (0 = last page).
-	Entries(ctx context.Context, s *ent.Scoped, f events.AuditFilter, cursor int64, limit int) (pagination.IDPage[*ent.AuditEntry], error)
+	// Entries returns up to in.Limit entries matching in.Filter, newest first, preceding the
+	// in.Cursor entry id (0 = from the newest), and the next page's cursor (0 = last page).
+	Entries(ctx context.Context, s *ent.Scoped, in EntriesInput) (pagination.IDPage[*ent.AuditEntry], error)
 	// Facets returns the actors, actions and target types that occur in the log, sorted.
 	Facets(ctx context.Context, s *ent.Scoped) (Facets, error)
 	// Export records the export as an Audit entry of the scope's actor, then returns the entries
 	// matching the filter, newest first, as CSV chunks the driver streams.
 	Export(ctx context.Context, s *ent.Scoped, f events.AuditFilter) (iter.Seq2[[]byte, error], error)
+}
+
+// EntriesInput is what a Reader's page of entries is asked with: the filter, the id of the entry
+// the page starts after (0 for the newest) and the page's size.
+type EntriesInput struct {
+	Filter events.AuditFilter
+	Cursor int64
+	Limit  int
 }
 
 // Log serves a Workspace's Audit log to the surfaces that show it (/site, /api), refused as
@@ -69,7 +77,7 @@ func (l *Log) Page(ctx context.Context, s *ent.Scoped, q Query) (Page, error) {
 	if err != nil {
 		return Page{}, err
 	}
-	page, err := l.reader.Entries(ctx, s, q.Filter, cursor, q.Limit)
+	page, err := l.reader.Entries(ctx, s, EntriesInput{Filter: q.Filter, Cursor: cursor, Limit: q.Limit})
 	if err != nil {
 		return Page{}, err
 	}

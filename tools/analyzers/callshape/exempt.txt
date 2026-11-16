@@ -3,11 +3,6 @@
 # when it gains an entry, the analyzer reports an entry that keeps the contract, and its test an entry
 # that names no package of the domain tier. A migration removes its packages; the last one deletes
 # the list, its embed and its check.
-ee/domain/insights/abusedetector
-ee/domain/insights/auditentries
-ee/domain/insights/erasures
-ee/domain/insights/usages
-ee/domain/insights/workspaceoversight
 internal/domain/contacts/channelstop
 internal/domain/contacts/condition
 internal/domain/contacts/confirmations
@@ -32,16 +27,11 @@ internal/domain/identity/apitokens
 internal/domain/identity/consentrecords
 internal/domain/identity/invitations
 internal/domain/identity/joindomains
-internal/domain/identity/login
 internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
 internal/domain/identity/oauthclients
 internal/domain/identity/passkeys
 internal/domain/identity/secondfactors
-internal/domain/identity/signinprovider
-internal/domain/identity/signupitems
-internal/domain/identity/staffmembers
-internal/domain/identity/suspension
 internal/domain/identity/users
 internal/domain/identity/users/usersunchecked
 internal/domain/identity/workspaces
