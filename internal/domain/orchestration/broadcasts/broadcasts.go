@@ -106,7 +106,7 @@ func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Mod
 // so an email Broadcast of a Workspace with no postal address is refused with
 // outboundmessages.ErrPostalAddressRequired (ADR 0156); a Send route that cannot send holds the plan.
 func (m *Module) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, postalAddressArmable)
+	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, requirePostalAddress)
 }
 
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
@@ -123,7 +123,7 @@ func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64
 // address for an email's footer, its Send route cannot send, or its content breaks its Channel's
 // written-length rule.
 func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
-	if err := postalAddressArmable(ctx, ts, b); err != nil {
+	if err := requirePostalAddress(ctx, ts, b); err != nil {
 		return err
 	}
 	channel := b.Channel
@@ -137,11 +137,11 @@ func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) 
 	return checkWritten(b)
 }
 
-// postalAddressArmable refuses a claimed email Broadcast while its Workspace has no postal address,
+// requirePostalAddress refuses a claimed email Broadcast while its Workspace has no postal address,
 // which the marketing email footer carries (ADR 0156). It reads the Workspace in the claim's
 // transaction, under the Workspace lock a clearing of the address takes too.
-func postalAddressArmable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
-	return outboundmessages.PostalAddressArmable(ctx, ts, b.Channel)
+func requirePostalAddress(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
+	return outboundmessages.RequirePostalAddress(ctx, ts, b.Channel)
 }
 
 // checkWritten is the Channel's written-length rule (ADR 0078), checked at Schedule on the content

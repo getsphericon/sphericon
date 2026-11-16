@@ -71,22 +71,12 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 	return events.Ingest(m.client.Scoped(workspaceID))
 }
 
-// Update renames the scoped Workspace and, when postalAddress is non-nil, sets (or clears, with "")
-// its postal address, trimmed so whitespace alone clears it. The name is held to the name rule
-// (validation.Name). It is the edit of the Workspace made on revision (ADR 0119), through the
-// scope's tenant edit: ErrRevisionChanged when the Workspace has moved past it, an edit that changes
-// nothing writes nothing, and a change is recorded as a `workspace.update` Audit entry of the
-// scope's actor (ADR 0022).
-func (m *Module) Update(ctx context.Context, s *ent.Scoped, revision int64, name string, postalAddress *string) (*ent.Workspace, error) {
-	name, err := validation.Name(name)
-	if err != nil {
-		return nil, err
-	}
-	upd := edit(s, revision).SetName(name)
-	if postalAddress != nil {
-		upd.SetPostalAddress(strings.TrimSpace(*postalAddress))
-	}
-	return upd.Save(ctx)
+// HasPostalAddress reports whether the Workspace has a postal address, which the footer of every
+// marketing email carries: non-empty text after trimming, nothing checked further (ADR 0156). Its
+// rename and the change of its address are workspacesunchecked.EditIn's: clearing an address is
+// refused while marketing email is armed, which a check above identity finds.
+func HasPostalAddress(ws *ent.Workspace) bool {
+	return strings.TrimSpace(ws.PostalAddress) != ""
 }
 
 // SetAuditRetention sets (or, with nil, clears) the number of days the Audit log is

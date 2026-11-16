@@ -38,19 +38,3 @@ func TestTheOldestLiveWorkspaceIsNeverADeletedOne(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.GlobexID, next)
 }
-
-// A postal address is trimmed, so one of whitespace alone clears it, as an empty one does.
-func TestUpdateTrimsThePostalAddress(t *testing.T) {
-	env := testhelper.Setup(t)
-	m := testhelper.Module[*workspaces.Module](env)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	padded, blank := "  1 Main St  ", "   "
-
-	set, err := m.Update(t.Context(), s, env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).Revision, "Acme", &padded)
-	require.NoError(t, err)
-	cleared, err := m.Update(t.Context(), s, set.Revision, "Acme", &blank)
-	require.NoError(t, err)
-
-	assert.Equal(t, "1 Main St", set.PostalAddress)
-	assert.Empty(t, cleared.PostalAddress)
-}

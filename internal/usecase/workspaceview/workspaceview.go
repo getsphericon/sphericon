@@ -22,8 +22,6 @@ import (
 	"context"
 	"time"
 
-	"strings"
-
 	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -31,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -187,26 +186,25 @@ func (u *UseCase) One(ctx context.Context, s *ent.Scoped, c Caller) (View, error
 	return u.view(ctx, s, c, ws)
 }
 
-// Update renames the Workspace of s and sets its postal address (workspaces.Module.Update) and
-// answers its View for the caller. Clearing the address (to nothing but whitespace) is refused with
-// a *liveuse.Error naming them while marketing email is armed (ADR 0156): the Removal check runs
-// under the Workspace lock, which Schedule, Send and Publish take too, so none of them arms an
-// email between the check and the write.
+// Update renames the Workspace of s and sets its postal address (workspacesunchecked.EditIn) and
+// answers its View for the caller. Clearing an address the Workspace has is refused with the
+// Removal check's *liveuse.Error naming them while marketing email is armed (ADR 0156); saving an
+// empty address over none, as a rename does, is not checked. The check and the edit run in one
+// transaction under the Workspace lock, which Schedule, Send and Publish take too, so none of them
+// arms an email between the check and the write.
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in UpdateInput) (View, error) {
-	if in.PostalAddress == nil || strings.TrimSpace(*in.PostalAddress) != "" {
-		ws, err := u.workspaces.Update(ctx, s, in.Revision, in.Name, in.PostalAddress)
-		if err != nil {
-			return View{}, err
-		}
-		return u.view(ctx, s, c, ws)
-	}
 	var ws *ent.Workspace
 	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		if err := u.removalCheck.PostalAddress(ctx, wl); err != nil {
+		edit, err := workspacesunchecked.EditIn(ctx, wl, in.Revision, in.Name, in.PostalAddress)
+		if err != nil {
 			return err
 		}
-		var err error
-		ws, err = u.workspaces.Update(ctx, wl.Scope(), in.Revision, in.Name, in.PostalAddress)
+		if edit.ClearsPostalAddress() {
+			if err := u.removalCheck.PostalAddress(ctx, wl); err != nil {
+				return err
+			}
+		}
+		ws, err = edit.Apply(ctx)
 		return err
 	})
 	if err != nil {

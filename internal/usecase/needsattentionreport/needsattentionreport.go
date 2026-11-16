@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/sendingdomain"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -378,7 +379,7 @@ func (m *UseCase) sendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]
 // item has no since.
 func postalAddressMissing(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
 	ws, err := s.Workspace(ctx)
-	if err != nil || outboundmessages.HasPostalAddress(ws) {
+	if err != nil || workspaces.HasPostalAddress(ws) {
 		return nil, err
 	}
 	emails, err := s.Integration().Query().Where(integration.ChannelEQ(channels.Email)).Exist(ctx)

@@ -1,7 +1,9 @@
 // Package workspacesunchecked holds the workspaces module's unchecked operations (ADR 0110): the
 // restore and the erase of the deletion cycle, which need a Membership that holds the delete
-// Permission and every owner's rows removed. Their checks are the use cases'
-// (internal/usecase/workspaceview, which restores one, and internal/usecase/workspacedeletion); only
+// Permission and every owner's rows removed, and the edit of the name and the postal address,
+// whose clearing needs no marketing email armed (ADR 0156). Their checks are the use cases'
+// (internal/usecase/workspaceview, which restores and edits one, and
+// internal/usecase/workspacedeletion); only
 // a use case may import this package. The workspaces module does not import it; it declares the
 // cycle's table (workspaces.DeletionCycle), whose restore and erase moves are written here.
 package workspacesunchecked
@@ -10,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -17,7 +20,58 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
+
+// Edit is the rename of the Workspace of a locked scope and, when it carries one, the change of its
+// postal address, opened on the row and written by Apply once the use case's check holds: clearing
+// a stored address is refused while marketing email is armed (ADR 0156), which the Removal check
+// above identity finds, so the use case asks ClearsPostalAddress first.
+type Edit struct {
+	l             *ent.WorkspaceLocked
+	revision      int64
+	name          string
+	postalAddress *string
+	clears        bool
+}
+
+// EditIn opens the edit made on revision (ADR 0119) under the Workspace lock l: name is held to the
+// name rule (validation.Name), and postalAddress, when non-nil, is trimmed, so whitespace alone
+// clears it ("" clears it, nil leaves it).
+func EditIn(ctx context.Context, l *ent.WorkspaceLocked, revision int64, name string, postalAddress *string) (*Edit, error) {
+	name, err := validation.Name(name)
+	if err != nil {
+		return nil, err
+	}
+	e := &Edit{l: l, revision: revision, name: name}
+	if postalAddress == nil {
+		return e, nil
+	}
+	stored, err := l.Scope().Workspace(ctx)
+	if err != nil {
+		return nil, err
+	}
+	trimmed := strings.TrimSpace(*postalAddress)
+	e.postalAddress = &trimmed
+	e.clears = trimmed == "" && workspaces.HasPostalAddress(stored)
+	return e, nil
+}
+
+// ClearsPostalAddress reports whether the edit takes away the address the Workspace has. Saving an
+// empty one over none clears nothing.
+func (e *Edit) ClearsPostalAddress() bool { return e.clears }
+
+// Apply writes the edit through the scope's tenant edit and returns the Workspace as it now reads:
+// workspaces.ErrRevisionChanged when the Workspace has moved past the revision, nothing written for
+// an edit that changes nothing, and a change recorded as a `workspace.update` Audit entry of the
+// scope's actor (ADR 0022).
+func (e *Edit) Apply(ctx context.Context) (*ent.Workspace, error) {
+	upd := e.l.Scope().EditWorkspaceAt(e.revision).Refusing(workspaces.ErrNotFound, workspaces.ErrRevisionChanged).SetName(e.name)
+	if e.postalAddress != nil {
+		upd.SetPostalAddress(*e.postalAddress)
+	}
+	return upd.Save(ctx)
+}
 
 // RestoreIn moves the Workspace id from pending deletion back to active inside tx, only while
 // it is inside its deletion window at now, and returns it as it now reads. One past it, already
