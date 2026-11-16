@@ -82,7 +82,7 @@ func (l *Log) exportCSV(ctx context.Context, s *ent.Scoped, f events.AuditFilter
 		}
 		var cursor int64
 		for {
-			page, err := l.Entries(ctx, s, f, cursor, exportPageSize)
+			page, err := l.Entries(ctx, s, auditlog.EntriesInput{Filter: f, Cursor: cursor, Limit: exportPageSize})
 			if err != nil {
 				yield(nil, err)
 				return

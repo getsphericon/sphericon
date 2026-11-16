@@ -17,5 +17,5 @@ func (env *TestEnv) RefreshUsage(t *testing.T, now time.Time) {
 	t.Helper()
 	lic, err := testLicense()
 	require.NoError(t, err)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, now))
+	require.NoError(t, usages.New(env.DB, lic, func() time.Time { return now }).Refresh(t.Context()))
 }

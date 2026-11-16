@@ -32,6 +32,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
@@ -74,6 +75,7 @@ type Module struct {
 	rates    *reputation.Module
 	lic      *licensekey.License
 	audit    *auditentries.Log
+	usage    *usages.Module
 	now      func() time.Time
 	watch    *abusedetector.Watch
 	holdMax  time.Duration
@@ -81,8 +83,8 @@ type Module struct {
 	sendCaps providerlimit.SendCaps
 }
 
-// New builds the module over the raw client.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
+// New builds the module over the raw client, the Audit log and the Usage it shows.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
 		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
@@ -92,13 +94,13 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog 
 		holdMax = holds.DefaultMaxExpiry
 	}
 	return &Module{
-		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
+		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
 		sendCaps: cfg.SendCaps,
 	}
 }
 
 // Watch is the abuse detector's read of a Workspace's standing, with the limits this
-// module shows rates under.
+// module shows rates under: the Edition's detector judges by the same one.
 func (m *Module) Watch() *abusedetector.Watch { return m.watch }
 
 func (m *Module) licensed() error {

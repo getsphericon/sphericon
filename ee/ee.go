@@ -52,9 +52,16 @@ type Edition struct {
 	lic    *licensekey.License
 	client *ent.Client
 
-	// Audit is the read side of the Audit log (auditlog.Reader), which auditlog.Log serves the
-	// surfaces over; unlicensed, it reports so and the Log refuses as unlicensed (402).
+	// Audit is the Audit log: its consumer, which the Enterprise jobs run, and its read side
+	// (auditlog.Reader), which auditlog.Log serves the surfaces over; unlicensed, it reports so and
+	// the Log refuses as unlicensed (402).
 	Audit *auditentries.Log
+	// Erasures is the Erasures stream's store (ADR 0045), which the Enterprise jobs fill and prune;
+	// unlicensed, it stores and removes nothing.
+	Erasures *erasures.Module
+	// Usage is the Usage of every Workspace (ADR 0009), which the Enterprise jobs refresh and the
+	// Staff module reads; unlicensed, the refresh does nothing.
+	Usage *usages.Module
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *ExportStreams
 	// Staff is the module of the console's Enterprise sections and of the service endpoints
@@ -67,7 +74,6 @@ type Edition struct {
 	staffSessions *staffmembers.Sessions
 	bus           *events.Bus
 	suspend       *suspension.Suspender
-	abuseLimits   abusedetector.Limits
 	now           func() time.Time
 }
 
@@ -85,30 +91,35 @@ type Deps struct {
 	StaffSessions *staffmembers.Sessions
 	// Suspender suspends a Workspace (ADR 0007).
 	Suspender *suspension.Suspender
-	// Reputation computes a Workspace's rates, which the console shows.
+	// Reputation computes a Workspace's rates, which the console shows and the abuse detector
+	// judges.
 	Reputation *reputation.Module
+	// Cipher seals the hashes the Erasures stream stores (ADR 0045).
+	Cipher *secrets.Cipher
 }
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
 // Staff member's sessions, so the `staff` feature refuses to start without them.
 func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
-	lic, staffSessions := deps.License, deps.StaffSessions
-	auditLog := auditentries.NewLog(lic, deps.Bus)
-	e := &Edition{
-		lic:     lic,
-		client:  deps.Client,
-		bus:     deps.Bus,
-		suspend: deps.Suspender,
-		Audit:   auditLog,
-		Export:  &ExportStreams{lic: lic},
-		Staff:   workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
-
-		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
-	}
-	e.abuseLimits = staffCfg.Abuse
-	e.now = staffCfg.Clock
-	if e.now == nil {
+	lic, staffSessions, now := deps.License, deps.StaffSessions, staffCfg.Clock
+	if now == nil {
 		return nil, errors.New("ee: workspaceoversight.Config.Clock is required: the Edition reads the Instance clock")
+	}
+	auditLog := auditentries.NewLog(deps.Client, lic, deps.Bus)
+	usage := usages.New(deps.Client, lic, now)
+	e := &Edition{
+		lic:      lic,
+		client:   deps.Client,
+		bus:      deps.Bus,
+		suspend:  deps.Suspender,
+		now:      now,
+		Audit:    auditLog,
+		Erasures: erasures.New(deps.Client, lic, deps.Cipher, now),
+		Usage:    usage,
+		Export:   &ExportStreams{lic: lic},
+		Staff:    workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Reputation, staffCfg),
+
+		ServiceCredentials: servicecredentials.New(deps.Client, lic, now),
 	}
 	if lic.Has(licensekey.FeatureStaff) {
 		if staffSessions == nil {
@@ -178,7 +189,7 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
 func (e *Edition) Abuse() *abusedetector.Detector {
-	return abusedetector.NewDetector(e.client, e.bus, e.lic, e.suspend, e.abuseLimits, e.now)
+	return abusedetector.NewDetector(e.client, e.bus, e.Staff.Watch(), e.suspend)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
@@ -187,12 +198,12 @@ func (e *Edition) AbuseWatch() abusewarning.Watch { return abuseWatchAdapter{e.S
 
 type abuseWatchAdapter struct{ watch *abusedetector.Watch }
 
-func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*abusewarning.Warning, error) {
+func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped) (*abusewarning.Warning, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return nil, err
 	}
-	b, err := w.watch.Warning(ctx, s, ws, now)
+	b, err := w.watch.Warning(ctx, s, ws)
 	if err != nil || b.Tier == abusedetector.TierNone {
 		return nil, err
 	}

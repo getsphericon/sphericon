@@ -448,6 +448,7 @@ var editionPackage = do.Package(
 			StaffSessions: members.Sessions(),
 			Suspender:     do.MustInvoke[*suspension.Suspender](i),
 			Reputation:    do.MustInvoke[*reputation.Module](i),
+			Cipher:        do.MustInvoke[*secrets.Cipher](i),
 		}, workspaceoversight.Config{
 			Abuse:         abusedetector.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail:  cfg.SupportEmail,
@@ -462,7 +463,7 @@ var editionPackage = do.Package(
 		return do.MustInvoke[*ee.Edition](i).Abuse(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*auditlogretention.UseCase, error) {
-		return auditlogretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i)), nil
+		return auditlogretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*ee.Edition](i).Audit, do.MustInvoke[*licensekey.License](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// A Workspace's freezes on the send chokepoint (ADR 0009, 0015), gated by the license: one
 	// module for the send path and every read of a hold shown to a Workspace.
@@ -577,13 +578,12 @@ var jobsPackage = do.Package(
 			Webhooks:         edition.Webhooks,
 			Instance:         do.MustInvoke[*instancestates.Module](i),
 		}, eejobs.Extension(eejobs.Deps{
-			Client:          do.MustInvoke[*ent.Client](i),
-			License:         do.MustInvoke[*licensekey.License](i),
 			Retention:       do.MustInvoke[*auditlogretention.UseCase](i),
 			Detector:        do.MustInvoke[*abusedetector.Detector](i),
+			Audit:           edition.Audit,
+			Erasures:        edition.Erasures,
+			Usage:           edition.Usage,
 			EventsRetention: cfg.EventsRetention,
-			Clock:           do.MustInvoke[Clock](i),
-			Cipher:          do.MustInvoke[*secrets.Cipher](i),
 		}))
 		if err != nil {
 			return nil, err

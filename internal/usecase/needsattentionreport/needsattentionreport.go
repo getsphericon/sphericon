@@ -339,11 +339,13 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 	return items, nil
 }
 
-func (m *UseCase) deliverability(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
+// deliverability is the Workspace's abuse warning, which the watch judges at the Instance clock it
+// reads itself.
+func (m *UseCase) deliverability(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
 	if m.watch == nil {
 		return nil, nil
 	}
-	w, err := m.watch.Warning(ctx, s, now)
+	w, err := m.watch.Warning(ctx, s)
 	if err != nil || w == nil {
 		return nil, err
 	}

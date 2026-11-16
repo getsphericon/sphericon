@@ -99,16 +99,31 @@ func measureInFlightSends(ctx context.Context, s *ent.Scoped, p Period, open boo
 	return int64(n), err
 }
 
+// Module is the Usage of every Workspace: the job that materializes it and the reads of what it
+// stored.
+type Module struct {
+	client *ent.Client
+	lic    *licensekey.License
+	now    func() time.Time
+}
+
+// New builds the module over the raw client, the license whose `staff` feature switches the
+// refresh on, and the Instance clock the refresh measures at.
+func New(client *ent.Client, lic *licensekey.License, now func() time.Time) *Module {
+	return &Module{client: client, lic: lic, now: now}
+}
+
 // Refresh closes every elapsed Usage period that is not closed yet and refreshes the
-// Live usage of the open one, for every Workspace, as of now. It is a pure function of
-// now and the stored data: running it twice or late gives the same rows, and a closed
+// Live usage of the open one, for every Workspace, as of the clock's now. It is a pure function
+// of now and the stored data: running it twice or late gives the same rows, and a closed
 // figure is never rewritten. A Workspace that fails does not stop the others: every
 // failure is joined into the returned error. Without the staff license it does nothing.
-func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, now time.Time) error {
-	if !lic.Has(licensekey.FeatureStaff) {
+func (m *Module) Refresh(ctx context.Context) error {
+	if !m.lic.Has(licensekey.FeatureStaff) {
 		return nil
 	}
-	live, err := client.Workspace.Query().
+	now := m.now()
+	live, err := m.client.Workspace.Query().
 		Where(workspaces.Live()).
 		Select(workspace.FieldID, workspace.FieldCreatedAt).
 		Order(ent.Asc(workspace.FieldID)).
@@ -122,7 +137,7 @@ func Refresh(ctx context.Context, client *ent.Client, lic *licensekey.License, n
 		if err := ctx.Err(); err != nil {
 			return errors.Join(append(errs, err)...)
 		}
-		if err := refreshWorkspace(ctx, client.Scoped(ws.ID), PeriodOf(ws.CreatedAt), current, now); err != nil {
+		if err := refreshWorkspace(ctx, m.client.Scoped(ws.ID), PeriodOf(ws.CreatedAt), current, now); err != nil {
 			errs = append(errs, fmt.Errorf("usage of workspace %d: %w", ws.ID, err))
 		}
 	}
@@ -226,10 +241,10 @@ type WorkspaceUsage struct {
 
 // List is one page of the stored figures of every Workspace that has any for the
 // period, by Workspace id. It reads the stored rows and never recounts.
-func List(ctx context.Context, client *ent.Client, period time.Time, p pagination.Params) (pagination.Page[WorkspaceUsage], error) {
+func (m *Module) List(ctx context.Context, period time.Time, p pagination.Params) (pagination.Page[WorkspaceUsage], error) {
 	period = PeriodOf(period)
 	inPeriod := entusage.PeriodStart(period)
-	page, err := pagination.List(ctx, p, client.Workspace.Query().
+	page, err := pagination.List(ctx, p, m.client.Workspace.Query().
 		Where(workspace.HasUsagesWith(inPeriod)).
 		WithUsages(func(q *ent.UsageQuery) { q.Where(inPeriod).Order(ent.Asc(entusage.FieldMetric)) }).
 		Order(ent.Asc(workspace.FieldID)))
@@ -247,7 +262,7 @@ func List(ctx context.Context, client *ent.Client, period time.Time, p paginatio
 
 // Get is the stored figures of one Workspace for the period, by metric. It reads the
 // stored rows and never recounts; a Workspace with none yet has no figures.
-func Get(ctx context.Context, s *ent.Scoped, period time.Time) (WorkspaceUsage, error) {
+func (m *Module) Get(ctx context.Context, s *ent.Scoped, period time.Time) (WorkspaceUsage, error) {
 	period = PeriodOf(period)
 	rows, err := s.Usage().Query().
 		Where(entusage.PeriodStart(period)).

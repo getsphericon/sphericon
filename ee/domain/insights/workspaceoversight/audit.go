@@ -6,9 +6,15 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
+
+// AuditEntriesInput is the page of a Workspace's Audit log the console asks for: the cursor a
+// previous page handed out ("" for the newest entries) and the page's size.
+type AuditEntriesInput struct {
+	Cursor string
+	Limit  int
+}
 
 // AuditEntries is one page of a Workspace's Audit log, newest first, as the console shows it
 // (staffPageOf: a Service credential named), with the cursor of the next page ("" on the
@@ -23,11 +29,11 @@ import (
 // the Audit log is one of its cards (ADR 0026). The separate `audit` license decides
 // whether entries are recorded at all (the audit consumer discards them without it), so an
 // instance with `staff` but no `audit` simply shows an empty log.
-func (m *Module) AuditEntries(ctx context.Context, workspaceID, cursor string, limit int) (auditlog.Page, error) {
+func (m *Module) AuditEntries(ctx context.Context, workspaceID string, in AuditEntriesInput) (auditlog.Page, error) {
 	if err := m.licensed(); err != nil {
 		return auditlog.Page{}, err
 	}
-	after, err := auditlog.Cursor(cursor)
+	after, err := auditlog.Cursor(in.Cursor)
 	if err != nil {
 		return auditlog.Page{}, err
 	}
@@ -35,7 +41,7 @@ func (m *Module) AuditEntries(ctx context.Context, workspaceID, cursor string, l
 	if err != nil {
 		return auditlog.Page{}, err
 	}
-	page, err := m.audit.Entries(ctx, s, events.AuditFilter{}, after, limit)
+	page, err := m.audit.Entries(ctx, s, auditlog.EntriesInput{Cursor: after, Limit: in.Limit})
 	if err != nil {
 		return auditlog.Page{}, err
 	}

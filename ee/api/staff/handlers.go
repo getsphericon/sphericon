@@ -71,7 +71,7 @@ func (h *SecurityHandler) HandleApiKeyAuth(ctx context.Context, _ staffeeapi.Ope
 // StaffWorkspacesList is a page of Workspaces, newest first, narrowed by an id or name
 // search. Metadata only: no Contacts, content or Events.
 func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.StaffWorkspacesListParams) (*staffeeapi.StaffWorkspacesListOK, error) {
-	page, err := h.module.ListWorkspaces(ctx, review(params.Review), strings.TrimSpace(params.Search.Value), pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.module.ListWorkspaces(ctx, workspaceoversight.ListWorkspacesInput{Review: review(params.Review), Search: strings.TrimSpace(params.Search.Value)}, pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staff
 
 // setSendCap is the change both Send cap operations make.
 func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (*staffeeapi.StaffSendCapChange, error) {
-	done, err := h.module.SetSendCap(ctx, string(wsID), auth.StaffMember(ctx), perDay)
+	done, err := h.module.SetSendCap(ctx, string(wsID), workspaceoversight.SetSendCapInput{By: auth.StaffMember(ctx), PerDay: perDay})
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
-	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), auth.StaffMember(ctx), req.Reason)
+	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), workspaceoversight.SuspendWorkspaceInput{By: auth.StaffMember(ctx), Reason: req.Reason})
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeap
 
 // setExempt is the change both exemption operations make.
 func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffExemptionChange, error) {
-	done, err := h.module.SetAbuseExempt(ctx, string(wsID), auth.StaffMember(ctx), exempt)
+	done, err := h.module.SetAbuseExempt(ctx, string(wsID), workspaceoversight.SetAbuseExemptInput{By: auth.StaffMember(ctx), Exempt: exempt})
 	if err != nil {
 		return nil, err
 	}

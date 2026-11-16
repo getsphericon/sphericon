@@ -16,7 +16,7 @@ import (
 func TestASendJustBeforeAndJustAfterMidnightUTCLandInDifferentPeriods(t *testing.T) {
 	env := testhelper.Setup(t)
 	// Meter has a send at 23:59 of month 20 and one at 00:01 of month 19.
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureStaff), month(19).Add(time.Hour)))
+	require.NoError(t, refresh(t, env, testhelper.License(t, licensekey.FeatureStaff), month(19).Add(time.Hour)))
 
 	january, february := figure(t, env, month(20)), figure(t, env, month(19))
 	assert.EqualValues(t, 1, january.Value)
@@ -28,13 +28,13 @@ func TestASendJustBeforeAndJustAfterMidnightUTCLandInDifferentPeriods(t *testing
 func TestEveryWorkspaceIsClosedWithinAnHourOfMidnightUTC(t *testing.T) {
 	env := testhelper.Setup(t)
 	lic := testhelper.License(t, licensekey.FeatureStaff)
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(6).Add(-time.Minute)), "the last run of January")
+	require.NoError(t, refresh(t, env, lic, month(6).Add(-time.Minute)), "the last run of January")
 
 	// The next scheduled tick after midnight is at most one Interval later.
 	require.Less(t, usages.Interval, time.Hour, "the job runs several times inside the bound")
-	require.NoError(t, usages.Refresh(t.Context(), env.DB, lic, month(6).Add(usages.Interval)))
+	require.NoError(t, refresh(t, env, lic, month(6).Add(usages.Interval)))
 
-	page, err := usages.List(t.Context(), env.DB, month(7), pagination.Params{Page: 1, PageSize: 100})
+	page, err := usage(env).List(t.Context(), month(7), pagination.Params{Page: 1, PageSize: 100})
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, page.TotalItems, 4, "every fixture Workspace has January figures")
 	for _, w := range page.Items {

@@ -18,6 +18,11 @@ import (
 // one 3 days old in Acme.
 const window = 400 * 24 * time.Hour
 
+// pruneAt is the module under lic, on a clock stopped at now.
+func pruneAt(env *testhelper.TestEnv, lic *licensekey.License, now time.Time) *erasures.Module {
+	return erasures.New(env.DB, lic, env.Cipher, func() time.Time { return now })
+}
+
 func acmeHas(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 	t.Helper()
 	exists, err := env.DB.Scoped(fixtures.AcmeID).Erasure().Query().Where(erasure.ID(id)).Exist(t.Context())
@@ -42,7 +47,7 @@ func TestPruneRemovesErasuresOlderThanTheEventRetentionWindow(t *testing.T) {
 	// Erasure puts the old one just past the window and the recent one well inside it.
 	now := fixtureErasedAt(t, env).Add(window + 24*time.Hour)
 
-	removed, err := erasures.Prune(t.Context(), env.DB, lic, window, now)
+	removed, err := pruneAt(env, lic, now).Prune(t.Context(), window)
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, removed)
@@ -56,7 +61,7 @@ func TestPruneKeepsEveryErasureWhenRetentionIsOff(t *testing.T) {
 
 	now := fixtureErasedAt(t, env).AddDate(10, 0, 0)
 
-	removed, err := erasures.Prune(t.Context(), env.DB, lic, 0, now)
+	removed, err := pruneAt(env, lic, now).Prune(t.Context(), 0)
 
 	require.NoError(t, err)
 	assert.Zero(t, removed)
@@ -68,7 +73,7 @@ func TestPruneWithoutTheExportLicenseRemovesNothing(t *testing.T) {
 
 	now := fixtureErasedAt(t, env).Add(window + 24*time.Hour)
 
-	removed, err := erasures.Prune(t.Context(), env.DB, testhelper.License(t, licensekey.FeatureAudit), window, now)
+	removed, err := pruneAt(env, testhelper.License(t, licensekey.FeatureAudit), now).Prune(t.Context(), window)
 
 	require.NoError(t, err)
 	assert.Zero(t, removed)
