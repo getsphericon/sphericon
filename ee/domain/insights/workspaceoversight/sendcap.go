@@ -40,7 +40,7 @@ func (m *Module) SetSendCap(ctx context.Context, publicID string, by *ent.StaffM
 	if err != nil {
 		return nil, err
 	}
-	changed, err := suspension.SetSendCap(ctx, m.bus, w.ID, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), perDay)
+	changed, err := m.suspend.SetSendCap(ctx, w.ID, suspension.SetSendCapInput{By: suspension.StaffMember(strconv.FormatInt(by.ID, 10)), SendCap: perDay})
 	if err != nil {
 		return nil, err
 	}

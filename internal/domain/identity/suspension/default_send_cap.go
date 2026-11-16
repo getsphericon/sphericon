@@ -36,15 +36,25 @@ func NewDefaultSendCap(client *ent.Client, sendCaps bool) *DefaultSendCap {
 	return &DefaultSendCap{ent: client, sendCaps: sendCaps}
 }
 
-// Get is the default as it stands: perDay messages per rolling 24 hours, nil when none is set, and
-// whether the Instance has Send caps at all (ok); without them there is no default, and perDay is
-// nil whatever is stored.
-func (d *DefaultSendCap) Get(ctx context.Context) (perDay *int, ok bool, err error) {
+// Setting is the default Send cap as it stands.
+type Setting struct {
+	// SendCaps is whether the Instance has Send caps at all: without them there is no default, and
+	// PerDay is nil whatever is stored.
+	SendCaps bool
+	// PerDay is the default in messages per rolling 24 hours, nil when none is set.
+	PerDay *int
+}
+
+// Get is the default as it stands.
+func (d *DefaultSendCap) Get(ctx context.Context) (Setting, error) {
 	if !d.sendCaps {
-		return nil, false, nil
+		return Setting{}, nil
 	}
-	perDay, err = storedIn(ctx, d.ent)
-	return perDay, err == nil, err
+	perDay, err := storedIn(ctx, d.ent)
+	if err != nil {
+		return Setting{}, err
+	}
+	return Setting{SendCaps: true, PerDay: perDay}, nil
 }
 
 // StartingIn is the Send cap a Workspace created now starts with, read on tx, the transaction
@@ -57,33 +67,40 @@ func (d *DefaultSendCap) StartingIn(ctx context.Context, tx *ent.Client) (*int, 
 	return storedIn(ctx, tx)
 }
 
+// Change is what a change of the default did.
+type Change struct {
+	// Changed is whether the default changed: setting the same value or clearing none is a no-op.
+	Changed bool
+	// Diff is the change as an Audit diff value (events.ChangeOf), nil when nothing changed.
+	Diff map[string]any
+}
+
 // SetIn sets the default to perDay messages per rolling 24 hours, or clears it with nil, on tx,
-// and reports the change as an Audit diff value (events.ChangeOf) and whether the default changed:
-// setting the same value or clearing none is a no-op. The row is locked, so two changes at once
+// and reports the Change: setting the same value or clearing none is a no-op. The row is locked, so two changes at once
 // each see the value the other left. A default outside the contract's bounds (bounds.MaxPerDay) is
 // refused, and so is any change on an Instance without Send caps (ErrNoSendCaps). Existing
 // Workspaces keep their Send caps. The caller records the change in its Audit log, in the same
 // transaction.
-func (d *DefaultSendCap) SetIn(ctx context.Context, tx *ent.Client, perDay *int) (change map[string]any, changed bool, err error) {
+func (d *DefaultSendCap) SetIn(ctx context.Context, tx *ent.Client, perDay *int) (Change, error) {
 	if !d.sendCaps {
-		return nil, false, ErrNoSendCaps
+		return Change{}, ErrNoSendCaps
 	}
 	if perDay != nil {
 		if err := validation.Range(fieldname.PerDay, *perDay, bounds.MaxPerDayMin, bounds.MaxPerDayMax); err != nil {
-			return nil, false, err
+			return Change{}, err
 		}
 	}
-	err = tx.DefaultSendCap.Create().SetID(defaultID).OnConflictColumns(defaultsendcap.FieldID).DoNothing().Exec(ctx)
+	err := tx.DefaultSendCap.Create().SetID(defaultID).OnConflictColumns(defaultsendcap.FieldID).DoNothing().Exec(ctx)
 	if _, err := db.Inserted(err); err != nil {
-		return nil, false, fmt.Errorf("set the default send cap: %w", err)
+		return Change{}, fmt.Errorf("set the default send cap: %w", err)
 	}
 	row, err := tx.DefaultSendCap.Query().Where(defaultsendcap.ID(defaultID)).ForUpdate().Only(ctx)
 	if err != nil {
-		return nil, false, fmt.Errorf("set the default send cap: %w", err)
+		return Change{}, fmt.Errorf("set the default send cap: %w", err)
 	}
-	change, differs := events.ChangeOf(row.PerDay, perDay)
+	diff, differs := events.ChangeOf(row.PerDay, perDay)
 	if !differs {
-		return nil, false, nil
+		return Change{}, nil
 	}
 	upd := tx.DefaultSendCap.UpdateOneID(defaultID)
 	if perDay == nil {
@@ -92,9 +109,9 @@ func (d *DefaultSendCap) SetIn(ctx context.Context, tx *ent.Client, perDay *int)
 		upd.SetPerDay(*perDay)
 	}
 	if err := upd.Exec(ctx); err != nil {
-		return nil, false, fmt.Errorf("set the default send cap: %w", err)
+		return Change{}, fmt.Errorf("set the default send cap: %w", err)
 	}
-	return change, true, nil
+	return Change{Changed: true, Diff: diff}, nil
 }
 
 // storedIn is the stored default read on client, nil when none is set.

@@ -18,10 +18,10 @@ func setDefault(t *testing.T, client *ent.Client, d *suspension.DefaultSendCap, 
 	t.Helper()
 	tx, err := client.Tx(t.Context())
 	require.NoError(t, err)
-	change, changed, err := d.SetIn(t.Context(), tx.Client(), perDay)
+	change, err := d.SetIn(t.Context(), tx.Client(), perDay)
 	require.NoError(t, err)
 	require.NoError(t, tx.Commit())
-	return change, changed
+	return change.Diff, change.Changed
 }
 
 // startingCap is the Send cap a Workspace created now starts with.
@@ -79,7 +79,7 @@ func TestADefaultSendCapOutsideItsBoundsIsRefused(t *testing.T) {
 	d := suspension.NewDefaultSendCap(env.DB, true)
 	setDefault(t, env.DB, d, new(500))
 
-	_, _, err := d.SetIn(t.Context(), env.DB, new(0))
+	_, err := d.SetIn(t.Context(), env.DB, new(0))
 	kept := startingCap(t, env.DB, d)
 
 	require.ErrorIs(t, err, validation.ErrOutOfRange)
@@ -94,13 +94,13 @@ func TestAnInstanceWithoutSendCapsHasNoDefaultSendCap(t *testing.T) {
 	d := suspension.NewDefaultSendCap(env.DB, false)
 
 	sendCap := startingCap(t, env.DB, d)
-	shown, ok, getErr := d.Get(t.Context())
-	_, changed, setErr := d.SetIn(t.Context(), env.DB, new(700))
+	shown, getErr := d.Get(t.Context())
+	change, setErr := d.SetIn(t.Context(), env.DB, new(700))
 
 	assert.Nil(t, sendCap)
 	require.NoError(t, getErr)
-	assert.False(t, ok)
-	assert.Nil(t, shown)
+	assert.False(t, shown.SendCaps)
+	assert.Nil(t, shown.PerDay)
 	require.ErrorIs(t, setErr, suspension.ErrNoSendCaps)
-	assert.False(t, changed)
+	assert.False(t, change.Changed)
 }
