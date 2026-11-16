@@ -17,7 +17,9 @@ package trackingdomains
 import (
 	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base32"
 	"encoding/hex"
 	"errors"
 	"io"
@@ -89,10 +91,12 @@ type Doer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// Checker proves a host: its CNAME reaches Target, and with HTTP set the HTTPS probe answers
-// ProbeValue(Secret, host). Without HTTP no host ever becomes serving.
+// Checker proves a host: its CNAME reaches Target, its TXT record OwnershipName(host) carries the
+// row's ownership token (ADR 0173), and with HTTP set the HTTPS probe answers ProbeValue(Secret,
+// host). Without HTTP no host ever becomes serving.
 type Checker struct {
 	Lookup CNAMELookup
+	TXT    domainname.TXTLookup
 	Target string
 	HTTP   Doer
 	Secret string
@@ -149,6 +153,32 @@ type Record struct {
 // Record is the CNAME to publish for the Tracking domain.
 func (m *Module) Record(d *ent.TrackingDomain) Record {
 	return Record{Host: d.Host, Target: m.Target()}
+}
+
+// OwnershipRecord is the TXT record a Tracking domain's host publishes to show it is this
+// Workspace's (ADR 0173): Value at Host.
+type OwnershipRecord struct {
+	Host  string
+	Value string
+}
+
+// OwnershipRecord is the TXT record to publish for the Tracking domain.
+func (m *Module) OwnershipRecord(d *ent.TrackingDomain) OwnershipRecord {
+	return OwnershipRecord{Host: OwnershipName(d.Host), Value: ownershipValue(d.OwnershipToken)}
+}
+
+// OwnershipName is the name of the TXT record that names the Workspace a host is: a label of its
+// own below the host, so it stands beside the host's CNAME, which no other record may.
+func OwnershipName(host string) string { return "_sphericon-tracking." + normalize(host) }
+
+func ownershipValue(token string) string { return "sphericon-tracking=" + token }
+
+// newOwnershipToken is a Tracking domain's ownership token: 20 random bytes, lower-case base32,
+// which a DNS provider keeps as it is.
+func newOwnershipToken() string {
+	b := make([]byte, 20)
+	_, _ = rand.Read(b)
+	return strings.ToLower(base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b))
 }
 
 // List returns the Workspace's Tracking domains: the current one, the replacement, then the
@@ -281,7 +311,7 @@ func (m *Module) Set(ctx context.Context, s *ent.Scoped, raw string) (*ent.Track
 			if err := roleMachine(ts, existing).FireCtx(ctx, role); err != nil {
 				return err
 			}
-		} else if err := ts.TrackingDomain().Create().SetHost(host).SetRole(role).Exec(ctx); err != nil {
+		} else if err := ts.TrackingDomain().Create().SetHost(host).SetRole(role).SetOwnershipToken(newOwnershipToken()).Exec(ctx); err != nil {
 			return err
 		}
 		row, err = ts.TrackingDomain().Query().Where(trackingdomain.Host(host)).Only(ctx)
@@ -458,11 +488,11 @@ func (m *Module) checkRow(ctx context.Context, s *ent.Scoped, row *ent.TrackingD
 	return nil
 }
 
-// checkRetired keeps a retired host while its CNAME reaches the edge and deletes it once it does
-// not, publishing events.TrackingDomainRemoved, which tells the Owners. A failed probe does not end
-// it: DNS does (ADR 0071).
+// checkRetired keeps a retired host while its CNAME reaches the edge and its TXT names this
+// Workspace, and deletes it once either does not, publishing events.TrackingDomainRemoved, which
+// tells the Owners. A failed probe does not end it: DNS does (ADR 0071, ADR 0173).
 func (m *Module) checkRetired(ctx context.Context, s *ent.Scoped, row *ent.TrackingDomain) error {
-	ok, err := m.check.pointsAtTarget(ctx, row.Host)
+	ok, err := m.check.held(ctx, row)
 	if err != nil {
 		return err
 	}
@@ -488,11 +518,12 @@ func notFoundIsStale(err error) error {
 	return err
 }
 
-// next is the state live DNS and the probe give a host: pending without the CNAME at Target,
-// dns_verified with it, serving once the probe passes. Without an HTTP client nothing is promoted
-// past what the row has. A resolver failure other than not-found is returned.
+// next is the state live DNS and the probe give a host: pending without the CNAME at Target or
+// without the row's ownership TXT, dns_verified with both, serving once the probe passes. Without an
+// HTTP client nothing is promoted past what the row has. A resolver failure other than not-found is
+// returned, so the row keeps its state.
 func (c *Checker) next(ctx context.Context, row *ent.TrackingDomain) (trackingdomain.State, error) {
-	ok, err := c.pointsAtTarget(ctx, row.Host)
+	ok, err := c.held(ctx, row)
 	if err != nil {
 		return "", err
 	}
@@ -531,6 +562,32 @@ func (c *Checker) probe(ctx context.Context, host string) bool {
 		return false
 	}
 	return strings.TrimSpace(string(body)) == ProbeValue(c.Secret, host)
+}
+
+// held reports whether the row's host is this Workspace's at the edge: its CNAME reaches Target and
+// its TXT record OwnershipName(host) carries the row's token (ADR 0173). The CNAME alone shows only
+// that the host points at the Instance, which every Workspace's claim of it would share.
+func (c *Checker) held(ctx context.Context, row *ent.TrackingDomain) (bool, error) {
+	ok, err := c.pointsAtTarget(ctx, row.Host)
+	if err != nil || !ok {
+		return false, err
+	}
+	return c.owns(ctx, row)
+}
+
+// owns reports whether the host's ownership TXT carries the row's token. A missing record is false
+// with a nil error; another resolver failure is returned.
+func (c *Checker) owns(ctx context.Context, row *ent.TrackingDomain) (bool, error) {
+	values, err := c.TXT(ctx, OwnershipName(row.Host))
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	want := ownershipValue(row.OwnershipToken)
+	return slices.ContainsFunc(values, func(v string) bool { return strings.TrimSpace(v) == want }), nil
 }
 
 // pointsAtTarget reports whether host's CNAME resolves to Target. A missing record is

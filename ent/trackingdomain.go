@@ -26,6 +26,8 @@ type TrackingDomain struct {
 	WorkspaceID int64 `json:"workspace_id,omitempty"`
 	// Host holds the value of the "host" field.
 	Host string `json:"host,omitempty"`
+	// OwnershipToken holds the value of the "ownership_token" field.
+	OwnershipToken string `json:"ownership_token,omitempty"`
 	// Role holds the value of the "role" field.
 	Role trackingdomain.Role `json:"role,omitempty"`
 	// State holds the value of the "state" field.
@@ -71,7 +73,7 @@ func (*TrackingDomain) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case trackingdomain.FieldID, trackingdomain.FieldWorkspaceID:
 			values[i] = new(sql.NullInt64)
-		case trackingdomain.FieldHost, trackingdomain.FieldRole, trackingdomain.FieldState, trackingdomain.FieldReason:
+		case trackingdomain.FieldHost, trackingdomain.FieldOwnershipToken, trackingdomain.FieldRole, trackingdomain.FieldState, trackingdomain.FieldReason:
 			values[i] = new(sql.NullString)
 		case trackingdomain.FieldCreatedAt, trackingdomain.FieldUpdatedAt, trackingdomain.FieldServedAt, trackingdomain.FieldCheckedAt, trackingdomain.FieldStateChangedAt:
 			values[i] = new(sql.NullTime)
@@ -119,6 +121,12 @@ func (_m *TrackingDomain) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field host", values[i])
 			} else if value.Valid {
 				_m.Host = value.String
+			}
+		case trackingdomain.FieldOwnershipToken:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field ownership_token", values[i])
+			} else if value.Valid {
+				_m.OwnershipToken = value.String
 			}
 		case trackingdomain.FieldRole:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -212,6 +220,9 @@ func (_m *TrackingDomain) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("host=")
 	builder.WriteString(_m.Host)
+	builder.WriteString(", ")
+	builder.WriteString("ownership_token=")
+	builder.WriteString(_m.OwnershipToken)
 	builder.WriteString(", ")
 	builder.WriteString("role=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Role))

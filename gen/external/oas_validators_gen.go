@@ -7135,6 +7135,17 @@ func (s *TrackingDomainResource) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if err := s.OwnershipRecord.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "ownershipRecord",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}

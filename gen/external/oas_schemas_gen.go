@@ -9119,7 +9119,7 @@ func (s *CustomFieldsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-// A DNS record the caller publishes to authenticate a Sending domain.
+// A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership.
 // Ref: #/components/schemas/DnsRecord
 type DnsRecord struct {
 	// The record type (always TXT for the records we generate).
@@ -19553,6 +19553,9 @@ type TrackingDomainResource struct {
 	Reason OptTrackingReason `json:"reason"`
 	// The CNAME to publish.
 	Record CnameRecord `json:"record"`
+	// The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every check
+	// needs both (ADR 0173).
+	OwnershipRecord DnsRecord `json:"ownershipRecord"`
 	// When the host first served (null = never): only a host that served is retired rather than deleted.
 	ServedAt OptNilTimestamp `json:"servedAt"`
 	// When the host was most recently checked (null = never).
@@ -19593,6 +19596,11 @@ func (s *TrackingDomainResource) GetReason() OptTrackingReason {
 // GetRecord returns the value of Record.
 func (s *TrackingDomainResource) GetRecord() CnameRecord {
 	return s.Record
+}
+
+// GetOwnershipRecord returns the value of OwnershipRecord.
+func (s *TrackingDomainResource) GetOwnershipRecord() DnsRecord {
+	return s.OwnershipRecord
 }
 
 // GetServedAt returns the value of ServedAt.
@@ -19648,6 +19656,11 @@ func (s *TrackingDomainResource) SetReason(val OptTrackingReason) {
 // SetRecord sets the value of Record.
 func (s *TrackingDomainResource) SetRecord(val CnameRecord) {
 	s.Record = val
+}
+
+// SetOwnershipRecord sets the value of OwnershipRecord.
+func (s *TrackingDomainResource) SetOwnershipRecord(val DnsRecord) {
+	s.OwnershipRecord = val
 }
 
 // SetServedAt sets the value of ServedAt.
@@ -19730,7 +19743,7 @@ func (s *TrackingDomainRole) UnmarshalText(data []byte) error {
 // TrackingDomainsRemoveNoContent is response for TrackingDomainsRemove operation.
 type TrackingDomainsRemoveNoContent struct{}
 
-// Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
+// Why a Tracking domain is held back although its records may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
 // Ref: #/components/schemas/TrackingReason
 type TrackingReason string
@@ -19767,8 +19780,9 @@ func (s *TrackingReason) UnmarshalText(data []byte) error {
 	}
 }
 
-// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host,
-// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers.
+// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the
+// ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS
+// on the host answers.
 // Ref: #/components/schemas/TrackingState
 type TrackingState string
 

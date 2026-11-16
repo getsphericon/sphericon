@@ -1230,7 +1230,7 @@ export const zSiteDeleteWorkspaceInput = z.strictObject({
 });
 
 /**
- * A DNS record the user publishes to authenticate a sending domain
+ * A TXT record the user publishes: a sending domain's DKIM key, or a tracking domain's ownership
  */
 export const zSiteDnsRecord = z.object({
   type: z.enum(['TXT']),
@@ -2376,12 +2376,12 @@ export const zSiteTrackingDomainRole = z.enum([
 ]);
 
 /**
- * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export const zSiteTrackingReason = z.enum(['host_taken']);
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
  */
 export const zSiteTrackingState = z.enum([
   'pending',
@@ -3656,6 +3656,7 @@ export const zSiteTrackingDomainResource = z.object({
   state: zSiteTrackingState,
   reason: z.exactOptional(zSiteTrackingReason),
   record: zSiteCnameRecord,
+  ownershipRecord: zSiteDnsRecord,
   servedAt: z.exactOptional(zTimestamp.nullable()),
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   stateChangedAt: z.exactOptional(zTimestamp.nullable()),

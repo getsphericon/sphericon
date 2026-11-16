@@ -553,11 +553,13 @@ type Converter interface {
 	DnsRecordToResource(source sendingdomains.Record) siteapi.SiteDnsRecord
 
 	// The CNAME target is the module's, which the mapper cannot see: the handler attaches it.
-	// goverter:ignore Record
+	// goverter:ignore Record OwnershipRecord
 	// goverter:map CheckedAt LastCheckedAt
 	TrackingDomainToResource(source *ent.TrackingDomain) siteapi.SiteTrackingDomainResource
 	// goverter:map . Type | cnameRecordType
 	CnameRecordToResource(source trackingdomains.Record) siteapi.SiteCnameRecord
+	// goverter:map . Type | ownershipRecordType
+	OwnershipRecordToResource(source trackingdomains.OwnershipRecord) siteapi.SiteDnsRecord
 
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
@@ -1308,4 +1310,9 @@ func nilFloat64(v *float64) siteapi.NilFloat64 {
 // revision is a row's revision (ADR 0119) as the contract carries it.
 func revision(v int64) siteapi.Revision {
 	return siteapi.Revision(v)
+}
+
+// ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
+func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.SiteDnsRecordType {
+	return siteapi.SiteDnsRecordTypeTXT
 }

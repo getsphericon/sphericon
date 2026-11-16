@@ -2634,7 +2634,7 @@ export const CustomFieldType = {
 export type CustomFieldType = typeof CustomFieldType[keyof typeof CustomFieldType];
 
 /**
- * A DNS record the caller publishes to authenticate a Sending domain
+ * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
  */
 export type DnsRecord = {
   /**
@@ -5216,6 +5216,11 @@ export type TrackingDomainResource = {
    */
   record: CnameRecord;
   /**
+   * The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every
+   * check needs both (ADR 0173)
+   */
+  ownershipRecord: DnsRecord;
+  /**
    * When the host first served (null = never): only a host that served is retired rather than deleted
    */
   servedAt?: Timestamp | null;
@@ -5256,17 +5261,17 @@ export const TrackingDomainRole = {
 export type TrackingDomainRole = typeof TrackingDomainRole[keyof typeof TrackingDomainRole];
 
 /**
- * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export const TrackingReason = { HOST_TAKEN: 'host_taken' } as const;
 
 /**
- * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export type TrackingReason = typeof TrackingReason[keyof typeof TrackingReason];
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
  */
 export const TrackingState = {
   PENDING: 'pending',
@@ -5275,7 +5280,7 @@ export const TrackingState = {
 } as const;
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
  */
 export type TrackingState = typeof TrackingState[keyof typeof TrackingState];
 

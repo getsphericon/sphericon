@@ -822,6 +822,7 @@ var TrackingDomainAuditSensitive = map[string]bool{}
 func (e *TrackingDomain) auditFields() map[string]any {
 	return map[string]any{
 		"host":             e.Host,
+		"ownership_token":  e.OwnershipToken,
 		"role":             e.Role,
 		"state":            e.State,
 		"served_at":        derefAudit(e.ServedAt),

@@ -1166,15 +1166,16 @@ Outbound message holds none), expires with the Test inbox's retention and is nev
 _Avoid_: Inbox message, email log
 
 **Tracking domain**:
-A hostname of the Workspace's own choosing (e.g. `t.example.com`), a CNAME to the Instance's edge,
-on which the Workspace's tracking is served instead of the Instance's host once it serves: the links
+A hostname of the Workspace's own choosing (e.g. `t.example.com`), a CNAME to the Instance's edge
+with a TXT record beside it naming the Workspace's row (its ownership token), on which the Workspace's tracking is served instead of the Instance's host once it serves: the links
 in its mail (open, click, unsubscribe, confirm), the short tracked links of its Telegram messages and SMS and
 the first-party tracker, for its own collect key only. A Workspace uses at most one; it belongs to the Workspace, not to a Sending domain, so a
 Workspace that sends no mail can have one. Another host is another Tracking domain: a replacement
 takes over only once it serves, and the one it replaces, or one removed, is **retired**: it serves
 no new mail or snippet but keeps serving the links already sent and the snippet already installed
 on it, and no other Workspace can take its host, until its CNAME no longer points at the
-Instance's edge or the Owner forgets it.
+Instance's edge, its TXT no longer names it, or the Owner forgets it. A host is held only while both
+records stand, so one that changes hands goes to the Workspace its TXT now names.
 _Avoid_: Click domain, link domain, custom domain (unqualified)
 
 **Short tracked link**:

@@ -18376,7 +18376,7 @@ func (s *SiteDeletedWorkspaceResource) SetOnlyOwner(val bool) {
 	s.OnlyOwner = val
 }
 
-// A DNS record the user publishes to authenticate a sending domain.
+// A TXT record the user publishes: a sending domain's DKIM key, or a tracking domain's ownership.
 // Ref: #/components/schemas/SiteDnsRecord
 type SiteDnsRecord struct {
 	// The record type (always TXT for the records we generate).
@@ -26689,6 +26689,9 @@ type SiteTrackingDomainResource struct {
 	Reason OptSiteTrackingReason `json:"reason"`
 	// The CNAME to publish.
 	Record SiteCnameRecord `json:"record"`
+	// The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every check
+	// needs both (ADR 0173).
+	OwnershipRecord SiteDnsRecord `json:"ownershipRecord"`
 	// When the host first served (null = never): only a host that served is retired rather than deleted.
 	ServedAt OptNilTimestamp `json:"servedAt"`
 	// When the host was most recently checked (null = never).
@@ -26729,6 +26732,11 @@ func (s *SiteTrackingDomainResource) GetReason() OptSiteTrackingReason {
 // GetRecord returns the value of Record.
 func (s *SiteTrackingDomainResource) GetRecord() SiteCnameRecord {
 	return s.Record
+}
+
+// GetOwnershipRecord returns the value of OwnershipRecord.
+func (s *SiteTrackingDomainResource) GetOwnershipRecord() SiteDnsRecord {
+	return s.OwnershipRecord
 }
 
 // GetServedAt returns the value of ServedAt.
@@ -26784,6 +26792,11 @@ func (s *SiteTrackingDomainResource) SetReason(val OptSiteTrackingReason) {
 // SetRecord sets the value of Record.
 func (s *SiteTrackingDomainResource) SetRecord(val SiteCnameRecord) {
 	s.Record = val
+}
+
+// SetOwnershipRecord sets the value of OwnershipRecord.
+func (s *SiteTrackingDomainResource) SetOwnershipRecord(val SiteDnsRecord) {
+	s.OwnershipRecord = val
 }
 
 // SetServedAt sets the value of ServedAt.
@@ -26866,7 +26879,7 @@ func (s *SiteTrackingDomainRole) UnmarshalText(data []byte) error {
 // SiteTrackingDomainsRemoveNoContent is response for SiteTrackingDomainsRemove operation.
 type SiteTrackingDomainsRemoveNoContent struct{}
 
-// Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another
+// Why a Tracking domain is held back although its records may be right: `host_taken` means another
 // Workspace already has this host verified (ADR 0038).
 // Ref: #/components/schemas/SiteTrackingReason
 type SiteTrackingReason string
@@ -26903,8 +26916,9 @@ func (s *SiteTrackingReason) UnmarshalText(data []byte) error {
 	}
 }
 
-// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host,
-// `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers.
+// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the
+// ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS
+// on the host answers.
 // Ref: #/components/schemas/SiteTrackingState
 type SiteTrackingState string
 

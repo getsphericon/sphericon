@@ -45,6 +45,10 @@ func TestSiteTrackingDomainsListsThemCurrentFirstWithTheRecordToPublish(t *testi
 	assert.Equal(t, siteapi.SiteCnameRecordTypeCNAME, rec.Type)
 	assert.Equal(t, fixtures.TrackingDomainGlobexHost, rec.Host)
 	assert.Equal(t, testhelper.TrackingCNAMETarget, rec.Target)
+	own := list[0].OwnershipRecord
+	assert.Equal(t, siteapi.SiteDnsRecordTypeTXT, own.Type)
+	assert.Equal(t, "_sphericon-tracking."+fixtures.TrackingDomainGlobexHost, own.Host)
+	assert.Equal(t, "sphericon-tracking=fixture-"+fixtures.TrackingDomainGlobexHost, own.Value, "the row's own token (ADR 0173)")
 
 	member := listTrackingDomains(t, env.SiteActor(t, fixtures.MemberMaryEmail), fixtures.AcmePublicID)
 	require.Len(t, member, 1, "a member reads them too")

@@ -84,6 +84,11 @@ function trackingDomain(
     role: 'current',
     state: 'pending',
     record: { type: 'CNAME', host, target: 'edge.sphericon.test' },
+    ownershipRecord: {
+      type: 'TXT',
+      host: `_sphericon-tracking.${host}`,
+      value: 'sphericon-tracking=token',
+    },
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     ...over,
@@ -240,6 +245,9 @@ test('shows the CNAME, a pending replacement and the retired hosts', async () =>
   await expect.element(screen.getByText('t.acme.test', { exact: true }).first()).toBeInTheDocument()
   await expect
     .element(screen.getByText('edge.sphericon.test', { exact: true }).first())
+    .toBeInTheDocument()
+  await expect
+    .element(screen.getByText('_sphericon-tracking.t.acme.test', { exact: true }))
     .toBeInTheDocument()
   await expect
     .element(

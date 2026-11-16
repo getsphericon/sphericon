@@ -75,6 +75,11 @@ func Host(v string) predicate.TrackingDomain {
 	return predicate.TrackingDomain(sql.FieldEQ(FieldHost, v))
 }
 
+// OwnershipToken applies equality check predicate on the "ownership_token" field. It's identical to OwnershipTokenEQ.
+func OwnershipToken(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldEQ(FieldOwnershipToken, v))
+}
+
 // ServedAt applies equality check predicate on the "served_at" field. It's identical to ServedAtEQ.
 func ServedAt(v time.Time) predicate.TrackingDomain {
 	return predicate.TrackingDomain(sql.FieldEQ(FieldServedAt, v))
@@ -253,6 +258,71 @@ func HostEqualFold(v string) predicate.TrackingDomain {
 // HostContainsFold applies the ContainsFold predicate on the "host" field.
 func HostContainsFold(v string) predicate.TrackingDomain {
 	return predicate.TrackingDomain(sql.FieldContainsFold(FieldHost, v))
+}
+
+// OwnershipTokenEQ applies the EQ predicate on the "ownership_token" field.
+func OwnershipTokenEQ(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldEQ(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenNEQ applies the NEQ predicate on the "ownership_token" field.
+func OwnershipTokenNEQ(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldNEQ(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenIn applies the In predicate on the "ownership_token" field.
+func OwnershipTokenIn(vs ...string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldIn(FieldOwnershipToken, vs...))
+}
+
+// OwnershipTokenNotIn applies the NotIn predicate on the "ownership_token" field.
+func OwnershipTokenNotIn(vs ...string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldNotIn(FieldOwnershipToken, vs...))
+}
+
+// OwnershipTokenGT applies the GT predicate on the "ownership_token" field.
+func OwnershipTokenGT(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldGT(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenGTE applies the GTE predicate on the "ownership_token" field.
+func OwnershipTokenGTE(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldGTE(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenLT applies the LT predicate on the "ownership_token" field.
+func OwnershipTokenLT(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldLT(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenLTE applies the LTE predicate on the "ownership_token" field.
+func OwnershipTokenLTE(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldLTE(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenContains applies the Contains predicate on the "ownership_token" field.
+func OwnershipTokenContains(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldContains(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenHasPrefix applies the HasPrefix predicate on the "ownership_token" field.
+func OwnershipTokenHasPrefix(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldHasPrefix(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenHasSuffix applies the HasSuffix predicate on the "ownership_token" field.
+func OwnershipTokenHasSuffix(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldHasSuffix(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenEqualFold applies the EqualFold predicate on the "ownership_token" field.
+func OwnershipTokenEqualFold(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldEqualFold(FieldOwnershipToken, v))
+}
+
+// OwnershipTokenContainsFold applies the ContainsFold predicate on the "ownership_token" field.
+func OwnershipTokenContainsFold(v string) predicate.TrackingDomain {
+	return predicate.TrackingDomain(sql.FieldContainsFold(FieldOwnershipToken, v))
 }
 
 // RoleEQ applies the EQ predicate on the "role" field.

@@ -344,11 +344,13 @@ type Converter interface {
 	DnsRecordToResource(source sendingdomains.Record) externalapi.DnsRecord
 
 	// The CNAME target is the module's, which the mapper cannot see: the handler attaches it.
-	// goverter:ignore Record
+	// goverter:ignore Record OwnershipRecord
 	// goverter:map CheckedAt LastCheckedAt
 	TrackingDomainToResource(source *ent.TrackingDomain) externalapi.TrackingDomainResource
 	// goverter:map . Type | cnameRecordType
 	CnameRecordToResource(source trackingdomains.Record) externalapi.CnameRecord
+	// goverter:map . Type | ownershipRecordType
+	OwnershipRecordToResource(source trackingdomains.OwnershipRecord) externalapi.DnsRecord
 
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
@@ -916,4 +918,9 @@ func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) externalapi.OptN
 // revision is a row's revision (ADR 0119) as the contract carries it.
 func revision(v int64) externalapi.Revision {
 	return externalapi.Revision(v)
+}
+
+// ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
+func ownershipRecordType(trackingdomains.OwnershipRecord) externalapi.DnsRecordType {
+	return externalapi.DnsRecordTypeTXT
 }

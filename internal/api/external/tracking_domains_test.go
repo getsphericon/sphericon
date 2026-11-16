@@ -26,6 +26,9 @@ func TestExternalTrackingDomainLifecycle(t *testing.T) {
 	assert.Equal(t, externalapi.TrackingStatePending, set.State)
 	assert.Equal(t, externalapi.CnameRecordTypeCNAME, set.Record.Type)
 	assert.Equal(t, testhelper.TrackingCNAMETarget, set.Record.Target)
+	assert.Equal(t, externalapi.DnsRecordTypeTXT, set.OwnershipRecord.Type)
+	assert.Equal(t, "_sphericon-tracking.links.acme.com", set.OwnershipRecord.Host)
+	assert.Regexp(t, `^sphericon-tracking=[a-z2-7]{32}$`, set.OwnershipRecord.Value, "a token of its own, made with the row")
 
 	list, err := c.TrackingDomainsList(ctx)
 	require.NoError(t, err)

@@ -1628,6 +1628,13 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 	}
 	return siteapiContactExportOutboundMessage
 }
+func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.OwnershipRecord) site.SiteDnsRecord {
+	var siteapiSiteDnsRecord site.SiteDnsRecord
+	siteapiSiteDnsRecord.Type = ownershipRecordType(source)
+	siteapiSiteDnsRecord.Host = source.Host
+	siteapiSiteDnsRecord.Value = source.Value
+	return siteapiSiteDnsRecord
+}
 func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey {
 	var siteapiSitePasskey site.SitePasskey
 	if source != nil {
@@ -2506,6 +2513,7 @@ func (c *ConverterImpl) TrackingDomainToResource(source *ent.TrackingDomain) sit
 		siteapiSiteTrackingDomainResource.State = c.TrackingStateToResource((*source).State)
 		siteapiSiteTrackingDomainResource.Reason = optTrackingReason(c, (*source).Reason)
 		// siteapiSiteTrackingDomainResource.Record: ignore
+		// siteapiSiteTrackingDomainResource.OwnershipRecord: ignore
 		siteapiSiteTrackingDomainResource.ServedAt = optNilTimestamp((*source).ServedAt)
 		siteapiSiteTrackingDomainResource.LastCheckedAt = optNilTimestamp((*source).CheckedAt)
 		siteapiSiteTrackingDomainResource.StateChangedAt = optNilTimestamp((*source).StateChangedAt)

@@ -5,7 +5,7 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** A DNS record the user publishes to authenticate a sending domain */
+/** A TXT record the user publishes: a sending domain's DKIM key, or a tracking domain's ownership */
 model SiteDnsRecord {
   /** The record type (always TXT for the records we generate) */
   type: "TXT";

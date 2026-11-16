@@ -23,6 +23,8 @@ const (
 	FieldWorkspaceID = "workspace_id"
 	// FieldHost holds the string denoting the host field in the database.
 	FieldHost = "host"
+	// FieldOwnershipToken holds the string denoting the ownership_token field in the database.
+	FieldOwnershipToken = "ownership_token"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
 	// FieldState holds the string denoting the state field in the database.
@@ -55,6 +57,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldWorkspaceID,
 	FieldHost,
+	FieldOwnershipToken,
 	FieldRole,
 	FieldState,
 	FieldServedAt,
@@ -82,6 +85,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// HostValidator is a validator for the "host" field. It is called by the builders before save.
 	HostValidator func(string) error
+	// OwnershipTokenValidator is a validator for the "ownership_token" field. It is called by the builders before save.
+	OwnershipTokenValidator func(string) error
 )
 
 // Role defines the type for the "role" enum field.
@@ -183,6 +188,11 @@ func ByWorkspaceID(opts ...sql.OrderTermOption) OrderOption {
 // ByHost orders the results by the host field.
 func ByHost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHost, opts...).ToFunc()
+}
+
+// ByOwnershipToken orders the results by the ownership_token field.
+func ByOwnershipToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOwnershipToken, opts...).ToFunc()
 }
 
 // ByRole orders the results by the role field.

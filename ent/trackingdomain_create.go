@@ -63,6 +63,12 @@ func (_c *TrackingDomainCreate) SetHost(v string) *TrackingDomainCreate {
 	return _c
 }
 
+// SetOwnershipToken sets the "ownership_token" field.
+func (_c *TrackingDomainCreate) SetOwnershipToken(v string) *TrackingDomainCreate {
+	_c.mutation.SetOwnershipToken(v)
+	return _c
+}
+
 // SetRole sets the "role" field.
 func (_c *TrackingDomainCreate) SetRole(v trackingdomain.Role) *TrackingDomainCreate {
 	_c.mutation.SetRole(v)
@@ -218,6 +224,14 @@ func (_c *TrackingDomainCreate) check() error {
 			return &ValidationError{Name: "host", err: fmt.Errorf(`ent: validator failed for field "TrackingDomain.host": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.OwnershipToken(); !ok {
+		return &ValidationError{Name: "ownership_token", err: errors.New(`ent: missing required field "TrackingDomain.ownership_token"`)}
+	}
+	if v, ok := _c.mutation.OwnershipToken(); ok {
+		if err := trackingdomain.OwnershipTokenValidator(v); err != nil {
+			return &ValidationError{Name: "ownership_token", err: fmt.Errorf(`ent: validator failed for field "TrackingDomain.ownership_token": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Role(); !ok {
 		return &ValidationError{Name: "role", err: errors.New(`ent: missing required field "TrackingDomain.role"`)}
 	}
@@ -286,6 +300,10 @@ func (_c *TrackingDomainCreate) createSpec() (*TrackingDomain, *sqlgraph.CreateS
 	if value, ok := _c.mutation.Host(); ok {
 		_spec.SetField(trackingdomain.FieldHost, field.TypeString, value)
 		_node.Host = value
+	}
+	if value, ok := _c.mutation.OwnershipToken(); ok {
+		_spec.SetField(trackingdomain.FieldOwnershipToken, field.TypeString, value)
+		_node.OwnershipToken = value
 	}
 	if value, ok := _c.mutation.Role(); ok {
 		_spec.SetField(trackingdomain.FieldRole, field.TypeEnum, value)
@@ -522,6 +540,9 @@ func (u *TrackingDomainUpsertOne) UpdateNewValues() *TrackingDomainUpsertOne {
 		}
 		if _, exists := u.create.mutation.Host(); exists {
 			s.SetIgnore(trackingdomain.FieldHost)
+		}
+		if _, exists := u.create.mutation.OwnershipToken(); exists {
+			s.SetIgnore(trackingdomain.FieldOwnershipToken)
 		}
 	}))
 	return u
@@ -881,6 +902,9 @@ func (u *TrackingDomainUpsertBulk) UpdateNewValues() *TrackingDomainUpsertBulk {
 			}
 			if _, exists := b.mutation.Host(); exists {
 				s.SetIgnore(trackingdomain.FieldHost)
+			}
+			if _, exists := b.mutation.OwnershipToken(); exists {
+				s.SetIgnore(trackingdomain.FieldOwnershipToken)
 			}
 		}
 	}))

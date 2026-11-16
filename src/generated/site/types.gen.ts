@@ -4234,7 +4234,7 @@ export type SiteDeletedWorkspaceResource = {
 };
 
 /**
- * A DNS record the user publishes to authenticate a sending domain
+ * A TXT record the user publishes: a sending domain's DKIM key, or a tracking domain's ownership
  */
 export type SiteDnsRecord = {
   /**
@@ -6781,6 +6781,11 @@ export type SiteTrackingDomainResource = {
    */
   record: SiteCnameRecord;
   /**
+   * The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every
+   * check needs both (ADR 0173)
+   */
+  ownershipRecord: SiteDnsRecord;
+  /**
    * When the host first served (null = never): only a host that served is retired rather than deleted
    */
   servedAt?: Timestamp | null;
@@ -6821,17 +6826,17 @@ export const SiteTrackingDomainRole = {
 export type SiteTrackingDomainRole = typeof SiteTrackingDomainRole[keyof typeof SiteTrackingDomainRole];
 
 /**
- * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export const SiteTrackingReason = { HOST_TAKEN: 'host_taken' } as const;
 
 /**
- * Why a Tracking domain is held back although its CNAME may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
  */
 export type SiteTrackingReason = typeof SiteTrackingReason[keyof typeof SiteTrackingReason];
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
  */
 export const SiteTrackingState = {
   PENDING: 'pending',
@@ -6840,7 +6845,7 @@ export const SiteTrackingState = {
 } as const;
 
 /**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host, `dns_verified` once it is (the edge may provision), `serving` once HTTPS on the host answers
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
  */
 export type SiteTrackingState = typeof SiteTrackingState[keyof typeof SiteTrackingState];
 
