@@ -60,7 +60,9 @@ identity on the customer's server and check the signature before the device is t
 - The Identity secret is a table of its own, one row per Workspace, read and regenerated on the
   tracking settings by those who hold `tokens:manage` and erased with the Workspace. Identify and
   the tracker's start link request take an `identityToken`; the tracker keeps the one of the page's
-  latest Identify in memory and sends it with the start link request.
+  latest Identify in memory and sends it with the start link request. A site calls the tracker's
+  `reset` when the person signs out: it forgets the token and starts a Visitor of its own, so the
+  next person on the browser starts a chat for no one and is not stitched onto the one before.
 - A browser shared by two people keeps a residual: the chats started on it before a sign-in go to
   whoever proves a sign-in next, as a device's push subscription does on the platforms that sign.
 

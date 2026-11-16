@@ -40,6 +40,7 @@ type QueueCommand =
   | ['init', Partial<TrackerConfig>]
   | ['identify', IdentifyInput?]
   | ['track', string, EventProperties | undefined]
+  | ['reset']
 
 type QueueApi = QueueCommand[] & {
   push: (...items: QueueCommand[]) => number
@@ -102,6 +103,14 @@ function collectClient(config: TrackerConfig): Client {
   })
 }
 
+// newVisitorId starts a visitor of its own on this browser: a fresh id in the cookie.
+function newVisitorId(): string {
+  const created = uuid()
+  Cookies.set(VISITOR_COOKIE_NAME, created, { path: '/', expires: 365, sameSite: 'Lax' })
+
+  return created
+}
+
 function getOrCreateVisitorId(): string {
   const existing = Cookies.get(VISITOR_COOKIE_NAME)
 
@@ -109,10 +118,7 @@ function getOrCreateVisitorId(): string {
     return existing
   }
 
-  const created = uuid()
-  Cookies.set(VISITOR_COOKIE_NAME, created, { path: '/', expires: 365, sameSite: 'Lax' })
-
-  return created
+  return newVisitorId()
 }
 
 // Unsent events live in localStorage so a restart of the instance, or a page load, never loses them.
@@ -152,6 +158,7 @@ interface DeliveryContext {
 type DeliveryEvent =
   | { type: 'initialize'; runtime: Runtime; events: CollectEventInput[] }
   | { type: 'track'; event: CollectEventInput }
+  | { type: 'reset'; visitorId: string }
   | { type: 'flush' }
 
 interface Submission {
@@ -184,6 +191,10 @@ const deliveryMachine = setup({
       assertEvent(event, 'initialize')
       return { runtime: event.runtime, pendingEvents: event.events }
     }),
+    resetVisitor: assign(({ context, event }) => {
+      assertEvent(event, 'reset')
+      return { runtime: context.runtime && { ...context.runtime, visitorId: event.visitorId } }
+    }),
     appendEvent: assign(({ context, event }) => {
       assertEvent(event, 'track')
       return { pendingEvents: [...context.pendingEvents, event.event].slice(-QUEUE_LIMIT) }
@@ -210,6 +221,8 @@ const deliveryMachine = setup({
       on: {
         // Targetless: appending never exits sending or restarts its invoked submission.
         track: { actions: ['appendEvent', 'persistQueue', 'scheduleFlush'] },
+        // Targetless as well: events queued before it keep the visitor they were made for.
+        reset: { actions: 'resetVisitor' },
       },
       states: {
         idle: {
@@ -261,6 +274,11 @@ function processQueueCommand(command: QueueCommand): void {
 
   if (command[0] === 'identify') {
     void identify(command[1] ?? {})
+    return
+  }
+
+  if (command[0] === 'reset') {
+    reset()
     return
   }
 
@@ -339,6 +357,24 @@ export async function identify(payload: IdentifyInput): Promise<void> {
       context: browserContext(),
     },
   }).catch(() => undefined)
+}
+
+// reset is what a site calls when the person signs out: the browser forgets the Identity token of
+// the page's latest identify, so a chat started next is not theirs (ADR 0171), and starts a visitor
+// of its own, so what the next person does here is not stitched onto them. Events queued before it
+// keep the visitor they were made for.
+export function reset(): void {
+  identityToken = null
+  if (!isBrowser) {
+    return
+  }
+  const runtime = delivery.getSnapshot().context.runtime
+  if (!runtime) {
+    window._omq ??= []
+    Array.prototype.push.call(window._omq, ['reset'])
+    return
+  }
+  delivery.send({ type: 'reset', visitorId: newVisitorId() })
 }
 
 // A Telegram start link for the current visitor, for a "Get updates in Telegram" button the site
