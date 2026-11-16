@@ -86,6 +86,8 @@ const (
 	SiteIdentitiesLinkOperation                        OperationName = "SiteIdentitiesLink"
 	SiteIdentitiesListOperation                        OperationName = "SiteIdentitiesList"
 	SiteIdentitiesUnlinkOperation                      OperationName = "SiteIdentitiesUnlink"
+	SiteIdentitySecretGetOperation                     OperationName = "SiteIdentitySecretGet"
+	SiteIdentitySecretRegenerateOperation              OperationName = "SiteIdentitySecretRegenerate"
 	SiteInstanceGetReleaseOperation                    OperationName = "SiteInstanceGetRelease"
 	SiteIntegrationsCreateOperation                    OperationName = "SiteIntegrationsCreate"
 	SiteIntegrationsDeleteOperation                    OperationName = "SiteIntegrationsDelete"

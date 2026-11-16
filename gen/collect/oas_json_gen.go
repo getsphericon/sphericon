@@ -396,6 +396,12 @@ func (s *CollectIdentifyInput) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.IdentityToken.Set {
+			e.FieldStart("identityToken")
+			s.IdentityToken.Encode(e)
+		}
+	}
+	{
 		if s.Traits.Set {
 			e.FieldStart("traits")
 			s.Traits.Encode(e)
@@ -409,13 +415,14 @@ func (s *CollectIdentifyInput) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfCollectIdentifyInput = [6]string{
+var jsonFieldsNameOfCollectIdentifyInput = [7]string{
 	0: "visitorId",
 	1: "email",
 	2: "phone",
 	3: "subjectId",
-	4: "traits",
-	5: "context",
+	4: "identityToken",
+	5: "traits",
+	6: "context",
 }
 
 // Decode decodes CollectIdentifyInput from json.
@@ -468,6 +475,16 @@ func (s *CollectIdentifyInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"subjectId\"")
+			}
+		case "identityToken":
+			if err := func() error {
+				s.IdentityToken.Reset()
+				if err := s.IdentityToken.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"identityToken\"")
 			}
 		case "traits":
 			if err := func() error {
@@ -795,10 +812,17 @@ func (s *CollectTelegramStartLinkInput) encodeFields(e *jx.Encoder) {
 		e.FieldStart("visitorId")
 		e.Str(s.VisitorId)
 	}
+	{
+		if s.IdentityToken.Set {
+			e.FieldStart("identityToken")
+			s.IdentityToken.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfCollectTelegramStartLinkInput = [1]string{
+var jsonFieldsNameOfCollectTelegramStartLinkInput = [2]string{
 	0: "visitorId",
+	1: "identityToken",
 }
 
 // Decode decodes CollectTelegramStartLinkInput from json.
@@ -821,6 +845,16 @@ func (s *CollectTelegramStartLinkInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"visitorId\"")
+			}
+		case "identityToken":
+			if err := func() error {
+				s.IdentityToken.Reset()
+				if err := s.IdentityToken.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"identityToken\"")
 			}
 		default:
 			return d.Skip()

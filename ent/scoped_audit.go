@@ -531,6 +531,41 @@ func auditChangeHold(verb string, before, after *Hold) (change AuditChange, chan
 	return change, changed
 }
 
+// IdentitySecretAuditSensitive lists the IdentitySecret fields whose values never reach the Audit log.
+var IdentitySecretAuditSensitive = map[string]bool{
+	"secret_encrypted": true,
+}
+
+// auditFields maps every audited field of the IdentitySecret to its value.
+func (e *IdentitySecret) auditFields() map[string]any {
+	return map[string]any{
+		"secret_encrypted": e.SecretEncrypted,
+	}
+}
+
+// auditChangeIdentitySecret describes a IdentitySecret create (before is nil), update or delete
+// (after is nil); changed is false when no audited field of the row differs, and such a
+// change records no entry.
+func auditChangeIdentitySecret(verb string, before, after *IdentitySecret) (change AuditChange, changed bool) {
+	var b, a map[string]any
+	target := before
+	if before != nil {
+		b = before.auditFields()
+	}
+	if after != nil {
+		a = after.auditFields()
+		target = after
+	}
+	change = AuditChange{
+		Action:     "identity_secret." + verb,
+		TargetType: "identity_secret",
+		TargetID:   auditID(target.ID),
+		Diff:       AuditDiff(b, a, IdentitySecretAuditSensitive),
+	}
+	changed = len(change.Diff) > 0
+	return change, changed
+}
+
 // IntegrationAuditSensitive lists the Integration fields whose values never reach the Audit log.
 var IntegrationAuditSensitive = map[string]bool{
 	"config_encrypted": true,

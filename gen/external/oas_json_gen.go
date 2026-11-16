@@ -675,6 +675,12 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionHoldUpdate
 	case AuditActionHoldDelete:
 		*s = AuditActionHoldDelete
+	case AuditActionIdentitySecretCreate:
+		*s = AuditActionIdentitySecretCreate
+	case AuditActionIdentitySecretUpdate:
+		*s = AuditActionIdentitySecretUpdate
+	case AuditActionIdentitySecretDelete:
+		*s = AuditActionIdentitySecretDelete
 	case AuditActionIntegrationCreate:
 		*s = AuditActionIntegrationCreate
 	case AuditActionIntegrationUpdate:

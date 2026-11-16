@@ -26,7 +26,7 @@ func TestIdentifyCreatesTheContactBindsTheDeviceAndStitchesEarlierEvents(t *test
 	// The fixtures hold an earlier anonymous event from the device, and one from another device.
 	const device, otherDevice = fixtures.EventAnonymousFirstVisitorID, fixtures.EventAnonymousSecondVisitorID
 
-	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "  " + device + " ",
 		Email:     new("Visitor@Example.com"),
 		Traits:    map[string]any{"plan": "pro"},
@@ -54,8 +54,8 @@ func TestIdentifyReusesAnExistingContactAndDevice(t *testing.T) {
 	ctx := context.Background()
 	input := visitoridentification.Input{VisitorID: "dev-known", Email: lo.ToPtr(fixtures.ContactAliceEmail)}
 
-	require.NoError(t, visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input))
-	require.NoError(t, visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input), "identify is idempotent")
+	require.NoError(t, testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input))
+	require.NoError(t, testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), input), "identify is idempotent")
 
 	v, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-known")).Only(ctx)
 	require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
 	ctx := context.Background()
 	identify := func(plan string) {
 		t.Helper()
-		err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+		err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 			VisitorID: fixtures.EventAnonymousFirstVisitorID,
 			Email:     new("repeat@example.com"),
 			Traits:    map[string]any{"plan": plan, "firstName": "Rita"},
@@ -97,7 +97,7 @@ func TestIdentifyThatChangesNothingLeavesTheContactAsItWas(t *testing.T) {
 	unchanged, _ := stored()
 	assert.Equal(t, revision, unchanged, "a claim never replaces")
 
-	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: fixtures.EventAnonymousFirstVisitorID,
 		Email:     new("repeat@example.com"),
 		Traits:    map[string]any{"lastName": "Levi"},
@@ -114,7 +114,7 @@ func TestAClaimLeavesAVisitorOfAnotherContactWhereItIs(t *testing.T) {
 	ctx := context.Background()
 	identify := func(email string) {
 		t.Helper()
-		err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+		err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 			VisitorID: "dev-claimed", Email: new(email),
 		})
 		require.NoError(t, err)
@@ -137,7 +137,7 @@ func TestAClaimFillsNoAliasKeyOfAContactThatExists(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 		VisitorID: "dev-phone", Email: lo.ToPtr(fixtures.ContactAliceEmail), Phone: new("+14155550199"), SubjectID: new("claimed-subject"),
 	})
 	require.NoError(t, err)
@@ -163,7 +163,7 @@ func TestIdentifyRepeatingTraitsOfEveryTypeLeavesTheRevision(t *testing.T) {
 	}
 	identify := func() int64 {
 		t.Helper()
-		err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+		err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
 			VisitorID: fixtures.EventAnonymousFirstVisitorID,
 			Email:     new("typed@example.com"),
 			Traits:    traits,
@@ -185,10 +185,10 @@ func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	err := visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "   ", Email: new("a@example.com")})
+	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "   ", Email: new("a@example.com")})
 	require.ErrorIs(t, err, visitoridentification.ErrVisitorIDRequired)
 
-	err = visitoridentification.New(env.Bus, time.Now).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-x"})
+	err = testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{VisitorID: "dev-x"})
 	require.ErrorIs(t, err, contacts.ErrIdentityRequired)
 	n, err := env.DB.Visitor.Query().Where(visitor.VisitorID("dev-x")).Count(ctx)
 	require.NoError(t, err)

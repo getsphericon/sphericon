@@ -4,7 +4,9 @@ namespace Sphericon;
 
 /** An identify claims who the visitor is: it finds or creates the contact by its keys, but gives a
  * contact that exists no key it lacks and replaces none of its values, and binds the visitor only
- * while it belongs to no other contact */
+ * while it belongs to no other contact. With an identity token it is proven: the token's keys are
+ * the contact's, it fills keys and replaces values, moves the visitor and hands the contact the
+ * chats the visitor started */
 model CollectIdentifyInput {
   @minLength(1)
   @maxLength(255)
@@ -20,6 +22,12 @@ model CollectIdentifyInput {
 
   @maxLength(255)
   subjectId?: string | null;
+
+  /** An identity token: a JWT the site's server signs with HS256 under the workspace's identity
+   * secret, naming the signed-in person's keys (`sub` for the subjectId, `email`, `phone`) and an
+   * `exp` at most a day ahead. A token that does not verify refuses the call with 422. A key sent beside it must be the token's */
+  @maxLength(4096)
+  identityToken?: string | null;
 
   /** Attributes of the contact; a trait named after a core attribute (`firstName`, `timeZone`,
    * `country`, `locale`, `birthday`, `city`, `avatar`) writes it, and an invalid value of one is

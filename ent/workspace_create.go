@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -831,6 +832,21 @@ func (_c *WorkspaceCreate) AddBrandKits(v ...*BrandKit) *WorkspaceCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddBrandKitIDs(ids...)
+}
+
+// AddIdentitySecretIDs adds the "identity_secrets" edge to the IdentitySecret entity by IDs.
+func (_c *WorkspaceCreate) AddIdentitySecretIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddIdentitySecretIDs(ids...)
+	return _c
+}
+
+// AddIdentitySecrets adds the "identity_secrets" edges to the IdentitySecret entity.
+func (_c *WorkspaceCreate) AddIdentitySecrets(v ...*IdentitySecret) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddIdentitySecretIDs(ids...)
 }
 
 // AddAutomationIDs adds the "automations" edge to the Automation entity by IDs.
@@ -1837,6 +1853,22 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.IdentitySecretsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

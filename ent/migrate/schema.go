@@ -1267,6 +1267,35 @@ var (
 			},
 		},
 	}
+	// IdentitySecretsColumns holds the columns for the "identity_secrets" table.
+	IdentitySecretsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "secret_encrypted", Type: field.TypeString},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// IdentitySecretsTable holds the schema information for the "identity_secrets" table.
+	IdentitySecretsTable = &schema.Table{
+		Name:       "identity_secrets",
+		Columns:    IdentitySecretsColumns,
+		PrimaryKey: []*schema.Column{IdentitySecretsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "identity_secrets_workspaces_identity_secrets",
+				Columns:    []*schema.Column{IdentitySecretsColumns[4]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "identitysecret_workspace_id",
+				Unique:  true,
+				Columns: []*schema.Column{IdentitySecretsColumns[4]},
+			},
+		},
+	}
 	// InstanceAuditEntriesColumns holds the columns for the "instance_audit_entries" table.
 	InstanceAuditEntriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -3198,6 +3227,7 @@ var (
 		EventReceiptsTable,
 		HeldOrderEventsTable,
 		HoldsTable,
+		IdentitySecretsTable,
 		InstanceAuditEntriesTable,
 		InstanceStateTable,
 		IntegrationsTable,
@@ -3437,6 +3467,10 @@ func init() {
 	HoldsTable.ForeignKeys[0].RefTable = WorkspacesTable
 	HoldsTable.Annotation = &entsql.Annotation{
 		Table: "holds",
+	}
+	IdentitySecretsTable.ForeignKeys[0].RefTable = WorkspacesTable
+	IdentitySecretsTable.Annotation = &entsql.Annotation{
+		Table: "identity_secrets",
 	}
 	InstanceAuditEntriesTable.ForeignKeys[0].RefTable = StaffMembersTable
 	InstanceAuditEntriesTable.Annotation = &entsql.Annotation{

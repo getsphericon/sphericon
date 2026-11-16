@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -472,6 +473,22 @@ func (s *Scoped) verifyHold(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("Hold: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyIdentitySecret fails with ErrNotInWorkspace unless every id is a IdentitySecret of the Workspace.
+func (s *Scoped) verifyIdentitySecret(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.IdentitySecret.Query().Where(s.inIdentitySecret(identitysecret.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("IdentitySecret: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -28591,6 +28608,780 @@ const (
 	RoleOf_HoldScopedUpdate_Modify = RoleStep
 	RoleOf_HoldScopedUpdate_Save   = RoleStep
 	RoleOf_HoldScopedUpdate_Exec   = RoleStep
+)
+
+// IdentitySecretScoped reaches IdentitySecret entities of one Workspace.
+type IdentitySecretScoped struct{ s *Scoped }
+
+// IdentitySecret returns the IdentitySecret entities of the Workspace.
+func (s *Scoped) IdentitySecret() *IdentitySecretScoped { return &IdentitySecretScoped{s: s} }
+
+const (
+	TypeOf_IdentitySecretScoped             = TypeWrapper
+	EntityOf_IdentitySecretScoped           = "IdentitySecret"
+	RoleOf_Scoped_IdentitySecret            = RoleNone
+	RoleOf_IdentitySecretScoped_Query       = RoleRead
+	RoleOf_IdentitySecretScoped_Get         = RoleRead
+	RoleOf_IdentitySecretScoped_DeleteOneID = RoleStart
+	RoleOf_IdentitySecretScoped_UpdateOneID = RoleStart
+	RoleOf_IdentitySecretScoped_Delete      = RoleStart
+	RoleOf_IdentitySecretScoped_Create      = RoleStart
+	RoleOf_IdentitySecretScoped_CreateBulk  = RoleStart
+	RoleOf_IdentitySecretScoped_Update      = RoleStart
+)
+
+// inIdentitySecret confines predicates of IdentitySecret rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inIdentitySecret(ps ...predicate.IdentitySecret) []predicate.IdentitySecret {
+	return append([]predicate.IdentitySecret{identitysecret.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a IdentitySecret query already confined to the Workspace.
+func (t *IdentitySecretScoped) Query() *IdentitySecretQuery {
+	return t.s.c.IdentitySecret.Query().Where(t.s.inIdentitySecret()...)
+}
+
+// Get returns the IdentitySecret with the id; a row of another Workspace is not found.
+func (t *IdentitySecretScoped) Get(ctx context.Context, id int64) (*IdentitySecret, error) {
+	return t.Query().Where(identitysecret.ID(id)).Only(ctx)
+}
+
+// writeIdentitySecret runs a write of IdentitySecret rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. Through an audited scope (Scoped.As)
+// that scope is bound to the transaction that carries the write's Audit entries (ADR 0022), which it
+// joins or opens: the rows where matches are read before the write, then the same rows and the ones
+// run reports it created after it, and verb is recorded for each of them whose audited fields
+// changed, or for every one of them when unchanged is recordUnchanged. Through any other scope run gets the scope itself.
+func (s *Scoped) writeIdentitySecret(ctx context.Context, verb string, where []predicate.IdentitySecret, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	if s.auditing() {
+		return s.audited(ctx, func(ts *Scoped) error {
+			var before []*IdentitySecret
+			if where != nil {
+				var err error
+				if before, err = ts.c.IdentitySecret.Query().Where(where...).All(ctx); err != nil {
+					return err
+				}
+			}
+			created, err := run(ts)
+			if err != nil {
+				return err
+			}
+			ids := make([]int64, 0, len(before)+len(created))
+			beforeByID := make(map[int64]*IdentitySecret, len(before))
+			for _, row := range before {
+				ids = append(ids, row.ID)
+				beforeByID[row.ID] = row
+			}
+			ids = append(ids, created...)
+			after, err := ts.c.IdentitySecret.Query().Where(identitysecret.IDIn(ids...)).All(ctx)
+			if err != nil {
+				return err
+			}
+			afterByID := make(map[int64]*IdentitySecret, len(after))
+			for _, row := range after {
+				afterByID[row.ID] = row
+			}
+			for _, id := range ids {
+				if beforeByID[id] == nil && afterByID[id] == nil {
+					continue
+				}
+				if change, changed := auditChangeIdentitySecret(verb, beforeByID[id], afterByID[id]); changed || unchanged == recordUnchanged {
+					if err := ts.record(ctx, change); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		})
+	}
+	_, err := run(s)
+	return err
+}
+
+// checkIdentitySecret verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkIdentitySecret(ctx context.Context, ms ...*IdentitySecretMutation) error {
+	return nil
+}
+
+// IdentitySecretScopedDeleteOne deletes one IdentitySecret: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type IdentitySecretScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.IdentitySecret
+}
+
+// DeleteOneID deletes the IdentitySecret with the id; a row of another Workspace is not found.
+func (t *IdentitySecretScoped) DeleteOneID(id int64) *IdentitySecretScopedDeleteOne {
+	return &IdentitySecretScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *IdentitySecretScopedDeleteOne) Where(ps ...predicate.IdentitySecret) *IdentitySecretScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_IdentitySecretScopedDeleteOne       = TypeScopedDelete
+	EntityOf_IdentitySecretScopedDeleteOne     = "IdentitySecret"
+	RoleOf_IdentitySecretScopedDeleteOne_Where = RoleStep
+	RoleOf_IdentitySecretScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *IdentitySecretScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inIdentitySecret(x.where...)
+	return x.s.writeIdentitySecret(ctx, "delete", append([]predicate.IdentitySecret{identitysecret.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.IdentitySecret.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// IdentitySecretScopedDelete deletes the IdentitySecret rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type IdentitySecretScopedDelete struct {
+	s     *Scoped
+	where []predicate.IdentitySecret
+}
+
+// Delete deletes the IdentitySecret entities of the Workspace that match the predicates.
+func (t *IdentitySecretScoped) Delete() *IdentitySecretScopedDelete {
+	return &IdentitySecretScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *IdentitySecretScopedDelete) Where(ps ...predicate.IdentitySecret) *IdentitySecretScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_IdentitySecretScopedDelete       = TypeScopedDelete
+	EntityOf_IdentitySecretScopedDelete     = "IdentitySecret"
+	RoleOf_IdentitySecretScopedDelete_Where = RoleStep
+	RoleOf_IdentitySecretScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *IdentitySecretScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inIdentitySecret(x.where...)
+	var n int
+	err := x.s.writeIdentitySecret(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.IdentitySecret.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// IdentitySecretScopedCreate creates a IdentitySecret of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type IdentitySecretScopedCreate struct {
+	s   *Scoped
+	set []func(*IdentitySecretCreate)
+}
+
+// Create starts a IdentitySecret in the Workspace.
+func (t *IdentitySecretScoped) Create() *IdentitySecretScopedCreate {
+	return &IdentitySecretScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *IdentitySecretScopedCreate) raw(s *Scoped) *IdentitySecretCreate {
+	b := s.c.IdentitySecret.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *IdentitySecretScopedCreate) build(ctx context.Context, s *Scoped) (*IdentitySecretCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkIdentitySecret(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *IdentitySecretScopedCreate) SetCreatedAt(v time.Time) *IdentitySecretScopedCreate {
+	x.set = append(x.set, func(b *IdentitySecretCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *IdentitySecretScopedCreate) SetNillableCreatedAt(v *time.Time) *IdentitySecretScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IdentitySecretScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *IdentitySecretScopedCreate) SetUpdatedAt(v time.Time) *IdentitySecretScopedCreate {
+	x.set = append(x.set, func(b *IdentitySecretCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *IdentitySecretScopedCreate) SetNillableUpdatedAt(v *time.Time) *IdentitySecretScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IdentitySecretScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetSecretEncrypted sets the "secret_encrypted" field.
+func (x *IdentitySecretScopedCreate) SetSecretEncrypted(v string) *IdentitySecretScopedCreate {
+	x.set = append(x.set, func(b *IdentitySecretCreate) { b.SetSecretEncrypted(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedCreate_SetSecretEncrypted = RoleStep
+
+const (
+	TypeOf_IdentitySecretScopedCreate                        = TypeScopedCreate
+	EntityOf_IdentitySecretScopedCreate                      = "IdentitySecret"
+	RoleOf_IdentitySecretScopedCreate_Save                   = RoleStep
+	RoleOf_IdentitySecretScopedCreate_Exec                   = RoleStep
+	RoleOf_IdentitySecretScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_IdentitySecretScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the IdentitySecret.
+func (x *IdentitySecretScopedCreate) Save(ctx context.Context) (*IdentitySecret, error) {
+	var created *IdentitySecret
+	err := x.s.writeIdentitySecret(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{created.ID}, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *IdentitySecretScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// IdentitySecretScopedCreateBulk creates several IdentitySecret entities of one Workspace at once.
+type IdentitySecretScopedCreateBulk struct {
+	s  *Scoped
+	xs []*IdentitySecretScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *IdentitySecretScoped) CreateBulk(xs ...*IdentitySecretScopedCreate) *IdentitySecretScopedCreateBulk {
+	return &IdentitySecretScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *IdentitySecretScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("IdentitySecret: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *IdentitySecretScopedCreateBulk) build(ctx context.Context, s *Scoped) (*IdentitySecretCreateBulk, error) {
+	builders := make([]*IdentitySecretCreate, len(b.xs))
+	ms := make([]*IdentitySecretMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkIdentitySecret(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.IdentitySecret.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the IdentitySecret entities.
+func (b *IdentitySecretScopedCreateBulk) Save(ctx context.Context) ([]*IdentitySecret, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*IdentitySecret
+	err := b.s.writeIdentitySecret(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		ids := make([]int64, len(created))
+		for i, row := range created {
+			ids[i] = row.ID
+		}
+		return ids, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *IdentitySecretScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_IdentitySecretScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_IdentitySecretScopedCreateBulk                 = "IdentitySecret"
+	RoleOf_IdentitySecretScopedCreateBulk_Save              = RoleStep
+	RoleOf_IdentitySecretScopedCreateBulk_Exec              = RoleStep
+	RoleOf_IdentitySecretScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// IdentitySecretScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type IdentitySecretScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_IdentitySecretScopedUpsert   = TypeScopedUpsert
+	EntityOf_IdentitySecretScopedUpsert = "IdentitySecret"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *IdentitySecretScopedUpsert) SetUpdatedAt(v time.Time) *IdentitySecretScopedUpsert {
+	u.u.Set(identitysecret.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_IdentitySecretScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *IdentitySecretScopedUpsert) UpdateUpdatedAt() *IdentitySecretScopedUpsert {
+	u.u.SetExcluded(identitysecret.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_IdentitySecretScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetSecretEncrypted sets the "secret_encrypted" field.
+func (u *IdentitySecretScopedUpsert) SetSecretEncrypted(v string) *IdentitySecretScopedUpsert {
+	u.u.Set(identitysecret.FieldSecretEncrypted, v)
+	return u
+}
+
+const RoleOf_IdentitySecretScopedUpsert_SetSecretEncrypted = RoleStep
+
+// UpdateSecretEncrypted sets the "secret_encrypted" field to the value that was provided on create.
+func (u *IdentitySecretScopedUpsert) UpdateSecretEncrypted() *IdentitySecretScopedUpsert {
+	u.u.SetExcluded(identitysecret.FieldSecretEncrypted)
+	return u
+}
+
+const RoleOf_IdentitySecretScopedUpsert_UpdateSecretEncrypted = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *IdentitySecretScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(identitysecret.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// IdentitySecretScopedUpsertOne is the "upsert" of one IdentitySecret: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type IdentitySecretScopedUpsertOne struct {
+	x        *IdentitySecretScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*IdentitySecretUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_IdentitySecretScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_IdentitySecretScopedUpsertOne               = "IdentitySecret"
+	RoleOf_IdentitySecretScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_IdentitySecretScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_IdentitySecretScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_IdentitySecretScopedUpsertOne_Update          = RoleStep
+	RoleOf_IdentitySecretScopedUpsertOne_Exec            = RoleStep
+	RoleOf_IdentitySecretScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *IdentitySecretScopedCreate) OnConflictColumns(columns ...string) *IdentitySecretScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *IdentitySecretScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *IdentitySecretScopedUpsertOne {
+	return &IdentitySecretScopedUpsertOne{x: x, conflict: (&IdentitySecretScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *IdentitySecretScopedUpsertOne) UpdateNewValues() *IdentitySecretScopedUpsertOne {
+	u.set = append(u.set, func(r *IdentitySecretUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *IdentitySecretScopedUpsertOne) Ignore() *IdentitySecretScopedUpsertOne {
+	u.set = append(u.set, func(r *IdentitySecretUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *IdentitySecretScopedUpsertOne) DoNothing() *IdentitySecretScopedUpsertOne {
+	u.set = append(u.set, func(r *IdentitySecretUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *IdentitySecretScopedUpsertOne) Update(set func(*IdentitySecretScopedUpsert)) *IdentitySecretScopedUpsertOne {
+	u.set = append(u.set, func(r *IdentitySecretUpsertOne) {
+		r.Update(func(s *IdentitySecretUpsert) { set(&IdentitySecretScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *IdentitySecretScopedUpsertOne) build(ctx context.Context, s *Scoped) (*IdentitySecretUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *IdentitySecretScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id. An audited upsert must be DO NOTHING:
+// an insert is a create, a conflict (sql.ErrNoRows) writes nothing and records nothing.
+func (u *IdentitySecretScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	if u.x.s.auditing() && !u.doNothing {
+		return 0, ErrAuditUpsert
+	}
+	var id int64
+	err := u.x.s.writeIdentitySecret(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// IdentitySecretScopedUpsertBulk is the "upsert" of several IdentitySecret entities.
+type IdentitySecretScopedUpsertBulk struct {
+	b       *IdentitySecretScopedCreateBulk
+	t       *IdentitySecretScoped
+	columns []string
+	set     []func(*IdentitySecretUpsertBulk)
+}
+
+const (
+	TypeOf_IdentitySecretScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_IdentitySecretScopedUpsertBulk               = "IdentitySecret"
+	RoleOf_IdentitySecretScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_IdentitySecretScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_IdentitySecretScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_IdentitySecretScopedUpsertBulk_Update          = RoleStep
+	RoleOf_IdentitySecretScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *IdentitySecretScopedCreateBulk) OnConflictColumns(columns ...string) *IdentitySecretScopedUpsertBulk {
+	return &IdentitySecretScopedUpsertBulk{b: b, t: &IdentitySecretScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *IdentitySecretScopedUpsertBulk) UpdateNewValues() *IdentitySecretScopedUpsertBulk {
+	u.set = append(u.set, func(r *IdentitySecretUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *IdentitySecretScopedUpsertBulk) Ignore() *IdentitySecretScopedUpsertBulk {
+	u.set = append(u.set, func(r *IdentitySecretUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *IdentitySecretScopedUpsertBulk) DoNothing() *IdentitySecretScopedUpsertBulk {
+	u.set = append(u.set, func(r *IdentitySecretUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *IdentitySecretScopedUpsertBulk) Update(set func(*IdentitySecretScopedUpsert)) *IdentitySecretScopedUpsertBulk {
+	u.set = append(u.set, func(r *IdentitySecretUpsertBulk) {
+		r.Update(func(s *IdentitySecretUpsert) { set(&IdentitySecretScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert. An audited entity has
+// no bulk upsert: it cannot tell an insert from an update.
+func (u *IdentitySecretScopedUpsertBulk) Exec(ctx context.Context) error {
+	if u.b.s.auditing() {
+		return ErrAuditUpsert
+	}
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeIdentitySecret(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// IdentitySecretScopedUpdateOne updates one IdentitySecret. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type IdentitySecretScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.IdentitySecret
+	set   []func(*IdentitySecretUpdateOne)
+}
+
+// UpdateOneID updates the IdentitySecret with the id; a row of another Workspace is not found.
+func (t *IdentitySecretScoped) UpdateOneID(id int64) *IdentitySecretScopedUpdateOne {
+	return &IdentitySecretScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *IdentitySecretScopedUpdateOne) Where(ps ...predicate.IdentitySecret) *IdentitySecretScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *IdentitySecretScopedUpdateOne) SetUpdatedAt(v time.Time) *IdentitySecretScopedUpdateOne {
+	x.set = append(x.set, func(b *IdentitySecretUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetSecretEncrypted sets the "secret_encrypted" field.
+func (x *IdentitySecretScopedUpdateOne) SetSecretEncrypted(v string) *IdentitySecretScopedUpdateOne {
+	x.set = append(x.set, func(b *IdentitySecretUpdateOne) { b.SetSecretEncrypted(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedUpdateOne_SetSecretEncrypted = RoleStep
+
+// SetNillableSecretEncrypted sets the "secret_encrypted" field if the given value is not nil.
+func (x *IdentitySecretScopedUpdateOne) SetNillableSecretEncrypted(v *string) *IdentitySecretScopedUpdateOne {
+	if v != nil {
+		x.SetSecretEncrypted(*v)
+	}
+	return x
+}
+
+const RoleOf_IdentitySecretScopedUpdateOne_SetNillableSecretEncrypted = RoleStep
+
+// Save verifies the references against the Workspace, then updates the IdentitySecret.
+func (x *IdentitySecretScopedUpdateOne) Save(ctx context.Context) (*IdentitySecret, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *IdentitySecretScopedUpdateOne) build(ctx context.Context, s *Scoped) (*IdentitySecretUpdateOne, error) {
+	b := s.c.IdentitySecret.UpdateOneID(x.id).Where(s.inIdentitySecret(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkIdentitySecret(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *IdentitySecretScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*IdentitySecret, error) {
+	where := x.s.inIdentitySecret(x.where...)
+	var updated *IdentitySecret
+	err := x.s.writeIdentitySecret(ctx, verb, append([]predicate.IdentitySecret{identitysecret.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *IdentitySecretScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_IdentitySecretScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_IdentitySecretScopedUpdateOne     = "IdentitySecret"
+	RoleOf_IdentitySecretScopedUpdateOne_Where = RoleStep
+	RoleOf_IdentitySecretScopedUpdateOne_Save  = RoleStep
+	RoleOf_IdentitySecretScopedUpdateOne_Exec  = RoleStep
+)
+
+// IdentitySecretScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type IdentitySecretScopedUpdate struct {
+	s     *Scoped
+	where []predicate.IdentitySecret
+	set   []func(*IdentitySecretUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the IdentitySecret entities of the Workspace that match the predicates.
+func (t *IdentitySecretScoped) Update() *IdentitySecretScopedUpdate {
+	return &IdentitySecretScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *IdentitySecretScopedUpdate) Where(ps ...predicate.IdentitySecret) *IdentitySecretScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *IdentitySecretScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *IdentitySecretScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(identitysecret.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *IdentitySecretUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *IdentitySecretScopedUpdate) SetUpdatedAt(v time.Time) *IdentitySecretScopedUpdate {
+	x.set = append(x.set, func(b *IdentitySecretUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetSecretEncrypted sets the "secret_encrypted" field.
+func (x *IdentitySecretScopedUpdate) SetSecretEncrypted(v string) *IdentitySecretScopedUpdate {
+	x.set = append(x.set, func(b *IdentitySecretUpdate) { b.SetSecretEncrypted(v) })
+	return x
+}
+
+const RoleOf_IdentitySecretScopedUpdate_SetSecretEncrypted = RoleStep
+
+// SetNillableSecretEncrypted sets the "secret_encrypted" field if the given value is not nil.
+func (x *IdentitySecretScopedUpdate) SetNillableSecretEncrypted(v *string) *IdentitySecretScopedUpdate {
+	if v != nil {
+		x.SetSecretEncrypted(*v)
+	}
+	return x
+}
+
+const RoleOf_IdentitySecretScopedUpdate_SetNillableSecretEncrypted = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *IdentitySecretScopedUpdate) build(ctx context.Context, s *Scoped) (*IdentitySecretUpdate, error) {
+	b := s.c.IdentitySecret.Update().Where(s.inIdentitySecret(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkIdentitySecret(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *IdentitySecretScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inIdentitySecret(x.where...)
+	var n int
+	err := x.s.writeIdentitySecret(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *IdentitySecretScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_IdentitySecretScopedUpdate        = TypeScopedUpdate
+	EntityOf_IdentitySecretScopedUpdate      = "IdentitySecret"
+	RoleOf_IdentitySecretScopedUpdate_Where  = RoleStep
+	RoleOf_IdentitySecretScopedUpdate_Modify = RoleStep
+	RoleOf_IdentitySecretScopedUpdate_Save   = RoleStep
+	RoleOf_IdentitySecretScopedUpdate_Exec   = RoleStep
 )
 
 // IntegrationScoped reaches Integration entities of one Workspace.

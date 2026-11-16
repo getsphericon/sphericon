@@ -176,6 +176,15 @@ enum AuditAction {
   /** Lifted a Staff hold */
   holdDelete: "hold.delete",
 
+  /** Generated the identity secret */
+  identitySecretCreate: "identity_secret.create",
+
+  /** Regenerated the identity secret */
+  identitySecretUpdate: "identity_secret.update",
+
+  /** Deleted the identity secret */
+  identitySecretDelete: "identity_secret.delete",
+
   /** Created an integration */
   integrationCreate: "integration.create",
 

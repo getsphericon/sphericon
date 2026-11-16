@@ -4,6 +4,8 @@ import { userEvent } from 'vitest/browser'
 
 import {
   handleSiteEventsList,
+  handleSiteIdentitySecretGet,
+  handleSiteIdentitySecretRegenerate,
   handleSiteTrackingDomainsList,
   handleSiteTrackingDomainsRemove,
   handleSiteTrackingDomainsSet,
@@ -351,4 +353,42 @@ test('shows an error alert when the workspaces fail to load', async () => {
   const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
 
   await expect.element(screen.getByRole('alert', { name: /Failed to load/ })).toBeInTheDocument()
+})
+
+// The Identity secret (ADR 0171) is for those who hold tokens:manage: generating the first needs no
+// confirmation, and the secret is then shown to copy.
+test('generates the identity secret for an owner and shows it', async () => {
+  let secret: string | undefined
+  worker.use(
+    handleSiteWorkspacesList({ body: [{ ...workspace, permissions: ['tokens:manage'] }] }),
+    handleSiteEventsList({
+      body: { items: [], page: 1, pageSize: 1, totalItems: 0, totalPages: 0 },
+    }),
+    handleSiteIdentitySecretGet(() => HttpResponse.json(secret ? { secret } : {})),
+    handleSiteIdentitySecretRegenerate(() => {
+      secret = 'idsec_generated'
+      return HttpResponse.json({ secret })
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  await expect.element(screen.getByText(/No identity secret yet/)).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Generate secret' }))
+
+  await expect.element(screen.getByText('idsec_generated')).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Regenerate secret' }))
+    .toBeInTheDocument()
+})
+
+test('shows no identity secret to a member without tokens:manage', async () => {
+  serveWorkspace()
+
+  const { screen } = await renderWithRouter(<TrackingPage />, TRACKING_ROUTE)
+
+  await expect.element(screen.getByText(/s\.async = true/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('heading', { name: 'Identity verification' }))
+    .not.toBeInTheDocument()
 })

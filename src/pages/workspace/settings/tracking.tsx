@@ -23,6 +23,8 @@ import { useFormat } from '../../../hooks/useFormat.ts'
 import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
 import { Route as trackingRoute } from '../../../routes/workspaces/$workspaceId/settings/tracking.tsx'
 import { DOCS_URL, SDK_SOURCE_URL } from '../../../utils/docs.ts'
+import { can } from '../../../utils/permissions.ts'
+import { IdentitySecretSection } from './IdentitySecretSection.tsx'
 import { SettingsFrame } from './SettingsFrame.tsx'
 import { TrackingDomainSection } from './TrackingDomainSection.tsx'
 
@@ -188,6 +190,7 @@ function TrackerSetup({ workspace }: { workspace: SiteWorkspaceResource }) {
         workspaceId={workspace.id}
       />
       <TestEvent collectKey={workspace.collectKey} trackerUrl={trackerUrl} />
+      {can(workspace, 'tokens:manage') && <IdentitySecretSection workspaceId={workspace.id} />}
       <TrackingDomainSection workspace={workspace} />
       <SendEvents />
     </Stack>

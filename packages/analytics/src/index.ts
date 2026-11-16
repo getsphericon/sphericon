@@ -308,7 +308,13 @@ export function initTracking(config?: TrackerConfig): void {
   flushSoon()
 }
 
+// The Identity token of the page's latest identify (ADR 0171), kept in memory only: the start link
+// asks for it so a chat started after a proven sign-in is the person's. A page that signs no one in
+// has none.
+let identityToken: string | null = null
+
 export async function identify(payload: IdentifyInput): Promise<void> {
+  identityToken = payload.identityToken ?? identityToken
   const runtime = delivery.getSnapshot().context.runtime
   if (!runtime) {
     if (isBrowser) {
@@ -328,6 +334,7 @@ export async function identify(payload: IdentifyInput): Promise<void> {
       email: payload.email ?? null,
       phone: payload.phone ?? null,
       subjectId: payload.subjectId ?? null,
+      identityToken: payload.identityToken ?? null,
       traits: payload.traits ?? null,
       context: browserContext(),
     },
@@ -335,8 +342,9 @@ export async function identify(payload: IdentifyInput): Promise<void> {
 }
 
 // A Telegram start link for the current visitor, for a "Get updates in Telegram" button the site
-// draws: whoever presses Start in the bot with it binds their chat to this browser, which reaches
-// no contact (ADR 0171). null when there is nothing to link to: the
+// draws: whoever presses Start in the bot with it binds their chat to this browser, which reaches no
+// contact until a proven identify hands it over, or, after a proven identify on this page, to the
+// person the Identity token proves (ADR 0171). null when there is nothing to link to: the
 // tracker is not started, the workspace has no enabled default Telegram bot, or the call failed.
 export async function telegramStartLink(): Promise<string | null> {
   const runtime = delivery.getSnapshot().context.runtime
@@ -348,7 +356,7 @@ export async function telegramStartLink(): Promise<string | null> {
     const { data } = await collectTelegramStartLinksCreate({
       client: runtime.client,
       retry: 0,
-      body: { visitorId: runtime.visitorId },
+      body: { visitorId: runtime.visitorId, identityToken },
     })
 
     return data?.url ?? null

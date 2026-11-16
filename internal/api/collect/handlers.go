@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
-	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
@@ -22,15 +21,14 @@ import (
 
 type Handlers struct {
 	bus      *events.Bus
-	bindings *bindings.Module
 	identify *visitoridentification.UseCase
 	now      func() time.Time
 }
 
 // NewHandlers builds the collect handlers. Payload size caps (batch, per event) are
 // enforced before decoding, in internal/server. now is the Instance clock a Visitor is seen by.
-func NewHandlers(bus *events.Bus, telegram *bindings.Module, identification *visitoridentification.UseCase, now func() time.Time) *Handlers {
-	return &Handlers{bus: bus, bindings: telegram, identify: identification, now: now}
+func NewHandlers(bus *events.Bus, identification *visitoridentification.UseCase, now func() time.Time) *Handlers {
+	return &Handlers{bus: bus, identify: identification, now: now}
 }
 
 // rawMap decodes an ogen map[string]jx.Raw into map[string]any using
@@ -109,6 +107,7 @@ func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.Co
 		s := v
 		input.SubjectID = &s
 	}
+	input.IdentityToken = req.IdentityToken.Or("")
 	if traits, ok := req.Traits.Get(); ok {
 		input.Traits = rawMap(traits)
 	}
@@ -123,9 +122,12 @@ func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.Co
 	return &collectapi.CollectOkResponse{Ok: collectapi.CollectOkResponseOkTrue}, nil
 }
 
-// CollectTelegramStartLinksCreate issues the Visitor's start link on the default Telegram bot.
+// CollectTelegramStartLinksCreate issues the start link on the default Telegram bot: the Visitor's,
+// or the Contact's an Identity token proves (ADR 0171).
 func (h *Handlers) CollectTelegramStartLinksCreate(ctx context.Context, req *collectapi.CollectTelegramStartLinkInput) (*collectapi.CollectTelegramStartLink, error) {
-	link, err := h.bindings.IssueVisitorStartLink(ctx, auth.CollectScoped(ctx), req.VisitorId)
+	link, err := h.identify.StartLink(ctx, auth.CollectScoped(ctx), visitoridentification.StartLinkInput{
+		VisitorID: req.VisitorId, IdentityToken: req.IdentityToken.Or(""),
+	})
 	if err != nil {
 		return nil, err
 	}

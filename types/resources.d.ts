@@ -260,6 +260,9 @@ export default interface Resources {
       "holdCreate": "Placed a Staff hold",
       "holdDelete": "Lifted a Staff hold",
       "holdUpdate": "Changed a Staff hold",
+      "identitySecretCreate": "Generated the identity secret",
+      "identitySecretDelete": "Deleted the identity secret",
+      "identitySecretUpdate": "Regenerated the identity secret",
       "instanceDefaultSendCapChange": "Changed the default Send cap",
       "instanceLegalDocumentPublish": "Published a Legal document",
       "instanceSignupItemAdd": "Added a Sign-up item",
@@ -1802,6 +1805,17 @@ export default interface Resources {
         "warning": "The workspace is frozen at once: nothing is sent, and its API tokens, collect key and tracking hosts stop working. Only an owner can restore it, within 30 days."
       },
       "errorTitle": "Failed to update workspace",
+      "identitySecret": {
+        "description": "Prove who is signed in on your site. Your server signs an identity token (a JWT, HS256) with this secret for the signed-in person: their subjectId as sub, their email or phone, and an exp at most a day ahead. An identify that carries the token may update the person's details and gives them the Telegram chats started in that browser; one without it only fills what is empty.",
+        "generate": "Generate secret",
+        "generateError": "Could not generate the identity secret",
+        "generated": "Identity secret generated",
+        "none": "No identity secret yet: every identify from your site is unproven.",
+        "regenerate": "Regenerate secret",
+        "regenerateConfirmBody": "The current secret stops verifying at once. Update your server with the new one.",
+        "regenerateConfirmTitle": "Regenerate the identity secret?",
+        "title": "Identity verification"
+      },
       "installStatusReceived": "Events are arriving",
       "installStatusTitle": "Installation status",
       "installStatusWaiting": "Waiting for the first event…",

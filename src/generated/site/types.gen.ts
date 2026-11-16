@@ -131,6 +131,9 @@ export const AuditAction = {
   HOLD_CREATE: 'hold.create',
   HOLD_UPDATE: 'hold.update',
   HOLD_DELETE: 'hold.delete',
+  IDENTITY_SECRET_CREATE: 'identity_secret.create',
+  IDENTITY_SECRET_UPDATE: 'identity_secret.update',
+  IDENTITY_SECRET_DELETE: 'identity_secret.delete',
   INTEGRATION_CREATE: 'integration.create',
   INTEGRATION_UPDATE: 'integration.update',
   INTEGRATION_DELETE: 'integration.delete',
@@ -4512,6 +4515,17 @@ export type SiteEventResource = {
  */
 export type SiteForgotPasswordInput = {
   email: EmailAddress;
+};
+
+/**
+ * The workspace's identity secret (ADR 0171): its server signs identity tokens with it (HS256), so
+ * an identify from its site proves who is signed in. Owners and admins only
+ */
+export type SiteIdentitySecretResource = {
+  /**
+   * The secret; absent until an owner or admin generates one
+   */
+  secret?: string;
 };
 
 /**
@@ -13397,6 +13411,70 @@ export type SiteEventsActionsResponses = {
 };
 
 export type SiteEventsActionsResponse = SiteEventsActionsResponses[keyof SiteEventsActionsResponses];
+
+export type SiteIdentitySecretGetData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/identity-secret';
+};
+
+export type SiteIdentitySecretGetErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteIdentitySecretGetError = SiteIdentitySecretGetErrors[keyof SiteIdentitySecretGetErrors];
+
+export type SiteIdentitySecretGetResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteIdentitySecretResource;
+};
+
+export type SiteIdentitySecretGetResponse = SiteIdentitySecretGetResponses[keyof SiteIdentitySecretGetResponses];
+
+export type SiteIdentitySecretRegenerateData = {
+  body?: never;
+  path: {
+    workspaceId: WorkspaceId;
+  };
+  query?: never;
+  url: '/workspaces/{workspaceId}/identity-secret/regenerate';
+};
+
+export type SiteIdentitySecretRegenerateErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type SiteIdentitySecretRegenerateError = SiteIdentitySecretRegenerateErrors[keyof SiteIdentitySecretRegenerateErrors];
+
+export type SiteIdentitySecretRegenerateResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: SiteIdentitySecretResource;
+};
+
+export type SiteIdentitySecretRegenerateResponse = SiteIdentitySecretRegenerateResponses[keyof SiteIdentitySecretRegenerateResponses];
 
 export type SiteIntegrationsListData = {
   body?: never;

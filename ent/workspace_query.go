@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -99,6 +100,7 @@ type WorkspaceQuery struct {
 	withAutomationFigures   *AutomationFigureQuery
 	withEmailTemplates      *EmailTemplateQuery
 	withBrandKits           *BrandKitQuery
+	withIdentitySecrets     *IdentitySecretQuery
 	withAutomations         *AutomationQuery
 	withAutomationVersions  *AutomationVersionQuery
 	withAutomationRuns      *AutomationRunQuery
@@ -771,6 +773,28 @@ func (_q *WorkspaceQuery) QueryBrandKits() *BrandKitQuery {
 	return query
 }
 
+// QueryIdentitySecrets chains the current query on the "identity_secrets" edge.
+func (_q *WorkspaceQuery) QueryIdentitySecrets() *IdentitySecretQuery {
+	query := (&IdentitySecretClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(identitysecret.Table, identitysecret.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.IdentitySecretsTable, workspace.IdentitySecretsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryAutomations chains the current query on the "automations" edge.
 func (_q *WorkspaceQuery) QueryAutomations() *AutomationQuery {
 	query := (&AutomationClient{config: _q.config}).Query()
@@ -1409,6 +1433,7 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		withAutomationFigures:   _q.withAutomationFigures.Clone(),
 		withEmailTemplates:      _q.withEmailTemplates.Clone(),
 		withBrandKits:           _q.withBrandKits.Clone(),
+		withIdentitySecrets:     _q.withIdentitySecrets.Clone(),
 		withAutomations:         _q.withAutomations.Clone(),
 		withAutomationVersions:  _q.withAutomationVersions.Clone(),
 		withAutomationRuns:      _q.withAutomationRuns.Clone(),
@@ -1743,6 +1768,17 @@ func (_q *WorkspaceQuery) WithBrandKits(opts ...func(*BrandKitQuery)) *Workspace
 	return _q
 }
 
+// WithIdentitySecrets tells the query-builder to eager-load the nodes that are connected to
+// the "identity_secrets" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithIdentitySecrets(opts ...func(*IdentitySecretQuery)) *WorkspaceQuery {
+	query := (&IdentitySecretClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withIdentitySecrets = query
+	return _q
+}
+
 // WithAutomations tells the query-builder to eager-load the nodes that are connected to
 // the "automations" edge. The optional arguments are used to configure the query builder of the edge.
 func (_q *WorkspaceQuery) WithAutomations(opts ...func(*AutomationQuery)) *WorkspaceQuery {
@@ -2030,7 +2066,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [47]bool{
+		loadedTypes = [48]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2059,6 +2095,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withAutomationFigures != nil,
 			_q.withEmailTemplates != nil,
 			_q.withBrandKits != nil,
+			_q.withIdentitySecrets != nil,
 			_q.withAutomations != nil,
 			_q.withAutomationVersions != nil,
 			_q.withAutomationRuns != nil,
@@ -2300,6 +2337,13 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadBrandKits(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.BrandKits = []*BrandKit{} },
 			func(n *Workspace, e *BrandKit) { n.Edges.BrandKits = append(n.Edges.BrandKits, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withIdentitySecrets; query != nil {
+		if err := _q.loadIdentitySecrets(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.IdentitySecrets = []*IdentitySecret{} },
+			func(n *Workspace, e *IdentitySecret) { n.Edges.IdentitySecrets = append(n.Edges.IdentitySecrets, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -3271,6 +3315,36 @@ func (_q *WorkspaceQuery) loadBrandKits(ctx context.Context, query *BrandKitQuer
 	}
 	query.Where(predicate.BrandKit(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.BrandKitsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadIdentitySecrets(ctx context.Context, query *IdentitySecretQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *IdentitySecret)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(identitysecret.FieldWorkspaceID)
+	}
+	query.Where(predicate.IdentitySecret(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.IdentitySecretsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -84,6 +84,9 @@ type HeldOrderEvent func(*sql.Selector)
 // Hold is the predicate function for hold builders.
 type Hold func(*sql.Selector)
 
+// IdentitySecret is the predicate function for identitysecret builders.
+type IdentitySecret func(*sql.Selector)
+
 // InstanceAuditEntry is the predicate function for instanceauditentry builders.
 type InstanceAuditEntry func(*sql.Selector)
 

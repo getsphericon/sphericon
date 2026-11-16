@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
@@ -171,6 +172,7 @@ func checkColumn(t, c string) error {
 			eventreceipt.Table:         eventreceipt.ValidColumn,
 			heldorderevent.Table:       heldorderevent.ValidColumn,
 			hold.Table:                 hold.ValidColumn,
+			identitysecret.Table:       identitysecret.ValidColumn,
 			instanceauditentry.Table:   instanceauditentry.ValidColumn,
 			instancestate.Table:        instancestate.ValidColumn,
 			integration.Table:          integration.ValidColumn,

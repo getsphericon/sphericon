@@ -137,7 +137,7 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 // acknowledged ingest.
 func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
 	sqlDB := testhelper.ClosedDB(t)
-	h := collect.NewHandlers(events.New(sqlDB, entclient.Core.NewTx, time.Now), nil, nil, time.Now)
+	h := collect.NewHandlers(events.New(sqlDB, entclient.Core.NewTx, time.Now), nil, time.Now)
 
 	err := h.CollectEventsCreate(
 		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: entclient.Core.New(sqlDB).Scoped(fixtures.AcmeID)}),

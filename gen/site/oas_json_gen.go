@@ -390,6 +390,12 @@ func (s *AuditAction) Decode(d *jx.Decoder) error {
 		*s = AuditActionHoldUpdate
 	case AuditActionHoldDelete:
 		*s = AuditActionHoldDelete
+	case AuditActionIdentitySecretCreate:
+		*s = AuditActionIdentitySecretCreate
+	case AuditActionIdentitySecretUpdate:
+		*s = AuditActionIdentitySecretUpdate
+	case AuditActionIdentitySecretDelete:
+		*s = AuditActionIdentitySecretDelete
 	case AuditActionIntegrationCreate:
 		*s = AuditActionIntegrationCreate
 	case AuditActionIntegrationUpdate:
@@ -30651,6 +30657,69 @@ func (s *SiteForgotPasswordInput) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *SiteForgotPasswordInput) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *SiteIdentitySecretResource) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *SiteIdentitySecretResource) encodeFields(e *jx.Encoder) {
+	{
+		if s.Secret.Set {
+			e.FieldStart("secret")
+			s.Secret.Encode(e)
+		}
+	}
+}
+
+var jsonFieldsNameOfSiteIdentitySecretResource = [1]string{
+	0: "secret",
+}
+
+// Decode decodes SiteIdentitySecretResource from json.
+func (s *SiteIdentitySecretResource) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode SiteIdentitySecretResource to nil")
+	}
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "secret":
+			if err := func() error {
+				s.Secret.Reset()
+				if err := s.Secret.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"secret\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode SiteIdentitySecretResource")
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *SiteIdentitySecretResource) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *SiteIdentitySecretResource) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

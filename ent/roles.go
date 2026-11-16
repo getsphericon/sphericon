@@ -1774,6 +1774,68 @@ const (
 	RoleOf_HoldCreateBulk_OnConflictColumns = RoleStart
 )
 
+// The types ent generates for IdentitySecret.
+const (
+	TypeOf_IdentitySecret             = TypeEntity
+	TypeOf_IdentitySecrets            = TypeOther
+	TypeOf_IdentitySecretEdges        = TypeOther
+	EntityOf_IdentitySecretEdges      = "IdentitySecret"
+	TypeOf_IdentitySecretMutation     = TypeOther
+	TypeOf_IdentitySecretClient       = TypeClient
+	TypeOf_IdentitySecretQuery        = TypeQuery
+	TypeOf_IdentitySecretSelect       = TypeQuery
+	TypeOf_IdentitySecretGroupBy      = TypeQuery
+	TypeOf_IdentitySecretCreate       = TypeCreate
+	TypeOf_IdentitySecretCreateBulk   = TypeCreate
+	TypeOf_IdentitySecretUpdate       = TypeUpdate
+	TypeOf_IdentitySecretUpdateOne    = TypeUpdate
+	TypeOf_IdentitySecretDelete       = TypeDelete
+	TypeOf_IdentitySecretDeleteOne    = TypeDelete
+	TypeOf_IdentitySecretUpsert       = TypeUpsert
+	TypeOf_IdentitySecretUpsertOne    = TypeUpsert
+	TypeOf_IdentitySecretUpsertBulk   = TypeUpsert
+	EntityOf_IdentitySecrets          = "IdentitySecret"
+	EntityOf_IdentitySecret           = "IdentitySecret"
+	EntityOf_IdentitySecretMutation   = "IdentitySecret"
+	EntityOf_IdentitySecretClient     = "IdentitySecret"
+	EntityOf_IdentitySecretQuery      = "IdentitySecret"
+	EntityOf_IdentitySecretSelect     = "IdentitySecret"
+	EntityOf_IdentitySecretGroupBy    = "IdentitySecret"
+	EntityOf_IdentitySecretCreate     = "IdentitySecret"
+	EntityOf_IdentitySecretCreateBulk = "IdentitySecret"
+	EntityOf_IdentitySecretUpdate     = "IdentitySecret"
+	EntityOf_IdentitySecretUpdateOne  = "IdentitySecret"
+	EntityOf_IdentitySecretDelete     = "IdentitySecret"
+	EntityOf_IdentitySecretDeleteOne  = "IdentitySecret"
+	EntityOf_IdentitySecretUpsert     = "IdentitySecret"
+	EntityOf_IdentitySecretUpsertOne  = "IdentitySecret"
+	EntityOf_IdentitySecretUpsertBulk = "IdentitySecret"
+)
+
+// The reads and the writes ent's methods for IdentitySecret start.
+const (
+	RoleOf_IdentitySecretClient_Create                = RoleStart
+	RoleOf_IdentitySecretClient_CreateBulk            = RoleStart
+	RoleOf_IdentitySecretClient_MapCreateBulk         = RoleStart
+	RoleOf_IdentitySecretClient_Update                = RoleStart
+	RoleOf_IdentitySecretClient_UpdateOne             = RoleStart
+	RoleOf_IdentitySecretClient_Delete                = RoleStart
+	RoleOf_IdentitySecretClient_Query                 = RoleRead
+	RoleOf_IdentitySecretClient_UpdateOneID           = RoleStart
+	RoleOf_IdentitySecretClient_DeleteOne             = RoleStart
+	RoleOf_IdentitySecretClient_DeleteOneID           = RoleStart
+	RoleOf_IdentitySecretClient_Get                   = RoleRead
+	RoleOf_IdentitySecretClient_GetX                  = RoleRead
+	RoleOf_IdentitySecretClient_QueryWorkspace        = RoleRead
+	RoleOf_IdentitySecret_QueryWorkspace              = RoleRead
+	RoleOf_IdentitySecretQuery_QueryWorkspace         = RoleRead
+	RoleOf_IdentitySecret_Update                      = RoleStart
+	RoleOf_IdentitySecretCreate_OnConflict            = RoleStart
+	RoleOf_IdentitySecretCreate_OnConflictColumns     = RoleStart
+	RoleOf_IdentitySecretCreateBulk_OnConflict        = RoleStart
+	RoleOf_IdentitySecretCreateBulk_OnConflictColumns = RoleStart
+)
+
 // The types ent generates for InstanceAuditEntry.
 const (
 	TypeOf_InstanceAuditEntry             = TypeEntity
@@ -4902,6 +4964,9 @@ const (
 	RoleOf_WorkspaceClient_QueryBrandKits           = RoleRead
 	RoleOf_Workspace_QueryBrandKits                 = RoleRead
 	RoleOf_WorkspaceQuery_QueryBrandKits            = RoleRead
+	RoleOf_WorkspaceClient_QueryIdentitySecrets     = RoleRead
+	RoleOf_Workspace_QueryIdentitySecrets           = RoleRead
+	RoleOf_WorkspaceQuery_QueryIdentitySecrets      = RoleRead
 	RoleOf_WorkspaceClient_QueryAutomations         = RoleRead
 	RoleOf_Workspace_QueryAutomations               = RoleRead
 	RoleOf_WorkspaceQuery_QueryAutomations          = RoleRead

@@ -321,6 +321,18 @@ func (f HoldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HoldMutation", m)
 }
 
+// The IdentitySecretFunc type is an adapter to allow the use of ordinary
+// function as IdentitySecret mutator.
+type IdentitySecretFunc func(context.Context, *ent.IdentitySecretMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IdentitySecretFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IdentitySecretMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IdentitySecretMutation", m)
+}
+
 // The InstanceAuditEntryFunc type is an adapter to allow the use of ordinary
 // function as InstanceAuditEntry mutator.
 type InstanceAuditEntryFunc func(context.Context, *ent.InstanceAuditEntryMutation) (ent.Value, error)

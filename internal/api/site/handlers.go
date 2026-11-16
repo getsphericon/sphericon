@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
@@ -77,6 +78,7 @@ type Handlers struct {
 	deletion        *workspacedeletion.UseCase
 	bus             *events.Bus
 	webhooks        *webhookendpoints.Module
+	identityTokens  *identitytokens.Module
 	broadcasts      *broadcasts.Module
 	broadcastViews  *broadcasts.Views
 	sendingDomains  *sendingdomains.Module
@@ -164,16 +166,18 @@ type Deps struct {
 	// owner is told of.
 	Instance *instancestates.Module
 	// Attempts counts the password-reset mails per account (ADR 0025).
-	Attempts    *throttle.Attempts
-	OAuth       *oauthclients.Module
-	Bus         *events.Bus
-	Webhooks    *webhookendpoints.Module
-	Outbound    *outboundmessages.Module
-	Segments    *segments.Module
-	Contacts    *contacts.Module
-	Erasure     *contacterasure.UseCase
-	Tags        *tags.Module
-	TagDeletion *tagdeletion.UseCase
+	Attempts *throttle.Attempts
+	OAuth    *oauthclients.Module
+	Bus      *events.Bus
+	Webhooks *webhookendpoints.Module
+	// IdentityTokens keeps the Identity secret (ADR 0171).
+	IdentityTokens *identitytokens.Module
+	Outbound       *outboundmessages.Module
+	Segments       *segments.Module
+	Contacts       *contacts.Module
+	Erasure        *contacterasure.UseCase
+	Tags           *tags.Module
+	TagDeletion    *tagdeletion.UseCase
 	// CustomFieldRetyping is the use case behind editing a Custom field (ADR 0102).
 	CustomFieldRetyping *customfieldretyping.UseCase
 	Bindings            *bindings.Module
@@ -262,7 +266,7 @@ func NewHandlers(d *Deps) *Handlers {
 		panic("site: Deps.Clock is required: the handlers read the Instance clock")
 	}
 	h := &Handlers{
-		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, deletion: d.Deletion, bus: d.Bus, webhooks: d.Webhooks, outbound: d.Outbound,
+		users: d.Users, invitations: d.Invitations, workspaces: d.Workspaces, memberships: d.Memberships, deletion: d.Deletion, bus: d.Bus, webhooks: d.Webhooks, identityTokens: d.IdentityTokens, outbound: d.Outbound,
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,

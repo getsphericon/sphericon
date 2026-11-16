@@ -600,6 +600,19 @@ type Handler interface {
 	//
 	// DELETE /me/identities/{id}
 	SiteIdentitiesUnlink(ctx context.Context, params SiteIdentitiesUnlinkParams) (*SiteIdentitiesUnlinkNoContent, error)
+	// SiteIdentitySecretGet implements SiteIdentitySecret_get operation.
+	//
+	// The workspace's identity secret. Owners and admins only.
+	//
+	// GET /workspaces/{workspaceId}/identity-secret
+	SiteIdentitySecretGet(ctx context.Context, params SiteIdentitySecretGetParams) (*SiteIdentitySecretResource, error)
+	// SiteIdentitySecretRegenerate implements SiteIdentitySecret_regenerate operation.
+	//
+	// Generate the identity secret, or replace it: the one before stops verifying at once, and the new one
+	// is in the response. Owners and admins only.
+	//
+	// POST /workspaces/{workspaceId}/identity-secret/regenerate
+	SiteIdentitySecretRegenerate(ctx context.Context, params SiteIdentitySecretRegenerateParams) (*SiteIdentitySecretResource, error)
 	// SiteInstanceGetRelease implements SiteInstance_getRelease operation.
 	//
 	// The newer release the Release check found, for its banner. Refused (403) to a User who holds

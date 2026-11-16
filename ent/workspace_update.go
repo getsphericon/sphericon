@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/eventjournalentry"
 	"github.com/getsphericon/sphericon/ent/heldorderevent"
 	"github.com/getsphericon/sphericon/ent/hold"
+	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
@@ -953,6 +954,21 @@ func (_u *WorkspaceUpdate) AddBrandKits(v ...*BrandKit) *WorkspaceUpdate {
 	return _u.AddBrandKitIDs(ids...)
 }
 
+// AddIdentitySecretIDs adds the "identity_secrets" edge to the IdentitySecret entity by IDs.
+func (_u *WorkspaceUpdate) AddIdentitySecretIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddIdentitySecretIDs(ids...)
+	return _u
+}
+
+// AddIdentitySecrets adds the "identity_secrets" edges to the IdentitySecret entity.
+func (_u *WorkspaceUpdate) AddIdentitySecrets(v ...*IdentitySecret) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddIdentitySecretIDs(ids...)
+}
+
 // AddAutomationIDs adds the "automations" edge to the Automation entity by IDs.
 func (_u *WorkspaceUpdate) AddAutomationIDs(ids ...int64) *WorkspaceUpdate {
 	_u.mutation.AddAutomationIDs(ids...)
@@ -1808,6 +1824,27 @@ func (_u *WorkspaceUpdate) RemoveBrandKits(v ...*BrandKit) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveBrandKitIDs(ids...)
+}
+
+// ClearIdentitySecrets clears all "identity_secrets" edges to the IdentitySecret entity.
+func (_u *WorkspaceUpdate) ClearIdentitySecrets() *WorkspaceUpdate {
+	_u.mutation.ClearIdentitySecrets()
+	return _u
+}
+
+// RemoveIdentitySecretIDs removes the "identity_secrets" edge to IdentitySecret entities by IDs.
+func (_u *WorkspaceUpdate) RemoveIdentitySecretIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveIdentitySecretIDs(ids...)
+	return _u
+}
+
+// RemoveIdentitySecrets removes "identity_secrets" edges to IdentitySecret entities.
+func (_u *WorkspaceUpdate) RemoveIdentitySecrets(v ...*IdentitySecret) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveIdentitySecretIDs(ids...)
 }
 
 // ClearAutomations clears all "automations" edges to the Automation entity.
@@ -3661,6 +3698,51 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.IdentitySecretsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedIdentitySecretsIDs(); len(nodes) > 0 && !_u.mutation.IdentitySecretsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IdentitySecretsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _u.mutation.AutomationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -5416,6 +5498,21 @@ func (_u *WorkspaceUpdateOne) AddBrandKits(v ...*BrandKit) *WorkspaceUpdateOne {
 	return _u.AddBrandKitIDs(ids...)
 }
 
+// AddIdentitySecretIDs adds the "identity_secrets" edge to the IdentitySecret entity by IDs.
+func (_u *WorkspaceUpdateOne) AddIdentitySecretIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddIdentitySecretIDs(ids...)
+	return _u
+}
+
+// AddIdentitySecrets adds the "identity_secrets" edges to the IdentitySecret entity.
+func (_u *WorkspaceUpdateOne) AddIdentitySecrets(v ...*IdentitySecret) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddIdentitySecretIDs(ids...)
+}
+
 // AddAutomationIDs adds the "automations" edge to the Automation entity by IDs.
 func (_u *WorkspaceUpdateOne) AddAutomationIDs(ids ...int64) *WorkspaceUpdateOne {
 	_u.mutation.AddAutomationIDs(ids...)
@@ -6271,6 +6368,27 @@ func (_u *WorkspaceUpdateOne) RemoveBrandKits(v ...*BrandKit) *WorkspaceUpdateOn
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveBrandKitIDs(ids...)
+}
+
+// ClearIdentitySecrets clears all "identity_secrets" edges to the IdentitySecret entity.
+func (_u *WorkspaceUpdateOne) ClearIdentitySecrets() *WorkspaceUpdateOne {
+	_u.mutation.ClearIdentitySecrets()
+	return _u
+}
+
+// RemoveIdentitySecretIDs removes the "identity_secrets" edge to IdentitySecret entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveIdentitySecretIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveIdentitySecretIDs(ids...)
+	return _u
+}
+
+// RemoveIdentitySecrets removes "identity_secrets" edges to IdentitySecret entities.
+func (_u *WorkspaceUpdateOne) RemoveIdentitySecrets(v ...*IdentitySecret) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveIdentitySecretIDs(ids...)
 }
 
 // ClearAutomations clears all "automations" edges to the Automation entity.
@@ -8147,6 +8265,51 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(brandkit.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IdentitySecretsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedIdentitySecretsIDs(); len(nodes) > 0 && !_u.mutation.IdentitySecretsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IdentitySecretsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IdentitySecretsTable,
+			Columns: []string{workspace.IdentitySecretsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(identitysecret.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
