@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 
 namespace Sphericon;
@@ -66,28 +68,14 @@ model StaffAuditEntryResource {
 }
 
 /** A page of a Workspace's Audit log, newest first */
-model StaffAuditEntryList {
-  items: StaffAuditEntryResource[];
-
-  /** Pass as `cursor` for the next page; absent on the last page */
-  nextCursor?: string | null;
-}
+model StaffAuditEntryList is CursorPage<StaffAuditEntryResource>;
 
 @tag("StaffMember Workspaces")
 @route("/workspaces/{workspaceId}/audit-entries")
 namespace StaffWorkspaceAudit {
   /** One Workspace's Audit log, newest first. Empty when the instance has no Audit license, since nothing is then recorded. */
   @get
-  op list(
-    @path workspaceId: WorkspaceId,
-
-    /** Cursor from a previous page */
-    @query cursor?: string,
-
-    /** Page size */
-    @query
-    @minValue(1)
-    @maxValue(100)
-    limit?: int32 = 25,
-  ): StaffAuditEntryList | Problem;
+  op list(@path workspaceId: WorkspaceId, ...CursorQuery):
+    | StaffAuditEntryList
+    | Problem;
 }

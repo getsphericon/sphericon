@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -35,18 +37,10 @@ model ServiceTrackingHostChange {
 }
 
 /** One page of the Tracking host feed */
-model ServiceTrackingHostFeedPage {
-  /** Changes after the requested cursor, in the order they were made */
-  items: ServiceTrackingHostChange[];
-
-  /** Pass it back as the cursor to read what follows this page. It is the requested
-   * cursor itself when the page is empty. Saving it is what advances the caller: the
-   * core keeps no position of its own. */
-  nextCursor: string;
-
-  /** Whether more entries follow this page right now */
-  hasMore: boolean;
-}
+model ServiceTrackingHostFeedPage is FeedPage<
+  ServiceTrackingHostChange,
+  "Changes after the requested cursor, in the order they were made"
+>;
 
 @tag("Service Domains")
 @route("/domains/changes")
@@ -60,14 +54,5 @@ namespace ServiceTrackingHostFeed {
    * entries, so applying one twice must change nothing. */
   @get
   @requiresServiceScopes(#[ServiceScope.domainsRead])
-  op list(
-    /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
-    @query cursor?: string,
-
-    /** Most entries on the page */
-    @query
-    @minValue(1)
-    @maxValue(200)
-    limit?: int32 = 100,
-  ): ServiceTrackingHostFeedPage | Problem;
+  op list(...FeedQuery): ServiceTrackingHostFeedPage | Problem;
 }

@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -66,12 +68,7 @@ model SiteAuditEntryResource {
 }
 
 /** A page of Audit entries, newest first */
-model SiteAuditEntryList {
-  items: SiteAuditEntryResource[];
-
-  /** Pass as `cursor` for the next page; absent on the last page */
-  nextCursor?: string | null;
-}
+model SiteAuditEntryList is CursorPage<SiteAuditEntryResource>;
 
 /** The values that occur in a Workspace's Audit log, offered as the choices of its filter */
 model SiteAuditFacets {
@@ -137,19 +134,9 @@ namespace SiteAudit {
   /** List the workspace's Audit log, newest first (Enterprise; owner and admin only) */
   @get
   @requiresPermissions(#[Permission.auditRead])
-  op list(
-    @path workspaceId: WorkspaceId,
-    ...SiteAuditFilter,
-
-    /** Cursor from a previous page */
-    @query cursor?: string,
-
-    /** Page size */
-    @query
-    @minValue(1)
-    @maxValue(100)
-    limit?: int32 = 25,
-  ): SiteAuditEntryList | Problem;
+  op list(@path workspaceId: WorkspaceId, ...SiteAuditFilter, ...CursorQuery):
+    | SiteAuditEntryList
+    | Problem;
 
   /** The actors, actions and target types that occur in the Audit log, for its filter (Enterprise; owner and admin only) */
   @get
