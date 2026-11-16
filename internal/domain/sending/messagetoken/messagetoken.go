@@ -296,8 +296,9 @@ func (t *Tracker) ConfirmURL(target linktarget.Confirmation) (string, error) {
 // postalAddress is the sending workspace's physical address (CAN-SPAM); when
 // non-empty it is escaped and appended below the unsubscribe line (its own
 // newlines become <br>). An empty address renders the footer unchanged: marketing
-// email is not armed without one, and the address is not cleared while some is
-// (ADR 0156), so a footer without it is a Test send's.
+// email is not armed without one, and an address is not cleared while some is
+// armed (ADR 0156), but a Test send needs none, and email armed before a
+// Workspace had to have one still goes out.
 func (t *Tracker) UnsubscribeFooter(target linktarget.Unsubscribe, postalAddress string) (string, error) {
 	url, err := t.UnsubscribeURL(target)
 	if err != nil {

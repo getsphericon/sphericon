@@ -81,7 +81,7 @@ func HasPostalAddress(ws *ent.Workspace) bool {
 
 // SetAuditRetention sets (or, with nil, clears) the number of days the Audit log is
 // kept (the EE advanced-retention window, ADR 0014). A number of days outside the contract's
-// bounds (bounds.RetentionDays) is refused. It is an edit made on revision, as Update is.
+// bounds (bounds.RetentionDays) is refused. It is an edit made on revision, as every edit of its settings is (ADR 0119).
 func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, revision int64, days *int) (*ent.Workspace, error) {
 	if days != nil {
 		if err := validation.Range(fieldname.RetentionDays, *days, bounds.RetentionDaysMin, bounds.RetentionDaysMax); err != nil {
@@ -99,7 +99,7 @@ func (m *Module) SetAuditRetention(ctx context.Context, s *ent.Scoped, revision 
 
 // SetTimezone sets the Workspace time zone (ADR 0057). A name the zone database does not know is
 // refused with ErrUnknownZone. It is an edit made on revision, as
-// Update is.
+// every edit of its settings is (ADR 0119).
 func (m *Module) SetTimezone(ctx context.Context, s *ent.Scoped, revision int64, name string) (*ent.Workspace, error) {
 	if err := CheckZone(name); err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func CheckZone(name string) error {
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
 // as it is, ADR 0064). A code outside ISO 4217 is refused with ErrUnknownCurrency, and a window
 // outside the contract's bounds (bounds.AttributionWindowDays) too.
-// It is an edit made on revision, as Update is: one that names neither writes nothing.
+// It is an edit made on revision, as every edit of its settings is (ADR 0119): one that names neither writes nothing.
 func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision int64, code *string, windowDays *int) (*ent.Workspace, error) {
 	if windowDays != nil {
 		if err := validation.Range(fieldname.AttributionWindowDays, *windowDays,
@@ -196,7 +196,7 @@ func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.
 // `workspace.update` Audit entry of the scope's actor, and switching it on publishes
 // events.SecondFactorRequired in the same transaction, which tells the members without a Second
 // factor (ADR 0105). Switching it on is an edit made on revision,
-// as Update is; lifting it names none (nil): it is the one operation a member withheld by the
+// as every edit of its settings is (ADR 0119); lifting it names none (nil): it is the one operation a member withheld by the
 // requirement may still perform, and it takes away a demand rather than writing over anything an
 // editor shows.
 func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, revision *int64, required bool, now time.Time) (updated *ent.Workspace, err error) {
@@ -303,7 +303,7 @@ func Deleted() predicate.Workspace { return workspace.DiscardedAtNotNil() }
 
 // SetDomainJoin switches the scoped Workspace's domain join on or off (ADR 0051). Switching
 // it on adds nobody: only an address proven afterwards joins. It
-// is an edit made on revision, as Update is.
+// is an edit made on revision, as every edit of its settings is (ADR 0119).
 func (m *Module) SetDomainJoin(ctx context.Context, s *ent.Scoped, revision int64, enabled bool) (*ent.Workspace, error) {
 	return edit(s, revision).SetDomainJoinEnabled(enabled).Save(ctx)
 }

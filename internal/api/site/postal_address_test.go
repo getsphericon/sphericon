@@ -115,3 +115,19 @@ func TestSiteAWorkspaceWithAnEmailIntegrationAndNoPostalAddressNeedsAttention(t 
 	assert.NotContains(t, withAddress, siteapi.SiteAttentionKindPostalAddressMissing)
 	assert.Contains(t, without, siteapi.SiteAttentionKindPostalAddressMissing)
 }
+
+// A Test send through the Workspace's own Integration builds the marketing footer, and goes out
+// without the address all the same.
+func TestSiteTestSendThroughTheWorkspacesIntegrationGoesOutWithoutAPostalAddress(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	env.ClearPostalAddress(t, fixtures.AcmeID)
+
+	_, err := c.SiteBroadcastsTestSend(t.Context(), &siteapi.TestSendBroadcastInput{Email: siteapi.NewOptEmailAddress("anyone@example.com")},
+		siteapi.SiteBroadcastsTestSendParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})
+
+	require.NoError(t, err)
+	sent := env.CustomerMail.Messages()
+	require.Len(t, sent, 1, "through the Workspace's Integration")
+	assert.Equal(t, "anyone@example.com", sent[0].To)
+}
