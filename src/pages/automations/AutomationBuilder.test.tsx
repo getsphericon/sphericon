@@ -6,13 +6,14 @@ import {
   handleSiteAutomationsUpdate,
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
+  handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteAutomationResource,
   SiteAutomationVersion,
 } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
-import { testId } from '../../test/payloads.ts'
+import { testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
@@ -91,4 +92,47 @@ test('saving a graph whose branches cannot be represented warns that they were d
 
   await expect.element(screen.getByText('Automation updated')).toBeInTheDocument()
   await expect.element(screen.getByText('Branches not supported yet')).toBeInTheDocument()
+})
+
+// The Workspace the builder edits in, with no postal address yet (ADR 0156).
+const NO_ADDRESS = workspace({ postalAddress: '' })
+
+test('an email step on the canvas shows the missing postal address with a link to the setting', async () => {
+  const withEmail: SiteAutomationResource = {
+    ...STORED,
+    draft: { ...DRAFT, steps: [{ type: 'email', subject: 'Hi', body: '<p>Hi</p>' }] },
+  }
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(withEmail)),
+    handleSiteWorkspacesList({ body: [NO_ADDRESS] }),
+    handleSiteIntegrationsList({ body: [] }),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByText(/This workspace has no postal address/)).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('link', { name: 'Set the postal address' }))
+    .toHaveAttribute('href', '/workspaces/TestWs01/settings')
+})
+
+test('a canvas without an email step shows no postal address notice', async () => {
+  worker.use(
+    handleSiteAutomationsGet(() => HttpResponse.json(STORED)),
+    handleSiteWorkspacesList({ body: [NO_ADDRESS] }),
+    handleSiteIntegrationsList({ body: [] }),
+    handleSiteEnrollmentsList({
+      body: { items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0 },
+    }),
+  )
+
+  const { screen } = await renderWithRouter(<AutomationEditPage />, EDIT_ROUTE)
+
+  await expect.element(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+  await expect
+    .element(screen.getByText(/This workspace has no postal address/))
+    .not.toBeInTheDocument()
 })

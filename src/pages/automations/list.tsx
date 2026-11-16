@@ -1,4 +1,4 @@
-import { Button, Group, Menu, Select, Stack, TextInput } from '@mantine/core'
+import { Anchor, Button, Group, Menu, Select, Stack, TextInput } from '@mantine/core'
 import { useDebouncedCallback, useDisclosure } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -24,11 +24,14 @@ import { SiteAutomationsSort } from '../../generated/site/types.gen.ts'
 import type { SiteAutomationResource, SortDirection } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationState } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
+import { useNotify } from '../../hooks/useNotify.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as settingsRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { withPage } from '../../searchSchemas.ts'
+import { getApiErrorMessage, isPostalAddressRequiredError } from '../../utils/apiErrors.ts'
 import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import { AutomationStatusBadge } from './AutomationStatusBadge.tsx'
 import { AutomationCreateModal } from './create.tsx'
@@ -38,16 +41,51 @@ import { AutomationCreateModal } from './create.tsx'
 const defaultDirection = (column: SiteAutomationsSort) =>
   column === SiteAutomationsSort.NAME ? 'asc' : 'desc'
 
+// postalAddressRefusal is the toast message of a Publish refused for the missing postal address
+// (ADR 0156): the API's message and a link to the setting. The toast is rendered outside the
+// router, so the link runs the page's navigate rather than being a router link.
+function postalAddressRefusal(props: { message: string; link: string; onOpen: () => void }) {
+  return (
+    <>
+      {props.message}{' '}
+      <Anchor component="button" fz="inherit" onClick={props.onOpen}>
+        {props.link}
+      </Anchor>
+    </>
+  )
+}
+
 export function AutomationsListPage() {
   const { t } = useTranslation()
   const { locale } = useFormat()
   const { workspaceId } = automationsRoute.useParams()
   const navigate = useNavigate()
 
+  const notify = useNotify()
   const publishMutation = useResourceMutation({
     mutation: siteAutomationsPublishMutation(),
     successMessage: t(($) => $.notifications.automationPublished),
     errorTitle: t(($) => $.alerts.automationStatusErrorTitle),
+    // A Publish refused for the missing postal address (ADR 0156) links to the setting, as the
+    // editor's notice does.
+    handleError: (error) => {
+      if (!isPostalAddressRequiredError(error)) {
+        return false
+      }
+      notify({
+        color: 'red',
+        title: t(($) => $.alerts.automationStatusErrorTitle),
+        message: postalAddressRefusal({
+          message: getApiErrorMessage(
+            error,
+            t(($) => $.notifications.errorMessage),
+          ),
+          link: t(($) => $.postalAddressNotice.link),
+          onOpen: () => void navigate({ to: settingsRoute.to, params: { workspaceId } }),
+        }),
+      })
+      return true
+    },
   })
 
   const deactivateMutation = useResourceMutation({

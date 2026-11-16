@@ -10,6 +10,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
+import { Route as settingsRoute } from '../../routes/workspaces/$workspaceId/settings/index.tsx'
 import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -188,6 +189,28 @@ test('publishing an inactive automation calls the API and refreshes the list', a
   await expect.poll(() => published).toEqual([testId(2)])
   await expect.element(screen.getByText('Automation published')).toBeInTheDocument()
   await expect.poll(() => listFetches).toBe(2)
+})
+
+test('a Publish refused for the missing postal address links to the setting', async () => {
+  worker.use(
+    handleSiteAutomationsList(() => HttpResponse.json({ items: [NURTURE], totalItems: 1 })),
+    handleSiteAutomationsPublish(() =>
+      problem(409, {
+        code: 'postal_address_required',
+        detail: 'the workspace has no postal address',
+      }),
+    ),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<AutomationsListPage />, LIST_ROUTE)
+  await screen.getByRole('button', { name: 'More actions' }).first().click()
+  await screen.getByRole('menuitem', { name: 'Publish' }).click()
+
+  await expect.element(screen.getByText(/the workspace has no postal address/)).toBeInTheDocument()
+  await screen.getByRole('button', { name: 'Set the postal address' }).click()
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ to: settingsRoute.to, params: { workspaceId: 'TestWs01' } }),
+  )
 })
 
 test('deactivating an active automation calls the API', async () => {
