@@ -140,7 +140,7 @@ func (UnimplementedHandler) SiteAuditList(ctx context.Context, params SiteAuditL
 // only).
 //
 // PUT /workspaces/{workspaceId}/audit-entries/retention
-func (UnimplementedHandler) SiteAuditSetRetention(ctx context.Context, req *SiteAuditRetention, params SiteAuditSetRetentionParams) (r *SiteAuditRetention, _ error) {
+func (UnimplementedHandler) SiteAuditSetRetention(ctx context.Context, req *SiteAuditRetentionInput, params SiteAuditSetRetentionParams) (r *SiteAuditRetention, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

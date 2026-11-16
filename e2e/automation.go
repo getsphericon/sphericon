@@ -33,7 +33,7 @@ func (w *Workspace) PublishAutomation(a Automation) int64 {
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name(a.Name),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStep{{
+		Steps: []externalapi.AutomationStepInput{{
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString(a.Subject),
 			Body:    externalapi.NewOptString(a.Body),
@@ -73,7 +73,7 @@ func (w *Workspace) PublishAuthoredAutomation(a AuthoredAutomation) {
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name("e2e authored automation " + uniq()),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStep{{
+		Steps: []externalapi.AutomationStepInput{{
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString(a.Subject),
 			Doc:     externalapi.NewOptEditorDocument(docObject[externalapi.EditorDocument](w.t, doc)),
@@ -102,7 +102,7 @@ type HTTPAutomation struct {
 func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	w.t.Helper()
 	ctx := w.t.Context()
-	httpStep := externalapi.AutomationStep{
+	httpStep := externalapi.AutomationStepInput{
 		Type: externalapi.AutomationStepTypeHTTP,
 		URL:  externalapi.NewOptString(a.Hook.URL),
 		Body: externalapi.NewOptString(a.Body),
@@ -113,7 +113,7 @@ func (w *Workspace) PublishHTTPAutomation(a HTTPAutomation) {
 	res, err := w.api.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         externalapi.Name("e2e http automation " + uniq()),
 		TriggerEvent: a.TriggerEvent,
-		Steps: []externalapi.AutomationStep{httpStep, {
+		Steps: []externalapi.AutomationStepInput{httpStep, {
 			Type:    externalapi.AutomationStepTypeEmail,
 			Subject: externalapi.NewOptString(a.Subject),
 			Body:    externalapi.NewOptString(a.EmailBody),

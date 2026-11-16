@@ -62,7 +62,7 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Pros 2", upd.Name)
 
-	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: upd.Revision, Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
+	_, err = c.SegmentsUpdate(ctx, &externalapi.UpdateSegmentInput{Revision: upd.Revision, Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))},
 		externalapi.SegmentsUpdateParams{ID: seg.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -76,11 +76,11 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
 	want, err := testhelper.Module[*segments.Module](env).Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(def)})
 	require.NoError(t, err)
-	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
+	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, def))})
 	require.NoError(t, err)
 	assert.EqualValues(t, want.Count, res.Count)
 
-	_, err = c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))})
+	_, err = c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
@@ -95,7 +95,7 @@ func TestExternalSegmentsPreviewCountsEvents(t *testing.T) {
 		def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"eq","value":"` +
 			fixtures.ContactLiamEmail + `"},` + leaf + `]}`
 		return c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
-			Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def)),
+			Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, def)),
 		})
 	}
 
@@ -125,8 +125,9 @@ func TestExternalSegmentsStoreAnEventCount(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
 	require.NoError(t, err)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
 
-	assert.Equal(t, externalapi.NewOptConditionGroup(sent), stored.Condition)
+	assert.JSONEq(t, sentJSON, readJSON)
 }
 
 // A number leaf takes a number custom field, a date leaf a datetime one, as on /site: Acme's
@@ -137,7 +138,7 @@ func TestExternalSegmentsPreviewFitsNumberAndDateLeavesToTheFieldType(t *testing
 	preview := func(leaf string) error {
 		t.Helper()
 		_, err := c.SegmentsPreview(context.Background(), &externalapi.PreviewSegmentInput{
-			Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[`+leaf+`]}`)),
+			Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"and","rules":[`+leaf+`]}`)),
 		})
 		return err
 	}
@@ -162,8 +163,9 @@ func TestExternalSegmentsStoreANumberLeaf(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SegmentsGet(ctx, externalapi.SegmentsGetParams{ID: created.ID})
 	require.NoError(t, err)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
 
-	assert.Equal(t, externalapi.NewOptConditionGroup(sent), stored.Condition)
+	assert.JSONEq(t, sentJSON, readJSON)
 }
 
 func TestExternalSegmentsScopes(t *testing.T) {
@@ -227,7 +229,7 @@ func TestExternalSegmentsTakeTheCanBeTextedCondition(t *testing.T) {
 		fixtures.ContactTexterEmail + `"},{"kind":"rule","field":"sms","operator":"has"}]}`
 	preview := func() *externalapi.PreviewSegmentResult {
 		t.Helper()
-		out, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroup(testhelper.ExternalRuleGroup(t, def))})
+		out, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, def))})
 		require.NoError(t, err)
 		return out
 	}

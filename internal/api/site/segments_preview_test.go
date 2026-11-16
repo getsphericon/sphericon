@@ -30,7 +30,7 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
 	res, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), res.Count)
@@ -49,7 +49,7 @@ func tryPreviewOne(t *testing.T, c *siteapi.Client, leaf string) (*siteapi.SiteP
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
 	return c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 }
 
@@ -93,8 +93,9 @@ func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
 	require.NoError(t, err)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
 
-	assert.Equal(t, siteapi.NewOptSiteConditionGroup(sent), stored.Condition)
+	assert.JSONEq(t, sentJSON, readJSON)
 }
 
 // A number leaf compares a number custom field and a date leaf tests a datetime one: in Dunder,
@@ -180,8 +181,9 @@ func TestSiteSegmentsStoreNumberAndDateLeaves(t *testing.T) {
 	require.NoError(t, err)
 	stored, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.DunderPublicID, ID: created.ID})
 	require.NoError(t, err)
+	sentJSON, readJSON := testhelper.JSONOf(t, &sent), testhelper.JSONOf(t, &stored.Condition.Value)
 
-	assert.Equal(t, siteapi.NewOptSiteConditionGroup(sent), stored.Condition)
+	assert.JSONEq(t, sentJSON, readJSON)
 }
 
 func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
@@ -190,7 +192,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -219,7 +221,7 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptSiteConditionGroup(bad)},
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptSiteConditionGroupInput(bad)},
 		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

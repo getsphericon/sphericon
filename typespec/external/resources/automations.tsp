@@ -31,6 +31,8 @@ model AutomationHttpHeader {
   value?: string;
 }
 
+model AutomationHttpHeaderInput is AutomationHttpHeader;
+
 /** Closed error kind of an HTTP step's body */
 enum AutomationHttpErrorKind {
   invalid_body,
@@ -59,7 +61,7 @@ model DryRunHttpStepResult {
 
 /** One node in an automation's ordered, linear sequence. A flat shape: email
  * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name. */
-model AutomationStep {
+model AutomationStepOf<Header, Button> {
   /** Step kind */
   type: AutomationStepType;
 
@@ -92,7 +94,7 @@ model AutomationStep {
 
   /** Up to 5 request headers (HTTP steps). On read, only the names are returned. */
   @maxItems(5)
-  headers?: AutomationHttpHeader[];
+  headers?: Header[];
 
   /** Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret. */
   secret?: string;
@@ -122,7 +124,7 @@ model AutomationStep {
 
   /** Up to 8 link buttons under a Telegram step's message, one per row, in order. */
   @maxItems(8)
-  buttons?: TelegramButton[];
+  buttons?: Button[];
 
   /** Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image. */
   linkPreview?: boolean;
@@ -130,6 +132,15 @@ model AutomationStep {
   /** Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted. */
   linkTracking?: boolean;
 }
+
+model AutomationStep is AutomationStepOf<AutomationHttpHeader, TelegramButton>;
+
+// The step a request sends is closed at every depth, the one a response returns stays open (ADR
+// 0148): one shape, two models.
+model AutomationStepInput is AutomationStepOf<
+  AutomationHttpHeaderInput,
+  TelegramButtonInput
+>;
 
 /** One version of an automation's definition: what publishing makes it do (ADR 0065) */
 model AutomationVersion {
@@ -200,7 +211,7 @@ model CreateAutomationInput {
    * an exit event. Null or omitted is none. */
   goalEvent?: string | null;
 
-  steps?: AutomationStep[];
+  steps?: AutomationStepInput[];
 }
 
 /** Request body for updating an automation. The name changes at once; the trigger, exit and
@@ -219,7 +230,7 @@ model UpdateAutomationInput {
   /** Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it */
   goalEvent?: string | null;
 
-  steps?: AutomationStep[];
+  steps?: AutomationStepInput[];
 }
 
 /** Filter of the automation list */

@@ -27,10 +27,10 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Notify Slack", TriggerEvent: "signup",
-		Steps: []siteapi.SiteAutomationStep{{
+		Steps: []siteapi.SiteAutomationStepInput{{
 			Type: siteapi.SiteAutomationStepTypeHTTP, Body: siteapi.NewOptString(body),
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
-			Headers: []siteapi.SiteAutomationHttpHeader{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
+			Headers: []siteapi.SiteAutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
 			Secret:  siteapi.NewOptString("whsec_topsecret"),
 		}},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
@@ -49,7 +49,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 
 	// Editing the body and resending only the step id keeps the stored secrets.
 	step.Body = siteapi.NewOptString(`{"text":"edited"}`)
-	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []siteapi.SiteAutomationStep{step}},
+	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []siteapi.SiteAutomationStepInput{testhelper.Resend[siteapi.SiteAutomationStepInput](t, &step)}},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated
@@ -117,7 +117,7 @@ func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	_, err := c.SiteAutomationsCreate(context.Background(), &siteapi.SiteCreateAutomationInput{
 		Name: "Bad", TriggerEvent: "signup",
-		Steps: []siteapi.SiteAutomationStep{{
+		Steps: []siteapi.SiteAutomationStepInput{{
 			Type: siteapi.SiteAutomationStepTypeHTTP, URL: siteapi.NewOptString("https://hooks.example.com/x"),
 			Body: siteapi.NewOptString(`{"a": {{ nope }}}`),
 		}},

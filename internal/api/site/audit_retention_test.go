@@ -22,7 +22,7 @@ func setRetention(t *testing.T, c *siteapi.Client, workspaceID siteapi.Workspace
 	if err != nil {
 		return err
 	}
-	_, err = c.SiteAuditSetRetention(context.Background(), &siteapi.SiteAuditRetention{Revision: read.Revision, RetentionDays: days},
+	_, err = c.SiteAuditSetRetention(context.Background(), &siteapi.SiteAuditRetentionInput{Revision: read.Revision, RetentionDays: days},
 		siteapi.SiteAuditSetRetentionParams{WorkspaceId: workspaceID})
 	return err
 }

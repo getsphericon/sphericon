@@ -40,7 +40,7 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name: "Broken", TriggerEvent: systemevent.ContactCreated,
-		Steps: []siteapi.SiteAutomationStep{
+		Steps: []siteapi.SiteAutomationStepInput{
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>hi</p></div>")},
 		},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})

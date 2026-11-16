@@ -138,6 +138,16 @@ model SiteConditionDateWithinLeaf {
   withinDays: int32;
 }
 
+model SiteConditionLeafInput is SiteConditionLeaf;
+
+model SiteConditionEventLeafInput is SiteConditionEventLeaf;
+
+model SiteConditionNumberLeafInput is SiteConditionNumberLeaf;
+
+model SiteConditionDateLeafInput is SiteConditionDateLeaf;
+
+model SiteConditionDateWithinLeafInput is SiteConditionDateWithinLeaf;
+
 /** A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
  * group inside a condition group, discriminated by `kind`. */
 @discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
@@ -150,9 +160,21 @@ union SiteConditionNode {
   group: SiteConditionGroup,
 }
 
+/** A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
+ * group inside a condition group, discriminated by `kind`. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union SiteConditionNodeInput {
+  rule: SiteConditionLeafInput,
+  event: SiteConditionEventLeafInput,
+  number: SiteConditionNumberLeafInput,
+  date: SiteConditionDateLeafInput,
+  dateWithin: SiteConditionDateWithinLeafInput,
+  group: SiteConditionGroupInput,
+}
+
 /** A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none). */
-model SiteConditionGroup {
+model SiteConditionGroupOf<Node> {
   kind: "group";
 
   /** How the entries combine */
@@ -162,8 +184,14 @@ model SiteConditionGroup {
   not?: boolean;
 
   /** The group's leaves and nested groups */
-  rules: SiteConditionNode[];
+  rules: Node[];
 }
+
+model SiteConditionGroup is SiteConditionGroupOf<SiteConditionNode>;
+
+// The group a request sends is closed at every depth, the one a response returns stays open (ADR
+// 0148): one shape, two models.
+model SiteConditionGroupInput is SiteConditionGroupOf<SiteConditionNodeInput>;
 
 /** Segment resource used by the site UI */
 @resource("segments")
@@ -199,7 +227,7 @@ model SiteCreateSegmentInput {
   name: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition: SiteConditionGroup;
+  condition: SiteConditionGroupInput;
 }
 
 /** Site request body for updating a segment */
@@ -211,13 +239,13 @@ model SiteUpdateSegmentInput {
   name?: Name;
 
   /** Segment condition: the tree of tests; an empty group matches all contacts */
-  condition?: SiteConditionGroup;
+  condition?: SiteConditionGroupInput;
 }
 
 /** Request body for previewing a condition's segment */
 model SitePreviewSegmentInput {
   /** Condition; absent means all contacts */
-  condition?: SiteConditionGroup;
+  condition?: SiteConditionGroupInput;
 
   /**
    * The Channel of a Broadcast the audience is asked for. When given, the result also counts the

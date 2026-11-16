@@ -11,7 +11,7 @@ import (
 )
 
 func encodeSiteAuditSetRetentionRequest(
-	req *SiteAuditRetention,
+	req *SiteAuditRetentionInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

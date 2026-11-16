@@ -5881,6 +5881,21 @@
             "description": "Header value. Omit it when editing to keep the stored value of the header with this name."
           }
         },
+        "description": "One request header of an HTTP step. The value is a secret: it is never returned."
+      },
+      "AutomationHttpHeaderInput": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon."
+          },
+          "value": {
+            "type": "string",
+            "description": "Header value. Omit it when editing to keep the stored value of the header with this name."
+          }
+        },
         "description": "One request header of an HTTP step. The value is a secret: it is never returned.",
         "additionalProperties": false
       },
@@ -6332,8 +6347,7 @@
             "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
           }
         },
-        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name.",
-        "additionalProperties": false
+        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name."
       },
       "AutomationStepFigures": {
         "type": "object",
@@ -6356,6 +6370,118 @@
           }
         },
         "description": "The messages of the send step at one position"
+      },
+      "AutomationStepInput": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AutomationStepType"
+              }
+            ],
+            "description": "Step kind"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject (email steps)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped, up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired on, when a Rule enrolled), copied when it began; empty when no Event began it"
+          },
+          "doc": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EditorDocument"
+              }
+            ],
+            "description": "The editor's JSON document an email step's body was built from, an opaque object checked by the\nserver against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the\nserver renders the body from it in the same save, and a document that cannot be rendered refuses\nthe whole save, naming the step. Writing only a body clears the step's document."
+          },
+          "editorVersion": {
+            "type": "string",
+            "description": "Version of the editor that rendered the document (email steps, read only)"
+          },
+          "seconds": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Delay before the next step, in seconds (wait steps)"
+          },
+          "tag": {
+            "type": "string",
+            "description": "Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets."
+          },
+          "url": {
+            "type": "string",
+            "description": "Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationHttpHeaderInput"
+            },
+            "maxItems": 5,
+            "description": "Up to 5 request headers (HTTP steps). On read, only the names are returned."
+          },
+          "secret": {
+            "type": "string",
+            "description": "Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
+          },
+          "clearSecret": {
+            "type": "boolean",
+            "description": "Remove the signing secret on save (HTTP steps)"
+          },
+          "hasSecret": {
+            "type": "boolean",
+            "description": "Whether a signing secret is stored (HTTP steps, read only)"
+          },
+          "integrationId": {
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "nullable": true,
+            "description": "The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel; null or\nomitted is that Channel's default. Each send step names its own, so one automation may send\nthrough several (ADR 0081)."
+          },
+          "text": {
+            "type": "string",
+            "description": "The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer one is refused.\n\nThe text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as short links."
+          },
+          "unsubscribeButton": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it is the person's Channel-wide Telegram opt-out; empty or omitted adds no button."
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text message."
+          },
+          "buttons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelegramButtonInput"
+            },
+            "maxItems": 8,
+            "description": "Up to 8 link buttons under a Telegram step's message, one per row, in order."
+          },
+          "linkPreview": {
+            "type": "boolean",
+            "description": "Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an image."
+          },
+          "linkTracking": {
+            "type": "boolean",
+            "description": "Whether the links of an SMS step's text go out as short tracked links, whose clicks record `sms.clicked` (ADR 0083). On when omitted."
+          }
+        },
+        "description": "One node in an automation's ordered, linear sequence. A flat shape: email\nsteps carry subject/body, wait steps carry seconds, tag steps carry the tag name.",
+        "additionalProperties": false
       },
       "AutomationStepType": {
         "type": "string",
@@ -7145,6 +7271,37 @@
             "description": "The moment the field's is compared with"
           }
         },
+        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse."
+      },
+      "ConditionDateLeafInput": {
+        "type": "object",
+        "required": ["kind", "field", "operator", "at"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["date"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionDateOperator"
+              }
+            ],
+            "description": "Which side of `at` the moment is on"
+          },
+          "at": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "The moment the field's is compared with"
+          }
+        },
         "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date\nwithout a time, a date-time without an offset or a value that is not a date-time makes the leaf\nfalse.",
         "additionalProperties": false
       },
@@ -7172,10 +7329,66 @@
             "description": "The window, in days back from now"
           }
         },
+        "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf."
+      },
+      "ConditionDateWithinLeafInput": {
+        "type": "object",
+        "required": ["kind", "field", "withinDays"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["dateWithin"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: \"birthday\" or \"custom:<key>\" for a datetime custom field"
+          },
+          "withinDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "The window, in days back from now"
+          }
+        },
         "description": "A test of a custom field of the workspace whose type is datetime (\"custom:<key>\"): its moment\nis within the last `withinDays` days up to now, so a moment still to come is not within. Only a\ndate-time with a UTC offset is a moment, as for the date leaf.",
         "additionalProperties": false
       },
       "ConditionEventLeaf": {
+        "type": "object",
+        "required": ["kind", "action", "operator", "times"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["event"]
+          },
+          "action": {
+            "type": "string",
+            "description": "The Event action counted"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionEventOperator"
+              }
+            ],
+            "description": "How the count is bounded"
+          },
+          "times": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0,
+            "description": "The bound: atLeast takes 1 or more, atMost 0 or more"
+          },
+          "withinDays": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 1,
+            "description": "Count only the Events of the last this many days; absent counts all time"
+          }
+        },
+        "description": "A test of how many times a contact performed an Event action, over all time or within the\nlast `withinDays` days. Performed is atLeast 1, not performed is atMost 0; \"exactly\" is a group of\nboth. Engagement Events made by software (machine opens and clicks) are not counted. A window\nlonger than Event retention is capped by it: expired Events are no longer counted."
+      },
+      "ConditionEventLeafInput": {
         "type": "object",
         "required": ["kind", "action", "operator", "times"],
         "properties": {
@@ -7244,10 +7457,67 @@
             "description": "The group's leaves and nested groups"
           }
         },
+        "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none)."
+      },
+      "ConditionGroupInput": {
+        "type": "object",
+        "required": ["kind", "combinator", "rules"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["group"]
+          },
+          "combinator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionCombinator"
+              }
+            ],
+            "description": "How the entries combine"
+          },
+          "not": {
+            "type": "boolean",
+            "description": "Negate the whole group"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConditionNodeInput"
+            },
+            "description": "The group's leaves and nested groups"
+          }
+        },
         "description": "A group of tests combined with and/or, optionally negated. An empty group matches every\ncontact (an empty negated group matches none).",
         "additionalProperties": false
       },
       "ConditionLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "operator"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["rule"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it tests: a contact attribute (email, phone, subject_id, first_name, last_name,\ntime_zone, country, locale, city), \"tag\", \"telegram\" (has a Telegram chat bound, on its own or through a Visitor; the value is\nignored), \"sms\" (has a phone that can be texted: one with an SMS Confirmation and no SMS opt-out or\nSuppression; the value is ignored), \"custom:<key>\" for a custom field of the workspace,\nor \"trigger:<key>\" (a property of the Event that fired a rule: valid only in a rule, refused in\na segment, takes the text operators, and is false when the Event lacks the key or holds a value\nthat is not text; a number property is compared by a number leaf)"
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionOperator"
+              }
+            ],
+            "description": "How the field is tested"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value to test against: a tag name, blank for null and notNull"
+          }
+        },
+        "description": "One test of a condition: a field, an operator and a value"
+      },
+      "ConditionLeafInput": {
         "type": "object",
         "required": ["kind", "field", "operator"],
         "properties": {
@@ -7310,7 +7580,70 @@
         },
         "description": "A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested\ngroup inside a condition group, discriminated by `kind`."
       },
+      "ConditionNodeInput": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/ConditionLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionEventLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionNumberLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionDateLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionDateWithinLeafInput"
+          },
+          {
+            "$ref": "#/components/schemas/ConditionGroupInput"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "rule": "#/components/schemas/ConditionLeafInput",
+            "event": "#/components/schemas/ConditionEventLeafInput",
+            "number": "#/components/schemas/ConditionNumberLeafInput",
+            "date": "#/components/schemas/ConditionDateLeafInput",
+            "dateWithin": "#/components/schemas/ConditionDateWithinLeafInput",
+            "group": "#/components/schemas/ConditionGroupInput"
+          }
+        },
+        "description": "A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested\ngroup inside a condition group, discriminated by `kind`."
+      },
       "ConditionNumberLeaf": {
+        "type": "object",
+        "required": ["kind", "field", "operator", "value"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["number"]
+          },
+          "field": {
+            "type": "string",
+            "description": "What it compares: \"custom:<key>\" for a number custom field, or \"trigger:<key>\""
+          },
+          "operator": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConditionNumberOperator"
+              }
+            ],
+            "description": "How the field compares with `value`"
+          },
+          "value": {
+            "type": "number",
+            "format": "double",
+            "description": "The number the field is compared with"
+          }
+        },
+        "description": "A comparison of a number: a custom field of the workspace whose type is number\n(\"custom:<key>\"), or a property of the Event that fired a rule (\"trigger:<key>\", valid only in a\nrule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the\nleaf false."
+      },
+      "ConditionNumberLeafInput": {
         "type": "object",
         "required": ["kind", "field", "operator", "value"],
         "properties": {
@@ -8391,7 +8724,7 @@
           "steps": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AutomationStep"
+              "$ref": "#/components/schemas/AutomationStepInput"
             }
           }
         },
@@ -8649,12 +8982,12 @@
             "description": "The Event actions that make the Rule fire; at least one"
           },
           "condition": {
-            "$ref": "#/components/schemas/ConditionGroup"
+            "$ref": "#/components/schemas/ConditionGroupInput"
           },
           "actions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/RuleAction"
+              "$ref": "#/components/schemas/RuleActionInput"
             },
             "description": "The Actions to run, in order"
           }
@@ -8677,7 +9010,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroup"
+                "$ref": "#/components/schemas/ConditionGroupInput"
               }
             ],
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"
@@ -10640,7 +10973,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroup"
+                "$ref": "#/components/schemas/ConditionGroupInput"
               }
             ],
             "description": "Condition; absent means all contacts"
@@ -10991,6 +11324,65 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AutomationHttpHeader"
+            },
+            "maxItems": 5,
+            "description": "Up to 5 request headers (http actions). On read, only the names are returned."
+          },
+          "body": {
+            "type": "string",
+            "description": "Liquid JSON request body (http actions): Contact bindings plus `event.action` and `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never returned. Omit it when editing to keep the stored secret."
+          },
+          "clearSecret": {
+            "type": "boolean",
+            "description": "Remove the signing secret on save (http actions)"
+          },
+          "hasSecret": {
+            "type": "boolean",
+            "description": "Whether a signing secret is stored (http actions, read only)"
+          }
+        },
+        "description": "One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call."
+      },
+      "RuleActionInput": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RuleActionType"
+              }
+            ],
+            "description": "Action kind"
+          },
+          "tag": {
+            "type": "string",
+            "description": "Tag name to apply to or remove from the Contact (apply_tag and remove_tag)"
+          },
+          "automationId": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Automation to enroll the Contact in, once ever (enroll_automation)"
+          },
+          "id": {
+            "type": "string",
+            "description": "Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets."
+          },
+          "url": {
+            "type": "string",
+            "description": "URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored URL. Up to 2 KiB, http or https."
+          },
+          "headers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutomationHttpHeaderInput"
             },
             "maxItems": 5,
             "description": "Up to 5 request headers (http actions). On read, only the names are returned."
@@ -12193,7 +12585,7 @@
           "buttons": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TelegramButton"
+              "$ref": "#/components/schemas/TelegramButtonInput"
             },
             "maxItems": 8,
             "description": "Up to 8 link buttons under the message, one per row, in order. An empty list removes them."
@@ -12212,6 +12604,21 @@
         "additionalProperties": false
       },
       "TelegramButton": {
+        "type": "object",
+        "required": ["label", "url"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "The button's label"
+          },
+          "url": {
+            "type": "string",
+            "description": "The URL it opens: absolute, http or https"
+          }
+        },
+        "description": "A link button under a Telegram message: an inline URL button on a row of its own"
+      },
+      "TelegramButtonInput": {
         "type": "object",
         "required": ["label", "url"],
         "properties": {
@@ -12653,7 +13060,7 @@
           "steps": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AutomationStep"
+              "$ref": "#/components/schemas/AutomationStepInput"
             }
           }
         },
@@ -12941,12 +13348,12 @@
             "description": "The Event actions that make the Rule fire; at least one"
           },
           "condition": {
-            "$ref": "#/components/schemas/ConditionGroup"
+            "$ref": "#/components/schemas/ConditionGroupInput"
           },
           "actions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/RuleAction"
+              "$ref": "#/components/schemas/RuleActionInput"
             },
             "description": "The Actions to run, in order"
           }
@@ -12977,7 +13384,7 @@
           "condition": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/ConditionGroup"
+                "$ref": "#/components/schemas/ConditionGroupInput"
               }
             ],
             "description": "Segment condition: the tree of tests; an empty group matches all contacts"

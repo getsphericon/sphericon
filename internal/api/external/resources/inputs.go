@@ -160,13 +160,13 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source externalapi.AutomationStep) automationstep.Step
-	AutomationSteps(source []externalapi.AutomationStep) []automationstep.Step
-	TelegramButton(source externalapi.TelegramButton) telegramrender.Button
+	AutomationStep(source externalapi.AutomationStepInput) automationstep.Step
+	AutomationSteps(source []externalapi.AutomationStepInput) []automationstep.Step
+	TelegramButton(source externalapi.TelegramButtonInput) telegramrender.Button
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 
-	RuleActions(source []externalapi.RuleAction) []rules.Action
+	RuleActions(source []externalapi.RuleActionInput) []rules.Action
 	// goverter:map Condition | conditionIn
 	RuleCreate(source *externalapi.CreateRuleInput) (rules.CreateInput, error)
 	// goverter:map Condition | conditionIn
@@ -288,7 +288,7 @@ func timestampIn(o externalapi.OptNilTimestamp) time.Time {
 
 // buttonsPtrIn is the link buttons a Telegram Broadcast's update replaces: an omitted list (nil)
 // keeps the stored ones, an empty list removes them.
-func buttonsPtrIn(c Inputs, list []externalapi.TelegramButton) *[]telegramrender.Button {
+func buttonsPtrIn(c Inputs, list []externalapi.TelegramButtonInput) *[]telegramrender.Button {
 	if list == nil {
 		return nil
 	}
@@ -299,7 +299,7 @@ func buttonsPtrIn(c Inputs, list []externalapi.TelegramButton) *[]telegramrender
 	return &out
 }
 
-func buttonsPatch(c Inputs, list []externalapi.TelegramButton) patch.Field[[]telegramrender.Button] {
+func buttonsPatch(c Inputs, list []externalapi.TelegramButtonInput) patch.Field[[]telegramrender.Button] {
 	return patch.FromPtr(buttonsPtrIn(c, list))
 }
 
@@ -313,7 +313,7 @@ func timestampPtrIn(o externalapi.OptNilTimestamp) *time.Time {
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]automationstep.Step {
+func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStepInput) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}
@@ -322,7 +322,7 @@ func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStep) *[]autom
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
-func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleAction) *[]rules.Action {
+func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleActionInput) *[]rules.Action {
 	if actions == nil {
 		return nil
 	}
@@ -332,7 +332,7 @@ func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleAction) *[]rules.Actio
 
 // conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
 // it is absent.
-func conditionIn(o externalapi.OptConditionGroup) (*string, error) {
+func conditionIn(o externalapi.OptConditionGroupInput) (*string, error) {
 	return condition.EncodeOptional(o)
 }
 
@@ -478,7 +478,7 @@ func integrationConfigPatch(o externalapi.OptIntegrationConfigInput) (patch.Fiel
 	return patch.Set(cfg), nil
 }
 
-func createSegmentCondition(g externalapi.ConditionGroup) (*string, error) {
+func createSegmentCondition(g externalapi.ConditionGroupInput) (*string, error) {
 	def, err := condition.Encode(&g)
 	if err != nil {
 		return nil, err
@@ -486,7 +486,7 @@ func createSegmentCondition(g externalapi.ConditionGroup) (*string, error) {
 	return &def, nil
 }
 
-func segmentConditionPatch(o externalapi.OptConditionGroup) (patch.Field[string], error) {
+func segmentConditionPatch(o externalapi.OptConditionGroupInput) (patch.Field[string], error) {
 	def, err := condition.EncodeOptional(o)
 	if err != nil {
 		return patch.Field[string]{}, err

@@ -49,7 +49,7 @@ func previewDuff(t *testing.T, c *siteapi.Client, leaf string) int32 {
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
 	res, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroup(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})
 	require.NoError(t, err)
 	return res.Count

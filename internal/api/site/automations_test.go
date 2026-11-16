@@ -22,7 +22,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
 		Name:         "Welcome series",
 		TriggerEvent: systemevent.ContactCreated,
-		Steps: []siteapi.SiteAutomationStep{
+		Steps: []siteapi.SiteAutomationStepInput{
 			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
 			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
 		},

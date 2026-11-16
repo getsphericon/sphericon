@@ -186,13 +186,13 @@ type Inputs interface {
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source siteapi.SiteAutomationStep) automationstep.Step
-	AutomationSteps(source []siteapi.SiteAutomationStep) []automationstep.Step
-	TelegramButton(source siteapi.TelegramButton) telegramrender.Button
+	AutomationStep(source siteapi.SiteAutomationStepInput) automationstep.Step
+	AutomationSteps(source []siteapi.SiteAutomationStepInput) []automationstep.Step
+	TelegramButton(source siteapi.TelegramButtonInput) telegramrender.Button
 	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
 
-	RuleActions(source []siteapi.SiteRuleAction) []rules.Action
+	RuleActions(source []siteapi.SiteRuleActionInput) []rules.Action
 	// goverter:map Condition | conditionIn
 	RuleCreate(source *siteapi.SiteCreateRuleInput) (rules.CreateInput, error)
 	// goverter:map Condition | conditionIn
@@ -329,7 +329,7 @@ func listPtrIn(list []string) *[]string {
 
 // buttonsPtrIn is the link buttons a Telegram Broadcast's update replaces: an omitted list (nil)
 // keeps the stored ones, an empty list removes them.
-func buttonsPtrIn(c Inputs, list []siteapi.TelegramButton) *[]telegramrender.Button {
+func buttonsPtrIn(c Inputs, list []siteapi.TelegramButtonInput) *[]telegramrender.Button {
 	if list == nil {
 		return nil
 	}
@@ -340,7 +340,7 @@ func buttonsPtrIn(c Inputs, list []siteapi.TelegramButton) *[]telegramrender.But
 	return &out
 }
 
-func buttonsPatch(c Inputs, list []siteapi.TelegramButton) patch.Field[[]telegramrender.Button] {
+func buttonsPatch(c Inputs, list []siteapi.TelegramButtonInput) patch.Field[[]telegramrender.Button] {
 	return patch.FromPtr(buttonsPtrIn(c, list))
 }
 
@@ -359,7 +359,7 @@ func signupSourcePtrIn(c Inputs, o siteapi.OptSiteSignupSource) *signupsurveyres
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]automationstep.Step {
+func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStepInput) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}
@@ -368,7 +368,7 @@ func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStep) *[]autom
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
-func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleAction) *[]rules.Action {
+func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleActionInput) *[]rules.Action {
 	if actions == nil {
 		return nil
 	}
@@ -378,7 +378,7 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleAction) *[]rules.Actio
 
 // conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
 // it is absent.
-func conditionIn(o siteapi.OptSiteConditionGroup) (*string, error) {
+func conditionIn(o siteapi.OptSiteConditionGroupInput) (*string, error) {
 	return condition.EncodeOptional(o)
 }
 
@@ -529,7 +529,7 @@ func sortDirectionIn(c Inputs, o siteapi.OptSortDirection) pagination.Direction 
 	return c.SortDirection(v)
 }
 
-func createSegmentCondition(g siteapi.SiteConditionGroup) (*string, error) {
+func createSegmentCondition(g siteapi.SiteConditionGroupInput) (*string, error) {
 	def, err := condition.Encode(&g)
 	if err != nil {
 		return nil, err
@@ -537,7 +537,7 @@ func createSegmentCondition(g siteapi.SiteConditionGroup) (*string, error) {
 	return &def, nil
 }
 
-func segmentConditionPatch(o siteapi.OptSiteConditionGroup) (patch.Field[string], error) {
+func segmentConditionPatch(o siteapi.OptSiteConditionGroupInput) (patch.Field[string], error) {
 	def, err := condition.EncodeOptional(o)
 	if err != nil {
 		return patch.Field[string]{}, err

@@ -2919,7 +2919,7 @@ func (s *Server) handleSiteAuditSetRetentionRequest(args [1]string, argsEscaped 
 		}
 
 		type (
-			Request  = *SiteAuditRetention
+			Request  = *SiteAuditRetentionInput
 			Params   = SiteAuditSetRetentionParams
 			Response = *SiteAuditRetention
 		)

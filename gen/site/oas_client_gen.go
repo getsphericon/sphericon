@@ -118,7 +118,7 @@ type Invoker interface {
 	// only).
 	//
 	// PUT /workspaces/{workspaceId}/audit-entries/retention
-	SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error)
+	SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetentionInput, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error)
 	// SiteAuthConfirmEmailChange invokes SiteAuth_confirmEmailChange operation.
 	//
 	// Confirm an email change from the token sent to the new address. Public: the link may be opened from
@@ -3873,12 +3873,12 @@ func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListPara
 // only).
 //
 // PUT /workspaces/{workspaceId}/audit-entries/retention
-func (c *Client) SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error) {
+func (c *Client) SiteAuditSetRetention(ctx context.Context, request *SiteAuditRetentionInput, params SiteAuditSetRetentionParams) (*SiteAuditRetention, error) {
 	res, err := c.sendSiteAuditSetRetention(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditSetRetention(ctx context.Context, request *SiteAuditRetention, params SiteAuditSetRetentionParams) (res *SiteAuditRetention, err error) {
+func (c *Client) sendSiteAuditSetRetention(ctx context.Context, request *SiteAuditRetentionInput, params SiteAuditSetRetentionParams) (res *SiteAuditRetention, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_setRetention"),
 		semconv.HTTPRequestMethodKey.String("PUT"),

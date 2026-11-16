@@ -21,10 +21,10 @@ func TestExternalHTTPStepIsMaskedOnRead(t *testing.T) {
 
 	res, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name: "Notify", TriggerEvent: "signup",
-		Steps: []externalapi.AutomationStep{{
+		Steps: []externalapi.AutomationStepInput{{
 			Type: externalapi.AutomationStepTypeHTTP, Body: externalapi.NewOptString(`{"a":1}`),
 			URL:     externalapi.NewOptString("https://hooks.example.com/SECRETPATH"),
-			Headers: []externalapi.AutomationHttpHeader{{Name: "X-Key", Value: externalapi.NewOptString("hunter2")}},
+			Headers: []externalapi.AutomationHttpHeaderInput{{Name: "X-Key", Value: externalapi.NewOptString("hunter2")}},
 			Secret:  externalapi.NewOptString("whsec_x"),
 		}},
 	})

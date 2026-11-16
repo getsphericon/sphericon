@@ -24,7 +24,7 @@ func TestExternalAnSMSStepIsPublishedAndKeepsItsIntegrationInUse(t *testing.T) {
 	a, err := c.AutomationsCreate(ctx, &externalapi.CreateAutomationInput{
 		Name:         "Cart reminder",
 		TriggerEvent: "cart_abandoned",
-		Steps: []externalapi.AutomationStep{{
+		Steps: []externalapi.AutomationStepInput{{
 			Type:          externalapi.AutomationStepTypeSMS,
 			Text:          externalapi.NewOptString("Your cart is waiting, {{ first_name }}"),
 			IntegrationId: externalapi.NewOptNilEntityId(externalapi.EntityId(twilio)),
@@ -52,7 +52,7 @@ func TestExternalAnSMSStepWithNoTextIsRefused(t *testing.T) {
 
 	_, err := c.AutomationsCreate(t.Context(), &externalapi.CreateAutomationInput{
 		Name: "Blank", TriggerEvent: "cart_abandoned",
-		Steps: []externalapi.AutomationStep{{Type: externalapi.AutomationStepTypeSMS}},
+		Steps: []externalapi.AutomationStepInput{{Type: externalapi.AutomationStepTypeSMS}},
 	})
 
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
