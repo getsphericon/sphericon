@@ -46,9 +46,18 @@ func (c *InputsImpl) SignupItemOrder(source []staff.EntityId) []int64 {
 	}
 	return int64List
 }
+func (c *InputsImpl) SignupItemPublish(source *staff.StaffLegalDocumentPublishInput) signupitems.PublishInput {
+	var signupitemsPublishInput signupitems.PublishInput
+	if source != nil {
+		// signupitemsPublishInput.ID: ignore
+		signupitemsPublishInput.Label = string((*source).Label)
+	}
+	return signupitemsPublishInput
+}
 func (c *InputsImpl) SignupItemUpdate(source *staff.StaffSignupItemUpdate) signupitems.UpdateInput {
 	var signupitemsUpdateInput signupitems.UpdateInput
 	if source != nil {
+		// signupitemsUpdateInput.ID: ignore
 		signupitemsUpdateInput.Title = titlePtrIn((*source).Title)
 		signupitemsUpdateInput.MailingsConsent = boolPtrIn((*source).MailingsConsent)
 	}

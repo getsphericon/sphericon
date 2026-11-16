@@ -37,7 +37,9 @@ func (h *Handlers) StaffSignupItemsGet(ctx context.Context, params staffapi.Staf
 
 // StaffSignupItemsUpdate changes a Sign-up item.
 func (h *Handlers) StaffSignupItemsUpdate(ctx context.Context, req *staffapi.StaffSignupItemUpdate, params staffapi.StaffSignupItemsUpdateParams) (*staffapi.StaffSignupItemResource, error) {
-	it, err := h.items.Update(ctx, auth.StaffMember(ctx).ID, int64(params.ID), inputs.SignupItemUpdate(req))
+	in := inputs.SignupItemUpdate(req)
+	in.ID = int64(params.ID)
+	it, err := h.items.Update(ctx, auth.StaffMember(ctx).ID, in)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,9 @@ func (h *Handlers) StaffSignupItemsSaveDraft(ctx context.Context, req *staffapi.
 // StaffSignupItemsPublish publishes the draft as a new version, recorded with the signed-in Staff
 // member.
 func (h *Handlers) StaffSignupItemsPublish(ctx context.Context, req *staffapi.StaffLegalDocumentPublishInput, params staffapi.StaffSignupItemsPublishParams) (*staffapi.StaffSignupItemResource, error) {
-	it, err := h.items.Publish(ctx, int64(params.ID), string(req.Label), auth.StaffMember(ctx).ID)
+	in := inputs.SignupItemPublish(req)
+	in.ID = int64(params.ID)
+	it, err := h.items.Publish(ctx, auth.StaffMember(ctx).ID, in)
 	if err != nil {
 		return nil, err
 	}
