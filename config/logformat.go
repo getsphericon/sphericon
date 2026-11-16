@@ -6,9 +6,9 @@ import "fmt"
 type LogFormat string
 
 const (
-	// LogFormatJSON writes one JSON object per line, the default outside development.
+	// LogFormatJSON writes one JSON object per line, the default.
 	LogFormatJSON LogFormat = "json"
-	// LogFormatText writes coloured, human-readable lines, the default in development.
+	// LogFormatText writes coloured, human-readable lines; the dev stack sets it.
 	LogFormatText LogFormat = "text"
 )
 

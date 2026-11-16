@@ -12656,7 +12656,7 @@
           "eventsRetentionDays": {
             "type": "integer",
             "format": "int32",
-            "description": "The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events\nare kept forever. Clicks are Events, so a range longer than this is counted only over the\nretained days."
+            "description": "The configured Event retention in whole days (SPHERICON_EVENTS_RETENTION); 0 means Events\nare kept forever. Clicks are Events, so a range longer than this is counted only over the\nretained days."
           }
         },
         "description": "The Clicks by link report"

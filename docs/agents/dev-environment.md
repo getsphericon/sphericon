@@ -37,8 +37,8 @@ database for a linked worktree, which `[env]` overrides). The database is `spher
 checkout's directory name lowercased to `[a-z0-9_]`, cut to 31 characters plus a hash of the path
 when it exceeds 40, so with the `_test`, `_e2e` and `_diff` twins (`SPHERICON_TEST_DATABASE_URL`, `SPHERICON_E2E_DATABASE_URL`,
 `SPHERICON_DIFF_DATABASE_URL`; `SPHERICON_DB_NAMES` lists all four) every name stays under Postgres's 63-byte identifier
-limit and nothing is truncated or collides. Never set `SPHERICON_DATABASE_URL` in `.env`: explicit values
-override it. `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT` point every checkout at another server (an
+limit and nothing is truncated or collides. Never set `SPHERICON_DATABASE_URL` in `.mise.local.toml`:
+an explicit value overrides it. `SPHERICON_PG_HOST` / `SPHERICON_PG_PORT` point every checkout at another server (an
 external Postgres): one that answers is used as is and never started. CI runs the same path: its
 single checkout is its own primary.
 
@@ -133,8 +133,8 @@ own origin `brightpath.localhost` that sends events through `@sphericon/analytic
 (`mise run db:migrate`); the backend does not self-migrate. After a pull with new migrations it
 starts anyway and every page shows the error page with a "Run pending migrations" button, which runs
 them (ADR 0033). Dev defaults (JWT secret, dev
-`SPHERICON_ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`; personal overrides go in
-the gitignored `.env` (read by the app) or `.mise.local.toml`.
+`SPHERICON_ENCRYPTION_KEY`, SMTP) live in the `[env]` table of `.mise.toml`, the app's only source
+besides the shell (it reads no `.env`); personal overrides go in the gitignored `.mise.local.toml`.
 
 **A public URL for the running stack.** `mise run dev:tunnel` opens a Cloudflare Quick Tunnel
 (`cloudflared`, no account) to this checkout's Caddy and prints a random

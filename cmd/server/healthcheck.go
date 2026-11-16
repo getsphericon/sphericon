@@ -13,7 +13,7 @@ import (
 
 // healthcheckCommand is `sphericon healthcheck`: the image's HEALTHCHECK. It exits non-zero
 // unless the server on PORT answers its /healthz with 200.
-func healthcheckCommand(d deps) *cli.Command {
+func healthcheckCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "healthcheck",
 		Usage: "exit 0 when the server on PORT answers /healthz, 1 otherwise",
@@ -21,7 +21,7 @@ func healthcheckCommand(d deps) *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
 			}
-			port, err := config.Port(d.env)
+			port, err := config.Port()
 			if err != nil {
 				return err
 			}

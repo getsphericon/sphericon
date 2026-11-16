@@ -176,7 +176,7 @@ func TestSiteAnalyticsClicksByLinkIsReadByAMemberAndCarriesTheRetention(t *testi
 		{Kind: siteapi.SiteAnalyticsOwnerKindBroadcast, ID: siteapi.EntityId(fixtures.BroadcastSentID), Name: "Python crash course is here", Clicks: 2},
 		{Kind: siteapi.SiteAnalyticsOwnerKindAutomation, ID: siteapi.EntityId(fixtures.AutomationWinBackID), Name: "Win-back lapsed learners", Clicks: 1},
 	}, report.Links[0].Owners)
-	assert.Equal(t, int32(400), report.EventsRetentionDays, "the default SPHERICON_EVENTS_RETENTION_DAYS")
+	assert.Equal(t, int32(400), report.EventsRetentionDays, "the default SPHERICON_EVENTS_RETENTION, in days")
 }
 
 // The Opens by hour report is open to every role, refused without a session, and reads the

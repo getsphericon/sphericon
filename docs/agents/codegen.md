@@ -35,7 +35,7 @@ openapi/site (`SystemEventAction` enum) ──cmd/scopegen──▶ internal/ker
 openapi/{site,external,service,collect} (the value bounds `boundgen.Bounds` lists: lengths, ranges, item counts, patterns, defaults) ──cmd/boundgen──▶ internal/kernel/bounds/bounds_gen.go (a constant per bound and the owner that checks it, ADR 0107) and packages/analytics/src/bounds.gen.ts (the bounds the tracker owns, which cannot import zod)
 fixtures/*.yml (`# fixture: Name` rows)  ──cmd/fixturegen──▶ internal/fixtures/catalog_gen.go (named test constants)
 internal/kernel/i18n/locales/en.json  ──cmd/i18ngen──▶ internal/kernel/i18n/ids_gen.go (one i18n.ID per message: a call can only name a message the catalog has)
-config (the `environment` struct: `env`, `envDefault` and `validate` tags, profile defaults, field doc comments)  ──cmd/configdoc──▶ docs/configuration.md (the configuration reference the docs site copies)
+config (`config.Environment`: `env` and `envDefault` tags, field doc comments)  ──envdoc (go generate ./config)──▶ docs/configuration.md (the configuration reference the docs site copies)
 Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mocks_gen_test.go (test mocks; add an interface to the task list)
 ```
 

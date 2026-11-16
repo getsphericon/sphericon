@@ -9954,7 +9954,7 @@ func (s *SiteAnalyticsAutomations) SetRunsCompleted(val int32) {
 type SiteAnalyticsClicksByLink struct {
 	// Each link with clicks in the range, most clicked first; machine clicks are left out.
 	Links []SiteAnalyticsLink `json:"links"`
-	// The configured Event retention in days (SPHERICON_EVENTS_RETENTION_DAYS); 0 means Events are kept
+	// The configured Event retention in whole days (SPHERICON_EVENTS_RETENTION); 0 means Events are kept
 	// forever. Clicks are Events, so a range longer than this is counted only over the retained days.
 	EventsRetentionDays int32 `json:"eventsRetentionDays"`
 }

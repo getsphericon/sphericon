@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -22,10 +23,7 @@ import (
 )
 
 func main() {
-	env := os.Getenv(config.EnvVar)
-	if env == "" {
-		env = config.EnvDevelopment
-	}
+	env := cmp.Or(os.Getenv(config.EnvVar), config.EnvProduction)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	err := newRoot(newDeps(env)).Run(ctx, os.Args)

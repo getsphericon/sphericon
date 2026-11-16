@@ -7,6 +7,10 @@ status: accepted
 > **Amended by [[0063-every-instance-has-a-staff-console-and-sign-up-is-always-open]]:** the Mode
 > no longer decides sign-up, which is always open, and the Staff member and the console no longer
 > need `saas`.
+>
+> **Amended by [[0172-the-configuration-is-the-process-environment-read-by-one-library]]:** an
+> empty `SPHERICON_ENV` is production, not development, and `saas` no longer refuses a start for want
+> of the settings only a deployment gives.
 
 The same binary is run as a self-hosted Instance and as the SaaS, and the two had drifted apart as a
 set of independent switches (sign-up, its survey, email verification, Telemetry, the Release
