@@ -16,7 +16,8 @@ import type { ResourceFormSchema, ResourceValues } from '../../resources/resourc
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import type { BroadcastValues } from './BroadcastForm.tsx'
 
-// A blank Segment or Integration is the whole list or the Workspace default.
+// A blank Integration is the Workspace default; a blank audience is not chosen yet, which Save
+// refuses (ADR 0149).
 const blankBroadcast: BroadcastValues = {
   name: '',
   channel: '',
@@ -65,7 +66,7 @@ type FlatBroadcast = z.output<typeof flatSchema.create>
 function toBody({ name, segmentId, integrationId, ...content }: FlatBroadcast) {
   return {
     name,
-    ...(segmentId !== undefined && { segmentId }),
+    segmentId,
     ...(integrationId !== undefined && { integrationId }),
     content: contentOf(content),
   } satisfies CreateBroadcastInput
@@ -105,9 +106,13 @@ function contentOf({
   return { channel, ...email, ...(doc ? { doc } : body !== undefined && { body }) }
 }
 
-// A loaded Broadcast read back flat: its content's fields beside the rest.
+// A loaded Broadcast read back flat: its content's fields beside the rest. Its audience was named
+// when it was created, so one without a Segment goes to all contacts (null), never to no choice.
 function flatValues({ content, ...rest }: ResourceValues<CreateBroadcastInput>) {
-  return flatSchema.toValues({ ...rest, ...(typeof content === 'object' ? content : {}) })
+  return {
+    ...flatSchema.toValues({ ...rest, ...(typeof content === 'object' ? content : {}) }),
+    segmentId: rest.segmentId ?? null,
+  }
 }
 
 export const broadcastSchema: ResourceFormSchema<CreateBroadcastInput, BroadcastValues> = {

@@ -71,6 +71,7 @@ import (
 // goverter:extend nilImageURLPtrIn
 // goverter:extend nilDatePtrIn
 // goverter:extend nilEntityIDPtrIn
+// goverter:extend requiredNilEntityIDPtrIn
 // goverter:extend boolIn
 // goverter:extend boolPtrIn
 // goverter:extend int32In
@@ -154,8 +155,6 @@ type Inputs interface {
 	// goverter:map Condition | segmentConditionPatch
 	SegmentUpdate(source *externalapi.UpdateSegmentInput) (segments.UpdateInput, error)
 	// goverter:map Condition | conditionIn
-	// /api previews the match alone: its contract asks for no Channel.
-	// goverter:ignore Channel IntegrationID
 	SegmentPreview(source *externalapi.PreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
@@ -264,13 +263,17 @@ func nilLocalePtrIn(o externalapi.OptNilLocaleTag) *string                { retu
 func nilImageURLPtrIn(o externalapi.OptNilImageUrl) *string               { return convert.StringPtr(o) }
 func nilDatePtrIn(o externalapi.OptNilDate) *time.Time                    { return convert.Ptr(o) }
 func nilEntityIDPtrIn(o externalapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
-func boolIn(o externalapi.OptBool) bool                                   { return o.Or(false) }
-func boolPtrIn(o externalapi.OptBool) *bool                               { return convert.Ptr(o) }
-func int32In(o externalapi.OptInt32) int                                  { return int(o.Or(0)) }
-func entityIDIn(o externalapi.OptEntityId) int64                          { return int64(o.Or(0)) }
-func maxPerSecondPtrIn(o externalapi.OptNilMaxPerSecond) *int             { return intPtr(o) }
-func maxPerDayPtrIn(o externalapi.OptNilMaxPerDay) *int                   { return intPtr(o) }
-func nilStringIn(o externalapi.OptNilString) string                       { return o.Or("") }
+
+// requiredNilEntityIDPtrIn is a field the body must carry whose null is a choice of its own (a
+// Broadcast's audience, null for all contacts): nil for null, else the id.
+func requiredNilEntityIDPtrIn(o externalapi.NilEntityId) *int64 { return convert.Int64Ptr(o) }
+func boolIn(o externalapi.OptBool) bool                         { return o.Or(false) }
+func boolPtrIn(o externalapi.OptBool) *bool                     { return convert.Ptr(o) }
+func int32In(o externalapi.OptInt32) int                        { return int(o.Or(0)) }
+func entityIDIn(o externalapi.OptEntityId) int64                { return int64(o.Or(0)) }
+func maxPerSecondPtrIn(o externalapi.OptNilMaxPerSecond) *int   { return intPtr(o) }
+func maxPerDayPtrIn(o externalapi.OptNilMaxPerDay) *int         { return intPtr(o) }
+func nilStringIn(o externalapi.OptNilString) string             { return o.Or("") }
 
 // listPtrIn is a list an update replaces: an omitted list (nil) keeps the stored one.
 func listPtrIn(list []string) *[]string {

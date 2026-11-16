@@ -413,6 +413,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.SegmentId = optNilEntityID((*source).SegmentID)
 		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
+		// externalapiBroadcastResource.Recipients: ignore
 		externalapiBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)

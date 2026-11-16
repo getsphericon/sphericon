@@ -698,9 +698,9 @@ export type CreateBroadcastInput = {
    */
   content: BroadcastContentInput;
   /**
-   * Target segment; null or omitted means all contacts. An archived segment is refused with 422.
+   * Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as such. A body without it is refused with 400. An archived segment is refused with 422.
    */
-  segmentId?: EntityId | null;
+  segmentId: EntityId | null;
   /**
    * Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An archived integration, or one of another Channel, is refused with 422.
    */
@@ -3034,6 +3034,10 @@ export type SiteBroadcastResource = {
    * When the broadcast is scheduled to send
    */
   scheduledAt?: Timestamp | null;
+  /**
+   * The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065).
+   */
+  recipients?: number;
   /**
    * When the broadcast finished sending
    */

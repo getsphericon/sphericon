@@ -26,8 +26,9 @@ func TestExternalStoresBodiesAsWritten(t *testing.T) {
 	assert.Equal(t, body, tpl.Body)
 
 	bc, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-		Name:    "As written",
-		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString(body)}),
+		Name:      "As written",
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Body: externalapi.NewOptString(body)}),
+		SegmentId: externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, body, testhelper.ExternalEmailOf(bc).Body)

@@ -75,6 +75,7 @@ func TestExternalConnectionWithoutTheSendScopeHasNoSMSTestSend(t *testing.T) {
 	made, err := author.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
 		Name: "Flash sale", Content: testhelper.ExternalSMS("Hi {{ first_name }}"),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(int64(account.Integration.ID))),
+		SegmentId:     externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
 	c := env.ExternalWithToken(t, env.ConnectionBearer(t, fixtures.OwnerJohnEmail, authorScopes...))

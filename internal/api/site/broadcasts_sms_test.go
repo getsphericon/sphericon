@@ -35,9 +35,10 @@ func createSMSBroadcastIn(t *testing.T, c *siteapi.Client, workspace siteapi.Wor
 	in := &siteapi.CreateBroadcastInput{
 		Name: "Flash sale", Content: testhelper.SiteSMS(text),
 		IntegrationId: siteapi.NewOptNilEntityId(idStr(int64(account.Integration.ID))),
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}
 	if segment != nil {
-		in.SegmentId = siteapi.NewOptNilEntityId(*segment)
+		in.SegmentId = siteapi.NewNilEntityId(*segment)
 	}
 	res, err := c.SiteBroadcastsCreate(t.Context(), in, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspace})
 	require.NoError(t, err)
@@ -93,7 +94,7 @@ func TestSiteSMSBroadcastIsRefusedWithoutAnSMSIntegration(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJaneEmail)
 
-	_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: "Flash sale", Content: testhelper.SiteSMS("Hi")},
+	_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{Name: "Flash sale", Content: testhelper.SiteSMS("Hi"), SegmentId: siteapi.NilEntityId{Null: true}},
 		siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.GlobexPublicID})
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
@@ -183,7 +184,7 @@ func TestSiteSMSBroadcastSaveRefusesATextOverTheLengthLimit(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	draft := siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastSmsDraftID)}
 
-	_, created := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "Long", Content: testhelper.SiteSMS(strings.Repeat("a", 1601))},
+	_, created := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{Name: "Long", Content: testhelper.SiteSMS(strings.Repeat("a", 1601)), SegmentId: siteapi.NilEntityId{Null: true}},
 		siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	_, fits := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft.ID))), Content: testhelper.SiteSMSEdit(strings.Repeat("я", 700))}, draft)
 	_, edited := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(draft.ID))), Content: testhelper.SiteSMSEdit(strings.Repeat("я", 701))}, draft)

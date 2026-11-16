@@ -2006,7 +2006,7 @@ export const siteBroadcastsArchive = <ThrowOnError extends boolean = false>(opti
 });
 
 /**
- * Schedule a broadcast to send at a future time. A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156).
+ * Schedule a broadcast to send at a future time. The answer carries `recipients`, the recipients it would take at that moment (ADR 0149). A draft copies its segment's condition: recipients are resolved at send time from that copy, so a later edit of the segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the integration it sends through cannot send (disabled or archived, or no default): a draft may name such an integration, only scheduling it is refused. An archived broadcast is a 409 too, and so is an email broadcast while the Workspace has no postal address (postal_address_required, ADR 0156).
  */
 export const siteBroadcastsSchedule = <ThrowOnError extends boolean = false>(options: Options<SiteBroadcastsScheduleData, ThrowOnError>): RequestResult<SiteBroadcastsScheduleResponses, SiteBroadcastsScheduleErrors, ThrowOnError> => (options.client ?? client).post<SiteBroadcastsScheduleResponses, SiteBroadcastsScheduleErrors, ThrowOnError>({
   requestValidator: async (data) => await z.object({

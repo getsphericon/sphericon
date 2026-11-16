@@ -95,8 +95,9 @@ func TestSiteBroadcastSaveReturnsWarnings(t *testing.T) {
 	ctx := context.Background()
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Warned",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody)}),
+		Name:      "Warned",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString(lintBody)}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res := created

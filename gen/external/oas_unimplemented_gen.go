@@ -231,10 +231,11 @@ func (UnimplementedHandler) BroadcastsReport(ctx context.Context, params Broadca
 
 // BroadcastsSchedule implements Broadcasts_schedule operation.
 //
-// Schedule a draft or scheduled broadcast to send to its audience at a future time. A draft copies its
-// segment's condition: recipients are resolved at send time from that copy, so a later edit of the
-// segment changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when
-// the integration it sends through cannot send (disabled or archived, or no default): a draft may name
+// Schedule a draft or scheduled broadcast to send to its audience at a future time. The answer carries
+// `recipients`, the recipients it would take at that moment (ADR 0149). A draft copies its segment's
+// condition: recipients are resolved at send time from that copy, so a later edit of the segment
+// changes nothing for it, and rescheduling keeps it. An archived segment is refused. 409 when the
+// integration it sends through cannot send (disabled or archived, or no default): a draft may name
 // such an integration, only scheduling it is refused, and so is an archived broadcast. An email
 // broadcast is a 409 postal_address_required while the Workspace has no postal address
 // (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Send-class: needs the
@@ -786,7 +787,9 @@ func (UnimplementedHandler) SegmentsList(ctx context.Context, params SegmentsLis
 
 // SegmentsPreview implements Segments_preview operation.
 //
-// Count the contacts matching an unsaved rule definition.
+// Count the contacts matching an unsaved rule definition, or all contacts without one. With a
+// `channel` it also counts the recipients a Broadcast there would take now: read it back before a
+// Broadcast is handed over for scheduling (ADR 0149).
 //
 // POST /segments/preview
 func (UnimplementedHandler) SegmentsPreview(ctx context.Context, req *PreviewSegmentInput) (r *PreviewSegmentResult, _ error) {

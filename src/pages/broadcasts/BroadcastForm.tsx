@@ -18,6 +18,7 @@ import {
 import type {
   BroadcastChannel,
   CreateBroadcastInput,
+  SiteSegmentResource,
   TelegramButton,
 } from '../../generated/site/types.gen.ts'
 import {
@@ -42,7 +43,8 @@ export interface BroadcastValues {
   subject: string
   fromName: string
   fromEmail: string
-  segmentId: string
+  // Who it goes to (ADR 0149): a Segment's id, null for all contacts, blank until it is chosen.
+  segmentId: string | null
   integrationId: string
   body: string
   doc: MessageDoc | null
@@ -126,6 +128,41 @@ function ChannelStep({ onChoose }: { onChoose: (channel: BroadcastChannel) => vo
   )
 }
 
+// The value the picker shows for "All contacts", which the form holds as null.
+const ALL_CONTACTS = 'all'
+
+// Who a Broadcast goes to, always named (ADR 0149): a Segment, or "All contacts" chosen as such. It
+// has no default: a blank value is no choice yet, and Save refuses it under the field.
+function AudienceSelect({
+  form,
+  segments,
+}: {
+  form: ResourceFormProps<CreateBroadcastInput, BroadcastValues>['form']
+  segments: SiteSegmentResource[] | undefined
+}) {
+  const { t } = useTranslation()
+  const { segmentId } = form.values
+  return (
+    <Select
+      label={t(($) => $.broadcasts.audience.label)}
+      placeholder={t(($) => $.broadcasts.audience.placeholder)}
+      required
+      data={[
+        { value: ALL_CONTACTS, label: t(($) => $.broadcasts.segmentAll) },
+        ...(segments ?? []).map((s) => ({ value: s.id, label: s.name })),
+      ]}
+      allowDeselect={false}
+      // The form's props (blur validation, the error, the path Save focuses on an error), with the
+      // value mapped to and from null below.
+      {...form.getInputProps('segmentId')}
+      value={segmentId === null ? ALL_CONTACTS : segmentId || null}
+      onChange={(next) => {
+        form.setFieldValue('segmentId', next === ALL_CONTACTS ? null : (next ?? ''))
+      }}
+    />
+  )
+}
+
 // The editor of a Telegram Broadcast: its Integration, Segment and message. Who it reaches is the
 // Segment's Contacts who have a Binding on the bot, so the note says that instead of email's.
 function TelegramBroadcastForm({
@@ -142,10 +179,6 @@ function TelegramBroadcastForm({
       query: { pageSize: maxPageSize(zSiteSegmentsListQuery) },
     }),
   )
-  const segmentOptions = [
-    { value: '', label: t(($) => $.broadcasts.segmentAll) },
-    ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
-  ]
 
   // The bot the broadcast sends and paces through; blank is the Channel's default.
   const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
@@ -175,12 +208,7 @@ function TelegramBroadcastForm({
           allowDeselect={false}
           {...form.getInputProps('integrationId')}
         />
-        <Select
-          label={t(($) => $.broadcasts.segmentLabel)}
-          data={segmentOptions}
-          allowDeselect={false}
-          {...form.getInputProps('segmentId')}
-        />
+        <AudienceSelect form={form} segments={segmentsQuery.data?.items} />
         <Alert color="blue" variant="light">
           {t(($) => $.broadcasts.segmentNoteTelegram)}
         </Alert>
@@ -238,10 +266,6 @@ function SmsBroadcastForm({
       query: { pageSize: maxPageSize(zSiteSegmentsListQuery) },
     }),
   )
-  const segmentOptions = [
-    { value: '', label: t(($) => $.broadcasts.segmentAll) },
-    ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
-  ]
 
   // The account the broadcast texts and paces through; blank is the Channel's default.
   const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
@@ -269,12 +293,7 @@ function SmsBroadcastForm({
           allowDeselect={false}
           {...form.getInputProps('integrationId')}
         />
-        <Select
-          label={t(($) => $.broadcasts.segmentLabel)}
-          data={segmentOptions}
-          allowDeselect={false}
-          {...form.getInputProps('segmentId')}
-        />
+        <AudienceSelect form={form} segments={segmentsQuery.data?.items} />
         <Alert color="blue" variant="light">
           {t(($) => $.broadcasts.segmentNoteSms)}
         </Alert>
@@ -319,10 +338,6 @@ function EmailBroadcastForm({
       query: { pageSize: maxPageSize(zSiteSegmentsListQuery) },
     }),
   )
-  const segmentOptions = [
-    { value: '', label: t(($) => $.broadcasts.segmentAll) },
-    ...(segmentsQuery.data?.items ?? []).map((s) => ({ value: s.id, label: s.name })),
-  ]
 
   // The Integration the broadcast sends and paces through; blank is the Workspace default.
   const integrationsQuery = useQuery(siteIntegrationsListOptions({ path: { workspaceId } }))
@@ -441,12 +456,7 @@ function EmailBroadcastForm({
           {...form.getInputProps('integrationId')}
         />
 
-        <Select
-          label={t(($) => $.broadcasts.segmentLabel)}
-          data={segmentOptions}
-          allowDeselect={false}
-          {...form.getInputProps('segmentId')}
-        />
+        <AudienceSelect form={form} segments={segmentsQuery.data?.items} />
         <Alert color="blue" variant="light">
           {t(($) => $.broadcasts.segmentNote)}
         </Alert>

@@ -193,17 +193,41 @@ test('creating a broadcast sends only the filled keys, refreshes the list and op
   await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByLabelText('Subject').fill('Hello')
+  await screen.getByRole('combobox', { name: /^Audience/ }).click()
+  await screen.getByRole('option', { name: 'All contacts' }).click()
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
     .poll(() => bodies)
-    .toEqual([{ name: 'Launch', content: { channel: 'email', subject: 'Hello' } }])
+    .toEqual([{ name: 'Launch', segmentId: null, content: { channel: 'email', subject: 'Hello' } }])
   await expect.element(screen.getByText('Broadcast created')).toBeInTheDocument()
   await expect.poll(() => fetches.list).toBe(2)
   await expect.poll(() => navigate.mock.calls.length).toBe(1)
   expect(navigate.mock.calls[0]?.[0]).toMatchObject({
     params: { workspaceId: 'TestWs01', broadcastId: testId(42) },
   })
+})
+
+// A Broadcast's audience is always named (ADR 0149): the picker has no default, a Save with no
+// choice shows the error under it and sends nothing, and "All contacts" is sent as null.
+test('a new broadcast is not saved until its audience is chosen', async () => {
+  const { bodies } = serve('draft')
+  const { screen } = await renderWithRouter(<BroadcastCreatePage />, CREATE_ROUTE)
+
+  await screen.getByRole('button', { name: 'Continue' }).click()
+  await screen.getByLabelText(/^Name/).fill('Launch')
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect.element(screen.getByText('This field is required')).toBeVisible()
+  await expect.element(screen.getByRole('combobox', { name: /^Audience/ })).toHaveFocus()
+  expect(bodies).toEqual([])
+  await screen.getByRole('combobox', { name: /^Audience/ }).click()
+  await screen.getByRole('option', { name: 'All contacts' }).click()
+  await screen.getByRole('button', { name: 'Save' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toEqual([{ name: 'Launch', segmentId: null, content: { channel: 'email' } }])
 })
 
 test('editing a draft; a cleared sender name is sent as null and the Segment is cleared too', async () => {
@@ -465,12 +489,18 @@ test('the From is a local part on a verified Sending domain, and an empty one is
   await screen.getByRole('button', { name: 'Continue' }).click()
   await screen.getByLabelText(/^Name/).fill('Launch')
   await screen.getByLabelText('From address').fill('news')
+  await screen.getByRole('combobox', { name: /^Audience/ }).click()
+  await screen.getByRole('option', { name: 'All contacts' }).click()
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
     .poll(() => bodies)
     .toEqual([
-      { name: 'Launch', content: { channel: 'email', fromEmail: 'news@news.example.com' } },
+      {
+        name: 'Launch',
+        segmentId: null,
+        content: { channel: 'email', fromEmail: 'news@news.example.com' },
+      },
     ])
 })
 
@@ -510,11 +540,15 @@ test('the Integration a broadcast sends through is chosen among the email ones a
   await picker.click()
   expect(screen.getByRole('option', { name: 'SMS gateway' }).elements()).toHaveLength(0)
   await screen.getByRole('option', { name: 'Postmark' }).click()
+  await screen.getByRole('combobox', { name: /^Audience/ }).click()
+  await screen.getByRole('option', { name: 'All contacts' }).click()
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
     .poll(() => bodies)
-    .toEqual([{ name: 'Launch', integrationId: testId(21), content: { channel: 'email' } }])
+    .toEqual([
+      { name: 'Launch', segmentId: null, integrationId: testId(21), content: { channel: 'email' } },
+    ])
 })
 
 test('a saved Integration is shown, and switching back to the default clears it', async () => {
@@ -653,6 +687,7 @@ test('scheduling a draft posts the chosen time as an ISO timestamp and opens the
   const bodies: unknown[] = []
   serveDraft()
   worker.use(
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(broadcast('scheduled'))
@@ -662,10 +697,40 @@ test('scheduling a draft posts the chosen time as an ISO timestamp and opens the
 
   await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+  await screen.getByRole('button', { name: 'Schedule broadcast' }).click()
 
   await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
   expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString(), revision: 1 }])
   await expect.poll(() => navigate.mock.calls).toContainEqual([REPORT])
+})
+
+// Schedule first shows the Recipients the saved Broadcast would take now (ADR 0149), on a Workspace
+// without a Send cap too: the preview of its audience (all contacts here) on its Channel. Nothing
+// is scheduled until it is confirmed.
+test('scheduling first shows the recipients counted now, without a Send cap', async () => {
+  const previews: unknown[] = []
+  const bodies: unknown[] = []
+  serveDraft()
+  worker.use(
+    handleSiteSegmentsPreview(async ({ request }) => {
+      previews.push(await request.json())
+      return HttpResponse.json({ count: 1500, recipients: 1234 })
+    }),
+    handleSiteBroadcastsSchedule(async ({ request }) => {
+      bodies.push(await request.json())
+      return HttpResponse.json(broadcast('scheduled'))
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastEditPage />, EDIT_ROUTE)
+
+  await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
+  await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+
+  await expect.element(screen.getByText(/1,234 recipients/)).toBeVisible()
+  expect(previews).toEqual([{ channel: 'email' }])
+  expect(bodies).toEqual([])
+  await screen.getByRole('button', { name: 'Schedule broadcast' }).click()
+  await expect.poll(() => bodies).toHaveLength(1)
 })
 
 test('a refused Send now shows the error toast and stays on the page', async () => {
@@ -761,6 +826,7 @@ test('a Telegram broadcast offers no test send and can be scheduled', async () =
   const bodies: unknown[] = []
   const draft = serveDraft({ text: 'Hello', buttons: [], linkPreview: true }, 'telegram')
   worker.use(
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       bodies.push(await request.json())
       return HttpResponse.json(draft.as('scheduled'))
@@ -770,6 +836,7 @@ test('a Telegram broadcast offers no test send and can be scheduled', async () =
 
   await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+  await screen.getByRole('button', { name: 'Schedule broadcast' }).click()
 
   await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
   expect(bodies).toEqual([{ scheduledAt: new Date('2030-05-06T07:08').toISOString(), revision: 1 }])
@@ -787,6 +854,7 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
       bodies.push(await request.json())
       return HttpResponse.json({ captured: false })
     }),
+    handleSiteSegmentsPreview({ body: { count: 3, recipients: 2 } }),
     handleSiteBroadcastsSchedule(async ({ request }) => {
       schedules.push(await request.json())
       return HttpResponse.json(draft.as('scheduled'))
@@ -804,6 +872,7 @@ test('an SMS broadcast is test-sent to the typed number, then scheduled', async 
 
   await screen.getByLabelText('Schedule for').fill('2030-05-06T07:08')
   await screen.getByRole('button', { name: 'Schedule', exact: true }).click()
+  await screen.getByRole('button', { name: 'Schedule broadcast' }).click()
 
   await expect.element(screen.getByText('Broadcast scheduled')).toBeInTheDocument()
   expect(schedules).toEqual([

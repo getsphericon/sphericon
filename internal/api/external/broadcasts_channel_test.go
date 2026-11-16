@@ -19,8 +19,9 @@ func TestExternalBroadcastIsCreatedOnTheChannelOfItsContent(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	in := &externalapi.CreateBroadcastInput{
-		Name:    "Launch",
-		Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hello")}),
+		Name:      "Launch",
+		Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hello")}),
+		SegmentId: externalapi.NilEntityId{Null: true},
 	}
 	c := env.ExternalScoped(t, authorScopes...)
 	noChannel := env.ExternalVia(t, env.ScopedBearer(t, authorScopes...), testhelper.EditBody(func(body map[string]any) {
@@ -45,6 +46,7 @@ func TestExternalBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 		Name:          "Through SMS",
 		Content:       testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{}),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(fixtures.IntegrationAcmeSmsID)),
+		SegmentId:     externalapi.NilEntityId{Null: true},
 	})
 
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)

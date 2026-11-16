@@ -94,6 +94,14 @@ async function openEmailEditor() {
   return screen
 }
 
+type Screen = Awaited<ReturnType<typeof openEmailEditor>>
+
+// A Broadcast's audience has no default (ADR 0149): the author picks it before Save.
+async function chooseAudience(screen: Screen, audience = 'All contacts') {
+  await screen.getByRole('combobox', { name: /^Audience/ }).click()
+  await screen.getByRole('option', { name: audience }).click()
+}
+
 function serve(
   templates: ReturnType<typeof template>[],
   bodies: unknown[] = [],
@@ -129,12 +137,17 @@ test('picking a template copies its subject and document, and saves the document
   await screen.getByRole('option', { name: 'Template 1' }).click()
   await expect.element(screen.getByLabelText(/^Subject/)).toHaveValue('Welcome aboard')
   await expect.element(screen.getByRole('button', { name: 'Insert variable' })).toBeEnabled()
+  await chooseAudience(screen)
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
     .poll(() => bodies)
     .toEqual([
-      { name: 'Launch', content: { channel: 'email', subject: 'Welcome aboard', doc: DOC } },
+      {
+        name: 'Launch',
+        segmentId: null,
+        content: { channel: 'email', subject: 'Welcome aboard', doc: DOC },
+      },
     ])
 })
 
@@ -147,12 +160,17 @@ test('a template written as HTML is copied as source and saves its body only', a
   await screen.getByRole('combobox', { name: 'Start from template' }).click()
   await screen.getByRole('option', { name: 'Template 2' }).click()
   await expect.element(screen.getByLabelText('Body')).toHaveValue('<p>2</p>')
+  await chooseAudience(screen)
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
     .poll(() => bodies)
     .toEqual([
-      { name: 'Launch', content: { channel: 'email', subject: 'Plain', body: '<p>2</p>' } },
+      {
+        name: 'Launch',
+        segmentId: null,
+        content: { channel: 'email', subject: 'Plain', body: '<p>2</p>' },
+      },
     ])
 })
 
@@ -191,6 +209,7 @@ test('an audience larger than the Send cap is warned about with the days it take
   serve([], [], { perDay: 5000, sentLast24h: 0 })
   worker.use(handleSiteSegmentsPreview({ body: { count: 12_000 } }))
   const screen = await openEmailEditor()
+  await chooseAudience(screen)
 
   await expect
     .element(screen.getByText(/12,000 contacts.*Send cap.*about 2 days/))
@@ -203,7 +222,10 @@ test('without a Send cap nothing is warned about and the audience is not counted
   serve([])
   const screen = await openEmailEditor()
 
-  await expect.element(screen.getByRole('combobox', { name: 'Segment' })).toBeInTheDocument()
+  await chooseAudience(screen)
+  await expect
+    .element(screen.getByRole('combobox', { name: /^Audience/ }))
+    .toHaveValue('All contacts')
   expect(screen.getByText(/Send cap/).elements()).toHaveLength(0)
 })
 
@@ -217,17 +239,16 @@ test('an audience that goes out within a day of the Send cap is not warned about
     }),
   )
   const screen = await openEmailEditor()
-  const segment = screen.getByRole('combobox', { name: 'Segment' })
 
-  await segment.click()
-  await screen.getByRole('option', { name: 'VIPs' }).click()
+  await chooseAudience(screen, 'VIPs')
   await expect.element(screen.getByText(/about 4 days/)).toBeInTheDocument()
-  await segment.click()
-  await screen.getByRole('option', { name: 'All contacts' }).click()
+  await chooseAudience(screen)
 
   await expect.element(screen.getByText(/Send cap/)).not.toBeInTheDocument()
 })
 
+// Nothing is counted before an audience is chosen; all contacts are counted with no condition, and
+// a Segment by its condition.
 test('the chosen Segment is counted by its condition', async () => {
   const previews: unknown[] = []
   serve([], [], { perDay: 5000, sentLast24h: 0 })
@@ -240,9 +261,11 @@ test('the chosen Segment is counted by its condition', async () => {
   )
   const screen = await openEmailEditor()
 
+  await expect.element(screen.getByRole('combobox', { name: /^Audience/ })).toBeInTheDocument()
+  expect(previews).toEqual([])
+  await chooseAudience(screen)
   await expect.poll(() => previews).toEqual([{}])
-  await screen.getByRole('combobox', { name: 'Segment' }).click()
-  await screen.getByRole('option', { name: 'VIPs' }).click()
+  await chooseAudience(screen, 'VIPs')
 
   await expect.element(screen.getByText(/20,000 contacts.*about 3 days/)).toBeInTheDocument()
   expect(previews).toEqual([{}, { condition: VIPS }])
@@ -253,6 +276,7 @@ test('the Send cap warning does not stop the Broadcast from being saved', async 
   serve([], bodies, { perDay: 5000, sentLast24h: 0 })
   worker.use(handleSiteSegmentsPreview({ body: { count: 12_000 } }))
   const screen = await openEmailEditor()
+  await chooseAudience(screen)
 
   await expect.element(screen.getByText(/about 2 days/)).toBeInTheDocument()
   await screen.getByLabelText(/^Name/).fill('Launch')
@@ -286,6 +310,7 @@ test('a Telegram broadcast is written as a text and saved under its Channel', as
   await screen.getByRole('option', { name: 'News bot' }).click()
   await screen.getByLabelText('Message').fill('Hello <b>{{ first_name }}</b>')
   await expect.element(screen.getByText('29 / 4,096')).toBeInTheDocument()
+  await chooseAudience(screen)
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -293,6 +318,7 @@ test('a Telegram broadcast is written as a text and saved under its Channel', as
     .toEqual([
       {
         name: 'News',
+        segmentId: null,
         integrationId: testId(2),
         content: {
           channel: 'telegram',
@@ -334,6 +360,7 @@ test('a Telegram broadcast carries an image, buttons, no preview and an unsubscr
   await screen.getByRole('textbox', { name: 'Button 1 URL' }).fill('https://example.com/b')
   await screen.getByText('Show a preview of links in the text').click({ force: true })
   await screen.getByText('Unsubscribe button', { exact: true }).click({ force: true })
+  await chooseAudience(screen)
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -341,6 +368,7 @@ test('a Telegram broadcast carries an image, buttons, no preview and an unsubscr
     .toEqual([
       {
         name: 'News',
+        segmentId: null,
         content: {
           channel: 'telegram',
           text: 'Hello',
@@ -369,6 +397,7 @@ test('a Telegram broadcast is warned about by its recipients, not by every conta
   const { screen } = await renderWithRouter(<BroadcastCreatePage />, mount)
 
   await screen.getByRole('button', { name: 'Continue' }).click()
+  await chooseAudience(screen)
   await expect.poll(() => previews).toEqual([{ channel: 'telegram' }])
   await expect.element(screen.getByText(/Send cap/)).not.toBeInTheDocument()
   await screen.getByRole('combobox', { name: 'Send through' }).click()
@@ -424,6 +453,7 @@ test('an SMS broadcast is written as a plain text and saved under its Channel', 
   await screen.getByRole('textbox', { name: /^Message/ }).fill('Hi {{ first_name }}, 20% off')
   // A brace is a GSM-7 extension character, counted twice.
   await expect.element(screen.getByText('32 characters · GSM-7 · 1 segment')).toBeVisible()
+  await chooseAudience(screen)
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -431,6 +461,7 @@ test('an SMS broadcast is written as a plain text and saved under its Channel', 
     .toEqual([
       {
         name: 'Flash sale',
+        segmentId: null,
         integrationId: testId(3),
         content: { channel: 'sms', text: 'Hi {{ first_name }}, 20% off', linkTracking: true },
       },
@@ -455,6 +486,7 @@ test('an SMS broadcast counts its links as short links and may keep them as writ
     .toBeVisible()
   await screen.getByText('Track links').click({ force: true })
   await expect.element(screen.getByText('126 characters · GSM-7 · 1 segment')).toBeVisible()
+  await chooseAudience(screen)
   await screen.getByRole('button', { name: 'Save' }).click()
 
   await expect
@@ -462,6 +494,7 @@ test('an SMS broadcast counts its links as short links and may keep them as writ
     .toEqual([
       {
         name: 'Flash sale',
+        segmentId: null,
         integrationId: testId(3),
         content: { channel: 'sms', text, linkTracking: false },
       },

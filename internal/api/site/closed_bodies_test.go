@@ -39,8 +39,9 @@ func TestSiteBroadcastRefusesAPropertyTheContractDoesNotDeclare(t *testing.T) {
 			require.NoError(t, err)
 
 			_, err = edited.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-				Name:    "Typo",
-				Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
+				Name:      "Typo",
+				Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
+				SegmentId: siteapi.NilEntityId{Null: true},
 			}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 			after, listErr := c.SiteBroadcastsList(ctx, list)
 
@@ -61,8 +62,9 @@ func TestSiteBroadcastRefusesAValueOfTheWrongTypeByItsPath(t *testing.T) {
 	}))
 
 	_, err := c.SiteBroadcastsCreate(t.Context(), &siteapi.CreateBroadcastInput{
-		Name:    "Wrong type",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
+		Name:      "Wrong type",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusBadRequest)

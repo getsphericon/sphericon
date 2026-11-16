@@ -143,6 +143,8 @@ type Converter interface {
 	ContactToResource(source *ent.Contact) externalapi.ContactResource
 	// goverter:useEmptyOnNil:slice
 	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
+	// Recipients are counted by Schedule (ADR 0149): the handler attaches them to its answer.
+	// goverter:ignore Recipients
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.

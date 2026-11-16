@@ -113,3 +113,17 @@ func TestMCPPromptsThatWriteMailNameTheEditorTools(t *testing.T) {
 		assert.NotContainsf(t, body, "HTML with merge tags", "%s no longer asks for an HTML body", name)
 	}
 }
+
+// The win-back prompt names the audience when it writes the Broadcast, and reads back the
+// recipients the preview counts on the Broadcast's Channel before it hands over (ADR 0149).
+func TestMCPWinBackPromptNamesTheAudienceAndCountsItsRecipients(t *testing.T) {
+	env := testhelper.Setup(t)
+	s := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeContactsRead))
+
+	body := promptText(t, s, "win-back")
+
+	assert.Contains(t, body, "`segmentId`", "the draft is written with its audience")
+	assert.Contains(t, body, "`channel`", "the preview is asked on the Broadcast's Channel")
+	assert.Contains(t, body, "`recipients`", "the count read back is the recipients")
+	assert.NotContains(t, body, "broadcasts_set_segment", "the audience is named at create, not after")
+}

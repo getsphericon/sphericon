@@ -210,6 +210,8 @@ func (a *Agent) SaveBroadcast(d Draft) externalapi.EntityId {
 	a.w.t.Helper()
 	out := a.mustCall("broadcasts_create", map[string]any{
 		"name": "e2e agent draft " + uniq(),
+		// The audience is always named (ADR 0149); the person's activation sets it again.
+		"segmentId": nil,
 		"content": map[string]any{
 			"channel": "email", "subject": d.Subject, "doc": d.Doc,
 			"fromName": a.w.FromName, "fromEmail": a.w.FromEmail,

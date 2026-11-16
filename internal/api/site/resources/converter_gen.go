@@ -740,6 +740,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		siteapiSiteBroadcastResource.HoldReason = optNilHoldReason(c, (*source).HoldReason)
 		siteapiSiteBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
+		// siteapiSiteBroadcastResource.Recipients: ignore
 		siteapiSiteBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiSiteBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		// siteapiSiteBroadcastResource.Stats: ignore

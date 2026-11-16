@@ -114,9 +114,36 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (*
 // send (its Integration is disabled or archived, or the Workspace has no default) is refused with
 // outboundmessages.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
 // An email Broadcast of a Workspace with no postal address is refused as Send refuses it. revision
-// is the one of what the person scheduling was shown, as for Send.
-func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, revision, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, m.armable)
+// is the one of what the person scheduling was shown, as for Send. The answer carries the Recipients
+// the Broadcast would take at that moment (ADR 0149), counted in the claim's transaction on the
+// Condition it has just copied, so a Broadcast whose audience cannot be resolved is not scheduled
+// (ErrAudienceUncountable).
+func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (Scheduled, error) {
+	var recipients int
+	counted := func(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
+		if err := m.armable(ctx, ts, b); err != nil {
+			return err
+		}
+		n, err := AudienceSize(ctx, ts, b, m.out.Now())
+		if errors.Is(err, ErrNoAudience) {
+			return ErrAudienceUncountable.With(err.Error())
+		}
+		recipients = n
+		return err
+	}
+	b, err := m.claim(ctx, s, id, revision, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, counted)
+	if err != nil {
+		return Scheduled{}, err
+	}
+	return Scheduled{Broadcast: b, Recipients: recipients}, nil
+}
+
+// Scheduled is a Broadcast Schedule has armed and the Recipients it would take at that moment: the
+// count at Schedule, not a promise, since its Recipients are resolved when it sends (ADR 0065).
+type Scheduled struct {
+	*ent.Broadcast
+
+	Recipients int
 }
 
 // armable refuses a claimed Broadcast that cannot go out as written: its Workspace has no postal
@@ -264,6 +291,10 @@ var (
 	ErrRevisionChanged = validation.RevisionChanged("broadcasts: broadcast changed since it was read", i18n.ErrorsBroadcastRevisionChanged)
 	// ErrSegmentNotFound: the Segment does not exist in this Workspace.
 	ErrSegmentNotFound = validation.Refuse("broadcasts: segment not found", i18n.ErrorsBroadcastSegmentNotFound)
+	// ErrAudienceUncountable: Schedule cannot count the Recipients of the Broadcast (ADR 0149), since
+	// the Condition it copied no longer compiles (ErrNoAudience). Its plan would fail it, so it is
+	// not scheduled; the refusal names the reason.
+	ErrAudienceUncountable = validation.Refuse("broadcasts: the audience cannot be counted", i18n.ErrorsBroadcastAudienceUncountable)
 	// ErrSegmentArchived: a draft leaving draft, or a write that sets the Segment, names an archived
 	// Segment, which takes no part in new work (ADR 0100); the refusal names it.
 	ErrSegmentArchived = validation.Refuse("broadcasts: segment archived", i18n.ErrorsBroadcastSegmentArchived)

@@ -18,13 +18,15 @@ import (
 // messages rather than stored on it (Stats). The view of one Broadcast (Get, Send) adds its Progress
 // while it is sending (ADR 0023); a list leaves it out, as it costs a query per sending row. The
 // view a save returns (Create, Update) adds the lint warnings of its email content (ADR 0040),
-// advice for the author that never blocks the save.
+// advice for the author that never blocks the save. The view Schedule returns adds the Recipients
+// the Broadcast would take at that moment (ADR 0149).
 type View struct {
 	*ent.Broadcast
 
-	Stats    Stats
-	Progress *Progress
-	Warnings []emailrender.Finding
+	Stats      Stats
+	Progress   *Progress
+	Warnings   []emailrender.Finding
+	Recipients *int
 }
 
 // Views are the Module's operations answered with the View: the figures, the Progress and the lint
@@ -94,13 +96,19 @@ func (v *Views) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (Vi
 	return v.detailed(ctx, s, b)
 }
 
-// Schedule schedules a draft or scheduled Broadcast at when (Module.Schedule) and returns its view.
+// Schedule schedules a draft or scheduled Broadcast at when (Module.Schedule) and returns its view,
+// with the Recipients it would take at that moment.
 func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (View, error) {
-	b, err := v.m.Schedule(ctx, s, id, revision, when)
+	scheduled, err := v.m.Schedule(ctx, s, id, revision, when)
 	if err != nil {
 		return View{}, err
 	}
-	return v.figured(ctx, s, b)
+	view, err := v.figured(ctx, s, scheduled.Broadcast)
+	if err != nil {
+		return View{}, err
+	}
+	view.Recipients = &scheduled.Recipients
+	return view, nil
 }
 
 // Archive puts a draft, sent or failed Broadcast aside (Module.Archive) and returns its view: its

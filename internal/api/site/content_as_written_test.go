@@ -39,8 +39,9 @@ func TestSiteStoresBodiesAsWritten(t *testing.T) {
 	assert.Equal(t, `<img src="https://example.com/a.png" onerror="fallback()">{{ first_name }}`, updated.Body)
 
 	bc, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "As written",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(writtenBody)}),
+		Name:      "As written",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Body: siteapi.NewOptString(writtenBody)}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.Equal(t, writtenBody, testhelper.SiteEmailOf(bc).Body)

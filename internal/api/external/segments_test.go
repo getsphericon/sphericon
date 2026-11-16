@@ -67,6 +67,37 @@ func TestExternalSegmentsWrite(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 }
 
+// With a Channel the preview also counts the Recipients a Broadcast there would take now (ADR
+// 0149): once one paying Contact is suppressed and another unsubscribed from broadcasts, the match
+// stays and the Recipients drop by those two. Without a Channel it answers the match alone.
+func TestExternalSegmentsPreviewCountsTheRecipientsOfABroadcast(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := t.Context()
+	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
+	paying := &externalapi.PreviewSegmentInput{
+		Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, `{"kind":"group","combinator":"or","rules":[`+
+			`{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"},`+
+			`{"kind":"rule","field":"custom:plan","operator":"eq","value":"team"}]}`)),
+		Channel: externalapi.NewOptBroadcastChannel(externalapi.BroadcastChannelEmail),
+	}
+	before, err := c.SegmentsPreview(ctx, paying)
+	require.NoError(t, err)
+	require.True(t, before.Recipients.Set, "a Channel asks for the recipients")
+
+	env.SuppressDestination(ctx, fixtures.ContactLiamEmail)
+	env.UnsubscribeFromBroadcasts(ctx, fixtures.ContactEmmaEmail)
+	after, err := c.SegmentsPreview(ctx, paying)
+	require.NoError(t, err)
+	alone, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: paying.Condition})
+	require.NoError(t, err)
+
+	wantRecipients := before.Recipients.Value - 2
+	assert.Equal(t, before.Count, after.Count, "the Condition still matches both")
+	assert.Equal(t, wantRecipients, after.Recipients.Value, "the suppressed and the unsubscribed Contact are no Recipients")
+	assert.Equal(t, after.Count, alone.Count)
+	assert.False(t, alone.Recipients.Set, "no Channel, no recipients")
+}
+
 // Preview matches the segments module's count for the same definition.
 func TestExternalSegmentsPreview(t *testing.T) {
 	env := testhelper.Setup(t)

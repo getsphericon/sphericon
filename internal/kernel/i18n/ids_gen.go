@@ -109,6 +109,7 @@ var (
 	ErrorsBrandkitNotSaved                                = ID{key: "errors.brandkit_not_saved"}
 	ErrorsBrandkitRevisionChanged                         = ID{key: "errors.brandkit_revision_changed"}
 	ErrorsBroadcastArchived                               = ID{key: "errors.broadcast_archived"}
+	ErrorsBroadcastAudienceUncountable                    = ID{key: "errors.broadcast_audience_uncountable"}
 	ErrorsBroadcastChannelFixed                           = ID{key: "errors.broadcast_channel_fixed"}
 	ErrorsBroadcastChannelNoIntegration                   = ID{key: "errors.broadcast_channel_no_integration"}
 	ErrorsBroadcastFromNotVerified                        = ID{key: "errors.broadcast_from_not_verified"}

@@ -27,6 +27,7 @@ func TestExternalTelegramBroadcastIsCreatedEditedAndReportedWithoutOpenOrDeliver
 		Name:          "News",
 		Content:       testhelper.ExternalTelegram("Hello <b>{{ first_name }}</b>"),
 		IntegrationId: externalapi.NewOptNilEntityId(entityIDString(int64(bot.Integration.ID))),
+		SegmentId:     externalapi.NilEntityId{Null: true},
 	})
 	require.NoError(t, err)
 	read, err := c.BroadcastsUpdate(ctx, &externalapi.UpdateBroadcastInput{Revision: externalapi.Revision(env.BroadcastRevision(ctx, t, int64(made.ID))), Content: testhelper.ExternalTelegramEdit("Edited")},
@@ -53,6 +54,7 @@ func TestExternalTelegramBroadcastScheduleIsRefusedForARouteThatCannotSendAndFor
 	create := func(text string, integrationID int64) externalapi.EntityId {
 		in := &externalapi.CreateBroadcastInput{
 			Name: "News", Content: testhelper.ExternalTelegram(text), IntegrationId: externalapi.NewOptNilEntityId(entityIDString(integrationID)),
+			SegmentId: externalapi.NilEntityId{Null: true},
 		}
 		b, err := c.BroadcastsCreate(ctx, in)
 		require.NoError(t, err)

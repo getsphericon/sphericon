@@ -252,7 +252,7 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadca
 			return broadcastsCreateInput, err
 		}
 		broadcastsCreateInput.Content = broadcastsContentInput
-		broadcastsCreateInput.SegmentID = nilEntityIDPtrIn((*source).SegmentId)
+		broadcastsCreateInput.SegmentID = requiredNilEntityIDPtrIn((*source).SegmentId)
 		broadcastsCreateInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
 	return broadcastsCreateInput, nil

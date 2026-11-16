@@ -21,8 +21,9 @@ func TestSiteBroadcastHasTheChannelOfItsContent(t *testing.T) {
 	ctx := t.Context()
 
 	created, err := c.SiteBroadcastsCreate(ctx, &siteapi.CreateBroadcastInput{
-		Name:    "Launch",
-		Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
+		Name:      "Launch",
+		Content:   testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{Subject: siteapi.NewOptString("Hello")}),
+		SegmentId: siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	res := created
@@ -41,7 +42,7 @@ func TestSiteBroadcastCreateWithoutAChannelIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	before := env.DB.Broadcast.Query().CountX(ctx)
-	in := &siteapi.CreateBroadcastInput{Name: "No channel", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{})}
+	in := &siteapi.CreateBroadcastInput{Name: "No channel", Content: testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}), SegmentId: siteapi.NilEntityId{Null: true}}
 	params := siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	noContent := env.SiteActorVia(t, fixtures.OwnerJohnEmail, testhelper.EditBody(func(body map[string]any) {
@@ -72,6 +73,7 @@ func TestSiteBroadcastRefusesAnIntegrationOfAnotherChannel(t *testing.T) {
 		Name:          "Through SMS",
 		Content:       testhelper.SiteEmail(siteapi.EmailBroadcastContentInput{}),
 		IntegrationId: sms,
+		SegmentId:     siteapi.NilEntityId{Null: true},
 	}, siteapi.SiteBroadcastsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	_, updated := c.SiteBroadcastsUpdate(ctx, &siteapi.UpdateBroadcastInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(idStr(fixtures.BroadcastDraftID)))), IntegrationId: sms},
 		siteapi.SiteBroadcastsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastDraftID)})

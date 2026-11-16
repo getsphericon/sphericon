@@ -38,8 +38,9 @@ func TestExternalBroadcastRefusesAPropertyTheContractDoesNotDeclare(t *testing.T
 			require.NoError(t, err)
 
 			_, err = edited.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-				Name:    "Typo",
-				Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hello")}),
+				Name:      "Typo",
+				Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{Subject: externalapi.NewOptString("Hello")}),
+				SegmentId: externalapi.NilEntityId{Null: true},
 			})
 
 			after, listErr := c.BroadcastsList(ctx, externalapi.BroadcastsListParams{})

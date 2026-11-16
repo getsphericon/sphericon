@@ -3622,10 +3622,8 @@ func (s *CreateBroadcastInput) encodeFields(e *jx.Encoder) {
 		s.Content.Encode(e)
 	}
 	{
-		if s.SegmentId.Set {
-			e.FieldStart("segmentId")
-			s.SegmentId.Encode(e)
-		}
+		e.FieldStart("segmentId")
+		s.SegmentId.Encode(e)
 	}
 	{
 		if s.IntegrationId.Set {
@@ -3672,8 +3670,8 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"content\"")
 			}
 		case "segmentId":
+			requiredBitSet[0] |= 1 << 2
 			if err := func() error {
-				s.SegmentId.Reset()
 				if err := s.SegmentId.Decode(d); err != nil {
 					return err
 				}
@@ -3701,7 +3699,7 @@ func (s *CreateBroadcastInput) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -19903,6 +19901,12 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
+		if s.Recipients.Set {
+			e.FieldStart("recipients")
+			s.Recipients.Encode(e)
+		}
+	}
+	{
 		if s.SentAt.Set {
 			e.FieldStart("sentAt")
 			s.SentAt.Encode(e)
@@ -19944,7 +19948,7 @@ func (s *SiteBroadcastResource) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfSiteBroadcastResource = [18]string{
+var jsonFieldsNameOfSiteBroadcastResource = [19]string{
 	0:  "id",
 	1:  "name",
 	2:  "channel",
@@ -19955,14 +19959,15 @@ var jsonFieldsNameOfSiteBroadcastResource = [18]string{
 	7:  "status",
 	8:  "holdReason",
 	9:  "scheduledAt",
-	10: "sentAt",
-	11: "failedAt",
-	12: "stats",
-	13: "progress",
-	14: "archivedAt",
-	15: "revision",
-	16: "createdAt",
-	17: "updatedAt",
+	10: "recipients",
+	11: "sentAt",
+	12: "failedAt",
+	13: "stats",
+	14: "progress",
+	15: "archivedAt",
+	16: "revision",
+	17: "createdAt",
+	18: "updatedAt",
 }
 
 // Decode decodes SiteBroadcastResource from json.
@@ -20083,6 +20088,16 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"scheduledAt\"")
 			}
+		case "recipients":
+			if err := func() error {
+				s.Recipients.Reset()
+				if err := s.Recipients.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"recipients\"")
+			}
 		case "sentAt":
 			if err := func() error {
 				s.SentAt.Reset()
@@ -20104,7 +20119,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"failedAt\"")
 			}
 		case "stats":
-			requiredBitSet[1] |= 1 << 4
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				if err := s.Stats.Decode(d); err != nil {
 					return err
@@ -20134,7 +20149,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"archivedAt\"")
 			}
 		case "revision":
-			requiredBitSet[1] |= 1 << 7
+			requiredBitSet[2] |= 1 << 0
 			if err := func() error {
 				if err := s.Revision.Decode(d); err != nil {
 					return err
@@ -20144,7 +20159,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"revision\"")
 			}
 		case "createdAt":
-			requiredBitSet[2] |= 1 << 0
+			requiredBitSet[2] |= 1 << 1
 			if err := func() error {
 				if err := s.CreatedAt.Decode(d); err != nil {
 					return err
@@ -20154,7 +20169,7 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"createdAt\"")
 			}
 		case "updatedAt":
-			requiredBitSet[2] |= 1 << 1
+			requiredBitSet[2] |= 1 << 2
 			if err := func() error {
 				if err := s.UpdatedAt.Decode(d); err != nil {
 					return err
@@ -20174,8 +20189,8 @@ func (s *SiteBroadcastResource) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b10001111,
-		0b10010000,
-		0b00000011,
+		0b00100000,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

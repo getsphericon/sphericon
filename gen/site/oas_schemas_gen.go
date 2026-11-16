@@ -2620,8 +2620,9 @@ type CreateBroadcastInput struct {
 	// broadcast is never converted to another Channel. An SMS broadcast in a Workspace with no SMS
 	// integration is refused with 422.
 	Content BroadcastContentInput `json:"content"`
-	// Target segment; null or omitted means all contacts. An archived segment is refused with 422.
-	SegmentId OptNilEntityId `json:"segmentId"`
+	// Who the broadcast goes to, always named (ADR 0149): a segment, or null for all contacts, chosen as
+	// such. A body without it is refused with 400. An archived segment is refused with 422.
+	SegmentId NilEntityId `json:"segmentId"`
 	// Sending integration, of the broadcast's Channel; null or omitted means the Channel's default. An
 	// archived integration, or one of another Channel, is refused with 422.
 	IntegrationId OptNilEntityId `json:"integrationId"`
@@ -2638,7 +2639,7 @@ func (s *CreateBroadcastInput) GetContent() BroadcastContentInput {
 }
 
 // GetSegmentId returns the value of SegmentId.
-func (s *CreateBroadcastInput) GetSegmentId() OptNilEntityId {
+func (s *CreateBroadcastInput) GetSegmentId() NilEntityId {
 	return s.SegmentId
 }
 
@@ -2658,7 +2659,7 @@ func (s *CreateBroadcastInput) SetContent(val BroadcastContentInput) {
 }
 
 // SetSegmentId sets the value of SegmentId.
-func (s *CreateBroadcastInput) SetSegmentId(val OptNilEntityId) {
+func (s *CreateBroadcastInput) SetSegmentId(val NilEntityId) {
 	s.SegmentId = val
 }
 
@@ -14018,6 +14019,11 @@ type SiteBroadcastResource struct {
 	HoldReason OptNilHoldReason `json:"holdReason"`
 	// When the broadcast is scheduled to send.
 	ScheduledAt OptNilTimestamp `json:"scheduledAt"`
+	// The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with
+	// a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by
+	// Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from
+	// the condition copied then (ADR 0065).
+	Recipients OptInt32 `json:"recipients"`
 	// When the broadcast finished sending.
 	SentAt OptNilTimestamp `json:"sentAt"`
 	// When the broadcast failed.
@@ -14086,6 +14092,11 @@ func (s *SiteBroadcastResource) GetHoldReason() OptNilHoldReason {
 // GetScheduledAt returns the value of ScheduledAt.
 func (s *SiteBroadcastResource) GetScheduledAt() OptNilTimestamp {
 	return s.ScheduledAt
+}
+
+// GetRecipients returns the value of Recipients.
+func (s *SiteBroadcastResource) GetRecipients() OptInt32 {
+	return s.Recipients
 }
 
 // GetSentAt returns the value of SentAt.
@@ -14176,6 +14187,11 @@ func (s *SiteBroadcastResource) SetHoldReason(val OptNilHoldReason) {
 // SetScheduledAt sets the value of ScheduledAt.
 func (s *SiteBroadcastResource) SetScheduledAt(val OptNilTimestamp) {
 	s.ScheduledAt = val
+}
+
+// SetRecipients sets the value of Recipients.
+func (s *SiteBroadcastResource) SetRecipients(val OptInt32) {
+	s.Recipients = val
 }
 
 // SetSentAt sets the value of SentAt.

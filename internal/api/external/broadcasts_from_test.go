@@ -23,8 +23,9 @@ func TestExternalBroadcastFromEmailMustBeAVerifiedSendingDomain(t *testing.T) {
 
 	create := func(from string) error {
 		_, err := c.BroadcastsCreate(ctx, &externalapi.CreateBroadcastInput{
-			Name:    "from check",
-			Content: testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(from))}),
+			Name:      "from check",
+			Content:   testhelper.ExternalEmail(externalapi.EmailBroadcastContentInput{FromEmail: externalapi.NewOptNilEmailAddress(externalapi.EmailAddress(from))}),
+			SegmentId: externalapi.NilEntityId{Null: true},
 		})
 		return err
 	}
