@@ -19,5 +19,5 @@ using TypeSpec.Http;
 @info(#{ version: "1.0.0" })
 @server("http://localhost:3400/service", "Internal listener")
 @useAuth(BearerAuth)
-@everyOperationDeclares("scopes")
+@everyOperationDeclares("scopes", "problem")
 namespace Sphericon;

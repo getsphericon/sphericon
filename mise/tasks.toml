@@ -862,18 +862,12 @@ if [ -n "${usage_registry:-}" ]; then helm push "$pkg" "$usage_registry"; fi
 '''
 
 ["check:openapi"]
-description = "vacuum lints the generated OpenAPI documents (the recommended ruleset, with the rules of vacuum.yaml for the surfaces our servers answer; a finding of severity error fails)"
-# The Telemetry document is the contract of a receiver outside this repository (ADR 0032): the
-# rules about what our servers answer do not apply to it.
+description = "vacuum lints the generated OpenAPI documents with its recommended ruleset (a finding of severity error fails); the rules of our own contract are checked at tsp compile (typespec/lib)"
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 for f in openapi/*.openapi.json; do
-  if [ "$f" = openapi/telemetry.openapi.json ]; then
-    vacuum lint --no-banner --silent --no-style --fail-severity error "$f"
-  else
-    vacuum lint --no-banner --silent --no-style --ruleset vacuum.yaml --fail-severity error "$f"
-  fi
+  vacuum lint --no-banner --silent --no-style --fail-severity error "$f"
 done
 '''
 

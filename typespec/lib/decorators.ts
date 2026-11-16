@@ -12,6 +12,7 @@ import {
   getErrorsDocData,
   getLocationContext,
   getReturnsDocData,
+  getSourceLocation,
   getSummary,
   isArrayModelType,
   navigateProgram,
@@ -42,6 +43,13 @@ export const $lib = createTypeSpecLibrary({
       severity: 'error',
       messages: {
         default: paramMessage`\`${'key'}\` is written by @${'decorator'}: declare it with the decorator, not a raw @extension`,
+      },
+    },
+    'raw-additional-properties': {
+      severity: 'error',
+      messages: {
+        default:
+          'A raw @extension("additionalProperties") decides on its own whether a model takes unknown properties: a surface closes its request bodies with @closedRequestBodies, a map whose keys are data is declared @openMap, and every other model stays open (ADR 0148)',
       },
     },
     'declared-twice': {
@@ -90,6 +98,13 @@ export const $lib = createTypeSpecLibrary({
       messages: {
         default:
           'The operation addresses a Workspace and declares no Permissions: give it @requiresPermissions, `#[]` for any member',
+      },
+    },
+    'problem-missing': {
+      severity: 'error',
+      messages: {
+        default:
+          'The operation does not answer its errors with the Problem as its default response: return its success type `| Problem` (ADR 0103)',
       },
     },
     'implementation-in-description': {
@@ -149,6 +164,12 @@ const extensions = {
 } as const
 
 type DecoratorName = keyof typeof extensions
+
+/**
+ * Whether a model takes a property it does not declare: decided by `@closedRequestBodies` and
+ * `@openMap` (ADR 0148), never by a raw `@extension`.
+ */
+const additionalProperties = 'additionalProperties'
 
 /** The decorator that writes each extension, for the message on a raw `@extension`. */
 const decoratorOf = new Map<string, string>(
@@ -349,20 +370,22 @@ function isSpreadCopy(member: EnumMember) {
   return member.node?.parent !== member.enum.node
 }
 
-/** What every operation of a surface must declare, by surface namespace. */
+/** A rule of `@everyOperationDeclares`: what every operation of a surface declares. */
+type Rule = 'scopes' | 'workspacePermissions' | 'problem'
+
+/** The rules of each surface, by surface namespace. */
 const rulesKey = Symbol('sphericon.everyOperationDeclares')
 
 /**
  * `@everyOperationDeclares`: what each operation of the surface declares. `scopes`: its scopes
  * (/api, /service). `workspacePermissions` (/site): an operation of a Workspace declares its
- * Permissions, and only it declares Permissions or `@allowedWhileWithheld`.
+ * Permissions, and only it declares Permissions or `@allowedWhileWithheld`. `problem`: it answers
+ * its errors with the Problem as its `default` response (ADR 0103).
  */
-function $everyOperationDeclares(
-  context: DecoratorContext,
-  target: Namespace,
-  what: 'scopes' | 'workspacePermissions',
-) {
-  context.program.stateMap(rulesKey).set(target, what)
+function $everyOperationDeclares(context: DecoratorContext, target: Namespace, ...rules: Rule[]) {
+  const surfaces = context.program.stateMap(rulesKey)
+  const declared: Set<Rule> = surfaces.get(target) ?? new Set()
+  surfaces.set(target, declared.union(new Set(rules)))
 }
 
 /** The surfaces whose request bodies are closed, and the maps declared open. */
@@ -390,7 +413,7 @@ function $closed(context: DecoratorContext, target: Model) {
 
 /** Writes the closing on the model, for `$closed` and for `closeModel`. */
 function writeClosed(program: Program, model: Model) {
-  setExtension(program, model, 'additionalProperties', false)
+  setExtension(program, model, additionalProperties, false)
 }
 
 export const $decorators = {
@@ -441,8 +464,8 @@ function visitDeclarations(program: Program, visit: (type: Decorated) => void) {
 }
 
 /**
- * Refuses a raw `@extension` that writes one of the decorators' keys, wherever it stands (a
- * template's operation reports once, at the template).
+ * Refuses a raw `@extension` that writes one of the decorators' keys or `additionalProperties`,
+ * wherever it stands (a template's operation reports once, at the template).
  */
 function checkRawExtensions(program: Program) {
   const seen = new Set<unknown>()
@@ -456,15 +479,16 @@ function checkRawExtensions(program: Program) {
         continue
       }
       const decorator = decoratorOf.get(key)
-      if (decorator === undefined || seen.has(application.node)) {
+      if ((decorator === undefined && key !== additionalProperties) || seen.has(application.node)) {
         continue
       }
       seen.add(application.node)
-      report(program, {
-        code: 'raw-extension',
-        format: { key, decorator },
-        target: application.node ?? type,
-      })
+      const target = application.node ?? type
+      if (decorator === undefined) {
+        report(program, { code: 'raw-additional-properties', target })
+      } else {
+        report(program, { code: 'raw-extension', format: { key, decorator }, target })
+      }
     }
   }
   visitDeclarations(program, visit)
@@ -548,8 +572,9 @@ function writtenOn(type: Type, read: (type: Type) => string | undefined): Type {
  */
 function checkDescriptions(program: Program) {
   const seen = new Map<string, Set<unknown>>()
+  const kinds = Object.entries(descriptions)
   visitDeclarations(program, (type) => {
-    for (const [kind, describe] of Object.entries(descriptions)) {
+    for (const [kind, describe] of kinds) {
       const read = (t: Type) => describe(program, t)
       const text = read(type)
       const word = text === undefined ? undefined : implementationWord(text)
@@ -570,38 +595,74 @@ function checkDescriptions(program: Program) {
   })
 }
 
-/** Checks what every operation of a surface marked with `@everyOperationDeclares` declares. */
-function checkSurfaces(program: Program, services: HttpService[]) {
-  const rules = program.stateMap(rulesKey)
-  for (const service of services) {
-    const what = rules.get(service.namespace)
-    if (what === undefined) {
-      continue
-    }
-    for (const httpOperation of service.operations) {
-      const op = httpOperation.operation
-      const declared = getExtensions(program, op)
-      if (what === 'scopes') {
-        if (!declared.has(extensions.requiresScopes)) {
-          report(program, { code: 'scopes-missing', target: op })
-        }
-        continue
-      }
-      const ofWorkspace = httpOperation.parameters.parameters.some(
+/** A diagnostic of a rule of `@everyOperationDeclares`, reported at the operation. */
+type Finding =
+  | { code: 'scopes-missing' | 'permissions-missing' | 'problem-missing' }
+  | { code: 'outside-workspace'; format: { decorator: string } }
+
+/** The check of a rule: what the operation fails it with. */
+type Check = (httpOperation: HttpOperation) => Finding[]
+
+/** The check of each rule. */
+function checksOf(program: Program): Record<Rule, Check> {
+  const [problem] = program.resolveTypeReference('Sphericon.Problem')
+  return {
+    // Every operation declares its scopes, `#[]` for none.
+    scopes: ({ operation }) =>
+      getExtensions(program, operation).has(extensions.requiresScopes)
+        ? []
+        : [{ code: 'scopes-missing' }],
+    // An operation with `workspaceId` in its path declares its Permissions, and no other operation
+    // declares Permissions or `@allowedWhileWithheld`.
+    workspacePermissions: ({ operation, parameters }) => {
+      const declared = getExtensions(program, operation)
+      const ofWorkspace = parameters.parameters.some(
         (p) => p.type === 'path' && p.name === workspaceParam,
       )
       if (ofWorkspace) {
-        if (!declared.has(extensions.requiresPermissions)) {
-          report(program, { code: 'permissions-missing', target: op })
-        }
-        continue
+        return declared.has(extensions.requiresPermissions) ? [] : [{ code: 'permissions-missing' }]
       }
-      for (const decorator of ['requiresPermissions', 'allowedWhileWithheld'] as const) {
-        if (declared.has(extensions[decorator])) {
-          report(program, { code: 'outside-workspace', format: { decorator }, target: op })
-        }
-      }
+      return (['requiresPermissions', 'allowedWhileWithheld'] as const)
+        .filter((decorator) => declared.has(extensions[decorator]))
+        .map((decorator) => ({ code: 'outside-workspace', format: { decorator } }))
+    },
+    // Every operation answers its errors with the Problem (`common/errors.tsp`), an `@error` model
+    // with no status code, which the emitter writes as the `default` response (ADR 0103).
+    problem: ({ responses }) =>
+      responses.some((response) => response.statusCodes === '*' && response.type === problem)
+        ? []
+        : [{ code: 'problem-missing' }],
+  }
+}
+
+/**
+ * Checks what every operation of a surface marked with `@everyOperationDeclares` declares. An
+ * operation of a template reports once, at the template, however many surface operations it
+ * becomes.
+ */
+function checkSurfaces(program: Program, services: HttpService[]) {
+  const surfaces = program.stateMap(rulesKey)
+  const checks = checksOf(program)
+  const findings = services.flatMap((service) => {
+    const rules: Set<Rule> = surfaces.get(service.namespace) ?? new Set()
+    return service.operations.flatMap((httpOperation) =>
+      [...rules].flatMap((rule) =>
+        checks[rule](httpOperation).map((finding) => ({
+          finding,
+          operation: httpOperation.operation,
+        })),
+      ),
+    )
+  })
+  const seen = new Set<string>()
+  for (const { finding, operation } of findings) {
+    const at = getSourceLocation(operation)
+    const key = `${JSON.stringify(finding)}:${at.file.path}:${at.pos}`
+    if (seen.has(key)) {
+      continue
     }
+    seen.add(key)
+    report(program, { ...finding, target: operation })
   }
 }
 

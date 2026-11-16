@@ -570,7 +570,7 @@ func (s *TelemetryReport) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"integrationKinds\"")
 			}
 		default:
-			return errors.Errorf("unexpected field %q", k)
+			return d.Skip()
 		}
 		return nil
 	}); err != nil {
