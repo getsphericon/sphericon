@@ -126,8 +126,9 @@ func TestMCPScheduleWithoutAPostalAddressIsRefusedWithItsCode(t *testing.T) {
 	res := call(t, s, "broadcasts_schedule", args)
 
 	require.True(t, res.IsError)
-	assert.Contains(t, text(t, res), "HTTP 409 Conflict")
-	assert.Contains(t, text(t, res), `"postal_address_required"`)
+	answer := text(t, res)
+	assert.Contains(t, answer, "HTTP 409 Conflict")
+	assert.Contains(t, answer, `"postal_address_required"`)
 	status := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastDraftID).Status
 	assert.Equal(t, broadcast.StatusDraft, status)
 }

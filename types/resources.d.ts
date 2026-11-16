@@ -1484,6 +1484,7 @@ export default interface Resources {
     },
     "postalAddressNotice": {
       "link": "Set the postal address",
+      "loadError": "Could not read the postal address",
       "text": "This workspace has no postal address, which every marketing email carries in its footer: it can't be scheduled, sent or published until one is set. A test send still goes out."
     },
     "profile": {

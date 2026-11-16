@@ -73,7 +73,8 @@ func TestSiteClearingThePostalAddressIsRefusedWhileMarketingEmailIsArmed(t *test
 	_, err := setPostalAddress(t, c, fixtures.AcmePublicID, " \n ")
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
-	assert.Contains(t, usedByIDs(refused), idStr(fixtures.BroadcastScheduledID))
+	named := usedByIDs(refused)
+	assert.Contains(t, named, idStr(fixtures.BroadcastScheduledID))
 	after := env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).PostalAddress
 	assert.Equal(t, before, after)
 }
