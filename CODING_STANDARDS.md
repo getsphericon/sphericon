@@ -94,10 +94,16 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   against a constant generated into `internal/kernel/bounds`: a line of `boundgen.Bounds` names the bound,
   where the contract declares it and its owner, the ent entity whose table holds the field or the package
   that owns it when no column does. The owner checks every write through the kernel's
-  `validation.Length`, `Range`, `Items` and `Pattern`; there is no Go copy of a bound, so `check:copies`
-  reads no Go constant. `TestEveryBoundIsCheckedByItsOwner` (`tools/analyzers/entrywrite`) refuses a
-  listed bound that no non-test code of its owner uses. A write that gains a bounded field, or a bound
-  the contract gains, adds its line to the list.
+  `validation.Length`, `Range`, `Min`, `Items` and `Pattern`; there is no Go copy of a bound, so
+  `check:copies` reads no Go constant. `TestEveryBoundIsCheckedByItsOwner` (`tools/analyzers/entrywrite`)
+  refuses a listed bound that no non-test code of its owner uses. Every bound of every OpenAPI document on
+  what a client sends (a request body, a parameter, the schemas they reach) is accounted for: a line of
+  `boundgen.Bounds` (lines that share a name are one bound declared in several places, such as a field
+  of the site and the external input) or of `boundgen.TransportOnly`, which names a bound no write meets
+  (a parameter of a read, the form of an identifier ogen parses, a report the Instance only sends) and
+  says why. `mise run generate` fails and names every bound neither list accounts for, and every
+  `TransportOnly` line whose bound the contract no longer declares. A write that gains a bounded field,
+  or a bound the contract gains, adds its line to one of the lists.
 - **Rule 6, `one-way-to-record-audit` (ast-grep).** An explicit Audit entry (one no audited write of the
   scoped client produces) is recorded only by `events.RecordAudit(ctx, pub, entry)` in the transaction of
   the change: a call of `RecordAudit` on any other receiver is a finding. Package `events` calls it

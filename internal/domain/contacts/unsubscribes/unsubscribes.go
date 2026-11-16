@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -37,9 +38,13 @@ var (
 
 // Destination is raw as the opt-outs of channel store it, or its refusal: an address in its Email
 // case that is one bare address (validation.Email), a phone number in E.164 (SMSNumber), or a
-// Telegram user id; blank is ErrDestinationEmpty, anything else ErrDestinationInvalid. Add applies
+// Telegram user id; one longer than the contract's ConsentDestination is refused, blank is
+// ErrDestinationEmpty, anything else ErrDestinationInvalid. Add applies
 // it to every opt-out, and a caller that reads the opt-out back by its Destination uses it too.
 func Destination(channel channels.Channel, raw string) (string, error) {
+	if err := validation.MaxLength(fieldname.Destination, raw, bounds.ConsentDestinationMaxLength); err != nil {
+		return "", err
+	}
 	switch channel {
 	case channels.SMS:
 		return SMSNumber(raw)

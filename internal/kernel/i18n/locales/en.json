@@ -105,6 +105,7 @@
   "errors.too_short": "{{.Field}} must be at least {{.Min}} characters",
   "errors.too_long": "{{.Field}} must be at most {{.Max}} characters",
   "errors.out_of_range": "{{.Field}} must be from {{.Min}} to {{.Max}}",
+  "errors.too_small": "{{.Field}} must be at least {{.Min}}",
   "errors.too_many": "{{.Field}} holds at most {{.Max}} items",
   "errors.too_few": "{{.Field}} needs at least {{.Min}} items",
   "errors.pattern_mismatch": "{{.Field}} has characters or a form it may not have",

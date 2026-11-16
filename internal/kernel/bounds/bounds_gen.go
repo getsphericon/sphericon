@@ -71,13 +71,13 @@ const (
 )
 
 // HTTPCallHeaders are the headers of an http Action or step.
-// From site SiteRuleAction.headers.
+// From site SiteRuleActionInput.headers, external RuleActionInput.headers, site SiteAutomationStepInput.headers, external AutomationStepInput.headers.
 const (
 	HTTPCallHeadersMaxItems = 5
 )
 
 // ContactCity is a Contact's city.
-// From external UpsertContactInput.city.
+// From external UpsertContactInput.city, external CreateContactInput.city, external UpdateContactInput.city, site SiteCreateContactInput.city, site SiteUpdateContactInput.city.
 const (
 	ContactCityMaxLength = 255
 )
@@ -122,7 +122,7 @@ const (
 )
 
 // SignupSurveyOther is the text of a Sign-up survey answer's `other` choice.
-// From site SiteSignupSurveyInput.roleOther.
+// From site SiteSignupSurveyInput.roleOther, site SiteSignupSurveyInput.companySizeOther, site SiteSignupSurveyInput.mainGoalOther, site SiteSignupSurveyInput.heardFromOther.
 const (
 	SignupSurveyOtherMaxLength = 100
 )
@@ -162,21 +162,21 @@ const (
 )
 
 // ConsentWording is the wording a person consented to.
-// From site ConsentEvidence.wording.
+// From site ConsentEvidence.wording, external CreateConfirmationInput.wording.
 const (
 	ConsentWordingMinLength = 1
 	ConsentWordingMaxLength = 2000
 )
 
 // ConsentSource is where a person consented.
-// From site ConsentEvidence.source.
+// From site ConsentEvidence.source, external CreateConfirmationInput.source.
 const (
 	ConsentSourceMinLength = 1
 	ConsentSourceMaxLength = 500
 )
 
 // ConsentBrand is the brand a person consented to hear from.
-// From site ConsentEvidence.brand.
+// From site ConsentEvidence.brand, external CreateConfirmationInput.brand.
 const (
 	ConsentBrandMinLength = 1
 	ConsentBrandMaxLength = 255
@@ -204,15 +204,116 @@ const (
 )
 
 // TelegramButtons are the buttons of a Telegram message.
-// From site TelegramBroadcastContentInput.buttons.
+// From site TelegramBroadcastContentInput.buttons, site SiteAutomationStepInput.buttons, external AutomationStepInput.buttons.
 const (
 	TelegramButtonsMaxItems = 8
 )
 
 // TelegramUnsubscribeButton is the label of a Telegram message's unsubscribe button.
-// From site TelegramBroadcastContentInput.unsubscribeButton.
+// From site TelegramBroadcastContentInput.unsubscribeButton, site SiteAutomationStepInput.unsubscribeButton, external AutomationStepInput.unsubscribeButton.
 const (
 	TelegramUnsubscribeButtonMaxLength = 64
+)
+
+// VisitorID is the tracker's id of a Visitor, the device an Event, an Identify or a start link names.
+// From collect CollectEventInput.visitorId, collect CollectIdentifyInput.visitorId, collect CollectTelegramStartLinkInput.visitorId.
+const (
+	VisitorIDMinLength = 1
+	VisitorIDMaxLength = 255
+)
+
+// CollectEventAction is the action of an Event the tracker collects.
+// From collect CollectEventInput.action.
+const (
+	CollectEventActionMinLength = 1
+	CollectEventActionMaxLength = 255
+)
+
+// ClientEventID is a client's own id of an Event, which makes a retry of it a no-op.
+// From collect CollectEventInput.clientEventId, external EventInput.clientEventId.
+const (
+	ClientEventIDMinLength = 1
+	ClientEventIDMaxLength = 255
+)
+
+// EventBatch are the Events one request of the external API records.
+// From external RecordEventsBatchInput.events.
+const (
+	EventBatchMinItems = 1
+	EventBatchMaxItems = 1000
+)
+
+// ContactBatch are the Contacts one request of the external API upserts.
+// From external UpsertContactsInput.contacts.
+const (
+	ContactBatchMinItems = 1
+	ContactBatchMaxItems = 1000
+)
+
+// IdentifyPhone is the phone an Identify of the tracker names its Contact by.
+// From collect CollectIdentifyInput.phone.
+const (
+	IdentifyPhoneMaxLength = 32
+)
+
+// IdentifySubjectID is the subject id an Identify of the tracker names its Contact by.
+// From collect CollectIdentifyInput.subjectId.
+const (
+	IdentifySubjectIDMaxLength = 255
+)
+
+// IdentifyTimeZone is the time zone the browser of an Identify reports.
+// From collect CollectIdentifyContext.timeZone.
+const (
+	IdentifyTimeZoneMaxLength = 64
+)
+
+// IdentifyLocale is the language the browser of an Identify reports.
+// From collect CollectIdentifyContext.locale.
+const (
+	IdentifyLocaleMaxLength = 35
+)
+
+// ConsentDestination is the address or phone a Consent fact (a Confirmation, a Suppression, an Unsubscribe) is about.
+// From external CreateConfirmationInput.destination, external CreateSuppressionInput.destination, external CreateUnsubscribeInput.destination.
+const (
+	ConsentDestinationMaxLength = 320
+)
+
+// RuleTriggerEvents are the Event actions that fire a Rule.
+// From site SiteCreateRuleInput.triggerEvents, site SiteUpdateRuleInput.triggerEvents, external CreateRuleInput.triggerEvents, external UpdateRuleInput.triggerEvents.
+const (
+	RuleTriggerEventsMinItems = 1
+)
+
+// ConditionWithinDays is how many days back a condition leaf looks: an Event count's window or a date's.
+// From site SiteConditionEventLeafInput.withinDays, site SiteConditionDateWithinLeafInput.withinDays, external ConditionEventLeafInput.withinDays, external ConditionDateWithinLeafInput.withinDays.
+const (
+	ConditionWithinDaysMin = 1
+)
+
+// ConditionEventTimes is how many Events of an action a condition leaf counts.
+// From site SiteConditionEventLeafInput.times, external ConditionEventLeafInput.times.
+const (
+	ConditionEventTimesMin = 0
+)
+
+// CurrencyCode is an ISO 4217 currency code, a Workspace's reporting currency.
+// From site CurrencyCode.
+const (
+	CurrencyCodePattern = `^[A-Z]{3}$`
+)
+
+// RegionalFormat is the BCP 47 tag of how the app shows a User dates, times and numbers.
+// From site RegionalFormat.
+const (
+	RegionalFormatMaxLength = 35
+)
+
+// SuspensionReason is why a Workspace is suspended, which its owners are told.
+// From staffee StaffSuspendInput.reason.
+const (
+	SuspensionReasonMinLength = 1
 )
 
 // Owners names what checks each bound: an ent entity, whose owner writes the field, or the
@@ -271,4 +372,25 @@ var Owners = map[string][]string{
 	"PageSizeDefault":                    {"internal/kernel/pagination"},
 	"TelegramButtonsMaxItems":            {"internal/kernel/telegramrender"},
 	"TelegramUnsubscribeButtonMaxLength": {"internal/kernel/telegramrender"},
+	"VisitorIDMinLength":                 {"Visitor"},
+	"VisitorIDMaxLength":                 {"Visitor"},
+	"CollectEventActionMinLength":        {"internal/domain/contacts/visitors"},
+	"CollectEventActionMaxLength":        {"internal/domain/contacts/visitors"},
+	"ClientEventIDMinLength":             {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},
+	"ClientEventIDMaxLength":             {"internal/domain/contacts/visitors", "internal/domain/contacts/eventrecording"},
+	"EventBatchMinItems":                 {"internal/domain/contacts/eventrecording"},
+	"EventBatchMaxItems":                 {"internal/domain/contacts/eventrecording"},
+	"ContactBatchMinItems":               {"Contact"},
+	"ContactBatchMaxItems":               {"Contact"},
+	"IdentifyPhoneMaxLength":             {"internal/usecase/visitoridentification"},
+	"IdentifySubjectIDMaxLength":         {"internal/usecase/visitoridentification"},
+	"IdentifyTimeZoneMaxLength":          {"internal/usecase/visitoridentification"},
+	"IdentifyLocaleMaxLength":            {"internal/usecase/visitoridentification"},
+	"ConsentDestinationMaxLength":        {"Confirmation", "Suppression", "Unsubscribe"},
+	"RuleTriggerEventsMinItems":          {"Rule"},
+	"ConditionWithinDaysMin":             {"internal/domain/contacts/condition"},
+	"ConditionEventTimesMin":             {"internal/domain/contacts/condition"},
+	"CurrencyCodePattern":                {"Workspace"},
+	"RegionalFormatMaxLength":            {"User"},
+	"SuspensionReasonMinLength":          {"internal/domain/identity/suspension"},
 }

@@ -51,6 +51,9 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channe
 	if channel != channels.SMS {
 		return nil, ErrConfirmationChannel
 	}
+	if err := validation.MaxLength(fieldname.Destination, destination, bounds.ConsentDestinationMaxLength); err != nil {
+		return nil, err
+	}
 	number, err := unsubscribes.SMSNumber(destination)
 	if err != nil {
 		return nil, err

@@ -614,7 +614,7 @@ description = "openapi/{service,external,site,staff} (x-required-scopes, x-requi
 run = "go run ./cmd/scopegen"
 
 ["generate:bounds"]
-description = "openapi/{site,external,service} (the value bounds boundgen.Bounds lists) -> Go (internal/kernel/bounds)"
+description = "openapi/*.openapi.json (the value bounds boundgen.Bounds lists; fails on a bound of a client's input that neither Bounds nor TransportOnly accounts for) -> Go (internal/kernel/bounds) and the tracker's bounds.gen.ts"
 run = "go run ./cmd/boundgen"
 
 [generate]

@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entsuppression "github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/internal/infra/db"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -100,6 +101,9 @@ func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 }
 
 func add(ctx context.Context, s *ent.Scoped, e Entry) (bool, error) {
+	if err := validation.MaxLength(fieldname.Destination, e.Destination, bounds.ConsentDestinationMaxLength); err != nil {
+		return false, err
+	}
 	dest := emailcase.Of(e.Destination)
 	if dest == "" {
 		return false, ErrDestinationEmpty

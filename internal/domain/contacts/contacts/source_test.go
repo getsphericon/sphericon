@@ -24,7 +24,8 @@ func TestACreatedContactKeepsTheDoorItCameThrough(t *testing.T) {
 	require.NoError(t, err)
 	viaAPI, err := m.Upsert(context.Background(), acme, contact.SourceAPI, contacts.UpsertInput{Email: new("door-api@example.com")})
 	require.NoError(t, err)
-	batch := m.UpsertBatch(context.Background(), acme, contact.SourceAPI, []contacts.IntakeInput{{Email: new("door-batch@example.com")}})
+	batch, err := m.UpsertBatch(context.Background(), acme, contact.SourceAPI, []contacts.IntakeInput{{Email: new("door-batch@example.com")}})
+	require.NoError(t, err)
 	require.NoError(t, batch.Items[0].Err)
 
 	assert.Equal(t, contact.SourceManual, lo.FromPtr(byHand.Source))

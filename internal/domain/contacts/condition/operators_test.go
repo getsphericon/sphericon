@@ -137,9 +137,9 @@ func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
 		"a text operator":          {eventLeaf("signup", "eq", 1, 0), "unsupported operator"},
 		"no times":                 {withoutTimes, "times is required"},
 		"at least none":            {eventLeaf("signup", "atLeast", 0, 0), "atLeast takes times of 1 or more"},
-		"at most a negative count": {eventLeaf("signup", "atMost", -1, 0), "atMost takes times of 0 or more"},
-		"a zero window":            {zeroWindow, "withinDays must be 1 or more"},
-		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be 1 or more"},
+		"at most a negative count": {eventLeaf("signup", "atMost", -1, 0), "times must be at least 0"},
+		"a zero window":            {zeroWindow, "withinDays must be at least 1"},
+		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be at least 1"},
 	} {
 		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf), time.Now())
 		require.Error(t, err, name)

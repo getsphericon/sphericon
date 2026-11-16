@@ -92,6 +92,8 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	for i := range tooMany {
 		tooMany[i] = httpStep("https://hooks.example.com/x")
 	}
+	six := httpStep("https://hooks.example.com/x")
+	six.Headers = headers(6)
 
 	for name, steps := range map[string][]automationstep.Step{
 		"invalid json":      {invalidJSON},
@@ -100,6 +102,7 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 		"not an http url":   {notHTTP},
 		"a new step no url": {noURL},
 		"eleven steps":      tooMany,
+		"six headers":       {six},
 	} {
 		_, err := m.Create(ctx, acme, automations.CreateInput{Name: name, TriggerEvent: "signup", Steps: steps})
 		require.ErrorIs(t, err, automations.ErrInvalidStep, name)

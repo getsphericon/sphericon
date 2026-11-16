@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
@@ -17,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -96,6 +99,10 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		}
 		input.SubjectID, input.Email, input.Phone = p.SubjectID, p.Email, p.Phone
 	}
+	// The keys are checked as they are written: a proven Identify's are the token's.
+	if err := checkBounds(input); err != nil {
+		return err
+	}
 
 	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		core, traits := contacts.FromTraits(input.Traits)
@@ -136,6 +143,17 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		// Stitch: attach the device's earlier anonymous events onto the Contact.
 		return events.StitchVisitor(ctx, ts, visitorID, c.ID)
 	})
+}
+
+// checkBounds refuses the keys and the browser's guesses of an Identify that are longer than the
+// contract allows (bounds.IdentifyPhone, IdentifySubjectID, IdentifyTimeZone, IdentifyLocale).
+func checkBounds(input Input) error {
+	return validation.Fields(
+		validation.MaxLength(fieldname.Phone, lo.FromPtr(input.Phone), bounds.IdentifyPhoneMaxLength),
+		validation.MaxLength(fieldname.SubjectID, lo.FromPtr(input.SubjectID), bounds.IdentifySubjectIDMaxLength),
+		validation.MaxLength(fieldname.TimeZone, lo.FromPtr(input.TimeZone), bounds.IdentifyTimeZoneMaxLength),
+		validation.MaxLength(fieldname.Locale, lo.FromPtr(input.Locale), bounds.IdentifyLocaleMaxLength),
+	)
 }
 
 // StartLink issues the tracker's Telegram start link on the default bot. With an Identity token that

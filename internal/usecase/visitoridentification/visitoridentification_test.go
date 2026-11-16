@@ -3,9 +3,14 @@ package visitoridentification_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"maps"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 )
@@ -193,4 +200,47 @@ func TestIdentifyRefusesWhatCannotBeIdentified(t *testing.T) {
 	n, err := env.DB.Visitor.Query().Where(visitor.VisitorID("dev-x")).Count(ctx)
 	require.NoError(t, err)
 	assert.Zero(t, n, "a refused identify leaves no device behind")
+}
+
+// An Identify whose keys or browser guesses are longer than the contract allows is refused, every
+// such field named, and nothing is created.
+func TestIdentifyRefusesFieldsLongerThanTheContract(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+
+	err := testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, env.DB.Scoped(fixtures.AcmeID), visitoridentification.Input{
+		VisitorID: "dev-overlong",
+		SubjectID: new(strings.Repeat("s", 256)),
+		Phone:     new(strings.Repeat("1", 33)),
+		TimeZone:  new(strings.Repeat("z", 65)),
+		Locale:    new(strings.Repeat("l", 36)),
+	})
+
+	form, ok := errors.AsType[*validation.FieldsError](err)
+	require.True(t, ok, "a form refusal: %v", err)
+	assert.ElementsMatch(t, []string{"subjectId", "phone", "timeZone", "locale"}, slices.Collect(maps.Keys(form.Fields)))
+	seen, err := env.DB.Visitor.Query().Where(visitor.WorkspaceID(fixtures.AcmeID), visitor.VisitorID("dev-overlong")).Exist(ctx)
+	require.NoError(t, err)
+	assert.False(t, seen, "the device is not recorded")
+}
+
+// A proven Identify writes the token's keys, so they meet the contract's bounds as a sent key does.
+func TestAProvenIdentifyRefusesATokenWhoseKeyIsLongerThanTheContract(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	secret, err := testhelper.Module[*identitytokens.Module](env).Regenerate(ctx, acme)
+	require.NoError(t, err)
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": strings.Repeat("s", 256), "exp": time.Now().Add(time.Minute).Unix(),
+	}).SignedString([]byte(secret))
+	require.NoError(t, err)
+
+	err = testhelper.Module[*visitoridentification.UseCase](env).Identify(ctx, acme, visitoridentification.Input{
+		VisitorID: "dev-long-token", IdentityToken: token,
+	})
+
+	form, ok := errors.AsType[*validation.FieldsError](err)
+	require.True(t, ok, "a form refusal: %v", err)
+	assert.Contains(t, form.Fields, "subjectId")
 }

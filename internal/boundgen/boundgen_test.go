@@ -1,6 +1,12 @@
 package boundgen_test
 
 import (
+	"bytes"
+	"maps"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,7 +25,7 @@ func TestGenerateWritesAConstantPerBoundOfAPropertyAndItsOwner(t *testing.T) {
 		Name: "HoldReasonCode", Doc: "is the machine code of a Hold's reason.",
 		Spec: "openapi/service.openapi.json", Schema: "HoldInput", Property: "reasonCode",
 		Owners: []string{"Hold"},
-	}})
+	}}, nil)
 	require.NoError(t, err)
 
 	out := string(src)
@@ -38,7 +44,7 @@ func TestGenerateReadsTheRangeOfAScalarAndTheItemsOfAList(t *testing.T) {
 			Schema: "RetentionDays", Owners: []string{"Workspace"}},
 		{Name: "HTTPActionHeaders", Doc: "are the headers of an http Action.", Spec: "openapi/site.openapi.json",
 			Schema: "HoldInput", Property: "headers", Owners: []string{"internal/domain/orchestration/rules"}},
-	})
+	}, nil)
 	require.NoError(t, err)
 
 	out := string(src)
@@ -52,7 +58,7 @@ func TestGenerateReadsTheRangeAndDefaultOfASharedParameter(t *testing.T) {
 	src, err := boundgen.Generate(map[string][]byte{"openapi/site.openapi.json": []byte(`{"components":{"parameters":{
 	 "PageQuery.pageSize":{"name":"pageSize","in":"query","schema":{"type":"integer","minimum":1,"maximum":100,"default":25}}}}}`)},
 		[]boundgen.Bound{{Name: "PageSize", Spec: "openapi/site.openapi.json", Parameter: "PageQuery.pageSize",
-			Owners: []string{"internal/kernel/pagination"}}})
+			Owners: []string{"internal/kernel/pagination"}}}, nil)
 	require.NoError(t, err)
 
 	out := string(src)
@@ -64,20 +70,20 @@ func TestGenerateReadsTheRangeAndDefaultOfASharedParameter(t *testing.T) {
 func TestGenerateRefusesABoundTheContractDoesNotDeclare(t *testing.T) {
 	_, err := boundgen.Generate(map[string][]byte{"openapi/site.openapi.json": holdDoc}, []boundgen.Bound{
 		{Name: "Missing", Spec: "openapi/site.openapi.json", Schema: "HoldInput", Property: "message", Owners: []string{"Hold"}},
-	})
+	}, nil)
 	require.ErrorContains(t, err, "HoldInput.message")
 
 	_, err = boundgen.Generate(map[string][]byte{"openapi/site.openapi.json": []byte(
 		`{"components":{"schemas":{"Plain":{"type":"string"}}}}`)}, []boundgen.Bound{
 		{Name: "Plain", Spec: "openapi/site.openapi.json", Schema: "Plain", Owners: []string{"Hold"}},
-	})
+	}, nil)
 	require.ErrorContains(t, err, "declares no bound")
 }
 
 func TestGenerateRefusesABoundWithoutAnOwner(t *testing.T) {
 	_, err := boundgen.Generate(map[string][]byte{"openapi/site.openapi.json": holdDoc}, []boundgen.Bound{
 		{Name: "RetentionDays", Spec: "openapi/site.openapi.json", Schema: "RetentionDays"},
-	})
+	}, nil)
 	require.ErrorContains(t, err, "RetentionDays names no owner")
 }
 
@@ -97,9 +103,186 @@ func TestGenerateTSExportsOnlyTheBoundsATypeScriptPackageOwns(t *testing.T) {
 }
 
 func TestEveryBoundOfTheListIsInTheContract(t *testing.T) {
-	specs, err := boundgen.ReadSpecs("../..", boundgen.Bounds)
+	specs, err := boundgen.ReadSpecs("../..")
 	require.NoError(t, err)
 
-	_, err = boundgen.Generate(specs, boundgen.Bounds)
+	_, err = boundgen.Generate(specs, boundgen.Bounds, boundgen.TransportOnly)
 	require.NoError(t, err)
+}
+
+// ruleDoc takes a Rule's input in a request body: its name is the shared Name scalar, its trigger
+// Events a bounded list, and the operation reads a page limit inline.
+var ruleDoc = []byte(`{
+ "paths":{"/rules":{
+  "post":{"operationId":"Rules_create",
+   "requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CreateRuleInput"}}}}},
+  "get":{"operationId":"Rules_list","parameters":[
+   {"name":"limit","in":"query","schema":{"type":"integer","minimum":1,"maximum":100}}]}}},
+ "components":{"schemas":{
+  "Name":{"type":"string","maxLength":120},
+  "CreateRuleInput":{"type":"object","properties":{
+   "name":{"$ref":"#/components/schemas/Name"},
+   "triggerEvents":{"type":"array","minItems":1,"items":{"type":"string"}}}}}}}`)
+
+const rulesSpec = "openapi/site.openapi.json"
+
+var ruleBounds = []boundgen.Bound{
+	{Name: "Name", Spec: rulesSpec, Schema: "Name", Owners: []string{"internal/kernel/validation"}},
+	{Name: "RuleTriggerEvents", Spec: rulesSpec, Schema: "CreateRuleInput", Property: "triggerEvents", Owners: []string{"Rule"}},
+}
+
+var ruleTransport = []boundgen.TransportBound{
+	{Spec: rulesSpec, Operation: "Rules_list", Parameter: "limit", Doc: "is the size of a page a list reads."},
+}
+
+func TestGenerateRefusesABoundOfAnInputThatNoEntryAccountsFor(t *testing.T) {
+	specs := map[string][]byte{rulesSpec: ruleDoc}
+
+	_, err := boundgen.Generate(specs, ruleBounds[:1], ruleTransport)
+	require.ErrorContains(t, err, "site CreateRuleInput.triggerEvents")
+
+	_, err = boundgen.Generate(specs, ruleBounds, ruleTransport)
+	require.NoError(t, err)
+
+	transport := append(slices.Clone(ruleTransport), boundgen.TransportBound{
+		Spec: rulesSpec, Schema: "CreateRuleInput", Property: "triggerEvents", Doc: "is only checked by ogen.",
+	})
+	_, err = boundgen.Generate(specs, ruleBounds[:1], transport)
+	require.NoError(t, err)
+}
+
+func TestGenerateReportsEveryBoundLeftOverNotOnlyTheFirst(t *testing.T) {
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: ruleDoc}, nil, nil)
+
+	require.ErrorContains(t, err, "site Name declares maxLength")
+	require.ErrorContains(t, err, "site CreateRuleInput.triggerEvents declares minItems")
+	require.ErrorContains(t, err, "site operation Rules_list parameter limit declares maximum, minimum")
+}
+
+func TestGenerateRefusesATransportEntryOfABoundTheContractDoesNotDeclare(t *testing.T) {
+	stale := append(slices.Clone(ruleTransport), boundgen.TransportBound{
+		Spec: rulesSpec, Operation: "Rules_list", Parameter: "page", Doc: "is a page of a read.",
+	})
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: ruleDoc}, ruleBounds, stale)
+
+	require.ErrorContains(t, err, "TransportOnly site operation Rules_list parameter page")
+}
+
+func TestGenerateRefusesATransportEntryWithoutAReason(t *testing.T) {
+	silent := []boundgen.TransportBound{{Spec: rulesSpec, Operation: "Rules_list", Parameter: "limit"}}
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: ruleDoc}, ruleBounds, silent)
+
+	require.ErrorContains(t, err, "says no reason")
+}
+
+func TestGenerateRefusesAPlaceNamedByBothLists(t *testing.T) {
+	both := append(slices.Clone(ruleTransport), boundgen.TransportBound{
+		Spec: rulesSpec, Schema: "Name", Doc: "is checked by ogen.",
+	})
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: ruleDoc}, ruleBounds, both)
+
+	require.ErrorContains(t, err, "site Name is named by both Bounds and TransportOnly")
+}
+
+// externalRuleDoc declares the trigger Events of the external Rule input under another name, and
+// the shared Name scalar again.
+var externalRuleDoc = []byte(`{
+ "paths":{"/rules":{"post":{"operationId":"Rules_create",
+  "requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RuleInput"}}}}}}},
+ "components":{"schemas":{
+  "Name":{"type":"string","maxLength":120},
+  "RuleInput":{"type":"object","properties":{
+   "name":{"$ref":"#/components/schemas/Name"},
+   "triggerEvents":{"type":"array","minItems":1,"items":{"type":"string"}}}}}}}`)
+
+const externalSpec = "openapi/external.openapi.json"
+
+func TestGenerateWritesABoundDeclaredInSeveralPlacesOnce(t *testing.T) {
+	specs := map[string][]byte{rulesSpec: ruleDoc, externalSpec: externalRuleDoc}
+	bounds := append(slices.Clone(ruleBounds),
+		boundgen.Bound{Name: "RuleTriggerEvents", Spec: externalSpec, Schema: "RuleInput", Property: "triggerEvents"})
+
+	src, err := boundgen.Generate(specs, bounds, ruleTransport)
+	require.NoError(t, err)
+
+	out := string(src)
+	require.Equal(t, 1, strings.Count(out, "RuleTriggerEventsMinItems ="))
+	require.Contains(t, out, "// From site CreateRuleInput.triggerEvents, external RuleInput.triggerEvents.")
+}
+
+func TestGenerateRefusesAPlaceThatRepeatsTheOwnersOfABound(t *testing.T) {
+	specs := map[string][]byte{rulesSpec: ruleDoc, externalSpec: externalRuleDoc}
+	bounds := append(slices.Clone(ruleBounds), boundgen.Bound{Name: "RuleTriggerEvents", Spec: externalSpec,
+		Schema: "RuleInput", Property: "triggerEvents", Owners: []string{"Rule"}})
+
+	_, err := boundgen.Generate(specs, bounds, ruleTransport)
+
+	require.ErrorContains(t, err, "external RuleInput.triggerEvents repeats the bound RuleTriggerEvents")
+}
+
+func TestGenerateRefusesADocumentThatDeclaresASharedSchemaWithOtherValues(t *testing.T) {
+	longer := bytes.Replace(externalRuleDoc, []byte(`"maxLength":120`), []byte(`"maxLength":200`), 1)
+	specs := map[string][]byte{rulesSpec: ruleDoc, externalSpec: longer}
+	bounds := append(slices.Clone(ruleBounds),
+		boundgen.Bound{Name: "RuleTriggerEvents", Spec: externalSpec, Schema: "RuleInput", Property: "triggerEvents"})
+
+	_, err := boundgen.Generate(specs, bounds, ruleTransport)
+
+	require.ErrorContains(t, err, "external Name declares map[maxLength:200], unlike site Name")
+}
+
+func TestReadSpecsReadsEveryDocument(t *testing.T) {
+	root := t.TempDir()
+	require.NoError(t, os.Mkdir(filepath.Join(root, "openapi"), 0o750))
+	for _, name := range []string{"site", "staffee", "telemetry"} {
+		require.NoError(t, os.WriteFile(filepath.Join(root, "openapi", name+".openapi.json"), []byte(`{}`), 0o600))
+	}
+
+	specs, err := boundgen.ReadSpecs(root)
+	require.NoError(t, err)
+
+	paths := slices.Sorted(maps.Keys(specs))
+	require.Equal(t, []string{"openapi/site.openapi.json", "openapi/staffee.openapi.json", "openapi/telemetry.openapi.json"}, paths)
+}
+
+func TestGenerateRefusesATransportEntryWhosePlaceKeepsOnlyADefault(t *testing.T) {
+	doc := bytes.Replace(ruleDoc, []byte(`"minimum":1,"maximum":100`), []byte(`"default":25`), 1)
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: doc}, ruleBounds, ruleTransport)
+
+	require.ErrorContains(t, err, "TransportOnly site operation Rules_list parameter limit")
+}
+
+func TestGenerateReadsTheBoundsOfAPlaceAndOfTheMembersOfItsComposition(t *testing.T) {
+	doc := []byte(`{
+	 "paths":{"/notes":{"post":{"operationId":"Notes_create",
+	  "requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/NoteInput"}}}}}}},
+	 "components":{"schemas":{"NoteInput":{"type":"object","properties":{
+	  "text":{"type":"string","maxLength":10,"allOf":[{"minLength":1}]}}}}}}`)
+	bounds := []boundgen.Bound{{Name: "NoteText", Spec: rulesSpec, Schema: "NoteInput", Property: "text", Owners: []string{"Note"}}}
+
+	_, err := boundgen.Generate(map[string][]byte{rulesSpec: doc}, bounds, nil)
+
+	require.ErrorContains(t, err, "site NoteInput.text declares map[maxLength:10 minLength:1]")
+}
+
+// staff, staffee and telemetry are read like every document: without their entries, their bounds
+// are left over.
+func TestEveryDocumentOfTheRepositoryIsScanned(t *testing.T) {
+	specs, err := boundgen.ReadSpecs("../..")
+	require.NoError(t, err)
+	others := map[string]bool{
+		"openapi/staff.openapi.json": true, "openapi/staffee.openapi.json": true, "openapi/telemetry.openapi.json": true,
+	}
+	bounds := slices.DeleteFunc(slices.Clone(boundgen.Bounds), func(b boundgen.Bound) bool { return others[b.Spec] })
+	transport := slices.DeleteFunc(slices.Clone(boundgen.TransportOnly), func(b boundgen.TransportBound) bool { return others[b.Spec] })
+
+	_, err = boundgen.Generate(specs, bounds, transport)
+
+	require.ErrorContains(t, err, "staff operation StaffInstance_listAuditEntries parameter limit")
+	require.ErrorContains(t, err, "staffee StaffSuspendInput.reason")
+	require.ErrorContains(t, err, "telemetry TelemetryReport.instanceId")
 }

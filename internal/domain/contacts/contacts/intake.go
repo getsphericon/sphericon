@@ -13,7 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/batch"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 // IntakeInput is one row of a Contact intake (GLOSSARY, ADR 0022): the Contact it asserts and the
@@ -44,8 +47,12 @@ type IntakeInput struct {
 // contact.field_changed (#897). The rows commit one by one (a failing row must not poison the others), so
 // the entry cannot share their transaction: if recording it fails the failure is
 // logged and the committed outcomes are still returned, never a 500 for an import
-// that happened.
-func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []IntakeInput) batch.Result[Result] {
+// that happened. A batch of fewer or more items than the contract's ContactBatch is refused whole,
+// before any row.
+func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Source, items []IntakeInput) (batch.Result[Result], error) {
+	if err := validation.Items(fieldname.Contacts, len(items), bounds.ContactBatchMinItems, bounds.ContactBatchMaxItems); err != nil {
+		return batch.Result[Result]{}, err
+	}
 	rows := events.Unaudited(s)
 	mail := m.mailVerdicts(ctx, items)
 	out := batch.Each(items, func(in IntakeInput) (Result, error) { return m.intake(ctx, rows, src, in, mail) })
@@ -63,7 +70,7 @@ func (m *Module) UpsertBatch(ctx context.Context, s *ent.Scoped, src contact.Sou
 	if err := m.recordImport(ctx, s, sum); err != nil {
 		slog.ErrorContext(ctx, "record contact.import audit entry", "workspace_id", s.WorkspaceID(), "error", err)
 	}
-	return out
+	return out, nil
 }
 
 // mailVerdicts reads whether the domain of each address the batch asserts accepts mail, one

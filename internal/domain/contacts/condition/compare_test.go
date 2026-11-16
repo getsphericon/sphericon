@@ -247,8 +247,8 @@ func TestCompileRefusesADateLeafThatDoesNotFit(t *testing.T) {
 		"a trigger property":        {dateWithin("trigger:at", 7), "takes a custom field of type datetime"},
 		"a contact attribute":       {dateAt("email", siteapi.SiteConditionDateOperatorAfter, now), "takes a custom field of type datetime"},
 		"a number operator":         {dateAt(seenAt, "gt", now), "unsupported operator"},
-		"a window of no days":       {dateWithin(seenAt, 0), "withinDays must be 1 or more"},
-		"a window of negative days": {dateWithin(seenAt, -1), "withinDays must be 1 or more"},
+		"a window of no days":       {dateWithin(seenAt, 0), "withinDays must be at least 1"},
+		"a window of negative days": {dateWithin(seenAt, -1), "withinDays must be at least 1"},
 	} {
 		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.WonkaID), opsGroup(tc.leaf), time.Now())
 		require.Error(t, err, name)

@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -83,12 +84,15 @@ var ErrMalformedRegionalFormat = validation.RefuseField(fieldname.RegionalFormat
 
 // canonicalRegionalFormat is the Regional format tag in its canonical spelling (`de-de` is
 // `de-DE`), or ErrMalformedRegionalFormat when it is not a well-formed BCP 47 tag. The tag is not
-// checked against a list of regions: the app's own list is a convenience, not a rule. Its length
-// is the contract's (RegionalFormat), which the request validation holds.
+// checked against a list of regions: the app's own list is a convenience, not a rule. A tag
+// longer than the contract's RegionalFormat is refused.
 func canonicalRegionalFormat(typed string) (string, error) {
 	tag := strings.TrimSpace(typed)
 	if tag == "" {
 		return "", ErrMalformedRegionalFormat
+	}
+	if err := validation.MaxLength(fieldname.RegionalFormat, tag, bounds.RegionalFormatMaxLength); err != nil {
+		return "", err
 	}
 	parsed, err := language.Parse(tag)
 	if err != nil {

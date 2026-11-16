@@ -24,6 +24,7 @@ var (
 	ErrTooShort        = Refuse("validation: too short", i18n.ErrorsTooShort)
 	ErrTooLong         = Refuse("validation: too long", i18n.ErrorsTooLong)
 	ErrOutOfRange      = Refuse("validation: out of range", i18n.ErrorsOutOfRange)
+	ErrTooSmall        = Refuse("validation: too small", i18n.ErrorsTooSmall)
 	ErrTooMany         = Refuse("validation: too many items", i18n.ErrorsTooMany)
 	ErrTooFew          = Refuse("validation: too few items", i18n.ErrorsTooFew)
 	ErrPatternMismatch = Refuse("validation: does not match the pattern", i18n.ErrorsPatternMismatch)
@@ -53,6 +54,14 @@ func MinLength(field, value string, lo int) error { return Length(field, value, 
 func Range(field string, value, lo, hi int) error {
 	if value < lo || value > hi {
 		return ErrOutOfRange.On(field).Args(map[string]any{argField: field, argMin: lo, argMax: hi})
+	}
+	return nil
+}
+
+// Min refuses value on field when it is below lo: a range with no upper bound.
+func Min(field string, value, lo int) error {
+	if value < lo {
+		return ErrTooSmall.On(field).Args(map[string]any{argField: field, argMin: lo})
 	}
 	return nil
 }

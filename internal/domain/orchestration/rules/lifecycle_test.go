@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -277,4 +278,21 @@ func TestRuleChangesAreAudited(t *testing.T) {
 	assert.Contains(t, seen, "rule.update")
 	assert.Equal(t, "rule.discard", seen[len(seen)-1])
 	assert.GreaterOrEqual(t, len(seen), 5, "update, publish, deactivate and delete each wrote one")
+}
+
+// A Rule fires on an Event, so one whose Trigger events are none, or only blanks, is refused
+// whichever driver saves it, and nothing is stored.
+func TestCreateRefusesARuleWithNoTriggerEvent(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	m := testhelper.Module[*rules.Module](env)
+
+	for name, triggers := range map[string][]string{"none": nil, "blanks": {" ", ""}} {
+		_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "No trigger " + name, TriggerEvents: triggers})
+		require.ErrorIs(t, err, validation.ErrTooFew, name)
+
+		stored, err := acme(env).Rule().Query().Where(rule.Name("No trigger " + name)).Exist(ctx)
+		require.NoError(t, err)
+		assert.False(t, stored, name)
+	}
 }

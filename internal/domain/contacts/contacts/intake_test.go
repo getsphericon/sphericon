@@ -3,6 +3,7 @@ package contacts_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"maps"
 	"net"
 	"sync"
@@ -20,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -27,11 +29,12 @@ func TestUpsertBatchRunsEachItemIndependentlyAndInOrder(t *testing.T) {
 	env := testhelper.Setup(t)
 	intake := testhelper.Module[*contacts.Module](env)
 
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.IntakeInput{
+	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceManual, []contacts.IntakeInput{
 		{Email: new("batch.new@example.com"), CustomFields: map[string]any{"source": "import"}},
 		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: patch.Set("Alicia")},
 		{FirstName: patch.Set("No identity")},
 	})
+	require.NoError(t, err)
 	require.Len(t, out.Items, 3)
 
 	require.NoError(t, out.Items[0].Err)
@@ -63,11 +66,12 @@ func TestUpsertBatchRefusesANewAddressAtADomainWithoutMail(t *testing.T) {
 	env := testhelper.Setup(t)
 	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
 
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
+	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("ann@nullmx.test")},
 		{Email: new("bob@missing.test")},
 		{Email: new("cat@mx.test")},
 	})
+	require.NoError(t, err)
 	require.Len(t, out.Items, 3)
 
 	require.ErrorIs(t, out.Items[0].Err, contacts.ErrEmailDomainNoMail, "a null MX")
@@ -86,9 +90,10 @@ func TestUpsertBatchUpdatesAnAddressTheWorkspaceHoldsWhateverItsDomain(t *testin
 	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
 
 	// example.com is outside the zones, so it is NXDOMAIN here; Alice holds the address already.
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
+	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: lo.ToPtr(fixtures.ContactAliceEmail), FirstName: patch.Set("Alicia")},
 	})
+	require.NoError(t, err)
 
 	require.NoError(t, out.Items[0].Err)
 	assert.EqualValues(t, fixtures.ContactAliceID, out.Items[0].Value.Contact.ID)
@@ -99,9 +104,10 @@ func TestUpsertBatchAcceptsAnAddressWhoseDomainDNSDoesNotAnswer(t *testing.T) {
 	env := testhelper.Setup(t)
 	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
 
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
+	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("dan@broken.test")},
 	})
+	require.NoError(t, err)
 
 	require.NoError(t, out.Items[0].Err)
 	assert.True(t, out.Items[0].Value.Created)
@@ -111,11 +117,12 @@ func TestUpsertBatchFlagsDisposableAndRoleAddresses(t *testing.T) {
 	env := testhelper.Setup(t)
 	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
 
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
+	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("eve@mailinator.com")},
 		{Email: new("info@mx.test")},
 		{Email: new("fay@mx.test")},
 	})
+	require.NoError(t, err)
 
 	require.NoError(t, out.Items[0].Err)
 	assert.Equal(t, []addresscheck.Flag{addresscheck.Disposable}, out.Items[0].Value.Flags)
@@ -130,11 +137,12 @@ func TestUpsertBatchLooksUpEachDomainOnce(t *testing.T) {
 	zones := mailZones(t)
 	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(zones))
 
-	out := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
+	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("gus@mx.test")},
 		{Email: new("Hal@MX.test")},
 		{Email: new("ivy@mx.test")},
 	})
+	require.NoError(t, err)
 
 	for _, item := range out.Items {
 		require.NoError(t, item.Err)
@@ -164,4 +172,23 @@ func (r *countingResolver) mxLookups() map[string]int {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	return maps.Clone(r.names)
+}
+
+// A batch holds at most the contract's ContactBatch, and one over it is refused whole, before any
+// row: none of it is stored.
+func TestUpsertBatchRefusesABatchOverTheContractsBound(t *testing.T) {
+	env := testhelper.Setup(t)
+	intake := testhelper.Module[*contacts.Module](env)
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	tooMany := make([]contacts.IntakeInput, 1001)
+	for i := range tooMany {
+		tooMany[i] = contacts.IntakeInput{Email: new(fmt.Sprintf("overfull-%d@example.com", i))}
+	}
+
+	_, err := intake.UpsertBatch(context.Background(), acme, contact.SourceAPI, tooMany)
+
+	require.ErrorIs(t, err, validation.ErrTooMany)
+	stored, err := acme.Contact().Query().Where(contact.EmailHasPrefix("overfull-")).Exist(context.Background())
+	require.NoError(t, err)
+	assert.False(t, stored, "none of the batch is stored")
 }

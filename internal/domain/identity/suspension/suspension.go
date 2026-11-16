@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -93,7 +95,7 @@ func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Ac
 	if err := by.validate(); err != nil {
 		return false, err
 	}
-	if reason == "" {
+	if utf8.RuneCountInString(reason) < bounds.SuspensionReasonMinLength {
 		return false, ErrReasonRequired
 	}
 	changed := false

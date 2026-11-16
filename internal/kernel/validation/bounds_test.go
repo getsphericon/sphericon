@@ -44,6 +44,15 @@ func TestRangeRefusesAValueOutsideTheBounds(t *testing.T) {
 	assert.Equal(t, "perDay must be from 1 to 10", validation.Message(err))
 }
 
+func TestMinRefusesOnlyAValueBelowIt(t *testing.T) {
+	require.NoError(t, validation.Min(fieldname.WithinDays, 1, 1))
+	require.NoError(t, validation.Min(fieldname.WithinDays, 100000, 1))
+
+	err := validation.Min(fieldname.WithinDays, 0, 1)
+	require.ErrorIs(t, err, validation.ErrTooSmall)
+	assert.Equal(t, "withinDays must be at least 1", validation.Message(err))
+}
+
 func TestItemsRefusesTooManyAndTooFew(t *testing.T) {
 	require.NoError(t, validation.Items(fieldname.Headers, 5, 0, 5))
 	require.ErrorIs(t, validation.Items(fieldname.Headers, 6, 0, 5), validation.ErrTooMany)

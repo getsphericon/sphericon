@@ -39,7 +39,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
 const (
@@ -153,6 +156,14 @@ var birthdaySides = map[operator]func(time.Time) predicate.Contact{
 	opBefore: contact.BirthdayLT,
 	opAfter:  contact.BirthdayGTE,
 }
+
+// boundError is a leaf's refusal of a bound of the contract (package bounds), whose text is the
+// refusal's message: a Segment or a Rule reports the compiler's text as the detail of its own
+// refusal, which a person reads.
+type boundError struct{ refusal error }
+
+func (e boundError) Error() string { return validation.Message(e.refusal) }
+func (e boundError) Unwrap() error { return e.refusal }
 
 // Parse decodes a stored condition into a Group. A blank condition is a valid
 // "match everyone" group.
@@ -405,8 +416,8 @@ func (c *compiler) date(ctx context.Context, l DateLeaf) (predicate.Contact, err
 // now, so a moment still to come is not within. A window reaching back past the first year starts
 // there.
 func (c *compiler) dateWithin(ctx context.Context, l DateWithinLeaf) (predicate.Contact, error) {
-	if l.WithinDays < 1 {
-		return nil, fmt.Errorf("date leaf withinDays must be 1 or more, got %d", l.WithinDays)
+	if err := validation.Min(fieldname.WithinDays, l.WithinDays, bounds.ConditionWithinDaysMin); err != nil {
+		return nil, boundError{err}
 	}
 	since := c.now.AddDate(0, 0, -l.WithinDays)
 	if since.Year() < 1 {
@@ -545,6 +556,9 @@ func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
 		return nil, errors.New("event leaf times is required")
 	}
 	times := *l.Times
+	if err := validation.Min(fieldname.Times, times, bounds.ConditionEventTimesMin); err != nil {
+		return nil, boundError{err}
+	}
 	if times < op.least {
 		return nil, fmt.Errorf("%s takes times of %d or more, got %d", l.Operator, op.least, times)
 	}
@@ -556,8 +570,8 @@ func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
 	}
 	if l.WithinDays != nil {
 		days := *l.WithinDays
-		if days < 1 {
-			return nil, fmt.Errorf("event leaf withinDays must be 1 or more, got %d", days)
+		if err := validation.Min(fieldname.WithinDays, days, bounds.ConditionWithinDaysMin); err != nil {
+			return nil, boundError{err}
 		}
 		// A window reaching back past the first year counts all time: no Event is older, and a
 		// cutoff that far back would overflow a stored timestamp. A window longer than Event
