@@ -4,6 +4,22 @@
 import * as z from 'zod';
 
 /**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export const zAbuseMetric = z.enum(['complaint', 'bounce']);
+
+/**
+ * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored.
+ */
+export const zAbuseWarning = z.object({
+  domain: z.string(),
+  metric: zAbuseMetric,
+  rate: z.number()
+});
+
+/**
  * Every API token scope: the one vocabulary of the external API
  */
 export const zApiTokenScope = z.enum([
@@ -149,12 +165,51 @@ export const zAuditAction = z.enum([
 ]);
 
 /**
+ * Who performed an audited change
+ */
+export const zAuditActorKind = z.enum([
+  'user',
+  'api_token',
+  'staff',
+  'system'
+]);
+
+/**
+ * The actor of an Audit entry
+ */
+export const zAuditActor = z.object({
+  kind: zAuditActorKind,
+  id: z.exactOptional(z.string().nullable()),
+  name: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * What an audited change was done to
+ */
+export const zAuditTarget = z.object({
+  type: z.string(),
+  id: z.exactOptional(z.string().nullable()),
+  name: z.exactOptional(z.string().nullable())
+});
+
+/**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
 export const zBroadcastChannel = z.enum([
   'email',
   'telegram',
   'sms'
+]);
+
+/**
+ * Broadcast lifecycle status
+ */
+export const zBroadcastStatus = z.enum([
+  'draft',
+  'scheduled',
+  'sending',
+  'sent',
+  'failed'
 ]);
 
 /**
@@ -509,6 +564,17 @@ export const zProblemDebug = z.object({
 });
 
 /**
+ * A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no
+ * display floor: the rate is null only when the denominator is zero, an undefined rate never
+ * being reported as 0.
+ */
+export const zRateTriple = z.object({
+  numerator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  denominator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  rate: z.number().nullable()
+});
+
+/**
  * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
@@ -584,6 +650,30 @@ export const zSetupScope = z.enum([
 ]);
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const zSignupCompanySize = z.enum([
+  '1',
+  '2_10',
+  '11_50',
+  '51_200',
+  '201_1000',
+  '1000_plus',
+  'other'
+]);
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const zSignupGoal = z.enum([
+  'broadcasts',
+  'automations',
+  'tracking',
+  'migrating',
+  'other'
+]);
+
+/**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
 export const zSignupItemKey = z.string().min(1).max(64).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
@@ -603,20 +693,26 @@ export const zSignupItemKind = z.enum([
 export const zSignupItemTitle = z.string().min(1).max(200);
 
 /**
- * The metric of a Sending domain that is over a warning limit of the abuse detector
+ * What the User does (Sign-up survey, first question)
  */
-export const zSiteAbuseMetric = z.enum(['complaint', 'bounce']);
+export const zSignupRole = z.enum([
+  'founder',
+  'marketer',
+  'developer',
+  'product',
+  'other'
+]);
 
 /**
- * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
- * over the warning limit but under the freeze limit. Computed live from the trailing
- * 24 hours since any clearance, never stored.
+ * Where the User heard about the product (fourth question, optional)
  */
-export const zSiteAbuseWarning = z.object({
-  domain: z.string(),
-  metric: zSiteAbuseMetric,
-  rate: z.number()
-});
+export const zSignupSource = z.enum([
+  'search',
+  'github',
+  'social',
+  'recommendation',
+  'other'
+]);
 
 /**
  * A required acceptance the screen showed: the item's key and the label of the version shown
@@ -827,29 +923,10 @@ export const zSiteAttentionSubject = z.object({
 });
 
 /**
- * Who performed an audited change
- */
-export const zSiteAuditActorKind = z.enum([
-  'user',
-  'api_token',
-  'staff',
-  'system'
-]);
-
-/**
- * The actor of an Audit entry
- */
-export const zSiteAuditActor = z.object({
-  kind: zSiteAuditActorKind,
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
-});
-
-/**
  * The values that occur in a Workspace's Audit log, offered as the choices of its filter
  */
 export const zSiteAuditFacets = z.object({
-  actors: z.array(zSiteAuditActor),
+  actors: z.array(zAuditActor),
   actions: z.array(zAuditAction),
   targetTypes: z.array(z.string())
 });
@@ -868,15 +945,6 @@ export const zSiteAuditRetention = z.object({
 export const zSiteAuditRetentionInput = z.strictObject({
   retentionDays: zRetentionDays.nullable(),
   revision: zRevision
-});
-
-/**
- * What an audited change was done to
- */
-export const zSiteAuditTarget = z.object({
-  type: z.string(),
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
 });
 
 /**
@@ -979,17 +1047,6 @@ export const zSiteAutomationsSort = z.enum(['name', 'createdAt']);
  * What slows a sending broadcast
  */
 export const zSiteBroadcastLimit = z.enum(['sendCap', 'providerLimit']);
-
-/**
- * Broadcast lifecycle status
- */
-export const zSiteBroadcastStatus = z.enum([
-  'draft',
-  'scheduled',
-  'sending',
-  'sent',
-  'failed'
-]);
 
 /**
  * The order of the broadcast list
@@ -1849,16 +1906,6 @@ export const zSiteProviderLimitStatus = z.object({
 });
 
 /**
- * A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,
- * with no display floor: the rate is null only when the denominator is zero.
- */
-export const zSiteRate = z.object({
-  numerator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  denominator: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  rate: z.number().nullable()
-});
-
-/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export const zSiteRecoveryCodes = z.object({
@@ -2090,8 +2137,8 @@ export const zSiteSendCap = z.object({
 export const zSiteSendingDomainRates = z.object({
   sendingDomainId: zEntityId,
   domain: z.string(),
-  complaintRate: zSiteRate,
-  bounceRate: zSiteRate
+  complaintRate: zRateTriple,
+  bounceRate: zRateTriple
 });
 
 /**
@@ -2203,30 +2250,6 @@ export const zSiteSigninProviders = z.object({
 });
 
 /**
- * How many people work at the User's company (second question)
- */
-export const zSiteSignupCompanySize = z.enum([
-  '1',
-  '2_10',
-  '11_50',
-  '51_200',
-  '201_1000',
-  '1000_plus',
-  'other'
-]);
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export const zSiteSignupGoal = z.enum([
-  'broadcasts',
-  'automations',
-  'tracking',
-  'migrating',
-  'other'
-]);
-
-/**
  * A Sign-up item in effect, with the label of its current Legal document version: what the
  * sign-up form asks (ADR 0062)
  */
@@ -2263,40 +2286,18 @@ export const zSiteSignupItemList = z.object({
 });
 
 /**
- * What the User does (Sign-up survey, first question)
- */
-export const zSiteSignupRole = z.enum([
-  'founder',
-  'marketer',
-  'developer',
-  'product',
-  'other'
-]);
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export const zSiteSignupSource = z.enum([
-  'search',
-  'github',
-  'social',
-  'recommendation',
-  'other'
-]);
-
-/**
  * The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`
  * and `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only
  * with its question's `other` choice.
  */
 export const zSiteSignupSurveyInput = z.strictObject({
-  role: zSiteSignupRole,
+  role: zSignupRole,
   roleOther: z.exactOptional(z.string().max(100)),
-  companySize: zSiteSignupCompanySize,
+  companySize: zSignupCompanySize,
   companySizeOther: z.exactOptional(z.string().max(100)),
-  mainGoal: zSiteSignupGoal,
+  mainGoal: zSignupGoal,
   mainGoalOther: z.exactOptional(z.string().max(100)),
-  heardFrom: z.exactOptional(zSiteSignupSource),
+  heardFrom: z.exactOptional(zSignupSource),
   heardFromOther: z.exactOptional(z.string().max(100))
 });
 
@@ -2857,6 +2858,29 @@ export const zSiteWorkspaceTimezoneInput = z.strictObject({
 export const zTimestamp = z.iso.datetime();
 
 /**
+ * One immutable Audit entry (Enterprise)
+ */
+export const zAuditEntryResource = z.object({
+  id: zEntityId,
+  occurredAt: zTimestamp,
+  actor: zAuditActor,
+  action: zAuditAction,
+  target: zAuditTarget,
+  diff: z.exactOptional(zJsonObject.nullable()),
+  requestId: z.exactOptional(z.string().nullable()),
+  ip: z.exactOptional(z.string().nullable()),
+  userAgent: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * A page of Audit entries, newest first
+ */
+export const zAuditEntryList = z.object({
+  items: z.array(zAuditEntryResource),
+  nextCursor: z.exactOptional(z.string().nullable())
+});
+
+/**
  * The contact's place in one broadcast's audience (how its send ended, and whether it was opened or clicked, is in `outboundMessages`)
  */
 export const zContactExportBroadcastRecipient = z.object({
@@ -3083,7 +3107,7 @@ export const zSiteAttentionItem = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   since: z.exactOptional(zTimestamp.nullable()),
   holdReason: z.exactOptional(zHoldReason.nullable()),
-  abuse: z.exactOptional(zSiteAbuseWarning.nullable()),
+  abuse: z.exactOptional(zAbuseWarning.nullable()),
   estimatedCompletionAt: z.exactOptional(zTimestamp.nullable())
 });
 
@@ -3094,29 +3118,6 @@ export const zSiteAttentionItem = z.object({
  */
 export const zSiteAttentionList = z.object({
   items: z.array(zSiteAttentionItem)
-});
-
-/**
- * One immutable Audit entry (Enterprise)
- */
-export const zSiteAuditEntryResource = z.object({
-  id: zEntityId,
-  occurredAt: zTimestamp,
-  actor: zSiteAuditActor,
-  action: zAuditAction,
-  target: zSiteAuditTarget,
-  diff: z.exactOptional(zJsonObject.nullable()),
-  requestId: z.exactOptional(z.string().nullable()),
-  ip: z.exactOptional(z.string().nullable()),
-  userAgent: z.exactOptional(z.string().nullable())
-});
-
-/**
- * A page of Audit entries, newest first
- */
-export const zSiteAuditEntryList = z.object({
-  items: z.array(zSiteAuditEntryResource),
-  nextCursor: z.exactOptional(z.string().nullable())
 });
 
 /**
@@ -3191,7 +3192,7 @@ export const zSiteBroadcastResource = z.object({
   warnings: z.exactOptional(z.array(zLintFinding)),
   segmentId: z.exactOptional(zEntityId.nullable()),
   integrationId: z.exactOptional(zEntityId.nullable()),
-  status: zSiteBroadcastStatus,
+  status: zBroadcastStatus,
   holdReason: z.exactOptional(zHoldReason.nullable()),
   scheduledAt: z.exactOptional(zTimestamp.nullable()),
   recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
@@ -4191,6 +4192,51 @@ export const zSiteUpdateSegmentInput = z.strictObject({
 export const zArchivedFilter = z.boolean();
 
 /**
+ * Only entries with exactly this action
+ */
+export const zAuditFilterAction = zAuditAction;
+
+/**
+ * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
+ */
+export const zAuditFilterActorId = z.string();
+
+/**
+ * Only entries by this kind of actor
+ */
+export const zAuditFilterActorKind = zAuditActorKind;
+
+/**
+ * Only entries at or after this time
+ */
+export const zAuditFilterFrom = zTimestamp;
+
+/**
+ * Only entries from this client address
+ */
+export const zAuditFilterIp = z.string();
+
+/**
+ * Only entries made under this request id
+ */
+export const zAuditFilterRequestId = z.string();
+
+/**
+ * Only entries about the target with this id
+ */
+export const zAuditFilterTargetId = z.string();
+
+/**
+ * Only entries about this target type, e.g. integration
+ */
+export const zAuditFilterTargetType = z.string();
+
+/**
+ * Only entries strictly before this time
+ */
+export const zAuditFilterTo = zTimestamp;
+
+/**
  * Page number (1-based)
  */
 export const zPageQueryPage = z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).default(1);
@@ -4216,51 +4262,6 @@ export const zSiteApiTokenResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteApiTokenResourceParentKey = zWorkspaceId;
-
-/**
- * Only entries with exactly this action
- */
-export const zSiteAuditFilterAction = zAuditAction;
-
-/**
- * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
- */
-export const zSiteAuditFilterActorId = z.string();
-
-/**
- * Only entries by this kind of actor
- */
-export const zSiteAuditFilterActorKind = zSiteAuditActorKind;
-
-/**
- * Only entries at or after this time
- */
-export const zSiteAuditFilterFrom = zTimestamp;
-
-/**
- * Only entries from this client address
- */
-export const zSiteAuditFilterIp = z.string();
-
-/**
- * Only entries made under this request id
- */
-export const zSiteAuditFilterRequestId = z.string();
-
-/**
- * Only entries about the target with this id
- */
-export const zSiteAuditFilterTargetId = z.string();
-
-/**
- * Only entries about this target type, e.g. integration
- */
-export const zSiteAuditFilterTargetType = z.string();
-
-/**
- * Only entries strictly before this time
- */
-export const zSiteAuditFilterTo = zTimestamp;
 
 /**
  * Unique identifier
@@ -4339,7 +4340,7 @@ export const zSiteBroadcastsListFilterOrder = zSiteBroadcastsOrder;
 /**
  * Only the broadcasts in one of these statuses; every status when absent
  */
-export const zSiteBroadcastsListFilterStatus = z.array(zSiteBroadcastStatus);
+export const zSiteBroadcastsListFilterStatus = z.array(zBroadcastStatus);
 
 /**
  * Unique identifier
@@ -5157,7 +5158,7 @@ export const zSiteAuditListPath = z.object({
 export const zSiteAuditListQuery = z.object({
   from: z.exactOptional(zTimestamp),
   to: z.exactOptional(zTimestamp),
-  actorKind: z.exactOptional(zSiteAuditActorKind),
+  actorKind: z.exactOptional(zAuditActorKind),
   actorId: z.exactOptional(z.string()),
   action: z.exactOptional(zAuditAction),
   targetType: z.exactOptional(z.string()),
@@ -5171,7 +5172,7 @@ export const zSiteAuditListQuery = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteAuditListResponse = zSiteAuditEntryList;
+export const zSiteAuditListResponse = zAuditEntryList;
 
 export const zSiteAuditExportPath = z.object({
   workspaceId: zWorkspaceId
@@ -5180,7 +5181,7 @@ export const zSiteAuditExportPath = z.object({
 export const zSiteAuditExportQuery = z.object({
   from: z.exactOptional(zTimestamp),
   to: z.exactOptional(zTimestamp),
-  actorKind: z.exactOptional(zSiteAuditActorKind),
+  actorKind: z.exactOptional(zAuditActorKind),
   actorId: z.exactOptional(z.string()),
   action: z.exactOptional(zAuditAction),
   targetType: z.exactOptional(z.string()),
@@ -5430,7 +5431,7 @@ export const zSiteBroadcastsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
   archived: z.exactOptional(z.boolean()),
-  status: z.exactOptional(z.array(zSiteBroadcastStatus)),
+  status: z.exactOptional(z.array(zBroadcastStatus)),
   channel: z.exactOptional(zBroadcastChannel),
   order: z.exactOptional(zSiteBroadcastsOrder)
 });

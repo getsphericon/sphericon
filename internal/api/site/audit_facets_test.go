@@ -15,7 +15,7 @@ import (
 )
 
 type facetActor struct {
-	Kind siteapi.SiteAuditActorKind
+	Kind siteapi.AuditActorKind
 	ID   string
 	Name string
 }
@@ -28,7 +28,7 @@ func auditFacets(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceI
 }
 
 func facetActors(facets *siteapi.SiteAuditFacets) []facetActor {
-	return lo.Map(facets.Actors, func(a siteapi.SiteAuditActor, _ int) facetActor {
+	return lo.Map(facets.Actors, func(a siteapi.AuditActor, _ int) facetActor {
 		return facetActor{Kind: a.Kind, ID: a.ID.Or(""), Name: a.Name.Or("")}
 	})
 }
@@ -44,9 +44,9 @@ func TestAuditFacetsOfferWhatOccursInTheLog(t *testing.T) {
 	}, facets.Actions)
 	assert.Equal(t, []string{"integration", "membership", "tag", "webhook_endpoint"}, facets.TargetTypes)
 	assert.Equal(t, []facetActor{
-		{Kind: siteapi.SiteAuditActorKindAPIToken, ID: "77"},
-		{Kind: siteapi.SiteAuditActorKindSystem},
-		{Kind: siteapi.SiteAuditActorKindUser, ID: "2", Name: `=HYPERLINK("http://evil")`},
+		{Kind: siteapi.AuditActorKindAPIToken, ID: "77"},
+		{Kind: siteapi.AuditActorKindSystem},
+		{Kind: siteapi.AuditActorKindUser, ID: "2", Name: `=HYPERLINK("http://evil")`},
 	}, facetActors(facets), "one entry per actor, named by its newest entry")
 }
 
@@ -56,8 +56,8 @@ func TestAuditFacetsNeverExposeAStaffIdentity(t *testing.T) {
 	facets := auditFacets(t, env.SiteActor(t, fixtures.InitechOwnerOlgaEmail), fixtures.InitechPublicID)
 
 	assert.Equal(t, []facetActor{
-		{Kind: siteapi.SiteAuditActorKindStaff, Name: "Sphericon staff"},
-		{Kind: siteapi.SiteAuditActorKindUser, ID: "9", Name: "Peter"},
+		{Kind: siteapi.AuditActorKindStaff, Name: "Sphericon staff"},
+		{Kind: siteapi.AuditActorKindUser, ID: "9", Name: "Peter"},
 	}, facetActors(facets))
 }
 

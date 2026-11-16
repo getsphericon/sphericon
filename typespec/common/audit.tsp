@@ -1,4 +1,6 @@
-// The actions of a Workspace's Audit log: /site, /staff and /api show the same, and filter by them.
+// The actions, targets and entries of a Workspace's Audit log: /site, /staff and /api show the
+// same, and filter by action. An entry is a template, as the Staff console names one more kind of
+// actor; the actor /site and /api share is in audit-log.tsp.
 
 namespace Sphericon;
 
@@ -271,4 +273,46 @@ enum AuditAction {
 
   /** Deleted a webhook endpoint */
   webhookEndpointDelete: "webhook_endpoint.delete",
+}
+
+/** What an audited change was done to */
+model AuditTarget {
+  /** Entity type, e.g. membership */
+  type: string;
+
+  /** The target's id */
+  id?: string | null;
+
+  /** Name snapshot taken when the entry was written; absent for a Contact */
+  name?: string | null;
+}
+
+/** One immutable Audit entry, by the actor model of the surface that shows it */
+model AuditEntryOf<Actor> {
+  /** Unique identifier */
+  id: EntityId;
+
+  /** When the change happened */
+  occurredAt: Timestamp;
+
+  /** Who did it */
+  actor: Actor;
+
+  /** What was done */
+  action: AuditAction;
+
+  /** What it was done to */
+  target: AuditTarget;
+
+  /** Before/after of the changed fields; secrets appear as changed only */
+  diff?: JsonObject | null;
+
+  /** Request id of the change */
+  requestId?: string | null;
+
+  /** Client address of the change */
+  ip?: string | null;
+
+  /** Client user agent of the change */
+  userAgent?: string | null;
 }

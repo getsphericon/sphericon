@@ -25,47 +25,8 @@ model StaffAuditActor {
   name?: string | null;
 }
 
-/** What an audited change was done to */
-model StaffAuditTarget {
-  /** Entity type, e.g. membership */
-  type: string;
-
-  /** The target's id */
-  id?: string | null;
-
-  /** Name snapshot taken when the entry was written */
-  name?: string | null;
-}
-
 /** One immutable Audit entry of a Workspace. Secrets are never recorded; they appear as changed only. */
-model StaffAuditEntryResource {
-  /** Unique identifier */
-  id: EntityId;
-
-  /** When the change happened */
-  occurredAt: Timestamp;
-
-  /** Who did it */
-  actor: StaffAuditActor;
-
-  /** What was done */
-  action: AuditAction;
-
-  /** What it was done to */
-  target: StaffAuditTarget;
-
-  /** Before/after of the changed fields */
-  diff?: JsonObject | null;
-
-  /** Request id of the change */
-  requestId?: string | null;
-
-  /** Client address of the change */
-  ip?: string | null;
-
-  /** Client user agent of the change */
-  userAgent?: string | null;
-}
+model StaffAuditEntryResource is AuditEntryOf<StaffAuditActor>;
 
 /** A page of a Workspace's Audit log, newest first */
 model StaffAuditEntryList is CursorPage<StaffAuditEntryResource>;

@@ -58,7 +58,7 @@ func (UnimplementedHandler) StaffWorkspacesClearSendCap(ctx context.Context, par
 // Idempotent.
 //
 // POST /workspaces/{workspaceId}/exempt
-func (UnimplementedHandler) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (r *StaffExemptionChange, _ error) {
+func (UnimplementedHandler) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (r *StaffWorkspaceChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -97,7 +97,7 @@ func (UnimplementedHandler) StaffWorkspacesSetSendCap(ctx context.Context, req *
 // member. Idempotent: an already-suspended Workspace is left as it was.
 //
 // POST /workspaces/{workspaceId}/suspend
-func (UnimplementedHandler) StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (r *StaffSuspensionChange, _ error) {
+func (UnimplementedHandler) StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (r *StaffWorkspaceChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -106,7 +106,7 @@ func (UnimplementedHandler) StaffWorkspacesSuspend(ctx context.Context, req *Sta
 // Police a Workspace by the abuse detector again. Audited. Idempotent.
 //
 // POST /workspaces/{workspaceId}/unexempt
-func (UnimplementedHandler) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (r *StaffExemptionChange, _ error) {
+func (UnimplementedHandler) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (r *StaffWorkspaceChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -116,7 +116,7 @@ func (UnimplementedHandler) StaffWorkspacesUnexempt(ctx context.Context, params 
 // left as it was.
 //
 // POST /workspaces/{workspaceId}/unsuspend
-func (UnimplementedHandler) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (r *StaffSuspensionChange, _ error) {
+func (UnimplementedHandler) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (r *StaffWorkspaceChange, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

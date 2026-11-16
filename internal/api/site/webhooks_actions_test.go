@@ -35,7 +35,7 @@ func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T
 
 	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "webhook_endpoint.update")
 	require.Len(t, entries, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, entries[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, entries[0].Actor.Kind)
 
 	_, err = owner.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookGlobexID)})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)

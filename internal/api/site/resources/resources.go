@@ -247,7 +247,7 @@ type Converter interface {
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
 	AnalyticsDomainRatesToResource(source analyticsreport.DomainRates) siteapi.SiteSendingDomainRates
-	AnalyticsRateToResource(source reputation.Rate) siteapi.SiteRate
+	AnalyticsRateToResource(source reputation.Rate) siteapi.RateTriple
 	AnalyticsContactsToResource(source analyticsreport.Contacts) siteapi.SiteAnalyticsContacts
 	AnalyticsPeriodToResource(source analyticsreport.Period) siteapi.SiteAnalyticsPeriod
 	// goverter:map Sent SentCount
@@ -267,7 +267,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	// goverter:map Series Timeseries
 	AnalyticsNewPeopleToResource(source *analyticsreport.NewPeople) *siteapi.SiteNewPeopleReport
-	AbuseWarningToResource(source abusewarning.Warning) siteapi.SiteAbuseWarning
+	AbuseWarningToResource(source abusewarning.Warning) siteapi.AbuseWarning
 
 	// What needs attention maps whole from the module's items; an absent subject, start, hold
 	// reason or rate is left out.
@@ -571,21 +571,21 @@ type Converter interface {
 	// goverter:map . Actor
 	// goverter:map . Target
 	// goverter:map Diff Diff | auditDiff
-	AuditEntryToResource(source auditlog.View) siteapi.SiteAuditEntryResource
+	AuditEntryToResource(source auditlog.View) siteapi.AuditEntryResource
 	// goverter:useEmptyOnNil:slice
-	AuditEntriesToResources(source []auditlog.View) []siteapi.SiteAuditEntryResource
+	AuditEntriesToResources(source []auditlog.View) []siteapi.AuditEntryResource
 	// An entry's actor and target are columns of the entry, nested in the contract.
 	// goverter:map ActorKind Kind
 	// goverter:map ActorID ID
 	// goverter:map ActorName Name
-	AuditActorToResource(source auditlog.View) siteapi.SiteAuditActor
+	AuditActorToResource(source auditlog.View) siteapi.AuditActor
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditlog.View) siteapi.SiteAuditTarget
+	AuditTargetToResource(source auditlog.View) siteapi.AuditTarget
 	// goverter:useEmptyOnNil:slice
 	AuditFacetsToResource(source auditlog.Facets) siteapi.SiteAuditFacets
-	AuditFacetActorToResource(source auditlog.Actor) siteapi.SiteAuditActor
+	AuditFacetActorToResource(source auditlog.Actor) siteapi.AuditActor
 
 	// The signing secret is decrypted by the webhooks module, which the mapper cannot see:
 	// the handler attaches it. The failure state is derived from the failure columns, and an
@@ -685,7 +685,7 @@ type Converter interface {
 	// goverter:enum:map ReportPeriod90Days SiteAutomationReportPeriod90d
 	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.SiteAutomationReportPeriod
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abusewarning.Metric) siteapi.SiteAbuseMetric
+	AbuseMetricToResource(source abusewarning.Metric) siteapi.AbuseMetric
 	// goverter:enum:transform value
 	AttentionKindToResource(source needsattentionreport.Kind) siteapi.SiteAttentionKind
 	// goverter:enum:transform value
@@ -697,7 +697,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	AutomationStepTypeToResource(source automationstep.Kind) siteapi.SiteAutomationStepType
 	// goverter:enum:transform value
-	BroadcastStatusToResource(source broadcast.Status) siteapi.SiteBroadcastStatus
+	BroadcastStatusToResource(source broadcast.Status) siteapi.BroadcastStatus
 	// goverter:enum:transform value
 	BroadcastChannelToResource(source channels.Channel) siteapi.BroadcastChannel
 	// goverter:enum:transform value
@@ -1294,8 +1294,8 @@ func optAttentionSubject(c Converter, v *needsattentionreport.Subject) siteapi.O
 }
 
 // optAbuseWarning is the rate behind a deliverability warning, absent on every other item.
-func optAbuseWarning(c Converter, v *abusewarning.Warning) siteapi.OptNilSiteAbuseWarning {
-	return convert.OptVia[siteapi.OptNilSiteAbuseWarning](v, c.AbuseWarningToResource)
+func optAbuseWarning(c Converter, v *abusewarning.Warning) siteapi.OptNilAbuseWarning {
+	return convert.OptVia[siteapi.OptNilAbuseWarning](v, c.AbuseWarningToResource)
 }
 
 // optMessageRevenue is the revenue of a message, present wherever the module read it.

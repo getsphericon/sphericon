@@ -82,6 +82,6 @@ func TestLeavingIsAuditedWithTheUserAsActor(t *testing.T) {
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionMembershipDelete)
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, fixtures.MemberMaryName, got[0].Actor.Name.Value)
 }

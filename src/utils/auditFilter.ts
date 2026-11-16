@@ -1,8 +1,8 @@
 import { omit } from 'es-toolkit'
 import { z } from 'zod'
 
-import type { SiteAuditActor } from '../generated/site/types.gen.ts'
-import { zAuditAction, zSiteAuditActorKind } from '../generated/site/zod.gen.ts'
+import type { AuditActor } from '../generated/site/types.gen.ts'
+import { zAuditAction, zAuditActorKind } from '../generated/site/zod.gen.ts'
 import { nextDay, startOfDay } from './datetime.ts'
 
 // The Audit log filter lives in the settings route's search, so a Change history link
@@ -16,7 +16,7 @@ const optionalDay = z.iso.date().optional().catch(undefined)
 export const auditFilterSchema = z.object({
   from: optionalDay,
   to: optionalDay,
-  actorKind: zSiteAuditActorKind.optional().catch(undefined),
+  actorKind: zAuditActorKind.optional().catch(undefined),
   actorId: optionalText,
   action: zAuditAction.optional().catch(undefined),
   targetType: optionalText,
@@ -49,7 +49,7 @@ export function auditQuery(filter: AuditFilter, timeZone?: string) {
 }
 
 // An actor as the "By" filter offers it: a kind, and an id unless the kind has none.
-type AuditActorRef = Pick<SiteAuditActor, 'kind' | 'id'>
+type AuditActorRef = Pick<AuditActor, 'kind' | 'id'>
 
 // actorValue is the "By" select's value of an actor: its kind, then its id when it has one.
 export function actorValue(actor: AuditActorRef) {
@@ -68,7 +68,7 @@ export function filterActorValue(filter: AuditFilter) {
 export function withActor(filter: AuditFilter, value: string | null): AuditFilter {
   const rest = omit(filter, ['actorKind', 'actorId'])
   const separator = value?.indexOf(':') ?? -1
-  const kind = zSiteAuditActorKind.safeParse(separator < 0 ? value : value?.slice(0, separator))
+  const kind = zAuditActorKind.safeParse(separator < 0 ? value : value?.slice(0, separator))
   if (!kind.success) {
     return rest
   }

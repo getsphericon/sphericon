@@ -18,10 +18,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) setExempt(t *testing.T, c *staffeeapi.Client, id string, exempt bool) *staffeeapi.StaffExemptionChange {
+func (h *harness) setExempt(t *testing.T, c *staffeeapi.Client, id string, exempt bool) *staffeeapi.StaffWorkspaceChange {
 	t.Helper()
 	wid := staffeeapi.WorkspaceId(id)
-	var change *staffeeapi.StaffExemptionChange
+	var change *staffeeapi.StaffWorkspaceChange
 	var err error
 	if exempt {
 		change, err = c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: wid})

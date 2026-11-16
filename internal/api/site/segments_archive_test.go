@@ -53,7 +53,7 @@ func TestSiteSegmentOnlyADraftNamesIsArchivedAndTheDraftIsNotScheduled(t *testin
 
 	draft, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastProSegmentID)})
 	require.NoError(t, err)
-	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, draft.Status)
+	assert.Equal(t, siteapi.BroadcastStatusDraft, draft.Status)
 }
 
 // An archived Segment is read-only until it is unarchived (ADR 0100): an edit answers 409 and
@@ -92,7 +92,7 @@ func TestSiteSegmentOfAScheduledBroadcastIsArchived(t *testing.T) {
 
 	b, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.BroadcastScheduledRenewalID)})
 	require.NoError(t, err)
-	assert.Equal(t, siteapi.SiteBroadcastStatusScheduled, b.Status)
+	assert.Equal(t, siteapi.BroadcastStatusScheduled, b.Status)
 	assert.Equal(t, idStr(fixtures.SegmentRenewalAudienceID), b.SegmentId.Value)
 }
 

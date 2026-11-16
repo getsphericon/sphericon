@@ -26,10 +26,10 @@ import (
 
 // entriesNamed works the audit jobs and returns the entries of
 // one action as the Workspace's owner sees them, newest first.
-func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, workspaceID siteapi.WorkspaceId, action string) []siteapi.SiteAuditEntryResource {
+func entriesNamed(t *testing.T, env *testhelper.TestEnv, ownerEmail string, workspaceID siteapi.WorkspaceId, action string) []siteapi.AuditEntryResource {
 	t.Helper()
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	var out []siteapi.SiteAuditEntryResource
+	var out []siteapi.AuditEntryResource
 	items := auditPage(t, env.SiteActor(t, ownerEmail), workspaceID).Items
 	for i := range items {
 		if string(items[i].Action) == action {
@@ -53,7 +53,7 @@ func TestAuditInvitationCreateAndRevokeAreRecorded(t *testing.T) {
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationCreate)
 	require.Len(t, got, 1)
 	e := got[0]
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, e.Actor.Kind)
 	assert.Equal(t, "John", e.Actor.Name.Value)
 	assert.Equal(t, "invitation", e.Target.Type)
 	assert.Equal(t, testhelper.ID(created.Resource.ID), e.Target.ID.Value)
@@ -81,7 +81,7 @@ func TestAuditInvitationAcceptIsAttributedToTheNewMember(t *testing.T) {
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionInvitationAccept)
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "Ivy", got[0].Actor.Name.Value)
 	assert.Equal(t, "Ivy", got[0].Target.Name.Value, "named by the name the new member gave, not the address")
 	assert.Empty(t, entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionInvitationAccept), "only the inviting Workspace")
@@ -98,8 +98,8 @@ func TestAuditLoginDuplicatesIntoEachOfTheUsersWorkspacesOnly(t *testing.T) {
 	globex := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserLogin)
 	require.Len(t, acme, 1)
 	require.Len(t, globex, 1)
-	for _, e := range []siteapi.SiteAuditEntryResource{acme[0], globex[0]} {
-		assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
+	for _, e := range []siteapi.AuditEntryResource{acme[0], globex[0]} {
+		assert.Equal(t, siteapi.AuditActorKindUser, e.Actor.Kind)
 		assert.Equal(t, "Mary", e.Actor.Name.Value)
 	}
 
@@ -163,7 +163,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
 		got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, action)
 		require.Lenf(t, got, 1, action)
-		assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
+		assert.Equal(t, siteapi.AuditActorKindStaff, got[0].Actor.Kind)
 		assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 		assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "", "the StaffMember's identity is never exposed")
 		diff, err := json.Marshal(got[0].Diff.Value)
@@ -182,7 +182,7 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindSystem, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindSystem, got[0].Actor.Kind)
 }
 
 func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
@@ -192,7 +192,7 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindStaff, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindStaff, got[0].Actor.Kind)
 	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")
 }
@@ -360,7 +360,7 @@ func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 		p.WorkspaceId = fixtures.AcmePublicID
 		return len(auditCSV(t, mustExport(ctx, t, owner, p))) - 1
 	}
-	staff := siteapi.NewOptSiteAuditActorKind(siteapi.SiteAuditActorKindStaff)
+	staff := siteapi.NewOptAuditActorKind(siteapi.AuditActorKindStaff)
 	probe, other := siteapi.NewOptString("op-42"), siteapi.NewOptString("someone-else")
 
 	assert.Zero(t, list(siteapi.SiteAuditListParams{ActorId: probe}), "the real id matches nothing without a kind")
