@@ -25,13 +25,10 @@ func presetSchemaCommand() *cli.Command {
 	return &cli.Command{
 		Name:  "schema",
 		Usage: "print the JSON Schema of the Preset file",
-		Action: func(_ context.Context, cmd *cli.Command) error {
-			if cmd.Args().Present() {
-				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
-			}
+		Action: noArgs(func(_ context.Context, cmd *cli.Command) error {
 			_, err := out(cmd).Write(preset.Schema)
 			return err
-		},
+		}),
 	}
 }
 
@@ -85,40 +82,31 @@ func sample(cmd *cli.Command) (preset.Request, preset.Params, time.Time, error) 
 	if err != nil {
 		return preset.Request{}, nil, time.Time{}, err
 	}
-	headers, err := pairs(cmd.StringSlice(flagHeader))
-	if err != nil {
+	header := http.Header{}
+	if err := pairs(cmd.StringSlice(flagHeader), header.Set); err != nil {
 		return preset.Request{}, nil, time.Time{}, fmt.Errorf("--header: %w", err)
 	}
-	header := http.Header{}
-	for k, v := range headers {
-		header.Set(k, v)
-	}
-	values, err := pairs(cmd.StringSlice(flagParam))
-	if err != nil {
+	params := preset.Params{}
+	if err := pairs(cmd.StringSlice(flagParam), func(k, v string) { params[k] = v }); err != nil {
 		return preset.Request{}, nil, time.Time{}, fmt.Errorf("--param: %w", err)
 	}
-	params := preset.Params{}
-	for k, v := range values {
-		params[k] = v
-	}
-	now := time.Now()
+	at := now()
 	if raw := cmd.String(flagNow); raw != "" {
-		if now, err = time.Parse(time.RFC3339, raw); err != nil {
+		if at, err = time.Parse(time.RFC3339, raw); err != nil {
 			return preset.Request{}, nil, time.Time{}, fmt.Errorf("--now is not an RFC 3339 time: %w", err)
 		}
 	}
-	return preset.Request{URL: cmd.String(flagURL), Header: header, Body: body}, params, now, nil
+	return preset.Request{URL: cmd.String(flagURL), Header: header, Body: body}, params, at, nil
 }
 
-// pairs reads repeated name=value flags.
-func pairs(items []string) (map[string]string, error) {
-	m := make(map[string]string, len(items))
+// pairs reads repeated name=value flags and hands each pair to set.
+func pairs(items []string, set func(name, value string)) error {
 	for _, it := range items {
 		k, v, ok := strings.Cut(it, "=")
 		if !ok || k == "" {
-			return nil, fmt.Errorf("%q is not name=value", it)
+			return fmt.Errorf("%q is not name=value", it)
 		}
-		m[k] = v
+		set(k, v)
 	}
-	return m, nil
+	return nil
 }

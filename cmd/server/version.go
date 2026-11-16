@@ -22,16 +22,13 @@ func versionCommand() *cli.Command {
 		Name:  "version",
 		Usage: "print the build version",
 		Flags: []cli.Flag{&cli.BoolFlag{Name: flagJSON, Usage: "print the build as a JSON object"}},
-		Action: func(_ context.Context, cmd *cli.Command) error {
-			if cmd.Args().Present() {
-				return fmt.Errorf("unexpected argument %q (see `%s --help`)", cmd.Args().First(), cmd.FullName())
-			}
+		Action: noArgs(func(_ context.Context, cmd *cli.Command) error {
 			info := buildinfo.Current()
 			if cmd.Bool(flagJSON) {
 				return json.NewEncoder(out(cmd)).Encode(info)
 			}
 			_, err := fmt.Fprintln(out(cmd), info.Line())
 			return err
-		},
+		}),
 	}
 }

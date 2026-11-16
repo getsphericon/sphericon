@@ -15,6 +15,15 @@ import (
 // What the `sphericon service-credential` commands print (ADR 0026): each Report function takes
 // what the module returned, prints the outcome to w, or says in its error why nothing changed.
 
+// KnownScopes is the scope vocabulary of the service contract, as the commands print it.
+func KnownScopes() string {
+	names := make([]string, len(servicecredentials.Scopes))
+	for i, s := range servicecredentials.Scopes {
+		names[i] = string(s)
+	}
+	return strings.Join(names, ", ")
+}
+
 // errNoLicense explains servicecredentials.ErrNotLicensed to the operator.
 var errNoLicense = errors.New("this instance has no staff license (feature `staff`)")
 
@@ -90,7 +99,7 @@ func explainCredential(err error, id int64) error {
 	case errors.Is(err, servicecredentials.ErrNotLicensed):
 		return errNoLicense
 	case errors.Is(err, servicecredentials.ErrInvalidScope):
-		return errors.New("a service credential needs one or more known scopes (usage:read, workspaces:read, users:read, domains:read, holds:write)")
+		return fmt.Errorf("a service credential needs one or more known scopes (%s)", KnownScopes())
 	case errors.Is(err, servicecredentials.ErrInvalidCredential):
 		return errors.New("a service credential needs an expiry in the future")
 	case errors.Is(err, servicecredentials.ErrCredentialNotFound):

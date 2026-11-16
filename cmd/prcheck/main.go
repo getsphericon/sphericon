@@ -21,13 +21,8 @@ func main() {
 }
 
 func run(args []string, body string) error {
-	if len(args) != 1 {
+	if len(args) != 1 || args[0] != "disclosure" {
 		return errors.New(usage)
 	}
-	switch args[0] {
-	case "disclosure":
-		return prcheck.CheckDisclosure(body)
-	default:
-		return errors.New(usage)
-	}
+	return prcheck.CheckDisclosure(body)
 }

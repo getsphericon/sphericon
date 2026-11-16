@@ -18,7 +18,7 @@ import (
 // shown once, when it is created, and only a hash of it is stored. A service may hold two
 // active credentials at once, so a rotation is `rotate` (a second credential with the
 // same name and scopes) followed by `revoke` of the old one once the service has switched.
-func serviceCredentialCommand(d deps) *cli.Command {
+func serviceCredentialCommand(env string) *cli.Command {
 	expiresIn := func() cli.Flag {
 		return &cli.DurationFlag{
 			Name:  flagExpiresIn,
@@ -37,7 +37,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 		if in == 0 {
 			return nil
 		}
-		at := d.now().Add(in)
+		at := now().Add(in)
 		return &at
 	}
 	return group("service-credential", "manage the Service credentials of the Staff surface",
@@ -45,13 +45,13 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Name:        "create",
 			Usage:       "create a Service credential and print its value once",
 			ArgsUsage:   "<name> <scope>[,<scope>...]",
-			Description: "scopes: usage:read, workspaces:read, users:read, domains:read, holds:write",
+			Description: "scopes: " + commandline.KnownScopes(),
 			Flags:       []cli.Flag{expiresIn()},
 			Arguments: []cli.Argument{
 				&cli.StringArg{Name: flagName, Required: true},
 				&cli.StringArg{Name: flagScopes, Required: true},
 			},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				credentials, err := c.ServiceCredentials()
 				if err != nil {
 					return err
@@ -70,7 +70,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			ArgsUsage: "<id>",
 			Flags:     []cli.Flag{expiresIn()},
 			Arguments: []cli.Argument{&cli.IntArg{Name: flagID, Required: true}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				id, err := credentialID(cmd)
 				if err != nil {
 					return err
@@ -88,7 +88,7 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Usage:     "refuse a credential from now on",
 			ArgsUsage: "<id>",
 			Arguments: []cli.Argument{&cli.IntArg{Name: flagID, Required: true}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				id, err := credentialID(cmd)
 				if err != nil {
 					return err
@@ -106,13 +106,13 @@ func serviceCredentialCommand(d deps) *cli.Command {
 			Usage:     "list the credentials, optionally of one name",
 			ArgsUsage: "[<name>]",
 			Arguments: []cli.Argument{&cli.StringArg{Name: flagName}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				credentials, err := c.ServiceCredentials()
 				if err != nil {
 					return err
 				}
 				list, err := credentials.ServiceCredentials(ctx, cmd.StringArg(flagName))
-				return commandline.ReportCredentials(out(cmd), list, d.now(), err)
+				return commandline.ReportCredentials(out(cmd), list, now(), err)
 			}),
 		},
 	)

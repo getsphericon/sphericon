@@ -13,7 +13,7 @@ import (
 // workspaceCommand is `sphericon workspace suspend|unsuspend` (ADR 0007): the bare
 // staff member toggle for a Workspace's outbound-sending freeze. Everything above this
 // mechanism (the automated detector, a Staff console) is EE.
-func workspaceCommand(d deps) *cli.Command {
+func workspaceCommand(env string) *cli.Command {
 	return group("workspace", "freeze or resume a Workspace's outbound sending",
 		&cli.Command{
 			Name:      "suspend",
@@ -23,7 +23,7 @@ func workspaceCommand(d deps) *cli.Command {
 				&cli.StringArg{Name: flagID, Required: true},
 				&cli.StringArgs{Name: flagReason, Max: -1},
 			},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				id := cmd.StringArg(flagID)
 				reason := strings.Join(cmd.StringArgs(flagReason), " ")
 				suspender, err := c.Suspender()
@@ -39,7 +39,7 @@ func workspaceCommand(d deps) *cli.Command {
 			Usage:     "resume outbound sending",
 			ArgsUsage: "<id>",
 			Arguments: []cli.Argument{&cli.StringArg{Name: flagID, Required: true}},
-			Action: d.withCore(func(ctx context.Context, cmd *cli.Command, c core) error {
+			Action: withCore(env, func(ctx context.Context, cmd *cli.Command, c core) error {
 				suspender, err := c.Suspender()
 				if err != nil {
 					return err
