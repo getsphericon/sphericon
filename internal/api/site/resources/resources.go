@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -1158,15 +1159,16 @@ func auditDiff(d map[string]jx.Raw) siteapi.OptNilJsonObject {
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
 func webhookFailure(c Converter, e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
-	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
+	h := webhookendpoints.HealthOf(&e)
+	if h.ConsecutiveFailures == nil || h.FailingSince == nil || h.LastFailureAt == nil || h.LastErrorKind == nil {
 		return siteapi.OptSiteWebhookFailure{}
 	}
 	return siteapi.NewOptSiteWebhookFailure(siteapi.SiteWebhookFailure{
-		ConsecutiveFailures: narrow.Int32(*e.ConsecutiveFailures),
-		Since:               siteapi.Timestamp(*e.FailingSince),
-		LastFailureAt:       siteapi.Timestamp(*e.LastFailureAt),
-		Kind:                c.WebhookErrorKindToResource(*e.LastErrorKind),
-		Status:              optInt32(e.LastErrorStatus),
+		ConsecutiveFailures: narrow.Int32(*h.ConsecutiveFailures),
+		Since:               siteapi.Timestamp(*h.FailingSince),
+		LastFailureAt:       siteapi.Timestamp(*h.LastFailureAt),
+		Kind:                c.WebhookErrorKindToResource(*h.LastErrorKind),
+		Status:              optInt32(h.LastErrorStatus),
 	})
 }
 

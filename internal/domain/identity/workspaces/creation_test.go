@@ -50,3 +50,24 @@ func TestCreateInKeepsTheFirstIDThatIsFree(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "FreshId1", ws.PublicID)
 }
+
+// A new Workspace takes the next service feed position as it is created (ADR 0062), held in its
+// standing beside it (ADR 0168), which the creation makes.
+func TestCreateInGivesTheWorkspaceItsStandingWithAFeedPosition(t *testing.T) {
+	env := testhelper.Setup(t)
+	top, err := workspaces.TopFeedPosition(t.Context(), env.DB)
+	require.NoError(t, err)
+
+	var ws *ent.Workspace
+	err = env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
+		var err error
+		ws, err = workspaces.CreateIn(t.Context(), tx, "Fresh", func() string { return "FreshId1" }, nil)
+		return err
+	})
+
+	require.NoError(t, err)
+	standing, err := workspaces.StandingIn(t.Context(), env.DB, ws.ID)
+	require.NoError(t, err)
+	assert.Equal(t, top+1, standing.FeedPosition)
+	assert.Nil(t, standing.SetupCompletedAt)
+}

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -129,8 +130,8 @@ func TestASuspensionTellsTheOwners(t *testing.T) {
 	assert.Contains(t, msgs[0].Text, "complaint rate above 0.3%", "the reason is stated")
 	assert.Contains(t, msgs[0].Text, "automated abuse detection", "who set it is stated")
 	assert.Contains(t, msgs[0].Text, support)
-	ws := env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID)
-	assert.NotNil(t, ws.AbuseFreezeNotifiedAt, "the notice is recorded")
+	standing := env.DB.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(fixtures.AcmeID)).OnlyX(t.Context())
+	assert.NotNil(t, standing.AbuseFreezeNotifiedAt, "the notice is recorded")
 }
 
 // A Staff member or the CLI appears to the owners as "Sphericon staff"; the Staff member's real id

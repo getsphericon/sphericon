@@ -36,8 +36,8 @@ func (c *StaffConverterImpl) AbuseToResource(source *ent.Workspace) staffee.Staf
 	if source != nil {
 		staffeeapiStaffAbuse.Exempt = (*source).AbuseExempt
 		staffeeapiStaffAbuse.ClearedAt = optNilTimestamp((*source).ClearedAt)
-		staffeeapiStaffAbuse.WarningNotifiedAt = optNilTimestamp((*source).AbuseWarningNotifiedAt)
-		staffeeapiStaffAbuse.FreezeNotifiedAt = optNilTimestamp((*source).AbuseFreezeNotifiedAt)
+		staffeeapiStaffAbuse.WarningNotifiedAt = abuseWarningNotifiedAt(source)
+		staffeeapiStaffAbuse.FreezeNotifiedAt = abuseFreezeNotifiedAt(source)
 		// staffeeapiStaffAbuse.Warning: ignore
 	}
 	return staffeeapiStaffAbuse
@@ -308,7 +308,7 @@ func (c *StaffConverterImpl) WorkspaceDetailToResource(source *ent.Workspace) st
 		staffeeapiStaffWorkspaceDetailResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
 		staffeeapiStaffWorkspaceDetailResource.Suspension = workspaceSuspension(c, source)
 		staffeeapiStaffWorkspaceDetailResource.Exempt = (*source).AbuseExempt
-		staffeeapiStaffWorkspaceDetailResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+		staffeeapiStaffWorkspaceDetailResource.Warned = abuseWarned(source)
 		// staffeeapiStaffWorkspaceDetailResource.Holds: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Deliverability: ignore
 		// staffeeapiStaffWorkspaceDetailResource.Abuse: ignore
@@ -326,7 +326,7 @@ func (c *StaffConverterImpl) WorkspaceToResource(source *ent.Workspace) staffee.
 		staffeeapiStaffWorkspaceResource.ErasedAt = optNilTimestamp((*source).ErasedAt)
 		staffeeapiStaffWorkspaceResource.Suspension = workspaceSuspension(c, source)
 		staffeeapiStaffWorkspaceResource.Exempt = (*source).AbuseExempt
-		staffeeapiStaffWorkspaceResource.Warned = isSet((*source).AbuseWarningNotifiedAt)
+		staffeeapiStaffWorkspaceResource.Warned = abuseWarned(source)
 	}
 	return staffeeapiStaffWorkspaceResource
 }

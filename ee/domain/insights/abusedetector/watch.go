@@ -82,7 +82,7 @@ func (r Review) Predicate() predicate.Workspace {
 	case ReviewDeleted:
 		return workspaces.Deleted()
 	case ReviewWarned:
-		return workspace.And(workspaces.Live(), workspace.AbuseWarningNotifiedAtNotNil(), suspension.NotSuspended(), workspace.AbuseExempt(false))
+		return workspace.And(workspaces.Live(), workspaces.AbuseWarned(), suspension.NotSuspended(), workspace.AbuseExempt(false))
 	case ReviewSystemFrozen:
 		return workspace.And(workspaces.Live(), suspension.BySystem())
 	default:

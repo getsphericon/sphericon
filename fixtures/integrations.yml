@@ -1,3 +1,5 @@
+# Each Integration has its provider state in integration_provider_state.yml (ADR 0168): a new one
+# here takes a row there.
 # Workspace acme (id 1). config_encrypted is sealed at load time via the encrypt
 # template func using the loading env's SPHERICON_ENCRYPTION_KEY, so the blob is valid in both
 # the test DB and the dev DB (their keys differ; a static ciphertext could not be).
@@ -88,8 +90,6 @@
   config_encrypted: '{{ encrypt "{}" }}'
   enabled: true
   is_default: false
-  provider_max_per_day: 200
-  provider_quota_checked_at: '2026-01-01 00:00:00'
   workspace_id: 2
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -132,8 +132,6 @@
   config_encrypted: '{{ encrypt "{}" }}'
   enabled: true
   is_default: false
-  provider_max_per_day: 200
-  provider_quota_checked_at: '2026-01-01 00:00:00'
   workspace_id: 4
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -149,8 +147,6 @@
   config_encrypted: '{{ encrypt "{}" }}'
   enabled: true
   is_default: false
-  provider_max_per_day: 200
-  provider_quota_checked_at: '2026-01-01 00:00:00'
   discarded_at: '{{daysAgo 5}}'
   workspace_id: 1
   created_at: '{{daysAgo 20}}'
@@ -388,8 +384,6 @@
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@meridian.test\"}" }}'
   enabled: true
   is_default: true
-  provider_enforcement: probation
-  provider_sandbox: true
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -430,7 +424,6 @@
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
   enabled: true
   is_default: false
-  provider_enforcement: shutdown
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -443,7 +436,6 @@
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
   enabled: true
   is_default: false
-  provider_enforcement: shutdown
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -456,7 +448,6 @@
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
   enabled: true
   is_default: false
-  provider_enforcement: shutdown
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -469,7 +460,6 @@
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@elsewhere.test\"}" }}'
   enabled: true
   is_default: false
-  provider_enforcement: shutdown
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -522,7 +512,6 @@
   config_encrypted: '{{ encrypt "{\"host\":\"mailpit\",\"port\":1025,\"from\":\"hello@kept.meridian.test\"}" }}'
   enabled: true
   is_default: false
-  provider_enforcement: shutdown
   workspace_id: 83
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
@@ -537,8 +526,6 @@
   config_encrypted: '{{ encrypt "{}" }}'
   enabled: true
   is_default: true
-  provider_max_per_day: 200
-  provider_quota_checked_at: '2026-01-01 00:00:00'
   workspace_id: 85
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'

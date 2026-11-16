@@ -28774,9 +28774,9 @@ type SiteWorkspaceResource struct {
 	AccountLinkAvailable bool `json:"accountLinkAvailable"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
-	// The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its
-	// bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's
-	// completion) does not move it.
+	// The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. What
+	// the service keeps about it for itself (the service feed's position, the abuse detector's notices,
+	// the Setup checklist's completion) lives beside it (ADR 0168) and does not move it.
 	Revision Revision `json:"revision"`
 }
 

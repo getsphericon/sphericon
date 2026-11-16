@@ -576,25 +576,18 @@ var IntegrationAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the Integration to its value.
 func (e *Integration) auditFields() map[string]any {
 	return map[string]any{
-		"discarded_at":              derefAudit(e.DiscardedAt),
-		"name":                      e.Name,
-		"channel":                   e.Channel,
-		"provider":                  e.Provider,
-		"config_encrypted":          e.ConfigEncrypted,
-		"preset":                    derefAudit(e.Preset),
-		"params_encrypted":          e.ParamsEncrypted,
-		"ingest_key":                e.IngestKey,
-		"enabled":                   e.Enabled,
-		"is_default":                e.IsDefault,
-		"max_per_second":            derefAudit(e.MaxPerSecond),
-		"max_per_day":               derefAudit(e.MaxPerDay),
-		"provider_max_per_second":   derefAudit(e.ProviderMaxPerSecond),
-		"provider_max_per_day":      derefAudit(e.ProviderMaxPerDay),
-		"provider_enforcement":      derefAudit(e.ProviderEnforcement),
-		"provider_sandbox":          e.ProviderSandbox,
-		"provider_refused_at":       derefAudit(e.ProviderRefusedAt),
-		"provider_quota_checked_at": derefAudit(e.ProviderQuotaCheckedAt),
-		"provider_quota_failed_at":  derefAudit(e.ProviderQuotaFailedAt),
+		"discarded_at":     derefAudit(e.DiscardedAt),
+		"name":             e.Name,
+		"channel":          e.Channel,
+		"provider":         e.Provider,
+		"config_encrypted": e.ConfigEncrypted,
+		"preset":           derefAudit(e.Preset),
+		"params_encrypted": e.ParamsEncrypted,
+		"ingest_key":       e.IngestKey,
+		"enabled":          e.Enabled,
+		"is_default":       e.IsDefault,
+		"max_per_second":   derefAudit(e.MaxPerSecond),
+		"max_per_day":      derefAudit(e.MaxPerDay),
 	}
 }
 
@@ -865,16 +858,11 @@ var WebhookEndpointAuditSensitive = map[string]bool{
 // auditFields maps every audited field of the WebhookEndpoint to its value.
 func (e *WebhookEndpoint) auditFields() map[string]any {
 	return map[string]any{
-		"url":                  e.URL,
-		"secret_encrypted":     e.SecretEncrypted,
-		"event_types":          e.EventTypes,
-		"disabled_at":          derefAudit(e.DisabledAt),
-		"consecutive_failures": derefAudit(e.ConsecutiveFailures),
-		"failing_since":        derefAudit(e.FailingSince),
-		"last_error_kind":      derefAudit(e.LastErrorKind),
-		"last_error_status":    derefAudit(e.LastErrorStatus),
-		"last_failure_at":      derefAudit(e.LastFailureAt),
-		"disabled_reason":      derefAudit(e.DisabledReason),
+		"url":              e.URL,
+		"secret_encrypted": e.SecretEncrypted,
+		"event_types":      e.EventTypes,
+		"disabled_at":      derefAudit(e.DisabledAt),
+		"disabled_reason":  derefAudit(e.DisabledReason),
 	}
 }
 
@@ -918,13 +906,11 @@ func (e *Workspace) auditFields() map[string]any {
 		"postal_address":            e.PostalAddress,
 		"retention_days":            derefAudit(e.RetentionDays),
 		"timezone":                  derefAudit(e.Timezone),
-		"setup_completed_at":        derefAudit(e.SetupCompletedAt),
 		"reporting_currency":        derefAudit(e.ReportingCurrency),
 		"attribution_window_days":   e.AttributionWindowDays,
 		"send_cap":                  derefAudit(e.SendCap),
 		"domain_join_enabled":       e.DomainJoinEnabled,
 		"second_factor_required_at": derefAudit(e.SecondFactorRequiredAt),
-		"feed_position":             e.FeedPosition,
 		"erased_at":                 derefAudit(e.ErasedAt),
 		"suspended_at":              derefAudit(e.SuspendedAt),
 		"suspended_by_kind":         derefAudit(e.SuspendedByKind),
@@ -932,8 +918,6 @@ func (e *Workspace) auditFields() map[string]any {
 		"suspension_reason":         derefAudit(e.SuspensionReason),
 		"cleared_at":                derefAudit(e.ClearedAt),
 		"abuse_exempt":              e.AbuseExempt,
-		"abuse_warning_notified_at": derefAudit(e.AbuseWarningNotifiedAt),
-		"abuse_freeze_notified_at":  derefAudit(e.AbuseFreezeNotifiedAt),
 	}
 }
 

@@ -110,11 +110,6 @@ func Timezone(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldTimezone, v))
 }
 
-// SetupCompletedAt applies equality check predicate on the "setup_completed_at" field. It's identical to SetupCompletedAtEQ.
-func SetupCompletedAt(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSetupCompletedAt, v))
-}
-
 // ReportingCurrency applies equality check predicate on the "reporting_currency" field. It's identical to ReportingCurrencyEQ.
 func ReportingCurrency(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))
@@ -138,11 +133,6 @@ func DomainJoinEnabled(v bool) predicate.Workspace {
 // SecondFactorRequiredAt applies equality check predicate on the "second_factor_required_at" field. It's identical to SecondFactorRequiredAtEQ.
 func SecondFactorRequiredAt(v time.Time) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldSecondFactorRequiredAt, v))
-}
-
-// FeedPosition applies equality check predicate on the "feed_position" field. It's identical to FeedPositionEQ.
-func FeedPosition(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
 }
 
 // ErasedAt applies equality check predicate on the "erased_at" field. It's identical to ErasedAtEQ.
@@ -173,16 +163,6 @@ func ClearedAt(v time.Time) predicate.Workspace {
 // AbuseExempt applies equality check predicate on the "abuse_exempt" field. It's identical to AbuseExemptEQ.
 func AbuseExempt(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldAbuseExempt, v))
-}
-
-// AbuseWarningNotifiedAt applies equality check predicate on the "abuse_warning_notified_at" field. It's identical to AbuseWarningNotifiedAtEQ.
-func AbuseWarningNotifiedAt(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAt applies equality check predicate on the "abuse_freeze_notified_at" field. It's identical to AbuseFreezeNotifiedAtEQ.
-func AbuseFreezeNotifiedAt(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldAbuseFreezeNotifiedAt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -760,56 +740,6 @@ func TimezoneContainsFold(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldContainsFold(FieldTimezone, v))
 }
 
-// SetupCompletedAtEQ applies the EQ predicate on the "setup_completed_at" field.
-func SetupCompletedAtEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldSetupCompletedAt, v))
-}
-
-// SetupCompletedAtNEQ applies the NEQ predicate on the "setup_completed_at" field.
-func SetupCompletedAtNEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldSetupCompletedAt, v))
-}
-
-// SetupCompletedAtIn applies the In predicate on the "setup_completed_at" field.
-func SetupCompletedAtIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldSetupCompletedAt, vs...))
-}
-
-// SetupCompletedAtNotIn applies the NotIn predicate on the "setup_completed_at" field.
-func SetupCompletedAtNotIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldSetupCompletedAt, vs...))
-}
-
-// SetupCompletedAtGT applies the GT predicate on the "setup_completed_at" field.
-func SetupCompletedAtGT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldSetupCompletedAt, v))
-}
-
-// SetupCompletedAtGTE applies the GTE predicate on the "setup_completed_at" field.
-func SetupCompletedAtGTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldSetupCompletedAt, v))
-}
-
-// SetupCompletedAtLT applies the LT predicate on the "setup_completed_at" field.
-func SetupCompletedAtLT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldSetupCompletedAt, v))
-}
-
-// SetupCompletedAtLTE applies the LTE predicate on the "setup_completed_at" field.
-func SetupCompletedAtLTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldSetupCompletedAt, v))
-}
-
-// SetupCompletedAtIsNil applies the IsNil predicate on the "setup_completed_at" field.
-func SetupCompletedAtIsNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldIsNull(FieldSetupCompletedAt))
-}
-
-// SetupCompletedAtNotNil applies the NotNil predicate on the "setup_completed_at" field.
-func SetupCompletedAtNotNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotNull(FieldSetupCompletedAt))
-}
-
 // ReportingCurrencyEQ applies the EQ predicate on the "reporting_currency" field.
 func ReportingCurrencyEQ(v string) predicate.Workspace {
 	return predicate.Workspace(sql.FieldEQ(FieldReportingCurrency, v))
@@ -1033,46 +963,6 @@ func SecondFactorRequiredAtIsNil() predicate.Workspace {
 // SecondFactorRequiredAtNotNil applies the NotNil predicate on the "second_factor_required_at" field.
 func SecondFactorRequiredAtNotNil() predicate.Workspace {
 	return predicate.Workspace(sql.FieldNotNull(FieldSecondFactorRequiredAt))
-}
-
-// FeedPositionEQ applies the EQ predicate on the "feed_position" field.
-func FeedPositionEQ(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldFeedPosition, v))
-}
-
-// FeedPositionNEQ applies the NEQ predicate on the "feed_position" field.
-func FeedPositionNEQ(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldFeedPosition, v))
-}
-
-// FeedPositionIn applies the In predicate on the "feed_position" field.
-func FeedPositionIn(vs ...int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldFeedPosition, vs...))
-}
-
-// FeedPositionNotIn applies the NotIn predicate on the "feed_position" field.
-func FeedPositionNotIn(vs ...int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldFeedPosition, vs...))
-}
-
-// FeedPositionGT applies the GT predicate on the "feed_position" field.
-func FeedPositionGT(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldFeedPosition, v))
-}
-
-// FeedPositionGTE applies the GTE predicate on the "feed_position" field.
-func FeedPositionGTE(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldFeedPosition, v))
-}
-
-// FeedPositionLT applies the LT predicate on the "feed_position" field.
-func FeedPositionLT(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldFeedPosition, v))
-}
-
-// FeedPositionLTE applies the LTE predicate on the "feed_position" field.
-func FeedPositionLTE(v int64) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldFeedPosition, v))
 }
 
 // ErasedAtEQ applies the EQ predicate on the "erased_at" field.
@@ -1413,106 +1303,6 @@ func AbuseExemptEQ(v bool) predicate.Workspace {
 // AbuseExemptNEQ applies the NEQ predicate on the "abuse_exempt" field.
 func AbuseExemptNEQ(v bool) predicate.Workspace {
 	return predicate.Workspace(sql.FieldNEQ(FieldAbuseExempt, v))
-}
-
-// AbuseWarningNotifiedAtEQ applies the EQ predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseWarningNotifiedAtNEQ applies the NEQ predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtNEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseWarningNotifiedAtIn applies the In predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldAbuseWarningNotifiedAt, vs...))
-}
-
-// AbuseWarningNotifiedAtNotIn applies the NotIn predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtNotIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldAbuseWarningNotifiedAt, vs...))
-}
-
-// AbuseWarningNotifiedAtGT applies the GT predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtGT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseWarningNotifiedAtGTE applies the GTE predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtGTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseWarningNotifiedAtLT applies the LT predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtLT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseWarningNotifiedAtLTE applies the LTE predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtLTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldAbuseWarningNotifiedAt, v))
-}
-
-// AbuseWarningNotifiedAtIsNil applies the IsNil predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtIsNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldIsNull(FieldAbuseWarningNotifiedAt))
-}
-
-// AbuseWarningNotifiedAtNotNil applies the NotNil predicate on the "abuse_warning_notified_at" field.
-func AbuseWarningNotifiedAtNotNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotNull(FieldAbuseWarningNotifiedAt))
-}
-
-// AbuseFreezeNotifiedAtEQ applies the EQ predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldEQ(FieldAbuseFreezeNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAtNEQ applies the NEQ predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtNEQ(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNEQ(FieldAbuseFreezeNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAtIn applies the In predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldIn(FieldAbuseFreezeNotifiedAt, vs...))
-}
-
-// AbuseFreezeNotifiedAtNotIn applies the NotIn predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtNotIn(vs ...time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotIn(FieldAbuseFreezeNotifiedAt, vs...))
-}
-
-// AbuseFreezeNotifiedAtGT applies the GT predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtGT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGT(FieldAbuseFreezeNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAtGTE applies the GTE predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtGTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldGTE(FieldAbuseFreezeNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAtLT applies the LT predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtLT(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLT(FieldAbuseFreezeNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAtLTE applies the LTE predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtLTE(v time.Time) predicate.Workspace {
-	return predicate.Workspace(sql.FieldLTE(FieldAbuseFreezeNotifiedAt, v))
-}
-
-// AbuseFreezeNotifiedAtIsNil applies the IsNil predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtIsNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldIsNull(FieldAbuseFreezeNotifiedAt))
-}
-
-// AbuseFreezeNotifiedAtNotNil applies the NotNil predicate on the "abuse_freeze_notified_at" field.
-func AbuseFreezeNotifiedAtNotNil() predicate.Workspace {
-	return predicate.Workspace(sql.FieldNotNull(FieldAbuseFreezeNotifiedAt))
 }
 
 // HasContacts applies the HasEdge predicate on the "contacts" edge.
@@ -2634,6 +2424,75 @@ func HasUsages() predicate.Workspace {
 func HasUsagesWith(preds ...predicate.Usage) predicate.Workspace {
 	return predicate.Workspace(func(s *sql.Selector) {
 		step := newUsagesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasIntegrationProviderStates applies the HasEdge predicate on the "integration_provider_states" edge.
+func HasIntegrationProviderStates() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, IntegrationProviderStatesTable, IntegrationProviderStatesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasIntegrationProviderStatesWith applies the HasEdge predicate on the "integration_provider_states" edge with a given conditions (other predicates).
+func HasIntegrationProviderStatesWith(preds ...predicate.IntegrationProviderState) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newIntegrationProviderStatesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasWebhookEndpointHealths applies the HasEdge predicate on the "webhook_endpoint_healths" edge.
+func HasWebhookEndpointHealths() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, WebhookEndpointHealthsTable, WebhookEndpointHealthsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasWebhookEndpointHealthsWith applies the HasEdge predicate on the "webhook_endpoint_healths" edge with a given conditions (other predicates).
+func HasWebhookEndpointHealthsWith(preds ...predicate.WebhookEndpointHealth) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newWebhookEndpointHealthsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasStanding applies the HasEdge predicate on the "standing" edge.
+func HasStanding() predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, StandingTable, StandingColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasStandingWith applies the HasEdge predicate on the "standing" edge with a given conditions (other predicates).
+func HasStandingWith(preds ...predicate.WorkspaceStanding) predicate.Workspace {
+	return predicate.Workspace(func(s *sql.Selector) {
+		step := newStandingStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

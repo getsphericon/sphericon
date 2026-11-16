@@ -30,7 +30,7 @@ type WorkspaceChange struct {
 
 // changeOf is the WorkspaceChange of the Workspace id after a change: the row as it stands now.
 func (m *Module) changeOf(ctx context.Context, id int64, changed bool) (*WorkspaceChange, error) {
-	ws, err := m.ent.Workspace.Get(ctx, id)
+	ws, err := m.ent.Workspace.Query().Where(entworkspace.ID(id)).WithStanding().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (m *Module) ListWorkspaces(ctx context.Context, review abusedetector.Review
 	if err := m.licensed(); err != nil {
 		return pagination.Page[*ent.Workspace]{}, err
 	}
-	q := m.ent.Workspace.Query()
+	q := m.ent.Workspace.Query().WithStanding()
 	if search != "" {
 		q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
 	}
@@ -150,6 +150,9 @@ func (m *Module) GetWorkspace(ctx context.Context, publicID string) (WorkspaceDe
 	}
 	w, err := m.workspace(ctx, publicID)
 	if err != nil {
+		return WorkspaceDetail{}, err
+	}
+	if w.Edges.Standing, err = w.QueryStanding().Only(ctx); err != nil {
 		return WorkspaceDetail{}, err
 	}
 	d := WorkspaceDetail{Workspace: w}

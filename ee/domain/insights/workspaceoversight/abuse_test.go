@@ -12,6 +12,7 @@ import (
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -91,7 +92,7 @@ func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 func TestTheListSurfacesWarnedAndSystemFrozenWorkspaces(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetAbuseWarningNotifiedAt(time.Now()).ExecX(t.Context())
+	h.env.DB.WorkspaceStanding.Update().Where(workspacestanding.WorkspaceID(fixtures.GlobexID)).SetAbuseWarningNotifiedAt(time.Now()).ExecX(t.Context())
 
 	frozen := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewSystemFrozen)})
 	warned := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewWarned)})
@@ -105,7 +106,7 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 	h := newHarness(t, testhelper.WithStaffVolumeFloor(8)) // Soylent: 8 sent, 1 hard bounce, 1 complaint
 	c, _ := h.staffSession(t)
 	notified := time.Now().Add(-time.Hour)
-	h.env.DB.Workspace.UpdateOneID(fixtures.SoylentID).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
+	h.env.DB.WorkspaceStanding.Update().Where(workspacestanding.WorkspaceID(fixtures.SoylentID)).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
 
 	detail := h.workspaceDetail(t, c, fixtures.SoylentPublicID)
 

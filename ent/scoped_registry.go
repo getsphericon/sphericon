@@ -29,6 +29,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -53,6 +54,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 )
 
 // ScopedEntity describes one Workspace-owned entity for tests that must cover every
@@ -1553,6 +1555,76 @@ func ScopedEntities() []*ScopedEntity {
 				if src.MaxPerDay != nil {
 					b.SetMaxPerDay(*src.MaxPerDay)
 				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "provider_limiter", Target: "ProviderLimiter",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).SetProviderLimiterID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "provider_state", Target: "IntegrationProviderState",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).SetProviderStateID(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "captured_messages", Target: "CapturedMessage",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddCapturedMessageIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "bindings", Target: "Binding",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddBindingIDs(target).Exec(ctx)
+					},
+				},
+				{
+					Name: "start_tokens", Target: "StartToken",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.Integration().UpdateOneID(id).AddStartTokenIDs(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Kind:         Kinds["IntegrationProviderState"],
+			Name:         "IntegrationProviderState",
+			Wrapper:      reflect.TypeFor[*IntegrationProviderStateScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.IntegrationProviderState.Query().Where(integrationproviderstate.WorkspaceID(ws)).Order(Asc(integrationproviderstate.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.IntegrationProviderState().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.IntegrationProviderState().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.IntegrationProviderState().Update().Where(integrationproviderstate.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.IntegrationProviderState().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.IntegrationProviderState().Delete().Where(integrationproviderstate.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.IntegrationProviderState.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.IntegrationProviderState().Create()
+				b.SetIntegrationID(remap("Integration", src.IntegrationID))
 				if src.ProviderMaxPerSecond != nil {
 					b.SetProviderMaxPerSecond(*src.ProviderMaxPerSecond)
 				}
@@ -1578,32 +1650,7 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				return created.WorkspaceID, nil
 			},
-			Refs: []ScopedRef{
-				{
-					Name: "provider_limiter", Target: "ProviderLimiter",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Integration().UpdateOneID(id).SetProviderLimiterID(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "captured_messages", Target: "CapturedMessage",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Integration().UpdateOneID(id).AddCapturedMessageIDs(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "bindings", Target: "Binding",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Integration().UpdateOneID(id).AddBindingIDs(target).Exec(ctx)
-					},
-				},
-				{
-					Name: "start_tokens", Target: "StartToken",
-					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
-						return s.Integration().UpdateOneID(id).AddStartTokenIDs(target).Exec(ctx)
-					},
-				},
-			},
+			Refs: []ScopedRef{},
 		},
 		{
 			Kind:         Kinds["Invitation"],
@@ -2982,6 +3029,55 @@ func ScopedEntities() []*ScopedEntity {
 				if src.HealthGeneration != nil {
 					b.SetHealthGeneration(*src.HealthGeneration)
 				}
+				if src.DisabledReason != nil {
+					b.SetDisabledReason(*src.DisabledReason)
+				}
+				created, err := b.Save(ctx)
+				if err != nil {
+					return 0, err
+				}
+				return created.WorkspaceID, nil
+			},
+			Refs: []ScopedRef{
+				{
+					Name: "health", Target: "WebhookEndpointHealth",
+					Set: func(ctx context.Context, s *Scoped, id, target int64) error {
+						return s.WebhookEndpoint().UpdateOneID(id).SetHealthID(target).Exec(ctx)
+					},
+				},
+			},
+		},
+		{
+			Kind:         Kinds["WebhookEndpointHealth"],
+			Name:         "WebhookEndpointHealth",
+			Wrapper:      reflect.TypeFor[*WebhookEndpointHealthScoped](),
+			AuditActions: []string{},
+			IDs: func(ctx context.Context, c *Client, ws int64) ([]int64, error) {
+				return c.WebhookEndpointHealth.Query().Where(webhookendpointhealth.WorkspaceID(ws)).Order(Asc(webhookendpointhealth.FieldID)).IDs(ctx)
+			},
+			Get: func(ctx context.Context, s *Scoped, id int64) (any, error) {
+				return s.WebhookEndpointHealth().Get(ctx, id)
+			},
+			Touch: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.WebhookEndpointHealth().UpdateOneID(id).Exec(ctx)
+			},
+			BulkTouch: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.WebhookEndpointHealth().Update().Where(webhookendpointhealth.ID(id)).Save(ctx)
+			},
+			Delete: func(ctx context.Context, s *Scoped, id int64) error {
+				return s.WebhookEndpointHealth().DeleteOneID(id).Exec(ctx)
+			},
+			BulkDelete: func(ctx context.Context, s *Scoped, id int64) (int, error) {
+				return s.WebhookEndpointHealth().Delete().Where(webhookendpointhealth.ID(id)).Exec(ctx)
+			},
+			Replant: func(ctx context.Context, s *Scoped, id int64, remap func(string, int64) int64) (int64, error) {
+				src, err := s.c.WebhookEndpointHealth.Get(ctx, id)
+				if err != nil {
+					return 0, err
+				}
+				_ = remap
+				b := s.WebhookEndpointHealth().Create()
+				b.SetWebhookEndpointID(remap("WebhookEndpoint", src.WebhookEndpointID))
 				if src.ConsecutiveFailures != nil {
 					b.SetConsecutiveFailures(*src.ConsecutiveFailures)
 				}
@@ -2996,9 +3092,6 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				if src.LastFailureAt != nil {
 					b.SetLastFailureAt(*src.LastFailureAt)
-				}
-				if src.DisabledReason != nil {
-					b.SetDisabledReason(*src.DisabledReason)
 				}
 				created, err := b.Save(ctx)
 				if err != nil {
