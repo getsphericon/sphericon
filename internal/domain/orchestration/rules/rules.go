@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"slices"
 	"strings"
 	"time"
@@ -510,7 +509,7 @@ func cleanTriggers(in []string) ([]string, error) {
 		a = strings.TrimSpace(a)
 		return a, a != ""
 	}))
-	if err := validation.Items(fieldname.TriggerEvents, len(out), bounds.RuleTriggerEventsMinItems, math.MaxInt); err != nil {
+	if err := validation.MinItems(fieldname.TriggerEvents, len(out), bounds.RuleTriggerEventsMinItems); err != nil {
 		return nil, err
 	}
 	return out, nil

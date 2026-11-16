@@ -45,9 +45,11 @@ type Bound struct {
 	Owners []string
 }
 
-// kinds are the JSON Schema keywords a bound is read from and the suffix of each constant, in the
-// order they are written.
-var kinds = []struct{ keyword, suffix string }{
+// kind is a JSON Schema keyword a bound is read from and the suffix of its constant.
+type kind struct{ keyword, suffix string }
+
+// boundKinds are the kinds that bound a client's value, in the order they are written.
+var boundKinds = []kind{
 	{"minLength", "MinLength"},
 	{"maxLength", "MaxLength"},
 	{"minimum", "Min"},
@@ -55,8 +57,11 @@ var kinds = []struct{ keyword, suffix string }{
 	{"minItems", "MinItems"},
 	{"maxItems", "MaxItems"},
 	{"pattern", "Pattern"},
-	{"default", "Default"},
 }
+
+// kinds are every kind a constant is written for: the bounds, then the default, which bounds
+// nothing.
+var kinds = append(slices.Clone(boundKinds), kind{"default", "Default"})
 
 // TransportBound is a bound of what a client sends that only the transport checks, because it
 // never reaches a write: a parameter of a read, the form of an identifier ogen parses before the
@@ -67,10 +72,6 @@ type TransportBound struct {
 	// Doc says why no write meets the bound.
 	Doc string
 }
-
-// keywords are the JSON Schema keywords a client's value is bounded by: those of kinds but the
-// default, which bounds nothing.
-var keywords = []string{"minLength", "maxLength", "minimum", "maximum", "minItems", "maxItems", "pattern"}
 
 // ReadSpecs reads every OpenAPI document of the repository at root, by its path relative to root.
 func ReadSpecs(root string) (map[string][]byte, error) {
@@ -324,14 +325,14 @@ func account(docs map[string]document, bounds []Bound, values map[string]map[str
 
 // bounded reports whether values hold a bound keyword, not only a default.
 func bounded(values map[string]string) bool {
-	return slices.ContainsFunc(keywords, func(k string) bool { _, ok := values[k]; return ok })
+	return slices.ContainsFunc(boundKinds, func(k kind) bool { _, ok := values[k.keyword]; return ok })
 }
 
 // matches reports whether a place declares the bound keywords of a bound's values; the default is
 // not a bound.
 func matches(values, found map[string]string) bool {
-	for _, k := range keywords {
-		if values[k] != found[k] {
+	for _, k := range boundKinds {
+		if values[k.keyword] != found[k.keyword] {
 			return false
 		}
 	}
@@ -482,7 +483,7 @@ func read(doc document, p place) (map[string]string, error) {
 }
 
 // literals are the Go literals of the keywords of kinds a schema declares.
-func literals(fields map[string]json.RawMessage, of []struct{ keyword, suffix string }) (map[string]string, error) {
+func literals(fields map[string]json.RawMessage, of []kind) (map[string]string, error) {
 	values := map[string]string{}
 	for _, k := range of {
 		v, ok := fields[k.keyword]

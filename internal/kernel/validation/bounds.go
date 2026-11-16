@@ -78,6 +78,9 @@ func Items(field string, n, lo, hi int) error {
 	return nil
 }
 
+// MinItems is Items with no upper bound.
+func MinItems(field string, n, lo int) error { return Items(field, n, lo, math.MaxInt) }
+
 // patterns are the compiled patterns of the contract, by their source.
 var patterns sync.Map
 

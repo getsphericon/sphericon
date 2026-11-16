@@ -181,7 +181,7 @@ func (w *walker) schema(at place, raw json.RawMessage) error {
 			return err
 		}
 	}
-	values, err := literals(s, boundKinds())
+	values, err := literals(s, boundKinds)
 	if err != nil {
 		return fmt.Errorf("%s %w", at, err)
 	}
@@ -260,15 +260,4 @@ func (p place) below(name string) place {
 		p.property += "." + name
 	}
 	return p
-}
-
-// boundKinds are the kinds a client's value is bounded by.
-func boundKinds() []struct{ keyword, suffix string } {
-	var out []struct{ keyword, suffix string }
-	for _, k := range kinds {
-		if slices.Contains(keywords, k.keyword) {
-			out = append(out, k)
-		}
-	}
-	return out
 }
