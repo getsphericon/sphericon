@@ -9,7 +9,8 @@ or `AGENTS.md`.
 ## Enforcement
 
 - A check is turned on at once and the violations it finds are fixed, with no baseline of known
-  violations.
+  violations. The one exception is the domain tier's call contract (rule 5, ADR 0167), which ratchets
+  in over an exemption list that may only shrink.
 - A rule that needs Go types is checked by an analyzer of our own; one that needs only syntax, by an
   ast-grep rule. Which rules have a check, and how to add one, is in "Project checks" of
   `CODING_STANDARDS.md`: this file does not list them.
@@ -46,7 +47,9 @@ or `AGENTS.md`.
    contexts, ADR 0102); an operation that needs a module above is a use case. A use case is called
    one way (ADR 0104): its `New` takes every dependency and the clock, and each method takes the
    context, the scope and at most two required arguments (the rest in a typed input, the actor
-   among them) and returns one value or a named result, with errors of the shared taxonomy.
+   among them) and returns one value or a named result, with errors of the shared taxonomy. A domain
+   operation is called the same way (ADR 0167): a method of an exported type that a constructor `New…`
+   builds from every dependency, its clients and the clock included.
    Every exported write of a domain module normalises and checks all of its input itself (ADR 0107):
    no doc comment says "the caller has checked", and a driver checks no rule of a row. The contract's
    bounds reach the owner generated from the contract, never as a copy; the rules every owner shares

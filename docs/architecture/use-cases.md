@@ -43,7 +43,7 @@ items, the decision, the link of a link flow, the Second factor and `user.login`
 happened, signed in, a Second factor due, a Pending sign-up or an identity linked, and the callback
 turns that into a cookie or a redirect). The use
 case is a `UseCase` type built by `New` from what it needs (the bus, the Instance clock: ADR 0104
-states the call contract every use case follows, which the `usecaseshape` analyzer checks), registered in
+states the call contract every use case follows, which the `callshape` analyzer checks), registered in
 `internal/app/container.go` and handed to the drivers through their `Deps` (the job runner's
 included: the Workspace erase job calls `workspacedeletion`). It takes the
 `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the

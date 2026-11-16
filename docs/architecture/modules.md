@@ -24,7 +24,11 @@ a use case and returns or records the result (review rule 5, analyzer `driverops
 tier imports one. A domain module
 or a use case writes to no `io.Writer` (ADR 0104, ADR 0111, analyzer `nowriter`): it returns a value or an iterator
 (`iter.Seq2`), which a command prints and an HTTP handler streams (`internal/kernel/seqreader`
-turns the chunks of an export into the response's body). A command takes the
+turns the chunks of an export into the response's body). A domain operation is called the way a use
+case is (ADR 0167, analyzer `callshape`): it is a method of an exported type its constructor `New…`
+builds from every dependency, the clients and the clock included (a module may have several such
+types, one per role), it takes the context, the scope and at most two arguments, and it returns a value
+and an `error`. A command takes the
 modules and use cases it calls from the command app (`app.NewCommandApp`), whose accessors build
 each from the container only when a command asks for it; the command line is the one driver that
 imports the wiring, and it holds neither the raw client nor the container. Only the wiring imports MCP and the runners, and it hands the
