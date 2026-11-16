@@ -8,7 +8,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 const (
@@ -34,20 +33,12 @@ const (
 	FieldDisabledAt = "disabled_at"
 	// FieldHealthGeneration holds the string denoting the health_generation field in the database.
 	FieldHealthGeneration = "health_generation"
-	// FieldConsecutiveFailures holds the string denoting the consecutive_failures field in the database.
-	FieldConsecutiveFailures = "consecutive_failures"
-	// FieldFailingSince holds the string denoting the failing_since field in the database.
-	FieldFailingSince = "failing_since"
-	// FieldLastErrorKind holds the string denoting the last_error_kind field in the database.
-	FieldLastErrorKind = "last_error_kind"
-	// FieldLastErrorStatus holds the string denoting the last_error_status field in the database.
-	FieldLastErrorStatus = "last_error_status"
-	// FieldLastFailureAt holds the string denoting the last_failure_at field in the database.
-	FieldLastFailureAt = "last_failure_at"
 	// FieldDisabledReason holds the string denoting the disabled_reason field in the database.
 	FieldDisabledReason = "disabled_reason"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
+	// EdgeHealth holds the string denoting the health edge name in mutations.
+	EdgeHealth = "health"
 	// Table holds the table name of the webhookendpoint in the database.
 	Table = "webhook_endpoints"
 	// WorkspaceTable is the table that holds the workspace relation/edge.
@@ -57,6 +48,13 @@ const (
 	WorkspaceInverseTable = "workspaces"
 	// WorkspaceColumn is the table column denoting the workspace relation/edge.
 	WorkspaceColumn = "workspace_id"
+	// HealthTable is the table that holds the health relation/edge.
+	HealthTable = "webhook_endpoint_health"
+	// HealthInverseTable is the table name for the WebhookEndpointHealth entity.
+	// It exists in this package in order to avoid circular dependency with the "webhookendpointhealth" package.
+	HealthInverseTable = "webhook_endpoint_health"
+	// HealthColumn is the table column denoting the health relation/edge.
+	HealthColumn = "webhook_endpoint_id"
 )
 
 // Columns holds all SQL columns for webhookendpoint fields.
@@ -71,11 +69,6 @@ var Columns = []string{
 	FieldEventTypes,
 	FieldDisabledAt,
 	FieldHealthGeneration,
-	FieldConsecutiveFailures,
-	FieldFailingSince,
-	FieldLastErrorKind,
-	FieldLastErrorStatus,
-	FieldLastFailureAt,
 	FieldDisabledReason,
 }
 
@@ -105,16 +98,6 @@ var (
 	// HealthGenerationValidator is a validator for the "health_generation" field. It is called by the builders before save.
 	HealthGenerationValidator func(int64) error
 )
-
-// LastErrorKindValidator is a validator for the "last_error_kind" field enum values. It is called by the builders before save.
-func LastErrorKindValidator(lek webhook.ErrorKind) error {
-	switch lek {
-	case "timeout", "blocked_address", "http_status", "network":
-		return nil
-	default:
-		return fmt.Errorf("webhookendpoint: invalid enum value for last_error_kind field: %q", lek)
-	}
-}
 
 // DisabledReason defines the type for the "disabled_reason" enum field.
 type DisabledReason string
@@ -188,31 +171,6 @@ func ByHealthGeneration(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldHealthGeneration, opts...).ToFunc()
 }
 
-// ByConsecutiveFailures orders the results by the consecutive_failures field.
-func ByConsecutiveFailures(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldConsecutiveFailures, opts...).ToFunc()
-}
-
-// ByFailingSince orders the results by the failing_since field.
-func ByFailingSince(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFailingSince, opts...).ToFunc()
-}
-
-// ByLastErrorKind orders the results by the last_error_kind field.
-func ByLastErrorKind(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLastErrorKind, opts...).ToFunc()
-}
-
-// ByLastErrorStatus orders the results by the last_error_status field.
-func ByLastErrorStatus(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLastErrorStatus, opts...).ToFunc()
-}
-
-// ByLastFailureAt orders the results by the last_failure_at field.
-func ByLastFailureAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLastFailureAt, opts...).ToFunc()
-}
-
 // ByDisabledReason orders the results by the disabled_reason field.
 func ByDisabledReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDisabledReason, opts...).ToFunc()
@@ -224,10 +182,24 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newWorkspaceStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByHealthField orders the results by health field.
+func ByHealthField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newHealthStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newWorkspaceStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(WorkspaceInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, WorkspaceTable, WorkspaceColumn),
+	)
+}
+func newHealthStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(HealthInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, HealthTable, HealthColumn),
 	)
 }

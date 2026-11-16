@@ -21,10 +21,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -120,7 +122,7 @@ func (m *Module) RegenerateSecret(ctx context.Context, s *ent.Scoped, id int64) 
 	if err != nil {
 		return Endpoint{}, missing(err)
 	}
-	return m.open(e)
+	return m.open(ctx, s, e)
 }
 
 // TestSend delivers a sample event of the given type to the endpoint, signed as a real
@@ -214,7 +216,16 @@ func (r *statusRecorder) Do(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-func (m *Module) open(e *ent.WebhookEndpoint) (Endpoint, error) {
+// open is the Endpoint of e with its secret and its health (HealthOf), read from s when e was read
+// without it.
+func (m *Module) open(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint) (Endpoint, error) {
+	if e.Edges.Health == nil {
+		health, err := s.WebhookEndpointHealth().Query().Where(webhookendpointhealth.WebhookEndpointID(e.ID)).Only(ctx)
+		if err != nil {
+			return Endpoint{}, err
+		}
+		e.Edges.Health = health
+	}
 	secret, err := m.cipher.Decrypt(e.SecretEncrypted)
 	if err != nil {
 		return Endpoint{}, err
@@ -229,8 +240,13 @@ func (m *Module) checkTypes(types []string) error {
 	return nil
 }
 
+// The unique constraint of an endpoint's health (ADR 0106): no client can break it.
+var _ = db.Declare(
+	db.Fault("webhook_endpoint_health_webhook_endpoint_id_key", "a health row is made once, with its endpoint (Create)"),
+)
+
 // Create validates the URL and the event filter, generates the signing secret and
-// stores it sealed.
+// stores it sealed, with the endpoint's health beside it (ADR 0168).
 func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Endpoint, error) {
 	if !validURL(in.URL) {
 		return Endpoint{}, ErrInvalidURL
@@ -242,18 +258,26 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (End
 	if err != nil {
 		return Endpoint{}, err
 	}
-	create := s.WebhookEndpoint().Create().
-		SetURL(in.URL).
-		SetSecretEncrypted(sealed).
-		SetEventTypes(in.EventTypes)
-	if in.Enabled != nil && !*in.Enabled {
-		create = create.SetDisabledAt(m.now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
-	}
-	e, err := create.Save(ctx)
+	var e *ent.WebhookEndpoint
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		create := ts.WebhookEndpoint().Create().
+			SetURL(in.URL).
+			SetSecretEncrypted(sealed).
+			SetEventTypes(in.EventTypes)
+		if in.Enabled != nil && !*in.Enabled {
+			create = create.SetDisabledAt(m.now()).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
+		}
+		var err error
+		if e, err = create.Save(ctx); err != nil {
+			return err
+		}
+		e.Edges.Health, err = ts.WebhookEndpointHealth().Create().SetWebhookEndpointID(e.ID).Save(ctx)
+		return err
+	})
 	if err != nil {
 		return Endpoint{}, err
 	}
-	return m.open(e)
+	return m.open(ctx, s, e)
 }
 
 // Update applies the set fields, conditional on the revision the edit was made on (ADR 0119): an
@@ -278,7 +302,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err != nil {
 			return Endpoint{}, err
 		}
-		return m.open(e)
+		return m.open(ctx, s, e)
 	}
 	return m.updateHealth(ctx, s, id, in, enabled)
 }
@@ -298,20 +322,20 @@ func missing(err error) error {
 
 // Get returns one endpoint. An unknown id is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (Endpoint, error) {
-	e, err := s.WebhookEndpoint().Get(ctx, id)
+	e, err := s.WebhookEndpoint().Query().Where(webhookendpoint.ID(id)).WithHealth().Only(ctx)
 	if err != nil {
 		return Endpoint{}, missing(err)
 	}
-	return m.open(e)
+	return m.open(ctx, s, e)
 }
 
 // List returns one page of the Workspace's endpoints, ascending by id.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[Endpoint], error) {
-	page, err := pagination.List(ctx, p, s.WebhookEndpoint().Query().Order(ent.Asc(webhookendpoint.FieldID)))
+	page, err := pagination.List(ctx, p, s.WebhookEndpoint().Query().WithHealth().Order(ent.Asc(webhookendpoint.FieldID)))
 	if err != nil {
 		return pagination.Page[Endpoint]{}, err
 	}
-	return page.MapErr(m.open)
+	return page.MapErr(func(e *ent.WebhookEndpoint) (Endpoint, error) { return m.open(ctx, s, e) })
 }
 
 // generateSecret returns a Standard Webhooks signing secret: the "whsec_" prefix

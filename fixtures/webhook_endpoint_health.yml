@@ -1,0 +1,76 @@
+# The failure run of each webhook endpoint (ADR 0168): one row per endpoint of
+# webhook_endpoints.yml, under its id; all empty while the endpoint is healthy.
+- id: 100
+  webhook_endpoint_id: 100
+  workspace_id: 1
+  created_at: '{{daysAgo 70}}'
+  updated_at: '{{daysAgo 70}}'
+- id: 101
+  webhook_endpoint_id: 101
+  workspace_id: 1
+  created_at: '{{daysAgo 50}}'
+  updated_at: '{{daysAgo 50}}'
+- id: 102
+  webhook_endpoint_id: 102
+  consecutive_failures: 7
+  failing_since: '{{hoursAgo 26}}'
+  last_error_kind: http_status
+  last_error_status: 503
+  last_failure_at: '{{hoursAgo 2}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{hoursAgo 2}}'
+- id: 103
+  webhook_endpoint_id: 103
+  consecutive_failures: 1
+  failing_since: '{{hoursAgo 5}}'
+  last_error_kind: http_status
+  last_error_status: 410
+  last_failure_at: '{{hoursAgo 5}}'
+  workspace_id: 1
+  created_at: '{{daysAgo 40}}'
+  updated_at: '{{hoursAgo 5}}'
+- id: 900
+  webhook_endpoint_id: 900
+  workspace_id: 2
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 300
+  webhook_endpoint_id: 300
+  workspace_id: 3
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 301
+  webhook_endpoint_id: 301
+  workspace_id: 3
+  created_at: '{{daysAgo 30}}'
+  updated_at: '{{daysAgo 30}}'
+- id: 21001
+  webhook_endpoint_id: 21001
+  workspace_id: 20
+  created_at: '{{daysAgo 90}}'
+  updated_at: '{{daysAgo 90}}'
+- id: 21002
+  webhook_endpoint_id: 21002
+  consecutive_failures: 5
+  failing_since: '{{hoursAgo 30}}'
+  last_error_kind: http_status
+  last_error_status: 502
+  last_failure_at: '{{hoursAgo 3}}'
+  workspace_id: 20
+  created_at: '{{daysAgo 60}}'
+  updated_at: '{{daysAgo 60}}'
+- id: 21003
+  webhook_endpoint_id: 21003
+  workspace_id: 20
+  created_at: '{{daysAgo 100}}'
+  updated_at: '{{daysAgo 100}}'
+- id: 21004
+  webhook_endpoint_id: 21004
+  consecutive_failures: 12
+  failing_since: '{{daysAgo 6}}'
+  last_error_kind: timeout
+  last_failure_at: '{{daysAgo 4}}'
+  workspace_id: 20
+  created_at: '{{daysAgo 80}}'
+  updated_at: '{{daysAgo 80}}'

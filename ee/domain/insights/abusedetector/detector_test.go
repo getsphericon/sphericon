@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -362,14 +363,16 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	d := detector(t, env)
 	_, err := d.Run(t.Context(), at(warnDay))
 	require.NoError(t, err)
-	require.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
+	warned := env.DB.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(fixtures.VandelayID)).OnlyX(t.Context())
+	require.NotNil(t, warned.AbuseWarningNotifiedAt)
 
 	_, err = suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.VandelayID, suspension.CLI, "manual", time.Now())
 	require.NoError(t, err)
 	_, err = d.Run(t.Context(), at(warnDay).Add(time.Minute))
 
 	require.NoError(t, err)
-	assert.Nil(t, env.DB.Workspace.GetX(t.Context(), fixtures.VandelayID).AbuseWarningNotifiedAt)
+	ended := env.DB.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(fixtures.VandelayID)).OnlyX(t.Context())
+	assert.Nil(t, ended.AbuseWarningNotifiedAt)
 }
 
 func TestAWorkspaceInItsDeletionWindowIsNotJudged(t *testing.T) {

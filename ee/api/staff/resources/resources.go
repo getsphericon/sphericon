@@ -18,6 +18,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -50,7 +51,7 @@ type StaffConverter interface {
 	// member sees the real actor id, which a customer never does.
 	// goverter:map PublicID ID
 	// goverter:map AbuseExempt Exempt
-	// goverter:map AbuseWarningNotifiedAt Warned | isSet
+	// goverter:map . Warned | abuseWarned
 	// goverter:map . Suspension | workspaceSuspension
 	WorkspaceToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceResource
 
@@ -59,7 +60,7 @@ type StaffConverter interface {
 	// attaches them, each through its own converter method.
 	// goverter:map PublicID ID
 	// goverter:map AbuseExempt Exempt
-	// goverter:map AbuseWarningNotifiedAt Warned | isSet
+	// goverter:map . Warned | abuseWarned
 	// goverter:map . Suspension | workspaceSuspension
 	// The Send cap is attached through SendCapToResource only on an Instance that has Send caps.
 	// goverter:ignore Holds
@@ -80,8 +81,8 @@ type StaffConverter interface {
 
 	// The detected breach, if any, is attached by the handler.
 	// goverter:map AbuseExempt Exempt
-	// goverter:map AbuseWarningNotifiedAt WarningNotifiedAt
-	// goverter:map AbuseFreezeNotifiedAt FreezeNotifiedAt
+	// goverter:map . WarningNotifiedAt | abuseWarningNotifiedAt
+	// goverter:map . FreezeNotifiedAt | abuseFreezeNotifiedAt
 	// goverter:ignore Warning
 	AbuseToResource(source *ent.Workspace) staffeeapi.StaffAbuse
 	// goverter:map . Rate | breachRate
@@ -275,7 +276,21 @@ func serviceOptNilTimestampAt(t time.Time) serviceapi.OptNilTimestamp {
 	return serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(t))
 }
 
-func isSet(t *time.Time) bool { return t != nil }
+// abuseWarned reports whether the Workspace's owners were warned of the current breach: its
+// standing, read with it (workspaces.StandingOf).
+func abuseWarned(w *ent.Workspace) bool {
+	return workspaces.StandingOf(w).AbuseWarningNotifiedAt != nil
+}
+
+// abuseWarningNotifiedAt is when the Workspace's owners were warned of the current breach.
+func abuseWarningNotifiedAt(w *ent.Workspace) staffeeapi.OptNilTimestamp {
+	return optNilTimestamp(workspaces.StandingOf(w).AbuseWarningNotifiedAt)
+}
+
+// abuseFreezeNotifiedAt is when the Workspace's owners were told of its freeze.
+func abuseFreezeNotifiedAt(w *ent.Workspace) staffeeapi.OptNilTimestamp {
+	return optNilTimestamp(workspaces.StandingOf(w).AbuseFreezeNotifiedAt)
+}
 
 func breachRate(b abusedetector.Breach) float64 { return b.Rate() }
 

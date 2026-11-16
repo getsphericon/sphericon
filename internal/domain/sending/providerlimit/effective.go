@@ -2,6 +2,7 @@ package providerlimit
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"time"
 
@@ -35,7 +36,7 @@ type Effective struct {
 	PerDay    Value
 
 	// ProviderQuotaUnavailable is set while the provider quota lookup fails (the
-	// Integration's provider_quota_failed_at is set), so
+	// Integration's provider state has provider_quota_failed_at), so
 	// the ceilings above rest on the manual value alone (or on none).
 	ProviderQuotaUnavailable bool
 
@@ -49,15 +50,29 @@ type Effective struct {
 	Inbox bool
 }
 
+// StateOf is what the provider last said about integ (ADR 0168), read through its provider_state
+// edge, which every read that judges a send or shows a limit loads (WithProviderState). Every
+// Integration has the row, made with it: an edge not loaded, or loaded empty, is a reader's bug, and
+// reading it as "nothing reported" would lift a ceiling or send into a stopped account, so it panics.
+func StateOf(integ *ent.Integration) *ent.IntegrationProviderState {
+	state, err := integ.Edges.ProviderStateOrErr()
+	if err != nil {
+		panic(fmt.Sprintf("providerlimit: Integration %d read without its provider state: %v", integ.ID, err))
+	}
+	return state
+}
+
 // EffectiveOf computes the ceilings an Integration is held to. It is the one place
-// manual, provider (and later warmup) values are folded into a ceiling.
+// manual, provider (and later warmup) values are folded into a ceiling. integ is read with its
+// provider state (StateOf).
 func EffectiveOf(integ *ent.Integration) Effective {
+	state := StateOf(integ)
 	return Effective{
-		PerSecond:                lowest(integ.MaxPerSecond, integ.ProviderMaxPerSecond),
-		PerDay:                   lowest(integ.MaxPerDay, integ.ProviderMaxPerDay),
-		ProviderQuotaUnavailable: integ.ProviderQuotaFailedAt != nil,
-		Enforcement:              enforcementOf(integ),
-		Sandbox:                  integ.ProviderSandbox,
+		PerSecond:                lowest(integ.MaxPerSecond, state.ProviderMaxPerSecond),
+		PerDay:                   lowest(integ.MaxPerDay, state.ProviderMaxPerDay),
+		ProviderQuotaUnavailable: state.ProviderQuotaFailedAt != nil,
+		Enforcement:              enforcementOf(state),
+		Sandbox:                  state.ProviderSandbox,
 		Inbox:                    integ.Provider == providers.Inbox,
 	}
 }
@@ -65,15 +80,21 @@ func EffectiveOf(integ *ent.Integration) Effective {
 // Stopped reports whether the provider last said it has stopped the Integration's account,
 // which holds every send through it (ADR 0067).
 func Stopped(integ *ent.Integration) bool {
-	return enforcementOf(integ) == providers.EnforcementShutdown
+	return enforcementOf(StateOf(integ)) == providers.EnforcementShutdown
+}
+
+// Refused reports whether a send found the provider refusing the Integration's credentials, which
+// holds every send through it until a save of new ones; the moment is when.
+func Refused(integ *ent.Integration) *time.Time {
+	return StateOf(integ).ProviderRefusedAt
 }
 
 // enforcementOf is the stored enforcement as the messaging value it was stored from.
-func enforcementOf(integ *ent.Integration) providers.Enforcement {
-	if integ.ProviderEnforcement == nil {
+func enforcementOf(state *ent.IntegrationProviderState) providers.Enforcement {
+	if state.ProviderEnforcement == nil {
 		return providers.EnforcementNone
 	}
-	return *integ.ProviderEnforcement
+	return *state.ProviderEnforcement
 }
 
 // lowest is the minimum rule: the lower of the two ceilings, the manual one on a tie.

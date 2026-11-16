@@ -19,18 +19,18 @@ import (
 func TestEffectiveOfReportsManualValuesAndTheirSource(t *testing.T) {
 	perSecond, perDay := 14, 50000
 
-	none := providerlimit.EffectiveOf(&ent.Integration{})
+	none := providerlimit.EffectiveOf(integ(ent.Integration{}, ent.IntegrationProviderState{}))
 	assert.True(t, none.Unlimited())
 	assert.Nil(t, none.PerSecond.Limit)
 	assert.Empty(t, none.PerSecond.Source, "no ceiling has no source")
 
-	both := providerlimit.EffectiveOf(&ent.Integration{MaxPerSecond: &perSecond, MaxPerDay: &perDay})
+	both := providerlimit.EffectiveOf(integ(ent.Integration{MaxPerSecond: &perSecond, MaxPerDay: &perDay}, ent.IntegrationProviderState{}))
 	assert.False(t, both.Unlimited())
 	assert.Equal(t, providerlimit.Value{Limit: &perSecond, Source: providerlimit.SourceManual}, both.PerSecond)
 	assert.Equal(t, providerlimit.Value{Limit: &perDay, Source: providerlimit.SourceManual}, both.PerDay)
 	assert.Equal(t, providerlimit.Limits{PerSecond: &perSecond, PerDay: &perDay}, both.Limits())
 
-	onlyDay := providerlimit.EffectiveOf(&ent.Integration{MaxPerDay: &perDay})
+	onlyDay := providerlimit.EffectiveOf(integ(ent.Integration{MaxPerDay: &perDay}, ent.IntegrationProviderState{}))
 	assert.False(t, onlyDay.Unlimited(), "one ceiling is enough to be limited")
 }
 
@@ -49,10 +49,8 @@ func TestEffectiveOfTakesTheLowestOfManualAndProviderValues(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			got := providerlimit.EffectiveOf(&ent.Integration{
-				MaxPerSecond: c.manual, ProviderMaxPerSecond: c.provider,
-				MaxPerDay: c.manual, ProviderMaxPerDay: c.provider,
-			})
+			got := providerlimit.EffectiveOf(integ(ent.Integration{MaxPerSecond: c.manual, MaxPerDay: c.manual},
+				ent.IntegrationProviderState{ProviderMaxPerSecond: c.provider, ProviderMaxPerDay: c.provider}))
 			assert.Equal(t, c.want, got.PerSecond)
 			assert.Equal(t, c.want, got.PerDay)
 		})
@@ -60,21 +58,21 @@ func TestEffectiveOfTakesTheLowestOfManualAndProviderValues(t *testing.T) {
 }
 
 func TestEffectiveOfReportsAnUnavailableProviderQuota(t *testing.T) {
-	assert.False(t, providerlimit.EffectiveOf(&ent.Integration{}).ProviderQuotaUnavailable)
-	assert.True(t, providerlimit.EffectiveOf(&ent.Integration{ProviderQuotaFailedAt: new(time.Now())}).ProviderQuotaUnavailable)
+	assert.False(t, providerlimit.EffectiveOf(integ(ent.Integration{}, ent.IntegrationProviderState{})).ProviderQuotaUnavailable)
+	assert.True(t, providerlimit.EffectiveOf(integ(ent.Integration{}, ent.IntegrationProviderState{ProviderQuotaFailedAt: new(time.Now())})).ProviderQuotaUnavailable)
 }
 
 func TestEffectiveOfReportsTheAccountStanding(t *testing.T) {
-	assert.Equal(t, providers.EnforcementNone, providerlimit.EffectiveOf(&ent.Integration{}).Enforcement)
+	assert.Equal(t, providers.EnforcementNone, providerlimit.EffectiveOf(integ(ent.Integration{}, ent.IntegrationProviderState{})).Enforcement)
 	stopped := providers.EnforcementShutdown
-	eff := providerlimit.EffectiveOf(&ent.Integration{ProviderEnforcement: &stopped, ProviderSandbox: true})
+	eff := providerlimit.EffectiveOf(integ(ent.Integration{}, ent.IntegrationProviderState{ProviderEnforcement: &stopped, ProviderSandbox: true}))
 	assert.Equal(t, providers.EnforcementShutdown, eff.Enforcement)
 	assert.True(t, eff.Sandbox)
 }
 
 func TestEffectiveOfWarnsOfNoCeilingExceptOnATestInbox(t *testing.T) {
-	smtp := providerlimit.EffectiveOf(&ent.Integration{Provider: providers.SMTP})
-	inbox := providerlimit.EffectiveOf(&ent.Integration{Provider: providers.Inbox})
+	smtp := providerlimit.EffectiveOf(integ(ent.Integration{Provider: providers.SMTP}, ent.IntegrationProviderState{}))
+	inbox := providerlimit.EffectiveOf(integ(ent.Integration{Provider: providers.Inbox}, ent.IntegrationProviderState{}))
 
 	assert.Equal(t, []providerlimit.Warning{providerlimit.WarningUnlimited}, smtp.Warnings())
 	assert.Empty(t, inbox.Warnings())
@@ -82,10 +80,10 @@ func TestEffectiveOfWarnsOfNoCeilingExceptOnATestInbox(t *testing.T) {
 
 func TestStoppedIsTheShutdownAlone(t *testing.T) {
 	stopped, probation := providers.EnforcementShutdown, providers.EnforcementProbation
-	assert.True(t, providerlimit.Stopped(&ent.Integration{ProviderEnforcement: &stopped}))
-	assert.False(t, providerlimit.Stopped(&ent.Integration{ProviderEnforcement: &probation}), "probation still sends")
-	assert.False(t, providerlimit.Stopped(&ent.Integration{ProviderSandbox: true}), "so does the sandbox")
-	assert.False(t, providerlimit.Stopped(&ent.Integration{}))
+	assert.True(t, providerlimit.Stopped(integ(ent.Integration{}, ent.IntegrationProviderState{ProviderEnforcement: &stopped})))
+	assert.False(t, providerlimit.Stopped(integ(ent.Integration{}, ent.IntegrationProviderState{ProviderEnforcement: &probation})), "probation still sends")
+	assert.False(t, providerlimit.Stopped(integ(ent.Integration{}, ent.IntegrationProviderState{ProviderSandbox: true})), "so does the sandbox")
+	assert.False(t, providerlimit.Stopped(integ(ent.Integration{}, ent.IntegrationProviderState{})))
 }
 
 func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {
@@ -134,7 +132,7 @@ func TestStatusesPairUsageWithTheEffectiveLimits(t *testing.T) {
 	ctx := t.Context()
 
 	require.NoError(t, s.Integration().UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerSecond(5).SetMaxPerDay(1000).Exec(ctx))
-	rows, err := s.Integration().Query().All(ctx)
+	rows, err := s.Integration().Query().WithProviderState().All(ctx)
 	require.NoError(t, err)
 	usage, err := providerlimit.Usage(ctx, s, time.Now())
 	require.NoError(t, err)
@@ -246,4 +244,10 @@ func TestSendCapDrainReturnsTheStoresErrorAndNoWait(t *testing.T) {
 
 	require.ErrorIs(t, err, context.Canceled)
 	assert.Zero(t, got)
+}
+
+// integ is row read with state as its provider state (ADR 0168).
+func integ(row ent.Integration, state ent.IntegrationProviderState) *ent.Integration {
+	row.Edges.ProviderState = &state
+	return &row
 }

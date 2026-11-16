@@ -19,6 +19,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -54,8 +55,8 @@ var ErrDefaultConflict = validation.ConflictField(fieldname.IsDefault, "a defaul
 var ErrNotFound = validation.NotFound("integrations: integration not found", i18n.ErrorsIntegrationNotFound)
 
 // ErrRevisionChanged means the edit was made on a revision the Integration has moved past (ADR
-// 0119): someone saved it since the client read it. A provider's reading of it (schema.Bookkeeping)
-// does not move it. Nothing is written.
+// 0119): someone saved it since the client read it. A provider's reading of it lives beside it
+// (ADR 0168) and does not move it. Nothing is written.
 var ErrRevisionChanged = validation.RevisionChanged("integrations: integration changed since it was read", i18n.ErrorsIntegrationRevisionChanged)
 
 // ErrOneInbox means the Workspace already keeps a Test inbox: it has at most one (ADR 0058).
@@ -67,6 +68,7 @@ var constraints = db.Declare(
 	db.Refusal("integration_workspace_id_channel", ErrDefaultConflict),
 	db.Refusal("integrations_one_inbox_per_workspace", ErrOneInbox),
 	db.Fault("integrations_ingest_key_key", "an ingest key is random (credentials.GenerateIngestKey)"),
+	db.Fault("integration_provider_state_integration_id_key", "a provider state is made once, with its Integration (Create)"),
 )
 
 var errUnknownProvider = errors.New("unsupported provider")
@@ -113,9 +115,10 @@ func missing(err error) error {
 	return err
 }
 
-// Get returns one Integration of the Workspace. An unknown id is ErrNotFound.
+// Get returns one Integration of the Workspace, with its provider state (ADR 0168). An unknown id
+// is ErrNotFound.
 func (m *Module) Get(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
-	row, err := s.Integration().Get(ctx, id)
+	row, err := withStateByID(ctx, s, id)
 	if err != nil {
 		return nil, missing(err)
 	}
@@ -303,8 +306,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 			SetEnabled(enabled).
 			SetIsDefault(isDefault).
 			SetNillableMaxPerSecond(in.MaxPerSecond).
-			SetNillableMaxPerDay(in.MaxPerDay).
-			SetNillableProviderMaxPerSecond(providerPerSecond)
+			SetNillableMaxPerDay(in.MaxPerDay)
 		if inb.sealed != nil {
 			create.SetParamsEncrypted(*inb.sealed)
 		}
@@ -314,6 +316,15 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 		}); err != nil {
 			return err
 		}
+		// What the provider says about it lives beside it (ADR 0168).
+		state, err := ts.IntegrationProviderState().Create().
+			SetIntegrationID(row.ID).
+			SetNillableProviderMaxPerSecond(providerPerSecond).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		row.Edges.ProviderState = state
 		return m.discoverQuota(ctx, q, row)
 	}
 	if in.IsDefault {
@@ -403,19 +414,18 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		var err error
 		updated, err = saveEdit(ctx, wl, row, in.Revision, promote, func(upd *ent.IntegrationScopedUpdateOne) {
 			applyEdit(upd, in, name, sealed, inb)
-			if tg.connected {
-				upd.SetProviderMaxPerSecond(telegramPerSecond)
-			}
 		})
-		if err != nil || sealed == nil {
+		if err != nil {
 			return err
 		}
-		// The provider's refusal of the old credentials goes with them.
-		if err := renewCredentials(ctx, wl.Scope(), updated); err != nil {
+		if err := renewState(ctx, wl.Scope(), updated, sealed != nil, tg.connected); err != nil {
 			return err
 		}
-		if updated, err = wl.Integration().Get(ctx, row.ID); err != nil {
+		if updated, err = withStateByID(ctx, wl.Scope(), row.ID); err != nil {
 			return err
+		}
+		if sealed == nil {
+			return nil
 		}
 		// New credentials or endpoint: what the provider allows may have changed.
 		return m.discoverQuota(ctx, q, updated)
@@ -450,6 +460,47 @@ func saveEdit(ctx context.Context, wl *ent.WorkspaceLocked, row *ent.Integration
 		return err
 	})
 	return updated, err
+}
+
+// withStateByID reads the Integration id of the scope, deleted or not, with its provider state (ADR
+// 0168).
+func withStateByID(ctx context.Context, s *ent.Scoped, id int64) (*ent.Integration, error) {
+	return s.Integration().QueryWithDiscarded().Where(integration.ID(id)).WithProviderState().Only(ctx)
+}
+
+// withState is the query of the scope's kept Integrations, each with its provider state (ADR 0168).
+func withState(s *ent.Scoped) *ent.IntegrationQuery {
+	return s.Integration().Query().WithProviderState()
+}
+
+// renewState writes, on the transaction s of a save of saved, what the save changes of the
+// provider's word on it. New credentials (newCredentials) may name another account: the account's
+// standing read with the old ones goes until the read the save schedules, so a failed one holds
+// nothing, and the provider's refusal of the old ones is lifted. A bot just connected (connected)
+// is held to Telegram's own rate.
+func renewState(ctx context.Context, s *ent.Scoped, saved *ent.Integration, newCredentials, connected bool) error {
+	if !newCredentials && !connected {
+		return nil
+	}
+	upd := stateOf(s, saved.ID)
+	if newCredentials {
+		upd.ClearProviderEnforcement().SetProviderSandbox(false)
+	}
+	if connected {
+		upd.SetProviderMaxPerSecond(telegramPerSecond)
+	}
+	if err := wroteState(upd.Save(ctx)); err != nil {
+		return err
+	}
+	if !newCredentials {
+		return nil
+	}
+	state, err := s.IntegrationProviderState().Query().Where(integrationproviderstate.IntegrationID(saved.ID)).Only(ctx)
+	if err != nil {
+		return err
+	}
+	saved.Edges.ProviderState = state
+	return renewCredentials(ctx, s, saved)
 }
 
 // refuseDiscarded is ErrNotFound for a deleted Integration, which is discarded and kept (ADR 0049).
@@ -496,10 +547,8 @@ func applyEdit(upd *ent.IntegrationScopedUpdateOne, in UpdateInput, name, sealed
 	}
 	in.Enabled.ApplySet(upd.SetEnabled)
 	if sealed != nil {
-		// The account's standing was read with the old credentials, which may name another
-		// account: it goes until the read the save schedules, so a failed one holds nothing. The
-		// provider's refusal of the old credentials is lifted after the save (renewCredentials).
-		upd.SetConfigEncrypted(*sealed).ClearProviderEnforcement().SetProviderSandbox(false)
+		// What the provider said of the old credentials goes after the save (renewState).
+		upd.SetConfigEncrypted(*sealed)
 	}
 	if inb.apply {
 		if inb.preset == nil {

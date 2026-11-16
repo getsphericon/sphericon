@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -24,7 +25,7 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	id := entityIDString(fixtures.WebhookCodebasicsID)
-	before, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
+	before, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 
 	_, err = env.ExternalScoped(t, apitokens.ScopeWebhooksRead, apitokens.ScopeWebhooksWrite).WebhooksRegenerateSecret(ctx, externalapi.WebhooksRegenerateSecretParams{ID: id})
@@ -34,7 +35,7 @@ func TestExternalWebhookRegenerateSecretReplacesItAndNeverReturnsIt(t *testing.T
 	require.NoError(t, err)
 	assert.Equal(t, "https://codebasics.dev/webhooks/sphericon", hook.URL)
 
-	after, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
+	after, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 	assert.NotEqual(t, before.SecretEncrypted, after.SecretEncrypted)
 
@@ -54,7 +55,7 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithConfig(func(c *config.Config) { c.OutboundAllow = allow }))
 	_, err = env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsFailingID).SetURL(rcv.URL).Save(ctx)
 	require.NoError(t, err)
-	before, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsFailingID)
+	before, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsFailingID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 	params := externalapi.WebhooksTestParams{ID: entityIDString(fixtures.WebhookCodebasicsFailingID)}
 	input := &externalapi.TestWebhookInput{EventType: systemevent.ContactCreated}
@@ -77,9 +78,9 @@ func TestExternalWebhookTestSendReportsTheReceiversAnswer(t *testing.T) {
 	assert.Equal(t, externalapi.WebhookErrorKindHTTPStatus, failed.Kind.Value)
 	assert.Equal(t, int32(http.StatusServiceUnavailable), failed.Status.Value)
 
-	after, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsFailingID)
+	after, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsFailingID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, before.ConsecutiveFailures, after.ConsecutiveFailures, "a test never touches the failure state")
+	assert.Equal(t, before.Edges.Health.ConsecutiveFailures, after.Edges.Health.ConsecutiveFailures, "a test never touches the failure state")
 
 	_, err = c.WebhooksTest(ctx, &externalapi.TestWebhookInput{EventType: " "}, params)
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)

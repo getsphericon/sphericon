@@ -64,14 +64,13 @@ type entity struct {
 
 // fieldAnnotations are the annotations of one field, decoded into their ent/schema types.
 type fieldAnnotations struct {
-	state       *schema.State
-	ref         *schema.ScopedRef
-	unique      *schema.UniqueOverAll
-	notOwned    *schema.NotWorkspaceOwned
-	givenUp     bool
-	bookkeeping bool
-	sensitive   bool
-	derived     bool
+	state     *schema.State
+	ref       *schema.ScopedRef
+	unique    *schema.UniqueOverAll
+	notOwned  *schema.NotWorkspaceOwned
+	givenUp   bool
+	sensitive bool
+	derived   bool
 }
 
 // Classify classifies every entity of the graph and checks the graph against every rule of the
@@ -171,7 +170,6 @@ func (c *checker) fieldAnnotations(n *gen.Type, f *gen.Field) *fieldAnnotations 
 		a.notOwned = &v
 	}
 	_, a.givenUp = f.Annotations[schema.GivenUpOnDiscard{}.Name()]
-	_, a.bookkeeping = f.Annotations[schema.Bookkeeping{}.Name()]
 	_, a.sensitive = f.Annotations[schema.Sensitive{}.Name()]
 	_, a.derived = f.Annotations[schema.Derived{}.Name()]
 	return a
