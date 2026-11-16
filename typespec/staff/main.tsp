@@ -20,4 +20,5 @@ using TypeSpec.Http;
 @server("http://localhost:3000/staff", "Local development staff API")
 @useAuth(ApiKeyAuth<ApiKeyLocation.cookie, "STAFF_JWT">)
 @closedRequestBodies
+@everyOperationDeclares("problem")
 namespace Sphericon;

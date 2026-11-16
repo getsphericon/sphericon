@@ -1,5 +1,5 @@
-// A raw @extension that writes a decorator's key is refused wherever it stands; any other
-// extension passes.
+// A raw @extension that writes a decorator's key or `additionalProperties` is refused wherever it
+// stands; any other extension passes.
 import "@typespec/openapi";
 import "../../common/scopes.tsp";
 
@@ -34,3 +34,10 @@ interface Reads<T> {
 
 interface ContactReads extends Reads<Contact> {}
 interface TagReads extends Reads<string> {}
+
+// Closed by hand: whether a model takes unknown properties is the surface's to say (ADR 0148).
+// expect-next-line: sphericon/raw-additional-properties
+@extension("additionalProperties", false)
+model Report {
+  version: int32;
+}
