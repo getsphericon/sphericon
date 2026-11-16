@@ -65,7 +65,7 @@ func TestANameDifferingInCaseIsTheSameTag(t *testing.T) {
 
 	var got *ent.Tag
 	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		got, err = tags.EnsureIn(ctx, tx.Scoped(fixtures.AcmeID), " VIP ")
+		got, err = tags.New().EnsureIn(ctx, tx.Scoped(fixtures.AcmeID), " VIP ")
 		return err
 	}))
 

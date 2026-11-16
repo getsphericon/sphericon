@@ -28,7 +28,7 @@ its unchecked removal, between opening it on the row and applying it (`tagdeleti
 `sendingdomainsunchecked.Deletion`; ADR 0145, see [Use cases](use-cases.md)). It is the one list of the
 readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
 0110's fence by place), which may import its owner and which the owner does not import: Definition
-use is `segmentsuse.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
+use is `segmentsuse.Module.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
 `rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.UsingTag` and
 `UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.LiveSends` and
 `automationsuse.LiveSends`, which return each send as a `liveuse.Send` (who sends, on which
@@ -67,7 +67,7 @@ the lock does not compile:
 - the readers of Live use and Definition use: the Removal check's methods, the `<module>use`
   readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.ActiveEnrollingInto`,
   which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
-- the unchecked removals behind their check, opened on their row: `tagsunchecked.DeletionIn`,
+- the unchecked removals behind their check, opened on their row: `tagsunchecked.Module.DeletionIn`,
   `contactsunchecked.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
   `sendingdomainsunchecked.DeletionIn`. An Integration's deletion gives up its default in the
   statement that discards it (`schema.GivenUpOnDiscard`) and queues the release of a Telegram bot's
