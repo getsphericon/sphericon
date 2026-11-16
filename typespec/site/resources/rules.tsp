@@ -201,7 +201,10 @@ interface SiteRules
   extends WorkspaceCrud<
       SiteRuleResource,
       SiteCreateRuleInput,
-      SiteUpdateRuleInput
+      SiteUpdateRuleInput,
+      #[],
+      #[],
+      #[]
     > {
   /** Publish a Rule: its draft becomes live, or with no draft its live version is resumed, and an inactive Rule becomes active and reacts to Events recorded from now on, never to past ones. 422 with neither draft nor live version. */
   @action("publish")
@@ -276,9 +279,3 @@ namespace SiteRuleFirings {
     ...PageQuery,
   ): Page<SiteRuleFiringResource> | Problem;
 }
-
-@@requiresPermissions(SiteRules.create, #[]);
-@@requiresPermissions(SiteRules.delete, #[]);
-@@requiresPermissions(SiteRules.get, #[]);
-@@requiresPermissions(SiteRules.list, #[]);
-@@requiresPermissions(SiteRules.update, #[]);

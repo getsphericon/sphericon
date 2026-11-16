@@ -275,7 +275,9 @@ interface SiteSegments
   extends WorkspaceCrudArchivable<
       SiteSegmentResource,
       SiteCreateSegmentInput,
-      SiteUpdateSegmentInput
+      SiteUpdateSegmentInput,
+      #[],
+      #[]
     > {
   /** Preview how many active contacts match a rule definition */
   @collectionAction(SiteSegmentResource, "preview")
@@ -302,10 +304,3 @@ namespace SiteSegmentContacts {
     ...PageQuery,
   ): Page<SiteContactResource> | Problem;
 }
-
-@@requiresPermissions(SiteSegments.archive, #[]);
-@@requiresPermissions(SiteSegments.create, #[]);
-@@requiresPermissions(SiteSegments.get, #[]);
-@@requiresPermissions(SiteSegments.list, #[]);
-@@requiresPermissions(SiteSegments.unarchive, #[]);
-@@requiresPermissions(SiteSegments.update, #[]);

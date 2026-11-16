@@ -281,6 +281,8 @@ interface SiteAutomations
       SiteAutomationResource,
       SiteCreateAutomationInput,
       SiteUpdateAutomationInput,
+      #[],
+      #[],
       SiteAutomationsListFilter
     > {
   /**
@@ -487,8 +489,3 @@ namespace SiteAutomationReports {
   SiteAutomations.update,
   "Update an automation: its name, and its definition written to the draft. 409 when the automation is archived."
 );
-
-@@requiresPermissions(SiteAutomations.create, #[]);
-@@requiresPermissions(SiteAutomations.get, #[]);
-@@requiresPermissions(SiteAutomations.list, #[]);
-@@requiresPermissions(SiteAutomations.update, #[]);

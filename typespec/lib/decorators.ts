@@ -10,8 +10,8 @@ import {
   getDocData,
   getEffectiveModelType,
   getErrorsDocData,
+  getLocationContext,
   getReturnsDocData,
-  getSourceLocation,
   getSummary,
   isArrayModelType,
   navigateProgram,
@@ -25,7 +25,6 @@ import type {
   EnumMember,
   EnumValue,
   Model,
-  ModelProperty,
   Namespace,
   Operation,
   Program,
@@ -33,7 +32,7 @@ import type {
   Value,
 } from '@typespec/compiler'
 import { getAllHttpServices } from '@typespec/http'
-import type { HttpOperation } from '@typespec/http'
+import type { HttpOperation, HttpService } from '@typespec/http'
 import { $extension, getExtensions, setExtension } from '@typespec/openapi'
 
 export const $lib = createTypeSpecLibrary({
@@ -266,46 +265,18 @@ function $mcp(context: DecoratorContext, target: Operation, tool: McpTool) {
   declare(context, target, { decorator: 'mcp', value })
 }
 
-/** `@requiresPermissions`: the Permissions an operation needs (ADR 0061). */
-function $requiresPermissions(
-  context: DecoratorContext,
-  target: Operation,
-  permissions: unknown[],
-) {
-  declare(context, target, {
-    decorator: 'requiresPermissions',
-    value: toJson(context.program, permissions),
-  })
+/** A decorator that writes the list of enum members it is given (Permissions or scopes). */
+function listOf(decorator: DecoratorName) {
+  return (context: DecoratorContext, target: Operation, members: unknown[]) => {
+    declare(context, target, { decorator, value: toJson(context.program, members) })
+  }
 }
 
-/** `@requiresScopes`: the API token scopes an /api operation needs (ADR 0061). */
-function $requiresScopes(context: DecoratorContext, target: Operation, scopes: unknown[]) {
-  declare(context, target, { decorator: 'requiresScopes', value: toJson(context.program, scopes) })
-}
-
-/** `@requiresServiceScopes`: the scopes a /service operation needs (ADR 0026). */
-function $requiresServiceScopes(context: DecoratorContext, target: Operation, scopes: unknown[]) {
-  declare(context, target, {
-    decorator: 'requiresServiceScopes',
-    value: toJson(context.program, scopes),
-  })
-}
-
-/** `@untrusted`: the property carries text a caller wrote (ADR 0016). */
-function $untrusted(context: DecoratorContext, target: ModelProperty) {
-  declare(context, target, { decorator: 'untrusted', value: true })
-}
-
-/** `@allowedWhileWithheld`: a User withheld by the Two-factor requirement may call it (ADR 0020). */
-function $allowedWhileWithheld(context: DecoratorContext, target: Operation) {
-  declare(context, target, { decorator: 'allowedWhileWithheld', value: true })
-}
-
-/**
- * `@allowedWhileAcceptancePending`: a User with a required acceptance pending may call it (ADR 0062).
- */
-function $allowedWhileAcceptancePending(context: DecoratorContext, target: Operation) {
-  declare(context, target, { decorator: 'allowedWhileAcceptancePending', value: true })
+/** A decorator that takes no argument and writes `true`. */
+function flag(decorator: DecoratorName) {
+  return (context: DecoratorContext, target: Type) => {
+    declare(context, target, { decorator, value: true })
+  }
 }
 
 /**
@@ -414,18 +385,29 @@ function $openMap(context: DecoratorContext, target: Model) {
  * request bodies.
  */
 function $closed(context: DecoratorContext, target: Model) {
-  setExtension(context.program, target, 'additionalProperties', false)
+  writeClosed(context.program, target)
+}
+
+/** Writes the closing on the model, for `$closed` and for `closeModel`. */
+function writeClosed(program: Program, model: Model) {
+  setExtension(program, model, 'additionalProperties', false)
 }
 
 export const $decorators = {
   Sphericon: {
     mcp: $mcp,
-    requiresPermissions: $requiresPermissions,
-    requiresScopes: $requiresScopes,
-    requiresServiceScopes: $requiresServiceScopes,
-    untrusted: $untrusted,
-    allowedWhileWithheld: $allowedWhileWithheld,
-    allowedWhileAcceptancePending: $allowedWhileAcceptancePending,
+    // The Permissions an operation needs (ADR 0061).
+    requiresPermissions: listOf('requiresPermissions'),
+    // The API token scopes an /api operation needs (ADR 0061).
+    requiresScopes: listOf('requiresScopes'),
+    // The scopes a /service operation needs (ADR 0026).
+    requiresServiceScopes: listOf('requiresServiceScopes'),
+    // The property carries text a caller wrote (ADR 0016).
+    untrusted: flag('untrusted'),
+    // A User withheld by the Two-factor requirement may call it (ADR 0020).
+    allowedWhileWithheld: flag('allowedWhileWithheld'),
+    // A User with a required acceptance pending may call it (ADR 0062).
+    allowedWhileAcceptancePending: flag('allowedWhileAcceptancePending'),
     rateLimited: $rateLimited,
     grantable: $grantable,
     grantedWith: $grantedWith,
@@ -578,7 +560,7 @@ function checkDescriptions(program: Program) {
       const key = ('node' in at ? at.node : undefined) ?? at
       const reported = seen.get(kind) ?? new Set()
       seen.set(kind, reported)
-      const inLibrary = getSourceLocation(at).file.path.includes('/node_modules/')
+      const inLibrary = getLocationContext(program, at).type !== 'project'
       if (reported.has(key) || inLibrary) {
         continue
       }
@@ -589,15 +571,14 @@ function checkDescriptions(program: Program) {
 }
 
 /** Checks what every operation of a surface marked with `@everyOperationDeclares` declares. */
-function checkSurfaces(program: Program) {
+function checkSurfaces(program: Program, services: HttpService[]) {
   const rules = program.stateMap(rulesKey)
-  if (rules.size === 0) {
-    return
-  }
-  const [services] = getAllHttpServices(program)
   for (const service of services) {
     const what = rules.get(service.namespace)
-    for (const httpOperation of what === undefined ? [] : service.operations) {
+    if (what === undefined) {
+      continue
+    }
+    for (const httpOperation of service.operations) {
       const op = httpOperation.operation
       const declared = getExtensions(program, op)
       if (what === 'scopes') {
@@ -625,6 +606,48 @@ function checkSurfaces(program: Program) {
 }
 
 /**
+ * A walk over the types reachable from the types it is called on: union variants, tuple values, the
+ * named model an anonymous model of spread properties is emitted as, and the indexer value and
+ * properties of each model `enter` admits. `at` is what the type was reached through, the target
+ * of a report: the root's own, then the property.
+ */
+function walkTypes(program: Program, enter: (model: Model, at: Type) => boolean) {
+  const seen = new Set<Type>()
+  const walk = (type: Type, at: Type) => {
+    if (seen.has(type)) {
+      return
+    }
+    seen.add(type)
+    if (type.kind === 'Union') {
+      for (const variant of type.variants.values()) {
+        walk(variant.type, at)
+      }
+    } else if (type.kind === 'Tuple') {
+      for (const value of type.values) {
+        walk(value, at)
+      }
+    } else if (type.kind === 'Model') {
+      // A model of properties spread from one named model (`op create(...Input)`) is emitted as it.
+      const effective = type.name === '' ? getEffectiveModelType(program, type) : type
+      if (effective !== type) {
+        walk(effective, at)
+        return
+      }
+      if (!enter(type, at)) {
+        return
+      }
+      if (type.indexer !== undefined) {
+        walk(type.indexer.value, at)
+      }
+      for (const property of type.properties.values()) {
+        walk(property.type, property)
+      }
+    }
+  }
+  return walk
+}
+
+/**
  * Closes every model reachable from a request body of a `@closedRequestBodies` surface, through
  * properties, arrays and unions (ADR 0148). A map declared `@openMap` stays open and is not entered;
  * any other map, an anonymous model and a model in an `extends` chain are refused, as none can be
@@ -632,67 +655,34 @@ function checkSurfaces(program: Program) {
  * versioning makes of every type when /api is emitted, which re-runs a type's decorators, is closed
  * too: an extension written here directly would reach only the original.
  */
-function closeRequestBodies(program: Program) {
+function closeRequestBodies(program: Program, services: HttpService[]) {
   const surfaces = program.stateSet(closedSurfacesKey)
-  if (surfaces.size === 0) {
-    return
-  }
   const open = program.stateSet(openMapsKey)
-  const seen = new Set<Type>()
-  const visit = (type: Type, at: Type) => {
-    if (seen.has(type)) {
-      return
+  const walk = walkTypes(program, (model, at) => {
+    if (isArrayModelType(model)) {
+      return true
     }
-    seen.add(type)
-    if (type.kind === 'Union') {
-      for (const variant of type.variants.values()) {
-        visit(variant.type, at)
-      }
-      return
+    if (open.has(model)) {
+      return false
     }
-    if (type.kind === 'Tuple') {
-      for (const value of type.values) {
-        visit(value, at)
-      }
-      return
-    }
-    if (type.kind !== 'Model') {
-      return
-    }
-    // A model of properties spread from one named model (`op create(...Input)`) is emitted as it.
-    const effective = type.name === '' ? getEffectiveModelType(program, type) : type
-    if (effective !== type) {
-      visit(effective, at)
-      return
-    }
-    if (isArrayModelType(type)) {
-      visit(type.indexer.value, at)
-      return
-    }
-    if (open.has(type)) {
-      return
-    }
-    if (type.indexer !== undefined) {
+    if (model.indexer !== undefined) {
       report(program, { code: 'open-in-request-body', target: at })
-    } else if (type.name === '') {
+    } else if (model.name === '') {
       report(program, { code: 'anonymous-in-request-body', target: at })
-    } else if (type.baseModel !== undefined || type.derivedModels.length > 0) {
-      report(program, { code: 'extends-in-request-body', target: type })
+    } else if (model.baseModel !== undefined || model.derivedModels.length > 0) {
+      report(program, { code: 'extends-in-request-body', target: model })
     } else {
-      closeModel(program, type)
+      closeModel(program, model)
     }
-    for (const property of type.properties.values()) {
-      visit(property.type, property)
-    }
-  }
-  const [services] = getAllHttpServices(program)
+    return true
+  })
   const operations = services
     .filter((service) => surfaces.has(service.namespace))
     .flatMap((service) => service.operations)
   for (const httpOperation of operations) {
     const body = httpOperation.parameters.body
     if (body?.bodyKind === 'single') {
-      visit(body.type, body.property ?? httpOperation.operation)
+      walk(body.type, body.property ?? httpOperation.operation)
     }
   }
   refuseClosedInResponses(program, operations)
@@ -703,42 +693,17 @@ function closeRequestBodies(program: Program) {
  * open to its readers, so a client ignores a property a later release adds (ADR 0148).
  */
 function refuseClosedInResponses(program: Program, operations: HttpOperation[]) {
-  const reached = new Set<Type>()
-  const reach = (type: Type) => {
-    if (reached.has(type)) {
-      return
+  const walk = walkTypes(program, (model) => {
+    if (isClosed(model)) {
+      report(program, { code: 'closed-in-response', target: model })
     }
-    reached.add(type)
-    if (type.kind === 'Union') {
-      for (const variant of type.variants.values()) {
-        reach(variant.type)
-      }
-    } else if (type.kind === 'Tuple') {
-      for (const value of type.values) {
-        reach(value)
-      }
-    } else if (type.kind === 'Model') {
-      const effective = type.name === '' ? getEffectiveModelType(program, type) : type
-      if (effective !== type) {
-        reach(effective)
-        return
-      }
-      if (type.indexer !== undefined) {
-        reach(type.indexer.value)
-      }
-      for (const property of type.properties.values()) {
-        reach(property.type)
-      }
-      if (isClosed(type)) {
-        report(program, { code: 'closed-in-response', target: type })
-      }
-    }
-  }
+    return true
+  })
   for (const httpOperation of operations) {
     for (const response of httpOperation.responses) {
       for (const content of response.responses) {
         if (content.body?.bodyKind === 'single') {
-          reach(content.body.type)
+          walk(content.body.type, content.body.type)
         }
       }
     }
@@ -756,13 +721,18 @@ function closeModel(program: Program, model: Model) {
     return
   }
   model.decorators.push({ decorator: $closed, args: [] })
-  setExtension(program, model, 'additionalProperties', false)
+  writeClosed(program, model)
 }
 
 export function $onValidate(program: Program) {
   checkGrantedWith(program)
   checkRawExtensions(program)
-  checkSurfaces(program)
   checkDescriptions(program)
-  closeRequestBodies(program)
+  // The rest reads the HTTP operations, which only a surface that declares a rule needs resolved.
+  if (program.stateMap(rulesKey).size === 0 && program.stateSet(closedSurfacesKey).size === 0) {
+    return
+  }
+  const [services] = getAllHttpServices(program)
+  checkSurfaces(program, services)
+  closeRequestBodies(program, services)
 }

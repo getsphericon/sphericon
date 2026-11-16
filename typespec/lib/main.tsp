@@ -1,8 +1,8 @@
 // The contract decorators that name no enum of the contract (docs/agents/codegen.md, "Contract
 // decorators"). Each writes the `x-*` extension the Go readers of the OpenAPI documents read;
 // decorators.ts implements and checks them. The ones typed by a contract enum are declared beside
-// it: @requiresPermissions in common/permissions.tsp, @requiresScopes and @grants in
-// common/scopes.tsp, @requiresServiceScopes in service/resources/identity.tsp.
+// it: @requiresPermissions in common/permissions.tsp, @requiresScopes, @grantable and @grantedWith
+// in common/scopes.tsp, @requiresServiceScopes in service/resources/identity.tsp.
 import "./decorators.ts";
 
 namespace Sphericon;

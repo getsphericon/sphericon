@@ -41,11 +41,17 @@ model SiteSecondFactorEnrollment {
   qrCode: string;
 }
 
-/** Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment */
-model SiteSecondFactorStartInput {
+// The proof of identity an operation on how the User signs in asks for (ADR 0048), spread into
+// each body: an alias, so that it is no schema of its own.
+alias SiteReauthentication = {
   /** Current password. Left out by a User with no password, who proves a provider or Passkey
    * sign-in of the last few minutes instead (ADR 0048). */
   currentPassword?: string;
+};
+
+/** Proof of the User's password (or a fresh provider login or Passkey check), for starting an enrollment */
+model SiteSecondFactorStartInput {
+  ...SiteReauthentication;
 }
 
 /** Proof of the User's password (or a fresh provider login or Passkey check) and a code from the authenticator app */
@@ -53,9 +59,7 @@ model SiteSecondFactorConfirmInput {
   /** Identity returned with the secret being confirmed. A replaced or reset enrollment is refused. */
   enrollmentId: EntityId;
 
-  /** Current password. Left out by a User with no password, who proves a provider or Passkey
-   * sign-in of the last few minutes instead (ADR 0048). */
-  currentPassword?: string;
+  ...SiteReauthentication;
 
   /** The current 6-digit TOTP code */
   code: string;
@@ -69,16 +73,12 @@ model SiteRecoveryCodes {
 
 /** Proof of the User's password (or a fresh provider login or Passkey check), for regenerating Recovery codes */
 model SiteRecoveryCodesInput {
-  /** Current password. Left out by a User with no password, who proves a provider or Passkey
-   * sign-in of the last few minutes instead (ADR 0048). */
-  currentPassword?: string;
+  ...SiteReauthentication;
 }
 
 /** Proof of password (or a fresh provider login or Passkey check) and possession, for disabling the Second factor */
 model SiteSecondFactorDisableInput {
-  /** Current password. Left out by a User with no password, who proves a provider or Passkey
-   * sign-in of the last few minutes instead (ADR 0048). */
-  currentPassword?: string;
+  ...SiteReauthentication;
 
   /** A current TOTP code, or an unused Recovery code */
   code: string;
