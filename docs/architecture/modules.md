@@ -210,18 +210,19 @@ another Workspace), is unexported and caught there with `errors.Is` instead.
 
 ## Shapes under the call contract
 
-A domain operation keeps the call contract (ADR 0167, analyzer `callshape`), and three shapes
-recur under it. The Tags path is their example.
+A domain operation keeps the call contract (ADR 0167, analyzer `callshape`). What follows says
+where its dependencies come from and the shapes that recur under it; the Tags path is their example.
 
 - **Constructor or argument.** A constructor `New…` takes what lives as long as its type: the bus
   (`*events.Bus`), the clock, the modules it reads through, the adapter of a seam. An operation takes
   the context, the scope and values. A client that exists for one transaction or one job is no
   argument either: the type takes the long-lived client it comes from in its constructor, and what
   belongs to the call reaches that client through the call. A delivery that hands its sends to a
-  scheduler takes the scheduler in its constructor; the scheduler's method takes the Workspace among
-  its arguments and reads the job's queue client from its context.
+  scheduler takes the scheduler in its constructor, and what the adapter knew of one job (its
+  Workspace, the queue's client of the job) reaches it through the arguments and the context of
+  its method.
 - **Who builds it.** The wiring (`internal/app/container.go`), except a package easement fences to
-  one importer (`<module>unchecked`, `<module>use`, ADR 0110): that importer builds it in its own
+  its importers (`<module>unchecked`, `<module>use`, ADR 0110): each importer builds its own in its
   constructor from what the wiring gave it, so the fence stays as it is. `tagdeletion.New` takes the
   `*tags.Module` and builds `tagsunchecked.New(catalogue)`; `removalcheck.New` builds
   `segmentsuse.New()`.
