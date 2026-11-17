@@ -19,6 +19,7 @@ import (
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -134,7 +135,7 @@ type StaffConverter interface {
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.AbuseMetric
+	AbuseMetricToResource(source abusewarning.Metric) staffeeapi.AbuseMetric
 	// goverter:enum:transform value
 	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.SignupCompanySize
 	// goverter:enum:transform value
