@@ -23,6 +23,9 @@ import (
 func baseline(t *testing.T) {
 	t.Helper()
 	t.Setenv("SPHERICON_DATABASE_URL", testhelper.RealDBURL(t))
+	// The dev stack sets SPHERICON_METRICS_ADDR and its backend holds that port, so an app built
+	// here would fail its bind while the stack runs: no listener unless a test asks for one.
+	t.Setenv("SPHERICON_METRICS_ADDR", "")
 }
 
 // newApp builds a test-profile app on the test's own database and shuts it down with the test.
