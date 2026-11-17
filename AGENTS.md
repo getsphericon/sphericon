@@ -178,7 +178,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
   HEAD:main`. History stays linear: rebase, never merge. A change that touches several areas, a
   contract, a schema or a `CODEOWNERS` path, or that CI should see first, goes through a pull request.
   An agent pushes to `main` only when the user asks for it in that session ("push", "залей в main");
-  otherwise it opens a pull request.
+  otherwise it opens a pull request. Such a push prints the ruleset's bypass notice ("Changes must be
+  made through a pull request"); `git ls-remote origin refs/heads/main` confirms it landed.
   `mise run land -- --door <one-way|two-way> --blast <word> [--ai <none|helped|wrote>] [--title <t>]
   [<issue>...]` does the pull request's first half in one go: rebase onto a freshly fetched
   `origin/main`, the title and body checks CI will run, push of the worktree's branch and
@@ -242,6 +243,14 @@ Every change is made in a worktree under `.claude/worktrees/<name>`, on a branch
 ### Advisor before /to-spec
 
 Before running the `to-spec` skill, call the `advisor` tool first and take its advice into account. The skill is vendored, so this rule lives here rather than in the skill.
+
+### Ready only on a built base
+
+`to-spec` and `to-tickets` apply `ready-for-agent` only when every ADR, Step, module or contract a
+ticket builds on is on `main`, or is an open ticket it carries a native `blocked_by` edge to (see
+`docs/agents/issue-tracker.md`, "Blocking"). An accepted ADR with no ticket gets its own spec first.
+Check the code, not the glossary: the glossary may already describe what is decided but unbuilt. The
+skills are vendored, so this rule lives here rather than in them.
 
 ### Research notes stay out of this repository
 
