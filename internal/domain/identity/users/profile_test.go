@@ -57,7 +57,7 @@ type profileRig struct {
 func newProfileRig(t *testing.T, prove users.Prover) profileRig {
 	t.Helper()
 	env := testhelper.Setup(t)
-	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), time.Now, users.WithProver(prove))
+	acc := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), prove, time.Now)
 	john, err := acc.User(t.Context(), fixtures.OwnerJohnID)
 	require.NoError(t, err)
 	return profileRig{env: env, acc: acc, john: john}

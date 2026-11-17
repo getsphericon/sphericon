@@ -28,7 +28,8 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 // missing contact, an invalid name, or an empty catalogue.
 func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 	client, bus := closedClient(t)
-	m, c := tags.New(), contacts.New(bus, time.Now)
+	m := tags.New()
+	c := contacts.New(bus, m, nil, time.Now)
 	ctx := context.Background()
 	wsID := client.Scoped(fixtures.AcmeID)
 

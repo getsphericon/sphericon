@@ -234,10 +234,11 @@ func checkDKIM(ctx context.Context, r *Report, in Input) {
 		r.add("dkim", Skip, "no Sending domains yet", "")
 		return
 	}
+	dns := sendingdomains.NewDNS(in.LookupTXT)
 	for _, d := range domains {
 		name := "dkim " + d.Domain
 		host, _ := sendingdomains.DKIMRecord(d.DkimSelector, d.Domain, d.DkimPublicKey)
-		ok, err := sendingdomains.VerifyDKIM(ctx, in.LookupTXT, d.DkimSelector, d.Domain, d.DkimPublicKey)
+		ok, err := dns.VerifyDKIM(ctx, d)
 		switch {
 		case err != nil:
 			r.add(name, Fail, "cannot resolve "+host+": "+err.Error(), "Check that this machine can resolve DNS, then run again.")

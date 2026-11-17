@@ -31,5 +31,5 @@ func ConsentRecords(client *ent.Client, bus *events.Bus) *consentrecords.Module 
 // SignupItems is the Sign-up items module over a client and a bus of a test, recording its changes
 // in the Instance audit log as the wiring does.
 func SignupItems(client *ent.Client, bus *events.Bus) *signupitems.Module {
-	return signupitems.New(client, bus, time.Now, instanceauditentries.Record)
+	return signupitems.New(client, bus, time.Now, instanceauditentries.New(client).Record)
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -64,7 +65,7 @@ func mailZones(t *testing.T) *countingResolver {
 
 func TestUpsertBatchRefusesANewAddressAtADomainWithoutMail(t *testing.T) {
 	env := testhelper.Setup(t)
-	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
+	intake := contacts.New(env.Bus, tags.New(), mailZones(t), time.Now)
 
 	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("ann@nullmx.test")},
@@ -87,7 +88,7 @@ func TestUpsertBatchRefusesANewAddressAtADomainWithoutMail(t *testing.T) {
 
 func TestUpsertBatchUpdatesAnAddressTheWorkspaceHoldsWhateverItsDomain(t *testing.T) {
 	env := testhelper.Setup(t)
-	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
+	intake := contacts.New(env.Bus, tags.New(), mailZones(t), time.Now)
 
 	// example.com is outside the zones, so it is NXDOMAIN here; Alice holds the address already.
 	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
@@ -102,7 +103,7 @@ func TestUpsertBatchUpdatesAnAddressTheWorkspaceHoldsWhateverItsDomain(t *testin
 
 func TestUpsertBatchAcceptsAnAddressWhoseDomainDNSDoesNotAnswer(t *testing.T) {
 	env := testhelper.Setup(t)
-	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
+	intake := contacts.New(env.Bus, tags.New(), mailZones(t), time.Now)
 
 	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("dan@broken.test")},
@@ -115,7 +116,7 @@ func TestUpsertBatchAcceptsAnAddressWhoseDomainDNSDoesNotAnswer(t *testing.T) {
 
 func TestUpsertBatchFlagsDisposableAndRoleAddresses(t *testing.T) {
 	env := testhelper.Setup(t)
-	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(mailZones(t)))
+	intake := contacts.New(env.Bus, tags.New(), mailZones(t), time.Now)
 
 	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("eve@mailinator.com")},
@@ -135,7 +136,7 @@ func TestUpsertBatchFlagsDisposableAndRoleAddresses(t *testing.T) {
 func TestUpsertBatchLooksUpEachDomainOnce(t *testing.T) {
 	env := testhelper.Setup(t)
 	zones := mailZones(t)
-	intake := contacts.New(env.Bus, time.Now, contacts.WithMailResolver(zones))
+	intake := contacts.New(env.Bus, tags.New(), zones, time.Now)
 
 	out, err := intake.UpsertBatch(context.Background(), env.DB.Scoped(fixtures.AcmeID), contact.SourceAPI, []contacts.IntakeInput{
 		{Email: new("gus@mx.test")},

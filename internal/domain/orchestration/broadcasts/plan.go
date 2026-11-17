@@ -155,7 +155,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", b.ID, err)
 	}
-	audience, err := audienceOf(ctx, s, armed, d.out.Now())
+	audience, err := d.audiences.of(ctx, s, armed)
 	if errors.Is(err, ErrNoAudience) {
 		return nil, failPlan(ctx, s, b.ID, err, d.out.Now())
 	}
@@ -218,15 +218,27 @@ func renderable(content outboundmessages.Content) error {
 // the copy of its Condition, or a copy that no longer compiles. Its plan fails it.
 var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot be resolved")
 
-// audienceOf is the Contacts the plan of the Broadcast b, which has left draft, takes: the
+// audiences resolves the audience of a Broadcast's plan: eligibility narrows it to the reachable
+// Contacts, and its Condition compiles over Outbound send's clock, which a relative date counts back
+// from.
+type audiences struct {
+	eligibility *eligibility.Module
+	conditions  *condition.Module
+}
+
+func newAudiences(out *outboundmessages.Module) audiences {
+	return audiences{eligibility: eligibility.New(), conditions: condition.New(out.Now)}
+}
+
+// of is the Contacts the plan of the Broadcast b, which has left draft, takes: the
 // Workspace's Contacts narrowed by the Condition copied from its Segment when it left draft (ADR
 // 0065; a Broadcast to all contacts is not narrowed) and by its Channel's Destination: they have
 // one, and it is eligible. Eligibility is derived (ADR 0001): suppressed destinations and ones
 // unsubscribed from the "broadcasts" source (or from everything) are excluded at the query level.
 // A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
 // would block finalization forever.
-func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (*ent.ContactQuery, error) {
-	reached, err := eligibility.BroadcastAudience(ctx, s, b.Channel, b.IntegrationID)
+func (a audiences) of(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*ent.ContactQuery, error) {
+	reached, err := a.eligibility.BroadcastAudience(ctx, s, b.Channel, b.IntegrationID)
 	if err != nil {
 		return nil, fmt.Errorf("broadcasts: broadcast %d: %w", b.ID, err)
 	}
@@ -237,7 +249,7 @@ func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.T
 	if b.Condition == nil {
 		return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
 	}
-	pred, err := condition.ContactPredicate(ctx, s, *b.Condition, now)
+	pred, err := a.conditions.ContactPredicate(ctx, s, *b.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("%w: broadcast %d condition: %w", ErrNoAudience, b.ID, err)
 	}
@@ -248,7 +260,7 @@ func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.T
 // if it ran now, on Outbound send's clock: an estimate for a scheduled Broadcast, whose audience is
 // taken when it starts. ErrNoAudience when its plan would fail it instead.
 func (m *Module) AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (int, error) {
-	audience, err := audienceOf(ctx, s, b, m.out.Now())
+	audience, err := m.audiences.of(ctx, s, b)
 	if err != nil {
 		return 0, err
 	}

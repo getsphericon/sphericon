@@ -26,16 +26,16 @@ type PrunePendingSignupsWorker struct {
 	river.WorkerDefaults[PrunePendingSignupsArgs]
 
 	users *users.Module
-	now   func() time.Time
 }
 
-// NewPrunePendingSignupsWorker builds the prune of the pending sign-ups expired by the clock now.
-func NewPrunePendingSignupsWorker(acc *users.Module, now func() time.Time) *PrunePendingSignupsWorker {
-	return &PrunePendingSignupsWorker{users: acc, now: now}
+// NewPrunePendingSignupsWorker builds the prune of the pending sign-ups expired by the users
+// module's clock.
+func NewPrunePendingSignupsWorker(acc *users.Module) *PrunePendingSignupsWorker {
+	return &PrunePendingSignupsWorker{users: acc}
 }
 
 func (w *PrunePendingSignupsWorker) Work(ctx context.Context, _ *river.Job[PrunePendingSignupsArgs]) error {
-	deleted, err := w.users.PruneExpiredPendingSignups(ctx, w.now())
+	deleted, err := w.users.PruneExpiredPendingSignups(ctx)
 	if err != nil {
 		return err
 	}

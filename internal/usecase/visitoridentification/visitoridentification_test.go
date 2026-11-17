@@ -181,7 +181,7 @@ func TestIdentifyRepeatingTraitsOfEveryTypeLeavesTheRevision(t *testing.T) {
 		return c.Revision
 	}
 
-	_, err := contacts.EnsureCustomFields(ctx, env.DB.Scoped(fixtures.AcmeID), traits)
+	_, err := testhelper.Module[*contacts.Module](env).EnsureCustomFields(ctx, env.DB.Scoped(fixtures.AcmeID), traits)
 	require.NoError(t, err, "a claim writes only defined Custom fields")
 	first := identify()
 

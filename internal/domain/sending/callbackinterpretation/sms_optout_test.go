@@ -71,7 +71,7 @@ func confirmNumber(t *testing.T, env *testhelper.TestEnv, number string) {
 // textable is Send-eligibility's decision for a marketing text to the number.
 func textable(t *testing.T, env *testhelper.TestEnv, number string) eligibility.Decision {
 	t.Helper()
-	dec, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), channels.SMS, number, eligibility.SourceBroadcasts)
+	dec, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	return dec
 }

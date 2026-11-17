@@ -178,21 +178,30 @@ func Parse(def string) (Group, error) {
 	return g, nil
 }
 
+// Module compiles Conditions to Contact predicates. now is the Instance clock a relative date (in
+// the last N days) counts back from.
+type Module struct {
+	now func() time.Time
+}
+
+// New builds the module over the Instance clock.
+func New(now func() time.Time) *Module { return &Module{now: now} }
+
 // ContactPredicate parses a stored condition and compiles it for the Workspace of s.
-func ContactPredicate(ctx context.Context, s *ent.Scoped, def string, now time.Time) (predicate.Contact, error) {
+func (m *Module) ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate.Contact, error) {
 	g, err := Parse(def)
 	if err != nil {
 		return nil, err
 	}
-	return Compile(ctx, s, g, now)
+	return m.Compile(ctx, s, g)
 }
 
 // Compile turns a condition group into a Contact predicate. An empty rule set
 // matches everyone (an empty negated group matches no one) — deliberate, so an
 // empty rule is never a silent "nobody". A "trigger:" leaf is refused: only a Rule has an Event.
-// A relative date (in the last N days) counts back from now, the Instance clock's time.
-func Compile(ctx context.Context, s *ent.Scoped, g Group, now time.Time) (predicate.Contact, error) {
-	return (&compiler{s: s, now: now}).group(ctx, g)
+// A relative date (in the last N days) counts back from the Instance clock's time.
+func (m *Module) Compile(ctx context.Context, s *ent.Scoped, g Group) (predicate.Contact, error) {
+	return (&compiler{s: s, now: m.now()}).group(ctx, g)
 }
 
 // RulePredicate parses a Rule's stored condition and compiles it for the Workspace of s, with
@@ -200,12 +209,12 @@ func Compile(ctx context.Context, s *ent.Scoped, g Group, now time.Time) (predic
 // the Event that fired the Rule, and folded into the tree as constants before the rest compiles
 // to a predicate (the Event's row may not exist yet). A key the Event lacks, or a value of
 // another type, makes the leaf false. Any key is valid, so props may be nil to only validate.
-func RulePredicate(ctx context.Context, s *ent.Scoped, def string, props map[string]any, now time.Time) (predicate.Contact, error) {
+func (m *Module) RulePredicate(ctx context.Context, s *ent.Scoped, def string, props map[string]any) (predicate.Contact, error) {
 	g, err := Parse(def)
 	if err != nil {
 		return nil, err
 	}
-	return (&compiler{s: s, now: now, trigger: &props}).group(ctx, g)
+	return (&compiler{s: s, now: m.now(), trigger: &props}).group(ctx, g)
 }
 
 // compiler holds what one compilation needs: the Workspace's Custom field keys are

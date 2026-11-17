@@ -14,7 +14,7 @@
 // Suppressions. Extending Erasure (another identifier kind, another dependent table, another
 // signal published in the same transaction) means resolving the new identifier into a Target,
 // adding one step, or a foreign key that does the work, not a second code path. The Contact row
-// goes last, through the contacts module's unchecked removal contactsunchecked.DeleteIn. Each step is
+// goes last, through the contacts module's unchecked removal contactsunchecked.Module.DeleteIn. Each step is
 // an unchecked operation of its owner's subpackage (`<module>unchecked`), which only a use case may
 // import (ADR 0110). The record of an Erasure (the Erasures stream, ADR 0045)
 // is written from the contact.erased Event by its own consumer, not here.
@@ -36,7 +36,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations/confirmationsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps/consentstampsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors/visitorsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
@@ -167,20 +169,29 @@ type UseCase struct {
 	broadcasts  *broadcastsunchecked.Module
 	automations *automationsunchecked.Module
 	rules       *rulesunchecked.Module
-	// outbound and captured are the Erasure steps of the Outbound messages and the Captured
-	// messages, which New builds (ADR 0110: only a use case imports them).
+	// The Erasure steps of the owners' unchecked subpackages, which New builds (ADR 0110: only a
+	// use case imports them), and the Contact's row lock.
+	locks    *contactlock.Module
+	contacts *contactsunchecked.Module
+	visitors *visitorsunchecked.Module
+	stamps   *consentstampsunchecked.Module
 	outbound *outboundmessagesunchecked.Module
 	captured *capturedmessagesunchecked.Module
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in and
-// the Broadcasts whose pending work it cancels; now is the Instance clock their unchecked
-// operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
+// the Broadcasts whose pending work it cancels and the contacts module whose unchecked removal of
+// the Contact row it builds; now is the Instance clock the Broadcasts' unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now),
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
-		outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New(),
+		locks:    contactlock.New(),
+		contacts: contactsunchecked.New(people),
+		visitors: visitorsunchecked.New(),
+		stamps:   consentstampsunchecked.New(),
+		outbound: outboundmessagesunchecked.New(),
+		captured: capturedmessagesunchecked.New(),
 	}
 }
 
@@ -194,7 +205,7 @@ func (u *UseCase) Erase(ctx context.Context, s *ent.Scoped, id Identifier, by Re
 		return err
 	}
 	return u.bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
-		target, err := resolve(ctx, ts, subj)
+		target, err := u.resolve(ctx, ts, subj)
 		if err != nil {
 			return err
 		}
@@ -246,7 +257,7 @@ func (u *UseCase) steps() []step {
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
 			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 		},
-		eraseConsentStamps,
+		u.eraseConsentStamps,
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
@@ -260,7 +271,7 @@ func (u *UseCase) steps() []step {
 		// The Visitors, and with them their Bindings and Start tokens. Telegram opt-outs are not
 		// here: they are keyed by the user id and stay.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return visitorsunchecked.EraseSubject(ctx, s, t.ContactID, t.VisitorIDs)
+			return u.visitors.EraseSubject(ctx, s, t.ContactID, t.VisitorIDs)
 		},
 		// The Confirmation of the Contact's number that names no Contact; the Contact's own go with
 		// its row. Losing one fails safe (re-confirmation).
@@ -277,14 +288,14 @@ func (u *UseCase) steps() []step {
 		// its Tag links, Automation runs, Rule firings, Bindings, Start tokens and Confirmations and
 		// detach its Broadcast recipients, Unsubscribes and Suppressions.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return contactsunchecked.DeleteIn(ctx, s, t.ContactID)
+			return u.contacts.DeleteIn(ctx, s, t.ContactID)
 		},
 		publishErased,
 	}
 }
 
-func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
-	c, err := findContact(ctx, s, id)
+func (u *UseCase) resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
+	c, err := u.findContact(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +325,7 @@ func resolve(ctx context.Context, s *ent.Scoped, id subject) (*Target, error) {
 // findContact returns the Contact the identifier names, locked to the end of the transaction s is
 // bound to (contactlock), or nil when it names none (an address or Visitor without a Contact). A
 // contact id that resolves to nothing is ErrContactNotFound.
-func findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, error) {
+func (u *UseCase) findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, error) {
 	var (
 		c   *ent.Contact
 		err error
@@ -342,9 +353,9 @@ func findContact(ctx context.Context, s *ent.Scoped, id subject) (*ent.Contact, 
 	}
 	// Erasure deletes the Contact's Enrollments (with the Contact row), so it locks the Contact
 	// first, in the order every writer of both rows takes them (contactlock, #811).
-	locked, err := contactlock.Lock(ctx, s, c.ID)
+	locked, err := u.locks.Lock(ctx, s, c.ID)
 	if ent.IsNotFound(err) {
-		return findContact(ctx, s, id) // erased meanwhile: resolve what the identifier names now
+		return u.findContact(ctx, s, id) // erased meanwhile: resolve what the identifier names now
 	}
 	return locked.Contact(), err
 }

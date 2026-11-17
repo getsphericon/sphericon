@@ -19,18 +19,15 @@ func TestCheckIsConfinedToTheScopedWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.GlobexID), channels.Email,
-		fixtures.SuppressionGlobexDestination, eligibility.SourceBroadcasts)
+	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.GlobexID), eligibility.CheckInput{Channel: channels.Email, Destination: fixtures.SuppressionGlobexDestination, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
 
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), channels.Email,
-		fixtures.SuppressionGlobexDestination, eligibility.SourceBroadcasts)
+	d, err = eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Email, Destination: fixtures.SuppressionGlobexDestination, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.True(t, d.Eligible, "a Globex suppression does not reach Acme")
 
-	d, err = eligibility.Check(ctx, env.DB.Scoped(fixtures.HooliID), channels.Email,
-		"anyone@example.com", eligibility.SourceBroadcasts)
+	d, err = eligibility.New().Check(ctx, env.DB.Scoped(fixtures.HooliID), eligibility.CheckInput{Channel: channels.Email, Destination: "anyone@example.com", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.True(t, d.Eligible, "a Workspace without Suppression rows is still decided")
 }

@@ -5,7 +5,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -26,7 +25,7 @@ type CreateInput struct {
 func (u *UseCase) Create(ctx context.Context, in CreateInput) (View, error) {
 	var ws *ent.Workspace
 	err := u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		usr, err := users.VerifiedIn(ctx, tx, in.UserID)
+		usr, err := u.users.VerifiedIn(ctx, tx, in.UserID)
 		if err != nil {
 			return err
 		}

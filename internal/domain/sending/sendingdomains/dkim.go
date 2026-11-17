@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 )
 
@@ -94,16 +95,25 @@ func DMARCRecord(domain string) (host, value string) {
 	return "_dmarc." + domain, "v=DMARC1; p=none;"
 }
 
-// VerifyDKIM reports whether the DKIM TXT published at "<selector>._domainkey.
-// <domain>" carries the same public key as expectedPubTXT. It is tolerant of TXT
-// chunking (records split into multiple strings) and whitespace differences in
-// the p= tag. A missing record verifies false with a nil error; a resolver
-// failure returns the error.
-func VerifyDKIM(ctx context.Context, lookup domainname.TXTLookup, selector, domain, expectedPubTXT string) (bool, error) {
+// DNS reads the records that prove a Sending domain from the DNS, through its lookup: the module's
+// checks, and the doctor's, which resolves from the machine it runs on.
+type DNS struct {
+	lookup domainname.TXTLookup
+}
+
+// NewDNS builds the reader over the lookup that resolves TXT records.
+func NewDNS(lookup domainname.TXTLookup) *DNS { return &DNS{lookup: lookup} }
+
+// VerifyDKIM reports whether the DKIM TXT published at "<selector>._domainkey.<domain>" of the
+// Sending domain d carries the same public key as its own. It is tolerant of TXT chunking (records
+// split into multiple strings) and whitespace differences in the p= tag. A missing record verifies
+// false with a nil error; a resolver failure returns the error.
+func (n *DNS) VerifyDKIM(ctx context.Context, d *ent.SendingDomain) (bool, error) {
+	selector, domain, expectedPubTXT := d.DkimSelector, d.Domain, d.DkimPublicKey
 	host, _ := DKIMRecord(selector, domain, expectedPubTXT)
 	// Fully qualified: a relative name would be retried through the host's resolv.conf
 	// search suffixes, which can turn a SERVFAIL into a misleading "not found".
-	records, err := lookup(ctx, host+".")
+	records, err := n.lookup(ctx, host+".")
 	if err != nil {
 		if dnsIsNotFound(err) {
 			return false, nil

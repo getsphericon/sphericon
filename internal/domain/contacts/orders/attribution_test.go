@@ -192,7 +192,7 @@ func TestAnEarlyRefundMovesTheRevenueOfTheMessageTheOrderIsCreditedTo(t *testing
 
 	placeOrder(t, env, fixtures.ContactClickerBroadcastID, "C-1")
 
-	got, err := orders.CreditedToBroadcasts(t.Context(), s, fixtures.BroadcastEmporiumID)
+	got, err := orders.NewRevenues().CreditedToBroadcasts(t.Context(), s, fixtures.BroadcastEmporiumID)
 	require.NoError(t, err)
 	assert.Equal(t, orders.Credited{Orders: 1, Amount: 1500}, got.ByID[fixtures.BroadcastEmporiumID])
 }

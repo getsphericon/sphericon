@@ -34,13 +34,12 @@ func trackingHostGate(cfg *config.Config, domains *trackingdomains.Module, next,
 		}
 		var (
 			ws  int64
-			ok  bool
 			err error
 		)
 		if _, candidate := trackingdomains.CanonicalHost(host); candidate && host != trackerHost {
-			ws, ok, err = domains.HostWorkspace(r.Context(), host)
+			ws, err = domains.HostWorkspace(r.Context(), host)
 		}
-		if err != nil || !ok {
+		if err != nil || ws == 0 {
 			if fromEdge {
 				http.NotFound(w, r)
 				return

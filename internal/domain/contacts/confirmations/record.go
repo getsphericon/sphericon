@@ -87,7 +87,7 @@ var _ = db.Declare(
 // then time.
 func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant) (*ent.Confirmation, error) {
 	key := stampKey(g.channel, g.destination)
-	if _, err := consentstamps.Hold(ctx, s, key); err != nil {
+	if _, err := consentstamps.New().Hold(ctx, s, key); err != nil {
 		return nil, err
 	}
 	standing, err := s.Confirmation().Query().Where(
@@ -102,7 +102,7 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 	case !Stronger(g.provenance, standing.Provenance):
 		return standing, nil
 	}
-	admitted, err := consentstamps.Admit(ctx, s, key, consentstamps.Confirmation, g.at, false)
+	admitted, err := consentstamps.New().Admit(ctx, s, consentstamps.Observation{Key: key, Fact: consentstamps.Confirmation, Occurred: g.at})
 	switch {
 	case err != nil:
 		return nil, err
@@ -119,7 +119,7 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 	}
 	// The Contact may be gone by now (erased between the send and the click): the Confirmation is
 	// keyed by its destination and is recorded unlinked.
-	if g.contactID, err = contactlock.Referenced(ctx, s, g.contactID); err != nil {
+	if g.contactID, err = contactlock.New().Referenced(ctx, s, g.contactID); err != nil {
 		return nil, fmt.Errorf("lock the confirmation's contact: %w", err)
 	}
 	create := s.Confirmation().Create().
@@ -196,7 +196,7 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 // ("confirmed at T1, left at T2"). at is when the person withdrew: a withdrawal older than the
 // Confirmation standing withdraws nothing (ADR 0154). Run it inside the transaction s is bound to.
 func Withdraw(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string, at consentstamps.Occurrence) error {
-	admitted, err := consentstamps.Admit(ctx, s, stampKey(channel, destination), consentstamps.Confirmation, at, true)
+	admitted, err := consentstamps.New().Admit(ctx, s, consentstamps.Observation{Key: stampKey(channel, destination), Fact: consentstamps.Confirmation, Occurred: at, Refusal: true})
 	if err != nil || !admitted {
 		return err
 	}

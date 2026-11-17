@@ -341,6 +341,15 @@ func (c *InputsImpl) EmailBroadcastContentPatch(source external.EmailBroadcastCo
 	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
 	return broadcastsEmailContentPatch
 }
+func (c *InputsImpl) EmailLint(source *external.LintEmailInput) emailtemplates.LintInput {
+	var emailtemplatesLintInput emailtemplates.LintInput
+	if source != nil {
+		emailtemplatesLintInput.Subject = stringIn((*source).Subject)
+		emailtemplatesLintInput.Body = stringPtrIn((*source).Body)
+		emailtemplatesLintInput.Doc = documentIn((*source).Doc)
+	}
+	return emailtemplatesLintInput
+}
 func (c *InputsImpl) EnrollmentsFilter(source external.EnrollmentsListParams) automations.EnrollmentsFilter {
 	var automationsEnrollmentsFilter automations.EnrollmentsFilter
 	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)

@@ -17,7 +17,7 @@ func TestCustomFieldsListTheWorkspaceCatalogueAscendingByKey(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	fields, err := contacts.CustomFields(context.Background(), s)
+	fields, err := testhelper.Module[*contacts.Module](env).CustomFields(context.Background(), s)
 	require.NoError(t, err)
 
 	keys := make([]string, len(fields))

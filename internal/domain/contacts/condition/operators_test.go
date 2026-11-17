@@ -82,7 +82,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 	} {
 		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
 		require.NoError(t, err)
-		_, err = condition.ContactPredicate(context.Background(), ws, string(def), time.Now())
+		_, err = condition.New(time.Now).ContactPredicate(context.Background(), ws, string(def))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
@@ -113,7 +113,7 @@ func TestCompileRefusesWhatTheRuleSetDoesNotAllow(t *testing.T) {
 		"json prefix without a key":     {rule("custom:", "eq", "x"), "unknown field"},
 		"plain operator on json column": {rule("custom:plan", "null", ""), "for json field"},
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule), time.Now())
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.rule))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -141,7 +141,7 @@ func TestCompileRefusesAnEventLeafOutOfRange(t *testing.T) {
 		"a zero window":            {zeroWindow, "withinDays must be at least 1"},
 		"a negative window":        {eventLeaf("signup", "atLeast", 1, -1), "withinDays must be at least 1"},
 	} {
-		_, err := condition.Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf), time.Now())
+		_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), opsGroup(tc.leaf))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), tc.msg, name)
 		assert.Contains(t, err.Error(), "rule 0", "%s: the error names the offending rule", name)
@@ -154,33 +154,33 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`42`)}}, time.Now())
+	_, err := condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`42`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}}, time.Now())
+	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}}, time.Now())
+	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}}, time.Now())
+	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown rule kind")
 
 	// An unknown combinator is refused, not read as "and".
-	_, err = condition.Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"}, time.Now())
+	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown combinator")
 
 	// An error deep in a nested group is reported with its path.
 	nested := opsGroup(opsGroup(rule("password", "eq", "x")))
-	_, err = condition.Compile(ctx, ws, nested, time.Now())
+	_, err = condition.New(time.Now).Compile(ctx, ws, nested)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
 }
@@ -190,14 +190,14 @@ func TestContactPredicateRefusesInvalidConditions(t *testing.T) {
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.ContactPredicate(ctx, ws, "{not json", time.Now())
+	_, err := condition.New(time.Now).ContactPredicate(ctx, ws, "{not json")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid condition")
 
-	_, err = condition.ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`, time.Now())
+	_, err = condition.New(time.Now).ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
 	require.Error(t, err)
 
-	p, err := condition.ContactPredicate(ctx, ws, "", time.Now())
+	p, err := condition.New(time.Now).ContactPredicate(ctx, ws, "")
 	require.NoError(t, err)
 	assert.NotNil(t, p, "a blank definition matches everyone")
 }

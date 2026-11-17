@@ -60,7 +60,7 @@ func newFactorRace(t *testing.T) factorRace {
 	clock := func() time.Time { return now }
 	env := testhelper.Setup(t, testhelper.Committed(), testhelper.WithClock(clock))
 	return factorRace{client: env.DB, bus: env.Bus, now: now,
-		factors: secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.ProvenUsers{}, testhelper.Module[*passkeys.Module](env), clock)}
+		factors: secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), testhelper.Module[*passkeys.Module](env), clock)}
 }
 
 // pause holds the first write matches selects, after its operation loaded and checked the User

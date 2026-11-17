@@ -109,10 +109,13 @@ type RelyingParty struct {
 	key []byte
 }
 
-// Users is the proof of identity a User's change of their own Passkeys takes
-// (users.Module.ProveIdentity).
+// Users is what the module asks of the User (users.Module): the proof of identity a User's change
+// of their own Passkeys takes, and the lock and the session epoch of the User's row the change
+// moves.
 type Users interface {
 	ProveIdentity(ctx context.Context, u *ent.User, proof users.IdentityProof) error
+	LockIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error)
+	BumpSessionEpochIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error)
 }
 
 // New builds the module over the Instance's relying party (NewRelyingParty). identity proves who a
@@ -249,7 +252,7 @@ func (p *Module) Remove(ctx context.Context, u *ent.User, in RemoveInput) (Remov
 		// Passkeys (a Second factor reset bumps the User, then removes the Passkeys): a removal and
 		// a reset queue on it rather than deadlock, and two removals of one User's last ways to sign
 		// in check them one after the other.
-		held, err := users.LockIn(ctx, tx, userID)
+		held, err := p.users.LockIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
@@ -276,7 +279,7 @@ func (p *Module) Remove(ctx context.Context, u *ent.User, in RemoveInput) (Remov
 		if err := tx.Passkey.DeleteOneID(id).Exec(ctx); err != nil {
 			return err
 		}
-		saved, err := users.BumpSessionEpochIn(ctx, tx, userID)
+		saved, err := p.users.BumpSessionEpochIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}

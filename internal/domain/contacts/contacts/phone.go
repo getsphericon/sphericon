@@ -54,7 +54,7 @@ func upsertedPhone(ctx context.Context, s *ent.Scoped, in UpsertInput) (*string,
 	if !errors.Is(err, ErrPhoneCountryRequired) {
 		return p, err
 	}
-	known, rerr := Resolve(ctx, s, in.SubjectID, in.Email, nil)
+	known, rerr := resolve(ctx, s, AliasKeys{SubjectID: in.SubjectID, Email: in.Email})
 	if rerr != nil {
 		return nil, rerr
 	}

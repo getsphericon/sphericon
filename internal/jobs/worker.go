@@ -19,6 +19,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
@@ -98,6 +99,8 @@ type Deps struct {
 	// Passkeys prunes the spent challenges of the Passkey ceremonies (ADR 0051).
 	Passkeys *passkeys.Module
 	Orders   *orders.Module
+	// Contacts changes a Contact's Tags for a Rule's tag Actions.
+	Contacts *contacts.Module
 	// CapturedMessages prunes the Captured messages past the Test inbox's retention (ADR 0058).
 	CapturedMessages *capturedmessages.Module
 	Deletion         *workspacedeletion.UseCase
@@ -146,7 +149,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
-	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper, now)})
+	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, deps.Contacts, stepper)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, rand.Float64))
 	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper, rand.Float64))
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, rand.Float64, bus))
@@ -154,7 +157,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
 	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
-	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
+	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewVerifyTrackingDomainWorker(deps.TrackingDomains))
@@ -172,7 +175,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(deps.Passkeys))
-	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
