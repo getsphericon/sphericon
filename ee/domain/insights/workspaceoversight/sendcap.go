@@ -6,7 +6,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 )
 
 // SendCapChange is a change of a Workspace's Send cap: the Workspace as it stands after it,
@@ -21,7 +20,7 @@ type SendCapChange struct {
 // console shows next to its Send cap, through a scope over w after its row is loaded
 // (docs/architecture/workspace-scoping.md, scope list item 7) and the same read as /site's (providerlimit).
 func (m *Module) sentLast24h(ctx context.Context, w *ent.Workspace) (int, error) {
-	return providerlimit.SentLast24h(ctx, m.ent.Scoped(w.ID), m.now())
+	return m.limits.SentLast24h(ctx, m.ent.Scoped(w.ID))
 }
 
 // SetSendCapInput is who sets a Workspace's Send cap, and the cap: PerDay messages per rolling 24

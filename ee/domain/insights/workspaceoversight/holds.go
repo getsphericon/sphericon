@@ -30,7 +30,7 @@ type ClearHoldInput struct {
 
 // SetHold sets the hold under in.Key on a Workspace, or renews it when it exists: one call
 // does both and repeating it is harmless. It is recorded in the Audit log under the
-// credential's name. The rules of a hold are its owner's (holds.Set), with the expiry checked
+// credential's name. The rules of a hold are its owner's (holds.Holds.Set), with the expiry checked
 // against the configured maximum. ErrWorkspaceNotFound for an unknown Workspace.
 //
 // The service endpoints scope over the one Workspace the call names, after its row is
@@ -43,7 +43,7 @@ func (m *Module) SetHold(ctx context.Context, workspaceID string, in SetHoldInpu
 	if err != nil {
 		return HoldChange{}, err
 	}
-	return holds.Set(ctx, s, in.Key, in.Credential.Name, in.Hold, holds.Limits{Now: m.now(), MaxExpiry: m.holdMax})
+	return m.holds.Set(ctx, s, holds.SetInput{Key: in.Key, SetBy: in.Credential.Name, Hold: in.Hold})
 }
 
 // ClearHold removes the hold under in.Key. Clearing a missing hold succeeds. It is recorded
@@ -56,7 +56,7 @@ func (m *Module) ClearHold(ctx context.Context, workspaceID string, in ClearHold
 	if err != nil {
 		return HoldChange{}, err
 	}
-	return holds.Clear(ctx, s, in.Key)
+	return m.holds.Clear(ctx, s, in.Key)
 }
 
 // ActiveHolds lists the holds of a Workspace that are active now, by key.
@@ -72,9 +72,10 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Ho
 	return m.holdsOf(ctx, s)
 }
 
-// holdsOf lists the holds of the Workspace of s that are active now, by key.
+// holdsOf lists the holds of the Workspace of s that are active now, by key: the module's holds
+// honour Staff holds whatever the license, since every read is licensed first.
 func (m *Module) holdsOf(ctx context.Context, s *ent.Scoped) ([]*ent.Hold, error) {
-	st, err := holds.Read(ctx, s, m.now(), true)
+	st, err := m.holds.Standing(ctx, s)
 	if err != nil {
 		return nil, err
 	}

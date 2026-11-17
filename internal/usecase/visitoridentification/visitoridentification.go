@@ -55,6 +55,7 @@ type UseCase struct {
 	visitors *visitors.Module
 	tokens   *identitytokens.Module
 	bindings *bindings.Module
+	chats    *bindings.Chats
 	now      func() time.Time
 }
 
@@ -62,7 +63,7 @@ type UseCase struct {
 // the Visitor, tokens checks an Identity token, bindings issues start links and hands a Visitor's
 // over, and now is the Instance clock a hand-over is dated by.
 func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, now: now}
+	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, chats: bindings.NewChats(bus, now), now: now}
 }
 
 var (
@@ -139,7 +140,7 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 			return err
 		}
 		if proven {
-			if err := bindings.HandOver(ctx, ts, pub, vis, c, u.now()); err != nil {
+			if err := u.chats.HandOver(ctx, ts, vis, c); err != nil {
 				return err
 			}
 		}

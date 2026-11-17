@@ -89,19 +89,24 @@ type limiterRun struct {
 	now         time.Time
 }
 
+// buckets spends at the run's clock as it stands at each call.
+func (r *limiterRun) buckets() *providerlimit.Buckets {
+	return providerlimit.NewBuckets(r.within, func() time.Time { return r.now })
+}
+
 // Reserve asks for a token: granted exactly when the model holds one in each bucket, and when
 // denied, granted after the wait the limiter reports.
 func (r *limiterRun) Reserve(t *rapid.T) {
 	granted, borderline := r.model.shortBy(r.now)
 
-	short, err := providerlimit.Reserve(t.Context(), r.s, r.within, r.reservation, r.now)
+	short, err := r.buckets().Reserve(t.Context(), r.s, r.reservation)
 
 	require.NoErrorf(t, err, "reserve at %v", r.now)
 	assert.Truef(t, borderline || (short.Wait == 0) == granted,
 		"at %v the model grants %v, the limiter waited %v", r.now, granted, short.Wait)
 	if short.Wait != 0 {
 		r.now = r.now.Add(short.Wait)
-		again, err := providerlimit.Reserve(t.Context(), r.s, r.within, r.reservation, r.now)
+		again, err := r.buckets().Reserve(t.Context(), r.s, r.reservation)
 		require.NoError(t, err)
 		require.Zerof(t, again.Wait, "after the reported wait of %v the reservation still waits", short.Wait)
 	}
@@ -110,7 +115,7 @@ func (r *limiterRun) Reserve(t *rapid.T) {
 
 // Spend takes a token for a transactional send, granted or not.
 func (r *limiterRun) Spend(t *rapid.T) {
-	require.NoErrorf(t, providerlimit.Spend(t.Context(), r.s, r.within, r.reservation, r.now), "spend at %v", r.now)
+	require.NoErrorf(t, r.buckets().Spend(t.Context(), r.s, r.reservation), "spend at %v", r.now)
 	r.model.take(r.now)
 }
 

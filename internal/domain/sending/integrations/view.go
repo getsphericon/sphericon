@@ -80,7 +80,7 @@ func (m *Module) views(ctx context.Context, s *ent.Scoped, rows []*ent.Integrati
 	if err := loadStates(ctx, s, rows); err != nil {
 		return nil, err
 	}
-	limits, err := providerlimit.Statuses(ctx, s, rows, m.now())
+	limits, err := m.limits.Statuses(ctx, s, rows)
 	if err != nil {
 		return nil, err
 	}

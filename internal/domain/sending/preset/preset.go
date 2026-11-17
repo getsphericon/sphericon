@@ -274,11 +274,31 @@ func (p *Preset) ValidateParams(values Params) error {
 	return nil
 }
 
-// Handle verifies the request and turns its payload into facts. Nothing
+// Engine runs a request through a Preset: it verifies it with the certificates and at the clock it
+// was built with, then transforms it into facts.
+type Engine struct {
+	certs Certificates
+	now   func() time.Time
+}
+
+// New builds the engine over the certificates an `sns` signature is checked against
+// (SNSCertificates; TestCertificates in a test) and the clock a timestamp's tolerance is read at.
+func New(certs Certificates, now func() time.Time) *Engine {
+	return &Engine{certs: certs, now: now}
+}
+
+// HandleInput is a request a Preset handles, and the params of the Integration it came to.
+type HandleInput struct {
+	Request Request
+	Params  Params
+}
+
+// Handle verifies the request through p and turns its payload into facts. Nothing
 // reaches the transform unverified: a header scheme checks the raw bytes before any
 // parsing, a body scheme parses under the body limit, verifies, and only then
-// transforms. now is the clock, for timestamp tolerance.
-func (p *Preset) Handle(ctx context.Context, req Request, params Params, now time.Time) (Result, error) {
+// transforms. The engine's clock is read once, for timestamp tolerance.
+func (e *Engine) Handle(ctx context.Context, p *Preset, in HandleInput) (Result, error) {
+	req, params, env := in.Request, in.Params, verifyEnv{now: e.now(), certs: e.certs}
 	if len(req.Body) > MaxBodyBytes {
 		return Result{}, fmt.Errorf("%w: body is over %d bytes", ErrMalformed, MaxBodyBytes)
 	}
@@ -288,11 +308,11 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 		if body, err = parseBody(req); err != nil {
 			return Result{}, err
 		}
-		if err := p.verifier.verify(ctx, req, body, params, now); err != nil {
+		if err := p.verifier.verify(ctx, req, body, params, env); err != nil {
 			return Result{}, refusal(err)
 		}
 	} else {
-		if err := p.verifier.verify(ctx, req, nil, params, now); err != nil {
+		if err := p.verifier.verify(ctx, req, nil, params, env); err != nil {
 			return Result{}, refusal(err)
 		}
 		var err error
@@ -307,7 +327,7 @@ func (p *Preset) Handle(ctx context.Context, req Request, params Params, now tim
 			return Result{}, err
 		}
 	}
-	res, err := p.run(ctx, body, req.Header)
+	res, err := run(ctx, p, body, req.Header)
 	if err != nil {
 		return Result{}, err
 	}
@@ -324,16 +344,6 @@ func refusal(err error) error {
 		return err
 	}
 	return fmt.Errorf("%w: %w", ErrUnauthentic, err)
-}
-
-// forTest is the Preset as its own tests run it: offline, so an `sns` Preset checks
-// signatures against the test certificate instead of fetching one.
-func (p *Preset) forTest() *Preset {
-	q := *p
-	if s, ok := p.verifier.(*snsVerifier); ok {
-		q.verifier = &snsVerifier{c: s.c, certs: TestSNSCertificates}
-	}
-	return &q
 }
 
 // formContentType is the media type of a form-encoded body (Twilio's callbacks).

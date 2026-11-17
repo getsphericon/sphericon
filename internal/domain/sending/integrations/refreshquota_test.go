@@ -22,7 +22,7 @@ import (
 
 // quotaModule is the module over the provider catalog a test scripts.
 func quotaModule(cipher *secrets.Cipher, catalog *messaging.Catalog) *integrations.Module {
-	return integrations.New(nil, cipher, catalog, nil, "", time.Now)
+	return integrations.New(nil, cipher, catalog, nil, "", nil, time.Now)
 }
 
 func reload(t *testing.T, s *ent.Scoped, id int64) *ent.Integration {

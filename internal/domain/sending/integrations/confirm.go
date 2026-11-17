@@ -12,13 +12,25 @@ import (
 )
 
 // ConfirmSubscription performs a Preset's confirm action: it fetches the URL the
-// provider asked to be fetched, through the SSRF-guarded client. The engine has already
+// provider asked to be fetched, through the module's Confirmer. The engine has already
 // refused a URL the provider's own rules do not allow (SNS: an https SNS host only).
 func (m *Module) ConfirmSubscription(ctx context.Context, url string) error {
-	return m.confirm(ctx, url)
+	return m.confirm.Confirm(ctx, url)
 }
 
-func confirmByGet(ctx context.Context, url string) error {
+// Confirmer performs a Preset's confirm action on a URL the engine has already checked.
+type Confirmer interface {
+	Confirm(ctx context.Context, url string) error
+}
+
+// WebConfirmer is the Confirmer of an Instance: a GET through the SSRF-guarded client.
+type WebConfirmer struct{}
+
+// NewWebConfirmer builds the Confirmer the wiring hands New.
+func NewWebConfirmer() *WebConfirmer { return &WebConfirmer{} }
+
+// Confirm fetches url and drains its answer; a status other than 2xx is an error.
+func (*WebConfirmer) Confirm(ctx context.Context, url string) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return err

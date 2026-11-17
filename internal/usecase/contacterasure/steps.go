@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
-	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -41,7 +40,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 		}
 	}
 	if t.ContactID != 0 {
-		users, err := bindings.DestinationsOf(ctx, s, t.ContactID)
+		users, err := u.chats.DestinationsOf(ctx, s, t.ContactID)
 		if err != nil {
 			return err
 		}

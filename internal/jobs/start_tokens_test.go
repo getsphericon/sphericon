@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/starttoken"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -18,7 +19,7 @@ import (
 func TestThePurgeRemovesLapsedAndUsedStartTokensAndKeepsOpenOnes(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
-	w := jobs.NewPruneStartTokensWorker(env.DB, time.Now)
+	w := jobs.NewPruneStartTokensWorker(env.DB, bindings.NewChats(env.Bus, time.Now))
 
 	require.NoError(t, w.Work(ctx, job(jobs.PruneStartTokensArgs{})))
 

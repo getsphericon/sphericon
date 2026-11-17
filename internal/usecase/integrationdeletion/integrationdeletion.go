@@ -20,14 +20,15 @@ import (
 // UseCase deletes an Integration. Every call receives the Workspace-scoped client (ADR 0017) built
 // by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus   *events.Bus
-	check *removalcheck.Module
-	now   func() time.Time
+	bus       *events.Bus
+	check     *removalcheck.Module
+	unchecked *integrationsunchecked.Module
 }
 
-// New builds the Integration deletion use case over the Removal check; now is the Instance clock.
+// New builds the Integration deletion use case over the Removal check and the module's unchecked
+// removal it builds on the same bus; now is the Instance clock.
 func New(bus *events.Bus, check *removalcheck.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, check: check, now: now}
+	return &UseCase{bus: bus, check: check, unchecked: integrationsunchecked.New(bus, now)}
 }
 
 // Delete discards an Integration for good (ADR 0049): it leaves the lists and is never restored,
@@ -42,14 +43,14 @@ func New(bus *events.Bus, check *removalcheck.Module, now func() time.Time) *Use
 // live between them and the Integration is never discarded as its Channel's default; a Telegram bot
 // lets go of its webhook through a job queued in the discard's transaction.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
-	return u.bus.WithinWorkspaceLockEnqueueTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
-		deletion, err := integrationsunchecked.DeletionIn(ctx, wl, id)
+	return u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		deletion, err := u.unchecked.DeletionIn(ctx, wl, id)
 		if err != nil || deletion.Done() {
 			return err
 		}
 		if err := u.check.Integration(ctx, wl, id); err != nil {
 			return err
 		}
-		return deletion.Apply(ctx, u.now(), q)
+		return u.unchecked.ApplyDeletion(ctx, wl, deletion)
 	})
 }

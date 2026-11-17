@@ -63,14 +63,15 @@ func presetTestCommand() *cli.Command {
 				return err
 			}
 			if cmd.String(flagPayload) == "" {
-				results := p.RunTests(ctx)
+				results := preset.New(preset.NewSNSCertificates(), now).RunTests(ctx, p)
 				return commandline.WritePresetTests(out(cmd), p.Name(), results)
 			}
-			req, params, now, err := sample(cmd)
+			req, params, at, err := sample(cmd)
 			if err != nil {
 				return err
 			}
-			res, err := p.Handle(ctx, req, params, now)
+			engine := preset.New(preset.NewSNSCertificates(), func() time.Time { return at })
+			res, err := engine.Handle(ctx, p, preset.HandleInput{Request: req, Params: params})
 			return commandline.WritePresetSample(out(cmd), res, err)
 		},
 	}

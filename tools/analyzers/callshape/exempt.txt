@@ -22,9 +22,3 @@ internal/domain/orchestration/rules
 internal/domain/orchestration/rules/rulesunchecked
 internal/domain/orchestration/rules/rulesuse
 internal/domain/orchestration/webhookendpoints
-internal/domain/sending/bindings
-internal/domain/sending/holds
-internal/domain/sending/integrations
-internal/domain/sending/integrations/integrationsunchecked
-internal/domain/sending/preset
-internal/domain/sending/providerlimit

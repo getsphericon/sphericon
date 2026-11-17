@@ -45,6 +45,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts/broadcastsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages/capturedmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -175,6 +176,8 @@ type UseCase struct {
 	stamps   *consentstampsunchecked.Module
 	outbound *outboundmessagesunchecked.Module
 	captured *capturedmessagesunchecked.Module
+	// chats reads the Telegram users Bound to the Contact.
+	chats *bindings.Chats
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in and
@@ -189,6 +192,7 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		stamps:   consentstampsunchecked.New(),
 		outbound: outboundmessagesunchecked.New(),
 		captured: capturedmessagesunchecked.New(),
+		chats:    bindings.NewChats(bus, now),
 	}
 }
 

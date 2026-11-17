@@ -129,7 +129,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 6. the Workspace comes from a secret rather than a login: the ingest hook
    `POST /hooks/{key}` (driver `internal/api/hooks`, ADR 0037), where the key belongs to one
    Integration, so the Callback interpretation (`callbackinterpretation.Module.Receive`) finds
-   the Integration by key (`integrations.ByIngestKey`, on its raw client) and then
+   the Integration by key (`integrations.Module.ByIngestKey`, on its raw client) and then
    scopes to its Workspace (`row.WorkspaceID`); the tracked links (driver `internal/api/tracking`), where an
    open or click token names an outbound message that the Outbound message's engagement
    (`internal/domain/sending/outboundmessages/engagement`) loads with the raw client and scopes
@@ -151,7 +151,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    the module that already serves `/site`: its Audit log (`Module.AuditEntries`, via
    `auditentries.Log.Entries`), its deliverability rates (`Module.WorkspaceDeliverability`, via
    `reputation.Rates`) and its sends of the last 24 hours shown next to its Send cap
-   (`Module.SentLast24h`, via `providerlimit.SentLast24h`, ADR 0067); and the service endpoints (a Service credential) scope over the one
+   (`Module.SentLast24h`, via `providerlimit.Module.SentLast24h`, ADR 0067); and the service endpoints (a Service credential) scope over the one
    Workspace a call names, after its row is loaded, to set, clear and list its Staff holds
    (`Module.SetHold`, `ClearHold`, `ActiveHolds`; the send path and the site API read them
    through the `holds` module, which holds no raw client); the abuse detector
@@ -167,7 +167,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
 
 ## Raw-client holders
 
-**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
+**The raw `*ent.Client` is allowed only in:** `internal/domain/sending/bindings` (only `Chats.PruneStartTokens`, the Instance-wide purge of lapsed and used Start tokens, ADR 0076, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/sending/capturedmessages` (only `Purge`, the Instance-wide age purge of Captured messages, ADR 0058, called by a river job; every other function takes a `*ent.Scoped`), `internal/domain/identity/users` (the User,
 ADR 0102, and the Pending sign-up of a Sign-in provider, ADR 0062: no User
 or Workspace exists yet, and its completion creates them, its Consent records and an Invitation's Membership in one
 transaction, which the Sign-up (`internal/domain/identity/signup`) opens; the prune river jobs only call it), `internal/domain/identity/invitations` (the lookup of a pending Invitation by its

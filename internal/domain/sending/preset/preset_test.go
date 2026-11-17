@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -24,7 +25,7 @@ func TestPresetsPassTheirOwnTests(t *testing.T) {
 	for _, name := range names {
 		p, _ := custom.Get(name)
 		t.Run(name, func(t *testing.T) {
-			require.NoError(t, p.Test(t.Context()))
+			require.NoError(t, engineAt(time.Now()).Test(t.Context(), p))
 		})
 	}
 }

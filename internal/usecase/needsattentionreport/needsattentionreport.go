@@ -149,6 +149,7 @@ type UseCase struct {
 	watch      abusewarning.Watch
 	out        *outboundmessages.Module
 	broadcasts *broadcasts.Module
+	limits     *providerlimit.Module
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
@@ -156,7 +157,7 @@ type UseCase struct {
 // now and whose SendCapStatus says which Send cap applies (ADR 0067), catalogue counts what the
 // Broadcasts draw from the Send cap, and now is the Instance clock.
 func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
-	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue}
+	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue, limits: providerlimit.New(now)}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a
@@ -233,7 +234,7 @@ func (m *UseCase) integrations(ctx context.Context, s *ent.Scoped, now time.Time
 	if err != nil {
 		return nil, err
 	}
-	usage, err := providerlimit.Usage(ctx, s, now)
+	usage, err := m.limits.Usage(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +443,7 @@ func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDa
 		if start.Before(now) {
 			start = now
 		}
-		wait, err := providerlimit.SendCapDrain(ctx, s, perDay, accumulated, start)
+		wait, err := m.limits.SendCapDrain(ctx, s, providerlimit.DrainInput{SendCap: perDay, N: accumulated, At: start})
 		if err != nil {
 			return nil, err
 		}

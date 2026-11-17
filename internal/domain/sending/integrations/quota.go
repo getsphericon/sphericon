@@ -31,7 +31,7 @@ const quotaTimeout = 15 * time.Second
 // with NULLS FIRST, so a never-checked Integration is reached before already-checked ones. Only
 // SES reports a quota; SMTP has none. A deleted Integration is not kept working (ADR 0099): nobody
 // sends with its credential. The read crosses Workspaces, so it takes the job's raw client.
-func DueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]*ent.Integration, error) {
+func (m *Module) DueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]*ent.Integration, error) {
 	// The moment of the last check is the Integration's provider state (ADR 0168): the read orders
 	// the states and names each one's Integration.
 	states, err := client.IntegrationProviderState.Query().
@@ -170,11 +170,24 @@ func wroteState(n int, err error) error {
 	return err
 }
 
-// RecordRefused stores, at, that the provider refused the credentials integ was read with
-// (provider_refused_at), which holds the Integration's Send route: Outbound send records it. The
-// refusal is of those credentials only: one that lands after a save replaced them, or after another
-// send recorded it, changes nothing.
-func RecordRefused(ctx context.Context, s *ent.Scoped, integ *ent.Integration, at time.Time) error {
+// Standing records what a send learns of the provider's standing on an Integration, beside
+// it in its provider state (ADR 0168): the role of Outbound send, which holds the clock and no
+// Integrations module.
+type Standing struct {
+	now func() time.Time
+}
+
+// NewStanding builds the role; now is the clock a refusal is dated by.
+func NewStanding(now func() time.Time) *Standing {
+	return &Standing{now: now}
+}
+
+// RecordRefused stores, at the clock, that the provider refused the credentials integ was read
+// with (provider_refused_at), which holds the Integration's Send route: Outbound send records it.
+// The refusal is of those credentials only: one that lands after a save replaced them, or after
+// another send recorded it, changes nothing.
+func (p *Standing) RecordRefused(ctx context.Context, s *ent.Scoped, integ *ent.Integration) error {
+	at := p.now()
 	err := refusalMachine(lifecycle.Storage[refusal]{
 		Read: func(context.Context) (refusal, error) { return refusalOf(integ), nil },
 		Write: func(ctx context.Context, _, _ refusal) (bool, error) {

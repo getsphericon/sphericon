@@ -159,11 +159,21 @@ func (e Effective) Warnings() []Warning {
 // window is the trailing period Usage counts over.
 const window = 24 * time.Hour
 
+// Module reads the limits as a user is shown them: the sends of the last 24 hours and the ceilings
+// they count against, at the clock.
+type Module struct {
+	now func() time.Time
+}
+
+// New builds the reads; now is the clock the last 24 hours end at.
+func New(now func() time.Time) *Module { return &Module{now: now} }
+
 // Usage counts the messages each of the Workspace's Integrations sent over the 24
-// hours before now, keyed by Integration id (an Integration that sent nothing is
+// hours before the clock, keyed by Integration id (an Integration that sent nothing is
 // absent). It counts every Outbound message the provider accepted, Transactional
 // included, because that is what the provider's own quota sees.
-func Usage(ctx context.Context, s *ent.Scoped, now time.Time) (map[int64]int, error) {
+func (m *Module) Usage(ctx context.Context, s *ent.Scoped) (map[int64]int, error) {
+	now := m.now()
 	var rows []struct {
 		IntegrationID int64 `json:"integration_id"`
 		Count         int   `json:"count"`
@@ -187,13 +197,22 @@ func Usage(ctx context.Context, s *ent.Scoped, now time.Time) (map[int64]int, er
 	return out, nil
 }
 
-// SendCapDrain is how long the Workspace's Send cap of sendCap messages per 24 hours takes, from
-// now, to let n more messages out: zero when its bucket already holds n tokens, otherwise the
-// messages beyond the bucket's current tokens at sendCap per 24 hours (a bucket in debt from
-// Transactional sends takes longer). A Workspace that has not sent under its Send cap yet has a
-// full bucket.
-func SendCapDrain(ctx context.Context, s *ent.Scoped, sendCap, n int, now time.Time) (time.Duration, error) {
-	b := workspaceBucket(sendCap)
+// DrainInput is what SendCapDrain is asked: the Workspace's Send cap in messages per 24 hours, the
+// messages to let out and the moment the bucket is judged at.
+type DrainInput struct {
+	SendCap int
+	N       int
+	// At is the moment the drain starts: the bucket as it will have refilled by then.
+	At time.Time
+}
+
+// SendCapDrain is how long the Workspace's Send cap of in.SendCap messages per 24 hours takes,
+// from in.At, to let in.N more messages out: zero when its bucket then holds that many tokens,
+// otherwise the messages beyond the bucket's tokens at in.SendCap per 24 hours (a bucket in debt
+// from Transactional sends takes longer). A Workspace that has not sent under its Send cap yet has
+// a full bucket.
+func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, in DrainInput) (time.Duration, error) {
+	b, now := workspaceBucket(in.SendCap), in.At
 	fill, refilledAt := 1.0, now
 	row, err := s.SendCapLimiter().Query().Only(ctx)
 	if err != nil && !ent.IsNotFound(err) {
@@ -202,7 +221,7 @@ func SendCapDrain(ctx context.Context, s *ent.Scoped, sendCap, n int, now time.T
 	if row != nil {
 		fill, refilledAt = row.DayFill, row.RefilledAt
 	}
-	return time.Duration(math.Ceil(b.secondsUntil(n, fill, refilledAt, now))) * time.Second, nil
+	return time.Duration(math.Ceil(b.secondsUntil(in.N, fill, refilledAt, now))) * time.Second, nil
 }
 
 // Status is an Integration's Provider limit as shown to a user: the ceilings as
@@ -219,8 +238,8 @@ type Status struct {
 
 // Statuses pairs the 24-hour usage with the effective ceilings of each Integration,
 // keyed by Integration id. Usage is read once for all rows.
-func Statuses(ctx context.Context, s *ent.Scoped, rows []*ent.Integration, now time.Time) (map[int64]Status, error) {
-	usage, err := Usage(ctx, s, now)
+func (m *Module) Statuses(ctx context.Context, s *ent.Scoped, rows []*ent.Integration) (map[int64]Status, error) {
+	usage, err := m.Usage(ctx, s)
 	if err != nil {
 		return nil, err
 	}

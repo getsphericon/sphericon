@@ -235,7 +235,7 @@ type setup struct {
 	licenseKey string
 	licensePub ed25519.PublicKey
 	// certs is where an `sns` Preset gets its signing certificate; nil is the test certificate.
-	certs preset.CertFetcher
+	certs preset.Certificates
 	// oauthFetcher downloads OAuth Client ID Metadata Documents; nil is the production fetcher.
 	oauthFetcher webhook.Doer
 	// noSystemFrom gives the System sender no default From (it is not a DefaultFromer).
@@ -289,7 +289,7 @@ func WithRunningVersion(v string) Option { return func(s *setup) { s.version = v
 
 // WithSNSCertificates replaces where an `sns` Preset gets its signing certificate (the
 // test certificate by default), so a test makes the fetch fail.
-func WithSNSCertificates(f preset.CertFetcher) Option { return func(s *setup) { s.certs = f } }
+func WithSNSCertificates(c preset.Certificates) Option { return func(s *setup) { s.certs = c } }
 
 // Committed builds the same Instance over a database of the test's own (RealDB) whose writes
 // really commit, for a test that cannot ride the rolled-back transaction: transactions that meet
@@ -432,12 +432,13 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	}
 	// An `sns` Preset checks signatures against the test certificate, so a test posts a
 	// notification signed offline; confirmations are recorded, never fetched. A test with
-	// certificates of its own loads the Presets over them.
+	// certificates of its own checks against them.
 	presets, err := testPresets()
-	if st.certs != nil {
-		presets, err = preset.Load(nil, preset.WithSNSCertificates(st.certs))
-	}
 	require.NoError(t, err, "load presets")
+	var certs preset.Certificates = preset.NewTestCertificates()
+	if st.certs != nil {
+		certs = st.certs
+	}
 	oauthFetcher := st.oauthFetcher
 	if oauthFetcher == nil {
 		oauthFetcher = oauthclients.NewFetcher(cfg.OutboundAllow)
@@ -470,7 +471,8 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	do.OverrideValue[apisite.Migrations](injector, nil)
 	do.OverrideValue(injector, app.OAuthFetcher{Doer: oauthFetcher})
 	do.OverrideValue(injector, st.signinEndpoints)
-	do.OverrideValue(injector, app.IntegrationOptions{integrations.WithSubscriptionConfirmer(confirmations.confirm)})
+	do.OverrideValue(injector, certs)
+	do.OverrideValue[integrations.Confirmer](injector, confirmations)
 	// A Workspace's mail lands in CustomerMail unless its Integration is a Test inbox.
 	do.Override(injector, func(i do.Injector) (outboundmessages.Senders, error) {
 		return inboxResolver{fixed: fixedResolver{sender: customerMail}, real: do.MustInvoke[*messaging.Resolver](i)}, nil
@@ -549,7 +551,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 // for a test under testing/synctest: fake time starts in 2000, before the real-clock expiry
 // of the fixture holds, which would read active there.
 func (env *TestEnv) CoreHolds() *holds.Holds {
-	return holds.New(func() bool { return false }, time.Now)
+	return holds.New(func() bool { return false }, 0, time.Now)
 }
 
 // CapturingSender is a messaging.EmailSender that records sends for assertions.
@@ -681,10 +683,10 @@ func loadFixtures(ctx context.Context, sqlDB *sql.DB, cfg *config.Config, projec
 // (internal/server), and asking the database for every test cost a query each.
 var migrated = db.WatchSchema(func(context.Context) (int, error) { return 0, nil }, time.Now)
 
-// testPresets are the built-in Presets over the test SNS certificate, loaded once per process:
-// a Registry is read-only once loaded, and loading compiles every Preset's parameter schema.
+// testPresets are the built-in Presets, loaded once per process: a Registry is read-only once
+// loaded, and loading compiles every Preset's parameter schema.
 var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
-	return preset.Load(nil, preset.WithSNSCertificates(preset.TestSNSCertificates))
+	return preset.Load(nil)
 })
 
 // addScheduled registers the workers of the scheduled work a test runs: the Integration quota

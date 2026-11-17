@@ -24,7 +24,7 @@ import (
 
 // The hook over HTTP for an Integration on the `ses` Preset (ADR 0037): Amazon SNS posts
 // the SES notification as text/plain. The notifications in testdata/sns are signed with
-// the test certificate the test environment's registry trusts (preset.TestSNSCertificates),
+// the test certificate the test environment trusts (preset.TestCertificates),
 // for the topic the Acme SES Integration names in its params. The Preset's own `tests` hold
 // the transform and verification cases; these tests hold what the hook leaves behind.
 
@@ -178,12 +178,17 @@ func TestSESHookIsImpliedForAnSESIntegrationWithNoPreset(t *testing.T) {
 	assert.Equal(t, "ses", got[0].Provider)
 }
 
+// unreachable is a certificate host that fails every fetch with err.
+type unreachable struct{ err error }
+
+func (u unreachable) Certificate(context.Context, string) (*x509.Certificate, error) {
+	return nil, u.err
+}
+
 // A certificate we cannot fetch is our failure, not an unauthentic request: 5xx, so SNS
 // retries, and nothing is published.
 func TestSESHookAnswers5xxWhenTheCertificateIsUnavailable(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithSNSCertificates(func(context.Context, string) (*x509.Certificate, error) {
-		return nil, errors.New("certificate host unreachable")
-	}))
+	env := testhelper.Setup(t, testhelper.WithSNSCertificates(unreachable{errors.New("certificate host unreachable")}))
 
 	rec := postSNS(t, env, fixtures.IntegrationAcmeSesIngestKey, snsNotification(t, "hard-bounce"))
 
@@ -194,9 +199,7 @@ func TestSESHookAnswers5xxWhenTheCertificateIsUnavailable(t *testing.T) {
 // A signing certificate on a host that is not Amazon's is the sender's fault: 4xx, and the
 // certificate is never fetched.
 func TestSESHookRefusesACertificateOnAnotherHost(t *testing.T) {
-	env := testhelper.Setup(t, testhelper.WithSNSCertificates(func(context.Context, string) (*x509.Certificate, error) {
-		return nil, errors.New("must not be fetched")
-	}))
+	env := testhelper.Setup(t, testhelper.WithSNSCertificates(unreachable{errors.New("must not be fetched")}))
 	var notification map[string]string
 	require.NoError(t, json.Unmarshal([]byte(snsNotification(t, "hard-bounce")), &notification))
 	notification["SigningCertURL"] = "https://evil.example.com/SimpleNotificationService.pem"

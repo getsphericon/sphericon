@@ -31,6 +31,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -117,7 +118,9 @@ type Deps struct {
 	JoinDomains   *joindomains.Module
 	// Integrations reads an Integration's provider send quota (ADR 0023) and releases a deleted
 	// Telegram bot's webhook (ADR 0145).
-	Integrations    *integrations.Module
+	Integrations *integrations.Module
+	// Chats prunes the lapsed and used Start tokens (ADR 0076).
+	Chats           *bindings.Chats
 	TrackingDomains *trackingdomains.Module
 	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock (app.Clock), which every worker reads; NewClient refuses none.
@@ -170,7 +173,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(deps.TrackingDomains))
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
-	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
+	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewReleaseWebhookWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
@@ -182,7 +185,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(deps.Passkeys))
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users))
-	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
+	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, deps.Chats))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.

@@ -42,7 +42,7 @@ type Callback struct {
 // own failure, and the provider retries. A valid request the Preset does not handle records
 // nothing and is no error.
 func (m *Module) Receive(ctx context.Context, in Callback) error {
-	row, err := integrations.ByIngestKey(ctx, m.client, in.Key)
+	row, err := m.integ.ByIngestKey(ctx, m.client, in.Key)
 	if errors.Is(err, integrations.ErrNotFound) {
 		return ErrNoHook
 	}
@@ -64,7 +64,9 @@ func (m *Module) Receive(ctx context.Context, in Callback) error {
 		slog.ErrorContext(ctx, "ingest hook: open the Integration's params failed", "integration_id", row.ID, "err", err)
 		return fmt.Errorf("open the params of integration %d: %w", row.ID, err)
 	}
-	res, err := p.Handle(ctx, preset.Request{URL: m.requestURL(row, in.Query), Header: in.Header, Body: in.Body}, params, m.now())
+	res, err := m.engine.Handle(ctx, p, preset.HandleInput{
+		Request: preset.Request{URL: m.requestURL(row, in.Query), Header: in.Header, Body: in.Body}, Params: params,
+	})
 	switch {
 	case errors.Is(err, preset.ErrUnauthentic):
 		// A forged callback (a STOP, a delivery report, a reply) is refused and left on record.

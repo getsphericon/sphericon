@@ -37,7 +37,7 @@ const SecretMask = "********"
 // Integration is found, since it still reads the callbacks of mail sent through it (ADR 0049). The
 // key names the Workspace before any scope exists, so this reads on the raw client and uses it for
 // nothing else (docs/architecture/workspace-scoping.md, Workspace scoping). An unknown key is ErrNotFound.
-func ByIngestKey(ctx context.Context, c *ent.Client, key string) (*ent.Integration, error) {
+func (m *Module) ByIngestKey(ctx context.Context, c *ent.Client, key string) (*ent.Integration, error) {
 	row, err := c.Integration.Query().
 		Where(integration.IngestKey(key), integration.HasWorkspaceWith(workspaces.Live())).
 		Only(ctx)

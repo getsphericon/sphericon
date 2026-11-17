@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -247,6 +248,13 @@ type Module struct {
 	sendCaps providerlimit.SendCaps
 	lease    time.Duration
 	holds    *holds.Holds
+	// buckets spends the Provider limit and the Send cap, limits reads them: both at now.
+	buckets *providerlimit.Buckets
+	limits  *providerlimit.Module
+	// standing records the provider's refusal of an Integration's credentials; chats unbinds a
+	// chat Telegram no longer reaches. Both publish or write in the send's transaction.
+	standing *integrations.Standing
+	chats    *bindings.Chats
 	// system is the Instance's System sender; nil on an Instance with no outbound mail.
 	system messaging.EmailSender
 	// testBudget caps Test sends from the System sender; nil means uncapped.
@@ -326,6 +334,8 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		bots: deps.Bots, sms: deps.SMS, hooks: deps.Hooks, trackingHosts: deps.TrackingHosts,
 		system: deps.System, testBudget: deps.TestBudget, users: deps.Users, startLinks: deps.StartLinks,
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
+		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: providerlimit.New(now),
+		standing: integrations.NewStanding(now), chats: bindings.NewChats(bus, now),
 		eligibility: eligibility.New(), contacts: contacts.New(bus, tags.New(), nil, now),
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
@@ -699,7 +709,7 @@ func (m *Module) refuse(ctx context.Context, s *ent.Scoped, integ *ent.Integrati
 	if integ == nil {
 		return nil
 	}
-	if err := integrations.RecordRefused(ctx, s, integ, m.now()); err != nil {
+	if err := m.standing.RecordRefused(ctx, s, integ); err != nil {
 		return fmt.Errorf("outbound: hold the refused integration: %w", err)
 	}
 	return nil

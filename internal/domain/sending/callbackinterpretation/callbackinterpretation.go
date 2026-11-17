@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
@@ -99,14 +100,22 @@ type Module struct {
 	integ *integrations.Module
 	// out finds the Outbound message a notice or a press names and stamps its delivery result.
 	out *outboundmessages.Module
-	now func() time.Time
+	// engine runs a request through the Integration's Preset; chats binds, reads and unbinds the
+	// chats of a Telegram bot.
+	engine *preset.Engine
+	chats  *bindings.Chats
+	now    func() time.Time
 }
 
 // New builds the module on the raw client an ingest key is resolved with, the bus the facts'
 // System events are published through, the Integrations module, Outbound send, whose messages
-// the facts land on, and the Instance clock the hook reads.
-func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, out *outboundmessages.Module, now func() time.Time) *Module {
-	return &Module{client: client, bus: bus, integ: integ, out: out, now: now}
+// the facts land on, the certificates an `sns` Preset checks a signature against
+// (preset.SNSCertificates) and the Instance clock the hook reads.
+func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, out *outboundmessages.Module, certs preset.Certificates, now func() time.Time) *Module {
+	return &Module{
+		client: client, bus: bus, integ: integ, out: out,
+		engine: preset.New(certs, now), chats: bindings.NewChats(bus, now), now: now,
+	}
 }
 
 // InterpretInput is one Ingest hook request: the Integration the callback came to, the name of
@@ -124,7 +133,7 @@ func (m *Module) interpreterFor(ch channels.Channel) Interpreter {
 	case channels.Email:
 		return email{out: m.out}
 	case channels.Telegram:
-		return telegram{integ: m.integ, out: m.out}
+		return telegram{integ: m.integ, out: m.out, chats: m.chats}
 	case channels.SMS:
 		return sms{out: m.out}
 	}

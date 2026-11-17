@@ -31,36 +31,39 @@ import (
 // snsHost is the only host a signing certificate or a SubscribeURL may live on.
 var snsHost = regexp.MustCompile(`^sns\.[a-zA-Z0-9-]{3,}\.amazonaws\.com(\.cn)?$`)
 
-// CertFetcher returns the signing certificate at an already host-checked URL.
-type CertFetcher func(ctx context.Context, certURL string) (*x509.Certificate, error)
+// Certificates returns the signing certificate of an `sns` Preset at an already host-checked URL.
+type Certificates interface {
+	Certificate(ctx context.Context, certURL string) (*x509.Certificate, error)
+}
 
-type options struct{ certs CertFetcher }
+// SNSCertificates fetches a signing certificate with an HTTPS request through the SSRF-guarded
+// client, once per certificate (certCache): the Certificates of an Instance.
+type SNSCertificates struct{}
 
-// Option configures how Presets are built.
-type Option func(*options)
+// NewSNSCertificates builds the Certificates the wiring hands the engine.
+func NewSNSCertificates() *SNSCertificates { return &SNSCertificates{} }
 
-// WithSNSCertificates replaces how an `sns` Preset fetches the signing certificate, which
-// is an HTTPS request through the SSRF-guarded client by default.
-func WithSNSCertificates(f CertFetcher) Option { return func(o *options) { o.certs = f } }
-
-func buildOptions(opts []Option) options {
-	o := options{certs: fetchSNSCertificate}
-	for _, opt := range opts {
-		opt(&o)
-	}
-	return o
+// Certificate is the certificate at certURL, fetched once for every waiter of its URL.
+func (*SNSCertificates) Certificate(ctx context.Context, certURL string) (*x509.Certificate, error) {
+	return fetchSNSCertificate(ctx, certURL)
 }
 
 // testSNSCertPEM is a certificate made for tests only: its private key was discarded after
 // it signed the sample notifications in the built-in `ses` Preset's tests. A Preset's own
-// tests run against it (see TestSNSCertificates), so they verify offline.
+// tests run against it (see TestCertificates), so they verify offline.
 //
 //go:embed snstest.pem
 var testSNSCertPEM []byte
 
-// TestSNSCertificates serves the test certificate for any URL. A Preset runs its `tests`
-// with it, never in production.
-func TestSNSCertificates(context.Context, string) (*x509.Certificate, error) {
+// TestCertificates serves the test certificate for any URL. A Preset runs its `tests` with it,
+// never in production.
+type TestCertificates struct{}
+
+// NewTestCertificates builds the Certificates of a Preset's own tests and of the test suite.
+func NewTestCertificates() *TestCertificates { return &TestCertificates{} }
+
+// Certificate is the test certificate, whatever the URL.
+func (*TestCertificates) Certificate(context.Context, string) (*x509.Certificate, error) {
 	return parseCertificate(testSNSCertPEM)
 }
 
@@ -132,8 +135,7 @@ func checkAWSURL(raw string) error {
 }
 
 type snsVerifier struct {
-	c     verifyConfig
-	certs CertFetcher
+	c verifyConfig
 }
 
 func (*snsVerifier) overBody() bool { return true }
@@ -208,7 +210,7 @@ func snsPayload(body any) (*snsMessage, error) {
 	return &p, nil
 }
 
-func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Params, _ time.Time) error {
+func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Params, env verifyEnv) error {
 	p, err := snsPayload(body)
 	if err != nil {
 		return err
@@ -233,7 +235,7 @@ func (s *snsVerifier) verify(ctx context.Context, _ Request, body any, params Pa
 		return fmt.Errorf("signing certificate: %w", err)
 	}
 	// A certificate we cannot get says nothing about the request: ours to retry.
-	cert, err := s.certs(ctx, p.SigningCertURL)
+	cert, err := env.certs.Certificate(ctx, p.SigningCertURL)
 	if err != nil {
 		return fmt.Errorf("%w: signing certificate: %w", ErrUnavailable, err)
 	}
