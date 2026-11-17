@@ -16,17 +16,17 @@ import (
 // the name starts with v=DMARC1; any policy counts, p=none too (ADR 0012). Two or more end the
 // discovery with no record, as receivers ignore them. A missing record is false with a nil error;
 // a resolver failure returns the error, so the caller keeps what it knew.
-func (d *DNS) LookupDMARC(ctx context.Context, domain string) (bool, error) {
-	n, err := dmarcRecords(ctx, d.lookup, domain)
-	if err != nil || n > 0 {
-		return n == 1, err
+func (n *DNS) LookupDMARC(ctx context.Context, domain string) (bool, error) {
+	found, err := dmarcRecords(ctx, n.lookup, domain)
+	if err != nil || found > 0 {
+		return found == 1, err
 	}
 	org, ok := organizationalDomain(domain)
 	if !ok {
 		return false, nil
 	}
-	n, err = dmarcRecords(ctx, d.lookup, org)
-	return n == 1, err
+	found, err = dmarcRecords(ctx, n.lookup, org)
+	return found == 1, err
 }
 
 // organizationalDomain is the domain's organizational domain (RFC 7489 §3.2, from the public

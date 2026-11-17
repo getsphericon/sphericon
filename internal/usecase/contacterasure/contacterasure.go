@@ -234,7 +234,7 @@ func (u *UseCase) steps() []step {
 	return []step{
 		// The Broadcast delivery module cancels the Contact's unsent recipients; a Broadcast left
 		// with nothing pending settles.
-		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 			return u.broadcasts.CancelPending(ctx, s, t.ContactID)
 		},
 		// The Automation module cancels the queued step calls and trigger evaluations that name the

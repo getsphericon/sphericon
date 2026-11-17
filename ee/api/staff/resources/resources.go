@@ -135,10 +135,6 @@ type StaffConverter interface {
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
 	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.AbuseMetric
-	// The review state a list is filtered by: the input direction, the one enum the console sends.
-	// goverter:enum:transform value
-	// goverter:enum:map StaffWorkspaceReviewSystemFrozen ReviewSystemFrozen
-	ReviewIn(source staffeeapi.StaffWorkspaceReview) abusedetector.Review
 	// goverter:enum:transform value
 	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.SignupCompanySize
 	// goverter:enum:transform value

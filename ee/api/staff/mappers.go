@@ -4,9 +4,11 @@ import (
 	"github.com/getsphericon/sphericon/ee/api/staff/resources"
 )
 
-// staffMapper, serviceMapper and serviceInputs are the generated converters of ee/api/staff/resources.
+// staffMapper, staffInputs, serviceMapper and serviceInputs are the generated converters of
+// ee/api/staff/resources.
 var (
 	staffMapper   = &resources.StaffConverterImpl{}
+	staffInputs   = &resources.StaffInputsImpl{}
 	serviceMapper = &resources.ServiceConverterImpl{}
 	serviceInputs = &resources.ServiceInputsImpl{}
 )

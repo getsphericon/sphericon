@@ -4,12 +4,19 @@
 package resources
 
 import (
+	workspaceoversight "github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
 	service "github.com/getsphericon/sphericon/gen/service"
 	holds "github.com/getsphericon/sphericon/internal/domain/sending/holds"
 )
 
 type ServiceInputsImpl struct{}
 
+func (c *ServiceInputsImpl) ClearHold(source service.ServiceHoldsClearParams) workspaceoversight.ClearHoldInput {
+	var workspaceoversightClearHoldInput workspaceoversight.ClearHoldInput
+	// workspaceoversightClearHoldInput.Credential: ignore
+	workspaceoversightClearHoldInput.Key = source.Key
+	return workspaceoversightClearHoldInput
+}
 func (c *ServiceInputsImpl) HoldSet(source *service.HoldInput) holds.Input {
 	var holdsInput holds.Input
 	if source != nil {
@@ -18,5 +25,22 @@ func (c *ServiceInputsImpl) HoldSet(source *service.HoldInput) holds.Input {
 		holdsInput.ActionURL = serviceNilStringPtrIn((*source).ActionUrl)
 		holdsInput.ExpiresAt = serviceTimestampIn((*source).ExpiresAt)
 	}
+	return holdsInput
+}
+func (c *ServiceInputsImpl) SetHold(source *service.HoldInput) workspaceoversight.SetHoldInput {
+	var workspaceoversightSetHoldInput workspaceoversight.SetHoldInput
+	if source != nil {
+		// workspaceoversightSetHoldInput.Credential: ignore
+		// workspaceoversightSetHoldInput.Key: ignore
+		workspaceoversightSetHoldInput.Hold = c.serviceapiHoldInputToHoldsInput((*source))
+	}
+	return workspaceoversightSetHoldInput
+}
+func (c *ServiceInputsImpl) serviceapiHoldInputToHoldsInput(source service.HoldInput) holds.Input {
+	var holdsInput holds.Input
+	holdsInput.ReasonCode = source.ReasonCode
+	holdsInput.Message = source.Message
+	holdsInput.ActionURL = serviceNilStringPtrIn(source.ActionUrl)
+	holdsInput.ExpiresAt = serviceTimestampIn(source.ExpiresAt)
 	return holdsInput
 }
