@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts/broadcastsunchecked"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -18,11 +19,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// cancelFor runs CancelPending for a Contact the way Erasure does.
+// cancelFor runs CancelPending for a Contact the way Erasure does, in its purging transaction.
 func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 	t.Helper()
-	return env.CancelPendingFor(t, contactID, func(ctx context.Context, s *ent.Scoped, id int64, purger events.QueuePurger) error {
-		return broadcastsunchecked.CancelPending(ctx, s, id, purger, time.Now())
+	unchecked := broadcastsunchecked.New(testhelper.Module[*broadcasts.Module](env), env.Bus, time.Now)
+	return env.CancelPendingFor(t, contactID, func(ctx context.Context, s *ent.Scoped, id int64, _ events.QueuePurger) error {
+		return unchecked.CancelPending(ctx, s, id)
 	})
 }
 

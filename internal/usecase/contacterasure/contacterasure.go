@@ -40,6 +40,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors/visitorsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts/broadcastsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages/capturedmessagesunchecked"
@@ -162,18 +163,22 @@ type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.Purging
 // UseCase erases data subjects. Every call receives the Workspace-scoped client (ADR 0017) built by
 // the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus *events.Bus
-	now func() time.Time
+	bus        *events.Bus
+	broadcasts *broadcastsunchecked.Module
 	// outbound and captured are the Erasure steps of the Outbound messages and the Captured
 	// messages, which New builds (ADR 0110: only a use case imports them).
 	outbound *outboundmessagesunchecked.Module
 	captured *capturedmessagesunchecked.Module
 }
 
-// New builds the Contact erasure use case over the bus whose transaction every erasure runs in;
-// now is the Instance clock a Broadcast left with nothing pending settles by.
-func New(bus *events.Bus, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, now: now, outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New()}
+// New builds the Contact erasure use case over the bus whose transaction every erasure runs in and
+// the Broadcasts whose pending work it cancels; now is the Instance clock their unchecked
+// operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
+	return &UseCase{
+		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now),
+		outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New(),
+	}
 }
 
 // Erase erases the identified data subject in one transaction: either all of it
@@ -216,7 +221,7 @@ func (u *UseCase) steps() []step {
 		// The Broadcast delivery module cancels the Contact's unsent recipients; a Broadcast left
 		// with nothing pending settles.
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return broadcastsunchecked.CancelPending(ctx, s, t.ContactID, pub, u.now())
+			return u.broadcasts.CancelPending(ctx, s, t.ContactID)
 		},
 		// The Automation module cancels the queued step calls and trigger evaluations that name the
 		// Contact or its runs; it reads the run ids before the Contact row goes, which deletes the

@@ -40,11 +40,11 @@ type Outcome struct {
 // job (Send or Schedule). Its plan may not claim a draft, so a Broadcast unscheduled since the job
 // was queued stays one. A delayed job whose schedule was superseded, and a stale job, whose
 // Broadcast is past its plan or back in draft, are done with nothing planned.
-func (d *Delivery) RunQueued(ctx context.Context, s *ent.Scoped, args SendArgs, sched Scheduler) Outcome {
+func (d *Delivery) RunQueued(ctx context.Context, s *ent.Scoped, args SendArgs) Outcome {
 	if bound, err := boundToSchedule(ctx, s, args.BroadcastID, args.ScheduledAt); err != nil || !bound {
 		return outcomeOf(err)
 	}
-	err := d.run(ctx, s, args.BroadcastID, sched, triggerResume)
+	err := d.run(ctx, s, args.BroadcastID, triggerResume)
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return Outcome{} // stale: unscheduled, sent or failed since the job was queued
 	}

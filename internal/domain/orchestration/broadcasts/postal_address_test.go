@@ -23,7 +23,7 @@ func TestScheduleOfAnEmailBroadcastIsRefusedWithoutAPostalAddress(t *testing.T) 
 	env.ClearPostalAddress(t, fixtures.AcmeID)
 	revision := testhelper.BroadcastRevisionIn(t.Context(), t, s, fixtures.BroadcastDraftID)
 
-	_, err := m.Schedule(t.Context(), s, fixtures.BroadcastDraftID, revision, time.Now().Add(time.Hour))
+	_, err := m.Schedule(t.Context(), s, fixtures.BroadcastDraftID, broadcasts.ScheduleInput{Revision: revision, ScheduledAt: time.Now().Add(time.Hour)})
 
 	require.ErrorIs(t, err, outboundmessages.ErrPostalAddressRequired)
 	got := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastDraftID)
@@ -58,8 +58,8 @@ func TestScheduleOfAnSMSBroadcastNeedsNoPostalAddress(t *testing.T) {
 	env.ClearPostalAddress(t, fixtures.LacunaID)
 	revision := testhelper.BroadcastRevisionIn(t.Context(), t, s, fixtures.BroadcastLacunaSmsHelloID)
 
-	scheduled, err := m.Schedule(t.Context(), s, fixtures.BroadcastLacunaSmsHelloID, revision, time.Now().Add(time.Hour))
+	scheduled, err := m.Schedule(t.Context(), s, fixtures.BroadcastLacunaSmsHelloID, broadcasts.ScheduleInput{Revision: revision, ScheduledAt: time.Now().Add(time.Hour)})
 
 	require.NoError(t, err)
-	assert.Equal(t, broadcast.StatusScheduled, scheduled.Status)
+	assert.Equal(t, broadcast.StatusScheduled, scheduled.Broadcast.Status)
 }

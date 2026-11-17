@@ -10,7 +10,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
@@ -37,9 +36,9 @@ func (SendRecipientArgs) InsertOpts() river.InsertOpts {
 	}
 }
 
-// SendBroadcastWorker is the fan-out phase: it runs the module's delivery sequence with a
-// river scheduler, so the send scales across workers instead of running the whole audience
-// in one job under the default 1-minute JobTimeout.
+// SendBroadcastWorker is the fan-out phase: it runs the module's delivery sequence, whose
+// scheduler is the river one (RecipientJobs), so the send scales across workers instead of running
+// the whole audience in one job under the default 1-minute JobTimeout.
 type SendBroadcastWorker struct {
 	river.WorkerDefaults[broadcasts.SendArgs]
 
@@ -47,9 +46,9 @@ type SendBroadcastWorker struct {
 	del *broadcasts.Delivery
 }
 
-// NewSendBroadcastWorker builds the worker that plans a Broadcast's audience and sends through mod.
-func NewSendBroadcastWorker(client *ent.Client, mod *outboundmessages.Module) *SendBroadcastWorker {
-	return &SendBroadcastWorker{ent: client, del: broadcasts.NewDelivery(mod)}
+// NewSendBroadcastWorker builds the worker that plans a Broadcast's audience through del.
+func NewSendBroadcastWorker(client *ent.Client, del *broadcasts.Delivery) *SendBroadcastWorker {
+	return &SendBroadcastWorker{ent: client, del: del}
 }
 
 // Timeout gives the plan phase room to resolve a large audience and enqueue the
@@ -66,28 +65,32 @@ func (w *SendBroadcastWorker) Work(ctx context.Context, job *river.Job[broadcast
 	if err != nil {
 		return err
 	}
-	sched := riverSends{rc: river.ClientFromContext[*sql.Tx](ctx), workspaceID: s.WorkspaceID()}
-	out := w.del.RunQueued(ctx, s, job.Args, sched)
+	out := w.del.RunQueued(ctx, s, job.Args)
 	return riverResult(out)
 }
 
-// riverSends is the river adapter of the module's scheduling seam: one recipient job per send,
-// scheduled at its time, named by the Broadcast's Workspace.
-type riverSends struct {
-	rc          *river.Client[*sql.Tx]
-	workspaceID int64
-}
+// RecipientJobs is the river adapter of the Broadcast delivery's scheduling seam
+// (broadcasts.Scheduler): one recipient job per send, scheduled at its time and named by the
+// Broadcast's Workspace, inserted by the client of the plan job it runs in, which river puts in the
+// job's context. The wiring builds the delivery over it.
+type RecipientJobs struct{}
 
-func (r riverSends) Schedule(ctx context.Context, broadcastID int64, sends []broadcasts.Send) error {
+// Schedule inserts the recipient jobs of the sends. Outside a job's context there is no client to
+// insert them with.
+func (RecipientJobs) Schedule(ctx context.Context, workspaceID, broadcastID int64, sends []broadcasts.Send) error {
+	rc, err := river.ClientFromContextSafely[*sql.Tx](ctx)
+	if err != nil {
+		return fmt.Errorf("schedule the sends of broadcast %d: %w", broadcastID, err)
+	}
 	params := make([]river.InsertManyParams, len(sends))
 	for i, send := range sends {
 		// A zero At is no schedule: river runs the job at once.
 		params[i] = river.InsertManyParams{
-			Args:       SendRecipientArgs{WorkspaceID: r.workspaceID, RecipientID: send.RecipientID, BroadcastID: broadcastID},
+			Args:       SendRecipientArgs{WorkspaceID: workspaceID, RecipientID: send.RecipientID, BroadcastID: broadcastID},
 			InsertOpts: &river.InsertOpts{ScheduledAt: send.At},
 		}
 	}
-	return insertMany(ctx, r.rc, params)
+	return insertMany(ctx, rc, params)
 }
 
 // SendRecipientWorker delivers one broadcast recipient. Each recipient is its
@@ -100,9 +103,9 @@ type SendRecipientWorker struct {
 	del *broadcasts.Delivery
 }
 
-// NewSendRecipientWorker builds the worker that sends one Broadcast recipient through mod.
-func NewSendRecipientWorker(client *ent.Client, mod *outboundmessages.Module) *SendRecipientWorker {
-	return &SendRecipientWorker{ent: client, del: broadcasts.NewDelivery(mod)}
+// NewSendRecipientWorker builds the worker that sends one Broadcast recipient through del.
+func NewSendRecipientWorker(client *ent.Client, del *broadcasts.Delivery) *SendRecipientWorker {
+	return &SendRecipientWorker{ent: client, del: del}
 }
 
 // Work is the river adapter over the module's recipient job: it hands the module the attempt and

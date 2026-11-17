@@ -2,7 +2,6 @@ package site
 
 import (
 	"context"
-	"time"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -29,8 +28,9 @@ func broadcastResource(v broadcasts.View) siteapi.SiteBroadcastResource {
 func (h *Handlers) SiteBroadcastsList(ctx context.Context, params siteapi.SiteBroadcastsListParams) (*siteapi.SiteBroadcastsListOK, error) {
 	ws := workspaceScope(ctx)
 
-	order := inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
-	page, err := h.broadcastViews.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.BroadcastsListFilter(params), order)
+	filter := inputs.BroadcastsListFilter(params)
+	filter.Order = inputs.BroadcastsOrder(params.Order.Or(siteapi.SiteBroadcastsOrderNewest))
+	page, err := h.broadcastViews.List(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), filter)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 
 	id := int64(params.ID)
 
-	v, err := h.broadcastViews.Schedule(ctx, ws, id, int64(req.Revision), time.Time(req.ScheduledAt))
+	v, err := h.broadcastViews.Schedule(ctx, ws, id, inputs.BroadcastSchedule(req))
 	if err != nil {
 		return nil, err
 	}

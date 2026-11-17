@@ -32,9 +32,6 @@ internal/domain/identity/workspaces/workspacesunchecked
 internal/domain/orchestration/automations
 internal/domain/orchestration/automations/automationsunchecked
 internal/domain/orchestration/automations/automationsuse
-internal/domain/orchestration/broadcasts
-internal/domain/orchestration/broadcasts/broadcastsunchecked
-internal/domain/orchestration/broadcasts/broadcastsuse
 internal/domain/orchestration/rules
 internal/domain/orchestration/rules/rulesunchecked
 internal/domain/orchestration/rules/rulesuse

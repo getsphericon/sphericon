@@ -29,8 +29,8 @@ its unchecked removal, between opening it on the row and applying it (`tagdeleti
 readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
 0110's fence by place), which may import its owner and which the owner does not import: Definition
 use is `segmentsuse.Module.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
-`rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.UsingTag` and
-`UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.LiveSends` and
+`rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.Module.UsingTag` and
+`UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.Module.LiveSends` and
 `automationsuse.LiveSends`, which return each send as a `liveuse.Send` (who sends, on which
 Channel, through which Integration by `messaging.Through`, from which From), so the Removal check
 and the send path agree on where work sends; a Sending domain's check reads the From an

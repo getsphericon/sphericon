@@ -377,7 +377,7 @@ func TestUnsubscribeEverythingEscalation(t *testing.T) {
 func figures(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadcasts.Stats {
 	t.Helper()
 	env.PerformEnqueuedJobs(t, jobs.MessageObservationArgs{})
-	got, err := broadcasts.StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
+	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(context.Background(), env.DB.Scoped(fixtures.AcmeID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]
 }

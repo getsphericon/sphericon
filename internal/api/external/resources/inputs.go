@@ -97,6 +97,7 @@ import (
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend smsConsentIn
+// goverter:extend timeIn
 type Inputs interface {
 	// The Channel defaults to email, which the handler picks with ConsentChannel and assigns.
 	// goverter:map SendingSource Source
@@ -116,9 +117,11 @@ type Inputs interface {
 	TelegramBroadcastContentPatch(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
 	SmsBroadcastContentIn(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
 	SmsBroadcastContentPatch(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
-	// The list's filter: the API lists every status.
-	// goverter:ignore Statuses
+	// The list's filter: the API lists every status, the newest first (the zero Order).
+	// goverter:ignore Statuses Order
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
+	BroadcastSchedule(source *externalapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
+	BroadcastSetSegment(source *externalapi.SetBroadcastSegmentInput) broadcasts.SetSegmentInput
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -285,6 +288,9 @@ func listPtrIn(list []string) *[]string {
 }
 
 // timestampIn is a moment the request may leave out: the zero time when absent.
+// timeIn is a required time as the module takes it.
+func timeIn(v externalapi.Timestamp) time.Time { return time.Time(v) }
+
 func timestampIn(o externalapi.OptNilTimestamp) time.Time {
 	v, _ := o.Get()
 	return time.Time(v)
