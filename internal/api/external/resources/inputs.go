@@ -16,16 +16,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
@@ -177,7 +179,7 @@ type Inputs interface {
 	AutomationCreate(source *externalapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *externalapi.UpdateAutomationInput) automations.UpdateInput
 
-	RuleActions(source []externalapi.RuleActionInput) []rules.Action
+	RuleActions(source []externalapi.RuleActionInput) []ruleaction.Action
 	// goverter:map Condition | conditionIn
 	RuleCreate(source *externalapi.CreateRuleInput) (rules.CreateInput, error)
 	// goverter:map Condition | conditionIn
@@ -204,7 +206,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	AutomationStepType(source externalapi.AutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
-	RuleActionType(source externalapi.RuleActionType) rules.ActionType
+	RuleActionType(source externalapi.RuleActionType) ruleaction.Type
 	// goverter:enum:transform value
 	BroadcastChannel(source externalapi.BroadcastChannel) channels.Channel
 	// goverter:enum:transform value
@@ -347,7 +349,7 @@ func automationStepsPtrIn(c Inputs, steps []externalapi.AutomationStepInput) *[]
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
-func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleActionInput) *[]rules.Action {
+func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleActionInput) *[]ruleaction.Action {
 	if actions == nil {
 		return nil
 	}
@@ -355,10 +357,9 @@ func ruleActionsPtrIn(c Inputs, actions []externalapi.RuleActionInput) *[]rules.
 	return &out
 }
 
-// conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
-// it is absent.
-func conditionIn(o externalapi.OptConditionGroupInput) (*string, error) {
-	return condition.EncodeOptional(o)
+// conditionIn is a Condition the request may leave out; nil when it is absent.
+func conditionIn(o externalapi.OptConditionGroupInput) (*conditiontree.Group, error) {
+	return condition.FromOptionalDTO(o)
 }
 
 // eventPropertiesIn decodes each property keeping numbers as the text that was sent: an amount of
@@ -504,18 +505,18 @@ func integrationConfigPatch(o externalapi.OptIntegrationConfigInput) (patch.Fiel
 	return patch.Set(cfg), nil
 }
 
-func createSegmentCondition(g externalapi.ConditionGroupInput) (*string, error) {
-	def, err := condition.Encode(&g)
+func createSegmentCondition(g externalapi.ConditionGroupInput) (*conditiontree.Group, error) {
+	def, err := condition.FromDTO(&g)
 	if err != nil {
 		return nil, err
 	}
 	return &def, nil
 }
 
-func segmentConditionPatch(o externalapi.OptConditionGroupInput) (patch.Field[string], error) {
-	def, err := condition.EncodeOptional(o)
+func segmentConditionPatch(o externalapi.OptConditionGroupInput) (patch.Field[conditiontree.Group], error) {
+	def, err := condition.FromOptionalDTO(o)
 	if err != nil {
-		return patch.Field[string]{}, err
+		return patch.Field[conditiontree.Group]{}, err
 	}
 	return patch.FromPtr(def), nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -27,7 +28,7 @@ func TestDryRunReportsTheActionsAStoredEventWouldRun(t *testing.T) {
 
 	assert.Equal(t, rules.WouldFire, res.Outcome)
 	require.Len(t, res.Actions, 1)
-	assert.Equal(t, rules.ActionApplyTag, res.Actions[0].Type)
+	assert.Equal(t, ruleaction.ApplyTag, res.Actions[0].Type)
 	assert.Contains(t, res.Actions[0].Summary, "rule-pricing")
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationVersion is the model entity for the AutomationVersion schema.
@@ -31,7 +32,7 @@ type AutomationVersion struct {
 	// Version holds the value of the "version" field.
 	Version int `json:"version,omitempty"`
 	// Steps holds the value of the "steps" field.
-	Steps string `json:"steps,omitempty"`
+	Steps []automationstep.Step `json:"steps,omitempty"`
 	// TriggerEvent holds the value of the "trigger_event" field.
 	TriggerEvent string `json:"trigger_event,omitempty"`
 	// ExitEvents holds the value of the "exit_events" field.
@@ -93,11 +94,11 @@ func (*AutomationVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case automationversion.FieldExitEvents:
+		case automationversion.FieldSteps, automationversion.FieldExitEvents:
 			values[i] = new([]byte)
 		case automationversion.FieldID, automationversion.FieldWorkspaceID, automationversion.FieldAutomationID, automationversion.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case automationversion.FieldSteps, automationversion.FieldTriggerEvent, automationversion.FieldGoalEvent:
+		case automationversion.FieldTriggerEvent, automationversion.FieldGoalEvent:
 			values[i] = new(sql.NullString)
 		case automationversion.FieldCreatedAt, automationversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -153,10 +154,12 @@ func (_m *AutomationVersion) assignValues(columns []string, values []any) error 
 				_m.Version = int(value.Int64)
 			}
 		case automationversion.FieldSteps:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field steps", values[i])
-			} else if value.Valid {
-				_m.Steps = value.String
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Steps); err != nil {
+					return fmt.Errorf("unmarshal field steps: %w", err)
+				}
 			}
 		case automationversion.FieldTriggerEvent:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -246,7 +249,7 @@ func (_m *AutomationVersion) String() string {
 	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
 	builder.WriteString("steps=")
-	builder.WriteString(_m.Steps)
+	builder.WriteString(fmt.Sprintf("%v", _m.Steps))
 	builder.WriteString(", ")
 	builder.WriteString("trigger_event=")
 	builder.WriteString(_m.TriggerEvent)

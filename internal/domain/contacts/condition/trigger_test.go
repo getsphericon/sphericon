@@ -2,7 +2,6 @@ package condition_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -15,14 +14,15 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // triggerMatches reports whether g, compiled as a Rule's Condition against props, holds for the
 // Contact.
-func triggerMatches(t require.TestingT, s *ent.Scoped, g condition.Group, props map[string]any, id int64) bool {
+func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Group, props map[string]any, id int64) bool {
 	ctx := context.Background()
-	p, err := condition.New(time.Now).RulePredicate(ctx, s, encode(t, g), props)
+	p, err := condition.New(time.Now).RulePredicate(ctx, s, g, props)
 	require.NoError(t, err)
 	ok, err := s.Contact().Query().Where(contact.ID(id), p).Exist(ctx)
 	require.NoError(t, err)
@@ -103,11 +103,11 @@ func TestTriggerLeafFoldsIntoTheRestOfTheTree(t *testing.T) {
 
 	assert.True(t, triggerMatches(t, s, opsGroup(hit, annaRow), props, anna))
 	assert.False(t, triggerMatches(t, s, opsGroup(miss, annaRow), props, anna))
-	or := condition.Group{Kind: "group", Combinator: condition.Or, Rules: marshal(miss, annaRow)}
+	or := conditiontree.Group{Kind: "group", Combinator: conditiontree.Or, Rules: marshal(miss, annaRow)}
 	assert.True(t, triggerMatches(t, s, or, props, anna))
-	not := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(miss)}
+	not := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(miss)}
 	assert.True(t, triggerMatches(t, s, not, props, anna), "not of a false leaf holds")
-	notHit := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(hit)}
+	notHit := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(hit)}
 	assert.False(t, triggerMatches(t, s, notHit, props, anna), "not of a true leaf holds for no one")
 	assert.True(t, triggerMatches(t, s, opsGroup(opsGroup(hit)), props, anna), "inside a nested group")
 }
@@ -121,17 +121,16 @@ func TestTriggerLeafIsValidOnlyInARule(t *testing.T) {
 	_, err := condition.New(time.Now).Compile(ctx, s, g)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "only in a Rule")
-	require.Error(t, validate(t, env, encode(t, g)))
 
 	// Any key is valid on save: nothing says which properties an Event will carry.
-	_, err = condition.New(time.Now).RulePredicate(ctx, s, encode(t, g), nil)
+	_, err = condition.New(time.Now).RulePredicate(ctx, s, g, nil)
 	require.NoError(t, err)
 
 	for name, bad := range map[string]condition.Leaf{
 		"no key":           rule("trigger:", "eq", "x"),
 		"unknown operator": rule("trigger:k", "atLeast", "x"),
 	} {
-		_, err = condition.New(time.Now).RulePredicate(ctx, s, encode(t, opsGroup(bad)), nil)
+		_, err = condition.New(time.Now).RulePredicate(ctx, s, opsGroup(bad), nil)
 		require.Error(t, err, name)
 	}
 }
@@ -142,10 +141,4 @@ func property(v *string) any {
 		return nil
 	}
 	return *v
-}
-
-func encode(t require.TestingT, g condition.Group) string {
-	b, err := json.Marshal(g)
-	require.NoError(t, err)
-	return string(b)
 }

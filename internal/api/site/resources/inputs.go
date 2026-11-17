@@ -28,17 +28,19 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -231,7 +233,7 @@ type Inputs interface {
 	AutomationCreate(source *siteapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.UpdateAutomationInput) automations.UpdateInput
 
-	RuleActions(source []siteapi.RuleActionInput) []rules.Action
+	RuleActions(source []siteapi.RuleActionInput) []ruleaction.Action
 	// goverter:map Condition | conditionIn
 	RuleCreate(source *siteapi.CreateRuleInput) (rules.CreateInput, error)
 	// goverter:map Condition | conditionIn
@@ -306,7 +308,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	PersonalScope(source siteapi.PersonalScope) tokenscope.PersonalScope
 	// goverter:enum:transform value
-	RuleActionType(source siteapi.RuleActionType) rules.ActionType
+	RuleActionType(source siteapi.RuleActionType) ruleaction.Type
 	// goverter:enum:transform value
 	SignupCompanySize(source siteapi.SignupCompanySize) signupsurveyresponse.CompanySize
 	// goverter:enum:transform value
@@ -425,7 +427,7 @@ func automationStepsPtrIn(c Inputs, steps []siteapi.AutomationStepInput) *[]auto
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
-func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]rules.Action {
+func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]ruleaction.Action {
 	if actions == nil {
 		return nil
 	}
@@ -433,10 +435,9 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]rules.Acti
 	return &out
 }
 
-// conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
-// it is absent.
-func conditionIn(o siteapi.OptConditionGroupInput) (*string, error) {
-	return condition.EncodeOptional(o)
+// conditionIn is a Condition the request may leave out; nil when it is absent.
+func conditionIn(o siteapi.OptConditionGroupInput) (*conditiontree.Group, error) {
+	return condition.FromOptionalDTO(o)
 }
 
 // documentIn is the editor document of a write as the JSON the modules render; nil when the
@@ -590,18 +591,18 @@ func sortDirectionIn(c Inputs, o siteapi.OptSortDirection) pagination.Direction 
 	return c.SortDirection(v)
 }
 
-func createSegmentCondition(g siteapi.ConditionGroupInput) (*string, error) {
-	def, err := condition.Encode(&g)
+func createSegmentCondition(g siteapi.ConditionGroupInput) (*conditiontree.Group, error) {
+	def, err := condition.FromDTO(&g)
 	if err != nil {
 		return nil, err
 	}
 	return &def, nil
 }
 
-func segmentConditionPatch(o siteapi.OptConditionGroupInput) (patch.Field[string], error) {
-	def, err := condition.EncodeOptional(o)
+func segmentConditionPatch(o siteapi.OptConditionGroupInput) (patch.Field[conditiontree.Group], error) {
+	def, err := condition.FromOptionalDTO(o)
 	if err != nil {
-		return patch.Field[string]{}, err
+		return patch.Field[conditiontree.Group]{}, err
 	}
 	return patch.FromPtr(def), nil
 }

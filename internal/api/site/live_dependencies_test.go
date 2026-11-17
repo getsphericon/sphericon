@@ -14,7 +14,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -150,46 +149,6 @@ func TestSiteSendingDomainDeleteRefusedThroughTheConfiguredFrom(t *testing.T) {
 	sendMeridianBroadcasts(t, meridian)
 	require.NoError(t, meridian.Automation().UpdateOneID(fixtures.AutomationMeridianWelcomeID).SetStatus(automation.StatusInactive).Exec(ctx))
 	require.NoError(t, del())
-}
-
-func TestDamagedStoredStepsDoNotPermitIntegrationRemoval(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	ctx := t.Context()
-	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetSteps(`[{"type":"wait","seconds":"soon"}]`).Exec(ctx) // JSON, as the database requires, but no Step
-	require.NoError(t, err)
-
-	err = integrationdeletion.New(env.Bus, testhelper.Module[*removalcheck.Module](env), time.Now).Delete(ctx, s, fixtures.IntegrationAcmeMailgunID)
-
-	require.Error(t, err, "an unreadable definition cannot prove the Integration unused")
-	var used *liveuse.Error
-	assert.NotErrorAs(t, err, &used, "propagate the read failure, rather than claiming known use")
-	kept, err := testhelper.Module[*integrations.Module](env).Get(ctx, s, fixtures.IntegrationAcmeMailgunID)
-	require.NoError(t, err)
-	assert.Nil(t, kept.DiscardedAt)
-}
-
-func TestDamagedStoredStepsDoNotPermitSendingDomainRemoval(t *testing.T) {
-	env := testhelper.Setup(t)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	ctx := t.Context()
-	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHoldDemoVersionID).
-		SetSteps(`[{"type":"email","subject":7}]`).Exec(ctx) // JSON, as the database requires, but no Step
-	require.NoError(t, err)
-
-	err = c.SiteSendingDomainsDelete(ctx, siteapi.SiteSendingDomainsDeleteParams{
-		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
-	})
-
-	require.Error(t, err, "the unreadable definition must fail the removal check")
-	kept, err := c.SiteSendingDomainsGet(ctx, siteapi.SiteSendingDomainsGetParams{
-		WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SendingDomainCodebasicsID),
-	})
-	require.NoError(t, err)
-	deleted := kept.DiscardedAt.IsSet()
-	assert.False(t, deleted)
 }
 
 // A draft's email does not establish a dependency, nor does the live version of an inactive or

@@ -13,10 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -220,10 +220,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if err != nil {
 		return fmt.Errorf("load version %d of run %d: %w", run.VersionID, run.ID, err)
 	}
-	steps, err := automationstep.Decode(version.Steps)
-	if err != nil {
-		return m.fail(ctx, s, run.ID, fmt.Errorf("automation %d version %d steps: %w", a.ID, version.Version, err))
-	}
+	steps := version.Steps
 
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
 		return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)

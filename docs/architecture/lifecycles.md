@@ -45,10 +45,10 @@ raw `*ent.Client`: it only maps rows to users and states these shapes.
 
 ## Stored Automation Steps
 
-**Stored Automation Steps:** `internal/domain/orchestration/automationstep` owns the stored Step model, its kinds,
-decoding and whether a definition sends email. Publish, Needs attention and live-use checks
-share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
-so a removal cannot treat an unreadable definition as unused. The reader chooses the version:
+**Stored Automation Steps:** `internal/kernel/automationstep` owns the stored Step model and its
+kinds, the type of a version's `steps` column, which is `jsonb` (ADR 0169): ent decodes it, so a
+version that does not decode fails its read, and a removal cannot treat an unreadable definition
+as unused. Publish, Needs attention and live-use checks read the same Steps. The reader chooses the version:
 dependencies use live, an Enrollment uses its pinned version. `internal/domain/orchestration/automations` keeps
 preparation for writing (normalization, validation and secret sealing), masked
 API views and the version lifecycle. The shared reader neither queries nor executes Steps.

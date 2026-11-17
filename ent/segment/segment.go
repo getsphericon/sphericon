@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 const (
@@ -76,6 +77,8 @@ var (
 	RevisionValidator func(int64) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultCondition holds the default value on creation for the "condition" field.
+	DefaultCondition conditiontree.Group
 )
 
 // OrderOption defines the ordering options for the Segment queries.
@@ -114,11 +117,6 @@ func ByRevision(opts ...sql.OrderTermOption) OrderOption {
 // ByName orders the results by the name field.
 func ByName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldName, opts...).ToFunc()
-}
-
-// ByCondition orders the results by the condition field.
-func ByCondition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCondition, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/qmuntal/stateless"
-	"github.com/samber/lo"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
@@ -114,7 +113,7 @@ func copyCondition(ctx context.Context, s *ent.Scoped, id int64, from, to broadc
 	if err != nil {
 		return err
 	}
-	u.Where(broadcast.SegmentID(*b.SegmentID)).SetCondition(lo.FromPtr(seg.Condition))
+	u.Where(broadcast.SegmentID(*b.SegmentID)).SetCondition(&seg.Condition)
 	return nil
 }
 

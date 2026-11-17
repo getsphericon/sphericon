@@ -44,16 +44,6 @@ func TestRunStepOutcomes(t *testing.T) {
 		assert.Empty(t, queuedSteps(t, env))
 	})
 
-	t.Run("an undecodable definition fails the run", func(t *testing.T) {
-		env := testhelper.Setup(t)
-		id := int64(fixtures.AutomationRunJobsUndecodableID)
-		// The stored steps are corrupted here: a fixture must stay decodable (key rotation reads it).
-		env.DB.AutomationVersion.UpdateOneID(fixtures.AutomationJobsUndecodableVersionID).SetSteps(`[{"type":7}]`).ExecX(t.Context()) // JSON, as the database requires, but no Step
-		err := stepOnce(t, env, stepperOf(env, resolvingTo(&fakeSender{})), id)
-		require.Error(t, err)
-		assert.Equal(t, automationrun.StatusFailed, runStatus(t.Context(), t, env, id))
-	})
-
 	t.Run("an unknown step type fails the run", func(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := int64(fixtures.AutomationRunJobsUnknownStepID)

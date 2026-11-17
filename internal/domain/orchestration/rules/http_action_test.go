@@ -11,7 +11,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -24,14 +25,13 @@ func newHTTPRule(t *testing.T, env *testhelper.TestEnv, m *rules.Module) (id int
 	r, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.CreateInput{
 		Name:          "Call the hook",
 		TriggerEvents: []string{"rule_http"},
-		Actions: []rules.Action{{
-			Type: rules.ActionHTTP, URL: hookURL, Body: `{"email":"{{ email }}"}`,
-			Headers: []httpcall.Header{{Name: "Authorization", Value: "Bearer hunter2"}}, Secret: testSigner,
+		Actions: []ruleaction.Action{{
+			Type: ruleaction.HTTP, URL: hookURL, Body: `{"email":"{{ email }}"}`,
+			Headers: []httpheader.Header{{Name: "Authorization", Value: "Bearer hunter2"}}, Secret: testSigner,
 		}},
 	})
 	require.NoError(t, err)
-	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
-	require.NoError(t, err)
+	stored := draftOf(t, r).Actions
 	require.Len(t, stored, 1)
 	return r.ID, stored[0].ID
 }
@@ -45,10 +45,9 @@ func TestAnHTTPActionIsStoredSealed(t *testing.T) {
 	r, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), id)
 	require.NoError(t, err)
 	for _, secret := range []string{hookURL, "hooks.example.com", "hunter2", testSigner} {
-		assert.NotContains(t, draftOf(t, r).Actions, secret, "the stored Actions hold only ciphertext")
+		assert.NotContains(t, testhelper.Document(t, draftOf(t, r).Actions), secret, "the stored Actions hold only ciphertext")
 	}
-	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
-	require.NoError(t, err)
+	stored := draftOf(t, r).Actions
 	opened, err := m.OpenHTTP(stored[0])
 	require.NoError(t, err)
 	assert.Equal(t, hookURL, opened.URL)
@@ -74,14 +73,13 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	_, err := m.Publish(context.Background(), s, id, testhelper.RuleRevisionIn(t.Context(), t, s, id))
 	require.NoError(t, err)
 
-	r, err := m.Update(context.Background(), s, id, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(t.Context(), t, s, id), Actions: &[]rules.Action{{
-		Type: rules.ActionHTTP, ID: actionID, Body: `{"changed":true}`,
-		Headers: []httpcall.Header{{Name: "Authorization"}},
+	r, err := m.Update(context.Background(), s, id, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(t.Context(), t, s, id), Actions: &[]ruleaction.Action{{
+		Type: ruleaction.HTTP, ID: actionID, Body: `{"changed":true}`,
+		Headers: []httpheader.Header{{Name: "Authorization"}},
 	}}})
 
 	require.NoError(t, err)
-	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
-	require.NoError(t, err)
+	stored := draftOf(t, r).Actions
 	require.Len(t, stored, 1)
 	assert.Equal(t, actionID, stored[0].ID)
 	opened, err := m.OpenHTTP(stored[0])
@@ -95,16 +93,16 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 func TestAnInvalidHTTPActionIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	cases := map[string]rules.Action{
-		"no url":                  {Type: rules.ActionHTTP, Body: `{}`},
-		"not http":                {Type: rules.ActionHTTP, URL: "ftp://example.com", Body: `{}`},
-		"a body that is not JSON": {Type: rules.ActionHTTP, URL: hookURL, Body: `not json`},
-		"a reserved header":       {Type: rules.ActionHTTP, URL: hookURL, Body: `{}`, Headers: []httpcall.Header{{Name: "Host", Value: "x"}}},
+	cases := map[string]ruleaction.Action{
+		"no url":                  {Type: ruleaction.HTTP, Body: `{}`},
+		"not http":                {Type: ruleaction.HTTP, URL: "ftp://example.com", Body: `{}`},
+		"a body that is not JSON": {Type: ruleaction.HTTP, URL: hookURL, Body: `not json`},
+		"a reserved header":       {Type: ruleaction.HTTP, URL: hookURL, Body: `{}`, Headers: []httpheader.Header{{Name: "Host", Value: "x"}}},
 	}
 	for name, a := range cases {
 		t.Run(name, func(t *testing.T) {
 			_, err := m.Create(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.CreateInput{
-				Name: "Bad", TriggerEvents: []string{"rule_http"}, Actions: []rules.Action{a},
+				Name: "Bad", TriggerEvents: []string{"rule_http"}, Actions: []ruleaction.Action{a},
 			})
 			assert.ErrorIs(t, err, rules.ErrInvalid)
 		})

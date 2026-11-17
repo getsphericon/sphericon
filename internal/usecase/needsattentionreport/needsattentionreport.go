@@ -313,10 +313,7 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 	holdOf := map[choice]holdreason.Reason{}
 	var items []Item
 	for _, a := range senders {
-		steps, err := automations.SendSteps(a.Edges.LiveVersion)
-		if err != nil {
-			return nil, err
-		}
+		steps := automations.SendSteps(a.Edges.LiveVersion)
 		for i := range steps {
 			st := &steps[i]
 			key := choice{st.Channel(), lo.FromPtr(st.Step.IntegrationID)}

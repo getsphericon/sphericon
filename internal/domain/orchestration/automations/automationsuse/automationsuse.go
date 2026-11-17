@@ -19,9 +19,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // Module is the automations module's reader of the use of a row (docs/architecture/modules.md).
@@ -41,15 +41,7 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 	var using []*ent.Automation
 	for _, a := range all {
 		live, draft := automations.LiveAndDraft(a)
-		inLive, err := namesTag(live, name)
-		if err != nil {
-			return nil, err
-		}
-		inDraft, err := namesTag(draft, name)
-		if err != nil {
-			return nil, err
-		}
-		if inLive || inDraft {
+		if namesTag(live, name) || namesTag(draft, name) {
 			using = append(using, a)
 		}
 	}
@@ -57,17 +49,10 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 }
 
 // namesTag reports whether a step of the version, if there is one, applies or removes the Tag.
-func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
-	if v == nil {
-		return false, nil
-	}
-	steps, err := automationstep.Decode(v.Steps)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(steps, func(st automationstep.Step) bool {
+func namesTag(v *ent.AutomationVersion, name string) bool {
+	return v != nil && slices.ContainsFunc(v.Steps, func(st automationstep.Step) bool {
 		return (st.Type == automationstep.ApplyTag || st.Type == automationstep.RemoveTag) && tagname.Same(st.Tag, name)
-	}), nil
+	})
 }
 
 // LiveSends returns the sends of the Automations in Live use (ADR 0099), in Automation id order:
@@ -75,8 +60,8 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 // version an unfinished Enrollment stands on, whatever its Automation's state, since the
 // Enrollment still sends through it. A draft sends nothing until it is published (ADR 0065). An
 // Automation with several send steps gives one Send per step; liveuse.SendUsers dedupes them for a
-// refusal. A step carries no From of its own. A damaged stored definition is an error, so a
-// removal never takes an unreadable definition for an unused one.
+// refusal. A step carries no From of its own. A version that does not decode fails the read, so
+// a removal never takes an unreadable definition for an unused one.
 func (m *Module) LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
 	autos, err := sendingVersions(ctx, l)
 	if err != nil {
@@ -87,10 +72,7 @@ func (m *Module) LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveu
 	for _, a := range autos {
 		user := liveuse.User{Kind: liveuse.Automation, ID: a.ID, Name: a.Name}
 		for _, v := range a.Edges.Versions {
-			steps, err := automationstep.Decode(v.Steps)
-			if err != nil {
-				return nil, err
-			}
+			steps := v.Steps
 			for i := range steps {
 				ch, ok := steps[i].Type.Channel()
 				if !ok {

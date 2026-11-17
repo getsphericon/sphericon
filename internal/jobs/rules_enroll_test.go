@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,7 +23,7 @@ func TestRuleActionEnrollsTheContactInAnAutomation(t *testing.T) {
 
 	f := runFiring(t, env, fixtures.RuleFiringEnrollGreetingPendingID)
 
-	assert.Equal(t, []rules.Result{{Type: rules.ActionEnroll, Status: rules.Succeeded}}, resultsOf(t, f))
+	assert.Equal(t, []rules.Result{{Type: ruleaction.Enroll, Status: rules.Succeeded}}, resultsOf(t, f))
 	run, err := env.DB.AutomationRun.Query().
 		Where(automationrun.AutomationID(fixtures.AutomationJobsGreetingID), automationrun.ContactID(fixtures.ContactBobID)).
 		Only(context.Background())
@@ -105,7 +106,7 @@ func TestARuleEnrollmentBeginsWhenTheEventTheRuleFiredOnOccurred(t *testing.T) {
 	require.NoError(t, err)
 	results := resultsOf(t, f)
 	steps := env.JobsOf(t, jobkind.RunStep.Kind)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionEnroll, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.Enroll, Status: rules.Succeeded}}, results)
 	assert.Equal(t, automationrun.StatusGoalReached, run.Status)
 	assert.WithinDuration(t, fired.OccurredAt, run.BeganAt, time.Microsecond)
 	assert.Empty(t, steps, "no step runs after the goal")

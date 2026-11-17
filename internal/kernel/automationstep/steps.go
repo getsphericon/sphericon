@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"slices"
 
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -79,32 +79,19 @@ type Step struct {
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
 	// in a step being saved, an empty one keeps the stored value of the step with the
 	// same ID, and ClearSecret drops the signing secret.
-	ID          string            `json:"id,omitempty"`
-	URL         string            `json:"url,omitempty"`
-	Headers     []httpcall.Header `json:"headers,omitempty"`
-	Secret      string            `json:"secret,omitempty"`
-	ClearSecret bool              `json:"-"`
+	ID          string              `json:"id,omitempty"`
+	URL         string              `json:"url,omitempty"`
+	Headers     []httpheader.Header `json:"headers,omitempty"`
+	Secret      string              `json:"secret,omitempty"`
+	ClearSecret bool                `json:"-"`
 }
 
 // TracksLinks reports whether the links of an SMS step go out as short tracked links: unless the
 // step turned it off.
 func (s *Step) TracksLinks() bool { return s.LinkTracking == nil || *s.LinkTracking }
 
-// Decode parses a stored definition, a JSON array (automation_versions_steps_check).
-func Decode(definition string) ([]Step, error) {
-	var steps []Step
-	if err := json.Unmarshal([]byte(definition), &steps); err != nil {
-		return nil, err
-	}
-	return steps, nil
-}
-
-// SendsEmail reports whether a stored definition contains an email Step. A definition with
-// no email Step has no email sending dependency; an unreadable definition cannot establish that.
-func SendsEmail(definition string) (bool, error) {
-	steps, err := Decode(definition)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(steps, func(step Step) bool { return step.Type == Email }), nil
+// SendsEmail reports whether the steps contain an email Step: steps with none have no email
+// sending dependency.
+func SendsEmail(steps []Step) bool {
+	return slices.ContainsFunc(steps, func(step Step) bool { return step.Type == Email })
 }

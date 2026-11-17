@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -47,8 +46,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	assert.Equal(t, emaildoc.EditorVersion(), res.Draft.Value.Steps[0].EditorVersion.Value)
 	assert.False(t, res.Draft.Value.Steps[2].Doc.Set, "a step with no document stays HTML-only")
 
-	stored, err := automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
-	require.NoError(t, err)
+	stored := testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID))
 	assert.JSONEq(t, `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello {{ first_name }}"}]}]}`, string(stored[0].Doc))
 	assert.Equal(t, res.Draft.Value.Steps[0].Body.Value, stored[0].Body)
 	assert.Empty(t, stored[2].Doc)
@@ -72,8 +70,7 @@ func TestSiteAutomationEmailStepsSaveADocumentWithItsBody(t *testing.T) {
 	clr := cleared
 	assert.False(t, clr.Draft.Value.Steps[0].Doc.Set)
 	assert.False(t, clr.Draft.Value.Steps[0].EditorVersion.Set)
-	stored, err = automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
-	require.NoError(t, err)
+	stored = testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID))
 	assert.Empty(t, stored[0].Doc)
 	assert.Empty(t, stored[0].EditorVersion)
 }
@@ -109,4 +106,24 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: "Probe", TriggerEvent: "probe.signup"}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	assert.Equal(t, listed+1, env.DB.Automation.Query().CountX(ctx), "the refused saves stored nothing")
+}
+
+// A document saved again is the one the step holds, though jsonb keeps its keys in another order
+// (ADR 0169): the save changes nothing and the Automation's revision stays.
+func TestSiteAutomationDocumentSavedAgainIsNoChange(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	step := docStep("Hi", paragraphDoc("Hello {{ first_name }}"))
+	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
+		Name: "Saved twice", TriggerEvent: "saved.twice", Steps: []siteapi.AutomationStepInput{step},
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+
+	saved, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: created.Revision, Steps: []siteapi.AutomationStepInput{step}},
+		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: created.ID})
+
+	require.NoError(t, err)
+	assert.Equal(t, created.Revision, saved.Revision)
 }

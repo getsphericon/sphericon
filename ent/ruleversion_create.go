@@ -16,6 +16,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // RuleVersionCreate is the builder for creating a RuleVersion entity.
@@ -73,13 +75,13 @@ func (_c *RuleVersionCreate) SetVersion(v int) *RuleVersionCreate {
 }
 
 // SetCondition sets the "condition" field.
-func (_c *RuleVersionCreate) SetCondition(v string) *RuleVersionCreate {
+func (_c *RuleVersionCreate) SetCondition(v conditiontree.Group) *RuleVersionCreate {
 	_c.mutation.SetCondition(v)
 	return _c
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_c *RuleVersionCreate) SetNillableCondition(v *string) *RuleVersionCreate {
+func (_c *RuleVersionCreate) SetNillableCondition(v *conditiontree.Group) *RuleVersionCreate {
 	if v != nil {
 		_c.SetCondition(*v)
 	}
@@ -87,16 +89,8 @@ func (_c *RuleVersionCreate) SetNillableCondition(v *string) *RuleVersionCreate 
 }
 
 // SetActions sets the "actions" field.
-func (_c *RuleVersionCreate) SetActions(v string) *RuleVersionCreate {
+func (_c *RuleVersionCreate) SetActions(v []ruleaction.Action) *RuleVersionCreate {
 	_c.mutation.SetActions(v)
-	return _c
-}
-
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_c *RuleVersionCreate) SetNillableActions(v *string) *RuleVersionCreate {
-	if v != nil {
-		_c.SetActions(*v)
-	}
 	return _c
 }
 
@@ -189,6 +183,10 @@ func (_c *RuleVersionCreate) defaults() {
 		v := ruleversion.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Condition(); !ok {
+		v := ruleversion.DefaultCondition
+		_c.mutation.SetCondition(v)
+	}
 	if _, ok := _c.mutation.Actions(); !ok {
 		v := ruleversion.DefaultActions
 		_c.mutation.SetActions(v)
@@ -216,6 +214,9 @@ func (_c *RuleVersionCreate) check() error {
 		if err := ruleversion.VersionValidator(v); err != nil {
 			return &ValidationError{Name: "version", err: fmt.Errorf(`ent: validator failed for field "RuleVersion.version": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Condition(); !ok {
+		return &ValidationError{Name: "condition", err: errors.New(`ent: missing required field "RuleVersion.condition"`)}
 	}
 	if _, ok := _c.mutation.Actions(); !ok {
 		return &ValidationError{Name: "actions", err: errors.New(`ent: missing required field "RuleVersion.actions"`)}
@@ -272,11 +273,11 @@ func (_c *RuleVersionCreate) createSpec() (*RuleVersion, *sqlgraph.CreateSpec) {
 		_node.Version = value
 	}
 	if value, ok := _c.mutation.Condition(); ok {
-		_spec.SetField(ruleversion.FieldCondition, field.TypeString, value)
-		_node.Condition = &value
+		_spec.SetField(ruleversion.FieldCondition, field.TypeJSON, value)
+		_node.Condition = value
 	}
 	if value, ok := _c.mutation.Actions(); ok {
-		_spec.SetField(ruleversion.FieldActions, field.TypeString, value)
+		_spec.SetField(ruleversion.FieldActions, field.TypeJSON, value)
 		_node.Actions = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
@@ -434,7 +435,7 @@ func (u *RuleVersionUpsert) UpdateRuleID() *RuleVersionUpsert {
 }
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionUpsert) SetCondition(v string) *RuleVersionUpsert {
+func (u *RuleVersionUpsert) SetCondition(v conditiontree.Group) *RuleVersionUpsert {
 	u.Set(ruleversion.FieldCondition, v)
 	return u
 }
@@ -445,14 +446,8 @@ func (u *RuleVersionUpsert) UpdateCondition() *RuleVersionUpsert {
 	return u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleVersionUpsert) ClearCondition() *RuleVersionUpsert {
-	u.SetNull(ruleversion.FieldCondition)
-	return u
-}
-
 // SetActions sets the "actions" field.
-func (u *RuleVersionUpsert) SetActions(v string) *RuleVersionUpsert {
+func (u *RuleVersionUpsert) SetActions(v []ruleaction.Action) *RuleVersionUpsert {
 	u.Set(ruleversion.FieldActions, v)
 	return u
 }
@@ -560,7 +555,7 @@ func (u *RuleVersionUpsertOne) UpdateRuleID() *RuleVersionUpsertOne {
 }
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionUpsertOne) SetCondition(v string) *RuleVersionUpsertOne {
+func (u *RuleVersionUpsertOne) SetCondition(v conditiontree.Group) *RuleVersionUpsertOne {
 	return u.Update(func(s *RuleVersionUpsert) {
 		s.SetCondition(v)
 	})
@@ -573,15 +568,8 @@ func (u *RuleVersionUpsertOne) UpdateCondition() *RuleVersionUpsertOne {
 	})
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleVersionUpsertOne) ClearCondition() *RuleVersionUpsertOne {
-	return u.Update(func(s *RuleVersionUpsert) {
-		s.ClearCondition()
-	})
-}
-
 // SetActions sets the "actions" field.
-func (u *RuleVersionUpsertOne) SetActions(v string) *RuleVersionUpsertOne {
+func (u *RuleVersionUpsertOne) SetActions(v []ruleaction.Action) *RuleVersionUpsertOne {
 	return u.Update(func(s *RuleVersionUpsert) {
 		s.SetActions(v)
 	})
@@ -857,7 +845,7 @@ func (u *RuleVersionUpsertBulk) UpdateRuleID() *RuleVersionUpsertBulk {
 }
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionUpsertBulk) SetCondition(v string) *RuleVersionUpsertBulk {
+func (u *RuleVersionUpsertBulk) SetCondition(v conditiontree.Group) *RuleVersionUpsertBulk {
 	return u.Update(func(s *RuleVersionUpsert) {
 		s.SetCondition(v)
 	})
@@ -870,15 +858,8 @@ func (u *RuleVersionUpsertBulk) UpdateCondition() *RuleVersionUpsertBulk {
 	})
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleVersionUpsertBulk) ClearCondition() *RuleVersionUpsertBulk {
-	return u.Update(func(s *RuleVersionUpsert) {
-		s.ClearCondition()
-	})
-}
-
 // SetActions sets the "actions" field.
-func (u *RuleVersionUpsertBulk) SetActions(v string) *RuleVersionUpsertBulk {
+func (u *RuleVersionUpsertBulk) SetActions(v []ruleaction.Action) *RuleVersionUpsertBulk {
 	return u.Update(func(s *RuleVersionUpsert) {
 		s.SetActions(v)
 	})

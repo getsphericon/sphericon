@@ -1,6 +1,6 @@
 // Package automations is the one place an Automation's definition is stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
-// adapters over it. internal/domain/orchestration/automationstep owns the stored Step format and its reader,
+// adapters over it. internal/kernel/automationstep owns the stored Step format and its reader,
 // shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events and
 // steps, each send step with its own Integration, ADR 0081) lives in versions (ADR 0049): an edit
 // writes the draft, Publish makes it live (ADR 0065). StepExecution walks the Enrollments through
@@ -9,7 +9,6 @@ package automations
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -23,7 +22,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
@@ -31,10 +29,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
+	"github.com/getsphericon/sphericon/internal/kernel/jsonvalue"
 	"github.com/getsphericon/sphericon/internal/kernel/optional"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -87,9 +87,9 @@ var (
 	errBodyAndDoc = errors.New("automations: a step writes a body or a doc, not both")
 )
 
-// Encode serializes steps into the stored definition, dropping the fields that do
-// not belong to each step's type and trimming tag names.
-func Encode(steps []automationstep.Step) (string, error) {
+// StoredSteps are the steps as a version stores them, dropping the fields that do not belong to
+// each step's type and trimming tag names.
+func StoredSteps(steps []automationstep.Step) []automationstep.Step {
 	stored := make([]automationstep.Step, 0, len(steps))
 	for i := range steps {
 		s := &steps[i]
@@ -120,8 +120,7 @@ func Encode(steps []automationstep.Step) (string, error) {
 			stored = append(stored, email)
 		}
 	}
-	b, err := json.Marshal(stored)
-	return string(b), err
+	return stored
 }
 
 // validate checks each step on its own. linkLength is the length of the Workspace's short tracked
@@ -211,18 +210,15 @@ func (s SendStep) Content() (outboundmessages.Content, error) {
 }
 
 // SendSteps are the send steps of the version, in step order.
-func SendSteps(v *ent.AutomationVersion) ([]SendStep, error) {
-	steps, err := automationstep.Decode(v.Steps)
-	if err != nil {
-		return nil, err
-	}
+func SendSteps(v *ent.AutomationVersion) []SendStep {
+	steps := v.Steps
 	var out []SendStep
 	for i := range steps {
 		if _, sends := steps[i].Type.Channel(); sends {
 			out = append(out, SendStep{Index: i, Step: steps[i]})
 		}
 	}
-	return out, nil
+	return out
 }
 
 // Module is the automations module.
@@ -491,12 +487,12 @@ type edit struct {
 
 // definition is the content of an Automation version as stored: its Trigger, the events that end
 // an Enrollment early (exits) and the one that ends it as having reached its goal (nil for none),
-// and its encoded, sealed steps, each send step naming its Integration.
+// and its sealed steps, each send step naming its Integration.
 type definition struct {
 	trigger string
 	exits   []string
 	goal    *string
-	steps   string
+	steps   []automationstep.Step
 }
 
 // versioned is the Automation's part of the lifecycle (versioneddefinition.Definition).
@@ -511,16 +507,10 @@ func (versioned) Store(s *ent.Scoped) ent.VersionedStore[ent.Automation, ent.Aut
 // steps, each send step's Integration kept (not archived). An HTTP step that names one of the
 // base's steps by ID keeps the secrets it does not resend.
 func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.AutomationVersion, e edit) (definition, error) {
-	def := definition{exits: []string{}, steps: "[]"}
+	def := definition{exits: []string{}, steps: []automationstep.Step{}}
 	var stored []automationstep.Step
 	if base != nil {
-		var err error
-		if stored, err = automationstep.Decode(base.Steps); err != nil {
-			return definition{}, err
-		}
-		if def, err = canonical(base); err != nil {
-			return definition{}, err
-		}
+		def, stored = definitionOf(base), base.Steps
 	}
 	if e.trigger != nil {
 		def.trigger = *e.trigger
@@ -555,31 +545,22 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 		if err != nil {
 			return definition{}, err
 		}
-		if def.steps, err = Encode(sealed); err != nil {
-			return definition{}, err
-		}
+		def.steps = StoredSteps(sealed)
 	}
 	return def, nil
 }
 
-// canonical is the definition a version holds, its steps in the form Encode writes them, so that
-// an unchanged edit compares equal whatever wrote the stored JSON.
-func canonical(v *ent.AutomationVersion) (definition, error) {
-	stored, err := automationstep.Decode(v.Steps)
-	if err != nil {
-		return definition{}, err
-	}
-	steps, err := Encode(stored)
-	if err != nil {
-		return definition{}, err
-	}
-	return definition{trigger: v.TriggerEvent, exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent, steps: steps}, nil
+// definitionOf is the definition a version holds.
+func definitionOf(v *ent.AutomationVersion) definition {
+	return definition{trigger: v.TriggerEvent, exits: normalizeExits(v.ExitEvents), goal: v.GoalEvent, steps: v.Steps}
 }
 
+// Equal compares the steps by value (ADR 0169): an email step's document spelled with its keys in
+// another order is the same document.
 func (versioned) Equal(v *ent.AutomationVersion, def definition) bool {
-	held, err := canonical(v)
-	return err == nil && held.trigger == def.trigger && slices.Equal(held.exits, def.exits) && optional.Equal(held.goal, def.goal) &&
-		held.steps == def.steps
+	held := definitionOf(v)
+	return held.trigger == def.trigger && slices.Equal(held.exits, def.exits) && optional.Equal(held.goal, def.goal) &&
+		jsonvalue.Same(held.steps, def.steps)
 }
 
 func (versioned) Write(ctx context.Context, l *ent.WorkspaceLocked, id int64, number int, draft *ent.AutomationVersion, def definition) (int64, error) {
@@ -620,10 +601,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 	if err := validateEvents(definition{trigger: version.TriggerEvent, exits: version.ExitEvents, goal: version.GoalEvent}); err != nil {
 		return err
 	}
-	sends, err := SendSteps(version)
-	if err != nil {
-		return err
-	}
+	sends := SendSteps(version)
 	if slices.ContainsFunc(sends, func(st SendStep) bool { return st.Channel() == channels.Email }) {
 		if err := v.m.out.RequirePostalAddress(ctx, ts, channels.Email); err != nil {
 			return err
@@ -678,11 +656,7 @@ func (m *Module) Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation,
 	}
 	senders := active[:0]
 	for _, a := range active {
-		sends, err := SendSteps(a.Edges.LiveVersion)
-		if err != nil {
-			return nil, err
-		}
-		if len(sends) > 0 {
+		if len(SendSteps(a.Edges.LiveVersion)) > 0 {
 			senders = append(senders, a)
 		}
 	}

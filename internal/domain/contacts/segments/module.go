@@ -6,8 +6,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/segment"
@@ -16,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -56,29 +55,26 @@ func New(bus *events.Bus, now func() time.Time) *Module {
 	return &Module{bus: bus, now: now, conditions: condition.New(now), eligibility: eligibility.New()}
 }
 
-// CreateInput is a new Segment. A nil or empty Condition means "no rules yet".
+// CreateInput is a new Segment. A nil Condition is the empty group: no tests yet, every Contact.
 type CreateInput struct {
 	Name      string
-	Condition *string
+	Condition *conditiontree.Group
 }
 
 // UpdateInput is a patch of a Segment: a field that keeps leaves the stored value. Neither field
-// can be cleared; an empty Condition matches all contacts.
+// can be cleared; a Condition with no tests matches all contacts.
 type UpdateInput struct {
 	// Revision is the Segment's revision the edit was made on (ADR 0119).
 	Revision  int64
 	Name      patch.Field[string]
-	Condition patch.Field[string]
+	Condition patch.Field[conditiontree.Group]
 }
 
 // Validate checks a condition against the Contact attributes and the Workspace's Custom
-// field catalogue. An empty condition is valid. This is the single rule set behind
+// field catalogue. A condition with no tests is valid. This is the single rule set behind
 // Create, Update, Preview and Count.
-func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) error {
-	if cond == "" {
-		return nil
-	}
-	if _, err := s.conditions.ContactPredicate(ctx, ws, cond); err != nil {
+func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond conditiontree.Group) error {
+	if _, err := s.conditions.Compile(ctx, ws, cond); err != nil {
 		return ErrInvalidCondition.With(err.Error())
 	}
 	return nil
@@ -103,14 +99,16 @@ func (s *Module) Create(ctx context.Context, ws *ent.Scoped, in CreateInput) (*e
 
 // createIn validates the condition and stores the Segment under the Workspace's lock (ADR 0108).
 func (s *Module) createIn(ctx context.Context, wl *ent.WorkspaceLocked, in CreateInput) (*ent.Segment, error) {
+	cond := conditiontree.Empty()
 	if in.Condition != nil {
-		if err := s.Validate(ctx, wl.Scope(), *in.Condition); err != nil {
-			return nil, err
-		}
+		cond = *in.Condition
+	}
+	if err := s.Validate(ctx, wl.Scope(), cond); err != nil {
+		return nil, err
 	}
 	return wl.Segment().Create().
 		SetName(in.Name).
-		SetNillableCondition(in.Condition).
+		SetCondition(cond).
 		Save(ctx)
 }
 
@@ -174,7 +172,7 @@ func refuseArchived(s *ent.Segment) error {
 // Broadcast the audience is asked for, with the Integration it routes through (nil: the Channel's
 // default). Without a Channel the preview counts the match alone.
 type PreviewInput struct {
-	Condition     *string
+	Condition     *conditiontree.Group
 	Channel       *channels.Channel
 	IntegrationID *int64
 }
@@ -190,7 +188,11 @@ type PreviewResult struct {
 // of a Broadcast on the Channel the input names. A Condition that does not compile is
 // ErrInvalidCondition.
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (PreviewResult, error) {
-	pred, err := s.conditions.ContactPredicate(ctx, ws, lo.FromPtr(in.Condition))
+	cond := conditiontree.Empty()
+	if in.Condition != nil {
+		cond = *in.Condition
+	}
+	pred, err := s.conditions.Compile(ctx, ws, cond)
 	if err != nil {
 		return PreviewResult{}, ErrInvalidCondition.With(err.Error())
 	}
@@ -223,7 +225,7 @@ func (s *Module) Count(ctx context.Context, ws *ent.Scoped, id int64) (int, erro
 	if err != nil {
 		return 0, err
 	}
-	res, err := s.Preview(ctx, ws, PreviewInput{Condition: seg.Condition})
+	res, err := s.Preview(ctx, ws, PreviewInput{Condition: &seg.Condition})
 	return res.Count, err
 }
 
@@ -236,11 +238,7 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 	if err != nil {
 		return pagination.Page[*ent.Contact]{}, err
 	}
-	cond := ""
-	if seg.Condition != nil {
-		cond = *seg.Condition
-	}
-	pred, err := s.conditions.ContactPredicate(ctx, ws, cond)
+	pred, err := s.conditions.Compile(ctx, ws, seg.Condition)
 	if err != nil {
 		return pagination.Page[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
 	}

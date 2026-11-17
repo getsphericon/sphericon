@@ -12,11 +12,12 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func opsGroup(entries ...any) condition.Group {
-	return condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(entries...)}
+func opsGroup(entries ...any) conditiontree.Group {
+	return conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(entries...)}
 }
 
 func TestPlainColumnOperators(t *testing.T) {
@@ -80,9 +81,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 		"declared by another Workspace":  fixtures.CustomFieldGlobexKey,
 		"injection that nobody declared": "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a",
 	} {
-		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
-		require.NoError(t, err)
-		_, err = condition.New(time.Now).ContactPredicate(context.Background(), ws, string(def))
+		_, err := condition.New(time.Now).Compile(context.Background(), ws, opsGroup(rule("custom:"+key, "eq", "a")))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
@@ -93,8 +92,8 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 
 	assert.Equal(t, []string{
 		fixtures.InitrodeOneEmail, fixtures.InitrodeQuoteEmail, fixtures.InitrodeThreeEmail, fixtures.InitrodeTwoEmail,
-	}, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: condition.And}))
-	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: condition.And, Not: true}),
+	}, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Group{Kind: "group", Combinator: conditiontree.And}))
+	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true}),
 		"an empty negated group matches no one")
 }
 
@@ -154,27 +153,27 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`42`)}})
+	_, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`42`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown rule kind")
 
 	// An unknown combinator is refused, not read as "and".
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: "xor"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown combinator")
 
@@ -185,19 +184,18 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
 }
 
-func TestContactPredicateRefusesInvalidConditions(t *testing.T) {
+func TestCompileRefusesInvalidConditions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.New(time.Now).ContactPredicate(ctx, ws, "{not json")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid condition")
-
-	_, err = condition.New(time.Now).ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
+	_, err := condition.New(time.Now).Compile(ctx, ws, testhelper.Condition(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
 	require.Error(t, err)
 
-	p, err := condition.New(time.Now).ContactPredicate(ctx, ws, "")
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{})
+	require.Error(t, err, "a document that is no group")
+
+	p, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Empty())
 	require.NoError(t, err)
-	assert.NotNil(t, p, "a blank definition matches everyone")
+	assert.NotNil(t, p, "the empty group matches everyone")
 }

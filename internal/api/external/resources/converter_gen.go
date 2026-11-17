@@ -26,7 +26,6 @@ import (
 	brandkits "github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	auditlog "github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -40,12 +39,14 @@ import (
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
 	addresscheck "github.com/getsphericon/sphericon/internal/kernel/addresscheck"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	emaildoc "github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
+	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	jx "github.com/go-faster/jx"
 )
@@ -1161,16 +1162,16 @@ func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) externa
 	}
 	return externalapiRuleActionStatus
 }
-func (c *ConverterImpl) RuleActionTypeToResource(source rules.ActionType) external.RuleActionType {
+func (c *ConverterImpl) RuleActionTypeToResource(source ruleaction.Type) external.RuleActionType {
 	var externalapiRuleActionType external.RuleActionType
 	switch source {
-	case rules.ActionApplyTag:
+	case ruleaction.ApplyTag:
 		externalapiRuleActionType = external.RuleActionTypeApplyTag
-	case rules.ActionEnroll:
+	case ruleaction.Enroll:
 		externalapiRuleActionType = external.RuleActionTypeEnrollAutomation
-	case rules.ActionHTTP:
+	case ruleaction.HTTP:
 		externalapiRuleActionType = external.RuleActionTypeHTTP
-	case rules.ActionRemoveTag:
+	case ruleaction.RemoveTag:
 		externalapiRuleActionType = external.RuleActionTypeRemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

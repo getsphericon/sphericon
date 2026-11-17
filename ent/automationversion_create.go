@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationVersionCreate is the builder for creating a AutomationVersion entity.
@@ -72,16 +73,8 @@ func (_c *AutomationVersionCreate) SetVersion(v int) *AutomationVersionCreate {
 }
 
 // SetSteps sets the "steps" field.
-func (_c *AutomationVersionCreate) SetSteps(v string) *AutomationVersionCreate {
+func (_c *AutomationVersionCreate) SetSteps(v []automationstep.Step) *AutomationVersionCreate {
 	_c.mutation.SetSteps(v)
-	return _c
-}
-
-// SetNillableSteps sets the "steps" field if the given value is not nil.
-func (_c *AutomationVersionCreate) SetNillableSteps(v *string) *AutomationVersionCreate {
-	if v != nil {
-		_c.SetSteps(*v)
-	}
 	return _c
 }
 
@@ -278,7 +271,7 @@ func (_c *AutomationVersionCreate) createSpec() (*AutomationVersion, *sqlgraph.C
 		_node.Version = value
 	}
 	if value, ok := _c.mutation.Steps(); ok {
-		_spec.SetField(automationversion.FieldSteps, field.TypeString, value)
+		_spec.SetField(automationversion.FieldSteps, field.TypeJSON, value)
 		_node.Steps = value
 	}
 	if value, ok := _c.mutation.TriggerEvent(); ok {
@@ -432,7 +425,7 @@ func (u *AutomationVersionUpsert) UpdateAutomationID() *AutomationVersionUpsert 
 }
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionUpsert) SetSteps(v string) *AutomationVersionUpsert {
+func (u *AutomationVersionUpsert) SetSteps(v []automationstep.Step) *AutomationVersionUpsert {
 	u.Set(automationversion.FieldSteps, v)
 	return u
 }
@@ -582,7 +575,7 @@ func (u *AutomationVersionUpsertOne) UpdateAutomationID() *AutomationVersionUpse
 }
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionUpsertOne) SetSteps(v string) *AutomationVersionUpsertOne {
+func (u *AutomationVersionUpsertOne) SetSteps(v []automationstep.Step) *AutomationVersionUpsertOne {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.SetSteps(v)
 	})
@@ -907,7 +900,7 @@ func (u *AutomationVersionUpsertBulk) UpdateAutomationID() *AutomationVersionUps
 }
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionUpsertBulk) SetSteps(v string) *AutomationVersionUpsertBulk {
+func (u *AutomationVersionUpsertBulk) SetSteps(v []automationstep.Step) *AutomationVersionUpsertBulk {
 	return u.Update(func(s *AutomationVersionUpsert) {
 		s.SetSteps(v)
 	})

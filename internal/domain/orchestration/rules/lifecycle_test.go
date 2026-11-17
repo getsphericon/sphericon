@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -127,8 +128,8 @@ func TestDeleteOfAnotherWorkspacesRuleIsNotFound(t *testing.T) {
 	assert.ErrorIs(t, rules.New(env.Cipher, env.Bus, nil, time.Now).Delete(context.Background(), acme(env), fixtures.RuleGlobexID), rules.ErrNotFound)
 }
 
-func tagAction(tag string) []rules.Action {
-	return []rules.Action{{Type: rules.ActionApplyTag, Tag: tag}}
+func tagAction(tag string) []ruleaction.Action {
+	return []ruleaction.Action{{Type: ruleaction.ApplyTag, Tag: tag}}
 }
 
 // A Rule's draft names its Tag even before it is published (spec #767, "In use"): the Rule never
@@ -184,10 +185,10 @@ func TestADeletedRuleUsesNoTag(t *testing.T) {
 	assert.Empty(t, using)
 }
 
-func manyActions(n int) []rules.Action {
-	actions := make([]rules.Action, n)
+func manyActions(n int) []ruleaction.Action {
+	actions := make([]ruleaction.Action, n)
 	for i := range actions {
-		actions[i] = rules.Action{Type: rules.ActionApplyTag, Tag: "t" + strconv.Itoa(i)}
+		actions[i] = ruleaction.Action{Type: ruleaction.ApplyTag, Tag: "t" + strconv.Itoa(i)}
 	}
 	return actions
 }
@@ -227,15 +228,15 @@ func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	big := conditionOf(rules.MaxConditionNodes)
 
-	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: &big})
+	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, big))})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 	assert.Contains(t, err.Error(), "Condition")
 
-	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: &big})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: new(testhelper.Condition(t, big))})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 
 	fits := conditionOf(rules.MaxConditionNodes - 1)
-	_, err = m.Create(ctx, acme(env), rules.CreateInput{Name: "fits", TriggerEvents: []string{"x"}, Condition: &fits})
+	_, err = m.Create(ctx, acme(env), rules.CreateInput{Name: "fits", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, fits))})
 	require.NoError(t, err)
 }
 

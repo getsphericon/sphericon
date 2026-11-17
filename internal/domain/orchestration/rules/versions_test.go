@@ -14,15 +14,15 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // appliedTags is the Tags a version's Actions apply, in order.
 func appliedTags(t *testing.T, v *ent.RuleVersion) []string {
 	t.Helper()
-	actions, err := rules.DecodeActions(v.Actions)
-	require.NoError(t, err)
-	return lo.Map(actions, func(a rules.Action, _ int) string { return a.Tag })
+	return lo.Map(v.Actions, func(a ruleaction.Action, _ int) string { return a.Tag })
 }
 
 // The lifecycle the Rule shares with the Automation (edit, Publish, Revert, Archive) is tested once,
@@ -56,14 +56,14 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	cond := `{"kind":"group","combinator":"and","rules":[]}`
 	actions := tagAction("rule-vip-edited")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), TriggerEvents: &triggers, Condition: &cond, Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), TriggerEvents: &triggers, Condition: new(testhelper.Condition(t, cond)), Actions: &actions})
 
 	require.NoError(t, err)
 	live, draft := rules.LiveAndDraft(r)
 	require.NotNil(t, draft)
 	assert.Equal(t, 2, draft.Version, "the draft is the version above the newest")
 	assert.Equal(t, triggers, rules.Triggers(draft))
-	assert.Nil(t, draft.Condition, "an empty group matches every Contact")
+	assert.Equal(t, conditiontree.Empty(), draft.Condition, "an empty group matches every Contact")
 	assert.Equal(t, []string{"rule-vip-edited"}, appliedTags(t, draft))
 	assert.EqualValues(t, fixtures.RuleVipOnlyID, live.ID, "the live version is untouched")
 	assert.Equal(t, []string{"rule-vip-seen"}, appliedTags(t, live))
@@ -113,7 +113,7 @@ func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 	cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"vip"}]}`
 	actions := tagAction("rule-vip-seen")
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), Name: &name, TriggerEvents: &triggers, Condition: &cond, Actions: &actions})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleVipOnlyID), Name: &name, TriggerEvents: &triggers, Condition: new(testhelper.Condition(t, cond)), Actions: &actions})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
@@ -121,14 +121,15 @@ func TestAnUnchangedDefinitionMakesNoDraft(t *testing.T) {
 	assert.Equal(t, "Renamed", r.Name)
 }
 
-func TestAnEmptyConditionGroupIsNoChangeToAVersionWithNoCondition(t *testing.T) {
+// A version with no tests holds the empty group (ADR 0169): saving it again makes no draft.
+func TestSavingTheEmptyConditionAgainMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	empty := `{"kind":"group","combinator":"and","rules":[]}`
 	triggers := []string{"rule_multi_a", "rule_multi_b"}
 
-	r, err := m.Update(ctx, acme(env), fixtures.RuleMultiTriggerID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleMultiTriggerID), TriggerEvents: &triggers, Condition: &empty})
+	r, err := m.Update(ctx, acme(env), fixtures.RuleMultiTriggerID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleMultiTriggerID), TriggerEvents: &triggers, Condition: new(testhelper.Condition(t, empty))})
 
 	require.NoError(t, err)
 	_, draft := rules.LiveAndDraft(r)
@@ -139,7 +140,7 @@ func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	none := []rules.Action{}
+	none := []ruleaction.Action{}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &none})
 	require.NoError(t, err)
 
@@ -178,7 +179,7 @@ func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	enroll := []rules.Action{{Type: rules.ActionEnroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
+	enroll := []ruleaction.Action{{Type: ruleaction.Enroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Actions: &enroll})
 	require.NoError(t, err)
 	_, err = m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &enroll})

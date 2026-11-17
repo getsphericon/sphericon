@@ -261,7 +261,7 @@ func (a audiences) of(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (*en
 	if b.Condition == nil {
 		return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
 	}
-	pred, err := a.conditions.ContactPredicate(ctx, s, *b.Condition)
+	pred, err := a.conditions.Compile(ctx, s, *b.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("%w: broadcast %d condition: %w", ErrNoAudience, b.ID, err)
 	}

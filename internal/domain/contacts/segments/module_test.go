@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -29,7 +30,7 @@ func TestCreateRejectsInvalidDefinition(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Condition: new(badCondition)})
+	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Bad", Condition: new(testhelper.Condition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
 	persisted, err := env.DB.Scoped(fixtures.AcmeID).Segment().Query().Where(segment.Name("Bad")).Exist(ctx)
@@ -45,7 +46,7 @@ func TestCreateRefusesAWindowOfNoDays(t *testing.T) {
 	def := `{"kind":"group","combinator":"and","rules":[` +
 		`{"kind":"event","action":"signup","operator":"atLeast","times":1,"withinDays":0}]}`
 
-	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "No days", Condition: new(def)})
+	_, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "No days", Condition: new(testhelper.Condition(t, def))})
 
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 	assert.Contains(t, validation.Message(err), "withinDays must be at least 1")
@@ -57,12 +58,12 @@ func TestCreateAcceptsValidAndEmptyDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`
-	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Condition: new(def)})
+	s, err := m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Good", Condition: new(testhelper.Condition(t, def))})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.AcmeID, s.WorkspaceID)
-	assert.Equal(t, def, *s.Condition)
+	assert.JSONEq(t, def, testhelper.Document(t, s.Condition))
 
-	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Empty", Condition: new("")})
+	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Empty", Condition: new(conditiontree.Empty())})
 	require.NoError(t, err)
 	_, err = m.Create(ctx, env.DB.Scoped(fixtures.AcmeID), segments.CreateInput{Name: "Nil"})
 	require.NoError(t, err)
@@ -73,15 +74,15 @@ func TestUpdateValidatesLikeCreate(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(badCondition)})
+	_, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.Condition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
 	// An invalid definition is rejected and leaves the row untouched.
-	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(badCondition)})
+	_, err = m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Condition: patch.Set(testhelper.Condition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 	s, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	assert.NotEqual(t, badCondition, *s.Condition)
+	assert.NotEqual(t, testhelper.Condition(t, badCondition), s.Condition)
 
 	got, err := m.Update(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.SegmentProPlanID, segments.UpdateInput{Revision: env.SegmentRevision(ctx, t, fixtures.SegmentProPlanID), Name: patch.Set("Renamed")})
 	require.NoError(t, err)
@@ -103,13 +104,13 @@ func TestPreviewAndCountAgree(t *testing.T) {
 
 	stored, err := env.DB.Segment.Get(ctx, fixtures.SegmentProPlanID)
 	require.NoError(t, err)
-	pred, err := condition.New(time.Now).ContactPredicate(ctx, env.DB.Scoped(fixtures.AcmeID), *stored.Condition)
+	pred, err := condition.New(time.Now).Compile(ctx, env.DB.Scoped(fixtures.AcmeID), stored.Condition)
 	require.NoError(t, err)
 	want, err := env.DB.Contact.Query().Where(contact.WorkspaceID(fixtures.AcmeID), pred).Count(ctx)
 	require.NoError(t, err)
 	require.Positive(t, want, "fixture segment should match someone")
 
-	preview, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: stored.Condition})
+	preview, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: &stored.Condition})
 	require.NoError(t, err)
 	assert.Equal(t, want, preview.Count)
 	assert.Nil(t, preview.Recipients, "no Channel was asked for")
@@ -124,10 +125,10 @@ func TestPreviewAndCountErrors(t *testing.T) {
 	m := testhelper.Module[*segments.Module](env)
 	ctx := context.Background()
 
-	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(badCondition)})
+	_, err := m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.Condition(t, badCondition))})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition)
 
-	_, err = m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(badCondition), Channel: new(channels.Email)})
+	_, err = m.Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.Condition(t, badCondition)), Channel: new(channels.Email)})
 	require.ErrorIs(t, err, segments.ErrInvalidCondition, "a Channel asked for changes nothing about a bad condition")
 
 	_, err = m.Count(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.SegmentProPlanID)

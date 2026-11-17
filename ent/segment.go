@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // Segment is the model entity for the Segment schema.
@@ -31,7 +33,7 @@ type Segment struct {
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Condition holds the value of the "condition" field.
-	Condition *string `json:"condition,omitempty"`
+	Condition conditiontree.Group `json:"condition,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the SegmentQuery when eager-loading is set.
 	Edges        SegmentEdges `json:"edges"`
@@ -63,9 +65,11 @@ func (*Segment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case segment.FieldCondition:
+			values[i] = new([]byte)
 		case segment.FieldID, segment.FieldWorkspaceID, segment.FieldRevision:
 			values[i] = new(sql.NullInt64)
-		case segment.FieldName, segment.FieldCondition:
+		case segment.FieldName:
 			values[i] = new(sql.NullString)
 		case segment.FieldCreatedAt, segment.FieldUpdatedAt, segment.FieldArchivedAt:
 			values[i] = new(sql.NullTime)
@@ -128,11 +132,12 @@ func (_m *Segment) assignValues(columns []string, values []any) error {
 				_m.Name = value.String
 			}
 		case segment.FieldCondition:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field condition", values[i])
-			} else if value.Valid {
-				_m.Condition = new(string)
-				*_m.Condition = value.String
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Condition); err != nil {
+					return fmt.Errorf("unmarshal field condition: %w", err)
+				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -195,10 +200,8 @@ func (_m *Segment) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
-	if v := _m.Condition; v != nil {
-		builder.WriteString("condition=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("condition=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Condition))
 	builder.WriteByte(')')
 	return builder.String()
 }

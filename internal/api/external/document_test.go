@@ -13,7 +13,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -218,8 +217,7 @@ func TestExternalAutomationEmailStepsCarryTheDocument(t *testing.T) {
 	_, err = c.AutomationsUpdate(ctx, &externalapi.UpdateAutomationInput{Revision: externalapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []externalapi.AutomationStepInput{bad}},
 		externalapi.AutomationsUpdateParams{ID: res.ID})
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
-	stored, err := automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
-	require.NoError(t, err)
+	stored := testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID))
 	assert.Contains(t, stored[0].Body, "Second")
 }
 

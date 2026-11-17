@@ -2,7 +2,6 @@ package rules_test
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -53,7 +53,7 @@ func TestHTTPExecutionRecordsSuccessOnItsFiring(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Succeeded}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -70,7 +70,7 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Pending}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Pending}}, results)
 	assert.Nil(t, stored.CompletedAt)
 
 	attempt := executionAttempt()
@@ -81,7 +81,7 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 	stored = env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err = rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Succeeded}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -96,7 +96,7 @@ func TestHTTPExecutionRecordsAGivenUpCallAsFailed(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Failed, Detail: "http_status 404: gone"}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Failed, Detail: "http_status 404: gone"}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -104,12 +104,9 @@ func TestHTTPExecutionRejectsAnInvalidRenderedBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	version := env.DB.RuleVersion.GetX(t.Context(), fixtures.RuleHTTPExecutionVersionID)
-	actions, err := rules.DecodeActions(version.Actions)
-	require.NoError(t, err)
+	actions := version.Actions
 	actions[0].Body = `{"n":{{ event.properties.n | default: 0 }}}`
-	storedActions, err := json.Marshal(actions)
-	require.NoError(t, err)
-	err = env.DB.RuleVersion.UpdateOneID(version.ID).SetActions(string(storedActions)).Exec(t.Context())
+	err := env.DB.RuleVersion.UpdateOneID(version.ID).SetActions(actions).Exec(t.Context())
 	require.NoError(t, err)
 
 	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
@@ -138,7 +135,7 @@ func TestHTTPExecutionDoesNotRepeatADecidedAction(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Succeeded}}, results)
 }
 
 func TestHTTPExecutionOfAnErasedFiringDoesNothing(t *testing.T) {
@@ -170,7 +167,7 @@ func TestHTTPExecutionRecordsAMissingContactAsFailed(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Failed, Detail: "contact not found"}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Failed, Detail: "contact not found"}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -186,8 +183,8 @@ func TestHTTPExecutionDecidesOnlyTheSelectedPendingAction(t *testing.T) {
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
 	assert.Equal(t, []rules.Result{
-		{Type: rules.ActionHTTP, Status: rules.Pending},
-		{Type: rules.ActionHTTP, Status: rules.Succeeded},
+		{Type: ruleaction.HTTP, Status: rules.Pending},
+		{Type: ruleaction.HTTP, Status: rules.Succeeded},
 	}, results)
 	assert.Nil(t, stored.CompletedAt)
 }
@@ -210,6 +207,6 @@ func TestHTTPExecutionWaitsUntilRetryAfterFromTheResponseTime(t *testing.T) {
 	require.NoError(t, err)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Pending}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Pending}}, results)
 	assert.Nil(t, stored.CompletedAt)
 }

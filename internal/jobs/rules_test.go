@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -64,7 +65,7 @@ func TestRuleActionAppliesATag(t *testing.T) {
 	f := runFiring(t, env, fixtures.RuleFiringPendingID)
 
 	assert.Equal(t, []string{"rule-clicked"}, tagsOf(t, env, fixtures.ContactBobID))
-	assert.Equal(t, []rules.Result{{Type: rules.ActionApplyTag, Status: rules.Succeeded}}, resultsOf(t, f))
+	assert.Equal(t, []rules.Result{{Type: ruleaction.ApplyTag, Status: rules.Succeeded}}, resultsOf(t, f))
 	assert.NotNil(t, f.CompletedAt)
 }
 
@@ -76,8 +77,8 @@ func TestRuleActionsRunInOrder(t *testing.T) {
 
 	assert.Equal(t, []string{"newsletter", "rule-multi"}, tagsOf(t, env, fixtures.ContactAliceID))
 	assert.Equal(t, []rules.Result{
-		{Type: rules.ActionApplyTag, Status: rules.Succeeded},
-		{Type: rules.ActionRemoveTag, Status: rules.Succeeded},
+		{Type: ruleaction.ApplyTag, Status: rules.Succeeded},
+		{Type: ruleaction.RemoveTag, Status: rules.Succeeded},
 	}, resultsOf(t, f))
 }
 

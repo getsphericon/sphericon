@@ -6,9 +6,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // ExecuteHTTPInput is one attempt at the call of an HTTP step: the Enrollment, the step it is
@@ -44,10 +44,7 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	steps, err := automationstep.Decode(version.Steps)
-	if err != nil {
-		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, httpcall.Execution{Cancel: err})
-	}
+	steps := version.Steps
 	if step < 0 || step >= len(steps) || steps[step].Type != automationstep.HTTP {
 		return httpcall.Execution{}, nil
 	}

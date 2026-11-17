@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/rule"
@@ -17,6 +18,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/ruleversiontrigger"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // RuleVersionUpdate is the builder for updating RuleVersion entities.
@@ -68,36 +71,28 @@ func (_u *RuleVersionUpdate) SetNillableRuleID(v *int64) *RuleVersionUpdate {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *RuleVersionUpdate) SetCondition(v string) *RuleVersionUpdate {
+func (_u *RuleVersionUpdate) SetCondition(v conditiontree.Group) *RuleVersionUpdate {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *RuleVersionUpdate) SetNillableCondition(v *string) *RuleVersionUpdate {
+func (_u *RuleVersionUpdate) SetNillableCondition(v *conditiontree.Group) *RuleVersionUpdate {
 	if v != nil {
 		_u.SetCondition(*v)
 	}
 	return _u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (_u *RuleVersionUpdate) ClearCondition() *RuleVersionUpdate {
-	_u.mutation.ClearCondition()
-	return _u
-}
-
 // SetActions sets the "actions" field.
-func (_u *RuleVersionUpdate) SetActions(v string) *RuleVersionUpdate {
+func (_u *RuleVersionUpdate) SetActions(v []ruleaction.Action) *RuleVersionUpdate {
 	_u.mutation.SetActions(v)
 	return _u
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_u *RuleVersionUpdate) SetNillableActions(v *string) *RuleVersionUpdate {
-	if v != nil {
-		_u.SetActions(*v)
-	}
+// AppendActions appends value to the "actions" field.
+func (_u *RuleVersionUpdate) AppendActions(v []ruleaction.Action) *RuleVersionUpdate {
+	_u.mutation.AppendActions(v)
 	return _u
 }
 
@@ -269,13 +264,15 @@ func (_u *RuleVersionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		_spec.SetField(ruleversion.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(ruleversion.FieldCondition, field.TypeString, value)
-	}
-	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(ruleversion.FieldCondition, field.TypeString)
+		_spec.SetField(ruleversion.FieldCondition, field.TypeJSON, value)
 	}
 	if value, ok := _u.mutation.Actions(); ok {
-		_spec.SetField(ruleversion.FieldActions, field.TypeString, value)
+		_spec.SetField(ruleversion.FieldActions, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedActions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, ruleversion.FieldActions, value)
+		})
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -482,36 +479,28 @@ func (_u *RuleVersionUpdateOne) SetNillableRuleID(v *int64) *RuleVersionUpdateOn
 }
 
 // SetCondition sets the "condition" field.
-func (_u *RuleVersionUpdateOne) SetCondition(v string) *RuleVersionUpdateOne {
+func (_u *RuleVersionUpdateOne) SetCondition(v conditiontree.Group) *RuleVersionUpdateOne {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *RuleVersionUpdateOne) SetNillableCondition(v *string) *RuleVersionUpdateOne {
+func (_u *RuleVersionUpdateOne) SetNillableCondition(v *conditiontree.Group) *RuleVersionUpdateOne {
 	if v != nil {
 		_u.SetCondition(*v)
 	}
 	return _u
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (_u *RuleVersionUpdateOne) ClearCondition() *RuleVersionUpdateOne {
-	_u.mutation.ClearCondition()
-	return _u
-}
-
 // SetActions sets the "actions" field.
-func (_u *RuleVersionUpdateOne) SetActions(v string) *RuleVersionUpdateOne {
+func (_u *RuleVersionUpdateOne) SetActions(v []ruleaction.Action) *RuleVersionUpdateOne {
 	_u.mutation.SetActions(v)
 	return _u
 }
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (_u *RuleVersionUpdateOne) SetNillableActions(v *string) *RuleVersionUpdateOne {
-	if v != nil {
-		_u.SetActions(*v)
-	}
+// AppendActions appends value to the "actions" field.
+func (_u *RuleVersionUpdateOne) AppendActions(v []ruleaction.Action) *RuleVersionUpdateOne {
+	_u.mutation.AppendActions(v)
 	return _u
 }
 
@@ -713,13 +702,15 @@ func (_u *RuleVersionUpdateOne) sqlSave(ctx context.Context) (_node *RuleVersion
 		_spec.SetField(ruleversion.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(ruleversion.FieldCondition, field.TypeString, value)
-	}
-	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(ruleversion.FieldCondition, field.TypeString)
+		_spec.SetField(ruleversion.FieldCondition, field.TypeJSON, value)
 	}
 	if value, ok := _u.mutation.Actions(); ok {
-		_spec.SetField(ruleversion.FieldActions, field.TypeString, value)
+		_spec.SetField(ruleversion.FieldActions, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedActions(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, ruleversion.FieldActions, value)
+		})
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

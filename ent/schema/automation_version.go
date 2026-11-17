@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 // AutomationVersion is one copy of an Automation's definition: its Trigger, exit and goal events
@@ -22,7 +23,7 @@ type AutomationVersion struct {
 func (AutomationVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "automation_versions", Checks: map[string]string{
-			"automation_versions_steps_check": jsonCheck("steps", "ARRAY"),
+			"automation_versions_steps_check": jsonCheck("steps", "array"),
 		}},
 	}
 }
@@ -39,14 +40,14 @@ func (AutomationVersion) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// JSON array of steps: [{"type":"email","subject":..,"body":<html>,"integrationId":N},
+		// The steps (automationstep.Step), a jsonb array (ADR 0169): [{"type":"email","subject":..,"body":<html>,"integrationId":N},
 		// {"type":"wait","seconds":N}]. A send step's integrationId is the Integration it sends
 		// through, absent for its Channel's default (ADR 0081). Sensitive: HTTP steps carry sealed URL, header
 		// values and secret (ADR 0039). The version is not audited itself: the Automation's own
 		// entries say it was archived or restored.
-		field.String("steps").
-			Default("[]").
-			Annotations(Sensitive{}),
+		field.JSON("steps", []automationstep.Step{}).
+			Default([]automationstep.Step{}).
+			Annotations(Sensitive{}, entsql.Default("[]")),
 		// The Event.action that enrolls a contact (e.g. "contact.created", "email.opened", a
 		// custom collect event).
 		field.String("trigger_event"),

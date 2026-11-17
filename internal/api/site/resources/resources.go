@@ -10,6 +10,9 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -39,15 +42,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -744,7 +746,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	RuleActionStatusToResource(source rules.Outcome) siteapi.RuleActionStatus
 	// goverter:enum:transform value
-	RuleActionTypeToResource(source rules.ActionType) siteapi.RuleActionType
+	RuleActionTypeToResource(source ruleaction.Type) siteapi.RuleActionType
 	// goverter:enum:transform value
 	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) siteapi.RuleDryRunOutcome
 	// goverter:enum:transform value
@@ -1025,10 +1027,10 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilA
 	return siteapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
 }
 
-// automationSteps decodes the stored definition (the executor's JSON format) into the typed steps
-// DTO, through the automations module's masked view of each step.
-func automationSteps(c Converter, definition string) []siteapi.AutomationStep {
-	return c.AutomationStepsToResources(automations.Views(definition))
+// automationSteps maps a version's steps into the typed steps DTO, through the automations module's
+// masked view of each step.
+func automationSteps(c Converter, steps []automationstep.Step) []siteapi.AutomationStep {
+	return c.AutomationStepsToResources(automations.Views(steps))
 }
 
 func optBool(v *bool) siteapi.OptBool {
@@ -1039,14 +1041,11 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))
 }
 
-// segmentCondition decodes the stored rule group into the typed DTO. A segment with no
-// definition (or one that no longer decodes) reads as having none.
-func segmentCondition(def *string) siteapi.OptConditionGroup {
-	if def == nil || *def == "" {
-		return siteapi.OptConditionGroup{}
-	}
+// segmentCondition maps a Condition into the typed DTO. One that no longer decodes as the contract's
+// tree reads as having none.
+func segmentCondition(g conditiontree.Group) siteapi.OptConditionGroup {
 	var group siteapi.ConditionGroup
-	if err := condition.Decode(*def, &group); err != nil {
+	if err := condition.ToDTO(g, &group); err != nil {
 		return siteapi.OptConditionGroup{}
 	}
 	return siteapi.NewOptConditionGroup(group)
@@ -1237,26 +1236,19 @@ func optNonEmpty(s string) siteapi.OptString {
 	return convert.OptNonZero[siteapi.OptString](s)
 }
 
-// ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
-// decode (only ever written by the module itself) yields none, and is logged: a converter has
-// no way to fail a response, and nobody reading the page can act on it.
-func ruleActions(c Converter, stored string) []siteapi.RuleAction {
-	actions, err := rules.DecodeActions(stored)
-	if err != nil {
-		slog.Error("rule: stored actions cannot be decoded", "error", err)
-		return nil
-	}
-	return lo.Map(actions, func(a rules.Action, _ int) siteapi.RuleAction {
+// ruleActions maps a Rule's Actions into the typed DTO, an http Action's secrets masked.
+func ruleActions(c Converter, actions []ruleaction.Action) []siteapi.RuleAction {
+	return lo.Map(actions, func(a ruleaction.Action, _ int) siteapi.RuleAction {
 		out := siteapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
-		if a.Type == rules.ActionEnroll {
+		if a.Type == ruleaction.Enroll {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
-		if a.Type == rules.ActionHTTP {
+		if a.Type == ruleaction.HTTP {
 			// Masked: the URL, header values and signing secret never leave the server.
 			out.ID = optNonEmpty(a.ID)
 			out.Body = optNonEmpty(a.Body)
 			out.HasSecret = siteapi.NewOptBool(a.Secret != "")
-			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) siteapi.AutomationHttpHeader {
+			out.Headers = lo.Map(a.Headers, func(h httpheader.Header, _ int) siteapi.AutomationHttpHeader {
 				return siteapi.AutomationHttpHeader{Name: h.Name}
 			})
 		}

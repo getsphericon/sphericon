@@ -12,9 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -74,10 +75,10 @@ func TestSavingRefusesAnHTTPStepThatCannotBeSent(t *testing.T) {
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 
-	headers := func(n int) []httpcall.Header {
-		out := make([]httpcall.Header, n)
+	headers := func(n int) []httpheader.Header {
+		out := make([]httpheader.Header, n)
 		for i := range out {
-			out[i] = httpcall.Header{Name: "X-H" + strings.Repeat("a", i), Value: "v"}
+			out[i] = httpheader.Header{Name: "X-H" + strings.Repeat("a", i), Value: "v"}
 		}
 		return out
 	}
@@ -145,7 +146,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	ctx := context.Background()
 
 	step := httpStep("https://hooks.slack.com/services/T000/SECRETPATH")
-	step.Headers = []httpcall.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
+	step.Headers = []httpheader.Header{{Name: "Authorization", Value: "Bearer hunter2"}}
 	step.Secret = "whsec_topsecret"
 	created, err := m.Create(ctx, acme, automations.CreateInput{
 		Name: "Notify", TriggerEvent: "signup", Steps: []automationstep.Step{{Type: automationstep.Wait, Seconds: 1}, step},
@@ -161,7 +162,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	// An edit that resends only the id, with a new body, keeps URL, headers and secret.
 	edit := automationstep.Step{
 		Type: automationstep.HTTP, ID: stored[1].ID, Body: `{"edited":true}`,
-		Headers: []httpcall.Header{{Name: "Authorization"}},
+		Headers: []httpheader.Header{{Name: "Authorization"}},
 	}
 	updated, err := m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{edit}})
 	require.NoError(t, err)
@@ -180,7 +181,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	// A new URL, header and a cleared secret replace what was stored.
 	replace := automationstep.Step{
 		Type: automationstep.HTTP, ID: stored[1].ID, URL: "https://hooks.zapier.com/a", Body: slackBody,
-		Headers: []httpcall.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
+		Headers: []httpheader.Header{{Name: "X-Key", Value: "k"}}, ClearSecret: true,
 	}
 	updated, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{replace}})
 	require.NoError(t, err)
@@ -192,7 +193,7 @@ func TestStoredHTTPStepHoldsNoPlaintextAndAnEditKeepsTheSecrets(t *testing.T) {
 	assert.Empty(t, opened.Secret)
 
 	// A header with no stored value to keep is refused.
-	bad := automationstep.Step{Type: automationstep.HTTP, ID: stored[1].ID, Body: slackBody, Headers: []httpcall.Header{{Name: "Nope"}}}
+	bad := automationstep.Step{Type: automationstep.HTTP, ID: stored[1].ID, Body: slackBody, Headers: []httpheader.Header{{Name: "Nope"}}}
 	_, err = m.Update(ctx, acme, created.ID, automations.UpdateInput{Revision: testhelper.AutomationRevisionIn(ctx, t, acme, created.ID), Steps: &[]automationstep.Step{bad}})
 	assert.ErrorIs(t, err, automations.ErrInvalidStep)
 }

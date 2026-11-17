@@ -34,7 +34,7 @@ func TestDeletingATagWaitsForASegmentSavedNamingIt(t *testing.T) {
 	var saved int64
 	save := testhelper.Writer{Name: "save", Run: func() error {
 		cond := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"` + fixtures.TagUnusedName + `"}]}`
-		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Unused tag holders", Condition: new(cond)})
+		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Unused tag holders", Condition: new(testhelper.Condition(t, cond))})
 		if seg != nil {
 			saved = seg.ID
 		}

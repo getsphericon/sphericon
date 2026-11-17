@@ -315,8 +315,6 @@ const (
 	AutomationJobsTelegramWelcomeBackName = "Jobs telegram welcome back"
 	// AutomationJobsTelegramWelcomeBackVersionID is from fixtures/automation_versions.
 	AutomationJobsTelegramWelcomeBackVersionID = 7507
-	// AutomationJobsUndecodableVersionID is from fixtures/automation_versions.
-	AutomationJobsUndecodableVersionID = 5563
 	// AutomationJobsUnknownStepVersionID is from fixtures/automation_versions.
 	AutomationJobsUnknownStepVersionID = 55632
 	// AutomationJobsWaitFirstID is from fixtures/automations.
@@ -583,8 +581,6 @@ const (
 	AutomationRunJobsTelegramUnsubscribeLinkBobID = 7507
 	// AutomationRunJobsTelegramWelcomeBackBobID is from fixtures/automation_runs.
 	AutomationRunJobsTelegramWelcomeBackBobID = 7508
-	// AutomationRunJobsUndecodableID is from fixtures/automation_runs.
-	AutomationRunJobsUndecodableID = 5565
 	// AutomationRunJobsUnknownStepID is from fixtures/automation_runs.
 	AutomationRunJobsUnknownStepID = 5566
 	// AutomationRunMeridianArchivedFailedID is from fixtures/automation_runs.
@@ -625,6 +621,12 @@ const (
 	AutomationRunWelcomeWaitingID = 1005
 	// AutomationRunWelcomeWaitingLaterID is from fixtures/automation_runs.
 	AutomationRunWelcomeWaitingLaterID = 1006
+	// AutomationSealedDraftID is from fixtures/automations.
+	AutomationSealedDraftID = 7310
+	// AutomationSealedDraftName is from fixtures/automations.
+	AutomationSealedDraftName = "Sealed draft"
+	// AutomationSealedDraftVersionID is from fixtures/automation_versions.
+	AutomationSealedDraftVersionID = 7310
 	// AutomationTagOnEngagementID is from fixtures/automations.
 	AutomationTagOnEngagementID = 104
 	// AutomationTagOnEngagementName is from fixtures/automations.
@@ -3407,6 +3409,12 @@ const (
 	RuleQuahogHookNumberVersionID = 7652
 	// RuleQuahogHookVersionID is from fixtures/rule_versions.
 	RuleQuahogHookVersionID = 7650
+	// RuleSealedDraftID is from fixtures/rules.
+	RuleSealedDraftID = 7310
+	// RuleSealedDraftName is from fixtures/rules.
+	RuleSealedDraftName = "Sealed draft"
+	// RuleSealedDraftVersionID is from fixtures/rule_versions.
+	RuleSealedDraftVersionID = 7310
 	// RuleSecondRevisitID is from fixtures/rules.
 	RuleSecondRevisitID = 111
 	// RuleSecondRevisitName is from fixtures/rules.

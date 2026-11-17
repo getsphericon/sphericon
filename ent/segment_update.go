@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // SegmentUpdate is the builder for updating Segment entities.
@@ -106,22 +107,16 @@ func (_u *SegmentUpdate) SetNillableName(v *string) *SegmentUpdate {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *SegmentUpdate) SetCondition(v string) *SegmentUpdate {
+func (_u *SegmentUpdate) SetCondition(v conditiontree.Group) *SegmentUpdate {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *SegmentUpdate) SetNillableCondition(v *string) *SegmentUpdate {
+func (_u *SegmentUpdate) SetNillableCondition(v *conditiontree.Group) *SegmentUpdate {
 	if v != nil {
 		_u.SetCondition(*v)
 	}
-	return _u
-}
-
-// ClearCondition clears the value of the "condition" field.
-func (_u *SegmentUpdate) ClearCondition() *SegmentUpdate {
-	_u.mutation.ClearCondition()
 	return _u
 }
 
@@ -232,10 +227,7 @@ func (_u *SegmentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.SetField(segment.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(segment.FieldCondition, field.TypeString, value)
-	}
-	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(segment.FieldCondition, field.TypeString)
+		_spec.SetField(segment.FieldCondition, field.TypeJSON, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -364,22 +356,16 @@ func (_u *SegmentUpdateOne) SetNillableName(v *string) *SegmentUpdateOne {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *SegmentUpdateOne) SetCondition(v string) *SegmentUpdateOne {
+func (_u *SegmentUpdateOne) SetCondition(v conditiontree.Group) *SegmentUpdateOne {
 	_u.mutation.SetCondition(v)
 	return _u
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *SegmentUpdateOne) SetNillableCondition(v *string) *SegmentUpdateOne {
+func (_u *SegmentUpdateOne) SetNillableCondition(v *conditiontree.Group) *SegmentUpdateOne {
 	if v != nil {
 		_u.SetCondition(*v)
 	}
-	return _u
-}
-
-// ClearCondition clears the value of the "condition" field.
-func (_u *SegmentUpdateOne) ClearCondition() *SegmentUpdateOne {
-	_u.mutation.ClearCondition()
 	return _u
 }
 
@@ -520,10 +506,7 @@ func (_u *SegmentUpdateOne) sqlSave(ctx context.Context) (_node *Segment, err er
 		_spec.SetField(segment.FieldName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(segment.FieldCondition, field.TypeString, value)
-	}
-	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(segment.FieldCondition, field.TypeString)
+		_spec.SetField(segment.FieldCondition, field.TypeJSON, value)
 	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{

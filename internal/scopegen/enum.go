@@ -81,8 +81,8 @@ var SystemEventActions = Table{
 // contract's ConditionCombinator enum.
 var ConditionCombinators = Table{
 	Spec:    siteSpec,
-	Out:     "internal/domain/contacts/condition/combinator_gen.go",
-	Package: "condition",
+	Out:     "internal/kernel/conditiontree/combinator_gen.go",
+	Package: "conditiontree",
 	Decls: Enum{
 		Schema: "ConditionCombinator",
 		Doc:    []string{"Combinator is how a Group joins its rules: And, every rule matches; Or, any rule does."},

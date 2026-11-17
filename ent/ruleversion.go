@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // RuleVersion is the model entity for the RuleVersion schema.
@@ -30,9 +33,9 @@ type RuleVersion struct {
 	// Version holds the value of the "version" field.
 	Version int `json:"version,omitempty"`
 	// Condition holds the value of the "condition" field.
-	Condition *string `json:"condition,omitempty"`
+	Condition conditiontree.Group `json:"condition,omitempty"`
 	// Actions holds the value of the "actions" field.
-	Actions string `json:"actions,omitempty"`
+	Actions []ruleaction.Action `json:"actions,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RuleVersionQuery when eager-loading is set.
 	Edges        RuleVersionEdges `json:"edges"`
@@ -99,10 +102,10 @@ func (*RuleVersion) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case ruleversion.FieldCondition, ruleversion.FieldActions:
+			values[i] = new([]byte)
 		case ruleversion.FieldID, ruleversion.FieldWorkspaceID, ruleversion.FieldRuleID, ruleversion.FieldVersion:
 			values[i] = new(sql.NullInt64)
-		case ruleversion.FieldCondition, ruleversion.FieldActions:
-			values[i] = new(sql.NullString)
 		case ruleversion.FieldCreatedAt, ruleversion.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
@@ -157,17 +160,20 @@ func (_m *RuleVersion) assignValues(columns []string, values []any) error {
 				_m.Version = int(value.Int64)
 			}
 		case ruleversion.FieldCondition:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field condition", values[i])
-			} else if value.Valid {
-				_m.Condition = new(string)
-				*_m.Condition = value.String
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Condition); err != nil {
+					return fmt.Errorf("unmarshal field condition: %w", err)
+				}
 			}
 		case ruleversion.FieldActions:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field actions", values[i])
-			} else if value.Valid {
-				_m.Actions = value.String
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Actions); err != nil {
+					return fmt.Errorf("unmarshal field actions: %w", err)
+				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -240,13 +246,11 @@ func (_m *RuleVersion) String() string {
 	builder.WriteString("version=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Version))
 	builder.WriteString(", ")
-	if v := _m.Condition; v != nil {
-		builder.WriteString("condition=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("condition=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Condition))
 	builder.WriteString(", ")
 	builder.WriteString("actions=")
-	builder.WriteString(_m.Actions)
+	builder.WriteString(fmt.Sprintf("%v", _m.Actions))
 	builder.WriteByte(')')
 	return builder.String()
 }

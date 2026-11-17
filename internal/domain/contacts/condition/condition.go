@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/tagname"
 
 	"entgo.io/ent/dialect/sql"
@@ -65,22 +66,12 @@ const (
 )
 
 const (
-	kindGroup      = "group"
 	kindRule       = "rule"
 	kindEvent      = "event"
 	kindNumber     = "number"
 	kindDate       = "date"
 	kindDateWithin = "dateWithin"
 )
-
-// Group is a group of the rule tree. Each rules[] entry is decoded lazily because it
-// is either a nested Group or a Leaf, as its `kind` says.
-type Group struct {
-	Kind       string            `json:"kind"`
-	Combinator Combinator        `json:"combinator"`
-	Not        bool              `json:"not,omitempty"`
-	Rules      []json.RawMessage `json:"rules"`
-}
 
 // Leaf is one test of the tree: a field, an operator and a value.
 type Leaf struct {
@@ -165,19 +156,6 @@ type boundError struct{ refusal error }
 func (e boundError) Error() string { return validation.Message(e.refusal) }
 func (e boundError) Unwrap() error { return e.refusal }
 
-// Parse decodes a stored condition into a Group. A blank condition is a valid
-// "match everyone" group.
-func Parse(def string) (Group, error) {
-	if strings.TrimSpace(def) == "" {
-		return Group{Kind: kindGroup, Combinator: And}, nil
-	}
-	var g Group
-	if err := json.Unmarshal([]byte(def), &g); err != nil {
-		return g, fmt.Errorf("invalid condition: %w", err)
-	}
-	return g, nil
-}
-
 // Module compiles Conditions to Contact predicates. now is the Instance clock a relative date (in
 // the last N days) counts back from.
 type Module struct {
@@ -187,33 +165,20 @@ type Module struct {
 // New builds the module over the Instance clock.
 func New(now func() time.Time) *Module { return &Module{now: now} }
 
-// ContactPredicate parses a stored condition and compiles it for the Workspace of s.
-func (m *Module) ContactPredicate(ctx context.Context, s *ent.Scoped, def string) (predicate.Contact, error) {
-	g, err := Parse(def)
-	if err != nil {
-		return nil, err
-	}
-	return m.Compile(ctx, s, g)
-}
-
 // Compile turns a condition group into a Contact predicate. An empty rule set
 // matches everyone (an empty negated group matches no one) — deliberate, so an
 // empty rule is never a silent "nobody". A "trigger:" leaf is refused: only a Rule has an Event.
 // A relative date (in the last N days) counts back from the Instance clock's time.
-func (m *Module) Compile(ctx context.Context, s *ent.Scoped, g Group) (predicate.Contact, error) {
+func (m *Module) Compile(ctx context.Context, s *ent.Scoped, g conditiontree.Group) (predicate.Contact, error) {
 	return (&compiler{s: s, now: m.now()}).group(ctx, g)
 }
 
-// RulePredicate parses a Rule's stored condition and compiles it for the Workspace of s, with
+// RulePredicate compiles a Rule's Condition for the Workspace of s, with
 // "trigger:<key>" leaves allowed. They are evaluated in memory against props, the properties of
 // the Event that fired the Rule, and folded into the tree as constants before the rest compiles
 // to a predicate (the Event's row may not exist yet). A key the Event lacks, or a value of
 // another type, makes the leaf false. Any key is valid, so props may be nil to only validate.
-func (m *Module) RulePredicate(ctx context.Context, s *ent.Scoped, def string, props map[string]any) (predicate.Contact, error) {
-	g, err := Parse(def)
-	if err != nil {
-		return nil, err
-	}
+func (m *Module) RulePredicate(ctx context.Context, s *ent.Scoped, g conditiontree.Group, props map[string]any) (predicate.Contact, error) {
 	return (&compiler{s: s, now: m.now(), trigger: &props}).group(ctx, g)
 }
 
@@ -230,11 +195,11 @@ type compiler struct {
 	trigger *map[string]any
 }
 
-func (c *compiler) group(ctx context.Context, g Group) (predicate.Contact, error) {
-	if g.Kind != kindGroup {
+func (c *compiler) group(ctx context.Context, g conditiontree.Group) (predicate.Contact, error) {
+	if g.Kind != conditiontree.KindGroup {
 		return nil, fmt.Errorf("unknown group kind %q", g.Kind)
 	}
-	if g.Combinator != And && g.Combinator != Or {
+	if g.Combinator != conditiontree.And && g.Combinator != conditiontree.Or {
 		return nil, fmt.Errorf("unknown combinator %q", g.Combinator)
 	}
 	preds := make([]predicate.Contact, 0, len(g.Rules))
@@ -254,7 +219,7 @@ func (c *compiler) group(ctx context.Context, g Group) (predicate.Contact, error
 	}
 
 	p := contact.And(preds...)
-	if g.Combinator == Or {
+	if g.Combinator == conditiontree.Or {
 		p = contact.Or(preds...)
 	}
 	if g.Not {
@@ -272,8 +237,8 @@ func (c *compiler) entry(ctx context.Context, raw json.RawMessage) (predicate.Co
 		return nil, fmt.Errorf("malformed rule: %w", err)
 	}
 	switch probe.Kind {
-	case kindGroup:
-		var g Group
+	case conditiontree.KindGroup:
+		var g conditiontree.Group
 		if err := json.Unmarshal(raw, &g); err != nil {
 			return nil, fmt.Errorf("malformed group: %w", err)
 		}
@@ -743,60 +708,52 @@ func (c *compiler) requireCustomFieldOf(ctx context.Context, key string, want cu
 	return nil
 }
 
-// Encode stores a condition given as an API DTO. The API's typed tree is the stored
-// shape: a condition is saved as its JSON, and ContactPredicate reads it back.
-func Encode(group json.Marshaler) (string, error) {
+// FromDTO is a Condition given as an API DTO: the API's typed tree is the stored shape (ADR 0169).
+func FromDTO(group json.Marshaler) (conditiontree.Group, error) {
+	var g conditiontree.Group
 	b, err := group.MarshalJSON()
-	if err != nil {
-		return "", fmt.Errorf("encode condition: %w", err)
+	if err == nil {
+		err = json.Unmarshal(b, &g)
 	}
-	return string(b), nil
+	if err != nil {
+		return g, fmt.Errorf("encode condition: %w", err)
+	}
+	return g, nil
 }
 
-// EncodeOptional is Encode for a condition the request may leave out: nil when it is absent.
-func EncodeOptional[G any, P interface {
+// FromOptionalDTO is FromDTO for a condition the request may leave out: nil when it is absent.
+func FromOptionalDTO[G any, P interface {
 	*G
 	json.Marshaler
-}](opt interface{ Get() (G, bool) }) (*string, error) {
+}](opt interface{ Get() (G, bool) }) (*conditiontree.Group, error) {
 	group, ok := opt.Get()
 	if !ok {
 		return nil, nil
 	}
-	def, err := Encode(P(&group))
+	g, err := FromDTO(P(&group))
 	if err != nil {
 		return nil, err
 	}
-	return &def, nil
+	return &g, nil
 }
 
-// Decode loads a stored condition into an API DTO.
-func Decode(def string, into json.Unmarshaler) error {
-	if err := into.UnmarshalJSON([]byte(def)); err != nil {
+// ToDTO loads a Condition into an API DTO.
+func ToDTO(g conditiontree.Group, into json.Unmarshaler) error {
+	b, err := json.Marshal(g)
+	if err == nil {
+		err = into.UnmarshalJSON(b)
+	}
+	if err != nil {
 		return fmt.Errorf("decode condition: %w", err)
 	}
 	return nil
-}
-
-// Size counts the nodes of the group: itself and every nested group and rule, at any depth. A
-// malformed entry counts as one node.
-func (g Group) Size() int {
-	n := 1
-	for _, raw := range g.Rules {
-		var sub Group
-		if json.Unmarshal(raw, &sub) == nil && sub.Kind == kindGroup {
-			n += sub.Size()
-			continue
-		}
-		n++
-	}
-	return n
 }
 
 // FitsCustomFieldType reports whether every leaf of the group, at any depth, that tests the Custom
 // field key would still compile were the field of type t: a rule leaf whose operator t takes (the
 // one table, customFieldOperators), a number leaf only on a number field, a date leaf only on a
 // datetime one. A malformed entry tests nothing.
-func (g Group) FitsCustomFieldType(key string, t customfield.Type) bool {
+func FitsCustomFieldType(g conditiontree.Group, key string, t customfield.Type) bool {
 	field := customFieldPrefix + key
 	for _, raw := range g.Rules {
 		var probe struct {
@@ -806,9 +763,9 @@ func (g Group) FitsCustomFieldType(key string, t customfield.Type) bool {
 		if json.Unmarshal(raw, &probe) != nil {
 			continue
 		}
-		if probe.Kind == kindGroup {
-			var sub Group
-			if json.Unmarshal(raw, &sub) == nil && !sub.FitsCustomFieldType(key, t) {
+		if probe.Kind == conditiontree.KindGroup {
+			var sub conditiontree.Group
+			if json.Unmarshal(raw, &sub) == nil && !FitsCustomFieldType(sub, key, t) {
 				return false
 			}
 			continue
@@ -837,7 +794,7 @@ func leafFits(kind string, raw json.RawMessage, t customfield.Type) bool {
 
 // NamesTag reports whether any rule of the group, at any depth, targets the Tag called name.
 // A malformed condition names nothing.
-func (g Group) NamesTag(name string) bool {
+func NamesTag(g conditiontree.Group, name string) bool {
 	for _, raw := range g.Rules {
 		var probe struct {
 			Kind string `json:"kind"`
@@ -846,9 +803,9 @@ func (g Group) NamesTag(name string) bool {
 			continue
 		}
 		switch probe.Kind {
-		case kindGroup:
-			var sub Group
-			if json.Unmarshal(raw, &sub) == nil && sub.NamesTag(name) {
+		case conditiontree.KindGroup:
+			var sub conditiontree.Group
+			if json.Unmarshal(raw, &sub) == nil && NamesTag(sub, name) {
 				return true
 			}
 		case kindRule:

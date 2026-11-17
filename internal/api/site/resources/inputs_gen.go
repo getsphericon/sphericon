@@ -27,16 +27,17 @@ import (
 	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	webhookendpoints "github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
-	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
+	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -143,9 +144,9 @@ func (c *InputsImpl) AutomationStep(source site.AutomationStepInput) automations
 	automationstepStep.ID = stringIn(source.ID)
 	automationstepStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepStep.Headers = make([]httpheader.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepStep.Headers[j] = c.siteapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.siteapiAutomationHttpHeaderInputToHttpheaderHeader(source.Headers[j])
 		}
 	}
 	automationstepStep.Secret = stringIn(source.Secret)
@@ -650,31 +651,31 @@ func (c *InputsImpl) RevenueSettingsSet(source *site.SiteUpdateRevenueSettingsIn
 	}
 	return workspacesSetRevenueSettingsInput
 }
-func (c *InputsImpl) RuleActionType(source site.RuleActionType) rules.ActionType {
-	var rulesActionType rules.ActionType
+func (c *InputsImpl) RuleActionType(source site.RuleActionType) ruleaction.Type {
+	var ruleactionType ruleaction.Type
 	switch source {
 	case site.RuleActionTypeApplyTag:
-		rulesActionType = rules.ActionApplyTag
+		ruleactionType = ruleaction.ApplyTag
 	case site.RuleActionTypeEnrollAutomation:
-		rulesActionType = rules.ActionEnroll
+		ruleactionType = ruleaction.Enroll
 	case site.RuleActionTypeHTTP:
-		rulesActionType = rules.ActionHTTP
+		ruleactionType = ruleaction.HTTP
 	case site.RuleActionTypeRemoveTag:
-		rulesActionType = rules.ActionRemoveTag
+		ruleactionType = ruleaction.RemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return rulesActionType
+	return ruleactionType
 }
-func (c *InputsImpl) RuleActions(source []site.RuleActionInput) []rules.Action {
-	var rulesActionList []rules.Action
+func (c *InputsImpl) RuleActions(source []site.RuleActionInput) []ruleaction.Action {
+	var ruleactionActionList []ruleaction.Action
 	if source != nil {
-		rulesActionList = make([]rules.Action, len(source))
+		ruleactionActionList = make([]ruleaction.Action, len(source))
 		for i := 0; i < len(source); i++ {
-			rulesActionList[i] = c.siteapiRuleActionInputToRulesAction(source[i])
+			ruleactionActionList[i] = c.siteapiRuleActionInputToRuleactionAction(source[i])
 		}
 	}
-	return rulesActionList
+	return ruleactionActionList
 }
 func (c *InputsImpl) RuleCreate(source *site.CreateRuleInput) (rules.CreateInput, error) {
 	var rulesCreateInput rules.CreateInput
@@ -686,11 +687,11 @@ func (c *InputsImpl) RuleCreate(source *site.CreateRuleInput) (rules.CreateInput
 				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
 			}
 		}
-		pString, err := conditionIn((*source).Condition)
+		pConditiontreeGroup, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesCreateInput, err
 		}
-		rulesCreateInput.Condition = pString
+		rulesCreateInput.Condition = pConditiontreeGroup
 		rulesCreateInput.Actions = c.RuleActions((*source).Actions)
 	}
 	return rulesCreateInput, nil
@@ -701,11 +702,11 @@ func (c *InputsImpl) RuleUpdate(source *site.UpdateRuleInput) (rules.UpdateInput
 		rulesUpdateInput.Revision = revisionIn((*source).Revision)
 		rulesUpdateInput.Name = namePtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
-		pString, err := conditionIn((*source).Condition)
+		pConditiontreeGroup, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesUpdateInput, err
 		}
-		rulesUpdateInput.Condition = pString
+		rulesUpdateInput.Condition = pConditiontreeGroup
 		rulesUpdateInput.Actions = ruleActionsPtrIn(c, (*source).Actions)
 	}
 	return rulesUpdateInput, nil
@@ -739,22 +740,22 @@ func (c *InputsImpl) SegmentCreate(source *site.CreateSegmentInput) (segments.Cr
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
 		segmentsCreateInput.Name = nameIn((*source).Name)
-		pString, err := createSegmentCondition((*source).Condition)
+		pConditiontreeGroup, err := createSegmentCondition((*source).Condition)
 		if err != nil {
 			return segmentsCreateInput, err
 		}
-		segmentsCreateInput.Condition = pString
+		segmentsCreateInput.Condition = pConditiontreeGroup
 	}
 	return segmentsCreateInput, nil
 }
 func (c *InputsImpl) SegmentPreview(source *site.SitePreviewSegmentInput) (segments.PreviewInput, error) {
 	var segmentsPreviewInput segments.PreviewInput
 	if source != nil {
-		pString, err := conditionIn((*source).Condition)
+		pConditiontreeGroup, err := conditionIn((*source).Condition)
 		if err != nil {
 			return segmentsPreviewInput, err
 		}
-		segmentsPreviewInput.Condition = pString
+		segmentsPreviewInput.Condition = pConditiontreeGroup
 		segmentsPreviewInput.Channel = broadcastChannelPtrIn(c, (*source).Channel)
 		segmentsPreviewInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
@@ -1071,29 +1072,29 @@ func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) work
 	}
 	return workspaceviewUpdateInput
 }
-func (c *InputsImpl) siteapiAutomationHttpHeaderInputToHttpcallHeader(source site.AutomationHttpHeaderInput) httpcall.Header {
-	var httpcallHeader httpcall.Header
-	httpcallHeader.Name = source.Name
-	httpcallHeader.Value = stringIn(source.Value)
-	return httpcallHeader
+func (c *InputsImpl) siteapiAutomationHttpHeaderInputToHttpheaderHeader(source site.AutomationHttpHeaderInput) httpheader.Header {
+	var httpheaderHeader httpheader.Header
+	httpheaderHeader.Name = source.Name
+	httpheaderHeader.Value = stringIn(source.Value)
+	return httpheaderHeader
 }
-func (c *InputsImpl) siteapiRuleActionInputToRulesAction(source site.RuleActionInput) rules.Action {
-	var rulesAction rules.Action
-	rulesAction.Type = c.RuleActionType(source.Type)
-	rulesAction.Tag = stringIn(source.Tag)
-	rulesAction.AutomationID = entityIDIn(source.AutomationId)
-	rulesAction.ID = stringIn(source.ID)
-	rulesAction.URL = stringIn(source.URL)
+func (c *InputsImpl) siteapiRuleActionInputToRuleactionAction(source site.RuleActionInput) ruleaction.Action {
+	var ruleactionAction ruleaction.Action
+	ruleactionAction.Type = c.RuleActionType(source.Type)
+	ruleactionAction.Tag = stringIn(source.Tag)
+	ruleactionAction.AutomationID = entityIDIn(source.AutomationId)
+	ruleactionAction.ID = stringIn(source.ID)
+	ruleactionAction.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		rulesAction.Headers = make([]httpcall.Header, len(source.Headers))
+		ruleactionAction.Headers = make([]httpheader.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			rulesAction.Headers[i] = c.siteapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
+			ruleactionAction.Headers[i] = c.siteapiAutomationHttpHeaderInputToHttpheaderHeader(source.Headers[i])
 		}
 	}
-	rulesAction.Body = stringIn(source.Body)
-	rulesAction.Secret = stringIn(source.Secret)
-	rulesAction.ClearSecret = boolIn(source.ClearSecret)
-	return rulesAction
+	ruleactionAction.Body = stringIn(source.Body)
+	ruleactionAction.Secret = stringIn(source.Secret)
+	ruleactionAction.ClearSecret = boolIn(source.ClearSecret)
+	return ruleactionAction
 }
 func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
 	var consentrecordsReAcceptance consentrecords.ReAcceptance

@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -272,16 +273,8 @@ func (_c *BroadcastCreate) SetNillableSegmentID(v *int64) *BroadcastCreate {
 }
 
 // SetCondition sets the "condition" field.
-func (_c *BroadcastCreate) SetCondition(v string) *BroadcastCreate {
+func (_c *BroadcastCreate) SetCondition(v *conditiontree.Group) *BroadcastCreate {
 	_c.mutation.SetCondition(v)
-	return _c
-}
-
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_c *BroadcastCreate) SetNillableCondition(v *string) *BroadcastCreate {
-	if v != nil {
-		_c.SetCondition(*v)
-	}
 	return _c
 }
 
@@ -672,8 +665,8 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 		_node.EditorVersion = &value
 	}
 	if value, ok := _c.mutation.Condition(); ok {
-		_spec.SetField(broadcast.FieldCondition, field.TypeString, value)
-		_node.Condition = &value
+		_spec.SetField(broadcast.FieldCondition, field.TypeJSON, value)
+		_node.Condition = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
@@ -1133,7 +1126,7 @@ func (u *BroadcastUpsert) ClearSegmentID() *BroadcastUpsert {
 }
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastUpsert) SetCondition(v string) *BroadcastUpsert {
+func (u *BroadcastUpsert) SetCondition(v *conditiontree.Group) *BroadcastUpsert {
 	u.Set(broadcast.FieldCondition, v)
 	return u
 }
@@ -1686,7 +1679,7 @@ func (u *BroadcastUpsertOne) ClearSegmentID() *BroadcastUpsertOne {
 }
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastUpsertOne) SetCondition(v string) *BroadcastUpsertOne {
+func (u *BroadcastUpsertOne) SetCondition(v *conditiontree.Group) *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetCondition(v)
 	})
@@ -2431,7 +2424,7 @@ func (u *BroadcastUpsertBulk) ClearSegmentID() *BroadcastUpsertBulk {
 }
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastUpsertBulk) SetCondition(v string) *BroadcastUpsertBulk {
+func (u *BroadcastUpsertBulk) SetCondition(v *conditiontree.Group) *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.SetCondition(v)
 	})

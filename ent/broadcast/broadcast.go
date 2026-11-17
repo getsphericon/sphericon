@@ -335,11 +335,6 @@ func BySegmentID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSegmentID, opts...).ToFunc()
 }
 
-// ByCondition orders the results by the condition field.
-func ByCondition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCondition, opts...).ToFunc()
-}
-
 // ByIntegrationID orders the results by the integration_id field.
 func ByIntegrationID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIntegrationID, opts...).ToFunc()

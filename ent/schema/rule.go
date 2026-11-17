@@ -9,6 +9,8 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // Rule is a stateless reaction to an Event (ADR 0054): when any of its Trigger events is
@@ -70,7 +72,7 @@ func (RuleVersion) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entsql.Annotation{Table: "rule_versions", Checks: map[string]string{
 			"rule_versions_condition_check": conditionCheck("condition"),
-			"rule_versions_actions_check":   jsonCheck("actions", "ARRAY"),
+			"rule_versions_actions_check":   jsonCheck("actions", "array"),
 		}},
 	}
 }
@@ -87,15 +89,17 @@ func (RuleVersion) Fields() []ent.Field {
 		field.Int64("id").
 			StorageKey("id").
 			Immutable(),
-		// The Condition tree (internal/condition) as JSON; empty means every Contact.
-		field.String("condition").
-			Optional().
-			Nillable(),
-		// JSON array of Actions, run in order: [{"type":"apply_tag","tag":"clicked"}].
-		// Sensitive: an http Action holds a sealed URL and signing secret.
-		field.String("actions").
-			Default("[]").
-			Annotations(Sensitive{}),
+		// The Condition tree (conditiontree.Group, internal/domain/contacts/condition), jsonb (ADR
+		// 0169); the empty group, with no tests, matches every Contact.
+		field.JSON("condition", conditiontree.Group{}).
+			Default(conditiontree.Empty()).
+			Annotations(entsql.Default(emptyConditionSQL)),
+		// The Actions (ruleaction.Action), a jsonb array run in order (ADR 0169):
+		// [{"type":"apply_tag","tag":"clicked"}]. Sensitive: an http Action holds a sealed URL and
+		// signing secret.
+		field.JSON("actions", []ruleaction.Action{}).
+			Default([]ruleaction.Action{}).
+			Annotations(Sensitive{}, entsql.Default("[]")),
 	}
 }
 

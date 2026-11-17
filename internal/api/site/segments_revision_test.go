@@ -37,8 +37,7 @@ func TestSiteSegmentSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)
 	assert.Equal(t, read.Revision+1, first.Revision)
 	stored := env.DB.Segment.GetX(ctx, fixtures.SegmentProPlanID)
-	require.NotNil(t, stored.Condition)
-	assert.JSONEq(t, firstCondition, *stored.Condition)
+	assert.JSONEq(t, firstCondition, testhelper.Document(t, stored.Condition))
 	assert.EqualValues(t, first.Revision, stored.Revision)
 }
 

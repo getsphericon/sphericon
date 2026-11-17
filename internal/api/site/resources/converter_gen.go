@@ -35,7 +35,6 @@ import (
 	setupchecklist "github.com/getsphericon/sphericon/internal/domain/insights/setupchecklist"
 	instancestates "github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	bindings "github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -48,11 +47,13 @@ import (
 	trackingdomains "github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	messaging "github.com/getsphericon/sphericon/internal/infra/messaging"
 	webhook "github.com/getsphericon/sphericon/internal/infra/webhook"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
 	emailrender "github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
+	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	smsrender "github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
@@ -1959,16 +1960,16 @@ func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) site.Ru
 	}
 	return siteapiRuleActionStatus
 }
-func (c *ConverterImpl) RuleActionTypeToResource(source rules.ActionType) site.RuleActionType {
+func (c *ConverterImpl) RuleActionTypeToResource(source ruleaction.Type) site.RuleActionType {
 	var siteapiRuleActionType site.RuleActionType
 	switch source {
-	case rules.ActionApplyTag:
+	case ruleaction.ApplyTag:
 		siteapiRuleActionType = site.RuleActionTypeApplyTag
-	case rules.ActionEnroll:
+	case ruleaction.Enroll:
 		siteapiRuleActionType = site.RuleActionTypeEnrollAutomation
-	case rules.ActionHTTP:
+	case ruleaction.HTTP:
 		siteapiRuleActionType = site.RuleActionTypeHTTP
-	case rules.ActionRemoveTag:
+	case ruleaction.RemoveTag:
 		siteapiRuleActionType = site.RuleActionTypeRemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

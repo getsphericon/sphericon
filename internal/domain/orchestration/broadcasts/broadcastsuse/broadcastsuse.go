@@ -35,8 +35,7 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 		return nil, err
 	}
 	return lo.Filter(armed, func(b *ent.Broadcast, _ int) bool {
-		g, err := condition.Parse(*b.Condition)
-		return err == nil && g.NamesTag(name)
+		return condition.NamesTag(*b.Condition, name)
 	}), nil
 }
 
@@ -50,8 +49,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 		return nil, err
 	}
 	return lo.Filter(armed, func(b *ent.Broadcast, _ int) bool {
-		g, err := condition.Parse(*b.Condition)
-		return err == nil && !g.FitsCustomFieldType(key, t)
+		return !condition.FitsCustomFieldType(*b.Condition, key, t)
 	}), nil
 }
 

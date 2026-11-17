@@ -410,17 +410,12 @@ func (m *BroadcastMutation) unchanged(ctx context.Context) (*Broadcast, bool, er
 		}
 	}
 	if v, ok := m.Condition(); ok {
-		if row.Condition == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.Condition) {
+		if !sameJSON(v, row.Condition) {
 			return nil, false, nil
 		}
 	}
 	if m.ConditionCleared() {
-		if row.Condition != nil {
-			return nil, false, nil
-		}
+		return nil, false, nil
 	}
 	if v, ok := m.IntegrationID(); ok {
 		if row.IntegrationID == nil {
@@ -1028,15 +1023,7 @@ func (m *SegmentMutation) unchanged(ctx context.Context) (*Segment, bool, error)
 		}
 	}
 	if v, ok := m.Condition(); ok {
-		if row.Condition == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.Condition) {
-			return nil, false, nil
-		}
-	}
-	if m.ConditionCleared() {
-		if row.Condition != nil {
+		if !sameJSON(v, row.Condition) {
 			return nil, false, nil
 		}
 	}

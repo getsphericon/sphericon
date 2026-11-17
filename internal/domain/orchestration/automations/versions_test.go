@@ -12,8 +12,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -30,13 +30,11 @@ func versionsOf(t *testing.T, env *testhelper.TestEnv, automationID int64) []int
 	return out
 }
 
-// stepsOf decodes the steps of a version the test expects to exist.
+// stepsOf is the steps of a version the test expects to exist.
 func stepsOf(t *testing.T, v *ent.AutomationVersion) []automationstep.Step {
 	t.Helper()
 	require.NotNil(t, v)
-	steps, err := automationstep.Decode(v.Steps)
-	require.NoError(t, err)
-	return steps
+	return v.Steps
 }
 
 // liveSteps and draftSteps are the steps of an Automation's live version and of its draft.
