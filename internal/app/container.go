@@ -408,9 +408,14 @@ var staffPackage = do.Package(
 		}
 		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), members), nil
 	}),
+	// The Instance audit log (ADR 0070), over the raw client: the Staff member's changes of the
+	// Instance's own settings and of the Sign-up items.
+	do.Lazy(func(i do.Injector) (*instanceauditentries.Log, error) {
+		return instanceauditentries.New(do.MustInvoke[*ent.Client](i)), nil
+	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
-		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), instanceauditentries.New(do.MustInvoke[*ent.Client](i)).Record), nil
+		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), do.MustInvoke[*instanceauditentries.Log](i).Record), nil
 	}),
 	// The Users' Consent records on those items (ADR 0062).
 	do.Lazy(func(i do.Injector) (*consentrecords.Module, error) {
@@ -753,7 +758,7 @@ var identityPackage = do.Package(
 			return nil, err
 		}
 		return instancestates.New(do.MustInvoke[*ent.Client](i), instancestates.EnvironmentOf(cfg, version, lapsedAt), do.MustInvoke[Clock](i),
-			do.MustInvoke[*suspension.DefaultSendCap](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
+			do.MustInvoke[*suspension.DefaultSendCap](i), do.MustInvoke[*instanceauditentries.Log](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
 	}),
 	// The Login throttle and the mail budgets of an address (ADR 0025), over the raw client.
 	do.Lazy(func(i do.Injector) (*throttle.Attempts, error) {
