@@ -41,26 +41,33 @@ var (
 	ErrContactNotFound = validation.NotFound("consent: contact not found", i18n.ErrorsContactNotFound)
 )
 
-// Confirm records consent a destination gave outside sphericon on channel, with its evidence, as
+// ConfirmInput is consent a Destination gave outside sphericon on a Channel, with its evidence.
+type ConfirmInput struct {
+	Channel     channels.Channel
+	Destination string
+	Evidence    Evidence
+}
+
+// Confirm records consent a destination gave outside sphericon on a Channel, with its evidence, as
 // an imported Confirmation, and returns the Confirmation that stands: a stronger one already on
 // the destination stays. Only sms takes one: email is confirmed by its own double opt-in link and a
-// Telegram chat is its own opt-in. It never lifts an opt-out. at is when the consent was given:
-// the evidence reaching sphericon. One older than a withdrawal of the number's consent is
-// ErrSuperseded.
-func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channels.Channel, destination string, ev Evidence, at time.Time) (*ent.Confirmation, error) {
-	if channel != channels.SMS {
+// Telegram chat is its own opt-in. It never lifts an opt-out. The consent is given now, by the
+// module's clock: the evidence reaching sphericon. One older than a withdrawal of the number's
+// consent is ErrSuperseded.
+func (m *Module) Confirm(ctx context.Context, s *ent.Scoped, in ConfirmInput) (*ent.Confirmation, error) {
+	if in.Channel != channels.SMS {
 		return nil, ErrConfirmationChannel
 	}
-	if err := validation.MaxLength(fieldname.Destination, destination, bounds.ConsentDestinationMaxLength); err != nil {
+	if err := validation.MaxLength(fieldname.Destination, in.Destination, bounds.ConsentDestinationMaxLength); err != nil {
 		return nil, err
 	}
-	number, err := unsubscribes.SMSNumber(destination)
+	number, err := unsubscribes.SMSNumber(in.Destination)
 	if err != nil {
 		return nil, err
 	}
 	var standing *ent.Confirmation
-	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		standing, err = ConfirmSMSIn(ctx, ts, pub, number, ev, at)
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		standing, err = m.ConfirmSMSIn(ctx, ts, number, in.Evidence)
 		return err
 	})
 	if err != nil {
@@ -71,17 +78,18 @@ func Confirm(ctx context.Context, bus *events.Bus, s *ent.Scoped, channel channe
 
 // ConfirmContactSMSIn is ConfirmSMSIn for the phone of a Contact: ErrNoPhone when the Contact has
 // none (number is empty), as the SMS consent an intake carries for a Contact.
-func ConfirmContactSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence, at time.Time) (*ent.Confirmation, error) {
+func (m *Module) ConfirmContactSMSIn(ctx context.Context, s *ent.Scoped, number string, ev Evidence) (*ent.Confirmation, error) {
 	if number == "" {
 		return nil, ErrNoPhone
 	}
-	return ConfirmSMSIn(ctx, s, pub, number, ev, at)
+	return m.ConfirmSMSIn(ctx, s, number, ev)
 }
 
-// ConfirmSMSIn records an imported SMS Confirmation of number with its evidence, given at at,
-// inside the transaction s and pub are bound to, and returns the Confirmation that stands (see
-// Confirm). The Confirmation names the Contact whose phone the number is, when there is one.
-func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, ev Evidence, at time.Time) (*ent.Confirmation, error) {
+// ConfirmSMSIn records an imported SMS Confirmation of number with its evidence, given now by the
+// module's clock, inside the bus transaction s is bound to, and returns the Confirmation that
+// stands (see Confirm). The Confirmation names the Contact whose phone the number is, when there
+// is one.
+func (m *Module) ConfirmSMSIn(ctx context.Context, s *ent.Scoped, number string, ev Evidence) (*ent.Confirmation, error) {
 	number, err := unsubscribes.SMSNumber(number)
 	if err != nil {
 		return nil, err
@@ -94,25 +102,25 @@ func ConfirmSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, numb
 	if err != nil {
 		return nil, err
 	}
-	return recordIn(ctx, s, pub, grant{
+	return m.recordIn(ctx, s, grant{
 		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceImported,
-		evidence: &ev, contactID: holder, at: consentstamps.At(at),
+		evidence: &ev, contactID: holder, at: consentstamps.At(m.now()),
 	})
 }
 
 // StartSMSIn reads a START the number texted, which occurred at the given time (ADR 0077): it lifts
 // the number's opt-out and records a Confirmation with provenance keyword, since the person asked
-// to receive again, inside the transaction s and pub are bound to. A stronger Confirmation already on the number stays
-// (recordIn), so a repeated START records nothing twice. The Confirmation names the Contact whose
-// phone the number is, when there is one; a START creates no Contact. A START that occurred before
-// the number's opt-out state (the person stopped later) lifts nothing, records nothing and reports
-// false (ADR 0154).
-func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, at consentstamps.Occurrence) (bool, error) {
+// to receive again, inside the bus transaction s is bound to. A stronger Confirmation already on
+// the number stays (recordIn), so a repeated START records nothing twice. The Confirmation names
+// the Contact whose phone the number is, when there is one; a START creates no Contact. A START
+// that occurred before the number's opt-out state (the person stopped later) lifts nothing,
+// records nothing and reports false (ADR 0154).
+func (m *Module) StartSMSIn(ctx context.Context, s *ent.Scoped, number string, at consentstamps.Occurrence) (bool, error) {
 	number, err := unsubscribes.SMSNumber(number)
 	if err != nil {
 		return false, err
 	}
-	applied, err := unsubscribes.LiftSMS(ctx, s, number, at)
+	applied, err := m.unsubs.LiftSMS(ctx, s, number, at)
 	if err != nil || !applied {
 		return false, err
 	}
@@ -120,7 +128,7 @@ func StartSMSIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, number
 	if err != nil {
 		return false, err
 	}
-	_, err = recordIn(ctx, s, pub, grant{
+	_, err = m.recordIn(ctx, s, grant{
 		channel: channels.SMS, destination: number, provenance: confirmation.ProvenanceKeyword,
 		contactID: holder, at: at,
 	})
@@ -159,7 +167,7 @@ type SMSOptOut struct {
 }
 
 // ReadContactSMS reads the SMS consent of a Contact's phone.
-func ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (ContactSMS, error) {
+func (m *Module) ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (ContactSMS, error) {
 	c, err := s.Contact().Get(ctx, contactID)
 	if ent.IsNotFound(err) {
 		return ContactSMS{}, ErrContactNotFound
@@ -178,12 +186,12 @@ func ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (Contac
 	if err != nil && !ent.IsNotFound(err) {
 		return ContactSMS{}, fmt.Errorf("read confirmation: %w", err)
 	}
-	stop, err := unsubscribes.SMSOptOut(ctx, s, *c.Phone)
+	stop, err := m.unsubs.SMSOptOut(ctx, s, *c.Phone)
 	if err != nil {
 		return ContactSMS{}, err
 	}
 	if stop != nil {
-		// Every SMS opt-out is recorded with its way (unsubscribes.AddSMS).
+		// Every SMS opt-out is recorded with its way (unsubscribes' AddSMS).
 		out.OptOut = &SMSOptOut{Via: lo.FromPtr(stop.Via), OptedOutAt: stop.CreatedAt}
 	}
 	return out, nil
@@ -191,20 +199,20 @@ func ReadContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (Contac
 
 // ConfirmContactSMS records consent a Contact's phone gave outside sphericon (Confirm, for the
 // number the Contact has) and returns the phone's SMS consent after it.
-func ConfirmContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64, ev Evidence, at time.Time) (ContactSMS, error) {
-	number, err := ContactPhone(ctx, s, contactID)
+func (m *Module) ConfirmContactSMS(ctx context.Context, s *ent.Scoped, contactID int64, ev Evidence) (ContactSMS, error) {
+	number, err := m.ContactPhone(ctx, s, contactID)
 	if err != nil {
 		return ContactSMS{}, err
 	}
-	if _, err := Confirm(ctx, bus, s, channels.SMS, number, ev, at); err != nil {
+	if _, err := m.Confirm(ctx, s, ConfirmInput{Channel: channels.SMS, Destination: number, Evidence: ev}); err != nil {
 		return ContactSMS{}, err
 	}
-	return ReadContactSMS(ctx, s, contactID)
+	return m.ReadContactSMS(ctx, s, contactID)
 }
 
 // ContactPhone is the phone of a Contact, ErrNoPhone when it has none.
-func ContactPhone(ctx context.Context, s *ent.Scoped, contactID int64) (string, error) {
-	read, err := ReadContactSMS(ctx, s, contactID)
+func (m *Module) ContactPhone(ctx context.Context, s *ent.Scoped, contactID int64) (string, error) {
+	read, err := m.ReadContactSMS(ctx, s, contactID)
 	if err != nil {
 		return "", err
 	}

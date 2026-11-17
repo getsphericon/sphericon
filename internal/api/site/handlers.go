@@ -12,9 +12,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -140,7 +143,10 @@ type Handlers struct {
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signinprovider.Providers
 	// unsubscribe records an opt-out (a use case, ADR 0102).
-	unsubscribe *unsubscriberecording.UseCase
+	unsubscribe   *unsubscriberecording.UseCase
+	suppressions  *suppressions.Module
+	confirmations *confirmations.Module
+	channelStops  *channelstop.Module
 }
 
 // Origins are the public origins besides the app's own that a Workspace resource names: where an
@@ -257,6 +263,12 @@ type Deps struct {
 	Migrations Migrations
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
+	// Suppressions adds, lists and lifts the Workspace's Suppressions.
+	Suppressions *suppressions.Module
+	// Confirmations performs a double opt-in and records and reads a Contact's SMS consent.
+	Confirmations *confirmations.Module
+	// ChannelStops records an SMS opt-out of a Contact's phone by hand.
+	ChannelStops *channelstop.Module
 }
 
 // Migrations is the seam of the error page's button: it runs the migrations the database has
@@ -276,6 +288,7 @@ func NewHandlers(d *Deps) *Handlers {
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
 		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		suppressions: d.Suppressions, confirmations: d.Confirmations, channelStops: d.ChannelStops,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

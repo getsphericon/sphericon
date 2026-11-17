@@ -3,10 +3,7 @@
 # when it gains an entry, the analyzer reports an entry that keeps the contract, and its test an entry
 # that names no package of the domain tier. A migration removes its packages; the last one deletes
 # the list, its embed and its check.
-internal/domain/contacts/channelstop
 internal/domain/contacts/condition
-internal/domain/contacts/confirmations
-internal/domain/contacts/confirmations/confirmationsunchecked
 internal/domain/contacts/consentstamps
 internal/domain/contacts/consentstamps/consentstampsunchecked
 internal/domain/contacts/contactlock
@@ -14,10 +11,6 @@ internal/domain/contacts/contacts
 internal/domain/contacts/contacts/contactsunchecked
 internal/domain/contacts/eligibility
 internal/domain/contacts/orders
-internal/domain/contacts/suppressions
-internal/domain/contacts/suppressions/suppressionsunchecked
-internal/domain/contacts/unsubscribes
-internal/domain/contacts/unsubscribes/unsubscribesunchecked
 internal/domain/contacts/visitors
 internal/domain/contacts/visitors/visitorsunchecked
 internal/domain/content/brandkits

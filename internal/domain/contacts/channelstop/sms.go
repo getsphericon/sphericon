@@ -32,12 +32,12 @@ var ErrSMSSource = validation.RefuseField(fieldname.SendingSource, "consent: an 
 // stopped. via is how the person stopped, which the Contact card shows, and at when: a stop older
 // than the number's opt-out state is superseded and changes nothing (ADR 0154). Run it inside the
 // transaction s is bound to.
-func stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via, at consentstamps.Occurrence) (unsubscribes.Change, error) {
-	change, err := unsubscribes.AddSMS(ctx, s, number, via, at)
+func (m *Module) stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via, at consentstamps.Occurrence) (unsubscribes.Change, error) {
+	change, err := m.unsubs.AddSMS(ctx, s, unsubscribes.AddSMSInput{Number: number, Via: via, At: at})
 	if err != nil || change.ID == 0 {
 		return change, err
 	}
-	if err := confirmations.Withdraw(ctx, s, channels.SMS, number, at); err != nil {
+	if err := m.confirmations.Withdraw(ctx, s, confirmations.WithdrawInput{Channel: channels.SMS, Destination: number, At: at}); err != nil {
 		return unsubscribes.Change{}, fmt.Errorf("drop confirmation: %w", err)
 	}
 	return change, nil
@@ -50,7 +50,7 @@ func stopSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.
 // only on the Event of the Contact the text was sent to: a number that has moved to another Contact
 // since records that Contact's opt-out, naming none. A STOP, a refused send or an opt-out by hand
 // names none either.
-func publishSMSUnsubscribed(ctx context.Context, s *ent.Scoped, pub events.Publisher, stop *events.SmsStopObserved, number string, optOutID int64) error {
+func (m *Module) publishSMSUnsubscribed(ctx context.Context, s *ent.Scoped, stop *events.SmsStopObserved, number string, optOutID int64) error {
 	c, err := s.Contact().Query().Where(contact.Phone(number)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil
@@ -65,7 +65,7 @@ func publishSMSUnsubscribed(ctx context.Context, s *ent.Scoped, pub events.Publi
 	if attributesSMSStop(stop) && stop.ContactID == c.ID {
 		e.BroadcastID, e.AutomationID = stop.BroadcastID, stop.AutomationID
 	}
-	return pub.Publish(ctx, e)
+	return m.bus.PublishIn(ctx, s, e)
 }
 
 // attributesSMSStop reports whether the stop is a person's action on a text they received: only
@@ -77,7 +77,7 @@ func attributesSMSStop(stop *events.SmsStopObserved) bool {
 // SMSUnsubscribe records an SMS opt-out that reached the Workspace by another route (an email, a
 // call): the number gets no more texts, whichever sender. A manual opt-out is
 // Channel-wide, so only the `everything` source is accepted. Idempotent.
-func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
+func (m *Module) SMSUnsubscribe(ctx context.Context, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
 	number, err := unsubscribes.SMSNumber(destination)
 	if err != nil {
 		return nil, err
@@ -85,23 +85,23 @@ func SMSUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destina
 	if source != eligibility.SourceEverything {
 		return nil, ErrSMSSource
 	}
-	if err := bus.WithinScopedTx(ctx, s, func(_ *ent.Scoped, pub events.Publisher) error {
-		return pub.Publish(ctx, &events.SmsStopObserved{WorkspaceID: s.WorkspaceID(), Phone: number, Via: events.UnsubscribedByManual})
+	if err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		return m.bus.PublishIn(ctx, ts, &events.SmsStopObserved{WorkspaceID: ts.WorkspaceID(), Phone: number, Via: events.UnsubscribedByManual})
 	}); err != nil {
 		return nil, err
 	}
-	return unsubscribes.SMSOptOut(ctx, s, number)
+	return m.unsubs.SMSOptOut(ctx, s, number)
 }
 
 // OptOutContactSMS records an SMS opt-out of a Contact's phone that reached the Workspace by
 // another route (SMSUnsubscribe) and returns the phone's SMS consent after it.
-func OptOutContactSMS(ctx context.Context, bus *events.Bus, s *ent.Scoped, contactID int64) (confirmations.ContactSMS, error) {
-	number, err := confirmations.ContactPhone(ctx, s, contactID)
+func (m *Module) OptOutContactSMS(ctx context.Context, s *ent.Scoped, contactID int64) (confirmations.ContactSMS, error) {
+	number, err := m.confirmations.ContactPhone(ctx, s, contactID)
 	if err != nil {
 		return confirmations.ContactSMS{}, err
 	}
-	if _, err := SMSUnsubscribe(ctx, bus, s, number, eligibility.SourceEverything); err != nil {
+	if _, err := m.SMSUnsubscribe(ctx, s, number, eligibility.SourceEverything); err != nil {
 		return confirmations.ContactSMS{}, err
 	}
-	return confirmations.ReadContactSMS(ctx, s, contactID)
+	return m.confirmations.ReadContactSMS(ctx, s, contactID)
 }

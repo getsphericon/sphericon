@@ -9,18 +9,35 @@ package confirmations
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/confirmation"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
+
+// Module records, reads and withdraws the Confirmations of a Workspace. It publishes each
+// Confirmation's proof in the transaction of the scope it is given, through the bus.
+type Module struct {
+	bus *events.Bus
+	// unsubs is the opt-outs a START lifts and the SMS consent of a phone reads.
+	unsubs *unsubscribes.Module
+	now    func() time.Time
+}
+
+// New builds the confirmations module over the bus whose transactions its operations join, the
+// opt-outs and the Instance clock, which dates a consent given now.
+func New(bus *events.Bus, unsubs *unsubscribes.Module, now func() time.Time) *Module {
+	return &Module{bus: bus, unsubs: unsubs, now: now}
+}
 
 // strength ranks how a Confirmation was obtained, the strongest highest (ADR 0077): the person
 // clicking the double opt-in link, the person texting START, consent an API client or an import
@@ -79,13 +96,13 @@ var _ = db.Declare(
 
 // recordIn writes g as the Confirmation of its (Channel, Destination) unless one as strong or
 // stronger stands, and publishes its Channel's proof (grant.proof) when it writes, in the
-// transaction s and pub are bound to. A weaker or equal one leaves everything as it was and
+// transaction s is bound to. A weaker or equal one leaves everything as it was and
 // publishes nothing, so a repeated request is a no-op; so does one that a concurrent request beat
 // to the row. It returns the Confirmation that stands. One given before the destination's
 // Confirmation state was last set (an opt-out of everything withdrew it later) records nothing
 // either, and is ErrSuperseded when no Confirmation stands (ADR 0154): provenance is checked first,
 // then time.
-func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant) (*ent.Confirmation, error) {
+func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Confirmation, error) {
 	key := stampKey(g.channel, g.destination)
 	if _, err := consentstamps.Hold(ctx, s, key); err != nil {
 		return nil, err
@@ -149,7 +166,7 @@ func recordIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, g grant)
 		// proof is its own.
 		return standingOf(ctx, s, g.channel, g.destination)
 	}
-	if err := pub.Publish(ctx, proof); err != nil {
+	if err := m.bus.PublishIn(ctx, s, proof); err != nil {
 		return nil, err
 	}
 	return s.Confirmation().Get(ctx, id)
@@ -190,19 +207,27 @@ func (g grant) proof(workspaceID int64) (events.DomainEvent, error) {
 	}
 }
 
-// Withdraw deletes the Confirmation of destination on channel: an opt-out of everything
+// WithdrawInput is a withdrawal of the consent of a Destination on a Channel.
+type WithdrawInput struct {
+	Channel     channels.Channel
+	Destination string
+	// At is when the person withdrew (ADR 0154).
+	At consentstamps.Occurrence
+}
+
+// Withdraw deletes the Confirmation of the Destination on the Channel: an opt-out of everything
 // invalidates it (ADR 0013, ADR 0077), so stale consent never silently reactivates and only a new
 // Confirmation makes the destination reachable again. The immutable confirmed Event stays as proof
-// ("confirmed at T1, left at T2"). at is when the person withdrew: a withdrawal older than the
-// Confirmation standing withdraws nothing (ADR 0154). Run it inside the transaction s is bound to.
-func Withdraw(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string, at consentstamps.Occurrence) error {
-	admitted, err := consentstamps.Admit(ctx, s, stampKey(channel, destination), consentstamps.Confirmation, at, true)
+// ("confirmed at T1, left at T2"). A withdrawal older than the Confirmation standing withdraws
+// nothing (ADR 0154). Run it inside the transaction s is bound to.
+func (m *Module) Withdraw(ctx context.Context, s *ent.Scoped, in WithdrawInput) error {
+	admitted, err := consentstamps.Admit(ctx, s, stampKey(in.Channel, in.Destination), consentstamps.Confirmation, in.At, true)
 	if err != nil || !admitted {
 		return err
 	}
 	_, err = s.Confirmation().Delete().Where(
-		confirmation.ChannelEQ(channel),
-		confirmation.DestinationEQ(destination),
+		confirmation.ChannelEQ(in.Channel),
+		confirmation.DestinationEQ(in.Destination),
 	).Exec(ctx)
 	return err
 }

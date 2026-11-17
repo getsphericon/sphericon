@@ -219,14 +219,14 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	// broadcastsListFilter.Order: ignore
 	return broadcastsListFilter
 }
-func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) confirmations.Evidence {
-	var confirmationsEvidence confirmations.Evidence
+func (c *InputsImpl) Confirmation(source *external.CreateConfirmationInput) confirmations.ConfirmInput {
+	var confirmationsConfirmInput confirmations.ConfirmInput
 	if source != nil {
-		confirmationsEvidence.Wording = (*source).Wording
-		confirmationsEvidence.Source = (*source).Source
-		confirmationsEvidence.Brand = (*source).Brand
+		confirmationsConfirmInput.Channel = c.ConsentChannel((*source).Channel)
+		confirmationsConfirmInput.Destination = (*source).Destination
+		confirmationsConfirmInput.Evidence = c.externalapiCreateConfirmationInputToConfirmationsEvidence((*source))
 	}
-	return confirmationsEvidence
+	return confirmationsConfirmInput
 }
 func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Channel {
 	var channelsChannel channels.Channel
@@ -640,6 +640,13 @@ func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpcallHeader(source
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
+}
+func (c *InputsImpl) externalapiCreateConfirmationInputToConfirmationsEvidence(source external.CreateConfirmationInput) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
+	confirmationsEvidence.Wording = source.Wording
+	confirmationsEvidence.Source = source.Source
+	confirmationsEvidence.Brand = source.Brand
+	return confirmationsEvidence
 }
 func (c *InputsImpl) externalapiRuleActionInputToRulesAction(source external.RuleActionInput) rules.Action {
 	var rulesAction rules.Action

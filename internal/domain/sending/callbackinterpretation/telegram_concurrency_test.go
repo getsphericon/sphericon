@@ -52,7 +52,7 @@ func TestSimultaneousTelegramSTOPCallbacksConsumeOneObservation(t *testing.T) {
 	}})
 	require.NoError(t, testhelper.Receive(t, done, "first callback commits"))
 	require.NoError(t, results["duplicate"])
-	stopped, err := unsubscribes.Get(t.Context(), scope, channels.Telegram, fixtures.BindingLiamDestination, eligibility.SourceEverything)
+	stopped, err := unsubscribes.New().Get(t.Context(), scope, unsubscribes.Key{Channel: channels.Telegram, Destination: fixtures.BindingLiamDestination, Source: eligibility.SourceEverything})
 	require.NoError(t, err)
 	require.NotNil(t, stopped)
 	transitions := scope.Event().Query().Where(event.Action(systemevent.TelegramUnsubscribed), event.ContactID(fixtures.ContactLiamID)).CountX(t.Context())

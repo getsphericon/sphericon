@@ -57,6 +57,14 @@ func ForEvent(name, bounceKind string) (entsuppression.Reason, bool) {
 	}
 }
 
+// Module adds, lists and lifts the Suppressions of a Workspace.
+type Module struct {
+	now func() time.Time
+}
+
+// New builds the Suppressions module over the Instance clock, which stamps a lift.
+func New(now func() time.Time) *Module { return &Module{now: now} }
+
 // Entry is one Suppression to add. ContactID is the Contact the destination belongs
 // to, when known (display only); zero means none. Channel is email when empty.
 type Entry struct {
@@ -95,7 +103,7 @@ var _ = db.Declare(
 // Add suppresses a destination in the scoped Workspace with one insert. It is
 // idempotent per (channel, destination): an existing active entry keeps its reason. A
 // lifted entry does not count (ADR 0049): the destination is suppressed anew in a new row.
-func Add(ctx context.Context, s *ent.Scoped, e Entry) error {
+func (m *Module) Add(ctx context.Context, s *ent.Scoped, e Entry) error {
 	_, err := add(ctx, s, e)
 	return err
 }
@@ -136,7 +144,7 @@ func add(ctx context.Context, s *ent.Scoped, e Entry) (bool, error) {
 
 // AddManual is Add with the manual reason (an Owner's or an API caller's request), and
 // returns the entry, the existing one when the destination was already suppressed.
-func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (*ent.Suppression, error) {
+func (m *Module) AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) (*ent.Suppression, error) {
 	if channel == "" {
 		channel = channels.Email
 	}
@@ -161,7 +169,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 	case channels.Telegram:
 		// A user id is checked by Add.
 	}
-	if err := Add(ctx, s, Entry{Channel: channel, Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
+	if err := m.Add(ctx, s, Entry{Channel: channel, Destination: destination, Reason: entsuppression.ReasonManual}); err != nil {
 		return nil, err
 	}
 	return s.Suppression().Query().
@@ -171,7 +179,7 @@ func AddManual(ctx context.Context, s *ent.Scoped, channel channels.Channel, des
 
 // List returns one page of the Workspace's active Suppressions, newest first, or of its
 // lifted ones when lifted is true.
-func List(ctx context.Context, s *ent.Scoped, p pagination.Params, lifted bool) (pagination.Page[*ent.Suppression], error) {
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, lifted bool) (pagination.Page[*ent.Suppression], error) {
 	return pagination.List(ctx, p, query(s, lifted).Order(ent.Desc(entsuppression.FieldID)))
 }
 
@@ -186,9 +194,10 @@ func query(s *ent.Scoped, lifted bool) *ent.SuppressionQuery {
 // Remove lifts an active Suppression of the scoped Workspace by id: the row stays with its
 // lift time and the destination can receive mail again. A missing or already lifted one is
 // ErrNotFound. On sms a number suppressed again after its Contact's Erasure also has the
-// Suppression the Erasure keyed by its hash (suppressionsunchecked.EraseContact), which refuses the number as much:
-// lifting the number's lifts that twin too, so the number can be texted again.
-func Remove(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
+// Suppression the Erasure keyed by its hash (suppressionsunchecked), which refuses the number as
+// much: lifting the number's lifts that twin too, so the number can be texted again. The lift is
+// stamped with the module's clock.
+func (m *Module) Remove(ctx context.Context, s *ent.Scoped, id int64) error {
 	row, err := s.Suppression().Query().Where(entsuppression.ID(id), entsuppression.LiftedAtIsNil()).Only(ctx)
 	if ent.IsNotFound(err) {
 		return ErrNotFound
@@ -201,6 +210,7 @@ func Remove(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
 		lifted = entsuppression.Or(lifted, entsuppression.And(
 			entsuppression.ChannelEQ(channels.SMS), entsuppression.DestinationEQ(phone.Hash(row.Destination))))
 	}
+	at := m.now()
 	err = lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := s.Suppression().Update().
 			Where(lifted, entsuppression.LiftedAtIsNil()).

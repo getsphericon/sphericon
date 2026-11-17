@@ -35,6 +35,7 @@ import (
 	apisite "github.com/getsphericon/sphericon/internal/api/site"
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -497,7 +498,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		add(tb, p, txDB, client, jobs.NewSendNoticeWorker(systemSender))
 		addScheduled(tb, p, txDB, client, injector)
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
-		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
+		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client, do.MustInvoke[*suppressions.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client, do.MustInvoke[*broadcasts.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewMessageObservationWorker(client, do.MustInvoke[*outboundmessages.Module](injector)))

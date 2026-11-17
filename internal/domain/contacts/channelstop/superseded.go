@@ -16,7 +16,7 @@ import (
 // contactIDs still in the Workspace: the place it takes in their consent history. Its source id
 // derives from the observation's, per Contact, so a redelivery records nothing twice; an
 // observation with none (one recorded by hand) records it each time.
-func publishSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactIDs []int64, e *events.ConsentSuperseded) error {
+func (m *Module) publishSuperseded(ctx context.Context, s *ent.Scoped, contactIDs []int64, e *events.ConsentSuperseded) error {
 	for _, id := range contactIDs {
 		c, err := s.Contact().Get(ctx, id)
 		if ent.IsNotFound(err) {
@@ -30,7 +30,7 @@ func publishSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher,
 		if e.DedupID != "" {
 			one.DedupID = fmt.Sprintf("%s/superseded/%d", e.DedupID, c.ID)
 		}
-		if err := pub.Publish(ctx, &one); err != nil {
+		if err := m.bus.PublishIn(ctx, s, &one); err != nil {
 			return err
 		}
 	}
@@ -39,7 +39,7 @@ func publishSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher,
 
 // publishSMSSuperseded records e, an SMS observation of number that changed nothing, for the
 // Contact whose phone the number is; a number no Contact has records nothing.
-func publishSMSSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher, number string, e *events.ConsentSuperseded) error {
+func (m *Module) publishSMSSuperseded(ctx context.Context, s *ent.Scoped, number string, e *events.ConsentSuperseded) error {
 	id, err := s.Contact().Query().Where(contact.Phone(number)).OnlyID(ctx)
 	if ent.IsNotFound(err) {
 		return nil
@@ -48,5 +48,5 @@ func publishSMSSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publish
 		return fmt.Errorf("find the number's contact: %w", err)
 	}
 	e.Channel, e.Phone = string(channels.SMS), number
-	return publishSuperseded(ctx, s, pub, []int64{id}, e)
+	return m.publishSuperseded(ctx, s, []int64{id}, e)
 }

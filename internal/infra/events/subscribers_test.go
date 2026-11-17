@@ -99,7 +99,7 @@ func TestSimultaneousDuplicateSTOPRunsItsReactionOnce(t *testing.T) {
 	require.NoError(t, testhelper.Receive(t, first, "first publication commits"))
 	require.NoError(t, results["duplicate"])
 	assert.Equal(t, 1, scope.Event().Query().Where(event.Action("stop.handled")).CountX(t.Context()))
-	row, err := unsubscribes.SMSOptOut(t.Context(), scope, fixtures.ContactTexterPhone)
+	row, err := unsubscribes.New().SMSOptOut(t.Context(), scope, fixtures.ContactTexterPhone)
 	require.NoError(t, err)
 	require.NotNil(t, row, "consent is already stopped without asynchronous work")
 }
@@ -125,14 +125,14 @@ func TestFailedSMSReactionRollsBackConsentReceiptAndJobsEvenIfCallerIgnoresTheEr
 		return nil
 	})
 	require.ErrorIs(t, err, boom)
-	consent, err := confirmations.ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
+	consent, err := testhelper.Module[*confirmations.Module](env).ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
 	require.NoError(t, err)
 	require.NotNil(t, consent.Confirmation)
 	assert.Nil(t, consent.OptOut)
 	assert.Zero(t, env.QueuedCount(t, events.NameSmsOptOutRecorded, nil))
 	fail = false
 	require.NoError(t, env.Bus.Publish(t.Context(), fact))
-	consent, err = confirmations.ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
+	consent, err = testhelper.Module[*confirmations.Module](env).ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
 	require.NoError(t, err)
 	assert.Nil(t, consent.Confirmation)
 	require.NotNil(t, consent.OptOut)
@@ -144,7 +144,7 @@ func TestDistinctSemanticFactsMayShareAnExternalSource(t *testing.T) {
 	source := "one-external-source"
 	require.NoError(t, env.Bus.Publish(t.Context(), &events.SmsStopObserved{WorkspaceID: fixtures.AcmeID, Phone: fixtures.ContactTexterPhone, Via: events.UnsubscribedByKeyword, DedupID: source}))
 	require.NoError(t, env.Bus.Publish(t.Context(), &events.SmsStartObserved{WorkspaceID: fixtures.AcmeID, Phone: fixtures.ContactTexterPhone, DedupID: source}))
-	consent, err := confirmations.ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
+	consent, err := testhelper.Module[*confirmations.Module](env).ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
 	require.NoError(t, err)
 	require.NotNil(t, consent.Confirmation)
 	assert.Nil(t, consent.OptOut)

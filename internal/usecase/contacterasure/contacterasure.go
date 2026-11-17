@@ -38,6 +38,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations/confirmationsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors/visitorsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -165,19 +168,27 @@ type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.Purging
 type UseCase struct {
 	bus        *events.Bus
 	broadcasts *broadcastsunchecked.Module
-	// outbound and captured are the Erasure steps of the Outbound messages and the Captured
-	// messages, which New builds (ADR 0110: only a use case imports them).
-	outbound *outboundmessagesunchecked.Module
-	captured *capturedmessagesunchecked.Module
+	// unsubs reads the opt-outs whose stops an Erasure keeps.
+	unsubs *unsubscribes.Module
+	// outbound, captured, optOuts, suppressions and confirmations are the Erasure steps of the
+	// Outbound messages, the Captured messages, the opt-outs, the Suppressions and the
+	// Confirmations, which New builds (ADR 0110: only a use case imports them).
+	outbound      *outboundmessagesunchecked.Module
+	captured      *capturedmessagesunchecked.Module
+	optOuts       *unsubscribesunchecked.Module
+	suppressions  *suppressionsunchecked.Module
+	confirmations *confirmationsunchecked.Module
 }
 
-// New builds the Contact erasure use case over the bus whose transaction every erasure runs in and
-// the Broadcasts whose pending work it cancels; now is the Instance clock their unchecked
-// operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
+// New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
+// the Broadcasts whose pending work it cancels and the opt-outs whose standing stops it keeps; now
+// is the Instance clock their unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, unsubs *unsubscribes.Module, now func() time.Time) *UseCase {
 	return &UseCase{
-		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now),
+		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New(),
+		optOuts: unsubscribesunchecked.New(), suppressions: suppressionsunchecked.New(),
+		confirmations: confirmationsunchecked.New(),
 	}
 }
 
@@ -243,7 +254,7 @@ func (u *UseCase) steps() []step {
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
 			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 		},
-		eraseConsentStamps,
+		u.eraseConsentStamps,
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
@@ -262,9 +273,9 @@ func (u *UseCase) steps() []step {
 		// The Confirmation of the Contact's number that names no Contact; the Contact's own go with
 		// its row. Losing one fails safe (re-confirmation).
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return confirmationsunchecked.EraseNumber(ctx, s, t.Phone)
+			return u.confirmations.EraseNumber(ctx, s, t.Phone)
 		},
-		detachOptOuts,
+		u.detachOptOuts,
 		u.anonymizeDelivery,
 		// The Captured messages (Test inbox, ADR 0058) addressed to the subject's Destinations.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
