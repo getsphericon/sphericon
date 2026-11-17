@@ -58,21 +58,39 @@ func (g ghIssue) ready() bool {
 	return slices.ContainsFunc(g.Labels, func(l ghLabel) bool { return l.Name == ReadyLabel })
 }
 
-// Open returns whether each issue number is an open issue.
-func (Tracker) Open(ctx context.Context) (func(int) bool, error) {
-	out, err := gh(ctx, "issue", "list", "--state", "open", "--limit", "10000", "--json", "number", "--jq", ".[].number")
+// States returns how each issue stands: open, closed as completed or closed as not planned. A
+// number that is no issue counts as completed.
+func (Tracker) States(ctx context.Context) (func(int) TicketState, error) {
+	out, err := gh(ctx, "issue", "list", "--state", "all", "--limit", "100000", "--json", "number,state,stateReason",
+		"--jq", `.[] | "\(.number) \(.state) \(.stateReason)"`)
 	if err != nil {
 		return nil, err
 	}
-	open := map[int]bool{}
-	for field := range strings.FieldsSeq(out) {
-		n, err := strconv.Atoi(field)
-		if err != nil {
-			return nil, fmt.Errorf("gh issue list: %q is not a number", field)
+	states := map[int]TicketState{}
+	for line := range strings.Lines(out) {
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
 		}
-		open[n] = true
+		n, err := strconv.Atoi(fields[0])
+		if err != nil {
+			return nil, fmt.Errorf("gh issue list: %q is not a number", fields[0])
+		}
+		switch {
+		case fields[1] == "OPEN":
+			states[n] = Open
+		case len(fields) > 2 && fields[2] == "NOT_PLANNED":
+			states[n] = NotPlanned
+		default:
+			states[n] = Completed
+		}
 	}
-	return func(n int) bool { return open[n] }, nil
+	return func(n int) TicketState {
+		if state, ok := states[n]; ok {
+			return state
+		}
+		return Completed
+	}, nil
 }
 
 // Ready returns the open issues labelled ready-for-agent.
@@ -111,21 +129,48 @@ func (t Tracker) Issue(ctx context.Context, number int) (Issue, bool, error) {
 	return issue, g.ready(), err
 }
 
+// withBlockers adds the issue's parent and the native blocking edges of the issue and of its
+// parent: a sub-issue waits for what its parent waits for.
 func (Tracker) withBlockers(ctx context.Context, g ghIssue) (Issue, error) {
-	out, err := gh(ctx, "api", fmt.Sprintf("repos/{owner}/{repo}/issues/%d/dependencies/blocked_by", g.Number),
-		"--jq", ".[].number")
+	issue := Issue{Number: g.Number, Title: g.Title, Body: g.Body}
+	parent, err := gh(ctx, "api", fmt.Sprintf("repos/{owner}/{repo}/issues/%d", g.Number),
+		"--jq", `.parent_issue_url // "" | split("/") | last`)
 	if err != nil {
 		return Issue{}, err
 	}
-	issue := Issue{Number: g.Number, Title: g.Title, Body: g.Body}
+	if parent = strings.TrimSpace(parent); parent != "" {
+		if issue.Parent, err = strconv.Atoi(parent); err != nil {
+			return Issue{}, fmt.Errorf("parent of #%d: %q is not a number", g.Number, parent)
+		}
+	}
+	for _, n := range []int{issue.Number, issue.Parent} {
+		if n == 0 {
+			continue
+		}
+		blockers, err := nativeBlockers(ctx, n)
+		if err != nil {
+			return Issue{}, err
+		}
+		issue.BlockedBy = append(issue.BlockedBy, blockers...)
+	}
+	return issue, nil
+}
+
+func nativeBlockers(ctx context.Context, number int) ([]int, error) {
+	out, err := gh(ctx, "api", fmt.Sprintf("repos/{owner}/{repo}/issues/%d/dependencies/blocked_by", number),
+		"--jq", ".[].number")
+	if err != nil {
+		return nil, err
+	}
+	var numbers []int
 	for field := range strings.FieldsSeq(out) {
 		n, err := strconv.Atoi(field)
 		if err != nil {
-			return Issue{}, fmt.Errorf("blocked_by of #%d: %q is not a number", g.Number, field)
+			return nil, fmt.Errorf("blocked_by of #%d: %q is not a number", number, field)
 		}
-		issue.BlockedBy = append(issue.BlockedBy, n)
+		numbers = append(numbers, n)
 	}
-	return issue, nil
+	return numbers, nil
 }
 
 // TakeBack moves an issue from ready-for-agent to needs-triage and says why.

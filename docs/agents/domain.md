@@ -47,7 +47,8 @@ An ADR's front matter carries `build:` beside `status:`:
 - `done`: built in the change that records it, or it decides nothing to build.
 
 An ADR whose listed tickets are all closed counts as built, so landing the last ticket changes
-nothing here. Filing the tickets of an ADR puts their numbers in its `build:`. `mise run check:adr`
+nothing here. A ticket closed as not planned (superseded, a duplicate) builds nothing: list the ticket
+that replaces it. Filing the tickets of an ADR puts their numbers in its `build:`. `mise run check:adr`
 requires the field from ADR 0178 on; an earlier ADR without it counts as built. A ticket that builds
 on an ADR not built yet waits for it or waives it (`issue-tracker.md`, "Before `ready-for-agent`").
 

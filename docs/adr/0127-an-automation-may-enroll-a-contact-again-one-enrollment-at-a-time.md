@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1546]
 ---
 
 # An Automation may enroll a Contact again, one Enrollment at a time

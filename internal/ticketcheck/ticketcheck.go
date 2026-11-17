@@ -1,8 +1,9 @@
 // Package ticketcheck checks that a ticket ready for an agent builds on decisions that are built. An
 // ADR says in its front matter whether it is built (`build:`). A ticket that names an ADR not built
-// yet, or whose own ADR names one, either waits for a ticket that builds it or says why it builds
-// without it: an agent handed the ticket otherwise finds nothing to build on. `cmd/ticketcheck` runs
-// the checks on the files of docs/adr and on the issues of the tracker.
+// yet either waits for a ticket that builds it or says why it builds without it: an agent handed the
+// ticket otherwise finds nothing to build on. Only the ADRs the ticket names count, not those its own
+// ADR names, so a ticket names every ADR it builds on. `cmd/ticketcheck` runs the checks on the
+// files of docs/adr and on the issues of the tracker.
 package ticketcheck
 
 import (
@@ -119,7 +120,8 @@ type Issue struct {
 	Number    int
 	Title     string
 	Body      string
-	BlockedBy []int // the tracker's native blocking edges
+	Parent    int   // the issue it is a sub-issue of, or 0
+	BlockedBy []int // the tracker's native blocking edges, the parent's included
 }
 
 // Gap is an ADR a ticket builds on that is not built, with the open tickets that build it.
@@ -144,7 +146,7 @@ var (
 	adrList         = regexp.MustCompile(`\bADRs?[\s-]+(\d{4}(?:(?:\s*,\s*|\s*,?\s+and\s+)\d{4})*)`)
 	adrLink         = regexp.MustCompile(`(?:\[\[|docs/adr/)(\d{4})-`)
 	fourDigit       = regexp.MustCompile(`\d{4}`)
-	ownADR          = regexp.MustCompile(`\(ADR (\d{4})\)`)
+	ownADR          = regexp.MustCompile(`\(ADRs? (\d{4}(?:(?:\s*,\s*|\s*,?\s+and\s+)\d{4})*)\)`)
 	issueRef        = regexp.MustCompile(`#(\d+)`)
 	blockedBy       = regexp.MustCompile(`(?i)^\W*blocked by\b(.*)$`)
 	markdownHeading = regexp.MustCompile(`^\s*#{1,6}\s`)
@@ -164,37 +166,43 @@ func References(text string) []string {
 	return slices.Compact(refs)
 }
 
+// TicketState is how a ticket an ADR's `build:` lists stands.
+type TicketState int
+
+const (
+	// Open: the ticket is still building the ADR.
+	Open TicketState = iota
+	// Completed: the ticket was closed as done.
+	Completed
+	// NotPlanned: the ticket was closed without being built (superseded, a duplicate); it builds
+	// nothing.
+	NotPlanned
+)
+
 // Check returns the ADRs the issue builds on that are not built and that it neither waits for nor
-// waives. The issue builds on every ADR its title and body name and every ADR its own ADRs name;
-// its own ADRs are the one its title names as `(ADR NNNN)` and those whose `build:` lists it. An ADR
-// is built when it has no `build:` field, has `done`, or lists only tickets that are not open. The
-// issue waits for an ADR when it is blocked by one of that ADR's open tickets (a native edge or a
-// `Blocked by` line), and waives it with a line `Without ADR NNNN: <why>`.
-func Check(issue Issue, adrs []ADR, open func(int) bool) []Gap {
+// waives. The issue builds on every ADR its title and body name but its own: those its title names
+// as `(ADR NNNN)` or `(ADR NNNN, NNNN)` and those whose `build:` lists it or its parent (a sub-issue
+// of a spec builds what the spec builds). An ADR is built when it has no `build:` field, has `done`,
+// or lists no open ticket and at least one completed one. The issue waits for an ADR when it is
+// blocked by one of that ADR's open tickets (a native edge, its parent's, or a `Blocked by` line),
+// and waives it with a line `Without ADR NNNN: <why>`.
+func Check(issue Issue, adrs []ADR, state func(int) TicketState) []Gap {
 	byNumber := make(map[string]ADR, len(adrs))
 	own := map[string]bool{}
 	for _, adr := range adrs {
 		byNumber[adr.Number] = adr
-		if slices.Contains(adr.Build.Tickets, issue.Number) {
+		if slices.Contains(adr.Build.Tickets, issue.Number) ||
+			(issue.Parent != 0 && slices.Contains(adr.Build.Tickets, issue.Parent)) {
 			own[adr.Number] = true
 		}
 	}
 	for _, m := range ownADR.FindAllStringSubmatch(issue.Title, -1) {
-		own[m[1]] = true
+		for _, number := range fourDigit.FindAllString(m[1], -1) {
+			own[number] = true
+		}
 	}
 
 	refs := References(issue.Title + "\n" + issue.Body)
-	for number := range own {
-		// An ADR builds on earlier ones; a later one it names amends it ("Amended by").
-		for _, ref := range References(byNumber[number].Text) {
-			if ref < number {
-				refs = append(refs, ref)
-			}
-		}
-	}
-	slices.Sort(refs)
-	refs = slices.Compact(refs)
-
 	waits := append(slices.Clone(issue.BlockedBy), blockers(issue.Body)...)
 
 	var gaps []Gap
@@ -204,12 +212,17 @@ func Check(issue Issue, adrs []ADR, open func(int) bool) []Gap {
 			continue
 		}
 		var building []int
+		completed := false
 		for _, n := range adr.Build.Tickets {
-			if open(n) {
+			switch state(n) {
+			case Open:
 				building = append(building, n)
+			case Completed:
+				completed = true
+			case NotPlanned:
 			}
 		}
-		if len(adr.Build.Tickets) > 0 && len(building) == 0 {
+		if len(building) == 0 && completed {
 			continue
 		}
 		if slices.ContainsFunc(building, func(n int) bool { return slices.Contains(waits, n) }) || waives(issue.Body, number) {

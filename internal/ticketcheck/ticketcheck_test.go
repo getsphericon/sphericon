@@ -84,8 +84,19 @@ func decisions(t *testing.T) []ticketcheck.ADR {
 	}
 }
 
-func openTickets(numbers ...int) func(int) bool {
-	return func(n int) bool { return slices.Contains(numbers, n) }
+// openTickets says that the numbers given are open, 1301 was closed as not planned, and every
+// other ticket was completed.
+func openTickets(numbers ...int) func(int) ticketcheck.TicketState {
+	return func(n int) ticketcheck.TicketState {
+		switch {
+		case slices.Contains(numbers, n):
+			return ticketcheck.Open
+		case n == 1301:
+			return ticketcheck.NotPlanned
+		default:
+			return ticketcheck.Completed
+		}
+	}
 }
 
 func TestCheckFindsAnUnbuiltADRTheTicketNames(t *testing.T) {
@@ -95,13 +106,38 @@ func TestCheckFindsAnUnbuiltADRTheTicketNames(t *testing.T) {
 	require.Equal(t, "ADR 0126 is not built yet: #1400 builds it", gaps[0].String())
 }
 
-func TestCheckFindsAnUnbuiltADRTheTicketsOwnADRNames(t *testing.T) {
-	// The body names only its own ADR, which builds on 0136: the gap is found through the ADR's text,
-	// whether the ADR is the ticket's own by its title or by its `build:` list.
-	byTitle := ticketcheck.Issue{Number: 9999, Title: "Keep the response (ADR 0161)", Body: "See the ADR.\n"}
-	byList := ticketcheck.Issue{Number: 1456, Title: "Keep the response", Body: "See the ADR.\n"}
-	for _, issue := range []ticketcheck.Issue{byTitle, byList} {
-		require.Equal(t, []ticketcheck.Gap{{ADR: "0136"}}, ticketcheck.Check(issue, decisions(t), openTickets(1456)))
+func TestCheckReadsOnlyTheADRsTheTicketNames(t *testing.T) {
+	// ADR 0161 builds on 0136, which is not built, but a ticket that names only 0161 passes: the check
+	// reads what the ticket names, not what its ADR names. Naming 0136 brings the gap back.
+	quiet := ticketcheck.Issue{Number: 1456, Title: "Keep the response (ADR 0161)", Body: "See the ADR.\n"}
+	require.Empty(t, ticketcheck.Check(quiet, decisions(t), openTickets(1456)))
+
+	named := ticketcheck.Issue{Number: 1456, Title: "Keep the response (ADR 0161)", Body: "Follows ADR 0136.\n"}
+	require.Equal(t, []ticketcheck.Gap{{ADR: "0136"}}, ticketcheck.Check(named, decisions(t), openTickets(1456)))
+}
+
+func TestCheckCountsATicketClosedAsNotPlannedAsNoTicket(t *testing.T) {
+	adrs := append(decisions(t), adr(t, "0165-key.md", "---\nbuild: [1301]\n---\n"))
+	issue := ticketcheck.Issue{Number: 1, Body: "Extends ADR 0165.\n"}
+	require.Equal(t, []ticketcheck.Gap{{ADR: "0165"}}, ticketcheck.Check(issue, adrs, openTickets()))
+}
+
+func TestCheckTakesTheADRsOfATitleListAndOfAParentSpecAsItsOwn(t *testing.T) {
+	// 0126 and 0136 are built by #1500, a spec; its sub-issue and a ticket whose title lists both
+	// build them, so neither waits for the other.
+	adrs := append(decisions(t),
+		adr(t, "0126-wait-until.md", "---\nbuild: [1500]\n---\n\nAlso [[0136-awaited]].\n"),
+		adr(t, "0136-awaited.md", "---\nbuild: [1500]\n---\n"))
+	adrs = slices.DeleteFunc(adrs, func(a ticketcheck.ADR) bool {
+		return (a.Number == "0126" || a.Number == "0136") && !slices.Contains(a.Build.Tickets, 1500)
+	})
+	for name, issue := range map[string]ticketcheck.Issue{
+		"sub-issue":  {Number: 1501, Parent: 1500, Title: "Wait until", Body: "ADR 0126 and ADR 0136.\n"},
+		"title list": {Number: 1502, Title: "Both (ADR 0126, 0136)", Body: "ADRs 0126 and 0136.\n"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.Empty(t, ticketcheck.Check(issue, adrs, openTickets(1500, 1501, 1502)))
+		})
 	}
 }
 

@@ -71,7 +71,7 @@ func checkIssues(ctx context.Context, args []string, apply bool) error {
 		return err
 	}
 	tracker := ticketcheck.Tracker{}
-	open, err := tracker.Open(ctx)
+	states, err := tracker.States(ctx)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func checkIssues(ctx context.Context, args []string, apply bool) error {
 	}
 	failed := 0
 	for _, issue := range issues {
-		gaps := ticketcheck.Check(issue, adrs, open)
+		gaps := ticketcheck.Check(issue, adrs, states)
 		if len(gaps) == 0 {
 			continue
 		}
