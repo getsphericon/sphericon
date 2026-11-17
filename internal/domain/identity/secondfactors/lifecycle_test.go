@@ -14,6 +14,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -60,7 +61,7 @@ func newFactorRace(t *testing.T) factorRace {
 	clock := func() time.Time { return now }
 	env := testhelper.Setup(t, testhelper.Committed(), testhelper.WithClock(clock))
 	return factorRace{client: env.DB, bus: env.Bus, now: now,
-		factors: secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), testhelper.Module[*passkeys.Module](env), clock)}
+		factors: secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), testhelper.Module[*passkeys.Module](env), memberships.New(env.DB, env.Bus, nil, nil, clock), clock)}
 }
 
 // pause holds the first write matches selects, after its operation loaded and checked the User

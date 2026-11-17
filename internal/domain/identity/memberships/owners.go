@@ -11,7 +11,7 @@ import (
 // lookup, lock and notice that needs them goes through these functions.
 
 // Owners loads the owner Memberships of the Workspace s with their Users, oldest first.
-func Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
+func (ms *Module) Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 	return s.Membership().Query().
 		Where(OwnerRole()).
 		WithUser().
@@ -20,21 +20,29 @@ func Owners(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 }
 
 // OwnersOf loads the owner Memberships, with their Users, of every Workspace in workspaceIDs,
-// oldest first. It is the paged form of Owners for callers that hold no scope (a list over
-// many Workspaces).
-func OwnersOf(ctx context.Context, client *ent.Client, workspaceIDs ...int64) ([]*ent.Membership, error) {
-	return client.Membership.Query().
+// oldest first, over the module's raw client. It is the paged form of Owners for callers that hold
+// no scope (a list over many Workspaces).
+func (ms *Module) OwnersOf(ctx context.Context, workspaceIDs ...int64) ([]*ent.Membership, error) {
+	return ms.client.Membership.Query().
 		Where(membership.WorkspaceIDIn(workspaceIDs...), OwnerRole()).
 		WithUser().
 		Order(ent.Asc(membership.FieldID)).
 		All(ctx)
 }
 
-// LockOwners locks the owner Memberships of the Workspace s for the transaction and returns
+// lockOwners locks the owner Memberships of the Workspace s for the transaction and returns
 // their ids. Locking first serializes concurrent Owner changes: the second waits, then reads
 // the committed outcome of the first.
-func LockOwners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
+func lockOwners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
 	return s.Membership().Query().Where(OwnerRole()).ForUpdate().IDs(ctx)
+}
+
+// SoleOwnership is what SoleOwnershipIn read under the Owner locks: the User's Memberships in
+// ascending Workspace id order (Held) and the ids of the Workspaces whose only Owner is the User
+// (SoleOwned).
+type SoleOwnership struct {
+	Held      []*ent.Membership
+	SoleOwned []int64
 }
 
 // SoleOwnershipIn returns, on the transaction tx, the User's Memberships in ascending Workspace
@@ -46,7 +54,7 @@ func LockOwners(ctx context.Context, s *ent.Scoped) ([]int64, error) {
 // deadlock and abort with a database error, never read stale. Locking in ascending Workspace id
 // order makes two co-Owners leaving at once serialize on the Workspace: the later one reads the
 // earlier one's outcome.
-func SoleOwnershipIn(ctx context.Context, tx *ent.Client, userID int64) (held []*ent.Membership, soleOwned []int64, err error) {
+func (ms *Module) SoleOwnershipIn(ctx context.Context, tx *ent.Client, userID int64) (SoleOwnership, error) {
 	read := func() ([]*ent.Membership, error) {
 		return tx.Membership.Query().
 			Where(membership.UserID(userID)).
@@ -59,7 +67,7 @@ func SoleOwnershipIn(ctx context.Context, tx *ent.Client, userID int64) (held []
 			if _, locked := owners[m.WorkspaceID]; locked {
 				continue
 			}
-			ids, err := LockOwners(ctx, tx.Scoped(m.WorkspaceID))
+			ids, err := lockOwners(ctx, tx.Scoped(m.WorkspaceID))
 			if err != nil {
 				return err
 			}
@@ -70,21 +78,23 @@ func SoleOwnershipIn(ctx context.Context, tx *ent.Client, userID int64) (held []
 
 	first, err := read()
 	if err != nil {
-		return nil, nil, err
+		return SoleOwnership{}, err
 	}
 	if err := lock(first); err != nil {
-		return nil, nil, err
+		return SoleOwnership{}, err
 	}
-	if held, err = read(); err != nil {
-		return nil, nil, err
+	held, err := read()
+	if err != nil {
+		return SoleOwnership{}, err
 	}
 	if err := lock(held); err != nil {
-		return nil, nil, err
+		return SoleOwnership{}, err
 	}
+	sole := SoleOwnership{Held: held}
 	for _, m := range held {
 		if IsOwner(m.Role) && len(owners[m.WorkspaceID]) == 1 {
-			soleOwned = append(soleOwned, m.WorkspaceID)
+			sole.SoleOwned = append(sole.SoleOwned, m.WorkspaceID)
 		}
 	}
-	return held, soleOwned, nil
+	return sole, nil
 }

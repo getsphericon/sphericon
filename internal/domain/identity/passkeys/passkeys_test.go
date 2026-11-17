@@ -27,7 +27,7 @@ func setup(t *testing.T) (*testhelper.TestEnv, *passkeys.Module) {
 	prover := login.New(login.Config[*ent.User]{
 		Throttle: throttle.NewAttempts(env.DB, time.Now).For(throttle.KindLogin), Passwords: testhelper.Passwords(),
 	})
-	identity := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), prover, time.Now)
+	identity := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), prover, testhelper.UsersModules(env), time.Now)
 	// The ceremony secret only seals the cookies this module opens again.
 	party, err := passkeys.NewRelyingParty(env.AppURL, "passkeys-test-ceremony-secret")
 	require.NoError(t, err)

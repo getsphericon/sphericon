@@ -96,7 +96,7 @@ func (m *Module) UserFeed(ctx context.Context, cursor string, limit int) (pagina
 			live = append(live, e.User.ID)
 		}
 	}
-	mailings, err := consentrecords.Mailings(ctx, m.ent, live...)
+	mailings, err := m.consents.Mailings(ctx, live...)
 	if err != nil {
 		return pagination.CursorPage[UserFeedEntry]{}, err
 	}

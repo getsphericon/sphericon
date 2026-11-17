@@ -81,7 +81,7 @@ func markMailings(t *testing.T, h *harness) {
 func decide(t *testing.T, h *harness, userID int64, decision consentrecord.Decision) {
 	t.Helper()
 	err := h.env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		return consentrecords.Write(t.Context(), tx, userID, consentrecords.Consents{
+		return testhelper.Module[*consentrecords.Module](h.env).Write(t.Context(), tx, userID, consentrecords.Consents{
 			Source:  consentrecord.SourceAccountSettings,
 			Entries: []consentrecords.Entry{{VersionID: fixtures.OperatorNewsCurrentID, Decision: decision}},
 		})
@@ -208,7 +208,7 @@ func TestADecisionOnAnotherItemIsNotAnEntry(t *testing.T) {
 	_, saved := usersFrom(t, c, "")
 
 	err := h.env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		return consentrecords.Write(t.Context(), tx, fixtures.OwnerJohnID, consentrecords.Consents{
+		return testhelper.Module[*consentrecords.Module](h.env).Write(t.Context(), tx, fixtures.OwnerJohnID, consentrecords.Consents{
 			Source:  consentrecord.SourceReAcceptance,
 			Entries: []consentrecords.Entry{{VersionID: fixtures.ServiceTermsCurrentID, Decision: consentrecord.DecisionAccepted}},
 		})

@@ -115,6 +115,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -460,14 +461,16 @@ var editionPackage = do.Package(
 		cfg := do.MustInvoke[*config.Config](i)
 		members := do.MustInvoke[*staffmembers.Module](i)
 		return ee.New(ee.Deps{
-			Client:        do.MustInvoke[*ent.Client](i),
-			Bus:           do.MustInvoke[*events.Bus](i),
-			License:       do.MustInvoke[*licensekey.License](i),
-			StaffSessions: members.Sessions(),
-			Suspender:     do.MustInvoke[*suspension.Suspender](i),
-			Workspaces:    do.MustInvoke[*workspaces.Module](i),
-			Reputation:    do.MustInvoke[*reputation.Module](i),
-			Cipher:        do.MustInvoke[*secrets.Cipher](i),
+			Client:         do.MustInvoke[*ent.Client](i),
+			Bus:            do.MustInvoke[*events.Bus](i),
+			License:        do.MustInvoke[*licensekey.License](i),
+			StaffSessions:  members.Sessions(),
+			Suspender:      do.MustInvoke[*suspension.Suspender](i),
+			Workspaces:     do.MustInvoke[*workspaces.Module](i),
+			Reputation:     do.MustInvoke[*reputation.Module](i),
+			Cipher:         do.MustInvoke[*secrets.Cipher](i),
+			Memberships:    do.MustInvoke[*memberships.Module](i),
+			ConsentRecords: do.MustInvoke[*consentrecords.Module](i),
 		}, workspaceoversight.Config{
 			Abuse:         abusedetector.LimitsFromPercent(cfg.AbuseVolumeFloor, cfg.AbuseWarnComplaintPercent, cfg.AbuseWarnBouncePercent, cfg.AbuseFreezeComplaintPercent, cfg.AbuseFreezeBouncePercent),
 			SupportEmail:  cfg.SupportEmail,
@@ -699,9 +702,13 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*workspaces.Module, error) {
 		return workspaces.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
-	// The Memberships (ADR 0102): the lookup of a Workspace's scope and the changes of a Role.
+	// The Memberships (ADR 0102): the lookup of a Workspace's scope and the changes of a Role, and
+	// the creation of a Workspace with its Owner, which starts with the default Send cap
+	// (suspension's, ADR 0146) where the Instance has Send caps.
 	do.Lazy(func(i do.Injector) (*memberships.Module, error) {
-		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i)), nil
+		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspaces.NewCreation(workspaceid.New),
+			do.MustInvoke[*suspension.DefaultSendCap](i),
+			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Users (ADR 0102), over the raw client. A step that asks for the current password proves it
 	// through the login module's prove path, over the Users' Login throttle (ADR 0025).
@@ -709,16 +716,19 @@ var identityPackage = do.Package(
 		passwords := do.MustInvoke[*credentials.Hasher](i)
 		prover := login.New(login.Config[*ent.User]{Throttle: do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), Passwords: passwords})
 		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), prover,
+			users.Modules{
+				Memberships: do.MustInvoke[*memberships.Module](i), Invitations: do.MustInvoke[*invitations.Module](i),
+				JoinDomains: do.MustInvoke[*joindomains.Module](i),
+			},
 			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a domain module
-	// of identity, ADR 0102), which starts with the default Send cap (suspension's, ADR 0146) where
-	// the Instance has Send caps, and the sign-in through a Sign-in provider (ADR 0111).
+	// of identity, ADR 0102), and the sign-in through a Sign-in provider (ADR 0111).
 	do.Lazy(func(i do.Injector) (*signup.Module, error) {
 		usersModule := do.MustInvoke[*users.Module](i)
 		links := users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i))
 		return signup.New(do.MustInvoke[*events.Bus](i), usersModule, do.MustInvoke[*consentrecords.Module](i), links,
-			do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*suspension.DefaultSendCap](i),
+			do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*memberships.Module](i),
 			do.MustInvoke[*apitokens.Module](i), do.MustInvoke[*secondfactors.Module](i),
 			signup.SignUpConfig{
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
@@ -738,11 +748,12 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*noticedelivery.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
-		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*signinprovider.Providers](i), noticedelivery.Config{
-			AppURL:         cfg.AppURL,
-			Support:        cfg.SupportEmail,
-			TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
-		}), nil
+		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*workspaces.Module](i),
+			do.MustInvoke[*signinprovider.Providers](i), do.MustInvoke[*memberships.Module](i), noticedelivery.Config{
+				AppURL:         cfg.AppURL,
+				Support:        cfg.SupportEmail,
+				TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
+			}), nil
 	}),
 	// The Sign-up survey is on only with an explicit switch and the `staff` license; the warning for
 	// a switch without the license is logged here, once, at start.
@@ -763,7 +774,8 @@ var identityPackage = do.Package(
 	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; its
 	// erase removes every Workspace-owned table's rows itself, the Enterprise Edition's too (ADR 0110).
 	do.Lazy(func(i do.Injector) (*workspacedeletion.UseCase, error) {
-		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
+		return workspacedeletion.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*workspaces.Module](i),
+			do.MustInvoke[*memberships.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Instance state (ADR 0032), set by a Staff member in the console (ADR 0063), over the raw
 	// client, with its Release check (a daily job, the line at start and the banner of an owner)
@@ -792,7 +804,7 @@ var identityPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*secondfactors.Module, error) {
 		return secondfactors.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*users.Module](i),
-			do.MustInvoke[*passkeys.Module](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*passkeys.Module](i), do.MustInvoke[*memberships.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The admission of a request made on a User's session (ADR 0061): /site's Access and the OAuth
 	// consent's decision.
@@ -802,7 +814,7 @@ var identityPackage = do.Package(
 	// User deletion (a use case, ADR 0050, ADR 0111): the proof feeds the Users' Login throttle.
 	do.Lazy(func(i do.Injector) (*userdeletion.UseCase, error) {
 		usersModule := do.MustInvoke[*users.Module](i)
-		return userdeletion.New(do.MustInvoke[*events.Bus](i), usersModule,
+		return userdeletion.New(do.MustInvoke[*events.Bus](i), usersModule, do.MustInvoke[*memberships.Module](i),
 			users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i)), do.MustInvoke[*secondfactors.Module](i),
 			do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), do.MustInvoke[*credentials.Hasher](i)), nil
 	}),
@@ -992,7 +1004,7 @@ var contentPackage = do.Package(
 			Users: do.MustInvoke[*users.Module](i), Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
-			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i), RemovalCheck: do.MustInvoke[*removalcheck.Module](i),
+			RemovalCheck: do.MustInvoke[*removalcheck.Module](i),
 		}, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {

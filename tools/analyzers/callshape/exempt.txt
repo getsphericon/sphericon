@@ -3,8 +3,3 @@
 # when it gains an entry, the analyzer reports an entry that keeps the contract, and its test an entry
 # that names no package of the domain tier. A migration removes its packages; the last one deletes
 # the list, its embed and its check.
-internal/domain/identity/consentrecords
-internal/domain/identity/invitations
-internal/domain/identity/joindomains
-internal/domain/identity/memberships
-internal/domain/identity/memberships/membershipsunchecked

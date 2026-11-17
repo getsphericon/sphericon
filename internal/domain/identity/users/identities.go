@@ -296,7 +296,7 @@ type HolderLink struct {
 // and the identities linked before, in the same transaction. FirstProof reports that case: the
 // caller drops the rest of what was set up before the proof (ADR 0170).
 func (a *Module) LinkToHolderIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (HolderLink, error) {
-	linked, identityID, firstProof, err := linkToHolderIn(ctx, tx, a.pub(tx), holderID, in, a.now())
+	linked, identityID, firstProof, err := a.linkToHolderIn(ctx, tx, a.pub(tx), holderID, in, a.now())
 	if err != nil {
 		return HolderLink{}, err
 	}
@@ -304,7 +304,7 @@ func (a *Module) LinkToHolderIn(ctx context.Context, tx *ent.Client, holderID in
 }
 
 // linkToHolderIn is LinkToHolderIn on the publisher pub of tx's transaction, at now.
-func linkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
+func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
 	// Every link ends the other sessions (ADR 0048); the caller starts the new one from
 	// the User returned here, so it holds the new epoch.
 	// The provider's proof stamps the address only from empty, and the rows-changed count
@@ -326,7 +326,7 @@ func linkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, h
 		return nil, 0, false, err
 	}
 	if stamped {
-		if _, err := applyDomainJoinIn(ctx, tx, pub, linked); err != nil {
+		if _, err := a.applyDomainJoinIn(ctx, tx, pub, linked); err != nil {
 			return nil, 0, false, err
 		}
 	}

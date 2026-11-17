@@ -42,22 +42,26 @@ type Request struct {
 
 // UseCase deletes Users.
 type UseCase struct {
-	bus        *events.Bus
-	users      *users.Module
-	removal    *usersunchecked.Module
-	links      *users.Links
-	factors    *secondfactors.Module
-	workspaces *workspaces.Module
-	login      *login.Module[*ent.User]
+	bus         *events.Bus
+	users       *users.Module
+	removal     *usersunchecked.Module
+	memberships *memberships.Module
+	leave       *membershipsunchecked.Module
+	links       *users.Links
+	factors     *secondfactors.Module
+	workspaces  *workspaces.Module
+	login       *login.Module[*ent.User]
 }
 
-// New builds the use case over the bus whose transaction it opens. budget is the Login throttle
+// New builds the use case over the bus whose transaction it opens, and the Memberships the User
+// leaves (the leave of a doomed Workspace is membershipsunchecked's, built here). budget is the Login throttle
 // of the Users (throttle.KindLogin), the budget every proof of a signed-in User feeds, and passwords
 // the hasher the stored passwords were made with: the password is proven through the login
 // module's one prove path over them. The Workspaces say which of the User's sole-owned ones are live.
-func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
+func New(bus *events.Bus, usersModule *users.Module, members *memberships.Module, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
 	return &UseCase{
-		bus: bus, users: usersModule, removal: usersunchecked.New(usersModule, bus), links: links, factors: factors,
+		bus: bus, users: usersModule, removal: usersunchecked.New(usersModule, bus),
+		memberships: members, leave: membershipsunchecked.New(members, bus), links: links, factors: factors,
 		workspaces: ws,
 		login:      login.New(login.Config[*ent.User]{Throttle: budget, Passwords: passwords}),
 	}
@@ -104,8 +108,8 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 		}
 	}
 
-	err = uc.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		return uc.deleteIn(ctx, tx, pub, u, req.Code)
+	err = uc.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return uc.deleteIn(ctx, tx, u, req.Code)
 	})
 	if errors.Is(err, secondfactors.ErrDeletionCodeInvalid) {
 		// The wrong code is counted like a wrong password (ADR 0025), after the rollback.
@@ -117,17 +121,17 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 }
 
 // deleteIn is the deletion's transaction tx, for the User proven as read for the proof.
-func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publisher, proven *ent.User, code string) error {
+func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, proven *ent.User, code string) error {
 	userID := proven.ID
 	deletion, err := uc.removal.DeletionIn(ctx, tx, proven)
 	if err != nil {
 		return err
 	}
-	held, soleOwned, err := memberships.SoleOwnershipIn(ctx, tx, userID)
+	owned, err := uc.memberships.SoleOwnershipIn(ctx, tx, userID)
 	if err != nil {
 		return err
 	}
-	live, err := uc.workspaces.LiveIn(ctx, tx, soleOwned...)
+	live, err := uc.workspaces.LiveIn(ctx, tx, owned.SoleOwned...)
 	if err != nil {
 		return err
 	}
@@ -137,13 +141,13 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 	if err := uc.factors.DeletionCode(ctx, tx, deletion.User(), code); err != nil {
 		return err
 	}
-	for _, m := range held {
+	for _, m := range owned.Held {
 		ts := tx.Scoped(m.WorkspaceID)
 		// Only a sole-owned Workspace still standing here is in its deletion window.
-		if slices.Contains(soleOwned, m.WorkspaceID) {
-			err = membershipsunchecked.LeaveDoomedWorkspaceIn(ctx, ts, pub, userID)
+		if slices.Contains(owned.SoleOwned, m.WorkspaceID) {
+			err = uc.leave.LeaveDoomedWorkspaceIn(ctx, ts, userID)
 		} else {
-			err = memberships.LeaveIn(ctx, ts, pub, userID)
+			err = uc.memberships.LeaveIn(ctx, ts, userID)
 		}
 		if err != nil {
 			return err

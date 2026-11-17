@@ -194,7 +194,7 @@ included, reads the table and changes it only through a function of its owner: t
 standing (`workspaces.Module.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position of `workspaces.Feed`)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
 (`users.Module.ClearSurveyDueIn`, `users.Feed.SetPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
-Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
+Invitation or a Join domain admits (`memberships.Module.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
 `users`; a provider's refusal of an Integration (`integrations.Standing.RecordRefused`) for
 `outboundmessages`. A write through a generic helper counts where
 the helper is instantiated with an ent write builder. The owner also declares each unique

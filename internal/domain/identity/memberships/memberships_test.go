@@ -30,19 +30,19 @@ func TestChangeMembershipRoleInvariants(t *testing.T) {
 	}
 
 	t.Run("an admin cannot grant the owner Role", func(t *testing.T) {
-		_, err := ms.ChangeRole(ctx, s, actor, membership.RoleAdmin, fixtures.InitechMemberMembershipID, membership.RoleOwner)
+		_, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleAdmin}, memberships.ChangeRoleInput{ID: fixtures.InitechMemberMembershipID, Role: membership.RoleOwner})
 		require.ErrorIs(t, err, memberships.Require(membership.RoleAdmin, memberships.PermOwnersManage))
 		assert.Equal(t, membership.RoleMember, roleOf(fixtures.InitechMemberMembershipID))
 	})
 
 	t.Run("an admin cannot alter an owner", func(t *testing.T) {
-		_, err := ms.ChangeRole(ctx, s, actor, membership.RoleAdmin, fixtures.InitechCoOwnerMembershipID, membership.RoleMember)
+		_, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleAdmin}, memberships.ChangeRoleInput{ID: fixtures.InitechCoOwnerMembershipID, Role: membership.RoleMember})
 		require.ErrorIs(t, err, memberships.Require(membership.RoleAdmin, memberships.PermOwnersManage))
 		assert.Equal(t, membership.RoleOwner, roleOf(fixtures.InitechCoOwnerMembershipID))
 	})
 
 	t.Run("an owner grants the owner Role", func(t *testing.T) {
-		m, err := ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechAdminMembershipID, membership.RoleOwner)
+		m, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.InitechAdminMembershipID, Role: membership.RoleOwner})
 		require.NoError(t, err)
 		assert.Equal(t, membership.RoleOwner, m.Role)
 		require.NotNil(t, m.Edges.User, "the User edge comes loaded for the response")
@@ -50,22 +50,22 @@ func TestChangeMembershipRoleInvariants(t *testing.T) {
 	})
 
 	t.Run("a co-owner can be demoted while another owner remains", func(t *testing.T) {
-		m, err := ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechCoOwnerMembershipID, membership.RoleAdmin)
+		m, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.InitechCoOwnerMembershipID, Role: membership.RoleAdmin})
 		require.NoError(t, err)
 		assert.Equal(t, membership.RoleAdmin, m.Role)
 	})
 
 	t.Run("the last owner cannot be demoted", func(t *testing.T) {
 		// The admin promoted above and the owner Olga remain; demote the former, then Olga is last.
-		_, err := ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechAdminMembershipID, membership.RoleMember)
+		_, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.InitechAdminMembershipID, Role: membership.RoleMember})
 		require.NoError(t, err)
-		_, err = ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID, membership.RoleAdmin)
+		_, err = ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.InitechOwnerMembershipID, Role: membership.RoleAdmin})
 		require.ErrorIs(t, err, memberships.ErrDemoteLastOwner)
 		assert.Equal(t, membership.RoleOwner, roleOf(fixtures.InitechOwnerMembershipID))
 	})
 
 	t.Run("a Membership of another Workspace is not found", func(t *testing.T) {
-		_, err := ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.GlobexOwnerMembershipID, membership.RoleMember)
+		_, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.GlobexOwnerMembershipID, Role: membership.RoleMember})
 		require.ErrorIs(t, err, memberships.ErrMemberNotFound)
 	})
 }
@@ -87,12 +87,12 @@ func TestChangeMembershipRoleAuditsInTheSameTransaction(t *testing.T) {
 	updates := func() int { return membershipUpdateEntries(t, env) }
 
 	before := updates()
-	_, err := ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechCoOwnerMembershipID, membership.RoleAdmin)
+	_, err := ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.InitechCoOwnerMembershipID, Role: membership.RoleAdmin})
 	require.NoError(t, err)
 	assert.Equal(t, before+1, updates(), "a committed change leaves its entry")
 
 	// Olga is now the last owner: the refused change rolls back and records nothing.
-	_, err = ms.ChangeRole(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID, membership.RoleAdmin)
+	_, err = ms.ChangeRole(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, memberships.ChangeRoleInput{ID: fixtures.InitechOwnerMembershipID, Role: membership.RoleAdmin})
 	require.ErrorIs(t, err, memberships.ErrDemoteLastOwner)
 	assert.Equal(t, before+1, updates(), "a refused change leaves no entry")
 }
@@ -111,25 +111,25 @@ func TestRemoveMembershipInvariants(t *testing.T) {
 	}
 
 	t.Run("an admin cannot remove an owner", func(t *testing.T) {
-		err := ms.Remove(ctx, s, actor, membership.RoleAdmin, fixtures.InitechCoOwnerMembershipID)
+		err := ms.Remove(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleAdmin}, fixtures.InitechCoOwnerMembershipID)
 		require.ErrorIs(t, err, memberships.Require(membership.RoleAdmin, memberships.PermOwnersManage))
 		assert.True(t, exists(fixtures.InitechCoOwnerMembershipID))
 	})
 
 	t.Run("an admin removes a member", func(t *testing.T) {
-		require.NoError(t, ms.Remove(ctx, s, actor, membership.RoleAdmin, fixtures.InitechMemberMembershipID))
+		require.NoError(t, ms.Remove(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleAdmin}, fixtures.InitechMemberMembershipID))
 		assert.False(t, exists(fixtures.InitechMemberMembershipID))
 	})
 
 	t.Run("an owner removes a co-owner, then the last owner cannot be removed", func(t *testing.T) {
-		require.NoError(t, ms.Remove(ctx, s, actor, membership.RoleOwner, fixtures.InitechCoOwnerMembershipID))
-		err := ms.Remove(ctx, s, actor, membership.RoleOwner, fixtures.InitechOwnerMembershipID)
+		require.NoError(t, ms.Remove(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, fixtures.InitechCoOwnerMembershipID))
+		err := ms.Remove(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, fixtures.InitechOwnerMembershipID)
 		require.ErrorIs(t, err, memberships.ErrRemoveLastOwner)
 		assert.True(t, exists(fixtures.InitechOwnerMembershipID))
 	})
 
 	t.Run("a Membership of another Workspace is not found", func(t *testing.T) {
-		err := ms.Remove(ctx, s, actor, membership.RoleOwner, fixtures.GlobexOwnerMembershipID)
+		err := ms.Remove(ctx, s, memberships.Caller{Actor: actor, Role: membership.RoleOwner}, fixtures.GlobexOwnerMembershipID)
 		require.ErrorIs(t, err, memberships.ErrMemberNotFound)
 		assert.True(t, exists(fixtures.GlobexOwnerMembershipID))
 	})

@@ -32,7 +32,7 @@ client, since an account's event belongs to no Workspace) answers the Notices a 
 for through identity's modules alone, wording what happened in another context from the facts its
 event carries; the Sign-up (`internal/domain/identity/signup`, which holds the raw client, since
 neither the User nor its first Workspace exists when a step starts) creates the User's first
-Workspace through `memberships.CreateWorkspaceIn` in every step that makes a User Verified, each on its own transaction: the verification and reset
+Workspace through `memberships.Module.CreateWorkspaceIn` in every step that makes a User Verified, each on its own transaction: the verification and reset
 links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
 completion of a pending sign-up, calling the `users` functions for the User's part
 (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
@@ -69,7 +69,7 @@ Workspace row on through
 ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with every
 job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; the
 Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace for a Verified User
-through `memberships.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
+through `memberships.Module.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
 starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146) and its `workspace.create`
 Audit entry, moves a deleted one back through
 `workspacesunchecked.Module.RestoreIn`, and renames one or changes its postal address through
@@ -80,8 +80,8 @@ or the Login throttle and the deletion link, then the Second factor code through
 `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
 opens the deletion on the locked User row (`usersunchecked.Module.DeletionIn`, which refuses a proof made
 before a password was set or removed), locks the Owner rows of its Workspaces
-(`memberships.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace
-(`memberships.LeaveIn`, or `membershipsunchecked.LeaveDoomedWorkspaceIn` for one in its deletion
+(`memberships.Module.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace
+(`memberships.Module.LeaveIn`, or `membershipsunchecked.Module.LeaveDoomedWorkspaceIn` for one in its deletion
 window) and applies the deletion last (`ApplyDeletion`), which deletes the row and publishes `UserDeleted`.
 What stays unchecked lives in `<module>unchecked` (ADR 0110). A write is left unchecked only
 when its check needs a module its owner may not call: one in a higher context, or several at
@@ -109,7 +109,7 @@ use writes behind the Removal check (`tagsunchecked.Deletion`, the edit
 `contactsunchecked.CustomFieldUpdate`, `integrationsunchecked.Deletion` and
 `sendingdomainsunchecked.Deletion`, each opened on its row, then checked by the use case and
 applied, ADR 0145), User deletion's removals
-(`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
+(`membershipsunchecked.Module.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
 deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
 Removal writes), the restore and the tombstone of a Workspace's deletion cycle
 (`workspacesunchecked.Module.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR

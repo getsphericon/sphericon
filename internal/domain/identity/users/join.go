@@ -7,8 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -26,11 +24,11 @@ import (
 // with the system as the actor and the joiner as target, in the bus transaction tx is bound to.
 // It returns the joined Workspace, nil when nothing was joined. Nothing is mailed.
 func (a *Module) ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, u *ent.User) (*ent.Workspace, error) {
-	return applyDomainJoinIn(ctx, tx, a.pub(tx), u)
+	return a.applyDomainJoinIn(ctx, tx, a.pub(tx), u)
 }
 
 // applyDomainJoinIn is ApplyDomainJoinIn on the publisher pub of tx's transaction.
-func applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
+func (a *Module) applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
 	_, host, ok := strings.Cut(u.Email, "@")
 	if !ok {
 		return nil, nil
@@ -39,7 +37,7 @@ func applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 	if !ok {
 		return nil, nil
 	}
-	holder, err := joindomains.HolderIn(ctx, tx, domain)
+	holder, err := a.mods.JoinDomains.HolderIn(ctx, tx, domain)
 	if err != nil || holder == nil {
 		return nil, err
 	}
@@ -69,7 +67,7 @@ func applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 		return nil, nil
 	}
 
-	joined, err := memberships.AddByDomainIn(ctx, ts, u.ID)
+	joined, err := a.mods.Memberships.AddByDomainIn(ctx, ts, u.ID)
 	if err != nil {
 		return nil, err
 	}

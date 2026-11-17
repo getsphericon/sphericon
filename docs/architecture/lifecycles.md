@@ -5,7 +5,7 @@
 ## Owners and suspension
 
 **Owners and suspension are defined once.** `internal/domain/identity/memberships` owns "Owner of a
-Workspace": `Owners`, `OwnersOf`, `LockOwners`, `IsOwner`, `OwnerRole`;
+Workspace": `Module.Owners`, `Module.OwnersOf`, the lock of the Owner rows, `IsOwner`, `OwnerRole`;
 `internal/domain/identity/suspension` owns "suspended" (`Is`, `Suspended`, `NotSuspended`,
 `BySystem`). A Workspace is suspended through the container's one `suspension.Suspender` (the
 command line, the Staff console and the abuse detector), whose event tells its Owners (see

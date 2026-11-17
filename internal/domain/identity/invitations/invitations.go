@@ -68,7 +68,7 @@ func New(client *ent.Client, bus *events.Bus, now func() time.Time) *Module {
 
 // PendingInvitations lists the unaccepted Invitations of the Workspace s with their inviters,
 // oldest first.
-func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, error) {
+func (m *Module) PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, error) {
 	return s.Invitation().Query().
 		Where(invitation.AcceptedAtIsNil()).
 		WithInviter().
@@ -78,16 +78,11 @@ func PendingInvitations(ctx context.Context, s *ent.Scoped) ([]*ent.Invitation, 
 
 // PendingInvitation looks up a pending, unexpired Invitation by its raw token, with
 // its Workspace edge. The token is the authorization, so no Workspace is known up
-// front. ErrInvitationLinkNotFound when there is none.
+// front. ErrInvitationLinkNotFound when there is none. The module that accepts the Invitation
+// (users.Module.AcceptInvitationLink) looks it up here too.
 func (m *Module) PendingInvitation(ctx context.Context, token string) (*ent.Invitation, error) {
-	return PendingByToken(ctx, m.client, token, m.now())
-}
-
-// PendingByToken is PendingInvitation on client at the time at, for the module that accepts the
-// Invitation (users.Module.AcceptInvitationLink).
-func PendingByToken(ctx context.Context, client *ent.Client, token string, at time.Time) (*ent.Invitation, error) {
-	inv, err := client.Invitation.Query().
-		Where(invitation.TokenHash(credentials.HashSecret(token)), PendingAt(at)).
+	inv, err := m.client.Invitation.Query().
+		Where(invitation.TokenHash(credentials.HashSecret(token)), PendingAt(m.now())).
 		WithWorkspace().
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -103,9 +98,11 @@ func PendingAt(now time.Time) predicate.Invitation {
 }
 
 // MarkAcceptedIn marks the Invitation id of the scoped Workspace accepted, on the transaction of
-// the acceptance that made its Membership, at `at`, and clears its address: an accepted Invitation
-// is only the latch, and the address would outlive a User who deletes themself (ADR 0050).
-func MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64, at time.Time) error {
+// the acceptance that made its Membership, at the module's now, and clears its address: an accepted
+// Invitation is only the latch, and the address would outlive a User who deletes themself
+// (ADR 0050).
+func (m *Module) MarkAcceptedIn(ctx context.Context, ts *ent.Scoped, id int64) error {
+	at := m.now()
 	return lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := ts.Invitation().Update().
 			Where(invitation.ID(id), invitation.AcceptedAtIsNil(), PendingAt(at)).
@@ -124,21 +121,27 @@ type InviteInput struct {
 	InvitedBy int64
 }
 
+// Issued is an Invitation Invite created or reissued, and the raw one-time token of its link.
+type Issued struct {
+	Invitation *ent.Invitation
+	Token      string
+}
+
 // Invite creates the Invitation for an email, or reissues the pending one (token,
 // expiry, role), and records `invitation.create` in
 // the same transaction. It generates the one-time token, stores only its hash, sets
-// the expiry InviteTokenTTL ahead and returns the raw token for the caller's link;
+// the expiry InviteTokenTTL ahead and returns it with the raw token for the caller's link;
 // the token itself is never logged. It publishes events.InvitationCreated in the same
 // transaction, which mails the invitee their link (ADR 0105). ErrEmailEmpty for a blank email,
 // ErrAlreadyMember when the address already has a Membership in the Workspace.
 // An accepted Invitation stays accepted: inviting its address again creates a new row.
-func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, in InviteInput) (*ent.Invitation, string, error) {
+func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, in InviteInput) (Issued, error) {
 	if emailcase.Of(in.Email) == "" {
-		return nil, "", ErrEmailEmpty
+		return Issued{}, ErrEmailEmpty
 	}
 	email, err := validation.AccountEmail(fieldname.Email, in.Email)
 	if err != nil {
-		return nil, "", err
+		return Issued{}, err
 	}
 	// The raw token travels in the invite link and is never stored.
 	token := credentials.GenerateTokenSecret()
@@ -188,9 +191,9 @@ func (m *Module) Invite(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 		})
 	})
 	if err != nil {
-		return nil, "", err
+		return Issued{}, err
 	}
-	return inv, token, nil
+	return Issued{Invitation: inv, Token: token}, nil
 }
 
 // RevokeInvitation deletes a pending Invitation and records `invitation.revoke`.

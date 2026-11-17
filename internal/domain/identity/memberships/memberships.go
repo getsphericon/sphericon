@@ -12,6 +12,7 @@ package memberships
 
 import (
 	"context"
+	"time"
 
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
@@ -26,14 +27,43 @@ import (
 
 // Module reads and writes Memberships over the raw client.
 type Module struct {
-	client *ent.Client
-	bus    *events.Bus
+	client      *ent.Client
+	bus         *events.Bus
+	creation    *workspaces.Creation
+	startingCap StartingSendCap
+	now         func() time.Time
 }
 
 // New builds the module over the ent client; the bus opens the transactions of a Role change,
-// a removal and Leaving, and names the actor of a scope.
-func New(client *ent.Client, bus *events.Bus) *Module {
-	return &Module{client: client, bus: bus}
+// a removal and Leaving, names the actor of a scope and publishes in the transaction of a client an
+// operation is given (events.Bus.PublishIn). creation writes the Workspace CreateWorkspaceIn
+// creates, with the Send cap startingCap says it starts with, and now is the Instance clock a
+// Second factor reminder is stamped by.
+func New(client *ent.Client, bus *events.Bus, creation *workspaces.Creation, startingCap StartingSendCap, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, creation: creation, startingCap: startingCap, now: now}
+}
+
+// publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):
+// the publisher an operation given a transaction's client hands to events.RecordAudit.
+type publisherIn struct {
+	bus *events.Bus
+	in  events.InTx
+}
+
+func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
+	return p.bus.PublishIn(ctx, p.in, ev)
+}
+
+// pub is the publisher of the bus transaction in is bound to.
+func (ms *Module) pub(in events.InTx) events.Publisher {
+	return publisherIn{bus: ms.bus, in: in}
+}
+
+// MemberScope is a User's Membership of a Workspace and the scoped client of that Workspace,
+// acting as the User.
+type MemberScope struct {
+	Scope      *ent.Scoped
+	Membership *ent.Membership
 }
 
 // Scope resolves the Workspace addressed by a /w/{id} path segment for a User and
@@ -42,19 +72,19 @@ func New(client *ent.Client, bus *events.Bus) *Module {
 // point of the scoped client: access is "does this User have a Membership on this
 // Workspace?". workspaces.ErrNotFound means the Workspace id does not exist or the User is
 // not a member.
-func (ms *Module) Scope(ctx context.Context, userID int64, publicID string) (*ent.Scoped, *ent.Membership, error) {
+func (ms *Module) Scope(ctx context.Context, userID int64, publicID string) (MemberScope, error) {
 	m, err := ms.client.Membership.Query().
 		Where(membership.UserID(userID), membership.HasWorkspaceWith(workspace.PublicID(publicID), workspaces.Live())).
 		WithUser().
 		WithWorkspace().
 		Only(ctx)
 	if ent.IsNotFound(err) {
-		return nil, nil, workspaces.ErrNotFound
+		return MemberScope{}, workspaces.ErrNotFound
 	}
 	if err != nil {
-		return nil, nil, err
+		return MemberScope{}, err
 	}
-	return ms.ScopeOf(m), m, nil
+	return MemberScope{Scope: ms.ScopeOf(m), Membership: m}, nil
 }
 
 // Restorable is the id of the deleted Workspace publicID whose User's Role holds workspace:delete
@@ -101,7 +131,7 @@ func (ms *Module) OfUser(ctx context.Context, userID int64) ([]*ent.Membership, 
 
 // OfUserIn lists every Membership of the User on the transaction tx, a Workspace in its deletion
 // window included, oldest Workspace first: the Workspaces a step about the User scopes to in turn.
-func OfUserIn(ctx context.Context, tx *ent.Client, userID int64) ([]*ent.Membership, error) {
+func (ms *Module) OfUserIn(ctx context.Context, tx *ent.Client, userID int64) ([]*ent.Membership, error) {
 	return tx.Membership.Query().
 		Where(membership.UserID(userID)).
 		Order(ent.Asc(membership.FieldWorkspaceID)).
@@ -109,7 +139,7 @@ func OfUserIn(ctx context.Context, tx *ent.Client, userID int64) ([]*ent.Members
 }
 
 // Members lists the Memberships of the Workspace s with their Users, oldest first.
-func Members(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
+func (ms *Module) Members(ctx context.Context, s *ent.Scoped) ([]*ent.Membership, error) {
 	return s.Membership().Query().
 		WithUser().
 		Order(ent.Asc(membership.FieldID)).
@@ -128,21 +158,29 @@ const (
 
 var ErrResetOwnSecondFactor = validation.RefuseField(FieldMember, "memberships: cannot reset your own second factor", i18n.ErrorsSecondFactorResetSelf)
 
-// SecondFactorResetTarget loads the Membership targetID of the Workspace s as the target of a
-// Second factor reset by the User callerID holding callerRole: resetting an Owner's needs
+// SecondFactorResetTargetInput is a Second factor reset of a member: the User who resets it, their
+// Role, and the Membership whose Second factor is reset.
+type SecondFactorResetTargetInput struct {
+	CallerID   int64
+	CallerRole membership.Role
+	TargetID   int64
+}
+
+// SecondFactorResetTarget loads the Membership in.TargetID of the Workspace s as the target of a
+// Second factor reset by the User in.CallerID holding in.CallerRole: resetting an Owner's needs
 // owners:manage, refused as Require refuses it, and nobody resets their own
 // (ErrResetOwnSecondFactor). A target outside the Workspace is ErrMemberNotFound.
-func SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, callerID int64, callerRole membership.Role, targetID int64) (*ent.Membership, error) {
-	target, err := s.Membership().Get(ctx, targetID)
+func (ms *Module) SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, in SecondFactorResetTargetInput) (*ent.Membership, error) {
+	target, err := s.Membership().Get(ctx, in.TargetID)
 	if err != nil {
 		return nil, memberTarget(err)
 	}
 	if IsOwner(target.Role) {
-		if err := Require(callerRole, PermOwnersManage); err != nil {
+		if err := Require(in.CallerRole, PermOwnersManage); err != nil {
 			return nil, err
 		}
 	}
-	if target.UserID == callerID {
+	if target.UserID == in.CallerID {
 		return nil, ErrResetOwnSecondFactor
 	}
 	return target, nil

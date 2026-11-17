@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -96,7 +97,7 @@ func newRace(t *testing.T) race {
 	party, err := passkeys.NewRelyingParty("https://app.example", "passkeys-test-ceremony-secret")
 	require.NoError(t, err)
 	keys := passkeys.New(env.DB, env.Bus, testhelper.NewProvenUsers(env), party, time.Now)
-	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), keys, time.Now)
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), keys, testhelper.Module[*memberships.Module](env), time.Now)
 	return race{env: env, db: env.SQLDB, client: env.DB, bus: env.Bus, keys: keys, factors: factors}
 }
 

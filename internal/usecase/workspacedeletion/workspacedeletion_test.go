@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -26,7 +27,7 @@ func setup(t *testing.T) (*testhelper.TestEnv, *workspacedeletion.UseCase) {
 	t.Helper()
 	env := testhelper.Setup(t)
 	clock := func() time.Time { return now }
-	return env, workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock)
+	return env, workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), testhelper.Module[*memberships.Module](env), clock)
 }
 
 // deletedAgo puts Initech into deletion, deleted ago before now.

@@ -150,7 +150,7 @@ func (a *Module) completePendingSignupIn(ctx context.Context, tx *ent.Client, in
 	if err != nil {
 		return nil, nil, err
 	}
-	if err := consentrecords.Write(ctx, tx, u.ID, consents); err != nil {
+	if err := a.consents.Write(ctx, tx, u.ID, consents); err != nil {
 		return nil, nil, err
 	}
 	if inv != nil {

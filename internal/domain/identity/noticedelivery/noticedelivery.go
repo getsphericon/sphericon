@@ -68,15 +68,16 @@ type Module struct {
 	factors    *secondfactors.Module
 	workspaces *workspaces.Module
 	providers  *signinprovider.Providers
+	owners     *memberships.Module
 	cfg        Config
 }
 
 // New builds Notice delivery over the raw client, the links of the account mails, the Second
 // factors (whose deadlines the Two-factor notices name), the Workspaces (which record a suspension's
-// notice, on its clock), the Sign-in providers (which name a linked one) and the Instance's
-// configuration.
-func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, providers *signinprovider.Providers, cfg Config) *Module {
-	return &Module{client: client, links: links, factors: factors, workspaces: ws, providers: providers, cfg: cfg}
+// notice, on its clock), the Sign-in providers (which name a linked one), the Memberships (which
+// name a Workspace's Owners) and the Instance's configuration.
+func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, providers *signinprovider.Providers, owners *memberships.Module, cfg Config) *Module {
+	return &Module{client: client, links: links, factors: factors, workspaces: ws, providers: providers, owners: owners, cfg: cfg}
 }
 
 // Issue answers the Notices ev calls for (the Notices' consumer wants only an event that calls for
@@ -443,7 +444,7 @@ func (u *Module) ownerNotice(ctx context.Context, ev events.DomainEvent) ([]Noti
 
 // toOwners is the notice, rendered from data, to every Owner of the Workspace with an address.
 func (u *Module) toOwners(ctx context.Context, workspaceID int64, subject, body i18n.ID, data map[string]any) ([]Notice, error) {
-	owners, err := memberships.Owners(ctx, u.client.Scoped(workspaceID))
+	owners, err := u.owners.Owners(ctx, u.client.Scoped(workspaceID))
 	if err != nil {
 		return nil, fmt.Errorf("notice: load the owners of workspace %d: %w", workspaceID, err)
 	}

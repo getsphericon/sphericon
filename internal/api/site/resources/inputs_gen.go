@@ -18,6 +18,7 @@ import (
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	memberships "github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	passkeys "github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	secondfactors "github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	signup "github.com/getsphericon/sphericon/internal/domain/identity/signup"
@@ -497,6 +498,23 @@ func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.R
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return membershipRole
+}
+func (c *InputsImpl) MembershipRoleChange(source *site.SiteUpdateMembershipInput) memberships.ChangeRoleInput {
+	var membershipsChangeRoleInput memberships.ChangeRoleInput
+	if source != nil {
+		// membershipsChangeRoleInput.ID: ignore
+		membershipsChangeRoleInput.Role = c.MembershipRole((*source).Role)
+	}
+	return membershipsChangeRoleInput
+}
+func (c *InputsImpl) OptionalConsentChange(source *site.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput {
+	var consentrecordsSetOptionalConsentInput consentrecords.SetOptionalConsentInput
+	if source != nil {
+		// consentrecordsSetOptionalConsentInput.Key: ignore
+		consentrecordsSetOptionalConsentInput.Version = string((*source).Version)
+		consentrecordsSetOptionalConsentInput.Accepted = (*source).Accepted
+	}
+	return consentrecordsSetOptionalConsentInput
 }
 func (c *InputsImpl) PasskeyRemove(source site.SitePasskeysRemoveParams) passkeys.RemoveInput {
 	var passkeysRemoveInput passkeys.RemoveInput

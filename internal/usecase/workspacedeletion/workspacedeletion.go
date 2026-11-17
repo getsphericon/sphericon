@@ -39,15 +39,16 @@ type UseCase struct {
 	client     *ent.Client
 	bus        *events.Bus
 	workspaces *workspaces.Module
+	owners     *memberships.Module
 	unchecked  *workspacesunchecked.Module
 	now        func() time.Time
 }
 
-// New returns the use case over the Workspaces, which delete one; now is the Instance clock the
-// window is measured on, which the unchecked operations it builds (workspacesunchecked.New) read
-// too.
-func New(client *ent.Client, bus *events.Bus, ws *workspaces.Module, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, workspaces: ws, unchecked: workspacesunchecked.New(now), now: now}
+// New returns the use case over the Workspaces, which delete one, and the Memberships, which name
+// their Owners; now is the Instance clock the window is measured on, which the unchecked operations
+// it builds (workspacesunchecked.New) read too.
+func New(client *ent.Client, bus *events.Bus, ws *workspaces.Module, owners *memberships.Module, now func() time.Time) *UseCase {
+	return &UseCase{client: client, bus: bus, workspaces: ws, owners: owners, unchecked: workspacesunchecked.New(now), now: now}
 }
 
 // DeletedWorkspace is a Workspace in its deletion window, and whether it has one Owner alone: no
@@ -90,7 +91,7 @@ func (m *UseCase) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor,
 // withSoleOwnership pairs each Workspace with whether it has exactly one Owner. Asked of the
 // Workspaces a User owns, it names the ones that have no other Owner to restore them.
 func (m *UseCase) withSoleOwnership(ctx context.Context, ws []*ent.Workspace) ([]DeletedWorkspace, error) {
-	owners, err := memberships.OwnersOf(ctx, m.client, lo.Map(ws, func(w *ent.Workspace, _ int) int64 { return w.ID })...)
+	owners, err := m.owners.OwnersOf(ctx, lo.Map(ws, func(w *ent.Workspace, _ int) int64 { return w.ID })...)
 	if err != nil {
 		return nil, err
 	}

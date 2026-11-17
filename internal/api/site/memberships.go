@@ -12,7 +12,7 @@ import (
 func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMembershipsListParams) ([]siteapi.SiteMembershipResource, error) {
 	s := workspaceScope(ctx)
 
-	members, err := memberships.Members(ctx, s)
+	members, err := h.memberships.Members(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -27,9 +27,11 @@ func (h *Handlers) SiteMembershipsList(ctx context.Context, _ siteapi.SiteMember
 func (h *Handlers) SiteMembershipsUpdate(ctx context.Context, req *siteapi.SiteUpdateMembershipInput, params siteapi.SiteMembershipsUpdateParams) (*siteapi.SiteMembershipResource, error) {
 	s := workspaceScope(ctx)
 
-	id := int64(params.ID)
+	in := inputs.MembershipRoleChange(req)
+	in.ID = int64(params.ID)
 
-	updated, err := h.memberships.ChangeRole(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id, inputs.MembershipRole(req.Role))
+	caller := memberships.Caller{Actor: h.actor(ctx), Role: callerMembership(ctx).Role}
+	updated, err := h.memberships.ChangeRole(ctx, s, caller, in)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +46,8 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 
 	id := int64(params.ID)
 
-	err := h.memberships.Remove(ctx, s, h.actor(ctx), callerMembership(ctx).Role, id)
+	caller := memberships.Caller{Actor: h.actor(ctx), Role: callerMembership(ctx).Role}
+	err := h.memberships.Remove(ctx, s, caller, id)
 	if err != nil {
 		return err
 	}

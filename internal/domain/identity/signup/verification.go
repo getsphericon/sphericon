@@ -6,7 +6,6 @@ import (
 	"errors"
 
 	"github.com/getsphericon/sphericon/ent"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -31,7 +30,7 @@ const (
 // provider sign-in: write stores the User's verified state (and whatever else its step writes,
 // on the same publisher); then, when proven (the step stamped email_proven_at from empty), the
 // domain-join step runs; then the User's first Workspace is created, with `workspace.create`
-// (memberships.CreateWorkspaceIn), and `user.email_verify` recorded in its Audit log, all in one
+// (memberships.Module.CreateWorkspaceIn), and `user.email_verify` recorded in its Audit log, all in one
 // transaction. landing is the Workspace the User goes to next: the one joined by domain, else the
 // first.
 func (m *Module) verified(ctx context.Context, proven bool, write func(tx *ent.Client, pub events.Publisher) (*ent.User, error)) (*ent.User, *ent.Workspace, error) {
@@ -48,7 +47,7 @@ func (m *Module) verified(ctx context.Context, proven bool, write func(tx *ent.C
 				return err
 			}
 		}
-		first, err := memberships.CreateWorkspaceIn(ctx, tx, pub, m.defaultSendCap, usr, users.FirstWorkspaceName)
+		first, err := m.memberships.CreateWorkspaceIn(ctx, tx, usr, users.FirstWorkspaceName)
 		if err != nil {
 			return err
 		}

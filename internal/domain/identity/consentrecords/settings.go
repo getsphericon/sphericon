@@ -100,22 +100,30 @@ func (m *Module) OptionalConsents(ctx context.Context, userID int64) ([]Optional
 	return consents, nil
 }
 
-// SetOptionalConsent gives (accepted) or withdraws the User's optional consent key, answered on
-// version (see ChangeOptional), recording the change with the source account settings, and is the
-// consent with the User's answer after it.
-func (m *Module) SetOptionalConsent(ctx context.Context, userID int64, key, version string, accepted bool) (OptionalConsent, error) {
+// SetOptionalConsentInput is a change a User makes in account settings to one optional consent:
+// its key, the label of the version the page showed and whether the consent is given.
+type SetOptionalConsentInput struct {
+	Key      string
+	Version  string
+	Accepted bool
+}
+
+// SetOptionalConsent gives (in.Accepted) or withdraws the User's optional consent in.Key, answered
+// on in.Version (see ChangeOptional), recording the change with the source account settings, and
+// is the consent with the User's answer after it.
+func (m *Module) SetOptionalConsent(ctx context.Context, userID int64, in SetOptionalConsentInput) (OptionalConsent, error) {
 	inEffect, current, err := m.state(ctx, userID)
 	if err != nil {
 		return OptionalConsent{}, err
 	}
-	entry, err := ChangeOptional(inEffect, current, key, version, accepted)
+	entry, err := ChangeOptional(inEffect, current, in.Key, in.Version, in.Accepted)
 	if err != nil {
 		return OptionalConsent{}, err
 	}
 	if entry != nil {
 		consents := Consents{Source: consentrecord.SourceAccountSettings, Entries: []Entry{*entry}}
 		err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-			return Write(ctx, tx, userID, consents)
+			return m.Write(ctx, tx, userID, consents)
 		})
 		if err != nil {
 			return OptionalConsent{}, err
@@ -124,7 +132,7 @@ func (m *Module) SetOptionalConsent(ctx context.Context, userID int64, key, vers
 			return OptionalConsent{}, err
 		}
 	}
-	d, _ := documentOf(inEffect, key)
+	d, _ := documentOf(inEffect, in.Key)
 	return optionalConsent(d, current), nil
 }
 

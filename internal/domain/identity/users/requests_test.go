@@ -21,7 +21,7 @@ func requests(env *testhelper.TestEnv) *users.Requests {
 	attempts := throttle.NewAttempts(env.DB, time.Now,
 		throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(1)),
 		throttle.WithRule(throttle.KindEmailChange, throttle.ResetRule(1)))
-	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), proveByHash{}, time.Now), attempts)
+	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), proveByHash{}, testhelper.UsersModules(env), time.Now), attempts)
 }
 
 // published are the account's events the test's requests published, oldest first.
