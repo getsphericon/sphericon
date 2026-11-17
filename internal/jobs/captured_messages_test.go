@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
+	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -16,7 +17,7 @@ import (
 
 func pruneCaptured(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneCapturedMessagesWorker(env.DB, retention, time.Now)
+	w := jobs.NewPruneCapturedMessagesWorker(testhelper.Module[*capturedmessages.Module](env), retention)
 	require.NoError(t, w.Work(context.Background(), job(jobs.PruneCapturedMessagesArgs{})))
 }
 

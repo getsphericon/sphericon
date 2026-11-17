@@ -68,21 +68,31 @@ func (m *Module) SendCapStatus(ctx context.Context, s *ent.Scoped, ws *ent.Works
 	return &providerlimit.SendCapStatus{PerDay: *perDay, Sent24h: sent}, nil
 }
 
-// SendCapDrain is how long the Workspace's Send cap (ADR 0067) takes, from now, to let n more
-// messages out: zero when its bucket holds them all. ok is false when no Send cap applies (none is
-// set, or the Instance has none), so nothing but the Provider limit paces the Workspace's sends.
-func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, n int, now time.Time) (wait time.Duration, ok bool, err error) {
+// SendCapWait is how long the Workspace's Send cap holds back the messages SendCapDrain was asked
+// about.
+type SendCapWait struct {
+	// Wait is how long the bucket takes, from the module's now, to let them out: zero when it
+	// holds them all.
+	Wait time.Duration
+	// Capped is false when no Send cap applies (none is set, or the Instance has none), so nothing
+	// but the Provider limit paces the Workspace's sends.
+	Capped bool
+}
+
+// SendCapDrain is how long the Workspace's Send cap (ADR 0067) takes, from the module's clock, to
+// let n more messages out.
+func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, n int) (SendCapWait, error) {
 	ws, err := m.workspace(ctx, s)
 	if err != nil {
-		return 0, false, err
+		return SendCapWait{}, err
 	}
 	sendCap := m.sendCaps.Of(ws)
 	if sendCap == nil {
-		return 0, false, nil
+		return SendCapWait{}, nil
 	}
-	wait, err = providerlimit.SendCapDrain(ctx, s, *sendCap, n, now)
+	wait, err := providerlimit.SendCapDrain(ctx, s, *sendCap, n, m.now())
 	if err != nil {
-		return 0, false, fmt.Errorf("outbound: read the send cap bucket: %w", err)
+		return SendCapWait{}, fmt.Errorf("outbound: read the send cap bucket: %w", err)
 	}
-	return wait, true, nil
+	return SendCapWait{Wait: wait, Capped: true}, nil
 }

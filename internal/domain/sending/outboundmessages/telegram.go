@@ -56,10 +56,6 @@ type TelegramBots interface {
 	TelegramBot(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.TelegramBot, error)
 }
 
-// WithTelegramBots gives the module the bots Telegram messages are sent through. Without it the
-// Telegram Channel has no Integration that can send.
-func WithTelegramBots(b TelegramBots) Option { return func(m *Module) { m.bots = b } }
-
 // telegramChannel is Telegram's part of the Outbound send: the renderer of the text and the adapter
 // over the Integration's bot. The Contact's Bindings on the routed Integration are its Destinations.
 type telegramChannel struct{ m *Module }

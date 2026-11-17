@@ -26,7 +26,7 @@ func captureOne(t *testing.T, c messaging.Capturer, subject string) {
 func TestCapturingKeepsOnlyTheNewestMessagesOfTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.GlobexID)
-	c := capturedmessages.New(3).Capturer(s, fixtures.IntegrationGlobexInboxID)
+	c := capturedmessages.New(env.DB, 3, time.Now).Capturer(s, fixtures.IntegrationGlobexInboxID)
 	require.Equal(t, 2, s.CapturedMessage().Query().CountX(t.Context()), "the fixture holds two")
 
 	captureOne(t, c, "third")
@@ -43,7 +43,7 @@ func TestCappingOneWorkspaceLeavesAnotherUntouched(t *testing.T) {
 	env := testhelper.Setup(t)
 	other := env.DB.Scoped(fixtures.UmbrellaID).CapturedMessage().Query().CountX(t.Context())
 	require.Positive(t, other)
-	c := capturedmessages.New(1).Capturer(env.DB.Scoped(fixtures.GlobexID), fixtures.IntegrationGlobexInboxID)
+	c := capturedmessages.New(env.DB, 1, time.Now).Capturer(env.DB.Scoped(fixtures.GlobexID), fixtures.IntegrationGlobexInboxID)
 
 	captureOne(t, c, "only")
 
@@ -55,9 +55,10 @@ func TestCappingOneWorkspaceLeavesAnotherUntouched(t *testing.T) {
 // insert, so the Workspace ends at the cap. The other tests ride one go-txdb transaction, which
 // serializes statements, so this one runs on a committed env.
 func TestConcurrentCapturesNeverLeaveMoreThanTheCap(t *testing.T) {
-	s := testhelper.Setup(t, testhelper.Committed()).DB.Scoped(fixtures.GlobexID)
+	env := testhelper.Setup(t, testhelper.Committed())
+	s := env.DB.Scoped(fixtures.GlobexID)
 	const kept = 5
-	c := capturedmessages.New(kept).Capturer(s, fixtures.IntegrationGlobexInboxID)
+	c := capturedmessages.New(env.DB, kept, time.Now).Capturer(s, fixtures.IntegrationGlobexInboxID)
 
 	var wg sync.WaitGroup
 	errs := make([]error, 24)
@@ -81,7 +82,7 @@ func TestPurgeDeletesMessagesPastTheRetentionWindowAcrossWorkspaces(t *testing.T
 	ctx := t.Context()
 	before := env.DB.CapturedMessage.Query().CountX(ctx)
 
-	deleted, err := capturedmessages.Purge(ctx, env.DB, 7*24*time.Hour, 1, time.Now())
+	deleted, err := capturedmessages.New(env.DB, 1, time.Now).Purge(ctx, 7*24*time.Hour, 1)
 
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, deleted, "in batches of one, every expired message still goes")
@@ -97,7 +98,7 @@ func TestPurgeFollowsTheWindowItIsGiven(t *testing.T) {
 	older := env.DB.CapturedMessage.Query().Where(capturedmessage.CreatedAtLT(time.Now().Add(-window))).CountX(t.Context())
 	require.Greater(t, older, 4, "the fixtures hold messages of more than two days old")
 
-	deleted, err := capturedmessages.Purge(t.Context(), env.DB, window, 100, time.Now())
+	deleted, err := capturedmessages.New(env.DB, 1, time.Now).Purge(t.Context(), window, 100)
 
 	require.NoError(t, err)
 	assert.EqualValues(t, older, deleted, "every message older than the window goes; the newer ones stay")
@@ -108,7 +109,7 @@ func TestPurgeWithAZeroWindowDeletesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	before := env.DB.CapturedMessage.Query().CountX(t.Context())
 
-	deleted, err := capturedmessages.Purge(t.Context(), env.DB, 0, 10, time.Now())
+	deleted, err := capturedmessages.New(env.DB, 1, time.Now).Purge(t.Context(), 0, 10)
 
 	require.NoError(t, err)
 	assert.Zero(t, deleted)

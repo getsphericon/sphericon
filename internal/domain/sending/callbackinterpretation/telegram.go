@@ -30,6 +30,7 @@ type telegram struct {
 	ignore
 
 	integ *integrations.Module
+	out   *outboundmessages.Module
 }
 
 // InboundMessage reads a pressed button or a written message for what it means.
@@ -61,7 +62,9 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 // press is answered once the facts are written, so the person's client stops waiting.
 func (t telegram) pressed(ctx context.Context, tx Tx, m preset.InboundMessage) error {
 	if m.Payload == messaging.TelegramUnsubscribePayload {
-		msg, err := outboundmessages.FindTelegramMessage(ctx, tx.Scoped, tx.Integration.ID, m.Destination, m.MessageID)
+		msg, err := t.out.FindTelegramMessage(ctx, tx.Scoped, outboundmessages.FindTelegramMessageInput{
+			IntegrationID: tx.Integration.ID, Destination: m.Destination, ProviderMessageID: m.MessageID,
+		})
 		if err != nil {
 			return err
 		}
