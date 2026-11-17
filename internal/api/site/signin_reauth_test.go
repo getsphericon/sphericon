@@ -173,14 +173,28 @@ func TestReauthTheStatusTellsWhetherAProviderLoginIsNeeded(t *testing.T) {
 	assert.Equal(t, status{PasswordSet: true, IdentityProofFresh: false}, read(john))
 }
 
-func TestReauthLinkingANewProviderAccountDoesNotRefreshTheProof(t *testing.T) {
+// ADR 0176: a User with no password links a provider only on a fresh proof, as they add a
+// Passkey.
+func TestReauthLinkingIsRefusedOnceTheProofIsStale(t *testing.T) {
 	r := newReauthEnv(t)
 	b := r.env.NewRedirectBrowser(t)
 	signInWith(t, r.fake, b, newcomer, "")
 	r.clock.Advance(time.Hour) // the login's proof has expired
-	attacker := testhelper.SigninIdentity{Subject: "google-subject-of-the-attacker", Email: "attacker@gmail.test", EmailVerified: true}
 
-	resp := link(t, r.fake, b, attacker)
+	resp := startLink(t, b, "google", "")
+
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	assert.Empty(t, resp.Header.Values("Set-Cookie"), "no flow was begun")
+}
+
+func TestReauthLinkingANewProviderAccountDoesNotRefreshTheProof(t *testing.T) {
+	r := newReauthEnv(t)
+	b := r.env.NewRedirectBrowser(t)
+	signInWith(t, r.fake, b, newcomer, "")
+	r.clock.Advance(4 * time.Minute) // the login's proof still holds, for a minute more
+	other := testhelper.SigninIdentity{Subject: "google-subject-of-someone-else", Email: "someone@gmail.test", EmailVerified: true}
+	resp := link(t, r.fake, b, other, "")
+	r.clock.Advance(2 * time.Minute)
 
 	cookie := sessionCookie(&http.Response{Header: resp.Header})
 	require.NotNil(t, cookie, "the acting session is reissued")
@@ -192,9 +206,9 @@ func TestReauthLinkingAnAlreadyLinkedProviderAccountRefreshesTheProof(t *testing
 	r := newReauthEnv(t)
 	b := r.env.NewRedirectBrowser(t)
 	signInWith(t, r.fake, b, newcomer, "")
-	r.clock.Advance(time.Hour)
-
-	resp := link(t, r.fake, b, newcomer)
+	r.clock.Advance(4 * time.Minute)
+	resp := link(t, r.fake, b, newcomer, "")
+	r.clock.Advance(2 * time.Minute) // past the first login's proof, not the link's
 
 	cookie := sessionCookie(&http.Response{Header: resp.Header})
 	require.NotNil(t, cookie)

@@ -65,6 +65,9 @@ var (
 	rn224AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn100AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
 	rn131AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
@@ -1224,16 +1227,48 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								break
 							}
 
-							// Param: "provider"
-							// Match until "/"
-							idx := strings.IndexByte(elem, '/')
-							if idx < 0 {
-								idx = len(elem)
+							if len(elem) == 0 {
+								break
 							}
-							args[0] = elem[:idx]
-							elem = elem[idx:]
+							switch elem[0] {
+							case 'l': // Prefix: "link"
+								origElem := elem
+								if l := len("link"); len(elem) >= l && elem[0:l] == "link" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleSiteIdentitiesLinkRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: rn100AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							}
+							// Param: "id"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[0] = elem
+							elem = ""
 
 							if len(elem) == 0 {
+								// Leaf node.
 								switch r.Method {
 								case "DELETE":
 									s.handleSiteIdentitiesUnlinkRequest([1]string{
@@ -1249,35 +1284,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								}
 
 								return
-							}
-							switch elem[0] {
-							case '/': // Prefix: "/link"
-
-								if l := len("/link"); len(elem) >= l && elem[0:l] == "/link" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch r.Method {
-									case "GET":
-										s.handleSiteIdentitiesLinkRequest([1]string{
-											args[0],
-										}, elemIsEscaped, w, r)
-									default:
-										s.notAllowed(w, r, notAllowedParams{
-											allowedMethods: "GET",
-											allowedHeaders: nil,
-											acceptPost:     "",
-											acceptPatch:    "",
-										})
-									}
-
-									return
-								}
-
 							}
 
 						}
@@ -6999,16 +7005,48 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								break
 							}
 
-							// Param: "provider"
-							// Match until "/"
-							idx := strings.IndexByte(elem, '/')
-							if idx < 0 {
-								idx = len(elem)
+							if len(elem) == 0 {
+								break
 							}
-							args[0] = elem[:idx]
-							elem = elem[idx:]
+							switch elem[0] {
+							case 'l': // Prefix: "link"
+								origElem := elem
+								if l := len("link"); len(elem) >= l && elem[0:l] == "link" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = SiteIdentitiesLinkOperation
+										r.summary = ""
+										r.operationID = "SiteIdentities_link"
+										r.operationGroup = ""
+										r.pathPattern = "/me/identities/link"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							}
+							// Param: "id"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[0] = elem
+							elem = ""
 
 							if len(elem) == 0 {
+								// Leaf node.
 								switch method {
 								case "DELETE":
 									r.name = SiteIdentitiesUnlinkOperation
@@ -7022,33 +7060,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								default:
 									return
 								}
-							}
-							switch elem[0] {
-							case '/': // Prefix: "/link"
-
-								if l := len("/link"); len(elem) >= l && elem[0:l] == "/link" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch method {
-									case "GET":
-										r.name = SiteIdentitiesLinkOperation
-										r.summary = ""
-										r.operationID = "SiteIdentities_link"
-										r.operationGroup = ""
-										r.pathPattern = "/me/identities/{provider}/link"
-										r.args = args
-										r.count = 1
-										return r, true
-									default:
-										return
-									}
-								}
-
 							}
 
 						}

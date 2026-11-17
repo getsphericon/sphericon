@@ -211,7 +211,7 @@ type Invoker interface {
 	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
 	// SiteAuthSigninNotMe invokes SiteAuth_signinNotMe operation.
 	//
-	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+	// Undo a link from the notice mailed to the owner (ADR 0048, ADR 0176): the token names one Linked
 	// identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
 	// opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 	//
@@ -602,14 +602,17 @@ type Invoker interface {
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (*SiteEventsListOK, error)
 	// SiteIdentitiesLink invokes SiteIdentities_link operation.
 	//
-	// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
-	// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
-	// subject to that User whatever email the provider reports. The callback redirects to `return_to`
-	// (default the account security page); a refusal goes to the account security page with the `error`
-	// code (see SiteSigninError). 404 for a provider that is not configured.
+	// Start linking another Sign-in provider account to the authenticated User, proving the password (or a
+	// fresh provider login or Passkey check) as adding a Passkey does. Works like `start` of a sign-in,
+	// but the flow cookie also names the User, and the shared callback adds the provider's subject to that
+	// User whatever email the provider reports; the owner is then mailed a notice with a link that undoes
+	// it. The browser is sent on to `redirectUrl`; the callback lands on the account security page, with
+	// the `error` code of a refusal (see SiteSigninError). 403 on a wrong or missing proof (a wrong
+	// password feeds the Login throttle: 429 while its delay runs), 404 for a provider that is not
+	// configured.
 	//
-	// GET /me/identities/{provider}/link
-	SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (*SiteIdentitiesLinkFound, error)
+	// POST /me/identities/link
+	SiteIdentitiesLink(ctx context.Context, request *SiteIdentityLinkInput) (*SiteIdentityLinkStartedHeaders, error)
 	// SiteIdentitiesList invokes SiteIdentities_list operation.
 	//
 	// List the authenticated User's Linked identities.
@@ -4949,7 +4952,7 @@ func (c *Client) sendSiteAuthSigninCallback(ctx context.Context, params SiteAuth
 
 // SiteAuthSigninNotMe invokes SiteAuth_signinNotMe operation.
 //
-// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+// Undo a link from the notice mailed to the owner (ADR 0048, ADR 0176): the token names one Linked
 // identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
 // opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 //
@@ -13286,23 +13289,26 @@ func (c *Client) sendSiteEventsList(ctx context.Context, params SiteEventsListPa
 
 // SiteIdentitiesLink invokes SiteIdentities_link operation.
 //
-// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
-// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
-// subject to that User whatever email the provider reports. The callback redirects to `return_to`
-// (default the account security page); a refusal goes to the account security page with the `error`
-// code (see SiteSigninError). 404 for a provider that is not configured.
+// Start linking another Sign-in provider account to the authenticated User, proving the password (or a
+// fresh provider login or Passkey check) as adding a Passkey does. Works like `start` of a sign-in,
+// but the flow cookie also names the User, and the shared callback adds the provider's subject to that
+// User whatever email the provider reports; the owner is then mailed a notice with a link that undoes
+// it. The browser is sent on to `redirectUrl`; the callback lands on the account security page, with
+// the `error` code of a refusal (see SiteSigninError). 403 on a wrong or missing proof (a wrong
+// password feeds the Login throttle: 429 while its delay runs), 404 for a provider that is not
+// configured.
 //
-// GET /me/identities/{provider}/link
-func (c *Client) SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (*SiteIdentitiesLinkFound, error) {
-	res, err := c.sendSiteIdentitiesLink(ctx, params)
+// POST /me/identities/link
+func (c *Client) SiteIdentitiesLink(ctx context.Context, request *SiteIdentityLinkInput) (*SiteIdentityLinkStartedHeaders, error) {
+	res, err := c.sendSiteIdentitiesLink(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendSiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (res *SiteIdentitiesLinkFound, err error) {
+func (c *Client) sendSiteIdentitiesLink(ctx context.Context, request *SiteIdentityLinkInput) (res *SiteIdentityLinkStartedHeaders, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIdentities_link"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/me/identities/{provider}/link"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/me/identities/link"),
 	}
 	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
 
@@ -13335,54 +13341,17 @@ func (c *Client) sendSiteIdentitiesLink(ctx context.Context, params SiteIdentiti
 
 	stage = "BuildURL"
 	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [3]string
-	pathParts[0] = "/me/identities/"
-	{
-		// Encode "provider" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "provider",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.StringToString(params.Provider))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	pathParts[2] = "/link"
+	var pathParts [1]string
+	pathParts[0] = "/me/identities/link"
 	uri.AddPathParts(u, pathParts[:]...)
 
-	stage = "EncodeQueryParams"
-	q := uri.NewQueryEncoder()
-	{
-		// Encode "return_to" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "return_to",
-			Style:   uri.QueryStyleForm,
-			Explode: false,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.ReturnTo.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	u.RawQuery = q.Values().Encode()
-
 	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
+	r, err := ht.NewRequest(ctx, "POST", u)
 	if err != nil {
 		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSiteIdentitiesLinkRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
 	}
 
 	{

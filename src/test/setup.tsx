@@ -85,8 +85,13 @@ beforeEach(() => {
   worker.use(handleSiteLegalDocumentsSignupItems({ body: { items: [] } }))
   // Account settings list the optional consents in effect; by default the Instance has none.
   worker.use(handleSiteOptionalConsentsList({ body: { items: [] } }))
-  // The account security page lists the User's Linked identities; by default there are none.
-  worker.use(handleSiteIdentitiesList({ body: { items: [] } }))
+  // The account security page lists the User's Linked identities; by default there are none,
+  // and a password to prove a link with.
+  worker.use(
+    handleSiteIdentitiesList({
+      body: { items: [], passwordSet: true, identityProofFresh: false },
+    }),
+  )
   // ...and their Passkeys; by default none, and a password to prove with.
   worker.use(
     handleSitePasskeysList({

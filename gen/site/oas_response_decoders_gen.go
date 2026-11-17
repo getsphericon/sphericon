@@ -7666,77 +7666,78 @@ func decodeSiteEventsListResponse(resp *http.Response) (res *SiteEventsListOK, _
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteIdentitiesLinkResponse(resp *http.Response) (res *SiteIdentitiesLinkFound, _ error) {
+func decodeSiteIdentitiesLinkResponse(resp *http.Response) (res *SiteIdentityLinkStartedHeaders, _ error) {
 	switch resp.StatusCode {
-	case 302:
-		// Code 302.
-		var wrapper SiteIdentitiesLinkFound
-		h := uri.NewHeaderDecoder(resp.Header)
-		// Parse "Location" header.
-		{
-			cfg := uri.HeaderParameterDecodingConfig{
-				Name:    "Location",
-				Explode: false,
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "application/json":
+			buf, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return res, err
 			}
+			d := jx.DecodeBytes(buf)
+
+			var response SiteIdentityLinkStarted
 			if err := func() error {
-				if err := h.HasParam(cfg); err == nil {
-					if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-						val, err := d.DecodeValue()
-						if err != nil {
-							return err
-						}
-
-						c, err := conv.ToString(val)
-						if err != nil {
-							return err
-						}
-
-						wrapper.Location = c
-						return nil
-					}); err != nil {
-						return err
-					}
-				} else {
+				if err := response.Decode(d); err != nil {
 					return err
+				}
+				if err := d.Skip(); err != io.EOF {
+					return errors.New("unexpected trailing data")
 				}
 				return nil
 			}(); err != nil {
-				return res, errors.Wrap(err, "parse Location header")
+				err = &ogenerrors.DecodeBodyError{
+					ContentType: ct,
+					Body:        buf,
+					Err:         err,
+				}
+				return res, err
 			}
-		}
-		// Parse "Set-Cookie" header.
-		{
-			cfg := uri.HeaderParameterDecodingConfig{
-				Name:    "Set-Cookie",
-				Explode: false,
-			}
-			if err := func() error {
-				if err := h.HasParam(cfg); err == nil {
-					if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-						val, err := d.DecodeValue()
-						if err != nil {
+			var wrapper SiteIdentityLinkStartedHeaders
+			wrapper.Response = response
+			h := uri.NewHeaderDecoder(resp.Header)
+			// Parse "Set-Cookie" header.
+			{
+				cfg := uri.HeaderParameterDecodingConfig{
+					Name:    "Set-Cookie",
+					Explode: false,
+				}
+				if err := func() error {
+					if err := h.HasParam(cfg); err == nil {
+						if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+							val, err := d.DecodeValue()
+							if err != nil {
+								return err
+							}
+
+							c, err := conv.ToString(val)
+							if err != nil {
+								return err
+							}
+
+							wrapper.SetCookie = c
+							return nil
+						}); err != nil {
 							return err
 						}
-
-						c, err := conv.ToString(val)
-						if err != nil {
-							return err
-						}
-
-						wrapper.SetCookie = c
-						return nil
-					}); err != nil {
+					} else {
 						return err
 					}
-				} else {
-					return err
+					return nil
+				}(); err != nil {
+					return res, errors.Wrap(err, "parse Set-Cookie header")
 				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "parse Set-Cookie header")
 			}
+			return &wrapper, nil
+		default:
+			return res, validate.InvalidContentType(ct)
 		}
-		return &wrapper, nil
 	}
 	// Convenient error response.
 	defRes, err := func() (res *ProblemDetailsStatusCode, err error) {

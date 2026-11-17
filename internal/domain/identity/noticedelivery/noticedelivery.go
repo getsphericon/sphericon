@@ -223,8 +223,8 @@ func welcome(e *events.UserSignedUp) Notice {
 	}
 }
 
-// identityLinked tells the owner of the account that a Sign-in provider was linked silently, with
-// the link that undoes it.
+// identityLinked tells the owner of the account that a Sign-in provider was linked, at a sign-in or
+// by the User, with the link that undoes it.
 func (u *Module) identityLinked(ctx context.Context, e *events.IdentityLinked) ([]Notice, error) {
 	usr, found, err := u.user(ctx, e.UserID)
 	if err != nil || !found {

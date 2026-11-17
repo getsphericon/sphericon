@@ -11,38 +11,44 @@ import (
 // lands, with the Reason in the query when it was refused. The SPA owns the route.
 const signinSettingsPath = "/account/security"
 
-// SiteIdentitiesList lists the session User's Linked identities (ADR 0048).
+// SiteIdentitiesList lists the session User's Linked identities (ADR 0048), with what proves
+// the User for a link.
 func (h *Handlers) SiteIdentitiesList(ctx context.Context) (*siteapi.SiteLinkedIdentities, error) {
-	userID, err := sessionUserID(ctx)
+	u, err := sessionUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := h.users.Identities(ctx, userID)
+	rows, err := h.users.Identities(ctx, u.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteLinkedIdentities{Items: mapper.IdentitiesToResources(rows)}, nil
+	return &siteapi.SiteLinkedIdentities{
+		Items: mapper.IdentitiesToResources(rows), PasswordSet: u.PasswordHash != "", IdentityProofFresh: sessionProof(ctx, "").StandsInFor(u, h.now()),
+	}, nil
 }
 
-// SiteIdentitiesLink begins linking a provider account to the session User: the same flow as
-// a sign-in, but the signed flow cookie also names the User the callback adds the subject to.
-func (h *Handlers) SiteIdentitiesLink(ctx context.Context, params siteapi.SiteIdentitiesLinkParams) (*siteapi.SiteIdentitiesLinkFound, error) {
-	userID, err := sessionUserID(ctx)
+// SiteIdentitiesLink begins linking a provider account to the session User once they prove their
+// identity (the password, or a fresh provider login or Passkey check; signup.Module.StartLink):
+// the same flow as a sign-in, but the signed flow cookie also names the User the callback adds
+// the subject to. The browser is sent on to the provider's URL.
+func (h *Handlers) SiteIdentitiesLink(ctx context.Context, req *siteapi.SiteIdentityLinkInput) (*siteapi.SiteIdentityLinkStartedHeaders, error) {
+	u, proof, err := h.identityProof(ctx, req.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
-	authURL, flow, err := h.signin.Start(params.Provider, signinprovider.SafeReturnTo(params.ReturnTo.Or("")))
+	in := inputs.IdentityLinkStart(req)
+	in.Proof = proof
+	started, err := h.signUp.StartLink(ctx, u, in)
 	if err != nil {
 		return nil, err
 	}
-	flow.LinkUserID = userID
-	sealed, err := h.signin.SealFlow(flow)
+	sealed, err := h.signin.SealFlow(started.Flow)
 	if err != nil {
 		return nil, err
 	}
-	return &siteapi.SiteIdentitiesLinkFound{
-		Location:  authURL,
+	return &siteapi.SiteIdentityLinkStartedHeaders{
 		SetCookie: h.sessions.SigninFlow(sealed, signinprovider.FlowTTL).String(),
+		Response:  siteapi.SiteIdentityLinkStarted{RedirectUrl: started.AuthURL},
 	}, nil
 }
 

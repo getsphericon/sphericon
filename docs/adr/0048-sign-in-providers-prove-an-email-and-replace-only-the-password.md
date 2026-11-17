@@ -4,6 +4,11 @@ status: accepted
 
 # Sign-in providers prove an email and replace only the password
 
+> **Amended by [[0176-linking-a-sign-in-provider-asks-for-a-fresh-proof-and-tells-the-owner]]:**
+> linking a provider while signed in asks for the same fresh proof as adding a Passkey (the password,
+> or a fresh provider login or Passkey check), and every link, not only a silent one, mails the owner
+> the notice with its "this was not me" link.
+
 > **Amended by [[0170-the-first-proof-of-an-address-drops-what-was-set-up-before-it]]:** the first
 > proof of a Verified User's address, by a provider link or a reset link, drops every credential set
 > up before it, not only the password: Linked identities, the Second factor, Passkeys, Personal

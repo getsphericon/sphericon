@@ -291,7 +291,7 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 
 	b := signedIn(t, env, fake, mary)                                                                                   // user.login by a provider
-	link(t, fake, b, maryAtWork)                                                                                        // user.identity_link
+	link(t, fake, b, maryAtWork, fixtures.MemberMaryPassword)                                                           // user.identity_link
 	require.Equal(t, http.StatusNoContent, b.Delete(t, identitiesPath+"/"+listIdentities(t, b).Items[0].ID).StatusCode) // user.identity_unlink
 
 	_, err = owner.SiteUserSignOutEverywhere(ctx) // user.sign_out_everywhere

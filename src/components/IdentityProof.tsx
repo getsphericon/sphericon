@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import {
+  siteIdentitiesListQueryKey,
   siteSecondFactorGetStatusQueryKey,
   sitePasskeysListOptions,
   sitePasskeysListQueryKey,
@@ -29,7 +30,11 @@ export function IdentityProof({ hint, returnTo }: { hint: string; returnTo: stri
   const passkeys = useQuery(sitePasskeysListOptions())
   const check = useResourceMutation({
     mutation: { mutationFn: checkPasskey },
-    invalidate: [sitePasskeysListQueryKey(), siteSecondFactorGetStatusQueryKey()],
+    invalidate: [
+      sitePasskeysListQueryKey(),
+      siteSecondFactorGetStatusQueryKey(),
+      siteIdentitiesListQueryKey(),
+    ],
     errorTitle: t(($) => $.security.passkeyCheck.errorTitle),
   })
   const canCheck = passkeys.data?.available === true && passkeys.data.items.length > 0

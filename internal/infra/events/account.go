@@ -21,7 +21,8 @@ const (
 	NameUserAddressClaimed = "user.address_claimed"
 	// NameUserSignedUp: a Sign-up completed: the User is Verified with their first Workspace.
 	NameUserSignedUp = "user.signed_up"
-	// NameUserIdentityLinked: a Sign-in provider was linked to the account silently (ADR 0048).
+	// NameUserIdentityLinked: a Sign-in provider was linked to the account, at a sign-in or by the
+	// User (ADR 0048, ADR 0176).
 	NameUserIdentityLinked = "user.identity_linked"
 	// NameUserDeleted: a User was deleted (ADR 0050).
 	NameUserDeleted = "user.deleted"
@@ -73,7 +74,7 @@ func (*UserSignedUp) EventName() string { return NameUserSignedUp }
 func (*UserSignedUp) EventVersion() int { return 1 }
 
 // IdentityLinked is the Sign-in provider Provider (its registry name) linked to the account of the
-// User at Email without the User's own step; IdentityID is the linked identity, which the "this
+// User at Email, at a sign-in or by the User; IdentityID is the linked identity, which the "this
 // was not me" link undoes.
 type IdentityLinked struct {
 	UserID     int64  `json:"userId"`

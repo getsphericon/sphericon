@@ -2340,10 +2340,13 @@ export default interface Resources {
       },
       "linked": {
         "connect": "Connect",
+        "connectDescription": "Confirm it is you, then sign in to {{provider}} with the account to connect. We will email you once it is connected.",
+        "connectTitle": "Connect {{provider}}",
         "disconnect": "Disconnect",
         "disconnectErrorTitle": "Could not disconnect the provider",
         "disconnected": "Provider disconnected",
         "errorTitle": "Could not connect the account",
+        "providerLoginHint": "This account has no password, so connecting a sign-in provider needs a fresh check. Verify with one of your passkeys or sign in again with your provider, and you will come back here.",
         "title": "Sign-in providers"
       },
       "or": "or"

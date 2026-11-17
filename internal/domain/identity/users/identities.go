@@ -199,8 +199,10 @@ type IdentityLink struct {
 
 // LinkIdentity attaches a provider account to the User, whatever email the provider
 // reports (the subject is the key, ADR 0048). The session epoch stays: a new way to sign in
-// takes nothing from the sessions already open. A subject that already belongs to
-// another User is ErrIdentityInUse; one that already belongs to this User changes nothing
+// takes nothing from the sessions already open. Every link tells the owner, as a link at sign-in
+// does: it publishes events.IdentityLinked in its transaction, whose notice carries the "this was
+// not me" link that undoes it (ADR 0176). A subject that already belongs to another User is
+// ErrIdentityInUse; one that already belongs to this User changes nothing and tells nobody
 // (Added is false).
 func (a *Module) LinkIdentity(ctx context.Context, in LinkIdentityInput) (IdentityLink, error) {
 	userID, provider, subject := in.UserID, in.Provider, in.Subject
@@ -213,14 +215,17 @@ func (a *Module) LinkIdentity(ctx context.Context, in LinkIdentityInput) (Identi
 		}
 		saved = u
 		// A provider account linked already inserts nothing; whose it is decides the answer.
-		err = tx.UserIdentity.Create().SetUserID(userID).SetProvider(provider).SetSubject(subject).
+		identityID, err := tx.UserIdentity.Create().SetUserID(userID).SetProvider(provider).SetSubject(subject).
 			OnConflictColumns(useridentity.FieldProvider, useridentity.FieldSubject).DoNothing().
-			Exec(ctx)
+			ID(ctx)
 		added, err = db.Inserted(err)
 		if err != nil || !added {
 			return identityHeldBy(ctx, tx, provider, subject, userID, err)
 		}
-		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": provider}})
+		if err := a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": provider}}); err != nil {
+			return err
+		}
+		return a.bus.PublishIn(ctx, tx, &events.IdentityLinked{UserID: saved.ID, Email: saved.Email, Provider: provider, IdentityID: identityID})
 	})
 	if err != nil {
 		return IdentityLink{}, err
@@ -342,7 +347,7 @@ func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, holderID in
 	if err := a.RecordUserAction(ctx, tx, UserAction{User: linked, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": in.Provider}}); err != nil {
 		return nil, 0, false, err
 	}
-	// The User did not take this step: the owner is told, with the link that undoes it (ADR 0048).
+	// The owner is told, with the link that undoes it (ADR 0048, ADR 0176).
 	err = a.bus.PublishIn(ctx, tx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
 	return linked, identityID, stamped, err
 }
@@ -396,9 +401,9 @@ func takeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in Provider
 }
 
 // UndoLink removes one Linked identity of a User and ends every session of the User: the
-// "this was not me" answer to a silent link (ADR 0048). Unlike UnlinkIdentity it is not
+// "this was not me" answer to a link (ADR 0048, ADR 0176). Unlike UnlinkIdentity it is not
 // refused when the identity is the User's last way in (a never-proven address lost its
-// password at the link; the reset flow gives it back). It reports false, and changes
+// password at a link at sign-in; the reset flow gives it back). It reports false, and changes
 // nothing, when the identity is already gone (a link followed twice).
 func (a *Module) UndoLink(ctx context.Context, userID, identityID int64) (bool, error) {
 	removed := false
