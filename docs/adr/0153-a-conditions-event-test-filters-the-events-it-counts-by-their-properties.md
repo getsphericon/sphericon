@@ -36,9 +36,16 @@ sent it and, for a click, the link. Analytical Events expire after the Instance'
   Events of every Channel, the filter may name the Broadcast or the Automation that sent the message
   and, on a click, test the link (`eq`, `contains`, `beginsWith`). The editor offers Broadcasts and
   Automations from the Workspace's lists, not as ids.
-- **A filter that names a definition is Definition use**: a Broadcast, an Automation, and the Tag,
-  Custom field or Score ADR 0133 lists. Such a definition cannot be deleted while a kept Segment, Rule
-  or Automation names it, so a Segment never turns into "no one" without a word.
+- **A Broadcast or an Automation is named by its id, and an archived one still matches.** Neither is
+  ever removed by its owner (ADR 0100), and archiving one keeps its row and the Events that name it,
+  so a filter that names it keeps counting them, and a save may name an archived one: "clicked in last
+  month's newsletter" is a question about history. A save naming one the Workspace does not have is
+  refused. The editor offers the kept ones, and the archived ones on request, marked as archived. A
+  Broadcast or Automation is therefore not Definition use and the Removal check does not read it.
+- **A filter that names a Tag, Custom field or Score is Definition use**, as ADR 0133 has it for a
+  matcher: the Removal check reads the filters of a Segment's, a Rule's and an Automation's
+  Conditions, so such a definition cannot be removed while a kept one names it, and a Segment never
+  turns into "no one" without a word.
 - **Unknown stays as it is.** A test of an open or a click is unknown for a Destination that is not
   tracked (ADR 0123), and a Segment reads unknown as no match; a filter changes which Events count,
   not that.
@@ -54,7 +61,8 @@ sent it and, for a click, the link. Analytical Events expire after the Instance'
 
 - The Condition's `event` leaf gains `filter` in the contract; a Rule's and a Branch's Conditions
   accept it too, as one grammar.
-- Deleting a Broadcast or an Automation checks Definition use.
+- The Removal check's readers of Segments, Rules and Automations read the `event` leaf's filter for
+  the Tag, Custom field and Score it names.
 - Glossary: the Condition entry.
 
 ## Rejected
@@ -64,5 +72,8 @@ sent it and, for a click, the link. Analytical Events expire after the Instance'
 - **"Bought product Y" through Event properties**: an Order has no lines, so a filter could only test
   a scalar the shop happens to send. Conditions on Orders (count, revenue, lines) are their own
   decision.
+- **A Broadcast or Automation named by a filter as Definition use**, kept from Archive while a
+  Segment names it: Archive removes neither the row nor its Events, so the guard would protect
+  nothing, and it would keep finished work in the lists for a Segment's sake.
 - **A lasting "ever" summary per Contact and action**: denormalized state to keep consistent with
   Erasure and consent, for the one case the shown horizon already makes honest.

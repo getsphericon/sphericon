@@ -6,8 +6,8 @@ build: [1546]
 # A Trigger, exit or goal matches an Event by its action and properties
 
 > **Extended by [[0153-a-conditions-event-test-filters-the-events-it-counts-by-their-properties]]:**
-> a Condition's `event` leaf takes the same filter, and a Broadcast or Automation it names is
-> Definition use.
+> a Condition's `event` leaf takes the same filter, whose Tag, Custom field or Score is Definition
+> use as a matcher's is; a Broadcast or Automation it names is not, since neither is ever removed.
 
 An Automation version names Events by action alone: its Trigger, its exit events and its goal event.
 Three decisions since have run into it. A goal of "the Contact got the Tag `qualified`" matches every

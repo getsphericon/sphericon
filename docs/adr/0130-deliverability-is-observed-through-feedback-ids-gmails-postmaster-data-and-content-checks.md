@@ -7,6 +7,9 @@ status: accepted
 > **Amended by [[0132-what-an-injected-agent-could-do-is-bounded-by-origin-marks-an-egress-lock-and-review]]:**
 > the list of link hosts, with the new ones marked, joins the Content checks at Schedule and Publish.
 
+> **Extended by [[0152-a-broadcast-tests-its-variants-on-a-share-and-sends-the-winner-to-the-rest]]:**
+> a Broadcast's content is its Variants, and the Content checks run on each Variant.
+
 A Workspace sees its deliverability through its own figures: the Complaint rate and the bounce rate
 per Sending domain (ADR 0011), computed from the `email.complained`, `email.bounced` and
 `email.delivered` Events its Integrations' Ingest hooks bring back. Three views it lacks are common
