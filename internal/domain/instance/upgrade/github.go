@@ -32,15 +32,20 @@ type GitHub struct {
 	http   *http.Client
 }
 
-// NewGitHub points at api.github.com. It honours http_proxy, https_proxy and no_proxy and their
-// uppercase forms; when both forms are set, the lowercase one wins.
-func NewGitHub() (*GitHub, error) { return NewGitHubAt("") }
+// GitHubEndpoint is the API root GitHub is read at and the HTTP client it is read through: what
+// building the client can refuse, which the caller builds and checks before NewGitHub.
+type GitHubEndpoint struct {
+	client *github.Client
+	http   *http.Client
+}
 
-// NewGitHubAt points at another API root (a test server, GitHub Enterprise); "" is api.github.com.
-func NewGitHubAt(baseURL string) (*GitHub, error) {
+// NewGitHubEndpoint points at an API root (a test server, GitHub Enterprise); "" is
+// api.github.com. It honours http_proxy, https_proxy and no_proxy and their uppercase forms; when
+// both forms are set, the lowercase one wins.
+func NewGitHubEndpoint(baseURL string) (GitHubEndpoint, error) {
 	def, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
-		return nil, fmt.Errorf("http.DefaultTransport is a %T, not an *http.Transport", http.DefaultTransport)
+		return GitHubEndpoint{}, fmt.Errorf("http.DefaultTransport is a %T, not an *http.Transport", http.DefaultTransport)
 	}
 	t := def.Clone()
 	// Read now, not through http.ProxyFromEnvironment, which caches the first read per process.
@@ -54,10 +59,13 @@ func NewGitHubAt(baseURL string) (*GitHub, error) {
 	}
 	c, err := github.NewClient(opts...)
 	if err != nil {
-		return nil, err
+		return GitHubEndpoint{}, err
 	}
-	return &GitHub{client: c, http: hc}, nil
+	return GitHubEndpoint{client: c, http: hc}, nil
 }
+
+// NewGitHub reads the releases at the endpoint.
+func NewGitHub(e GitHubEndpoint) *GitHub { return &GitHub{client: e.client, http: e.http} }
 
 // LatestRelease is the newest stable release (GitHub's `latest`: no prerelease, no draft),
 // without the leading "v".

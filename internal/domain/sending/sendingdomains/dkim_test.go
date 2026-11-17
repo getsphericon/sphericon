@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/foxcpp/go-mockdns"
+	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 )
@@ -73,7 +74,7 @@ func TestVerifyDKIM(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lookup := dnstest.Resolver(t, tt.zones).LookupTXT
-			got, err := sendingdomains.VerifyDKIM(context.Background(), lookup, "sphericon", "mail.acme.com", dkimPub)
+			got, err := sendingdomains.NewDNS(lookup).VerifyDKIM(context.Background(), &ent.SendingDomain{DkimSelector: "sphericon", Domain: "mail.acme.com", DkimPublicKey: dkimPub})
 			require.NoError(t, err)
 			require.Equalf(t, tt.want, got, "got %v, want %v", got, tt.want)
 		})
@@ -85,7 +86,7 @@ func TestVerifyDKIM(t *testing.T) {
 func TestVerifyDKIMSurfacesAResolverFailure(t *testing.T) {
 	lookup := dnstest.Resolver(t, map[string]mockdns.Zone{dkimZone: {Err: errors.New("server misbehaving")}}).LookupTXT
 
-	got, err := sendingdomains.VerifyDKIM(context.Background(), lookup, "sphericon", "mail.acme.com", dkimPub)
+	got, err := sendingdomains.NewDNS(lookup).VerifyDKIM(context.Background(), &ent.SendingDomain{DkimSelector: "sphericon", Domain: "mail.acme.com", DkimPublicKey: dkimPub})
 
 	require.Error(t, err)
 	require.False(t, got)

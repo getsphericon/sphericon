@@ -85,7 +85,7 @@ func TestLookupDMARC(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			lookup := dnstest.Resolver(t, tt.zones).LookupTXT
 
-			got, err := sendingdomains.LookupDMARC(t.Context(), lookup, tt.domain)
+			got, err := sendingdomains.NewDNS(lookup).LookupDMARC(t.Context(), tt.domain)
 
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
@@ -107,13 +107,13 @@ func FuzzLookupDMARC(f *testing.F) {
 		return func(context.Context, string) ([]string, error) { return records, nil }
 	}
 	f.Fuzz(func(t *testing.T, record string) {
-		alone, err := sendingdomains.LookupDMARC(t.Context(), answer(record), "mail.acme.com")
+		alone, err := sendingdomains.NewDNS(answer(record)).LookupDMARC(t.Context(), "mail.acme.com")
 		require.NoError(t, err)
-		withSPF, err := sendingdomains.LookupDMARC(t.Context(), answer(record, "v=spf1 -all"), "mail.acme.com")
+		withSPF, err := sendingdomains.NewDNS(answer(record, "v=spf1 -all")).LookupDMARC(t.Context(), "mail.acme.com")
 		require.NoError(t, err)
-		twice, err := sendingdomains.LookupDMARC(t.Context(), answer(record, record), "mail.acme.com")
+		twice, err := sendingdomains.NewDNS(answer(record, record)).LookupDMARC(t.Context(), "mail.acme.com")
 		require.NoError(t, err)
-		tagged, err := sendingdomains.LookupDMARC(t.Context(), answer("v=DMARC1; "+record), "mail.acme.com")
+		tagged, err := sendingdomains.NewDNS(answer("v=DMARC1; "+record)).LookupDMARC(t.Context(), "mail.acme.com")
 		require.NoError(t, err)
 
 		assert.Equal(t, alone, withSPF, "a TXT record that is not DMARC changes nothing")
@@ -130,7 +130,7 @@ func TestLookupDMARCSurfacesAResolverFailure(t *testing.T) {
 		"at the organizational domain": {dmarcOrg: {Err: errors.New("server misbehaving")}},
 	} {
 		t.Run(name, func(t *testing.T) {
-			got, err := sendingdomains.LookupDMARC(t.Context(), dnstest.Resolver(t, zones).LookupTXT, "mail.acme.com")
+			got, err := sendingdomains.NewDNS(dnstest.Resolver(t, zones).LookupTXT).LookupDMARC(t.Context(), "mail.acme.com")
 
 			require.Error(t, err)
 			require.False(t, got)

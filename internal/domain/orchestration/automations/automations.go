@@ -469,7 +469,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		}
 		e.steps = &built
 	}
-	return m.life.Edit(ctx, s, id, in.Revision, in.Name, e)
+	return m.life.Edit(ctx, s, id, versioneddefinition.EditInput[edit]{Revision: in.Revision, Name: in.Name, Edit: e})
 }
 
 // edit is a change of an Automation's definition; nil fields keep the base's. The steps are built

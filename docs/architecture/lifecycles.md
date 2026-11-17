@@ -69,7 +69,7 @@ the lock does not compile:
   which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
 - the unchecked removals behind their check, opened on their row: `tagsunchecked.Module.DeletionIn`,
   `contactsunchecked.Module.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
-  `sendingdomainsunchecked.DeletionIn`. An Integration's deletion gives up its default in the
+  `sendingdomainsunchecked.Module.DeletionIn`. An Integration's deletion gives up its default in the
   statement that discards it (`schema.GivenUpOnDiscard`) and queues the release of a Telegram bot's
   webhook in the same transaction;
 - the writes that move a use: a version of a Versioned definition (`Definition.Write`, on Create

@@ -69,19 +69,21 @@ var selectorPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.
 
 // Module holds the shared collaborators; it is stateless otherwise.
 type Module struct {
+	// client reads the Sending domains of every Workspace, before any scope exists (Due).
+	client *ent.Client
 	bus    *events.Bus
 	cipher *secrets.Cipher
-	// lookup resolves the DNS records a check reads.
-	lookup domainname.TXTLookup
+	// dns resolves the DNS records a check reads.
+	dns *DNS
 	// now is the Instance clock a check and a lost verification are stamped by.
 	now func() time.Time
 }
 
-// New builds the module: bus opens the transactions its writes run in (a check's DKIM outcome is
+// New builds the module over the raw client, which reads across Workspaces: bus opens the transactions its writes run in (a check's DKIM outcome is
 // stored and its loss published in one, which tells the Owners, ADR 0105), lookup resolves the
 // DNS records a check reads, and now is the Instance clock.
-func New(bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, now func() time.Time) *Module {
-	return &Module{bus: bus, cipher: cipher, lookup: lookup, now: now}
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, lookup domainname.TXTLookup, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, cipher: cipher, dns: NewDNS(lookup), now: now}
 }
 
 // CreateInput is a new Sending domain. An empty Selector means DefaultSelector.
@@ -147,7 +149,7 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateInput) (*ent.SendingDomain, error) {
 	var row *ent.SendingDomain
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-		cur, err := Editable(ctx, ts, id)
+		cur, err := editable(ctx, ts, id)
 		if err != nil {
 			return err
 		}
@@ -225,9 +227,9 @@ func validSelector(raw string) (string, error) {
 	return sel, nil
 }
 
-// Editable returns the Sending domain of the id for its owner to change or check. A deleted one is
+// editable returns the Sending domain of the id for its owner to change or check. A deleted one is
 // read, never changed (ADR 0100): it is ErrNotFound, as an unknown id is.
-func Editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
+func editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
 	row, err := s.SendingDomain().Get(ctx, id)
 	if err != nil {
 		return nil, notFound(err)

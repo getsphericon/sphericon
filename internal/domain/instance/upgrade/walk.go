@@ -43,7 +43,7 @@ type MajorFloor struct {
 //
 // With a directory Source every archive of the walk is checked before the first step, and
 // a missing one refuses the whole Upgrade. It yields its Progress as it goes.
-func Walk(ctx context.Context, o Options) iter.Seq2[Progress, error] {
+func (*Upgrader) Walk(ctx context.Context, o Options) iter.Seq2[Progress, error] {
 	return progressOf(func(emit emitter) error { return walk(ctx, o, emit) })
 }
 

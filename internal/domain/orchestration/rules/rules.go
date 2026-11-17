@@ -269,7 +269,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 	in.Name = name
-	return m.life.Edit(ctx, s, id, in.Revision, in.Name, in)
+	return m.life.Edit(ctx, s, id, versioneddefinition.EditInput[UpdateInput]{Revision: in.Revision, Name: in.Name, Edit: in})
 }
 
 // versioned is the Rule's part of the lifecycle (versioneddefinition.Definition).
