@@ -141,12 +141,13 @@ func (g Gap) String() string {
 
 var (
 	// "ADR 0136", "ADRs 0122, 0124 and 0125", "ADR-0007".
-	adrList   = regexp.MustCompile(`\bADRs?[\s-]+(\d{4}(?:(?:\s*,\s*|\s*,?\s+and\s+)\d{4})*)`)
-	adrLink   = regexp.MustCompile(`(?:\[\[|docs/adr/)(\d{4})-`)
-	fourDigit = regexp.MustCompile(`\d{4}`)
-	ownADR    = regexp.MustCompile(`\(ADR (\d{4})\)`)
-	issueRef  = regexp.MustCompile(`#(\d+)`)
-	blockedBy = regexp.MustCompile(`(?im)^\W*blocked by\b(.*)$`)
+	adrList         = regexp.MustCompile(`\bADRs?[\s-]+(\d{4}(?:(?:\s*,\s*|\s*,?\s+and\s+)\d{4})*)`)
+	adrLink         = regexp.MustCompile(`(?:\[\[|docs/adr/)(\d{4})-`)
+	fourDigit       = regexp.MustCompile(`\d{4}`)
+	ownADR          = regexp.MustCompile(`\(ADR (\d{4})\)`)
+	issueRef        = regexp.MustCompile(`#(\d+)`)
+	blockedBy       = regexp.MustCompile(`(?i)^\W*blocked by\b(.*)$`)
+	markdownHeading = regexp.MustCompile(`^\s*#{1,6}\s`)
 )
 
 // References returns the ADR numbers a text names, sorted.
@@ -194,14 +195,7 @@ func Check(issue Issue, adrs []ADR, open func(int) bool) []Gap {
 	slices.Sort(refs)
 	refs = slices.Compact(refs)
 
-	waits := slices.Clone(issue.BlockedBy)
-	for _, line := range blockedBy.FindAllStringSubmatch(issue.Body, -1) {
-		for _, m := range issueRef.FindAllStringSubmatch(line[1], -1) {
-			if n, err := strconv.Atoi(m[1]); err == nil {
-				waits = append(waits, n)
-			}
-		}
-	}
+	waits := append(slices.Clone(issue.BlockedBy), blockers(issue.Body)...)
 
 	var gaps []Gap
 	for _, number := range refs {
@@ -224,6 +218,37 @@ func Check(issue Issue, adrs []ADR, open func(int) bool) []Gap {
 		gaps = append(gaps, Gap{ADR: number, Tickets: building})
 	}
 	return gaps
+}
+
+// blockers returns the tickets a body says it waits for: those on a `Blocked by` line, and under a
+// `## Blocked by` heading up to the next heading (the to-tickets template).
+func blockers(body string) []int {
+	var refs []string
+	inSection := false
+	for line := range strings.Lines(body) {
+		line = strings.TrimRight(line, "\r\n")
+		heading := markdownHeading.MatchString(line)
+		if heading {
+			inSection = false
+		}
+		if m := blockedBy.FindStringSubmatch(line); m != nil {
+			refs = append(refs, m[1])
+			inSection = heading
+			continue
+		}
+		if inSection {
+			refs = append(refs, line)
+		}
+	}
+	var numbers []int
+	for _, ref := range refs {
+		for _, m := range issueRef.FindAllStringSubmatch(ref, -1) {
+			if n, err := strconv.Atoi(m[1]); err == nil {
+				numbers = append(numbers, n)
+			}
+		}
+	}
+	return numbers
 }
 
 func waives(body, number string) bool {

@@ -110,6 +110,7 @@ func TestCheckPassesWhatIsBuiltWaitedForOrWaived(t *testing.T) {
 		"built: no field, done, closed ticket": {Number: 1, Body: "Uses ADRs 0080, 0149 and 0120.\n"},
 		"blocked by line":                      {Number: 1, Body: "Blocked by #1438 (the ADR) and #1400.\n\nExtends ADR 0126.\n"},
 		"native edge":                          {Number: 1, Body: "Extends ADR 0126.\n", BlockedBy: []int{1400}},
+		"blocked by heading":                   {Number: 1, Body: "Extends ADR 0126.\n\n## Blocked by\n\n- #1438\n- #1400\n\n## Notes\n"},
 		"waived":                               {Number: 1, Body: "Extends ADR 0136.\n\nWithout ADR 0136: the copy is read only when it exists.\n"},
 		"only its own ADR":                     {Number: 1, Title: "Wait until (ADR 0126)", Body: "ADR 0126.\n"},
 		"an ADR not on main yet":               {Number: 1, Body: "Blocked by #1475 (the ADR). ADR 0172.\n"},
@@ -123,10 +124,11 @@ func TestCheckPassesWhatIsBuiltWaitedForOrWaived(t *testing.T) {
 
 func TestCheckHoldsWhatIsNeitherWaitedForNorWaived(t *testing.T) {
 	for name, issue := range map[string]ticketcheck.Issue{
-		"blocked by another ticket": {Number: 1, Body: "Blocked by #1438.\n\nExtends ADR 0126.\n"},
-		"a waiver of another ADR":   {Number: 1, Body: "Extends ADR 0126.\n\nWithout ADR 0136: not needed.\n"},
-		"a waiver without a reason": {Number: 1, Body: "Extends ADR 0126.\n\nWithout ADR 0126:\n"},
-		"a ticket named in prose":   {Number: 1, Body: "Extends ADR 0126, which #1400 builds.\n"},
+		"blocked by another ticket":            {Number: 1, Body: "Blocked by #1438.\n\nExtends ADR 0126.\n"},
+		"a waiver of another ADR":              {Number: 1, Body: "Extends ADR 0126.\n\nWithout ADR 0136: not needed.\n"},
+		"a waiver without a reason":            {Number: 1, Body: "Extends ADR 0126.\n\nWithout ADR 0126:\n"},
+		"a ticket named in prose":              {Number: 1, Body: "Extends ADR 0126, which #1400 builds.\n"},
+		"a ticket after the heading's section": {Number: 1, Body: "## Blocked by\n\n- #1438\n\n## Notes\n\nExtends ADR 0126 (#1400).\n"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			require.Equal(t, []ticketcheck.Gap{{ADR: "0126", Tickets: []int{1400}}},
