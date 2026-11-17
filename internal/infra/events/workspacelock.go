@@ -36,6 +36,18 @@ func (b *Bus) WithinWorkspaceLockEnqueueTx(ctx context.Context, s *ent.Scoped, f
 	})
 }
 
+// TryLockWorkspace takes the Workspace's lock on the transaction tx of the raw client only when no
+// other transaction holds it, and reports whether it did: the Secret re-encryption, which rewrites
+// a version of a Rule or an Automation, never waits for an edit of the Workspace, and leaves the
+// version to its next run (ADR 0169).
+func TryLockWorkspace(ctx context.Context, tx *ent.Client, workspaceID int64) (bool, error) {
+	took, err := postgres.TryLockTx(ctx, tx, postgres.WorkspaceKey("workspace", workspaceID))
+	if err != nil {
+		return false, fmt.Errorf("lock the Workspace: %w", err)
+	}
+	return took, nil
+}
+
 // lockWorkspace takes the Workspace's lock on the transaction tx.
 func lockWorkspace(ctx context.Context, tx *ent.Client, workspaceID int64) error {
 	if err := postgres.LockTx(ctx, tx, postgres.WorkspaceKey("workspace", workspaceID)); err != nil {

@@ -31,6 +31,22 @@ func LockTx(ctx context.Context, e Execer, key int64) error {
 	return err
 }
 
+// TryLockTx takes the advisory lock key, as LockTx does, only when no other transaction holds it,
+// and reports whether it did: a caller that may come back later does not wait.
+func TryLockTx(ctx context.Context, q Queryer, key int64) (bool, error) {
+	// raw sql: pg_try_advisory_xact_lock is a server function; ent has no advisory lock.
+	rows, err := q.QueryContext(ctx, "SELECT pg_try_advisory_xact_lock($1)", key)
+	if err != nil {
+		return false, err
+	}
+	defer func() { _ = rows.Close() }()
+	var took bool
+	if rows.Next() {
+		err = rows.Scan(&took)
+	}
+	return took, errors.Join(err, rows.Err())
+}
+
 // LockHolder is a session that holds an advisory lock, as pg_stat_activity describes it.
 type LockHolder struct {
 	PID          int

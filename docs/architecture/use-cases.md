@@ -132,7 +132,7 @@ the Enterprise Edition's) hands over its columns as `secrets.Sweep` values (`Sec
 the wiring builds on the raw client in a fixed order and binds to the cipher
 (`app.SecretReencryption`), and the cipher sweeps them by id (`secrets.Cipher.Reencrypt`): a
 compare-and-swap of the text, or for a version of a Rule or an Automation a write on its owner's
-revision that reads the version again when an edit took it (`secrets.Guarded`, ADR 0169); the command prints the report (`internal/commandline`, whose tests run
+revision under the Workspace's lock, which reads the version again when an edit took it and leaves it to the next run while an edit holds the lock (`secrets.Guarded`, ADR 0169); the command prints the report (`internal/commandline`, whose tests run
 the owners' sweeps under a rotated key). A sweep only stores the value it read again under the primary key, so no check guards it
 and it is no unchecked operation.
 A use case need not guard a removal: an operation whose subject's owner would have to call a

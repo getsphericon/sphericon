@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -125,4 +126,49 @@ func TestReencryptGoesOnPastADraftRevertedMeanwhile(t *testing.T) {
 	sealed := env.DB.RuleVersion.GetX(ctx, fixtures.RuleSealedDraftVersionID).Actions
 	_, err = retired.Decrypt(sealed[0].URL)
 	require.NoError(t, err, "a version after the reverted one is sealed under the new key")
+}
+
+// A rotation run while an edit holds the Rule's draft, read and not yet written: the edit writes
+// back the secrets it read, so the rotation does not claim the draft under the Workspace's lock the
+// edit holds. It leaves it to the next run, which seals the edited draft (ADR 0169).
+func TestReencryptDuringAnEditLeavesTheDraftToTheNextRun(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.Committed()) // the edit and the rotation hold transactions of their own
+	ctx := context.Background()
+	acme := env.DB.Scoped(fixtures.AcmeID)
+	module := testhelper.Module[*rules.Module](env)
+	draft := env.DB.RuleVersion.GetX(ctx, fixtures.RuleSealedDraftVersionID)
+	revision := testhelper.RuleRevisionIn(ctx, t, acme, fixtures.RuleSealedDraftID)
+	rotation, retired := rotated(t)
+	var during []secrets.Count
+	// The edit has read the draft under the Workspace's lock and is about to write it.
+	raced := false
+	env.Bus.Use(func(next ent.Mutator) ent.Mutator {
+		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+			if v, ok := m.(*ent.RuleVersionMutation); ok && !raced {
+				if id, ok := v.ID(); ok && id == draft.ID {
+					raced = true
+					var err error
+					during, err = reencrypt(ctx, env, rotation, &bytes.Buffer{})
+					require.NoError(t, err)
+				}
+			}
+			return next.Mutate(ctx, m)
+		})
+	})
+
+	_, err := module.Update(ctx, acme, fixtures.RuleSealedDraftID, rules.UpdateInput{Revision: revision, Actions: &[]ruleaction.Action{{
+		Type: ruleaction.HTTP, ID: draft.Actions[0].ID, Body: `{"v":2}`,
+	}}})
+	require.NoError(t, err)
+
+	column := ruleversion.Table + "." + ruleversion.FieldActions
+	require.True(t, raced, "the rotation ran inside the edit")
+	left := lo.SumBy(during, func(c secrets.Count) int { return lo.Ternary(c.Column == column, c.Raced, 0) })
+	assert.Positive(t, left, "the draft is left to the next run")
+	_, err = reencrypt(ctx, env, rotation, &bytes.Buffer{})
+	require.NoError(t, err)
+	stored := env.DB.RuleVersion.GetX(ctx, draft.ID).Actions
+	assert.JSONEq(t, `{"v":2}`, stored[0].Body, "the edit stays")
+	_, err = retired.Decrypt(stored[0].URL)
+	require.NoError(t, err, "the next run seals the edited draft")
 }

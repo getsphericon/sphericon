@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationversion"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -36,7 +37,7 @@ func SecretSweeps(c *ent.Client) []secrets.Sweep {
 
 // guardedSteps is the steps of the Automation version id, written on its Automation's revision.
 func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step] {
-	var owner int64
+	var owner, workspace int64
 	return secrets.Guarded[[]automationstep.Step]{
 		// The Automation is read first: an edit between the two reads leaves an older revision with
 		// the edited steps, and the write misses.
@@ -48,7 +49,7 @@ func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step
 			if err != nil {
 				return nil, 0, err
 			}
-			owner = a.ID
+			owner, workspace = a.ID, a.WorkspaceID
 			v, err := c.AutomationVersion.Get(ctx, id)
 			if ent.IsNotFound(err) {
 				return nil, 0, secrets.ErrRowGone
@@ -59,16 +60,19 @@ func guardedSteps(c *ent.Client, id int64) secrets.Guarded[[]automationstep.Step
 			return v.Steps, a.Revision, nil
 		},
 		Seal: rewrapSteps,
-		// The Automation is locked on the revision read, so an edit either committed before, and
-		// the write misses, or waits for it.
+		// An edit holds the Workspace's lock from its read of the version to its write, and writes
+		// back the secrets it read: the write takes the lock or leaves the version to the next run,
+		// and under it lands only while the Automation has the revision read.
 		Write: func(ctx context.Context, steps []automationstep.Step, revision int64) (bool, error) {
 			tx, err := c.Tx(ctx)
 			if err != nil {
 				return false, err
 			}
 			defer func() { _ = tx.Rollback() }()
-			held, err := tx.Automation.Query().Where(automation.ID(owner), automation.Revision(revision)).ForUpdate().IDs(ctx)
-			if err != nil || len(held) == 0 {
+			if took, err := events.TryLockWorkspace(ctx, tx.Client(), workspace); err != nil || !took {
+				return false, err
+			}
+			if held, err := tx.Automation.Query().Where(automation.ID(owner), automation.Revision(revision)).Exist(ctx); err != nil || !held {
 				return false, err
 			}
 			if err := tx.AutomationVersion.UpdateOneID(id).SetSteps(steps).Exec(ctx); err != nil {

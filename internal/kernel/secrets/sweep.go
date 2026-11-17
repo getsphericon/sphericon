@@ -17,8 +17,8 @@ type Count struct {
 	Rewritten int
 	// Current values were already under the primary key and were left alone.
 	Current int
-	// Raced rows changed while the sweep ran (a request saved them): their new value was
-	// sealed by the running server, so they are skipped. A second run counts them as current.
+	// Raced rows changed while the sweep ran (a request saved them), or were held by an edit, so
+	// they are skipped: a second run rewrites them or counts them as current.
 	Raced int
 }
 
@@ -56,7 +56,8 @@ const (
 	RowCurrent Outcome = iota
 	// RowRewritten is a row sealed again under the primary key.
 	RowRewritten
-	// RowRaced is a row edited each time it was about to be written: left to the next run.
+	// RowRaced is a row edited, or held by an edit, each time it was about to be written: left to
+	// the next run.
 	RowRaced
 )
 

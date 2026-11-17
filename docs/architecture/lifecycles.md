@@ -79,7 +79,11 @@ the lock does not compile:
 
 `integrations.Create` takes the lock for a new default; `integrations.Update` always does, since a
 new config may change the From its sends go out with. A Tracking domain's moves take the lock to
-run one at a time; they hold no use. The lock comes before any row lock. A hot path (a Rule firing,
+run one at a time; they hold no use. The Secret re-encryption's write of a Rule's or an
+Automation's version tries the lock on the raw client (`events.TryLockWorkspace`, ADR 0169): an
+edit holds it from its read of the version to its write and writes back the secrets it read, so the
+re-encryption never writes in between, and leaves a version it cannot lock to its next run. The lock
+comes before any row lock. A hot path (a Rule firing,
 an Enrollment, a send) never takes it: it locks the row it acts on and checks it again under that
 lock, and the locked row is a value the write takes. An Enrollment is written (`automations.begin`)
 with the Contact locked (`contactlock.Locked`) and the Automation share-locked on its live version;
