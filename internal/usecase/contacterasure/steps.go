@@ -35,7 +35,7 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // writes next.
 func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 	for _, address := range t.Destinations {
-		if err := eraseStampsOf(ctx, s, channels.Email, address); err != nil {
+		if err := u.eraseStampsOf(ctx, s, channels.Email, address); err != nil {
 			return err
 		}
 	}
@@ -45,7 +45,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 			return err
 		}
 		for _, user := range users {
-			if err := eraseStampsOf(ctx, s, channels.Telegram, user); err != nil {
+			if err := u.eraseStampsOf(ctx, s, channels.Telegram, user); err != nil {
 				return err
 			}
 		}
@@ -63,7 +63,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 			optOut, err := unsubscribes.SMSOptOut(ctx, s, number)
 			return optOut != nil, err
 		}
-		if err := consentstampsunchecked.Erase(ctx, s, channels.SMS, number, standing); err != nil {
+		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channels.SMS, Destination: number, Standing: standing}); err != nil {
 			return err
 		}
 	}
@@ -72,7 +72,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 
 // eraseStampsOf erases the stamps of destination on channel but the time of a stop whose opt-out,
 // kept by the Destination, still stands.
-func eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
+func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
 	standing := func(ctx context.Context, source string) (bool, error) {
 		_, err := unsubscribes.Get(ctx, s, channel, destination, source)
 		if ent.IsNotFound(err) {
@@ -80,7 +80,7 @@ func eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel,
 		}
 		return err == nil, err
 	}
-	return consentstampsunchecked.Erase(ctx, s, channel, destination, standing)
+	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channel, Destination: destination, Standing: standing})
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

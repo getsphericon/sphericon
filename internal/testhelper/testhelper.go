@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/oauthclients"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -500,7 +501,7 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
 		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
 		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
-		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client))
+		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client, do.MustInvoke[*broadcasts.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewMessageObservationWorker(client, do.MustInvoke[*outboundmessages.Module](injector)))
 		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.Module](injector), systemSender))
 		add[recordedArgs](tb, p, txDB, client, recordedWorker{})

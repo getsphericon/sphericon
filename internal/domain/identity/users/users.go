@@ -11,7 +11,7 @@
 // sign-up, a link, a provider callback, an Invitation's token) have no Workspace known up front
 // (ADR 0017). The steps that make a User Verified create its first Workspace on the same
 // transaction, so they are the Sign-up's (internal/domain/identity/signup), which calls the
-// ...In functions here for the User's part (ADR 0102).
+// ...In methods here for the User's part (ADR 0102).
 package users
 
 import (
@@ -65,18 +65,30 @@ type Consents interface {
 	Pending(ctx context.Context, userID int64) ([]signupitems.Document, error)
 }
 
-// Option tunes Module.
-type Option func(*Module)
+// New builds Module over the ent client; the bus opens the transactions that span several writes
+// and publishes in the transaction of a client an operation is given (events.Bus.PublishIn),
+// passwords hashes the passwords a User sets, consents answers the Sign-up items an account set up
+// from an Invitation is asked (ADR 0062), and prover proves a User's current password the way a
+// login does (Prover). now is the Instance clock.
+func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, prover Prover, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, passwords: passwords, consents: consents, prover: prover, now: now}
+}
 
-// New builds Module over the ent client; the bus opens the transactions that
-// span several writes, passwords hashes the passwords a User sets, and consents answers the
-// Sign-up items an account set up from an Invitation is asked (ADR 0062). now is the Instance clock.
-func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, now func() time.Time, opts ...Option) *Module {
-	a := &Module{ent: client, bus: bus, passwords: passwords, consents: consents, now: now}
-	for _, opt := range opts {
-		opt(a)
-	}
-	return a
+// publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):
+// the publisher an operation given a transaction's client hands to events.RecordAudit and to the
+// steps of the modules it calls that still take one.
+type publisherIn struct {
+	bus *events.Bus
+	in  events.InTx
+}
+
+func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
+	return p.bus.PublishIn(ctx, p.in, ev)
+}
+
+// pub is the publisher of the bus transaction in is bound to.
+func (a *Module) pub(in events.InTx) events.Publisher {
+	return publisherIn{bus: a.bus, in: in}
 }
 
 // ErrMalformedRegionalFormat refuses a Regional format that is not a well-formed BCP 47 tag.
@@ -117,7 +129,7 @@ func RequireVerified(u *ent.User) error {
 
 // VerifiedIn loads the User id in the caller's transaction, refused with ErrEmailNotVerified while
 // it is Unverified: a Verified User's later Workspace is created on the transaction that loads it.
-func VerifiedIn(ctx context.Context, tx *ent.Client, id int64) (*ent.User, error) {
+func (a *Module) VerifiedIn(ctx context.Context, tx *ent.Client, id int64) (*ent.User, error) {
 	u, err := tx.User.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -136,12 +148,12 @@ func (a *Module) User(ctx context.Context, id int64) (*ent.User, error) {
 // UserByEmail loads a User by login email, whatever its case (an ent NotFound error when none):
 // a stored email is lower-cased (ent/schema LowerEmail).
 func (a *Module) UserByEmail(ctx context.Context, email string) (*ent.User, error) {
-	return UserByEmailIn(ctx, a.ent, email)
+	return a.UserByEmailIn(ctx, a.ent, email)
 }
 
 // UserByEmailIn is UserByEmail in the caller's transaction: a Staff member addresses a User by
 // email at the command line (the Second factor reset).
-func UserByEmailIn(ctx context.Context, tx *ent.Client, email string) (*ent.User, error) {
+func (a *Module) UserByEmailIn(ctx context.Context, tx *ent.Client, email string) (*ent.User, error) {
 	return tx.User.Query().Where(user.Email(emailcase.Of(email))).Only(ctx)
 }
 
@@ -217,49 +229,78 @@ func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, er
 // repeated Sign-up's answers in the same transaction. A Verified User is left
 // untouched, records included: whoever signed up has not proven the address. It returns the User
 // as it stands afterwards.
-func (a *Module) ReplaceUnverifiedPassword(ctx context.Context, id int64, passwordHash string, consents consentrecords.Consents) (*ent.User, error) {
+func (a *Module) ReplaceUnverifiedPassword(ctx context.Context, in ReplaceUnverifiedPasswordInput) (*ent.User, error) {
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		n, err := tx.User.Update().
-			Where(user.ID(id), user.EmailVerifiedAtIsNil()).
-			SetPasswordHash(passwordHash).
+			Where(user.ID(in.UserID), user.EmailVerifiedAtIsNil()).
+			SetPasswordHash(in.PasswordHash).
 			Save(ctx)
 		if err != nil || n == 0 {
 			return err
 		}
-		return consentrecords.Write(ctx, tx, id, consents)
+		return consentrecords.Write(ctx, tx, in.UserID, in.Consents)
 	})
 	if err != nil {
 		return nil, err
 	}
-	return a.ent.User.Get(ctx, id)
+	return a.ent.User.Get(ctx, in.UserID)
+}
+
+// ReplaceUnverifiedPasswordInput is a repeated Sign-up of the Unverified User UserID: the hash of
+// the password it sets and the Consent records of its answers.
+type ReplaceUnverifiedPasswordInput struct {
+	UserID       int64
+	PasswordHash string
+	Consents     consentrecords.Consents
+}
+
+// CreateUserInput is a User the platform makes itself: its name, address and password hash.
+type CreateUserInput struct {
+	Name, Email, PasswordHash string
 }
 
 // CreateUser creates a User whose email is already proven, with a password hash: a
 // User made by the platform itself rather than by a Sign-up. A taken address is ErrEmailTaken.
-func (a *Module) CreateUser(ctx context.Context, name, email, passwordHash string) (*ent.User, error) {
-	n, err := NewUser{Name: name, Email: email}.checked()
+func (a *Module) CreateUser(ctx context.Context, in CreateUserInput) (*ent.User, error) {
+	n, err := NewUser{Name: in.Name, Email: in.Email}.checked()
 	if err != nil {
 		return nil, err
 	}
-	name, email = n.Name, n.Email
 	var u *ent.User
 	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		return constraints.Write(ctx, tx, func() error {
 			var err error
-			u, err = tx.User.Create().SetName(name).SetEmail(email).SetPasswordHash(passwordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
+			u, err = tx.User.Create().SetName(n.Name).SetEmail(n.Email).SetPasswordHash(in.PasswordHash).SetEmailVerifiedAt(a.now()).Save(ctx)
 			return err
 		})
 	})
 	return u, err
 }
 
-// MarkVerifiedIn completes an Unverified User's row: it stamps the Verified email, bumps the
-// session epoch (ending every earlier session), sets the password hash when passwordHash is
-// not nil (nil keeps the stored one) and the name when not empty. The write lands only on a still-Unverified User, so of two
-// racing completions exactly one wins; the other gets ErrAlreadyVerified and changes
-// nothing. proven also stamps the address as proven: a verify link was followed, which only the
-// address received; an Invitation link is no proof (ADR 0158).
-func MarkVerifiedIn(ctx context.Context, tx *ent.Client, id int64, name string, passwordHash *string, at time.Time, proven bool) (*ent.User, error) {
+// MarkVerifiedInput is the completion of an Unverified User's row: the User, the password hash to
+// set (nil keeps the stored one), the name (empty keeps it), and whether the step proved the
+// address.
+type MarkVerifiedInput struct {
+	UserID       int64
+	Name         string
+	PasswordHash *string
+	Proven       bool
+}
+
+// MarkVerifiedIn completes an Unverified User's row on the transaction tx, at the module's clock:
+// it stamps the Verified email, bumps the session epoch (ending every earlier session), sets the
+// password hash when in.PasswordHash is not nil (nil keeps the stored one) and the name when not
+// empty. The write lands only on a still-Unverified User, so of two racing completions exactly one
+// wins; the other gets ErrAlreadyVerified and changes nothing. in.Proven also stamps the address
+// as proven: a verify link was followed, which only the address received; an Invitation link is no
+// proof (ADR 0158).
+func (a *Module) MarkVerifiedIn(ctx context.Context, tx *ent.Client, in MarkVerifiedInput) (*ent.User, error) {
+	return markVerifiedIn(ctx, tx, in, a.now())
+}
+
+// markVerifiedIn is MarkVerifiedIn at `at`.
+func markVerifiedIn(ctx context.Context, tx *ent.Client, in MarkVerifiedInput, at time.Time) (*ent.User, error) {
+	id, name, passwordHash, proven := in.UserID, in.Name, in.PasswordHash, in.Proven
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		upd := tx.User.Update().
 			Where(user.ID(id), user.EmailVerifiedAtIsNil()).
@@ -322,11 +363,13 @@ var constraints = db.Declare(
 const FirstWorkspaceName = "Personal"
 
 // CreateVerifiedIn writes, in tx, the User of a Sign-up on an install that does not require
-// email verification (ADR 0030): Verified at once with its password, and the Consent records of
-// its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up survey. The name and the
-// address are checked by the rules of a User's; the caller creates the first Workspace on the same
-// transaction (internal/domain/identity/signup). A taken address is ErrEmailTaken.
-func CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser, at time.Time) (*ent.User, error) {
+// email verification (ADR 0030): Verified at once, at the module's clock, with its password, and
+// the Consent records of its answers (ADR 0062). SurveyDue marks the User as owing the Sign-up
+// survey. The name and the address are checked by the rules of a User's; the caller creates the
+// first Workspace on the same transaction (internal/domain/identity/signup). A taken address is
+// ErrEmailTaken.
+func (a *Module) CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser) (*ent.User, error) {
+	at := a.now()
 	n, err := n.checked()
 	if err != nil {
 		return nil, err
@@ -409,24 +452,35 @@ func updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		return nil, false, err
 	}
 	if firstProof {
-		if _, err := ApplyDomainJoinIn(ctx, tx, pub, saved); err != nil {
+		if _, err := applyDomainJoinIn(ctx, tx, pub, saved); err != nil {
 			return nil, false, err
 		}
 	}
 	if w.PasswordHash == nil {
 		return saved, firstProof, nil
 	}
-	return saved, firstProof, RecordUserAction(ctx, tx, pub, saved, events.ActionUserPasswordChange, map[string]any{"password": "changed"})
+	return saved, firstProof, recordUserAction(ctx, tx, pub, UserAction{User: saved, Action: events.ActionUserPasswordChange, Diff: map[string]any{"password": "changed"}})
+}
+
+// Reset is a Verified User's password set from a reset link: the User as it stands afterwards, and
+// whether the link was the address's first proof (ADR 0170).
+type Reset struct {
+	User       *ent.User
+	FirstProof bool
 }
 
 // ResetVerifiedPasswordIn sets a Verified User's password from a reset link (ADR 0030): a password
 // change recorded like ChangeProfile, which ends every earlier session. The link was mailed to the
 // login address, so following it proves the address. An Unverified User's reset completes the
 // Sign-up instead (internal/domain/identity/signup).
-// It runs on the transaction tx; firstProof reports that the link was the address's first proof, so
-// the caller drops what was set up before it (ADR 0170).
-func ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, passwordHash string, now time.Time) (*ent.User, bool, error) {
-	return updateProfileIn(ctx, tx, pub, id, profileWrite{PasswordHash: &passwordHash}, true, now)
+// It runs on the transaction tx and publishes in it; FirstProof reports that the link was the
+// address's first proof, so the caller drops what was set up before it (ADR 0170).
+func (a *Module) ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, id int64, passwordHash string) (Reset, error) {
+	saved, firstProof, err := updateProfileIn(ctx, tx, a.pub(tx), id, profileWrite{PasswordHash: &passwordHash}, true, a.now())
+	if err != nil {
+		return Reset{}, err
+	}
+	return Reset{User: saved, FirstProof: firstProof}, nil
 }
 
 // EndSessions bumps the User's session epoch, ending every session issued before
@@ -438,26 +492,26 @@ func (a *Module) EndSessions(ctx context.Context, id int64) error {
 		if err != nil {
 			return err
 		}
-		return RecordUserAction(ctx, tx, pub, u, events.ActionUserSignOutEverywhere, nil)
+		return recordUserAction(ctx, tx, pub, UserAction{User: u, Action: events.ActionUserSignOutEverywhere})
 	})
 }
 
 // LockIn reads the User userID on the transaction tx and locks its row until the transaction
 // ends, so a change of its session epoch or password waits for it.
-func LockIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+func (a *Module) LockIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
 	return tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
 }
 
 // BumpSessionEpochIn ends the User's sessions on the transaction tx (a Passkey change).
-func BumpSessionEpochIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+func (a *Module) BumpSessionEpochIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
 	return tx.User.UpdateOneID(userID).AddSessionEpoch(1).Save(ctx)
 }
 
 // BumpSessionEpochFromIn ends the User's sessions on the transaction tx only while the User still
 // has the session epoch and password of before, the snapshot a change of the User's Second factor
-// checked (internal/domain/identity/secondfactors). bumped is false, and nothing is written, when
-// either moved since.
-func BumpSessionEpochFromIn(ctx context.Context, tx *ent.Client, before *ent.User) (saved *ent.User, bumped bool, err error) {
+// checked (internal/domain/identity/secondfactors), and returns the User as it stands afterwards.
+// It returns nil, and writes nothing, when either moved since.
+func (a *Module) BumpSessionEpochFromIn(ctx context.Context, tx *ent.Client, before *ent.User) (*ent.User, error) {
 	update := tx.User.UpdateOneID(before.ID).Where(user.SessionEpochEQ(before.SessionEpoch))
 	// A passwordless User stores no password as NULL or an empty optional string.
 	if before.PasswordHash == "" {
@@ -465,11 +519,11 @@ func BumpSessionEpochFromIn(ctx context.Context, tx *ent.Client, before *ent.Use
 	} else {
 		update.Where(user.PasswordHashEQ(before.PasswordHash))
 	}
-	saved, err = update.AddSessionEpoch(1).Save(ctx)
+	saved, err := update.AddSessionEpoch(1).Save(ctx)
 	if ent.IsNotFound(err) {
-		return nil, false, nil
+		return nil, nil
 	}
-	return saved, err == nil, err
+	return saved, err
 }
 
 // LoginPassword is the method of a login by email and password in the `user.login` entry.
@@ -484,43 +538,75 @@ const LoginPasskey = "passkey"
 // or the registry name of the Sign-in provider (ADR 0048).
 func (a *Module) RecordLogin(ctx context.Context, u *ent.User, method string) error {
 	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		return RecordUserAction(ctx, tx, pub, u, events.ActionUserLogin, map[string]any{"method": method})
+		return recordUserAction(ctx, tx, pub, UserAction{User: u, Action: events.ActionUserLogin, Diff: map[string]any{"method": method}})
 	})
 }
 
-// RecordUserAction publishes one Audit entry per Workspace the User holds a
-// Membership in, and none anywhere else. The User is the actor and the target.
-func RecordUserAction(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User, action string, diff map[string]any) error {
-	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(u.ID), Name: u.Name}
-	return RecordActionOnUser(ctx, tx, pub, actor, u, action, diff)
+// UserAction is an Audit action a User takes on themself: the User, who is the actor and the
+// target, the action and its diff.
+type UserAction struct {
+	User   *ent.User
+	Action string
+	Diff   map[string]any
 }
 
-// RecordActionOnUser publishes action by actor on the User u into the log of every
-// Workspace u holds a Membership in (a staff member acting on a User), and none
-// anywhere else.
-func RecordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publisher, actor events.Actor, u *ent.User, action string, diff map[string]any) error {
-	held, err := tx.Membership.Query().Where(membership.UserID(u.ID)).All(ctx)
+// ActionOnUser is an Audit action an actor takes on a User: the actor (a staff member, an Owner
+// or Admin, the system), the User who is the target, the action and its diff.
+type ActionOnUser struct {
+	Actor  events.Actor
+	User   *ent.User
+	Action string
+	Diff   map[string]any
+}
+
+// RecordUserAction publishes, in the bus transaction tx is bound to, one Audit entry per Workspace
+// the User holds a Membership in, and none anywhere else. The User is the actor and the target.
+func (a *Module) RecordUserAction(ctx context.Context, tx *ent.Client, in UserAction) error {
+	return recordUserAction(ctx, tx, a.pub(tx), in)
+}
+
+// RecordActionOnUser publishes, in the bus transaction tx is bound to, in.Action by in.Actor on
+// in.User into the log of every Workspace that User holds a Membership in (a staff member acting
+// on a User), and none anywhere else.
+func (a *Module) RecordActionOnUser(ctx context.Context, tx *ent.Client, in ActionOnUser) error {
+	return recordActionOnUser(ctx, tx, a.pub(tx), in)
+}
+
+// RecordActionOnUserIn publishes in.Action by in.Actor on in.User into the log of the Workspace of
+// the scope ts only, in the bus transaction ts is bound to: an Owner or Admin acting on a member is
+// recorded where they hold that authority, not in the member's other Workspaces.
+func (a *Module) RecordActionOnUserIn(ctx context.Context, ts *ent.Scoped, in ActionOnUser) error {
+	return recordActionOnUserIn(ctx, a.pub(ts), in, ts.WorkspaceID())
+}
+
+// recordUserAction is RecordUserAction on the publisher pub of tx's transaction.
+func recordUserAction(ctx context.Context, tx *ent.Client, pub events.Publisher, in UserAction) error {
+	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(in.User.ID), Name: in.User.Name}
+	return recordActionOnUser(ctx, tx, pub, ActionOnUser{Actor: actor, User: in.User, Action: in.Action, Diff: in.Diff})
+}
+
+// recordActionOnUser is RecordActionOnUser on the publisher pub of tx's transaction.
+func recordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publisher, in ActionOnUser) error {
+	held, err := tx.Membership.Query().Where(membership.UserID(in.User.ID)).All(ctx)
 	if err != nil {
 		return err
 	}
 	ids := lo.Map(held, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID })
-	return RecordActionOnUserIn(ctx, pub, actor, u, action, diff, ids...)
+	return recordActionOnUserIn(ctx, pub, in, ids...)
 }
 
-// RecordActionOnUserIn publishes action by actor on the User u into the logs of the
-// given Workspaces only: an Owner or Admin acting on a member is recorded where they
-// hold that authority, not in the member's other Workspaces.
-func RecordActionOnUserIn(ctx context.Context, pub events.Publisher, actor events.Actor, u *ent.User, action string, diff map[string]any, workspaceIDs ...int64) error {
-	id := publicid.Encode(u.ID)
+// recordActionOnUserIn publishes in on pub into the logs of the given Workspaces only.
+func recordActionOnUserIn(ctx context.Context, pub events.Publisher, in ActionOnUser, workspaceIDs ...int64) error {
+	id := publicid.Encode(in.User.ID)
 	for _, ws := range workspaceIDs {
 		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: ws,
-			Actor:       actor,
-			Action:      action,
+			Actor:       in.Actor,
+			Action:      in.Action,
 			TargetType:  user.Label,
 			TargetID:    id,
-			TargetName:  u.Name,
-			Diff:        diff,
+			TargetName:  in.User.Name,
+			Diff:        in.Diff,
 		}); err != nil {
 			return err
 		}
@@ -562,7 +648,7 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*e
 		if u, err = tx.User.Get(ctx, id); err != nil {
 			return err
 		}
-		_, err = ApplyDomainJoinIn(ctx, tx, pub, u)
+		_, err = applyDomainJoinIn(ctx, tx, pub, u)
 		return err
 	})
 	if err != nil {

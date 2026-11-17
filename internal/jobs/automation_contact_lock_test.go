@@ -29,7 +29,7 @@ func queuedOnTheContact(t *testing.T, e *realEnv, contactID int64, writers ...te
 	require.NoError(t, err)
 	release := sync.OnceFunc(func() { _ = tx.Rollback() })
 	t.Cleanup(release) // a failed assertion must not leave the Contact locked
-	_, err = contactlock.Lock(ctx, e.scoped.InTx(tx.Client(), nil), contactID)
+	_, err = contactlock.New().Lock(ctx, e.scoped.InTx(tx.Client(), nil), contactID)
 	require.NoError(t, err)
 	return e.env.QueueBehind(t, release, writers...)
 }

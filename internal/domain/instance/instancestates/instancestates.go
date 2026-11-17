@@ -148,17 +148,20 @@ type Module struct {
 	receiver *telemetryapi.Client
 	// log takes the Release check's and the Telemetry report's lines.
 	log *slog.Logger
+	// audit is the Instance audit log, which records a Staff member's change.
+	audit *instanceauditentries.Log
 }
 
 // New builds the module on the Instance clock now. A Staff member sees and sets the default Send
 // cap through defaultSendCap, suspension's (ADR 0067, ADR 0146; nil, as in a test that does not
-// exercise it, shows none). The Release check asks releases
+// exercise it, shows none), and reads the Instance audit log that records the change, audit (nil
+// in a test that exercises neither). The Release check asks releases
 // for the newest release (nil asks nobody). The Telemetry report says host about the running binary
 // (read by the wiring) and is sent through receiver, the client of the Telemetry contract's
 // receiver (built by the wiring from config.TelemetryReceiverURL; nil builds the report for the
 // preview and never sends it). log takes the lines of both. now and log are required.
 func New(client *ent.Client, env Environment, now func() time.Time, defaultSendCap *suspension.DefaultSendCap,
-	releases ReleaseSource, host TelemetryHost, receiver *telemetryapi.Client, log *slog.Logger,
+	audit *instanceauditentries.Log, releases ReleaseSource, host TelemetryHost, receiver *telemetryapi.Client, log *slog.Logger,
 ) *Module {
 	if now == nil {
 		panic("instancestates: the module needs the Instance clock")
@@ -168,7 +171,7 @@ func New(client *ent.Client, env Environment, now func() time.Time, defaultSendC
 	}
 	return &Module{
 		ent: client, env: env, now: now, defaultSendCap: defaultSendCap,
-		releases: releases, host: host, receiver: receiver, log: log,
+		releases: releases, host: host, receiver: receiver, log: log, audit: audit,
 	}
 }
 
@@ -266,13 +269,15 @@ func (m *Module) setDefaultSendCapIn(ctx context.Context, tx *ent.Client, by *en
 		return false, err
 	}
 	diff := map[string]any{diffDefaultSendCap: change.Diff}
-	return true, instanceauditentries.Record(ctx, tx, by.ID, instanceauditentries.ActionDefaultSendCapChange, diff)
+	return true, m.audit.Record(ctx, tx, &ent.InstanceAuditEntry{
+		StaffMemberID: by.ID, Action: instanceauditentries.ActionDefaultSendCapChange, Diff: diff,
+	})
 }
 
 // AuditEntries is a page of the Instance audit log, newest first, from the cursor a previous page
-// handed out (see instanceauditentries.Entries).
+// handed out (see instanceauditentries.Log.Entries).
 func (m *Module) AuditEntries(ctx context.Context, cursor string, limit int) (instanceauditentries.Page, error) {
-	return instanceauditentries.Entries(ctx, m.ent, cursor, limit)
+	return m.audit.Entries(ctx, cursor, limit)
 }
 
 // SetTelemetry stores the Staff member's choice; ErrTelemetryLocked when the environment decides.

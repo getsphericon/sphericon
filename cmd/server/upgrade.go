@@ -33,7 +33,11 @@ func upgradeCommand() *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (%s)", cmd.Args().First(), upgrade.Usage)
 			}
-			progress := upgrade.Run(ctx, upgrade.Request{
+			endpoint, err := upgrade.NewGitHubEndpoint("")
+			if err != nil {
+				return err
+			}
+			progress := upgrade.New(upgrade.NewGitHub(endpoint)).Run(ctx, upgrade.Request{
 				From:    cmd.String(flagFrom),
 				Version: cmd.String(flagVersion),
 				Yes:     cmd.Bool(flagYes),

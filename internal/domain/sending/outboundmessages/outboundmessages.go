@@ -43,7 +43,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -263,6 +265,10 @@ type Module struct {
 	startLinks StartLinks
 	// now is the clock the Provider limit and the claim lease are read at.
 	now func() time.Time
+	// eligibility decides whether a target may be sent to; contacts resolves the Contact of a
+	// Transactional send's address. New builds both: what they read comes with each call's scope.
+	eligibility *eligibility.Module
+	contacts    *contacts.Module
 }
 
 // TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
@@ -330,6 +336,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
 		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: providerlimit.New(now),
 		standing: integrations.NewProviderStanding(now), chats: bindings.NewChats(bus, now),
+		eligibility: eligibility.New(), contacts: contacts.New(bus, tags.New(), nil, now),
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m
@@ -572,7 +579,7 @@ func renderedSubject(rendered any) string {
 func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip string, err error) {
 	onChannel := req.Channel()
 	for _, t := range targets {
-		dec, err := eligibility.Check(ctx, s, onChannel, t.dest, req.Source)
+		dec, err := m.eligibility.Check(ctx, s, eligibility.CheckInput{Channel: onChannel, Destination: t.dest, Source: req.Source})
 		if err != nil {
 			return nil, "", err
 		}

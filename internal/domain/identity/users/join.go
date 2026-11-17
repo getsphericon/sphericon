@@ -23,9 +23,14 @@ import (
 // record was lost has already been un-verified by the periodic re-check), builds the scope
 // of the Workspace that row names, decides on the facts with DecideJoin and, on a join,
 // creates a `member` Membership with source `domain` and records `membership.domain_join`
-// with the system as the actor and the joiner as target. It returns the joined Workspace,
-// nil when nothing was joined. Nothing is mailed.
-func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
+// with the system as the actor and the joiner as target, in the bus transaction tx is bound to.
+// It returns the joined Workspace, nil when nothing was joined. Nothing is mailed.
+func (a *Module) ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, u *ent.User) (*ent.Workspace, error) {
+	return applyDomainJoinIn(ctx, tx, a.pub(tx), u)
+}
+
+// applyDomainJoinIn is ApplyDomainJoinIn on the publisher pub of tx's transaction.
+func applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
 	_, host, ok := strings.Cut(u.Email, "@")
 	if !ok {
 		return nil, nil
@@ -78,7 +83,7 @@ func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 		membership.FieldRole:   events.Became(string(joined.Role)),
 	}
 	system := events.Actor{Kind: events.ActorSystem}
-	if err := RecordActionOnUserIn(ctx, pub, system, u, events.ActionMembershipDomainJoin, diff, ws.ID); err != nil {
+	if err := recordActionOnUserIn(ctx, pub, ActionOnUser{Actor: system, User: u, Action: events.ActionMembershipDomainJoin, Diff: diff}, ws.ID); err != nil {
 		return nil, err
 	}
 	return ws, nil

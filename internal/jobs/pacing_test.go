@@ -33,7 +33,7 @@ func (e *riverEnv) recipientJobTimes(t *testing.T) []time.Time {
 func (e *riverEnv) planBroadcast(t *testing.T, id int64, now func() time.Time) {
 	t.Helper()
 	e.DB.Broadcast.UpdateOneID(id).SetStatus(broadcast.StatusSending).ExecX(e.workCtx())
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), now))
+	w := jobs.NewSendBroadcastWorker(e.DB, deliveryOf(newMod(e.TestEnv, resolvingTo(e.sender), now)))
 	require.NoError(t, w.Work(e.workCtx(), job(broadcasts.SendArgs{BroadcastID: id})))
 }
 

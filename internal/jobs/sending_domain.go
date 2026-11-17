@@ -64,18 +64,18 @@ func (RecheckSendingDomainsArgs) Kind() string { return "sending_domain_recheck"
 type RecheckSendingDomainsWorker struct {
 	river.WorkerDefaults[RecheckSendingDomainsArgs]
 
-	ent *ent.Client
+	domains *sendingdomains.Module
 }
 
 // NewRecheckSendingDomainsWorker builds the worker that queues a check of every Sending domain due one.
-func NewRecheckSendingDomainsWorker(client *ent.Client) *RecheckSendingDomainsWorker {
-	return &RecheckSendingDomainsWorker{ent: client}
+func NewRecheckSendingDomainsWorker(domains *sendingdomains.Module) *RecheckSendingDomainsWorker {
+	return &RecheckSendingDomainsWorker{domains: domains}
 }
 
 // Work fans the periodic tick out into one VerifySendingDomain job per due domain, giving each
 // check its own isolation and retry and reusing the path of the "Verify" button.
 func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[RecheckSendingDomainsArgs]) error {
-	due, err := sendingdomains.Due(ctx, w.ent, recheckBatchSize)
+	due, err := w.domains.Due(ctx, recheckBatchSize)
 	if err != nil {
 		return err
 	}

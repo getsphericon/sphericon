@@ -115,7 +115,7 @@ func begin(o Options) (Options, string, error) {
 
 // Step runs one Upgrade, yielding its Progress: to the pinned release, or to the newest the
 // Source has.
-func Step(ctx context.Context, o Options) iter.Seq2[Progress, error] {
+func (*Upgrader) Step(ctx context.Context, o Options) iter.Seq2[Progress, error] {
 	return progressOf(func(emit emitter) error {
 		_, err := step(ctx, o, emit)
 		return err

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -34,7 +35,7 @@ func recoverAfterFirstCall(rcv *hookReceiver) {
 }
 
 func ruleRunners(env *testhelper.TestEnv) rules.ActionRunners {
-	return jobs.RuleActionRunners(newMod(env, nil, time.Now), env.Bus, testhelper.Module[*automations.StepExecution](env), time.Now)
+	return jobs.RuleActionRunners(newMod(env, nil, time.Now), testhelper.Module[*contacts.Module](env), testhelper.Module[*automations.StepExecution](env))
 }
 
 // httpRuleHarness works the pending call of a fixture Firing of RuleQuahogHook, whose Actions

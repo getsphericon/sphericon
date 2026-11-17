@@ -91,7 +91,7 @@ func (h *Handlers) SiteUserEmailChange(ctx context.Context, req *siteapi.SiteEma
 	if err != nil {
 		return err
 	}
-	return h.requests.EmailChange(ctx, u, string(req.NewEmail), req.CurrentPassword)
+	return h.requests.EmailChange(ctx, u, inputs.EmailChange(req))
 }
 
 // SiteUserSignOutEverywhere ends every session of the authenticated user, on

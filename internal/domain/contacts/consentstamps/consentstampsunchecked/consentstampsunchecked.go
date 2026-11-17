@@ -14,27 +14,41 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
-// Erase is the consent stamp part of the Erasure of a Contact that held destination on channel,
-// run inside the Erasure's transaction. The stamps follow the opt-outs (ADR 0154): where an opt-out
-// of a sending source still stands (standing reports it), the time the person stopped keeps
-// ordering the observations that come later, kept by what the stamp is stored by
+// Module holds the consent stamp step of a Contact's Erasure. It holds nothing: every call takes
+// the scope of the Erasure's transaction.
+type Module struct{}
+
+// New builds the module.
+func New() *Module { return &Module{} }
+
+// EraseInput is what Erase erases: the stamps of Destination on Channel, and the question that
+// tells whether an opt-out of a sending source still stands for it.
+type EraseInput struct {
+	Channel     channels.Channel
+	Destination string
+	// Standing reports whether the opt-out of the Destination from source still stands.
+	Standing func(ctx context.Context, source string) (bool, error)
+}
+
+// Erase is the consent stamp part of the Erasure of a Contact that held in.Destination on
+// in.Channel, run inside the Erasure's transaction. The stamps follow the opt-outs (ADR 0154):
+// where an opt-out of a sending source still stands (in.Standing reports it), the time the person
+// stopped keeps ordering the observations that come later, kept by what the stamp is stored by
 // (consentstamps.Stored: the number's hash on sms, the Destination elsewhere); otherwise nothing of
 // the stamp stays, and neither does the time of a Confirmation, whose proof the Erasure deletes.
-func Erase(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string,
-	standing func(ctx context.Context, source string) (bool, error),
-) error {
-	if destination == "" {
+func (m *Module) Erase(ctx context.Context, s *ent.Scoped, in EraseInput) error {
+	if in.Destination == "" {
 		return nil
 	}
-	stored := consentstamps.Stored(consentstamps.Key{Channel: channel, Destination: destination}).Destination
+	stored := consentstamps.Stored(consentstamps.Key{Channel: in.Channel, Destination: in.Destination}).Destination
 	rows, err := s.ConsentStamp().Query().Where(
-		consentstamp.ChannelEQ(channel), consentstamp.DestinationEQ(stored),
+		consentstamp.ChannelEQ(in.Channel), consentstamp.DestinationEQ(stored),
 	).All(ctx)
 	if err != nil {
 		return fmt.Errorf("find consent stamps: %w", err)
 	}
 	for _, row := range rows {
-		stands, err := standing(ctx, row.SendingSource)
+		stands, err := in.Standing(ctx, row.SendingSource)
 		if err != nil {
 			return err
 		}

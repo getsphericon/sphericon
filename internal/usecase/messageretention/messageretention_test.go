@@ -25,7 +25,7 @@ const messagesRetention = 400 * 24 * time.Hour
 func past() time.Time { return time.Now().Add(1000 * 24 * time.Hour) }
 
 func retentionAt(env *testhelper.TestEnv, retention time.Duration, batch int, now time.Time) *messageretention.UseCase {
-	return messageretention.New(env.DB, env.Bus, retention, batch, func() time.Time { return now })
+	return messageretention.New(env.DB, env.Bus, testhelper.Module[*broadcasts.Module](env), retention, batch, func() time.Time { return now })
 }
 
 // pruneAll runs the prune of every Workspace Due lists, each run within budget, until none says
@@ -71,7 +71,7 @@ func reports(t *testing.T, env *testhelper.TestEnv) (stats map[int64]broadcasts.
 		AllX(ctx)
 	stats = map[int64]broadcasts.Stats{}
 	for _, b := range bs {
-		got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), b.ID)
+		got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), b.ID)
 		require.NoError(t, err)
 		stats[b.ID] = got[b.ID]
 	}
@@ -173,6 +173,6 @@ func TestAFrozenBroadcastsRecipientSendsNothing(t *testing.T) {
 	pruned := env.DB.OutboundMessage.Query().CountX(ctx)
 	require.Less(t, pruned, messages)
 
-	require.NoError(t, broadcasts.NewDelivery(env.OutboundModule()).SendRecipient(ctx, s, fixtures.BroadcastRecipientUntrackedID))
+	require.NoError(t, testhelper.Module[*broadcasts.Delivery](env).SendRecipient(ctx, s, fixtures.BroadcastRecipientUntrackedID))
 	assert.Equal(t, pruned, env.DB.OutboundMessage.Query().CountX(ctx))
 }

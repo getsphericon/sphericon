@@ -228,6 +228,9 @@ type txPublisher struct {
 	failed error
 	// committed runs once tx has committed, in order.
 	committed []func()
+	// purging marks the transaction of an Erasure (WithinScopedPurgeTx), the one PurgeJobsIn
+	// purges in.
+	purging bool
 }
 
 // Publish claims an external identity, writes the optional Event row, runs mandatory reactions

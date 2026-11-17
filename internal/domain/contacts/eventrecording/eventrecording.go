@@ -27,8 +27,9 @@ import (
 
 // Module records a customer's Events.
 type Module struct {
-	bus  *events.Bus
-	live LivePolicy
+	bus      *events.Bus
+	contacts *contacts.Module
+	live     LivePolicy
 }
 
 // LivePolicy says how old a live Event may be: an older one is history and arrives as a
@@ -39,10 +40,10 @@ type LivePolicy struct {
 	Now    func() time.Time
 }
 
-// New builds the module over the domain-event bus (transactional publish). Identity
-// resolution goes through the Workspace-scoped client each call receives.
-func New(bus *events.Bus, live LivePolicy) *Module {
-	return &Module{bus: bus, live: live}
+// New builds the module over the domain-event bus (transactional publish) and the contacts module
+// an Event's Contact is resolved through, by the Workspace-scoped client each call receives.
+func New(bus *events.Bus, people *contacts.Module, live LivePolicy) *Module {
+	return &Module{bus: bus, contacts: people, live: live}
 }
 
 // Input is one customer Event to record. Action and Properties are the customer's
@@ -116,7 +117,7 @@ func (m *Module) Record(ctx context.Context, s *ent.Scoped, inputs []Input) erro
 			if in.ClientEventID != "" {
 				dedupID = events.DedupKey(events.SourceAPI, ts.WorkspaceID(), in.ClientEventID)
 			}
-			contactID, err := contacts.ResolveID(ctx, ts, in.SubjectID, in.Email, in.Phone)
+			contactID, err := m.contacts.ResolveID(ctx, ts, contacts.AliasKeys{SubjectID: &in.SubjectID, Email: in.Email, Phone: in.Phone})
 			if err != nil {
 				return err
 			}
