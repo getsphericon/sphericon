@@ -766,7 +766,8 @@ _Avoid_: Quota, plan limit, allowance, throttle, ceiling (unqualified)
 The most marketing messages a Workspace lets one Destination receive on a Channel per rolling
 period (three per 24 hours on SMS unless it changes it, none on email and Telegram; with caps of its
 own for countries on a phone Channel). Every Broadcast, series issue and Automation send counts;
-Transactional sends and messages the person asked for do not. Over it a Broadcast Recipient is
+Transactional sends and messages the person asked for do not; a message to several Destinations
+counts once for each. Over it a Broadcast Recipient is
 Skipped and an Automation send is deferred, for one period at most, then Skipped. Distinct from the Send cap (per Workspace) and the
 Provider limit (per Integration).
 _Avoid_: Fatigue limit, rate limit, throttle, quota
@@ -954,7 +955,8 @@ _Avoid_: Log, trace, debug view
 **Path preview**:
 The path one Contact would take through an Automation version now, computed without writing or sending
 anything: Branches on the Contact's data, a Split by its hash, waits counted from now, a Wait for event
-as the author assumes it ends, each send's rendered message and whether it would be sent.
+as the author assumes it ends, each send's rendered message and whether it would be sent, deferred
+(with the cause and until when) or Skipped.
 _Avoid_: Simulation, dry run, test mode
 
 **Branch**:

@@ -5,6 +5,10 @@ build: none
 
 # Marketing SMS waits for the Workspace's sending window in the recipient's time
 
+> **Amended by [[0178-a-frequency-cap-counts-each-destination-a-message-is-claimed-for-after-eligibility]]:**
+> a wait for the window is recorded on the Enrollment, the Broadcast Recipient and the Outbound
+> message; the windows are rows per Channel and country.
+
 > **Amended by [[0137-a-frequency-cap-limits-marketing-messages-per-destination]]:**
 > the cap on messages per person it queued is decided as a frequency cap per Destination.
 

@@ -5,6 +5,11 @@ build: none
 
 # A frequency cap limits marketing messages per Destination
 
+> **Amended by [[0178-a-frequency-cap-counts-each-destination-a-message-is-claimed-for-after-eligibility]]:**
+> each Destination a marketing message is claimed for is counted in a record of its own, after
+> Send-eligibility and the Sending window; a takeover counts nothing again; Outbound send decides
+> between Skipped and Deferral, and a wait is recorded where it waits.
+
 Nothing limits how many messages one person gets. The Send cap bounds a Workspace's day and the
 Provider limit an Integration's pace; neither looks at the recipient. Florida's telephone
 solicitation act, as law firms report it, allows at most three messages on one subject to a person in
