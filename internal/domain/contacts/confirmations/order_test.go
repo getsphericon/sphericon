@@ -44,7 +44,7 @@ func TestALateDoubleOptInIsRecordedAsChangingNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	left := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
-	_, err := unsubscriberecording.New(env.Bus, func() time.Time { return left }).
+	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), func() time.Time { return left }).
 		Unsubscribe(t.Context(), s, fixtures.ContactAliceEmail, eligibility.SourceEverything)
 	require.NoError(t, err)
 

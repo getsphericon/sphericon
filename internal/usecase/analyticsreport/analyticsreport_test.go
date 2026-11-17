@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -114,8 +113,9 @@ func TestAnAutomationMessageIsCountedAndATransactionalOneIsNot(t *testing.T) {
 	}
 	before := read()
 
+	out := env.OutboundModule()
 	for _, id := range []int64{fixtures.OutboundMessageAutomationSentRecentlyID, fixtures.OutboundMessageWelcomeID} {
-		for _, record := range []func(context.Context, *ent.Scoped, int64, time.Time) (bool, error){outboundmessages.StampOpened, outboundmessages.StampClicked} {
+		for _, record := range []func(context.Context, *ent.Scoped, int64, time.Time) (bool, error){out.StampOpened, out.StampClicked} {
 			set, err := record(ctx, acme, id, time.Now())
 			require.NoError(t, err)
 			require.True(t, set)

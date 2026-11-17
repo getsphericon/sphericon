@@ -30,11 +30,15 @@ import (
 // by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
 	bus *events.Bus
+	out *outboundmessages.Module
 	now func() time.Time
 }
 
-// New builds the unsubscribe use case over the bus and the Instance clock.
-func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: bus, now: now} }
+// New builds the unsubscribe use case over the bus, Outbound send, which reads the Broadcast or
+// Automation a text came from, and the Instance clock.
+func New(bus *events.Bus, out *outboundmessages.Module, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, out: out, now: now}
+}
 
 // RecordLink writes a per-(channel, destination, sending source) opt-out
 // (ADR 0001) from a signed token — no contact-row lookup, so the opt-out records
@@ -62,7 +66,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			return err
 		}
 		if target.Channel == channels.SMS {
-			return publishSMSStop(ctx, sc, pub, target, dest, at)
+			return u.publishSMSStop(ctx, sc, pub, target, dest, at)
 		}
 		o := unsubscribes.OptOut{
 			Channel: target.Channel, Destination: dest, Source: target.Source, ContactID: target.ContactID,
@@ -167,13 +171,13 @@ func publishSuperseded(ctx context.Context, sc *ent.Scoped, pub events.Publisher
 // effects are its subscriber's (ADR 0114). The link names the Contact the text was sent to and the
 // text's Broadcast but not its Automation, since an SMS link is for everything, so the Broadcast and
 // the Automation are read from the text.
-func publishSMSStop(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string, at time.Time) error {
+func (u *UseCase) publishSMSStop(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string, at time.Time) error {
 	stop := &events.SmsStopObserved{
 		WorkspaceID: target.WorkspaceID, Phone: dest, Via: events.UnsubscribedByLink,
 		OutboundMessageID: target.OutboundMessageID, ContactID: target.ContactID, ObservedAt: at,
 	}
 	if target.OutboundMessageID != 0 {
-		origin, err := outboundmessages.FindOrigin(ctx, sc, target.OutboundMessageID)
+		origin, err := u.out.FindOrigin(ctx, sc, target.OutboundMessageID)
 		if err != nil {
 			return err
 		}

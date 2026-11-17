@@ -617,7 +617,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 		return err
 	}
 	if slices.ContainsFunc(sends, func(st SendStep) bool { return st.Channel() == channels.Email }) {
-		if err := outboundmessages.RequirePostalAddress(ctx, ts, channels.Email); err != nil {
+		if err := v.m.out.RequirePostalAddress(ctx, ts, channels.Email); err != nil {
 			return err
 		}
 	}

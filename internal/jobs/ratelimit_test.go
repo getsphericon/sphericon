@@ -70,7 +70,7 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
@@ -101,7 +101,7 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now, outboundmessages.WithSendCaps(true))
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
@@ -181,7 +181,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), time.Now, outboundmessages.WithSendCaps(true))
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 		// The day's one token went to another send just now.
 		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(time.Now()).ExecX(ctx)
@@ -209,7 +209,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		require.NoError(t, testhelper.Module[*automations.StepExecution](e.TestEnv).OnEvent(ctx, e.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))

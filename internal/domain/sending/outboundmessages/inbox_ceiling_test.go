@@ -22,8 +22,8 @@ import (
 
 // pinewoodInboxModule sends Pinewood's marketing through its default, its Test inbox: the real
 // provider keeping Captured messages, with the 200 a day the Integration row reports, on a clock the
-// test moves. opts add to the module's options.
-func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Clock, opts ...outboundmessages.Option) *outboundmessages.Module {
+// test moves, with the settings cfg.
+func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Clock, cfg outboundmessages.Config) *outboundmessages.Module {
 	t.Helper()
 	s := env.DB.Scoped(fixtures.PinewoodID)
 	built, err := inbox.Descriptor().Build(nil, messaging.Deps{
@@ -37,8 +37,9 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Cl
 		testhelper.Module[*holds.Holds](env),
 		senders{sender: sender},
 		messagetoken.New("test-secret", "http://local", time.Now),
+		outboundmessages.Deps{},
+		cfg,
 		c.Now,
-		opts...,
 	)
 }
 
@@ -56,7 +57,7 @@ func TestTestInboxDefersTheMessageAfterItsDailyCeilingAndSendsItLater(t *testing
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := startClock()
-	m := pinewoodInboxModule(t, env, c)
+	m := pinewoodInboxModule(t, env, c, outboundmessages.Config{})
 	s := env.DB.Scoped(fixtures.PinewoodID)
 	sendTo := func(key string) outboundmessages.Result { return sendToReader(t, env, m, key) }
 
@@ -80,7 +81,7 @@ func TestTestInboxHonoursALowerUserLimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	c := startClock()
-	m := pinewoodInboxModule(t, env, c)
+	m := pinewoodInboxModule(t, env, c, outboundmessages.Config{})
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationPinewoodInboxID).SetMaxPerDay(2).ExecX(ctx)
 	sendTo := func(key string) outboundmessages.Result { return sendToReader(t, env, m, key) }
 

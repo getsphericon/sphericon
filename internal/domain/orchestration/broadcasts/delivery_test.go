@@ -61,13 +61,13 @@ type delivery struct {
 	s   *ent.Scoped
 }
 
-// newDelivery builds the delivery over an Outbound send module with opts (a clock of the test's).
-func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Option) *delivery {
+// newDelivery builds the delivery over an Outbound send module on a clock of the test's.
+func newDelivery(t *testing.T, now func() time.Time) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
 	return &delivery{
 		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),

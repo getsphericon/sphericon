@@ -24,6 +24,7 @@
 package outboundmessages
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -256,40 +257,48 @@ type Module struct {
 	now func() time.Time
 }
 
-// Option customizes a Module.
-type Option func(*Module)
-
-// WithLease overrides DefaultLease (tests use a tiny lease to exercise takeover).
-func WithLease(d time.Duration) Option { return func(m *Module) { m.lease = d } }
-
 // TrackingHosts names the host a Workspace's links are built on: its current Tracking domain
 // while it serves, "" otherwise (ADR 0071).
 type TrackingHosts interface {
 	ServingHost(ctx context.Context, s *ent.Scoped) (string, error)
 }
 
-// WithTrackingDomains turns on Tracking domains (SPHERICON_TRACKING_CNAME_TARGET is set): every
-// tracked message of a Workspace whose Tracking domain serves gets its links on that host. Off,
-// every link uses the Instance's host (ADR 0038, ADR 0071).
-func WithTrackingDomains(hosts TrackingHosts) Option {
-	return func(m *Module) { m.trackingHosts = hosts }
+// Deps are the collaborators of the module's optional parts, each passed by the wiring; a nil one
+// turns its part off, and a test leaves nil what it does not reach.
+type Deps struct {
+	// Bots builds the bots Telegram messages are sent through. Nil, the Telegram Channel has no
+	// Integration that can send.
+	Bots TelegramBots
+	// SMS builds the senders SMS messages go through and Hooks names where their delivery reports
+	// are posted. Without both, the SMS Channel has no Integration that can send.
+	SMS   SMSSenders
+	Hooks HookURLs
+	// TrackingHosts turns on Tracking domains (SPHERICON_TRACKING_CNAME_TARGET is set): every
+	// tracked message of a Workspace whose Tracking domain serves gets its links on that host. Nil,
+	// every link uses the Instance's host (ADR 0038, ADR 0071).
+	TrackingHosts TrackingHosts
+	// System is the Instance's System sender, which a Test send falls back to while the Workspace
+	// has no verified Sending domain (ADR 0041); nil on an Instance with no outbound mail.
+	System messaging.EmailSender
+	// TestBudget caps the Test sends made from the System sender; nil leaves them uncapped.
+	TestBudget TestSendBudget
+	// Users finds the User a Test send is asked by, the scope's actor (ADR 0041); nil on a module
+	// that sends no Test send for one.
+	Users Users
+	// StartLinks issues the Start tokens of {{ telegram_start_url }}; nil renders the tag empty.
+	StartLinks StartLinks
 }
 
-// WithSendCaps says whether the Instance has Send caps (ADR 0067): with them every send of a
-// Workspace that has one also spends from its 24-hour bucket. Without (the default), a stored Send
-// cap has no effect.
-func WithSendCaps(c providerlimit.SendCaps) Option { return func(m *Module) { m.sendCaps = c } }
-
-// WithSystemSender gives the module the Instance's System sender, which a Test send falls
-// back to while the Workspace has no verified Sending domain (ADR 0041).
-func WithSystemSender(s messaging.EmailSender) Option { return func(m *Module) { m.system = s } }
-
-// WithTestSendBudget caps the Test sends made from the System sender.
-func WithTestSendBudget(b TestSendBudget) Option { return func(m *Module) { m.testBudget = b } }
-
-// WithUsers gives the module the Users, among whom it finds the one a Test send is asked by: the
-// scope's actor (ADR 0041).
-func WithUsers(u Users) Option { return func(m *Module) { m.users = u } }
+// Config is what the module needs besides its collaborators.
+type Config struct {
+	// SendCaps says whether the Instance has Send caps (ADR 0067): with them every send of a
+	// Workspace that has one also spends from its 24-hour bucket. Without (the zero value), a
+	// stored Send cap has no effect.
+	SendCaps providerlimit.SendCaps
+	// Lease is how long a pending claim blocks other attempts; zero is DefaultLease (tests use a
+	// tiny one to exercise takeover).
+	Lease time.Duration
+}
 
 // Now reads the module's clock (New's now): the moment a Deferral's Wait is measured from, so a
 // caller that records when the deferred send is due uses the same clock.
@@ -301,15 +310,18 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 	return m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
 }
 
-// New builds the module. tracker may be nil only if no marketing Request is sent. now is the
-// Instance clock (app.Clock) the module reads for the Provider limit's token buckets, the claim
-// lease and the moment a message is recorded sent; tests move it instead of waiting.
-func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, now func() time.Time, opts ...Option) *Module {
-	m := &Module{bus: bus, holds: hs, senders: senders, tracker: tracker, lease: DefaultLease, now: now}
-	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
-	for _, o := range opts {
-		o(m)
+// New builds the module. tracker may be nil only if no marketing Request is sent; deps are the
+// collaborators of its optional parts and cfg its settings. now is the Instance clock (app.Clock)
+// the module reads for the Provider limit's token buckets, the claim lease and the moment a
+// message is recorded sent; tests move it instead of waiting.
+func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, deps Deps, cfg Config, now func() time.Time) *Module {
+	m := &Module{
+		bus: bus, holds: hs, senders: senders, tracker: tracker,
+		bots: deps.Bots, sms: deps.SMS, hooks: deps.Hooks, trackingHosts: deps.TrackingHosts,
+		system: deps.System, testBudget: deps.TestBudget, users: deps.Users, startLinks: deps.StartLinks,
+		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
 	}
+	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m
 }
 
@@ -708,7 +720,7 @@ func (m *Module) contactErased(ctx context.Context, s *ent.Scoped, req Request) 
 // its Channel integrationID names (nil is that Channel's default), without sending or recording
 // anything. Planning code (Broadcast) calls it to fail or pause fast instead of finding out per
 // recipient; the answer is the same Send route and gate Send applies.
-func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, content Content, integrationID *int64) (hold holdreason.Reason, err error) {
+func (m *Module) Preflight(ctx context.Context, s *ent.Scoped, content Content, integrationID *int64) (holdreason.Reason, error) {
 	if content == nil {
 		return "", errors.New("outbound: content required")
 	}

@@ -642,21 +642,24 @@ var deliveryPackage = do.Package(
 	// Workspace's behalf, for every send surface.
 	do.Lazy(func(i do.Injector) (*outboundmessages.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		opts := []outboundmessages.Option{
-			outboundmessages.WithStartLinks(do.MustInvoke[*bindings.Module](i)),
-			outboundmessages.WithTestSendBudget(do.MustInvoke[*throttle.Attempts](i)),
-			outboundmessages.WithUsers(do.MustInvoke[*users.Module](i)),
-			outboundmessages.WithSendCaps(do.MustInvoke[providerlimit.SendCaps](i)),
-			outboundmessages.WithTelegramBots(do.MustInvoke[*messaging.Resolver](i)),
-			outboundmessages.WithSMSSenders(do.MustInvoke[*messaging.Resolver](i), do.MustInvoke[*integrations.Module](i)),
+		deps := outboundmessages.Deps{
+			Bots:       do.MustInvoke[*messaging.Resolver](i),
+			SMS:        do.MustInvoke[*messaging.Resolver](i),
+			Hooks:      do.MustInvoke[*integrations.Module](i),
+			TestBudget: do.MustInvoke[*throttle.Attempts](i),
+			Users:      do.MustInvoke[*users.Module](i),
+			StartLinks: do.MustInvoke[*bindings.Module](i),
 		}
+		// Left nil, an Instance with no outbound mail has no System sender, and one that offers no
+		// Tracking domains builds every link on its own host.
 		if cfg.SystemMailConfigured() {
-			opts = append(opts, outboundmessages.WithSystemSender(do.MustInvoke[SystemSender](i).EmailSender))
+			deps.System = do.MustInvoke[SystemSender](i).EmailSender
 		}
 		if cfg.TrackingCNAMETarget != "" {
-			opts = append(opts, outboundmessages.WithTrackingDomains(do.MustInvoke[*trackingdomains.Module](i)))
+			deps.TrackingHosts = do.MustInvoke[*trackingdomains.Module](i)
 		}
-		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i), do.MustInvoke[Clock](i), opts...), nil
+		return outboundmessages.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*holds.Holds](i), do.MustInvoke[outboundmessages.Senders](i), do.MustInvoke[*messagetoken.Tracker](i),
+			deps, outboundmessages.Config{SendCaps: do.MustInvoke[providerlimit.SendCaps](i)}, do.MustInvoke[Clock](i)), nil
 	}),
 )
 
@@ -881,14 +884,14 @@ var contentPackage = do.Package(
 			do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
-		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Callback interpretation behind the Ingest hook, a sending module (ADR 0112): it resolves
 	// an ingest key to its Integration and Workspace before any scope exists, so it holds the raw
 	// client.
 	do.Lazy(func(i do.Injector) (*callbackinterpretation.Module, error) {
 		return callbackinterpretation.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i),
-			do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*integrations.Module](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The opens and clicks of the Outbound messages (ADR 0053): a token names a message before any
 	// scope exists, so it holds the raw client.

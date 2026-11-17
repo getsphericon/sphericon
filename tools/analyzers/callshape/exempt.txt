@@ -49,7 +49,6 @@ internal/domain/sending/bindings
 internal/domain/sending/holds
 internal/domain/sending/integrations
 internal/domain/sending/integrations/integrationsunchecked
-internal/domain/sending/outboundmessages
 internal/domain/sending/preset
 internal/domain/sending/privaterelayranges
 internal/domain/sending/providerlimit

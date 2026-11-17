@@ -331,8 +331,8 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
-func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func() time.Time, opts ...outboundmessages.Option) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolver, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func() time.Time) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolver, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
 }
 
 // A Send delivered by the real workers runs the production sequence: the module plans, paces and settles
