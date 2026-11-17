@@ -5,13 +5,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
-	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 )
 
 // The unique constraints of the tables this package writes (ADR 0106).
@@ -34,8 +32,8 @@ var ErrCreatorUnverified = validation.Unverified("memberships: the creator's ema
 // with a fresh Workspace id and the Send cap the module's StartingSendCap says it starts with, its
 // creator as its Owner (source creator, ADR 0043), and records `workspace.create` in its Audit log,
 // the creator its actor: a Workspace is reached through its Memberships, so it is never created
-// without its Owner. The name is held to the name rule (workspaces.CreateIn). An Unverified creator
-// is ErrCreatorUnverified (ADR 0030) and nothing is written.
+// without its Owner. The name is held to the name rule (workspaces.Creation.CreateIn). An
+// Unverified creator is ErrCreatorUnverified (ADR 0030) and nothing is written.
 func (ms *Module) CreateWorkspaceIn(ctx context.Context, tx *ent.Client, creator *ent.User, name string) (*ent.Workspace, error) {
 	if creator.EmailVerifiedAt == nil {
 		return nil, ErrCreatorUnverified
@@ -44,7 +42,7 @@ func (ms *Module) CreateWorkspaceIn(ctx context.Context, tx *ent.Client, creator
 	if err != nil {
 		return nil, err
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, name, workspaceid.New, sendCap)
+	ws, err := ms.creation.CreateIn(ctx, tx, name, sendCap)
 	if err != nil {
 		return nil, err
 	}

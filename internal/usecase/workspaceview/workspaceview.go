@@ -117,7 +117,7 @@ type UseCase struct {
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
 	removalCheck    *removalcheck.Module
-	now             func() time.Time
+	unchecked       *workspacesunchecked.Module
 }
 
 // Modules are the modules the use case reads and changes the Workspace through. RemovalCheck finds the marketing email still to send that holds the postal address
@@ -134,13 +134,13 @@ type Modules struct {
 }
 
 // New builds the use case over the bus whose transactions create and restore a Workspace and the
-// modules it reads and changes; now is the Instance clock a Two-factor requirement starts at and a
-// deletion window is measured on.
+// modules it reads and changes; now is the Instance clock a restore measures the deletion window on
+// (the unchecked operations it builds, workspacesunchecked.New).
 func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, users: mods.Users, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains,
-		removalCheck: mods.RemovalCheck, now: now,
+		removalCheck: mods.RemovalCheck, unchecked: workspacesunchecked.New(now),
 	}
 }
 
@@ -184,7 +184,7 @@ func (u *UseCase) One(ctx context.Context, s *ent.Scoped, c Caller) (View, error
 	return u.view(ctx, s, c, ws)
 }
 
-// Update renames the Workspace of s and sets its postal address (workspacesunchecked.EditIn) and
+// Update renames the Workspace of s and sets its postal address (workspacesunchecked.Module.EditIn) and
 // answers its View for the caller. Clearing an address the Workspace has is refused with the
 // Removal check's *liveuse.Error naming them while marketing email is armed (ADR 0156); saving an
 // empty address over none, as a rename does, is not checked. The check and the edit run in one
@@ -193,7 +193,9 @@ func (u *UseCase) One(ctx context.Context, s *ent.Scoped, c Caller) (View, error
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in UpdateInput) (View, error) {
 	var ws *ent.Workspace
 	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		edit, err := workspacesunchecked.EditIn(ctx, wl, in.Revision, in.Name, in.PostalAddress)
+		edit, err := u.unchecked.EditIn(ctx, wl, workspacesunchecked.EditInput{
+			Revision: in.Revision, Name: in.Name, PostalAddress: in.PostalAddress,
+		})
 		if err != nil {
 			return err
 		}
@@ -202,7 +204,7 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, c Caller, in Update
 				return err
 			}
 		}
-		ws, err = edit.Apply(ctx)
+		ws, err = u.unchecked.ApplyEdit(ctx, wl, edit)
 		return err
 	})
 	if err != nil {
@@ -225,7 +227,9 @@ func (u *UseCase) SetTimezone(ctx context.Context, s *ent.Scoped, c Caller, in S
 // now, or off (workspaces.Module.SetSecondFactorRequirement, which tells the Users without a
 // Second factor when it goes on) and answers its View for the caller, whose grace starts with it.
 func (u *UseCase) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, c Caller, in SetSecondFactorRequirementInput) (View, error) {
-	ws, err := u.workspaces.SetSecondFactorRequirement(ctx, s, in.Revision, in.Required, u.now())
+	ws, err := u.workspaces.SetSecondFactorRequirement(ctx, s, workspaces.SetSecondFactorRequirementInput{
+		Revision: in.Revision, Required: in.Required,
+	})
 	if err != nil {
 		return View{}, err
 	}

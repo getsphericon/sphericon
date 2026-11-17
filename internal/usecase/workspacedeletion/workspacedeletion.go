@@ -6,7 +6,7 @@
 // Workspace summary its Owner reads, so it is internal/usecase/workspaceview's. The cycle's
 // table, the window with the erase date and the Workspaces past it are the Workspace's own
 // (workspaces.DeletionCycle, workspaces.EraseDate, workspaces.Module.DueForErase), and its erase
-// move is the module's unchecked operation (workspacesunchecked.TombstoneIn, ADR 0110), which
+// move is the module's unchecked operation (workspacesunchecked.Module.TombstoneIn, ADR 0110), which
 // keeps the window and finishes a Workspace no longer pending deletion as a no-op: the erase
 // removes the Workspace's rows, then, in the last transaction, its jobs in the queue
 // (events.WorkspacePurger), and writes the tombstone.
@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -39,13 +40,15 @@ type UseCase struct {
 	bus        *events.Bus
 	workspaces *workspaces.Module
 	owners     *memberships.Module
+	unchecked  *workspacesunchecked.Module
 	now        func() time.Time
 }
 
 // New returns the use case over the Workspaces, which delete one, and the Memberships, which name
-// their Owners; now is the Instance clock the window is measured on.
+// their Owners; now is the Instance clock the window is measured on, which the unchecked operations
+// it builds (workspacesunchecked.New) read too.
 func New(client *ent.Client, bus *events.Bus, ws *workspaces.Module, owners *memberships.Module, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, workspaces: ws, owners: owners, now: now}
+	return &UseCase{client: client, bus: bus, workspaces: ws, owners: owners, unchecked: workspacesunchecked.New(now), now: now}
 }
 
 // DeletedWorkspace is a Workspace in its deletion window, and whether it has one Owner alone: no

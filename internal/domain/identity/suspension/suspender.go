@@ -3,8 +3,8 @@ package suspension
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
@@ -13,13 +13,14 @@ import (
 // Workspace's sending: the abuse exemption and the Send cap. The suspension publishes
 // events.WorkspaceSuspended in its transaction, and the Notices tell the owners (ADR 0105).
 type Suspender struct {
-	bus *events.Bus
-	now func() time.Time
+	bus        *events.Bus
+	workspaces *workspaces.Module
 }
 
-// NewSuspender is the Suspender that suspends through bus on the Instance clock now.
-func NewSuspender(bus *events.Bus, now func() time.Time) *Suspender {
-	return &Suspender{bus: bus, now: now}
+// NewSuspender is the Suspender that suspends through bus and writes the Workspace's standing
+// through the workspaces module, which dates it.
+func NewSuspender(bus *events.Bus, ws *workspaces.Module) *Suspender {
+	return &Suspender{bus: bus, workspaces: ws}
 }
 
 // Suspend freezes all outbound sending for a Workspace (ADR 0007): it sets suspended_at together
@@ -41,7 +42,7 @@ func (s *Suspender) Suspend(ctx context.Context, workspaceID int64, in SuspendIn
 // SuspendByPublicID is Suspend of the Workspace with this Workspace id (ADR 0043), the address an
 // operator types at the command line; an unknown id fails as `workspace "<id>"`.
 func (s *Suspender) SuspendByPublicID(ctx context.Context, publicID string, in SuspendInput) (bool, error) {
-	changed, err := s.suspend(ctx, byPublicID(publicID), in)
+	changed, err := s.suspend(ctx, s.byPublicID(publicID), in)
 	if err != nil {
 		return false, fmt.Errorf("suspend: %w", err)
 	}
@@ -63,7 +64,7 @@ func (s *Suspender) Unsuspend(ctx context.Context, workspaceID int64, by Actor) 
 // UnsuspendByPublicID is Unsuspend of the Workspace with this Workspace id (ADR 0043), the address
 // an operator types at the command line.
 func (s *Suspender) UnsuspendByPublicID(ctx context.Context, publicID string, by Actor) (bool, error) {
-	changed, err := s.unsuspend(ctx, byPublicID(publicID), by)
+	changed, err := s.unsuspend(ctx, s.byPublicID(publicID), by)
 	if err != nil {
 		return false, fmt.Errorf("unsuspend: %w", err)
 	}

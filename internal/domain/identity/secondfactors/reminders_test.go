@@ -39,7 +39,7 @@ func remindedUsers(t *testing.T, env *testhelper.TestEnv) []int64 {
 func remindAt(t *testing.T, env *testhelper.TestEnv, at time.Time) error {
 	t.Helper()
 	keys := testhelper.Module[*passkeys.Module](env)
-	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), keys, memberships.New(env.DB, env.Bus, nil, func() time.Time { return at }), func() time.Time { return at })
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), keys, memberships.New(env.DB, env.Bus, nil, nil, func() time.Time { return at }), func() time.Time { return at })
 	return factors.RemindDeadlines(t.Context())
 }
 

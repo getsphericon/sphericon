@@ -28,16 +28,18 @@ const Interval = time.Hour
 //
 // It holds the raw client: like a job entry point it lists every Workspace, then scopes to each one.
 type Detector struct {
-	watch   *Watch
-	client  *ent.Client
-	bus     *events.Bus
-	suspend *suspension.Suspender
+	watch      *Watch
+	client     *ent.Client
+	bus        *events.Bus
+	suspend    *suspension.Suspender
+	workspaces *workspaces.Module
 }
 
 // NewDetector builds the detector over the watch, whose license, limits and clock a pass judges
-// by. A warning is recorded and published through bus; a freeze suspends through suspender.
-func NewDetector(client *ent.Client, bus *events.Bus, watch *Watch, suspender *suspension.Suspender) *Detector {
-	return &Detector{watch: watch, client: client, bus: bus, suspend: suspender}
+// by. A warning is recorded on the Workspace's standing through ws and published through bus; a
+// freeze suspends through suspender.
+func NewDetector(client *ent.Client, bus *events.Bus, watch *Watch, suspender *suspension.Suspender, ws *workspaces.Module) *Detector {
+	return &Detector{watch: watch, client: client, bus: bus, suspend: suspender, workspaces: ws}
 }
 
 // Summary is who a pass warned and who it froze.
@@ -62,7 +64,7 @@ func (d *Detector) Run(ctx context.Context) (Summary, error) {
 	// detector's reach: end its episode, so a stale marker neither lists it as warned nor
 	// mutes the warning it earns after being cleared.
 	var errs []error
-	if err := workspaces.ClearAbuseWarnings(ctx, d.client, workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true))); err != nil {
+	if err := d.workspaces.ClearAbuseWarnings(ctx, d.client, workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true))); err != nil {
 		errs = append(errs, fmt.Errorf("end the warning episodes of suspended and exempt workspaces: %w", err))
 	}
 	candidates, err := d.client.Workspace.Query().
@@ -88,7 +90,7 @@ func (d *Detector) Run(ctx context.Context) (Summary, error) {
 				errs = append(errs, err)
 			}
 		case TierWarn:
-			warned, err := d.warn(ctx, ws, breach, now)
+			warned, err := d.warn(ctx, ws, breach)
 			if warned {
 				sum.Warned = append(sum.Warned, ws.ID)
 			}
@@ -97,7 +99,7 @@ func (d *Detector) Run(ctx context.Context) (Summary, error) {
 			}
 		default:
 			if workspaces.StandingOf(ws).AbuseWarningNotifiedAt != nil {
-				if err := workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
+				if err := d.workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
 					errs = append(errs, fmt.Errorf("end the warning episode of workspace %d: %w", ws.ID, err))
 				}
 			}
@@ -113,7 +115,7 @@ func (d *Detector) freeze(ctx context.Context, ws *ent.Workspace, b Breach) (boo
 	if err != nil || !changed {
 		return false, err
 	}
-	if err := workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
+	if err := d.workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
 		slog.ErrorContext(ctx, "workspace frozen, but its warning episode could not be ended", "workspace_id", ws.ID, "error", err)
 	}
 	return true, nil
@@ -125,12 +127,12 @@ var metricNames = map[Metric]i18n.ID{Complaint: i18n.MetricComplaint, Bounce: i1
 // warn warns the owners once per episode: the marker is set and the warning published in one
 // transaction, so the warning exists iff the marker does, and the marker is cleared when the
 // Workspace leaves the tier.
-func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now time.Time) (bool, error) {
+func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach) (bool, error) {
 	if workspaces.StandingOf(ws).AbuseWarningNotifiedAt != nil {
 		return false, nil
 	}
 	err := d.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		if err := workspaces.MarkAbuseWarned(ctx, tx, ws.ID, now); err != nil {
+		if err := d.workspaces.MarkAbuseWarned(ctx, tx, ws.ID); err != nil {
 			return fmt.Errorf("record the warning of workspace %d: %w", ws.ID, err)
 		}
 		return pub.Publish(ctx, &events.AbuseWarned{

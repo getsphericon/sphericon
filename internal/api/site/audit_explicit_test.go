@@ -155,9 +155,9 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
-	_, err = suspension.NewSuspender(env.Bus, time.Now).Unsuspend(ctx, fixtures.AcmeID, suspension.StaffMember("op-42"))
+	_, err = testhelper.Module[*suspension.Suspender](env).Unsuspend(ctx, fixtures.AcmeID, suspension.StaffMember("op-42"))
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
@@ -177,7 +177,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 
 func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate"})
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -187,7 +187,7 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 
 func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "abuse"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "abuse"})
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -200,9 +200,9 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "first"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "first"})
 	require.NoError(t, err)
-	changed, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "second"})
+	changed, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "second"})
 	require.NoError(t, err)
 	require.False(t, changed)
 
@@ -267,15 +267,15 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID}) // workspace.restore
 	require.NoError(t, err)
-	_, err = suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse"}) // workspace.suspend
+	_, err = testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse"}) // workspace.suspend
 	require.NoError(t, err)
-	_, err = suspension.NewSuspender(env.Bus, time.Now).Unsuspend(ctx, fixtures.AcmeID, suspension.StaffMember("op-42")) // workspace.unsuspend
+	_, err = testhelper.Module[*suspension.Suspender](env).Unsuspend(ctx, fixtures.AcmeID, suspension.StaffMember("op-42")) // workspace.unsuspend
 	require.NoError(t, err)
-	_, err = suspension.NewSuspender(env.Bus, time.Now).SetAbuseExempt(ctx, fixtures.AcmeID, suspension.SetAbuseExemptInput{By: suspension.StaffMember("op-42"), Exempt: true}) // workspace.abuse_exempt
+	_, err = testhelper.Module[*suspension.Suspender](env).SetAbuseExempt(ctx, fixtures.AcmeID, suspension.SetAbuseExemptInput{By: suspension.StaffMember("op-42"), Exempt: true}) // workspace.abuse_exempt
 	require.NoError(t, err)
-	_, err = suspension.NewSuspender(env.Bus, time.Now).SetAbuseExempt(ctx, fixtures.AcmeID, suspension.SetAbuseExemptInput{By: suspension.StaffMember("op-42"), Exempt: false}) // workspace.abuse_unexempt
+	_, err = testhelper.Module[*suspension.Suspender](env).SetAbuseExempt(ctx, fixtures.AcmeID, suspension.SetAbuseExemptInput{By: suspension.StaffMember("op-42"), Exempt: false}) // workspace.abuse_unexempt
 	require.NoError(t, err)
-	_, err = suspension.NewSuspender(env.Bus, time.Now).SetSendCap(ctx, fixtures.AcmeID, suspension.SetSendCapInput{By: suspension.StaffMember("op-42"), SendCap: new(500)}) // workspace.send_cap_change
+	_, err = testhelper.Module[*suspension.Suspender](env).SetSendCap(ctx, fixtures.AcmeID, suspension.SetSendCapInput{By: suspension.StaffMember("op-42"), SendCap: new(500)}) // workspace.send_cap_change
 	require.NoError(t, err)
 
 	_, err = env.ExternalAnchor(t).ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{ // contact.import
@@ -345,7 +345,7 @@ func recordAuditCallSites(t *testing.T) []string {
 func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)

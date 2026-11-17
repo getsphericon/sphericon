@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -52,7 +53,7 @@ func (p *pass) Run(ctx context.Context, at time.Time) (abusedetector.Summary, er
 func newDetector(env *testhelper.TestEnv, lic *licensekey.License, limits abusedetector.Limits) *pass {
 	p := &pass{}
 	watch := abusedetector.NewWatch(lic, limits, reputation.New(), func() time.Time { return p.now })
-	p.detector = abusedetector.NewDetector(env.DB, env.Bus, watch, suspension.NewSuspender(env.Bus, time.Now))
+	p.detector = abusedetector.NewDetector(env.DB, env.Bus, watch, testhelper.Module[*suspension.Suspender](env), testhelper.Module[*workspaces.Module](env))
 	return p
 }
 
@@ -313,7 +314,7 @@ func TestAnExemptWorkspaceIsNeitherWarnedNorFrozenButCanBeSuspendedByHand(t *tes
 	assert.NotContains(t, summary.Warned, fixtures.KramericaID)
 	assert.False(t, suspended(t, env, fixtures.KramericaID))
 	assert.NotContains(t, recipients(env), fixtures.KramericaOwnerNewmanEmail)
-	changed, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.KramericaID, suspension.SuspendInput{By: suspension.CLI, Reason: "verified abuse"})
+	changed, err := testhelper.Module[*suspension.Suspender](env).Suspend(t.Context(), fixtures.KramericaID, suspension.SuspendInput{By: suspension.CLI, Reason: "verified abuse"})
 	require.NoError(t, err)
 	assert.True(t, changed, "an exemption is not a loophole for real abuse")
 }
@@ -329,7 +330,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 	_, err := d.Run(t.Context(), now)
 	require.NoError(t, err)
 	require.True(t, suspended(t, env, fixtures.KramericaID))
-	_, err = suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.KramericaID, suspension.StaffMember("1"))
+	_, err = testhelper.Module[*suspension.Suspender](env).Unsuspend(t.Context(), fixtures.KramericaID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	immediately, err := d.Run(t.Context(), now.Add(time.Minute))
@@ -347,7 +348,7 @@ func TestAfterAnUnsuspendOnlyNewerEventsCountUntilTheFloorIsMetAgain(t *testing.
 
 func TestUnsuspendingRecordsTheClearance(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Unsuspend(t.Context(), fixtures.HooliID, suspension.StaffMember("1"))
+	_, err := testhelper.Module[*suspension.Suspender](env).Unsuspend(t.Context(), fixtures.HooliID, suspension.StaffMember("1"))
 	require.NoError(t, err)
 
 	assert.NotNil(t, env.DB.Workspace.GetX(t.Context(), fixtures.HooliID).ClearedAt)
@@ -373,7 +374,7 @@ func TestAWarnedWorkspaceThatIsThenSuspendedByHandEndsItsEpisode(t *testing.T) {
 	warned := env.DB.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(fixtures.VandelayID)).OnlyX(t.Context())
 	require.NotNil(t, warned.AbuseWarningNotifiedAt)
 
-	_, err = suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.VandelayID, suspension.SuspendInput{By: suspension.CLI, Reason: "manual"})
+	_, err = testhelper.Module[*suspension.Suspender](env).Suspend(t.Context(), fixtures.VandelayID, suspension.SuspendInput{By: suspension.CLI, Reason: "manual"})
 	require.NoError(t, err)
 	_, err = d.Run(t.Context(), at(warnDay).Add(time.Minute))
 

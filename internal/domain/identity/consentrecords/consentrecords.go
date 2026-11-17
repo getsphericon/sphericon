@@ -120,6 +120,19 @@ func decision(accepted bool) consentrecord.Decision {
 	return consentrecord.DecisionDeclined
 }
 
+// Module is the Consent records over the Instance's Sign-up items.
+type Module struct {
+	ent   *ent.Client
+	bus   *events.Bus
+	items *signupitems.Module
+}
+
+// New builds the module over the raw client, the bus, in whose transaction a change in account
+// settings writes its record, and the Sign-up items.
+func New(client *ent.Client, bus *events.Bus, items *signupitems.Module) *Module {
+	return &Module{ent: client, bus: bus, items: items}
+}
+
 // Write adds the records of consents for the User in tx, the transaction that writes the User or
 // its answer, with the client's address and user agent of the request in ctx (resolved as the
 // rate limiter resolves them, internal/kernel/clientip).
@@ -161,19 +174,6 @@ type Record struct {
 	UserAgent string
 	// DecidedAt is when the decision was made.
 	DecidedAt time.Time
-}
-
-// Module is the Consent records over the Instance's Sign-up items.
-type Module struct {
-	ent   *ent.Client
-	bus   *events.Bus
-	items *signupitems.Module
-}
-
-// New builds the module over the raw client, the bus, in whose transaction a change in account
-// settings writes its record, and the Sign-up items.
-func New(client *ent.Client, bus *events.Bus, items *signupitems.Module) *Module {
-	return &Module{ent: client, bus: bus, items: items}
 }
 
 // Check answers a form against the Sign-up items in effect now (see Decide): the Consents it

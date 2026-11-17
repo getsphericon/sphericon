@@ -34,8 +34,8 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, tar
 	// token here), so this is a scope source outside the site/external/job list.
 	return bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
 		// A link of an erased Workspace has nothing left to record into.
-		erased, err := workspaces.ErasedIn(ctx, sc)
-		if err != nil || erased {
+		ws, err := sc.Workspace(ctx)
+		if err != nil || workspaces.DeletionStateOf(ws) == workspaces.StateErased {
 			return err
 		}
 		_, err = recordIn(ctx, sc, pub, grant{

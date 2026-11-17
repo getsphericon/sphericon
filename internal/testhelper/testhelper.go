@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
@@ -493,19 +494,20 @@ func Setup(t *testing.T, opts ...Option) *TestEnv {
 	workers := func(tb testing.TB) performers {
 		tb.Helper()
 		client := do.MustInvoke[*ent.Client](injector)
+		ws := do.MustInvoke[*workspaces.Module](injector)
 		p := performers{}
-		add(tb, p, txDB, client, jobs.NewSendNoticeWorker(systemSender))
+		add(tb, p, txDB, ws, jobs.NewSendNoticeWorker(systemSender))
 		addScheduled(tb, p, txDB, client, injector)
 		// The consumers of the domain events, core's and the Edition's (ADR 0101).
-		add(tb, p, txDB, client, jobs.NewSuppressEventWorker(client))
-		add(tb, p, txDB, client, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
-		add(tb, p, txDB, client, jobs.NewBroadcastUnsubscribeEventWorker(client, do.MustInvoke[*broadcasts.Module](injector)))
-		add(tb, p, txDB, client, jobs.NewMessageObservationWorker(client, do.MustInvoke[*outboundmessages.Module](injector)))
-		add(tb, p, txDB, client, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.Module](injector), systemSender))
-		add[recordedArgs](tb, p, txDB, client, recordedWorker{})
-		add(tb, p, txDB, client, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
-		add(tb, p, txDB, client, eejobs.NewEntryEventWorker(edition.Audit))
-		add(tb, p, txDB, client, eejobs.NewErasureEventWorker(edition.Erasures))
+		add(tb, p, txDB, ws, jobs.NewSuppressEventWorker(client))
+		add(tb, p, txDB, ws, jobs.NewOrderEventWorker(client, do.MustInvoke[*orders.Module](injector)))
+		add(tb, p, txDB, ws, jobs.NewBroadcastUnsubscribeEventWorker(client, do.MustInvoke[*broadcasts.Module](injector)))
+		add(tb, p, txDB, ws, jobs.NewMessageObservationWorker(client, do.MustInvoke[*outboundmessages.Module](injector)))
+		add(tb, p, txDB, ws, jobs.NewNoticeEventWorker(do.MustInvoke[*noticedelivery.Module](injector), systemSender))
+		add[recordedArgs](tb, p, txDB, ws, recordedWorker{})
+		add(tb, p, txDB, ws, jobs.NewWebhookEventWorker(client, edition.Webhooks(jobs.NewWebhookDispatcher())))
+		add(tb, p, txDB, ws, eejobs.NewEntryEventWorker(edition.Audit))
+		add(tb, p, txDB, ws, eejobs.NewErasureEventWorker(edition.Erasures))
 		return p
 	}
 
@@ -690,10 +692,11 @@ var testPresets = sync.OnceValues(func() (*preset.Registry, error) {
 // retention's daily tick with the prune of one Workspace it queues (ADR 0143).
 func addScheduled(tb testing.TB, p performers, sqlDB *sql.DB, client *ent.Client, injector do.Injector) {
 	tb.Helper()
-	add(tb, p, sqlDB, client, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
-	add(tb, p, sqlDB, client, jobs.NewReleaseWebhookWorker(client, do.MustInvoke[*integrations.Module](injector)))
-	add(tb, p, sqlDB, client, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
+	ws := do.MustInvoke[*workspaces.Module](injector)
+	add(tb, p, sqlDB, ws, jobs.NewRefreshIntegrationQuotaWorker(client, do.MustInvoke[*integrations.Module](injector)))
+	add(tb, p, sqlDB, ws, jobs.NewReleaseWebhookWorker(client, do.MustInvoke[*integrations.Module](injector)))
+	add(tb, p, sqlDB, ws, jobs.NewVerifySendingDomainWorker(client, do.MustInvoke[*sendingdomains.Module](injector)))
 	retention := do.MustInvoke[*messageretention.UseCase](injector)
-	add(tb, p, sqlDB, client, jobs.NewPruneMessagesWorker(retention))
-	add(tb, p, sqlDB, client, jobs.NewPruneWorkspaceMessagesWorker(retention))
+	add(tb, p, sqlDB, ws, jobs.NewPruneMessagesWorker(retention))
+	add(tb, p, sqlDB, ws, jobs.NewPruneWorkspaceMessagesWorker(retention))
 }

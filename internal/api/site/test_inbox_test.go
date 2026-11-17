@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -255,7 +254,7 @@ func TestSuppressionAndAFreezeApplyToTheTestInboxAsToAnyIntegration(t *testing.T
 
 	suppressedResult, err := sendGlobexTransactional(t, env, fixtures.SuppressionGlobexDestination)
 	require.NoError(t, err)
-	suspended, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.GlobexID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
+	suspended, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.GlobexID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
 	require.True(t, suspended)
 	_, frozen := sendGlobexTransactional(t, env, "free@example.com")

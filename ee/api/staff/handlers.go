@@ -10,7 +10,6 @@ package staff
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/workspaceoversight"
@@ -71,20 +70,11 @@ func (h *SecurityHandler) HandleApiKeyAuth(ctx context.Context, _ staffeeapi.Ope
 // StaffWorkspacesList is a page of Workspaces, newest first, narrowed by an id or name
 // search. Metadata only: no Contacts, content or Events.
 func (h *Handlers) StaffWorkspacesList(ctx context.Context, params staffeeapi.StaffWorkspacesListParams) (*staffeeapi.StaffWorkspacesListOK, error) {
-	page, err := h.module.ListWorkspaces(ctx, workspaceoversight.ListWorkspacesInput{Review: review(params.Review), Search: strings.TrimSpace(params.Search.Value)}, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.module.ListWorkspaces(ctx, staffInputs.WorkspacesList(params), pagination.ParamsOf(params.Page, params.PageSize))
 	if err != nil {
 		return nil, err
 	}
 	return staffMapper.WorkspacesListPage(page), nil
-}
-
-// review is the review state the list is filtered by; none narrows it to no state.
-func review(p staffeeapi.OptStaffWorkspaceReview) abusedetector.Review {
-	v, ok := p.Get()
-	if !ok {
-		return abusedetector.ReviewNone
-	}
-	return staffMapper.ReviewIn(v)
 }
 
 // StaffWorkspacesGet is one Workspace's metadata and suspension state.
@@ -109,18 +99,18 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 
 // StaffWorkspacesSetSendCap sets a Workspace's Send cap as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesSetSendCap(ctx context.Context, req *staffeeapi.StaffSendCapInput, params staffeeapi.StaffWorkspacesSetSendCapParams) (*staffeeapi.StaffSendCapChange, error) {
-	perDay := int(req.PerDay)
-	return h.setSendCap(ctx, params.WorkspaceId, &perDay)
+	return h.setSendCap(ctx, params.WorkspaceId, staffInputs.SendCapSet(req))
 }
 
 // StaffWorkspacesClearSendCap removes a Workspace's Send cap as the signed-in Staff member.
 func (h *Handlers) StaffWorkspacesClearSendCap(ctx context.Context, params staffeeapi.StaffWorkspacesClearSendCapParams) (*staffeeapi.StaffSendCapChange, error) {
-	return h.setSendCap(ctx, params.WorkspaceId, nil)
+	return h.setSendCap(ctx, params.WorkspaceId, staffInputs.SendCapClear(params))
 }
 
 // setSendCap is the change both Send cap operations make.
-func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, perDay *int) (*staffeeapi.StaffSendCapChange, error) {
-	done, err := h.module.SetSendCap(ctx, string(wsID), workspaceoversight.SetSendCapInput{By: auth.StaffMember(ctx), PerDay: perDay})
+func (h *Handlers) setSendCap(ctx context.Context, wsID staffeeapi.WorkspaceId, in workspaceoversight.SetSendCapInput) (*staffeeapi.StaffSendCapChange, error) {
+	in.By = auth.StaffMember(ctx)
+	done, err := h.module.SetSendCap(ctx, string(wsID), in)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +131,9 @@ func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.Staff
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
 func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffWorkspaceChange, error) {
-	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), workspaceoversight.SuspendWorkspaceInput{By: auth.StaffMember(ctx), Reason: req.Reason})
+	in := staffInputs.WorkspaceSuspend(req)
+	in.By = auth.StaffMember(ctx)
+	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), in)
 	if err != nil {
 		return nil, err
 	}
@@ -160,17 +152,22 @@ func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeea
 // StaffWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
 // Staff member.
 func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.StaffWorkspacesExemptParams) (*staffeeapi.StaffWorkspaceChange, error) {
-	return h.setExempt(ctx, params.WorkspaceId, true)
+	in := staffInputs.AbuseExempt(params)
+	in.Exempt = true
+	return h.setExempt(ctx, params.WorkspaceId, in)
 }
 
 // StaffWorkspacesUnexempt puts a Workspace back under the abuse detector.
 func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeapi.StaffWorkspacesUnexemptParams) (*staffeeapi.StaffWorkspaceChange, error) {
-	return h.setExempt(ctx, params.WorkspaceId, false)
+	in := staffInputs.AbuseUnexempt(params)
+	in.Exempt = false
+	return h.setExempt(ctx, params.WorkspaceId, in)
 }
 
 // setExempt is the change both exemption operations make.
-func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffWorkspaceChange, error) {
-	done, err := h.module.SetAbuseExempt(ctx, string(wsID), workspaceoversight.SetAbuseExemptInput{By: auth.StaffMember(ctx), Exempt: exempt})
+func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, in workspaceoversight.SetAbuseExemptInput) (*staffeeapi.StaffWorkspaceChange, error) {
+	in.By = auth.StaffMember(ctx)
+	done, err := h.module.SetAbuseExempt(ctx, string(wsID), in)
 	if err != nil {
 		return nil, err
 	}

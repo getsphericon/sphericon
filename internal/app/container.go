@@ -113,6 +113,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
+	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/mcpserver"
 	"github.com/getsphericon/sphericon/internal/server"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -464,6 +465,7 @@ var editionPackage = do.Package(
 			License:        do.MustInvoke[*licensekey.License](i),
 			StaffSessions:  members.Sessions(),
 			Suspender:      do.MustInvoke[*suspension.Suspender](i),
+			Workspaces:     do.MustInvoke[*workspaces.Module](i),
 			Reputation:     do.MustInvoke[*reputation.Module](i),
 			Cipher:         do.MustInvoke[*secrets.Cipher](i),
 			Memberships:    do.MustInvoke[*memberships.Module](i),
@@ -492,7 +494,7 @@ var editionPackage = do.Package(
 	// The one operation that suspends a Workspace (ADR 0007): the command line, the Staff
 	// console and the abuse detector all suspend through it, and its event tells the owners.
 	do.Lazy(func(i do.Injector) (*suspension.Suspender, error) {
-		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
+		return suspension.NewSuspender(do.MustInvoke[*events.Bus](i), do.MustInvoke[*workspaces.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*orders.Module, error) {
 		return orders.New(do.MustInvoke[*workspaces.Module](i)), nil
@@ -589,6 +591,7 @@ var jobsPackage = do.Package(
 			Contacts:          do.MustInvoke[*contacts.Module](i),
 			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
 			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
+			Workspaces:        do.MustInvoke[*workspaces.Module](i),
 			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
 			SendingDomains:    do.MustInvoke[*sendingdomains.Module](i),
 			StepExecution:     do.MustInvoke[*automations.StepExecution](i),
@@ -696,7 +699,8 @@ var identityPackage = do.Package(
 	// the creation of a Workspace with its Owner, which starts with the default Send cap
 	// (suspension's, ADR 0146) where the Instance has Send caps.
 	do.Lazy(func(i do.Injector) (*memberships.Module, error) {
-		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*suspension.DefaultSendCap](i),
+		return memberships.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), workspaces.NewCreation(workspaceid.New),
+			do.MustInvoke[*suspension.DefaultSendCap](i),
 			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Users (ADR 0102), over the raw client. A step that asks for the current password proves it
@@ -737,12 +741,12 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*noticedelivery.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		links := users.NewLinks(do.MustInvoke[*users.Module](i), do.MustInvoke[*authtoken.Signer](i))
-		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*signinprovider.Providers](i),
-			do.MustInvoke[*memberships.Module](i), noticedelivery.Config{
+		return noticedelivery.New(do.MustInvoke[*ent.Client](i), links, do.MustInvoke[*secondfactors.Module](i), do.MustInvoke[*workspaces.Module](i),
+			do.MustInvoke[*signinprovider.Providers](i), do.MustInvoke[*memberships.Module](i), noticedelivery.Config{
 				AppURL:         cfg.AppURL,
 				Support:        cfg.SupportEmail,
 				TrackingTarget: do.MustInvoke[*trackingdomains.Module](i).Target(),
-			}, do.MustInvoke[Clock](i)), nil
+			}), nil
 	}),
 	// The Sign-up survey is on only with an explicit switch and the `staff` license; the warning for
 	// a switch without the license is logged here, once, at start.
@@ -805,7 +809,7 @@ var identityPackage = do.Package(
 		usersModule := do.MustInvoke[*users.Module](i)
 		return userdeletion.New(do.MustInvoke[*events.Bus](i), usersModule, do.MustInvoke[*memberships.Module](i),
 			users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i)), do.MustInvoke[*secondfactors.Module](i),
-			do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), do.MustInvoke[*credentials.Hasher](i)), nil
+			do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), do.MustInvoke[*credentials.Hasher](i)), nil
 	}),
 	// The User's Login (ADR 0020): the login module over the Users, their Second factors and
 	// Passkeys, on the Users' Login throttle.
@@ -955,7 +959,7 @@ var contentPackage = do.Package(
 		return eventrecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), policy), nil
 	}),
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
-		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
+		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()

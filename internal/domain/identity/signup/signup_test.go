@@ -21,12 +21,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/throttle"
 	"github.com/getsphericon/sphericon/internal/kernel/authtoken"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
+	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -119,7 +121,7 @@ func build(t *testing.T, env *testhelper.TestEnv, budget int, opts ...option) ri
 		o(&cfg)
 	}
 	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
-	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), memberships.New(client, bus, suspension.NewDefaultSendCap(client, false), time.Now),
+	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), memberships.New(client, bus, workspaces.NewCreation(workspaceid.New), suspension.NewDefaultSendCap(client, false), time.Now),
 		testhelper.Module[*apitokens.Module](env), testhelper.Module[*secondfactors.Module](env), cfg, signup.SignInConfig{}, time.Now)
 	return rig{env: env, db: client, queue: q, module: module, users: acc, consents: consents, links: links}
 }

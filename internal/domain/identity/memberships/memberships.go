@@ -29,17 +29,18 @@ import (
 type Module struct {
 	client      *ent.Client
 	bus         *events.Bus
+	creation    *workspaces.Creation
 	startingCap StartingSendCap
 	now         func() time.Time
 }
 
 // New builds the module over the ent client; the bus opens the transactions of a Role change,
 // a removal and Leaving, names the actor of a scope and publishes in the transaction of a client an
-// operation is given (events.Bus.PublishIn). startingCap says the Send cap a Workspace created by
-// CreateWorkspaceIn starts with, and now is the Instance clock a Second factor reminder is stamped
-// by.
-func New(client *ent.Client, bus *events.Bus, startingCap StartingSendCap, now func() time.Time) *Module {
-	return &Module{client: client, bus: bus, startingCap: startingCap, now: now}
+// operation is given (events.Bus.PublishIn). creation writes the Workspace CreateWorkspaceIn
+// creates, with the Send cap startingCap says it starts with, and now is the Instance clock a
+// Second factor reminder is stamped by.
+func New(client *ent.Client, bus *events.Bus, creation *workspaces.Creation, startingCap StartingSendCap, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, creation: creation, startingCap: startingCap, now: now}
 }
 
 // publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):

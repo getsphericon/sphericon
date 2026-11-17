@@ -13,8 +13,10 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
+	"github.com/getsphericon/sphericon/internal/kernel/workspaceid"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -29,7 +31,7 @@ func TestAWorkspaceIsCreatedWithItsOwnerItsStartingSendCapAndItsAuditEntry(t *te
 		return err
 	}))
 	creator := env.DB.User.GetX(ctx, fixtures.UmbrellaOwnerRitaID)
-	ms := memberships.New(env.DB, env.Bus, startingCap, time.Now)
+	ms := memberships.New(env.DB, env.Bus, workspaces.NewCreation(workspaceid.New), startingCap, time.Now)
 
 	var ws *ent.Workspace
 	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {

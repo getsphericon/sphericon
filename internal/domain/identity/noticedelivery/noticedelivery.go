@@ -63,27 +63,27 @@ type Config struct {
 
 // Module issues the Notices of the domain events.
 type Module struct {
-	client    *ent.Client
-	links     *users.Links
-	factors   *secondfactors.Module
-	providers *signinprovider.Providers
-	owners    *memberships.Module
-	cfg       Config
-	now       func() time.Time
+	client     *ent.Client
+	links      *users.Links
+	factors    *secondfactors.Module
+	workspaces *workspaces.Module
+	providers  *signinprovider.Providers
+	owners     *memberships.Module
+	cfg        Config
 }
 
 // New builds Notice delivery over the raw client, the links of the account mails, the Second
-// factors (whose deadlines the Two-factor notices name), the Sign-in providers (which name a linked
-// one), the Memberships (which name a Workspace's Owners) and the Instance's configuration; now is
-// the Instance clock.
-func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, providers *signinprovider.Providers, owners *memberships.Module, cfg Config, now func() time.Time) *Module {
-	return &Module{client: client, links: links, factors: factors, providers: providers, owners: owners, cfg: cfg, now: now}
+// factors (whose deadlines the Two-factor notices name), the Workspaces (which record a suspension's
+// notice, on its clock), the Sign-in providers (which name a linked one), the Memberships (which
+// name a Workspace's Owners) and the Instance's configuration.
+func New(client *ent.Client, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, providers *signinprovider.Providers, owners *memberships.Module, cfg Config) *Module {
+	return &Module{client: client, links: links, factors: factors, workspaces: ws, providers: providers, owners: owners, cfg: cfg}
 }
 
 // Issue answers the Notices ev calls for (the Notices' consumer wants only an event that calls for
 // some), none when it calls for none (a request that is not
 // delivered, a User gone since, a suspension lifted since). A suspension's notice is recorded on
-// the Workspace (workspaces.MarkAbuseFreezeNotified) when it is issued. An error leaves the event
+// the Workspace (workspaces.Module.MarkAbuseFreezeNotified) when it is issued. An error leaves the event
 // to be handled again: Issue reads and mints nothing it cannot read and mint again.
 func (u *Module) Issue(ctx context.Context, ev events.DomainEvent) ([]Notice, error) {
 	switch e := ev.(type) {
@@ -381,7 +381,7 @@ func (u *Module) suspended(ctx context.Context, e *events.WorkspaceSuspended) ([
 	if err != nil {
 		return nil, err
 	}
-	if err := workspaces.MarkAbuseFreezeNotified(ctx, u.client, ws.ID, u.now()); err != nil {
+	if err := u.workspaces.MarkAbuseFreezeNotified(ctx, u.client, ws.ID); err != nil {
 		return nil, fmt.Errorf("notice: record the suspension notice of workspace %d: %w", ws.ID, err)
 	}
 	return notices, nil

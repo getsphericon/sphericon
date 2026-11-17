@@ -33,7 +33,7 @@ var (
 func remind(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
 	keys := testhelper.Module[*passkeys.Module](env)
-	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.Module[*users.Module](env), keys, memberships.New(env.DB, env.Bus, nil, func() time.Time { return now }), func() time.Time { return now })
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.Module[*users.Module](env), keys, memberships.New(env.DB, env.Bus, nil, nil, func() time.Time { return now }), func() time.Time { return now })
 	sweep := jobs.NewRemindSecondFactorWorker(factors)
 	require.NoError(t, sweep.Work(context.Background(), job(jobs.RemindSecondFactorArgs{})))
 }

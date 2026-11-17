@@ -10,8 +10,6 @@ internal/domain/contacts/suppressions
 internal/domain/contacts/suppressions/suppressionsunchecked
 internal/domain/contacts/unsubscribes
 internal/domain/contacts/unsubscribes/unsubscribesunchecked
-internal/domain/identity/workspaces
-internal/domain/identity/workspaces/workspacesunchecked
 internal/domain/orchestration/automations
 internal/domain/orchestration/automations/automationsunchecked
 internal/domain/orchestration/automations/automationsuse

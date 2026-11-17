@@ -49,6 +49,7 @@ type UseCase struct {
 	leave       *membershipsunchecked.Module
 	links       *users.Links
 	factors     *secondfactors.Module
+	workspaces  *workspaces.Module
 	login       *login.Module[*ent.User]
 }
 
@@ -56,12 +57,13 @@ type UseCase struct {
 // leaves (the leave of a doomed Workspace is membershipsunchecked's, built here). budget is the Login throttle
 // of the Users (throttle.KindLogin), the budget every proof of a signed-in User feeds, and passwords
 // the hasher the stored passwords were made with: the password is proven through the login
-// module's one prove path over them.
-func New(bus *events.Bus, usersModule *users.Module, members *memberships.Module, links *users.Links, factors *secondfactors.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
+// module's one prove path over them. The Workspaces say which of the User's sole-owned ones are live.
+func New(bus *events.Bus, usersModule *users.Module, members *memberships.Module, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
 	return &UseCase{
 		bus: bus, users: usersModule, removal: usersunchecked.New(usersModule, bus),
 		memberships: members, leave: membershipsunchecked.New(members, bus), links: links, factors: factors,
-		login: login.New(login.Config[*ent.User]{Throttle: budget, Passwords: passwords}),
+		workspaces: ws,
+		login:      login.New(login.Config[*ent.User]{Throttle: budget, Passwords: passwords}),
 	}
 }
 
@@ -129,7 +131,7 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, proven *ent.Use
 	if err != nil {
 		return err
 	}
-	live, err := workspaces.LiveIn(ctx, tx, owned.SoleOwned...)
+	live, err := uc.workspaces.LiveIn(ctx, tx, owned.SoleOwned...)
 	if err != nil {
 		return err
 	}

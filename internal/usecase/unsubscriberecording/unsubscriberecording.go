@@ -61,8 +61,8 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 	// The Workspace comes from the signed unsubscribe token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
 	return u.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
-		erased, err := workspaces.ErasedIn(ctx, sc)
-		if err != nil || erased {
+		ws, err := sc.Workspace(ctx)
+		if err != nil || workspaces.DeletionStateOf(ws) == workspaces.StateErased {
 			return err
 		}
 		if target.Channel == channels.SMS {
