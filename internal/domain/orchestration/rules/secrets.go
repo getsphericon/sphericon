@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -35,7 +36,7 @@ func SecretSweeps(c *ent.Client) []secrets.Sweep {
 
 // guardedActions is the Actions of the Rule version id, written on its Rule's revision.
 func guardedActions(c *ent.Client, id int64) secrets.Guarded[[]ruleaction.Action] {
-	var owner int64
+	var owner, workspace int64
 	return secrets.Guarded[[]ruleaction.Action]{
 		// The Rule is read first: an edit between the two reads leaves an older revision with the
 		// edited Actions, and the write misses.
@@ -47,7 +48,7 @@ func guardedActions(c *ent.Client, id int64) secrets.Guarded[[]ruleaction.Action
 			if err != nil {
 				return nil, 0, err
 			}
-			owner = r.ID
+			owner, workspace = r.ID, r.WorkspaceID
 			v, err := c.RuleVersion.Get(ctx, id)
 			if ent.IsNotFound(err) {
 				return nil, 0, secrets.ErrRowGone
@@ -58,16 +59,19 @@ func guardedActions(c *ent.Client, id int64) secrets.Guarded[[]ruleaction.Action
 			return v.Actions, r.Revision, nil
 		},
 		Seal: rewrapActions,
-		// The Rule is locked on the revision read, so an edit either committed before, and the
-		// write misses, or waits for it.
+		// An edit holds the Workspace's lock from its read of the version to its write, and writes
+		// back the secrets it read: the write takes the lock or leaves the version to the next run,
+		// and under it lands only while the Rule has the revision read.
 		Write: func(ctx context.Context, actions []ruleaction.Action, revision int64) (bool, error) {
 			tx, err := c.Tx(ctx)
 			if err != nil {
 				return false, err
 			}
 			defer func() { _ = tx.Rollback() }()
-			held, err := tx.Rule.Query().Where(rule.ID(owner), rule.Revision(revision)).ForUpdate().IDs(ctx)
-			if err != nil || len(held) == 0 {
+			if took, err := events.TryLockWorkspace(ctx, tx.Client(), workspace); err != nil || !took {
+				return false, err
+			}
+			if held, err := tx.Rule.Query().Where(rule.ID(owner), rule.Revision(revision)).Exist(ctx); err != nil || !held {
 				return false, err
 			}
 			if err := tx.RuleVersion.UpdateOneID(id).SetActions(actions).Exec(ctx); err != nil {
