@@ -7,7 +7,6 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 )
 
@@ -22,24 +21,23 @@ type PruneCapturedMessagesArgs struct{}
 func (PruneCapturedMessagesArgs) Kind() string { return "captured_messages_prune" }
 
 // PruneCapturedMessagesWorker deletes the Captured messages of every Workspace older than the
-// retention window; the capturedmessages module does the deleting. It is instance-wide, so it
-// holds the raw ent client; a zero retention disables it.
+// retention window; the capturedmessages module does the deleting, Instance-wide, by its clock. A
+// zero retention disables it.
 type PruneCapturedMessagesWorker struct {
 	river.WorkerDefaults[PruneCapturedMessagesArgs]
 
-	ent       *ent.Client
+	captured  *capturedmessages.Module
 	retention time.Duration
-	now       func() time.Time
 }
 
-// NewPruneCapturedMessagesWorker builds the prune of Captured messages older than retention (0 disables it),
-// by the Instance clock now.
-func NewPruneCapturedMessagesWorker(client *ent.Client, retention time.Duration, now func() time.Time) *PruneCapturedMessagesWorker {
-	return &PruneCapturedMessagesWorker{ent: client, retention: retention, now: now}
+// NewPruneCapturedMessagesWorker builds the prune of Captured messages older than retention (0
+// disables it).
+func NewPruneCapturedMessagesWorker(captured *capturedmessages.Module, retention time.Duration) *PruneCapturedMessagesWorker {
+	return &PruneCapturedMessagesWorker{captured: captured, retention: retention}
 }
 
 func (w *PruneCapturedMessagesWorker) Work(ctx context.Context, _ *river.Job[PruneCapturedMessagesArgs]) error {
-	deleted, err := capturedmessages.Purge(ctx, w.ent, w.retention, capturedMessagesBatch, w.now())
+	deleted, err := w.captured.Purge(ctx, w.retention, capturedMessagesBatch)
 	if err != nil {
 		return err
 	}

@@ -106,7 +106,11 @@ await test('on /api every operation declares its scopes, a template its argument
   assert.deepEqual(extension(program, 'Fixture.Events.list', 'x-required-scopes'), ['events:read'])
 })
 
-await test('a raw @extension of a decorator key is refused once per declaration, any other kept', async () => {
+await test('every operation answers its errors with the Problem as its default response', async () => {
+  await assertDiagnostics('problem.tsp')
+})
+
+await test('a raw @extension of a decorator key or additionalProperties is refused once per declaration, any other kept', async () => {
   const program = await assertDiagnostics('raw.tsp')
   assert.equal(extension(program, 'Fixture.Contact.email', 'x-something-else'), true)
 })

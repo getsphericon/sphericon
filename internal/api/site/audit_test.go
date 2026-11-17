@@ -27,12 +27,12 @@ func promoteMary(t *testing.T, env *testhelper.TestEnv) {
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 }
 
-func auditList(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) (*siteapi.SiteAuditEntryList, error) {
+func auditList(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) (*siteapi.AuditEntryList, error) {
 	t.Helper()
 	return c.SiteAuditList(context.Background(), siteapi.SiteAuditListParams{WorkspaceId: workspaceID})
 }
 
-func auditPage(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteAuditEntryList {
+func auditPage(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.AuditEntryList {
 	t.Helper()
 	page, err := auditList(t, c, workspaceID)
 	require.NoError(t, err, "audit list")
@@ -47,7 +47,7 @@ func TestAuditRoleChangeIsRecordedAndListed(t *testing.T) {
 	require.Len(t, page.Items, 2, "the new entry and the fixture entry")
 	e := page.Items[0]
 	assert.Equal(t, siteapi.AuditActionMembershipUpdate, e.Action)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, e.Actor.Kind)
 	assert.Equal(t, testhelper.ID(fixtures.OwnerJohnID), e.Actor.ID.Value)
 	assert.Equal(t, "John", e.Actor.Name.Value)
 	assert.Equal(t, "membership", e.Target.Type)

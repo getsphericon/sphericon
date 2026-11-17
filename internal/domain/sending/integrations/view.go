@@ -2,11 +2,14 @@ package integrations
 
 import (
 	"context"
+	"maps"
+	"slices"
 
 	"github.com/go-faster/jx"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
@@ -41,7 +44,7 @@ func (m *Module) View(ctx context.Context, s *ent.Scoped, id int64) (View, error
 
 // All reads every kept Integration of the Workspace as a View, ascending by id.
 func (m *Module) All(ctx context.Context, s *ent.Scoped) ([]View, error) {
-	rows, err := s.Integration().Query().Order(ent.Asc(integration.FieldID)).All(ctx)
+	rows, err := withState(s).Order(ent.Asc(integration.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +53,7 @@ func (m *Module) All(ctx context.Context, s *ent.Scoped) ([]View, error) {
 
 // List reads one page of the Workspace's kept Integrations as Views, ascending by id.
 func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params) (pagination.Page[View], error) {
-	page, err := pagination.List(ctx, p, s.Integration().Query().Order(ent.Asc(integration.FieldID)))
+	page, err := pagination.List(ctx, p, withState(s).Order(ent.Asc(integration.FieldID)))
 	if err != nil {
 		return pagination.Page[View]{}, err
 	}
@@ -74,6 +77,9 @@ func (m *Module) viewOf(ctx context.Context, s *ent.Scoped, row *ent.Integration
 
 // views builds the View of each row, reading the Workspace's 24-hour usage once for all of them.
 func (m *Module) views(ctx context.Context, s *ent.Scoped, rows []*ent.Integration) ([]View, error) {
+	if err := loadStates(ctx, s, rows); err != nil {
+		return nil, err
+	}
 	limits, err := providerlimit.Statuses(ctx, s, rows, m.now())
 	if err != nil {
 		return nil, err
@@ -98,4 +104,28 @@ func (m *Module) views(ctx context.Context, s *ent.Scoped, rows []*ent.Integrati
 		}
 	}
 	return out, nil
+}
+
+// loadStates reads, in one query, the provider state (ADR 0168) of each row read without it: the
+// row a write returns carries none.
+func loadStates(ctx context.Context, s *ent.Scoped, rows []*ent.Integration) error {
+	byID := make(map[int64]*ent.Integration, len(rows))
+	for _, row := range rows {
+		if row.Edges.ProviderState == nil {
+			byID[row.ID] = row
+		}
+	}
+	if len(byID) == 0 {
+		return nil
+	}
+	states, err := s.IntegrationProviderState().Query().
+		Where(integrationproviderstate.IntegrationIDIn(slices.Collect(maps.Keys(byID))...)).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, state := range states {
+		byID[state.IntegrationID].Edges.ProviderState = state
+	}
+	return nil
 }

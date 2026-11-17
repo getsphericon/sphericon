@@ -97,7 +97,7 @@ func TestSiteContactsEraseByEmailAuditEntryHoldsNoAddress(t *testing.T) {
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "contact.delete")
 
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 	assert.NotContains(t, fmt.Sprintf("%+v", got[0]), fixtures.ContactExportSubjectEmail)
 	assert.Empty(t, got[0].Target.Name.Value, "no name of the erased Contact")
 }

@@ -130,9 +130,10 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   error type per surface (`*ProblemDetailsStatusCode`): a handler returns `(*T, error)` (or `error`
   when it answers no body), the Handler's `NewError` turns the error into the problem through
   `internal/api/problem` (`problem.Site`, `problem.External`, …), and a client returns the success type
-  or that error (`testhelper.SiteRefusal` and its kin read it in a test). An operation without the
-  `default` response fails the generation (and `check:openapi`, rule `operation-declares-problem`);
-  a status code listed beside it would bring a per-operation sum type back.
+  or that error (`testhelper.SiteRefusal` and its kin read it in a test). An operation that does not
+  return `| Problem` fails `tsp compile` (`@everyOperationDeclares("problem")` on every surface but
+  the Telemetry report's, whose client alone is generated here), and ogen fails without the
+  `default` response; a status code listed beside it would bring a per-operation sum type back.
 
 - **An opaque JSON object is a shared model, never an inline `Record<unknown>`.** A field whose
   members the contract leaves open is `JsonObject` (custom fields, properties, params, a diff) or
@@ -143,21 +144,24 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 - **Contract decorators** (ADR 0069): every `x-*` extension a Go reader depends on is written by
   a typed decorator, never by a raw `@extension`, which `tsp compile` refuses for these keys.
 
-  | Decorator                                                                  | Extension                | Declared in                      |
-  | -------------------------------------------------------------------------- | ------------------------ | -------------------------------- |
-  | `@requiresPermissions(#[Permission.…])`                                    | `x-required-permissions` | `common/permissions.tsp`         |
-  | `@requiresScopes(#[ApiTokenScope.…])`                                      | `x-required-scopes`      | `common/scopes.tsp`              |
-  | `@requiresServiceScopes(#[ServiceScope.…])`                                | `x-required-scopes`      | `service/resources/identity.tsp` |
-  | `@grantable` on an enum, `@grantedWith(Permission.…)` on a member          | `x-grant-permissions`    | `common/scopes.tsp`              |
-  | `@allowedWhileWithheld`, `@allowedWhileAcceptancePending`                  | `x-allowed-while-…`      | `lib/main.tsp`                   |
-  | `@rateLimited("login" \| "forgot_password" \| "human")` on an operation    | `x-rate-limit`           | `lib/main.tsp`                   |
-  | `@untrusted`                                                               | `x-untrusted`            | `lib/main.tsp`                   |
-  | `@mcp(#{ hidden?, name?, send? })`                                         | `x-mcp`                  | `lib/main.tsp`                   |
-  | `@everyOperationDeclares("scopes" \| "workspacePermissions")` on a surface | (a check)                | `lib/main.tsp`                   |
+  | Decorator                                                                                  | Extension                | Declared in                      |
+  | ------------------------------------------------------------------------------------------ | ------------------------ | -------------------------------- |
+  | `@requiresPermissions(#[Permission.…])`                                                    | `x-required-permissions` | `common/permissions.tsp`         |
+  | `@requiresScopes(#[ApiTokenScope.…])`                                                      | `x-required-scopes`      | `common/scopes.tsp`              |
+  | `@requiresServiceScopes(#[ServiceScope.…])`                                                | `x-required-scopes`      | `service/resources/identity.tsp` |
+  | `@grantable` on an enum, `@grantedWith(Permission.…)` on a member                          | `x-grant-permissions`    | `common/scopes.tsp`              |
+  | `@allowedWhileWithheld`, `@allowedWhileAcceptancePending`                                  | `x-allowed-while-…`      | `lib/main.tsp`                   |
+  | `@rateLimited("login" \| "forgot_password" \| "human")` on an operation                    | `x-rate-limit`           | `lib/main.tsp`                   |
+  | `@untrusted`                                                                               | `x-untrusted`            | `lib/main.tsp`                   |
+  | `@mcp(#{ hidden?, name?, send? })`                                                         | `x-mcp`                  | `lib/main.tsp`                   |
+  | `@everyOperationDeclares("scopes" \| "workspacePermissions" \| "problem", …)` on a surface | (a check)                | `lib/main.tsp`                   |
 
   A decorator typed by a contract enum is declared beside it; `lib/decorators.ts` implements them
-  all and checks, in `$onValidate`, what each surface's operations must declare (the checks
-  `cmd/scopegen` repeats on the OpenAPI document). The OpenAPI output is what a raw `@extension`
+  all and checks, in `$onValidate`, what each surface's operations must declare. `cmd/scopegen`
+  writes a row per operation from the OpenAPI document and keeps, as the last guard, only the
+  checks without which a row would open an operation: a missing scope or Permission, and
+  Permissions on a `/site` operation of no Workspace. A withheld mark outside a Workspace lets
+  nothing through, so only `tsp compile` refuses it. The OpenAPI output is what a raw `@extension`
   wrote. A new extension a Go reader depends on gets a decorator here, a fixture under
   `typespec/lib/testdata/` (`// expect-next-line: <code>` marks a statement that must fail) and a
   case in `decorators.test.ts`; `mise run test:typespec` runs them.
@@ -170,9 +174,11 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   the copy versioning makes of /api's types is closed too. A map whose keys are data (`JsonObject`,
   `EditorDocument`, a WebAuthn response) is declared `@openMap` and left open; any other map, an
   anonymous model and a model in an `extends` chain in a request body fail the compile, as none can
-  be closed. Responses, `/collect`, `/service` and the telemetry report are not closed, and a
-  closed model a response also reaches fails the compile (`closed-in-response`): one schema would
-  close the response too. Such a shape is a template instantiated twice, the response's model
+  be closed, and so does a raw `@extension("additionalProperties", …)` anywhere: whether a model
+  takes an unknown property is decided by these two decorators alone. Responses, `/collect`,
+  `/service` and the telemetry report are not closed, and a closed model a response also reaches
+  fails the compile (`closed-in-response`): one schema would close the response too. Such a shape
+  is a template instantiated twice, the response's model
   under its plain name and the request's as `…Input` (`ConditionGroupOf<Node>`, `AutomationStepOf`),
   or `model XInput is X` for a leaf; a test that edits what it read and sends it back goes through
   the wire with `testhelper.Resend`. The server

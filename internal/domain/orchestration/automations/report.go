@@ -59,7 +59,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if err != nil {
 		return Report{}, err
 	}
-	links, err := linkclick.ByLink(ctx, s, linkclick.Between{}, event.AutomationID(id))
+	links, err := m.clicks.ByLink(ctx, s, linkclick.Between{}, event.AutomationID(id))
 	if err != nil {
 		return Report{}, err
 	}

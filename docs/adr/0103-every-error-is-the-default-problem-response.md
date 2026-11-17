@@ -41,8 +41,8 @@ truth: any operation could answer a 401, a 429 or a 500 it did not list.
   descriptions say it where a client must branch (a 409 of a refused removal), and the problem's
   `status` and `code` say it on the wire. The TypeScript clients type every error as
   `ProblemDetails`, as `src/utils/apiErrors.ts` already read them.
-- `vacuum` checks that every operation declares the `default` response (`operation-declares-problem`)
-  instead of its 400.
+- `tsp compile` checks that every operation returns `| Problem` (`@everyOperationDeclares("problem")`
+  on each surface whose server is generated here) instead of its 400.
 - A test reads a refusal with `testhelper.SiteRefusal` (and its kin), which checks the status and
   returns the problem.
 

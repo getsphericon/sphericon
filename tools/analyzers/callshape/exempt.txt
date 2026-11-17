@@ -36,14 +36,9 @@ internal/domain/orchestration/rules/rulesunchecked
 internal/domain/orchestration/rules/rulesuse
 internal/domain/orchestration/webhookendpoints
 internal/domain/sending/bindings
-internal/domain/sending/capturedmessages
-internal/domain/sending/capturedmessages/capturedmessagesunchecked
 internal/domain/sending/holds
 internal/domain/sending/integrations
 internal/domain/sending/integrations/integrationsunchecked
-internal/domain/sending/linkclick
-internal/domain/sending/outboundmessages
-internal/domain/sending/outboundmessages/outboundmessagesunchecked
 internal/domain/sending/preset
 internal/domain/sending/privaterelayranges
 internal/domain/sending/providerlimit

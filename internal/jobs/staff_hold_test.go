@@ -22,7 +22,7 @@ import (
 // heldMod is an Outbound module whose send gate reads Staff holds on the test clock, as the
 // running application's does.
 func heldMod(env *testhelper.TestEnv, clock *testhelper.Clock, resolver outboundmessages.Senders) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, holds.New(func() bool { return true }, clock.Now), resolver, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+	return outboundmessages.New(env.Bus, holds.New(func() bool { return true }, clock.Now), resolver, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 }
 
 func setHold(t *testing.T, env *testhelper.TestEnv, expires time.Time) {

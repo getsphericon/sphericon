@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -23,7 +24,7 @@ const (
 func clicksByLink(t *testing.T, w analyticsreport.Window) []analyticsreport.LinkClicks {
 	t.Helper()
 	env := testhelper.Setup(t)
-	links, err := analyticsreport.New(time.Now, 0).ClicksByLink(context.Background(), env.DB.Scoped(fixtures.AcmeID), w)
+	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(context.Background(), env.DB.Scoped(fixtures.AcmeID), w)
 	require.NoError(t, err)
 	return links
 }
@@ -52,7 +53,7 @@ func TestClicksByLinkNameAnArchivedBroadcastAndAutomation(t *testing.T) {
 	require.NoError(t, acme.Broadcast().Archive(ctx, fixtures.BroadcastSentID, time.Now()))
 	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationWinBackID, time.Now()))
 
-	links, err := analyticsreport.New(time.Now, 0).ClicksByLink(ctx, acme, analyticsreport.Window30Days)
+	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(ctx, acme, analyticsreport.Window30Days)
 	require.NoError(t, err)
 
 	require.NotEmpty(t, links)
@@ -75,7 +76,7 @@ func TestClicksByLinkEqualTheBroadcastAndAutomationReportsSummed(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	links, err := analyticsreport.New(time.Now, 0).ClicksByLink(ctx, s, analyticsreport.Window90Days)
+	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(ctx, s, analyticsreport.Window90Days)
 	require.NoError(t, err)
 	got := map[string]int{}
 	for _, l := range links {
@@ -98,7 +99,7 @@ func TestClicksByLinkEqualTheBroadcastAndAutomationReportsSummed(t *testing.T) {
 
 func TestClicksByLinkIsEmptyForAWorkspaceWithoutClicks(t *testing.T) {
 	env := testhelper.Setup(t)
-	links, err := analyticsreport.New(time.Now, 0).ClicksByLink(context.Background(), env.DB.Scoped(fixtures.GlobexID), analyticsreport.Window90Days)
+	links, err := analyticsreport.New(linkclick.New(), time.Now, 0).ClicksByLink(context.Background(), env.DB.Scoped(fixtures.GlobexID), analyticsreport.Window90Days)
 	require.NoError(t, err)
 	assert.Empty(t, links)
 }

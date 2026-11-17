@@ -15,7 +15,7 @@ import (
 )
 
 // diffOf is the entry's diff as JSON text.
-func diffOf(t *testing.T, e siteapi.SiteAuditEntryResource) string {
+func diffOf(t *testing.T, e siteapi.AuditEntryResource) string {
 	t.Helper()
 	diff, err := json.Marshal(e.Diff.Value)
 	require.NoError(t, err)
@@ -24,7 +24,7 @@ func diffOf(t *testing.T, e siteapi.SiteAuditEntryResource) string {
 
 // entriesInMarysWorkspaces are the entries of one action in the logs of Acme and Globex,
 // the two Workspaces Mary belongs to, read by each one's Owner.
-func entriesInMarysWorkspaces(t *testing.T, env *testhelper.TestEnv, action string) (acme, globex []siteapi.SiteAuditEntryResource) {
+func entriesInMarysWorkspaces(t *testing.T, env *testhelper.TestEnv, action string) (acme, globex []siteapi.AuditEntryResource) {
 	t.Helper()
 	return entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, action),
 		entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, action)
@@ -38,8 +38,8 @@ func TestAuditProviderLoginNamesTheProviderInEachOfTheUsersWorkspaces(t *testing
 
 	require.Len(t, acme, 1)
 	require.Len(t, globex, 1)
-	for _, e := range []siteapi.SiteAuditEntryResource{acme[0], globex[0]} {
-		assert.Equal(t, siteapi.SiteAuditActorKindUser, e.Actor.Kind)
+	for _, e := range []siteapi.AuditEntryResource{acme[0], globex[0]} {
+		assert.Equal(t, siteapi.AuditActorKindUser, e.Actor.Kind)
 		assert.Equal(t, "Mary", e.Actor.Name.Value)
 		assert.JSONEq(t, `{"method":"google"}`, diffOf(t, e))
 		assert.NotContains(t, diffOf(t, e), fixtures.MaryGoogleIdentitySubject, "the raw subject is never recorded")
@@ -78,7 +78,7 @@ func TestAuditLinkAndUnlinkNameTheProviderInEachOfTheUsersWorkspaces(t *testing.
 	acme, globex := entriesInMarysWorkspaces(t, env, events.ActionUserIdentityLink)
 	require.Len(t, acme, 1)
 	require.Len(t, globex, 1)
-	for _, e := range []siteapi.SiteAuditEntryResource{acme[0], globex[0]} {
+	for _, e := range []siteapi.AuditEntryResource{acme[0], globex[0]} {
 		assert.Equal(t, "Mary", e.Actor.Name.Value)
 		assert.JSONEq(t, `{"provider":"google"}`, diffOf(t, e))
 		assert.NotContains(t, diffOf(t, e), maryAtWork.Subject, "the raw subject is never recorded")

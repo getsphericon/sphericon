@@ -8,7 +8,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/kernel/emailcase"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -98,7 +97,7 @@ func (m *Module) SendTransactional(ctx context.Context, s *ent.Scoped, req Trans
 
 	// The Contact this destination resolves to, when one exists (transactional mail may go to
 	// an address with no Contact); the send fact attaches to it.
-	contactID, err := contacts.New(m.bus, tags.New(), nil, m.now).ResolveID(ctx, s, contacts.AliasKeys{Email: &dest})
+	contactID, err := m.contacts.ResolveID(ctx, s, contacts.AliasKeys{Email: &dest})
 	if err != nil {
 		return TransactionalResult{}, err
 	}

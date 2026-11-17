@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -90,11 +89,11 @@ func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel chan
 // Contact's Outbound messages go first, then the messages to its addresses and number, which a
 // transactional send may have made without a Contact. Its Broadcast recipients name it only by
 // the Contact reference, which their foreign key sets null when the Contact row goes.
-func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := outboundmessagesunchecked.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
+func (u *UseCase) anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	if err := u.outbound.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	return outboundmessagesunchecked.AnonymizeDestinations(ctx, s, t.destinations())
+	return u.outbound.AnonymizeDestinations(ctx, s, t.destinations())
 }
 
 // publishErased emits the PII-free contact.erased Event in the erasure's transaction,

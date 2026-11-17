@@ -104,7 +104,7 @@ model SiteAttentionItem {
   holdReason?: HoldReason | null;
 
   /** The rate behind a deliverability warning */
-  abuse?: SiteAbuseWarning | null;
+  abuse?: AbuseWarning | null;
 
   /** When the Send cap is expected to have let the Broadcast out, set on a
    * `scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once

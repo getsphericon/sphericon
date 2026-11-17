@@ -44,12 +44,15 @@ type UseCase struct {
 	retention time.Duration
 	batch     int
 	now       func() time.Time
+	// messages deletes the Outbound messages, which New builds (ADR 0110: only a use case imports
+	// it).
+	messages *outboundmessagesunchecked.Module
 }
 
 // New returns the use case deleting messages older than retention (0 disables it), batch rows to a
 // transaction (Batch; a test passes 1 to turn every loop), by the Instance clock now.
 func New(client *ent.Client, bus *events.Bus, retention time.Duration, batch int, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, retention: retention, batch: batch, now: now}
+	return &UseCase{client: client, bus: bus, retention: retention, batch: batch, now: now, messages: outboundmessagesunchecked.New()}
 }
 
 // Pruned is how many Outbound messages a run deleted, by kind, and whether its budget ran out
@@ -185,7 +188,7 @@ func (r *run) broadcast(ctx context.Context, id int64) (int, error) {
 			if ids, err = broadcastsunchecked.RecipientsOf(ctx, ts, id, r.batch); err != nil || len(ids) == 0 {
 				return err
 			}
-			if deleted, err = outboundmessagesunchecked.DeleteOfRecipients(ctx, ts, ids); err != nil {
+			if deleted, err = r.messages.DeleteOfRecipients(ctx, ts, ids); err != nil {
 				return err
 			}
 			return broadcastsunchecked.DeleteRecipients(ctx, ts, ids)
@@ -202,7 +205,7 @@ func (r *run) broadcast(ctx context.Context, id int64) (int, error) {
 		if !r.spend() {
 			return total, nil
 		}
-		n, err := outboundmessagesunchecked.DeleteOfBroadcast(ctx, r.s, id, r.batch)
+		n, err := r.messages.DeleteOfBroadcast(ctx, r.s, id, r.batch)
 		total += n
 		if err != nil {
 			return total, err
@@ -223,7 +226,7 @@ func (r *run) kind(ctx context.Context, kind outboundmessage.Kind, keep func(con
 		var taken []*ent.OutboundMessage
 		err := r.bus.WithinAuditTx(ctx, r.s, func(ts *ent.Scoped) error {
 			var err error
-			if taken, err = outboundmessagesunchecked.TakeExpired(ctx, ts, kind, r.cutoff, r.batch); err != nil || len(taken) == 0 || keep == nil {
+			if taken, err = r.messages.TakeExpired(ctx, ts, outboundmessagesunchecked.TakeExpiredInput{Kind: kind, Cutoff: r.cutoff, Limit: r.batch}); err != nil || len(taken) == 0 || keep == nil {
 				return err
 			}
 			return keep(ctx, ts, taken)

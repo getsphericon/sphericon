@@ -160,6 +160,7 @@ func Through(ctx context.Context, s *ent.Scoped, channel channels.Channel, id *i
 	}
 	row, err := s.Integration().Query().
 		Where(integration.ChannelEQ(channel), which).
+		WithProviderState().
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, ErrNoProvider

@@ -5,9 +5,9 @@
 //
 // The Workspace is the tenant root, not a tenant-owned entity, so the scoped client has no
 // wrapper for it: the module edits its settings through the scope's own tenant edit
-// (Scoped.EditWorkspaceAt, audited as any entity), writes its lifecycle and bookkeeping with the raw
-// client, always the row of the Workspace a scope names, and resolves a Workspace id for the
-// command line.
+// (Scoped.EditWorkspaceAt, audited as any entity), writes its lifecycle, and its standing beside it
+// (ADR 0168), with the raw client, always the row of the Workspace a scope names, and resolves a
+// Workspace id for the command line.
 package workspaces
 
 import (
@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -173,13 +174,23 @@ func (m *Module) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code
 	return err
 }
 
+// SetupCompletedAt is when the scoped Workspace's Setup checklist was first found complete, nil
+// before (its standing, ADR 0168).
+func (m *Module) SetupCompletedAt(ctx context.Context, s *ent.Scoped) (*time.Time, error) {
+	standing, err := StandingIn(ctx, m.client, s.WorkspaceID())
+	if err != nil {
+		return nil, err
+	}
+	return standing.SetupCompletedAt, nil
+}
+
 // MarkSetupComplete stamps the scoped Workspace's Setup checklist complete at now, once: a
 // Workspace already stamped keeps its first moment. It returns the moment the Workspace holds.
 // Nothing a member chose changes, so no Audit entry is written.
 func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error) {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
-		n, err := m.client.Workspace.Update().
-			Where(workspace.ID(s.WorkspaceID()), workspace.SetupCompletedAtIsNil()).
+		n, err := m.client.WorkspaceStanding.Update().
+			Where(workspacestanding.WorkspaceID(s.WorkspaceID()), workspacestanding.SetupCompletedAtIsNil()).
 			SetSetupCompletedAt(now).
 			Save(ctx)
 		return n > 0, err
@@ -187,11 +198,11 @@ func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.
 	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return time.Time{}, err
 	}
-	ws, err := m.client.Workspace.Get(ctx, s.WorkspaceID())
+	standing, err := StandingIn(ctx, m.client, s.WorkspaceID())
 	if err != nil {
 		return time.Time{}, err
 	}
-	return *ws.SetupCompletedAt, nil
+	return *standing.SetupCompletedAt, nil
 }
 
 // SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement
@@ -231,9 +242,9 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 }
 
 // ErrRevisionChanged means a settings edit was made on a revision the Workspace has moved past (ADR
-// 0119): someone changed its settings since the client read them. Its bookkeeping (schema.Bookkeeping:
-// the service feed's position, the notices of the abuse detector, the Setup checklist's completion)
-// does not move it. Nothing is written.
+// 0119): someone changed its settings since the client read them. Its standing (the service feed's
+// position, the notices of the abuse detector, the Setup checklist's completion) lives beside it
+// (ADR 0168) and does not move it. Nothing is written.
 var ErrRevisionChanged = validation.RevisionChanged("workspaces: workspace changed since it was read", i18n.ErrorsWorkspaceRevisionChanged)
 
 // edit is the edit of the Workspace of s made on revision (ADR 0119), through the scope's tenant

@@ -17,4 +17,5 @@ using TypeSpec.Http;
 @info(#{ version: "1.0.0" })
 @server("http://localhost:3000/collect", "Local development collect API")
 @useAuth(ApiKeyAuth<ApiKeyLocation.header, "x-collect-key">)
+@everyOperationDeclares("problem")
 namespace Sphericon;

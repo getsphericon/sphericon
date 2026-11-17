@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -45,14 +46,20 @@ func (s senders) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (me
 // startClock starts a clock at the real time, so the fixtures' times keep their meaning.
 func startClock() *testhelper.Clock { return testhelper.NewClock(time.Now()) }
 
-func newModule(env *testhelper.TestEnv, now func() time.Time, opts ...outboundmessages.Option) *outboundmessages.Module {
+func newModule(env *testhelper.TestEnv, now func() time.Time) *outboundmessages.Module {
+	return configured(env, now, outboundmessages.Config{})
+}
+
+// configured is newModule with the settings cfg.
+func configured(env *testhelper.TestEnv, now func() time.Time, cfg outboundmessages.Config) *outboundmessages.Module {
 	return outboundmessages.New(
 		env.Bus,
 		testhelper.Module[*holds.Holds](env),
 		senders{sender: env.CustomerMail},
 		messagetoken.New("test-secret", "http://local", time.Now),
+		outboundmessages.Deps{},
+		cfg,
 		now,
-		opts...,
 	)
 }
 
@@ -229,7 +236,7 @@ func TestMarketingCarriesFooterAndOneClickHeader(t *testing.T) {
 
 func TestMarketingWithoutTrackerFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, nil, time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, nil, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:notracker", fixtures.ContactAliceID))
 	require.ErrorIs(t, err, outboundmessages.ErrNoTracker)
@@ -334,7 +341,7 @@ func TestDomainLosingVerificationAtSignTimeIsHeldAndFreesTheClaim(t *testing.T) 
 
 func TestNoIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
@@ -346,7 +353,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := newModule(env, time.Now)
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+	env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
 		SetProviderEnforcement(providers.EnforcementShutdown).ExecX(ctx)
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
@@ -355,7 +362,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	assert.Equal(t, holdreason.ProviderStopped, res.Hold)
 	assert.Empty(t, env.CustomerMail.Messages(), "nothing is handed to a stopped account")
 
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).ClearProviderEnforcement().ExecX(ctx)
+	env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ClearProviderEnforcement().ExecX(ctx)
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome, "the same Request goes out once the account sends again")
@@ -523,7 +530,7 @@ func TestSlowAttemptCannotRecordOverATakeover(t *testing.T) {
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 		second, secondErr = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	}
-	m = outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: s}, messagetoken.New("s", "http://local", time.Now), time.Now)
+	m = outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: s}, messagetoken.New("s", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	require.ErrorIs(t, err, outboundmessages.ErrInProgress, "the slow attempt lost its claim and must not record")

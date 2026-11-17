@@ -71,7 +71,7 @@ func TestSiteSMSBroadcastToASegmentTextsTheConfirmedNumbersAndReportsItsFigures(
 	require.Len(t, texts, 1, "the Segment's other phone has no Confirmation")
 	assert.Equal(t, fixtures.ContactKrustyBayConfirmedPhone, texts[0].To)
 	assert.Equal(t, "Hi Tess, 20% off today", texts[0].Body)
-	assert.Equal(t, siteapi.SiteBroadcastStatusSent, read.Status)
+	assert.Equal(t, siteapi.BroadcastStatusSent, read.Status)
 	st := read.Stats
 	assert.Equal(t, int32(1), st.RecipientsTotal)
 	assert.Equal(t, int32(1), st.SentCount)

@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi";
 
+import "../lib/main.tsp";
 import "./resources/report.tsp";
 
 using TypeSpec.OpenAPI;

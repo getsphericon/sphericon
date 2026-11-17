@@ -18,6 +18,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -96,14 +97,16 @@ type Module struct {
 	// params, its hook URL, the confirmation of a subscription its provider asks for, and the bot
 	// of a Telegram Integration.
 	integ *integrations.Module
-	now   func() time.Time
+	// out finds the Outbound message a notice or a press names and stamps its delivery result.
+	out *outboundmessages.Module
+	now func() time.Time
 }
 
 // New builds the module on the raw client an ingest key is resolved with, the bus the facts'
-// System events are published through, the Integrations module and the Instance clock the hook
-// reads.
-func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, now func() time.Time) *Module {
-	return &Module{client: client, bus: bus, integ: integ, now: now}
+// System events are published through, the Integrations module, Outbound send, whose messages
+// the facts land on, and the Instance clock the hook reads.
+func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, out *outboundmessages.Module, now func() time.Time) *Module {
+	return &Module{client: client, bus: bus, integ: integ, out: out, now: now}
 }
 
 // InterpretInput is one Ingest hook request: the Integration the callback came to, the name of
@@ -119,11 +122,11 @@ type InterpretInput struct {
 func (m *Module) interpreterFor(ch channels.Channel) Interpreter {
 	switch ch {
 	case channels.Email:
-		return email{}
+		return email{out: m.out}
 	case channels.Telegram:
-		return telegram{integ: m.integ}
+		return telegram{integ: m.integ, out: m.out}
 	case channels.SMS:
-		return sms{}
+		return sms{out: m.out}
 	}
 	return ignore{}
 }

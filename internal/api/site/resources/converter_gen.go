@@ -63,24 +63,24 @@ import (
 
 type ConverterImpl struct{}
 
-func (c *ConverterImpl) AbuseMetricToResource(source abusewarning.Metric) site.SiteAbuseMetric {
-	var siteapiSiteAbuseMetric site.SiteAbuseMetric
+func (c *ConverterImpl) AbuseMetricToResource(source abusewarning.Metric) site.AbuseMetric {
+	var siteapiAbuseMetric site.AbuseMetric
 	switch source {
 	case abusewarning.MetricBounce:
-		siteapiSiteAbuseMetric = site.SiteAbuseMetricBounce
+		siteapiAbuseMetric = site.AbuseMetricBounce
 	case abusewarning.MetricComplaint:
-		siteapiSiteAbuseMetric = site.SiteAbuseMetricComplaint
+		siteapiAbuseMetric = site.AbuseMetricComplaint
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteAbuseMetric
+	return siteapiAbuseMetric
 }
-func (c *ConverterImpl) AbuseWarningToResource(source abusewarning.Warning) site.SiteAbuseWarning {
-	var siteapiSiteAbuseWarning site.SiteAbuseWarning
-	siteapiSiteAbuseWarning.Domain = source.Domain
-	siteapiSiteAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
-	siteapiSiteAbuseWarning.Rate = source.Rate
-	return siteapiSiteAbuseWarning
+func (c *ConverterImpl) AbuseWarningToResource(source abusewarning.Warning) site.AbuseWarning {
+	var siteapiAbuseWarning site.AbuseWarning
+	siteapiAbuseWarning.Domain = source.Domain
+	siteapiAbuseWarning.Metric = c.AbuseMetricToResource(source.Metric)
+	siteapiAbuseWarning.Rate = source.Rate
+	return siteapiAbuseWarning
 }
 func (c *ConverterImpl) AnalyticsContactsToResource(source analyticsreport.Contacts) site.SiteAnalyticsContacts {
 	var siteapiSiteAnalyticsContacts site.SiteAnalyticsContacts
@@ -196,12 +196,12 @@ func (c *ConverterImpl) AnalyticsPeriodToResource(source analyticsreport.Period)
 	siteapiSiteAnalyticsPeriod.NewContacts = count(source.NewContacts)
 	return siteapiSiteAnalyticsPeriod
 }
-func (c *ConverterImpl) AnalyticsRateToResource(source reputation.Rate) site.SiteRate {
-	var siteapiSiteRate site.SiteRate
-	siteapiSiteRate.Numerator = count(source.Numerator)
-	siteapiSiteRate.Denominator = count(source.Denominator)
-	siteapiSiteRate.Rate = nilFloat64(source.Rate)
-	return siteapiSiteRate
+func (c *ConverterImpl) AnalyticsRateToResource(source reputation.Rate) site.RateTriple {
+	var siteapiRateTriple site.RateTriple
+	siteapiRateTriple.Numerator = count(source.Numerator)
+	siteapiRateTriple.Denominator = count(source.Denominator)
+	siteapiRateTriple.Rate = nilFloat64(source.Rate)
+	return siteapiRateTriple
 }
 func (c *ConverterImpl) AnalyticsSubscribedPeopleToResource(source *analyticsreport.SubscribedPeople) *site.SiteAnalyticsSubscribedPeople {
 	var pSiteapiSiteAnalyticsSubscribedPeople *site.SiteAnalyticsSubscribedPeople
@@ -284,44 +284,44 @@ func (c *ConverterImpl) AttentionSubjectToResource(source needsattentionreport.S
 	siteapiSiteAttentionSubject.Name = source.Name
 	return siteapiSiteAttentionSubject
 }
-func (c *ConverterImpl) AuditActorToResource(source auditlog.View) site.SiteAuditActor {
-	var siteapiSiteAuditActor site.SiteAuditActor
-	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.ActorKind)
-	siteapiSiteAuditActor.ID = optNilString(source.ActorID)
-	siteapiSiteAuditActor.Name = optNilString(source.ActorName)
-	return siteapiSiteAuditActor
+func (c *ConverterImpl) AuditActorToResource(source auditlog.View) site.AuditActor {
+	var siteapiAuditActor site.AuditActor
+	siteapiAuditActor.Kind = site.AuditActorKind(source.ActorKind)
+	siteapiAuditActor.ID = optNilString(source.ActorID)
+	siteapiAuditActor.Name = optNilString(source.ActorName)
+	return siteapiAuditActor
 }
-func (c *ConverterImpl) AuditEntriesToResources(source []auditlog.View) []site.SiteAuditEntryResource {
-	var siteapiSiteAuditEntryResourceList []site.SiteAuditEntryResource
-	siteapiSiteAuditEntryResourceList = make([]site.SiteAuditEntryResource, len(source))
+func (c *ConverterImpl) AuditEntriesToResources(source []auditlog.View) []site.AuditEntryResource {
+	var siteapiAuditEntryResourceList []site.AuditEntryResource
+	siteapiAuditEntryResourceList = make([]site.AuditEntryResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteAuditEntryResourceList[i] = c.AuditEntryToResource(source[i])
+		siteapiAuditEntryResourceList[i] = c.AuditEntryToResource(source[i])
 	}
-	return siteapiSiteAuditEntryResourceList
+	return siteapiAuditEntryResourceList
 }
-func (c *ConverterImpl) AuditEntryToResource(source auditlog.View) site.SiteAuditEntryResource {
-	var siteapiSiteAuditEntryResource site.SiteAuditEntryResource
-	siteapiSiteAuditEntryResource.ID = site.EntityId(source.ID)
-	siteapiSiteAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
-	siteapiSiteAuditEntryResource.Actor = c.AuditActorToResource(source)
-	siteapiSiteAuditEntryResource.Action = site.AuditAction(source.Action)
-	siteapiSiteAuditEntryResource.Target = c.AuditTargetToResource(source)
-	siteapiSiteAuditEntryResource.Diff = auditDiff(source.Diff)
-	siteapiSiteAuditEntryResource.RequestId = optNilString(source.RequestID)
-	siteapiSiteAuditEntryResource.IP = optNilString(source.IP)
-	siteapiSiteAuditEntryResource.UserAgent = optNilString(source.UserAgent)
-	return siteapiSiteAuditEntryResource
+func (c *ConverterImpl) AuditEntryToResource(source auditlog.View) site.AuditEntryResource {
+	var siteapiAuditEntryResource site.AuditEntryResource
+	siteapiAuditEntryResource.ID = site.EntityId(source.ID)
+	siteapiAuditEntryResource.OccurredAt = timestamp(source.OccurredAt)
+	siteapiAuditEntryResource.Actor = c.AuditActorToResource(source)
+	siteapiAuditEntryResource.Action = site.AuditAction(source.Action)
+	siteapiAuditEntryResource.Target = c.AuditTargetToResource(source)
+	siteapiAuditEntryResource.Diff = auditDiff(source.Diff)
+	siteapiAuditEntryResource.RequestId = optNilString(source.RequestID)
+	siteapiAuditEntryResource.IP = optNilString(source.IP)
+	siteapiAuditEntryResource.UserAgent = optNilString(source.UserAgent)
+	return siteapiAuditEntryResource
 }
-func (c *ConverterImpl) AuditFacetActorToResource(source auditlog.Actor) site.SiteAuditActor {
-	var siteapiSiteAuditActor site.SiteAuditActor
-	siteapiSiteAuditActor.Kind = site.SiteAuditActorKind(source.Kind)
-	siteapiSiteAuditActor.ID = optNilString(source.ID)
-	siteapiSiteAuditActor.Name = optNilString(source.Name)
-	return siteapiSiteAuditActor
+func (c *ConverterImpl) AuditFacetActorToResource(source auditlog.Actor) site.AuditActor {
+	var siteapiAuditActor site.AuditActor
+	siteapiAuditActor.Kind = site.AuditActorKind(source.Kind)
+	siteapiAuditActor.ID = optNilString(source.ID)
+	siteapiAuditActor.Name = optNilString(source.Name)
+	return siteapiAuditActor
 }
 func (c *ConverterImpl) AuditFacetsToResource(source auditlog.Facets) site.SiteAuditFacets {
 	var siteapiSiteAuditFacets site.SiteAuditFacets
-	siteapiSiteAuditFacets.Actors = make([]site.SiteAuditActor, len(source.Actors))
+	siteapiSiteAuditFacets.Actors = make([]site.AuditActor, len(source.Actors))
 	for i := 0; i < len(source.Actors); i++ {
 		siteapiSiteAuditFacets.Actors[i] = c.AuditFacetActorToResource(source.Actors[i])
 	}
@@ -335,12 +335,12 @@ func (c *ConverterImpl) AuditFacetsToResource(source auditlog.Facets) site.SiteA
 	}
 	return siteapiSiteAuditFacets
 }
-func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) site.SiteAuditTarget {
-	var siteapiSiteAuditTarget site.SiteAuditTarget
-	siteapiSiteAuditTarget.Type = source.TargetType
-	siteapiSiteAuditTarget.ID = optNilString(source.TargetID)
-	siteapiSiteAuditTarget.Name = optNilString(source.TargetName)
-	return siteapiSiteAuditTarget
+func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) site.AuditTarget {
+	var siteapiAuditTarget site.AuditTarget
+	siteapiAuditTarget.Type = source.TargetType
+	siteapiAuditTarget.ID = optNilString(source.TargetID)
+	siteapiAuditTarget.Name = optNilString(source.TargetName)
+	return siteapiAuditTarget
 }
 func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.HeaderName) site.SiteAutomationHttpHeader {
 	var siteapiSiteAutomationHttpHeader site.SiteAutomationHttpHeader
@@ -708,24 +708,24 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.Revenue = c.MessageRevenueToResource(source.Revenue)
 	return siteapiSiteBroadcastStats
 }
-func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) site.SiteBroadcastStatus {
-	var siteapiSiteBroadcastStatus site.SiteBroadcastStatus
+func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) site.BroadcastStatus {
+	var siteapiBroadcastStatus site.BroadcastStatus
 	switch source {
 	case broadcast.DefaultStatus:
-		siteapiSiteBroadcastStatus = site.SiteBroadcastStatusDraft
-	// Skipped StatusDraft(draft) -> SiteBroadcastStatusDraft(draft) because it duplicates DefaultStatus(draft) -> SiteBroadcastStatusDraft(draft)
+		siteapiBroadcastStatus = site.BroadcastStatusDraft
+	// Skipped StatusDraft(draft) -> BroadcastStatusDraft(draft) because it duplicates DefaultStatus(draft) -> BroadcastStatusDraft(draft)
 	case broadcast.StatusFailed:
-		siteapiSiteBroadcastStatus = site.SiteBroadcastStatusFailed
+		siteapiBroadcastStatus = site.BroadcastStatusFailed
 	case broadcast.StatusScheduled:
-		siteapiSiteBroadcastStatus = site.SiteBroadcastStatusScheduled
+		siteapiBroadcastStatus = site.BroadcastStatusScheduled
 	case broadcast.StatusSending:
-		siteapiSiteBroadcastStatus = site.SiteBroadcastStatusSending
+		siteapiBroadcastStatus = site.BroadcastStatusSending
 	case broadcast.StatusSent:
-		siteapiSiteBroadcastStatus = site.SiteBroadcastStatusSent
+		siteapiBroadcastStatus = site.BroadcastStatusSent
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteBroadcastStatus
+	return siteapiBroadcastStatus
 }
 func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroadcastResource {
 	var siteapiSiteBroadcastResource site.SiteBroadcastResource

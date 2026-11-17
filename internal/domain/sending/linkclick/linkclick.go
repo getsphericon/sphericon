@@ -1,6 +1,6 @@
 // Package linkclick counts the Link clicks (GLOSSARY) of the messages of one Broadcast or Automation, or of the
-// whole Workspace, by link. It is a leaf the per-owner reports and the Clicks by link report share:
-// the count reads the click Events of every Channel (`email.clicked`, `telegram.clicked`, `sms.clicked`), machine clicks left out (ADR 0053), and takes a
+// whole Workspace, by link. It is a leaf the per-owner reports and the Clicks by link report share,
+// each holding the Module the wiring built: the count reads the click Events of every Channel (`email.clicked`, `telegram.clicked`, `sms.clicked`), machine clicks left out (ADR 0053), and takes a
 // scoped client like every Workspace read.
 package linkclick
 
@@ -44,10 +44,16 @@ type Between struct {
 	Since, Until time.Time
 }
 
+// Module counts the Link clicks; it needs nothing but the scope each call is given.
+type Module struct{}
+
+// New builds the count of the Link clicks.
+func New() *Module { return &Module{} }
+
 // ByLink counts the `email.clicked` Events that owner narrows to (the Events of one Broadcast or
 // Automation) within the span, by link, most clicked first. Every click is an Event, so these are
 // repeat counts that cover the Event retention window.
-func ByLink(ctx context.Context, s *ent.Scoped, in Between, owner predicate.Event) ([]Clicks, error) {
+func (m *Module) ByLink(ctx context.Context, s *ent.Scoped, in Between, owner predicate.Event) ([]Clicks, error) {
 	rows := []Clicks{}
 	err := clicks(s, in, owner).
 		Modify(func(sel *sql.Selector) {
@@ -62,7 +68,7 @@ func ByLink(ctx context.Context, s *ent.Scoped, in Between, owner predicate.Even
 // ByOwner counts the human `email.clicked` Events of the whole Workspace within the span, by
 // link and by the Broadcast or Automation that carried it, most clicked first. A click that
 // carries neither (a Transactional send) belongs to no report and is left out.
-func ByOwner(ctx context.Context, s *ent.Scoped, in Between) ([]OwnerClicks, error) {
+func (m *Module) ByOwner(ctx context.Context, s *ent.Scoped, in Between) ([]OwnerClicks, error) {
 	var rows []struct {
 		URL          string `json:"url"`
 		BroadcastID  *int64 `json:"broadcast_id"`

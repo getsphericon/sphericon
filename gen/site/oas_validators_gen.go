@@ -9,6 +9,51 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+func (s AbuseMetric) Validate() error {
+	switch s {
+	case "complaint":
+		return nil
+	case "bounce":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *AbuseWarning) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Metric.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "metric",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := (validate.Float{}).Validate(float64(s.Rate)); err != nil {
+			return errors.Wrap(err, "float")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "rate",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s ApiTokenScope) Validate() error {
 	switch s {
 	case "contacts:read":
@@ -318,6 +363,118 @@ func (s AuditAction) Validate() error {
 	}
 }
 
+func (s *AuditActor) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Kind.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "kind",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s AuditActorKind) Validate() error {
+	switch s {
+	case "user":
+		return nil
+	case "api_token":
+		return nil
+	case "staff":
+		return nil
+	case "system":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s *AuditEntryList) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.Items == nil {
+			return errors.New("nil is invalid value")
+		}
+		var failures []validate.FieldError
+		for i, elem := range s.Items {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "items",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *AuditEntryResource) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.Actor.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "actor",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Action.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "action",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s BroadcastChannel) Validate() error {
 	switch s {
 	case "email":
@@ -418,6 +575,23 @@ func (s BroadcastContentSum) Validate() error {
 		return nil
 	default:
 		return errors.Errorf("invalid type %q", s.Type)
+	}
+}
+
+func (s BroadcastStatus) Validate() error {
+	switch s {
+	case "draft":
+		return nil
+	case "scheduled":
+		return nil
+	case "sending":
+		return nil
+	case "sent":
+		return nil
+	case "failed":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
 	}
 }
 
@@ -1670,6 +1844,36 @@ func (s *ProblemDetailsStatusCode) Validate() error {
 	return nil
 }
 
+func (s *RateTriple) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if value, ok := s.Rate.Get(); ok {
+			if err := func() error {
+				if err := (validate.Float{}).Validate(float64(value)); err != nil {
+					return errors.Wrap(err, "float")
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "rate",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s RegionalFormat) Validate() error {
 	alias := (string)(s)
 	if err := (validate.String{
@@ -1880,6 +2084,44 @@ func (s SetupScope) Validate() error {
 	}
 }
 
+func (s SignupCompanySize) Validate() error {
+	switch s {
+	case "1":
+		return nil
+	case "2_10":
+		return nil
+	case "11_50":
+		return nil
+	case "51_200":
+		return nil
+	case "201_1000":
+		return nil
+	case "1000_plus":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
+func (s SignupGoal) Validate() error {
+	switch s {
+	case "broadcasts":
+		return nil
+	case "automations":
+		return nil
+	case "tracking":
+		return nil
+	case "migrating":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}
+
 func (s SignupItemKey) Validate() error {
 	alias := (string)(s)
 	if err := (validate.String{
@@ -1913,49 +2155,38 @@ func (s SignupItemKind) Validate() error {
 	}
 }
 
-func (s SiteAbuseMetric) Validate() error {
+func (s SignupRole) Validate() error {
 	switch s {
-	case "complaint":
+	case "founder":
 		return nil
-	case "bounce":
+	case "marketer":
+		return nil
+	case "developer":
+		return nil
+	case "product":
+		return nil
+	case "other":
 		return nil
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
 }
 
-func (s *SiteAbuseWarning) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Metric.Validate(); err != nil {
-			return err
-		}
+func (s SignupSource) Validate() error {
+	switch s {
+	case "search":
 		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "metric",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if err := (validate.Float{}).Validate(float64(s.Rate)); err != nil {
-			return errors.Wrap(err, "float")
-		}
+	case "github":
 		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "rate",
-			Error: err,
-		})
+	case "social":
+		return nil
+	case "recommendation":
+		return nil
+	case "other":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
 	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
 }
 
 func (s *SiteAcceptInvitationInput) Validate() error {
@@ -2763,118 +2994,6 @@ func (s SiteAttentionSeverity) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
-}
-
-func (s *SiteAuditActor) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Kind.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "kind",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s SiteAuditActorKind) Validate() error {
-	switch s {
-	case "user":
-		return nil
-	case "api_token":
-		return nil
-	case "staff":
-		return nil
-	case "system":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s *SiteAuditEntryList) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if s.Items == nil {
-			return errors.New("nil is invalid value")
-		}
-		var failures []validate.FieldError
-		for i, elem := range s.Items {
-			if err := func() error {
-				if err := elem.Validate(); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				failures = append(failures, validate.FieldError{
-					Name:  fmt.Sprintf("[%d]", i),
-					Error: err,
-				})
-			}
-		}
-		if len(failures) > 0 {
-			return &validate.Error{Fields: failures}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "items",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
-func (s *SiteAuditEntryResource) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if err := s.Actor.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "actor",
-			Error: err,
-		})
-	}
-	if err := func() error {
-		if err := s.Action.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "action",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
 }
 
 func (s *SiteAuditFacets) Validate() error {
@@ -3952,23 +4071,6 @@ func (s *SiteBroadcastStats) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
-}
-
-func (s SiteBroadcastStatus) Validate() error {
-	switch s {
-	case "draft":
-		return nil
-	case "scheduled":
-		return nil
-	case "sending":
-		return nil
-	case "sent":
-		return nil
-	case "failed":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
 }
 
 func (s *SiteBroadcastsListOK) Validate() error {
@@ -8124,36 +8226,6 @@ func (s SiteProviderLimitWarning) Validate() error {
 	}
 }
 
-func (s *SiteRate) Validate() error {
-	if s == nil {
-		return validate.ErrNilPointer
-	}
-
-	var failures []validate.FieldError
-	if err := func() error {
-		if value, ok := s.Rate.Get(); ok {
-			if err := func() error {
-				if err := (validate.Float{}).Validate(float64(value)); err != nil {
-					return errors.Wrap(err, "float")
-				}
-				return nil
-			}(); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		failures = append(failures, validate.FieldError{
-			Name:  "rate",
-			Error: err,
-		})
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-	return nil
-}
-
 func (s *SiteRecoveryCodes) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -9376,44 +9448,6 @@ func (s *SiteSigninProviders) Validate() error {
 	return nil
 }
 
-func (s SiteSignupCompanySize) Validate() error {
-	switch s {
-	case "1":
-		return nil
-	case "2_10":
-		return nil
-	case "11_50":
-		return nil
-	case "51_200":
-		return nil
-	case "201_1000":
-		return nil
-	case "1000_plus":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s SiteSignupGoal) Validate() error {
-	switch s {
-	case "broadcasts":
-		return nil
-	case "automations":
-		return nil
-	case "tracking":
-		return nil
-	case "migrating":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
 func (s *SiteSignupItem) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -9531,40 +9565,6 @@ func (s *SiteSignupItemList) Validate() error {
 		return &validate.Error{Fields: failures}
 	}
 	return nil
-}
-
-func (s SiteSignupRole) Validate() error {
-	switch s {
-	case "founder":
-		return nil
-	case "marketer":
-		return nil
-	case "developer":
-		return nil
-	case "product":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
-}
-
-func (s SiteSignupSource) Validate() error {
-	switch s {
-	case "search":
-		return nil
-	case "github":
-		return nil
-	case "social":
-		return nil
-	case "recommendation":
-		return nil
-	case "other":
-		return nil
-	default:
-		return errors.Errorf("invalid value: %v", s)
-	}
 }
 
 func (s *SiteSignupSurveyInput) Validate() error {

@@ -39,8 +39,6 @@ const (
 	// RuleGivenUpWithoutDiscard: schema.GivenUpOnDiscard is on a Workspace-owned discardable entity,
 	// whose generated Discard gives it up.
 	RuleGivenUpWithoutDiscard Rule = "given-up-without-discard"
-	// RuleBookkeepingWithoutRevision: schema.Bookkeeping is on an entity with a revision (ADR 0119).
-	RuleBookkeepingWithoutRevision Rule = "bookkeeping-without-revision"
 	// RuleUncheckedRefReason: an unchecked schema.ScopedRef says why it has no key (rule 8).
 	RuleUncheckedRefReason Rule = "unchecked-ref-reason"
 	// RuleRefWithoutKey: an int64 id column is an edge field or carries schema.ScopedRef (rule 8).
@@ -170,10 +168,6 @@ func (c *checker) checkField(n *gen.Type, e *entity, f *gen.Field) {
 	if a.givenUp && (!e.kind.WorkspaceOwned || !e.kind.Discardable) {
 		problem(RuleGivenUpWithoutDiscard, "schema.GivenUpOnDiscard is read by the generated Discard of a Workspace-owned entity "+
 			"with DiscardMixin: take the mixin or drop the annotation")
-	}
-	if a.bookkeeping && !e.kind.Revised {
-		problem(RuleBookkeepingWithoutRevision, "schema.Bookkeeping marks a column of an entity with a revision (ADR 0119): "+
-			"take RevisionMixin or drop the annotation")
 	}
 	c.checkRef(f, a, problem)
 	if e.kind.PutAside() && f.Unique && (a.unique == nil || strings.TrimSpace(a.unique.Reason) == "") {

@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -34,7 +35,7 @@ func TestAResponseFromBeforeAnOwnerResetCannotDisableTheEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	stored := r.endpoint()
 	assert.Nil(t, stored.DisabledAt)
-	assert.Nil(t, stored.ConsecutiveFailures)
+	assert.Nil(t, stored.Edges.Health.ConsecutiveFailures)
 	assert.Empty(t, r.disabled())
 }
 
@@ -50,8 +51,8 @@ func TestAnOldSuccessCannotClearFailuresAfterAnOwnerReset(t *testing.T) {
 
 	require.NoError(t, err)
 	stored := r.endpoint()
-	require.NotNil(t, stored.ConsecutiveFailures)
-	assert.Equal(t, 1, *stored.ConsecutiveFailures)
+	require.NotNil(t, stored.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, 1, *stored.Edges.Health.ConsecutiveFailures)
 }
 
 func TestOverlappingFailuresKeepTheFirstFailureOfTheirSeries(t *testing.T) {
@@ -65,10 +66,10 @@ func TestOverlappingFailuresKeepTheFirstFailureOfTheirSeries(t *testing.T) {
 
 	require.NoError(t, err)
 	stored := r.endpoint()
-	require.NotNil(t, stored.ConsecutiveFailures)
-	assert.Equal(t, 2, *stored.ConsecutiveFailures)
-	require.NotNil(t, stored.FailingSince)
-	assert.True(t, began.Equal(*stored.FailingSince))
+	require.NotNil(t, stored.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, 2, *stored.Edges.Health.ConsecutiveFailures)
+	require.NotNil(t, stored.Edges.Health.FailingSince)
+	assert.True(t, began.Equal(*stored.Edges.Health.FailingSince))
 }
 
 func TestASuccessClearsFailuresRecordedWhileTheRequestWasInFlight(t *testing.T) {
@@ -80,8 +81,8 @@ func TestASuccessClearsFailuresRecordedWhileTheRequestWasInFlight(t *testing.T) 
 
 	require.NoError(t, err)
 	stored := r.endpoint()
-	assert.Nil(t, stored.ConsecutiveFailures)
-	assert.Nil(t, stored.FailingSince)
+	assert.Nil(t, stored.Edges.Health.ConsecutiveFailures)
+	assert.Nil(t, stored.Edges.Health.FailingSince)
 }
 
 // refusingEventQueue refuses every job the bus queues with fault.
@@ -108,8 +109,8 @@ func TestFailureCountersRollbackWhenTheDisableEventCannotBeRecorded(t *testing.T
 
 	require.ErrorIs(t, err, fault)
 	stored := r.endpoint()
-	assert.Nil(t, stored.ConsecutiveFailures)
-	assert.Nil(t, stored.FailingSince)
+	assert.Nil(t, stored.Edges.Health.ConsecutiveFailures)
+	assert.Nil(t, stored.Edges.Health.FailingSince)
 	assert.Nil(t, stored.DisabledAt)
 	assert.Empty(t, r.disabled())
 }
@@ -120,7 +121,7 @@ func pauseFirstHealthWrites(ready chan<- struct{}, resume <-chan struct{}) ent.H
 	var entered atomic.Int32
 	return func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, mutation ent.Mutation) (ent.Value, error) {
-			_, healthWrite := mutation.(*ent.WebhookEndpointMutation)
+			_, healthWrite := mutation.(*ent.WebhookEndpointHealthMutation)
 			if healthWrite && entered.Add(1) <= 2 {
 				ready <- struct{}{}
 				select {
@@ -139,7 +140,7 @@ func TestConcurrentCurrentGenerationResultsAreBothCounted(t *testing.T) {
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	bus := env.Bus
 	mod := testhelper.Module[*webhookendpoints.Module](env)
-	inFlight, err := scope.WebhookEndpoint().Get(t.Context(), fixtures.WebhookCodebasicsID)
+	inFlight, err := scope.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(t.Context())
 	require.NoError(t, err)
 	ready, resume := make(chan struct{}, 2), make(chan struct{})
 	release := sync.OnceFunc(func() { close(resume) })
@@ -160,10 +161,10 @@ func TestConcurrentCurrentGenerationResultsAreBothCounted(t *testing.T) {
 
 	require.NoError(t, first)
 	require.NoError(t, second)
-	stored, err := scope.WebhookEndpoint().Get(t.Context(), inFlight.ID)
+	stored, err := scope.WebhookEndpoint().Query().Where(webhookendpoint.ID(inFlight.ID)).WithHealth().Only(t.Context())
 	require.NoError(t, err)
-	require.NotNil(t, stored.ConsecutiveFailures)
-	assert.Equal(t, 2, *stored.ConsecutiveFailures)
+	require.NotNil(t, stored.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, 2, *stored.Edges.Health.ConsecutiveFailures)
 	assert.Nil(t, stored.DisabledAt)
 }
 
@@ -190,26 +191,59 @@ func TestAnOwnerResetRollsBackItsGenerationWithItsHealthWrite(t *testing.T) {
 	require.ErrorIs(t, err, fault)
 	stored := r.endpoint()
 	assert.Equal(t, before.HealthGeneration, stored.HealthGeneration)
-	assert.Equal(t, before.ConsecutiveFailures, stored.ConsecutiveFailures)
+	assert.Equal(t, before.Edges.Health.ConsecutiveFailures, stored.Edges.Health.ConsecutiveFailures)
 	err = r.mod.RecordDelivery(t.Context(), r.scope(), before, status(http.StatusBadGateway), r.now)
 	require.NoError(t, err)
 	continued := r.endpoint()
-	require.NotNil(t, continued.ConsecutiveFailures)
-	assert.Equal(t, 2, *continued.ConsecutiveFailures)
+	require.NotNil(t, continued.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, 2, *continued.Edges.Health.ConsecutiveFailures)
 }
 
 func TestResetGenerationStaysOutOfTheConfigurationAudit(t *testing.T) {
 	r := newRecording(t)
-	r.record(status(http.StatusServiceUnavailable))
+	r.record(status(http.StatusGone))
 	before := r.endpoint()
+	require.NotNil(t, before.DisabledAt, "the endpoint turned itself off")
 	sys := r.env.Bus.Act(r.scope(), events.Actor{Kind: events.ActorSystem})
 
 	_, err := r.mod.Update(t.Context(), sys, before.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, sys, before.ID), Enabled: patch.Set(true)})
 
 	require.NoError(t, err)
 	entries := testhelper.Queued[*events.AuditEntry](t, r.env, events.NameAuditEntry)
-	require.Len(t, entries, 1)
-	entry := entries[0]
-	assert.Contains(t, entry.Diff, "consecutive_failures")
+	require.NotEmpty(t, entries)
+	entry := entries[len(entries)-1]
+	assert.Contains(t, entry.Diff, "disabled_at")
 	assert.NotContains(t, entry.Diff, "health_generation")
+	assert.NotContains(t, entry.Diff, "consecutive_failures", "the failure run lives beside the endpoint, unaudited (ADR 0168)")
+}
+
+// A delivery result that meets the owner's disable of the endpoint between its read and its write
+// takes no place in the run: the run is written only while the endpoint is as the delivery read it.
+func TestADeliveryThatMeetsAnOwnerDisableLeavesTheRun(t *testing.T) {
+	env := testhelper.Setup(t, testhelper.Committed())
+	scope := env.DB.Scoped(fixtures.AcmeID)
+	mod := testhelper.Module[*webhookendpoints.Module](env)
+	inFlight, err := scope.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(t.Context())
+	require.NoError(t, err)
+	ready, resume := make(chan struct{}, 2), make(chan struct{})
+	release := sync.OnceFunc(func() { close(resume) })
+	t.Cleanup(release)
+	env.Bus.Use(pauseFirstHealthWrites(ready, resume))
+	result := make(chan error, 1)
+	go func() {
+		result <- mod.RecordDelivery(t.Context(), scope, inFlight, status(http.StatusServiceUnavailable), time.Now())
+	}()
+	testhelper.Receive(t, ready, "the delivery loaded its position")
+
+	_, err = mod.Update(t.Context(), scope, inFlight.ID, webhookendpoints.UpdateInput{
+		Revision: testhelper.WebhookRevisionIn(t.Context(), t, scope, inFlight.ID), Enabled: patch.Set(false),
+	})
+	require.NoError(t, err)
+	release()
+
+	require.NoError(t, testhelper.Receive(t, result, "the delivery recorded"))
+	stored, err := scope.WebhookEndpoint().Query().Where(webhookendpoint.ID(inFlight.ID)).WithHealth().Only(t.Context())
+	require.NoError(t, err)
+	assert.NotNil(t, stored.DisabledAt)
+	assert.Nil(t, stored.Edges.Health.ConsecutiveFailures, "the run of a disabled endpoint takes no result")
 }

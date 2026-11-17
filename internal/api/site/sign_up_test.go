@@ -261,7 +261,7 @@ func TestVerifyingIsRecordedInTheNewWorkspacesAuditLog(t *testing.T) {
 	got := entriesNamed(t, env, "grace@example.com", firstWorkspaceID(t, env, "grace@example.com"), events.ActionUserEmailVerify)
 
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "Grace Hopper", got[0].Actor.Name.Value)
 	assert.Equal(t, "user", got[0].Target.Type)
 }
@@ -275,7 +275,7 @@ func TestTheFirstWorkspaceCreationIsRecordedInItsAuditLog(t *testing.T) {
 	got := entriesNamed(t, env, "grace@example.com", first, events.ActionWorkspaceCreate)
 
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "Grace Hopper", got[0].Actor.Name.Value)
 	assert.Equal(t, "workspace", got[0].Target.Type)
 }

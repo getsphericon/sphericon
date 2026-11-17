@@ -1239,7 +1239,7 @@ func decodeSiteAuditGetRetentionResponse(resp *http.Response) (res *SiteAuditRet
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteAuditListResponse(resp *http.Response) (res *SiteAuditEntryList, _ error) {
+func decodeSiteAuditListResponse(resp *http.Response) (res *AuditEntryList, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1255,7 +1255,7 @@ func decodeSiteAuditListResponse(resp *http.Response) (res *SiteAuditEntryList, 
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteAuditEntryList
+			var response AuditEntryList
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
