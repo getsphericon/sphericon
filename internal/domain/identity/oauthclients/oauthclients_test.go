@@ -47,18 +47,18 @@ func TestDescribeValidatesClientRedirectAndScope(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := newModule(env, env.DB)
 
-	_, err := s.Describe(t.Context(), "no-such-client", fixtureRedirectURI, "")
+	_, err := s.Describe(t.Context(), oauthclients.Authorization{ClientID: "no-such-client", RedirectURI: fixtureRedirectURI})
 	require.ErrorIs(t, err, oauthclients.ErrUnknownClient)
-	_, err = s.Describe(t.Context(), fixtureClientID, fixtureRedirectURI+"/", "")
+	_, err = s.Describe(t.Context(), oauthclients.Authorization{ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI + "/"})
 	require.ErrorIs(t, err, oauthclients.ErrInvalidRequest, "the redirect_uri must match exactly, not by prefix")
-	_, err = s.Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "bogus nonsense")
+	_, err = s.Describe(t.Context(), oauthclients.Authorization{ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI, Scope: "bogus nonsense"})
 	require.ErrorIs(t, err, oauthclients.ErrInvalidRequest, "a request for only unsupported scopes grants nothing")
 
-	req, err := s.Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
+	req, err := s.Describe(t.Context(), oauthclients.Authorization{ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI})
 	require.NoError(t, err)
 	assert.NotEmpty(t, req.Scopes, "no scope asked means the default grant")
 
-	_, err = newModule(env, testhelper.ClosedClient(t)).Describe(t.Context(), fixtureClientID, fixtureRedirectURI, "")
+	_, err = newModule(env, testhelper.ClosedClient(t)).Describe(t.Context(), oauthclients.Authorization{ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI})
 	require.Error(t, err)
 	assert.NotErrorIs(t, err, oauthclients.ErrUnknownClient, "an outage is not an unknown client")
 }
@@ -161,7 +161,8 @@ func TestDecideAdmitsTheUserToTheWorkspaceFirst(t *testing.T) {
 // gets the grant once.
 func TestClaimCodeChecksTheRequestBeforeItSpendsTheCode(t *testing.T) {
 	env := testhelper.Setup(t)
-	target, err := newModule(env, env.DB).Decide(t.Context(), oauthclients.Decision{
+	clients := newModule(env, env.DB)
+	target, err := clients.Decide(t.Context(), oauthclients.Decision{
 		ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI,
 		CodeChallenge: oauth2.S256ChallengeFromVerifier(verifier), Scope: "contacts:read", Admission: johnInAcme, Approve: true,
 	})
@@ -171,8 +172,6 @@ func TestClaimCodeChecksTheRequestBeforeItSpendsTheCode(t *testing.T) {
 	good := oauthclients.CodeClaim{
 		Code: u.Query().Get("code"), ClientID: fixtureClientID, RedirectURI: fixtureRedirectURI, Verifier: verifier,
 	}
-	now := time.Now()
-
 	for name, mutate := range map[string]func(*oauthclients.CodeClaim){
 		"unknown code":       func(c *oauthclients.CodeClaim) { c.Code = "nope" },
 		"another client":     func(c *oauthclients.CodeClaim) { c.ClientID = "someone-else" },
@@ -182,18 +181,18 @@ func TestClaimCodeChecksTheRequestBeforeItSpendsTheCode(t *testing.T) {
 	} {
 		c := good
 		mutate(&c)
-		_, err := oauthclients.ClaimCodeIn(t.Context(), env.DB, c, now)
+		_, err := clients.ClaimCodeIn(t.Context(), env.DB, c)
 		require.ErrorIs(t, err, oauthclients.ErrInvalidGrant, name)
 	}
 
-	grant, err := oauthclients.ClaimCodeIn(t.Context(), env.DB, good, now)
+	grant, err := clients.ClaimCodeIn(t.Context(), env.DB, good)
 	require.NoError(t, err, "no refused claim spent the code")
 	assert.EqualValues(t, fixtures.AcmeID, grant.WorkspaceID)
 	assert.EqualValues(t, fixtures.AcmeOwnerMembershipID, grant.MembershipID)
 	assert.Equal(t, []string{"contacts:read"}, grant.Scopes)
 	assert.Equal(t, "Fixture Connector", grant.Edges.Client.Name)
 
-	_, err = oauthclients.ClaimCodeIn(t.Context(), env.DB, good, now)
+	_, err = clients.ClaimCodeIn(t.Context(), env.DB, good)
 	require.ErrorIs(t, err, oauthclients.ErrInvalidGrant, "a code is spent once")
 }
 

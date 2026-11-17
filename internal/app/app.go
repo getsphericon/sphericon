@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ee"
 	"github.com/getsphericon/sphericon/ee/domain/identity/servicecredentials"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
@@ -390,6 +391,12 @@ func (a *App) runJobs(ctx context.Context) error {
 // Suspender is the Workspace suspension from the DI container.
 func (a *App) Suspender() (*suspension.Suspender, error) {
 	return do.Invoke[*suspension.Suspender](a.injector)
+}
+
+// APITokens is the API tokens module from the DI container, for harnesses that mint a Workspace's
+// token.
+func (a *App) APITokens() (*apitokens.Module, error) {
+	return do.Invoke[*apitokens.Module](a.injector)
 }
 
 // SecondFactors is the Second factor module from the DI container, which resets a User's Second

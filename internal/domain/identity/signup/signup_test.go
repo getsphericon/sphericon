@@ -14,7 +14,9 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/authattempt"
 	"github.com/getsphericon/sphericon/ent/user"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -116,7 +118,8 @@ func build(t *testing.T, env *testhelper.TestEnv, budget int, opts ...option) ri
 		o(&cfg)
 	}
 	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
-	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false), cfg, signup.SignInConfig{}, time.Now)
+	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false),
+		testhelper.Module[*apitokens.Module](env), testhelper.Module[*secondfactors.Module](env), cfg, signup.SignInConfig{}, time.Now)
 	return rig{env: env, db: client, queue: q, module: module, users: acc, consents: consents, links: links}
 }
 

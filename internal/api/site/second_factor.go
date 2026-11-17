@@ -49,7 +49,9 @@ func (h *Handlers) SiteSecondFactorConfirmEnrollment(ctx context.Context, req *s
 	if err != nil {
 		return nil, err
 	}
-	issued, err := h.secondFactor.ConfirmEnrollment(ctx, u, proof, inputs.SecondFactorConfirm(req))
+	in := inputs.SecondFactorConfirm(req)
+	in.Proof = proof
+	issued, err := h.secondFactor.ConfirmEnrollment(ctx, u, in)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +87,9 @@ func (h *Handlers) SiteSecondFactorDisable(ctx context.Context, req *siteapi.Sit
 	if err != nil {
 		return nil, err
 	}
-	saved, err := h.secondFactor.Disable(ctx, u, proof, req.Code)
+	in := inputs.SecondFactorDisable(req)
+	in.Proof = proof
+	saved, err := h.secondFactor.Disable(ctx, u, in)
 	if err != nil {
 		return nil, err
 	}

@@ -25,14 +25,13 @@ type RemindSecondFactorWorker struct {
 	river.WorkerDefaults[RemindSecondFactorArgs]
 
 	factors *secondfactors.Module
-	now     func() time.Time
 }
 
-// NewRemindSecondFactorWorker builds the reminder sweep on the Instance clock now.
-func NewRemindSecondFactorWorker(factors *secondfactors.Module, now func() time.Time) *RemindSecondFactorWorker {
-	return &RemindSecondFactorWorker{factors: factors, now: now}
+// NewRemindSecondFactorWorker builds the reminder sweep of the Second factors module, on its clock.
+func NewRemindSecondFactorWorker(factors *secondfactors.Module) *RemindSecondFactorWorker {
+	return &RemindSecondFactorWorker{factors: factors}
 }
 
 func (w *RemindSecondFactorWorker) Work(ctx context.Context, _ *river.Job[RemindSecondFactorArgs]) error {
-	return w.factors.RemindDeadlines(ctx, w.now())
+	return w.factors.RemindDeadlines(ctx)
 }

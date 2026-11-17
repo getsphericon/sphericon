@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
@@ -89,8 +90,10 @@ type Deps struct {
 	Users     *users.Module
 	// SecondFactor reminds the Users whose Two-factor grace ends soon (ADR 0020).
 	SecondFactor *secondfactors.Module
-	Orders       *orders.Module
-	Deletion     *workspacedeletion.UseCase
+	// Passkeys prunes the spent challenges of the Passkey ceremonies (ADR 0051).
+	Passkeys *passkeys.Module
+	Orders   *orders.Module
+	Deletion *workspacedeletion.UseCase
 	// MessageRetention deletes old Outbound messages, keeping their figures (ADR 0143).
 	MessageRetention *messageretention.UseCase
 	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
@@ -142,7 +145,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, rand.Float64, bus))
 	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
-	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor, now))
+	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
 	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
@@ -161,7 +164,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages, now))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
-	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
+	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(deps.Passkeys))
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))

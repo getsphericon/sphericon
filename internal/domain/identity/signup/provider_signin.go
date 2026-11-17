@@ -11,11 +11,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
-	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -30,8 +28,6 @@ type SignInConfig struct {
 	Invitations *invitations.Module
 	// SignupItems says whether the Instance asks Sign-up items (ADR 0062).
 	SignupItems *signupitems.Module
-	// SecondFactors says whether the User signing in has a Second factor due (ADR 0020).
-	SecondFactors *secondfactors.Module
 }
 
 // ProviderSignInInput is a Sign-in provider's answer to a flow this browser began: the flow its
@@ -140,7 +136,7 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 		return &ProviderSignInResult{Outcome: PendingSignupKept, Pending: signedIn.Pending, At: at}, nil
 	}
 	usr := signedIn.User
-	due, err := cfg.SecondFactors.Active(ctx, usr.ID)
+	due, err := m.factors.Active(ctx, usr.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +144,7 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 		// A provider replaces only the password step: an enrolled Second factor still gets the
 		// challenge of ADR 0020, finished through the same second step (and the same Login
 		// throttle) as after a password.
-		binding, err := cfg.SecondFactors.ChallengeBinding(ctx, usr)
+		binding, err := m.factors.ChallengeBinding(ctx, usr)
 		if err != nil {
 			return nil, err
 		}
@@ -292,19 +288,19 @@ func (m *Module) linkToHolder(ctx context.Context, holderID int64, in users.Prov
 			return err
 		}
 		linked, identityID = u, id
-		linked, err = afterProofIn(ctx, tx, u, firstProof, now)
+		linked, err = m.afterProofIn(ctx, tx, u, firstProof)
 		return err
 	})
 	return linked, identityID, err
 }
 
-// afterProofIn is the end of a step that proved u's address at now, on its transaction tx. When
+// afterProofIn is the end of a step that proved u's address, on its transaction tx. When
 // that proof was the address's first, it drops the ways into the account that were set up before
 // it: whoever set them was not shown to control the address, so whoever proves it is the one who
 // controls the account (ADR 0170). The Personal tokens and Connections go in every Workspace of the
 // User, then the Second factor, its Recovery codes and the Passkeys. It returns the User as it
 // stands afterwards, its session epoch the last one.
-func afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof bool, now time.Time) (*ent.User, error) {
+func (m *Module) afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof bool) (*ent.User, error) {
 	if !firstProof {
 		return u, nil
 	}
@@ -313,11 +309,11 @@ func afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof b
 		return nil, err
 	}
 	for _, ms := range held {
-		if err := apitokens.RevokeOfUser(ctx, tx.Scoped(ms.WorkspaceID), u.ID, now); err != nil {
+		if err := m.tokens.RevokeOfUser(ctx, tx.Scoped(ms.WorkspaceID), u.ID); err != nil {
 			return nil, err
 		}
 	}
-	return secondfactors.ClearFactorAndPasskeysIn(ctx, tx, u.ID)
+	return m.factors.ClearFactorAndPasskeysIn(ctx, tx, u.ID)
 }
 
 // lostRace reports whether err is a write of a provider sign-in that another sign-in of the same

@@ -77,7 +77,8 @@ type Handlers struct {
 	brandKit              *brandkits.Module
 	automations           *automations.Module
 	rules                 *rules.Module
-	// tokens mints the first token of the Instance by its bootstrap token.
+	// tokens mints, lists and revokes the Workspace's tokens, and the first token of the Instance by
+	// its bootstrap token.
 	tokens *apitokens.Module
 	audit  *auditlog.Log
 	export *exportstream.Streams
@@ -119,7 +120,8 @@ type Deps struct {
 	Rules                 *rules.Module
 	Broadcasts            *broadcasts.Module
 	Reputation            *reputation.Module
-	// Tokens mints the first token of the Instance by its bootstrap token (apitokens.Module).
+	// Tokens mints, lists and revokes the Workspace's tokens, and the first token of the Instance by
+	// its bootstrap token (apitokens.Module).
 	Tokens *apitokens.Module
 	Audit  *auditlog.Log
 	// Export serves the Export streams behind their licenses (ADR 0045).

@@ -105,7 +105,7 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	ws := created.Summary.Workspace
 	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(tb, err)
-	minted, err := apitokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
+	minted, err := e.tokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
 	require.NoError(tb, err)
 
 	api, err := externalapi.NewClient(e.BaseURL+"/api", bearer(minted.Value))

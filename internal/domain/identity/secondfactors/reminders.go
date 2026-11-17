@@ -17,14 +17,15 @@ import (
 const ReminderLead = 24 * time.Hour
 
 // RemindDeadlines reminds, once per grace, every User without a Second factor whose grace in a
-// Workspace with a Two-factor requirement ends within ReminderLead of now. The
+// Workspace with a Two-factor requirement ends within ReminderLead of now (the module's clock). The
 // Membership records the reminder (memberships.ClaimSecondFactorReminder) and the claim publishes
 // events.SecondFactorReminderDue in its transaction, so a concurrent or repeated call never
 // reminds twice and the reminder's Notice exists iff the claim commits (ADR 0105). A reminder from
 // an earlier grace (the requirement switched off and on again) does not count. It lists the
 // Memberships of every Workspace, so it works on the raw client; each claim is scoped to the
 // Workspace of the Membership it loaded.
-func (m *Module) RemindDeadlines(ctx context.Context, now time.Time) error {
+func (m *Module) RemindDeadlines(ctx context.Context) error {
+	now := m.now()
 	members, err := m.ent.Membership.Query().
 		Where(membership.HasWorkspaceWith(workspace.SecondFactorRequiredAtNotNil())).
 		WithWorkspace().

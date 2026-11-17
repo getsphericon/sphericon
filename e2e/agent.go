@@ -63,7 +63,7 @@ type Agent struct {
 func (w *Workspace) Agent() *Agent {
 	w.t.Helper()
 	ctx := w.t.Context()
-	minted, err := apitokens.Mint(ctx, w.scoped, apitokens.Input{Name: "e2e agent", Scopes: agentScopes})
+	minted, err := w.env.tokens.Mint(ctx, w.scoped, apitokens.Input{Name: "e2e agent", Scopes: agentScopes})
 	require.NoError(w.t, err)
 
 	transport := &mcp.StreamableClientTransport{

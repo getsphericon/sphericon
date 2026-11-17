@@ -15,7 +15,9 @@ import (
 // SiteOAuthDescribe validates an OAuth authorization request for the consent
 // screen (the client is untrusted: only its registered redirect URIs are honored).
 func (h *Handlers) SiteOAuthDescribe(ctx context.Context, params siteapi.SiteOAuthDescribeParams) (*siteapi.SiteOAuthAuthorizationRequest, error) {
-	req, err := h.oauth.Describe(ctx, params.ClientId, params.RedirectUri, params.Scope.Or(""))
+	req, err := h.oauth.Describe(ctx, oauthclients.Authorization{
+		ClientID: params.ClientId, RedirectURI: params.RedirectUri, Scope: params.Scope.Or(""),
+	})
 	if err != nil {
 		return nil, err
 	}

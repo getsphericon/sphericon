@@ -29,9 +29,9 @@ func setup(t *testing.T) (*testhelper.TestEnv, *passkeys.Module) {
 	})
 	identity := users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), time.Now, users.WithProver(prover))
 	// The ceremony secret only seals the cookies this module opens again.
-	m, err := passkeys.New(env.DB, env.Bus, identity, env.AppURL, "passkeys-test-ceremony-secret", time.Now)
+	party, err := passkeys.NewRelyingParty(env.AppURL, "passkeys-test-ceremony-secret")
 	require.NoError(t, err)
-	return env, m
+	return env, passkeys.New(env.DB, env.Bus, identity, party, time.Now)
 }
 
 func user(t *testing.T, env *testhelper.TestEnv, id int64) *ent.User {
@@ -53,14 +53,14 @@ func passkeysOf(t *testing.T, env *testhelper.TestEnv, userID int64) int {
 func TestARegistrationFinishedTwiceIsRefusedAsSpent(t *testing.T) {
 	env, m := setup(t)
 	pat := user(t, env, fixtures.PasskeyPatID)
-	options, ceremony, err := m.BeginRegistration(t.Context(), pat)
+	begun, err := m.BeginRegistration(t.Context(), pat)
 	require.NoError(t, err)
-	response := env.NewAuthenticator(t).Attest(options)
-	_, _, err = m.FinishRegistration(t.Context(), pat, users.IdentityProof{Password: fixtures.PasskeyPatPassword}, passkeys.Registration{Ceremony: ceremony, Response: response, Name: "Pat's phone"})
+	response := env.NewAuthenticator(t).Attest(begun.Options)
+	_, err = m.FinishRegistration(t.Context(), pat, passkeys.Registration{Proof: users.IdentityProof{Password: fixtures.PasskeyPatPassword}, Ceremony: begun.Ceremony, Response: response, Name: "Pat's phone"})
 	require.NoError(t, err)
 	held := passkeysOf(t, env, pat.ID)
 
-	_, _, err = m.FinishRegistration(t.Context(), pat, users.IdentityProof{Password: fixtures.PasskeyPatPassword}, passkeys.Registration{Ceremony: ceremony, Response: response, Name: "Pat's phone"})
+	_, err = m.FinishRegistration(t.Context(), pat, passkeys.Registration{Proof: users.IdentityProof{Password: fixtures.PasskeyPatPassword}, Ceremony: begun.Ceremony, Response: response, Name: "Pat's phone"})
 
 	require.ErrorIs(t, err, passkeys.ErrChallengeSpent)
 	require.ErrorIs(t, err, passkeys.ErrRegistrationFailed)
@@ -73,13 +73,13 @@ func TestARegistrationFinishedTwiceIsRefusedAsSpent(t *testing.T) {
 func TestACredentialRegisteredBeforeIsRefused(t *testing.T) {
 	env, m := setup(t)
 	john := user(t, env, fixtures.OwnerJohnID)
-	options, ceremony, err := m.BeginRegistration(t.Context(), john)
+	begun, err := m.BeginRegistration(t.Context(), john)
 	require.NoError(t, err)
 	// Pat's laptop answers John's ceremony with the credential it registered for Pat.
-	response := env.FixturePasskey(t).AttestHeld(options)
+	response := env.FixturePasskey(t).AttestHeld(begun.Options)
 	held := passkeysOf(t, env, john.ID)
 
-	_, _, err = m.FinishRegistration(t.Context(), john, users.IdentityProof{Password: fixtures.OwnerJohnPassword}, passkeys.Registration{Ceremony: ceremony, Response: response, Name: "Borrowed laptop"})
+	_, err = m.FinishRegistration(t.Context(), john, passkeys.Registration{Proof: users.IdentityProof{Password: fixtures.OwnerJohnPassword}, Ceremony: begun.Ceremony, Response: response, Name: "Borrowed laptop"})
 
 	require.ErrorIs(t, err, passkeys.ErrCredentialRegistered)
 	require.ErrorIs(t, err, passkeys.ErrRegistrationFailed)
@@ -93,9 +93,9 @@ func TestRemovingAPasskeyTakesTheIdentityProofAndTellsWhetherNoneIsLeft(t *testi
 	env, m := setup(t)
 	pat := user(t, env, fixtures.PasskeyPatID)
 
-	_, refused := m.Remove(t.Context(), pat, users.IdentityProof{Password: "wrong"}, fixtures.PasskeyPatLaptopID)
+	_, refused := m.Remove(t.Context(), pat, passkeys.RemoveInput{ID: fixtures.PasskeyPatLaptopID, Proof: users.IdentityProof{Password: "wrong"}})
 	kept := passkeysOf(t, env, pat.ID)
-	removal, err := m.Remove(t.Context(), pat, users.IdentityProof{Password: fixtures.PasskeyPatPassword}, fixtures.PasskeyPatLaptopID)
+	removal, err := m.Remove(t.Context(), pat, passkeys.RemoveInput{ID: fixtures.PasskeyPatLaptopID, Proof: users.IdentityProof{Password: fixtures.PasskeyPatPassword}})
 
 	require.ErrorIs(t, refused, login.ErrPasswordIncorrect)
 	assert.Equal(t, 1, kept)
@@ -110,7 +110,7 @@ func TestANameLeftBlankRefusesTheRegistrationBeforeAnyProof(t *testing.T) {
 	env, m := setup(t)
 	pat := user(t, env, fixtures.PasskeyPatID)
 
-	_, _, err := m.FinishRegistration(t.Context(), pat, users.IdentityProof{Password: "wrong"}, passkeys.Registration{Name: "  "})
+	_, err := m.FinishRegistration(t.Context(), pat, passkeys.Registration{Proof: users.IdentityProof{Password: "wrong"}, Name: "  "})
 
 	require.ErrorIs(t, err, validation.ErrNameBlank)
 }

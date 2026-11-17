@@ -23,15 +23,11 @@ internal/domain/contacts/visitors/visitorsunchecked
 internal/domain/content/brandkits
 internal/domain/content/emailtemplates
 internal/domain/content/versioneddefinition
-internal/domain/identity/apitokens
 internal/domain/identity/consentrecords
 internal/domain/identity/invitations
 internal/domain/identity/joindomains
 internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
-internal/domain/identity/oauthclients
-internal/domain/identity/passkeys
-internal/domain/identity/secondfactors
 internal/domain/identity/users
 internal/domain/identity/users/usersunchecked
 internal/domain/identity/workspaces

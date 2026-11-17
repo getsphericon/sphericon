@@ -8,7 +8,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -41,7 +40,7 @@ func (m *Module) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, c
 		if err != nil {
 			return err
 		}
-		u, err := resetIn(ctx, tx, target.UserID)
+		u, err := m.resetIn(ctx, tx, target.UserID)
 		if err != nil {
 			return err
 		}
@@ -60,7 +59,7 @@ func (m *Module) ResetByStaff(ctx context.Context, email, by string) error {
 		if err != nil {
 			return fmt.Errorf("user %q: %w", email, err)
 		}
-		u, err := resetIn(ctx, tx, target.ID)
+		u, err := m.resetIn(ctx, tx, target.ID)
 		if err != nil {
 			return err
 		}
@@ -71,8 +70,8 @@ func (m *Module) ResetByStaff(ctx context.Context, email, by string) error {
 // ClearFactorAndPasskeysIn clears whatever Second factor, Recovery codes and Passkeys the User holds on the
 // transaction tx, as a reset does, without asking that there be any: the first proof of an address
 // drops what was set up before it (ADR 0170). It returns the User as it stands afterwards.
-func ClearFactorAndPasskeysIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
-	u, err := resetIn(ctx, tx, userID)
+func (m *Module) ClearFactorAndPasskeysIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+	u, err := m.resetIn(ctx, tx, userID)
 	if errors.Is(err, ErrNothingToReset) {
 		return tx.User.Get(ctx, userID)
 	}
@@ -83,12 +82,12 @@ func ClearFactorAndPasskeysIn(ctx context.Context, tx *ent.Client, userID int64)
 // the transaction tx and returns the User with its session epoch bumped. A User without a factor
 // row (one who holds only Passkeys) still has the epoch bumped. The factor's move comes first, the
 // lock order of every change of the factor: the User row, the factor row, then the codes.
-func resetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
+func (m *Module) resetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error) {
 	before, err := snapshotIn(ctx, tx, userID)
 	if err != nil {
 		return nil, err
 	}
-	held, err := passkeys.HeldIn(ctx, tx, userID)
+	held, err := m.passkeys.HeldIn(ctx, tx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +98,7 @@ func resetIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, erro
 	if err != nil {
 		return nil, err
 	}
-	if err := passkeys.RemoveAllIn(ctx, tx, userID); err != nil {
+	if err := m.passkeys.RemoveAllIn(ctx, tx, userID); err != nil {
 		return nil, err
 	}
 	return removed.User, nil

@@ -568,6 +568,7 @@ var jobsPackage = do.Package(
 			Rules:            do.MustInvoke[*rules.Module](i),
 			Users:            do.MustInvoke[*users.Module](i),
 			SecondFactor:     do.MustInvoke[*secondfactors.Module](i),
+			Passkeys:         do.MustInvoke[*passkeys.Module](i),
 			Orders:           do.MustInvoke[*orders.Module](i),
 			Deletion:         do.MustInvoke[*workspacedeletion.UseCase](i),
 			MessageRetention: do.MustInvoke[*messageretention.UseCase](i),
@@ -690,16 +691,16 @@ var identityPackage = do.Package(
 		links := users.NewLinks(usersModule, do.MustInvoke[*authtoken.Signer](i))
 		return signup.New(do.MustInvoke[*events.Bus](i), usersModule, do.MustInvoke[*consentrecords.Module](i), links,
 			do.MustInvoke[*credentials.Hasher](i), do.MustInvoke[*suspension.DefaultSendCap](i),
+			do.MustInvoke[*apitokens.Module](i), do.MustInvoke[*secondfactors.Module](i),
 			signup.SignUpConfig{
 				Budget:              do.MustInvoke[*throttle.Attempts](i).For(throttle.KindSignUp),
 				RequireVerification: do.MustInvoke[*config.Config](i).RequireEmailVerification,
 				SurveyDue:           do.MustInvoke[*signupsurveyresponses.Module](i).Enabled,
 			},
 			signup.SignInConfig{
-				Providers:     do.MustInvoke[*signinprovider.Providers](i),
-				Invitations:   do.MustInvoke[*invitations.Module](i),
-				SignupItems:   do.MustInvoke[*signupitems.Module](i),
-				SecondFactors: do.MustInvoke[*secondfactors.Module](i),
+				Providers:   do.MustInvoke[*signinprovider.Providers](i),
+				Invitations: do.MustInvoke[*invitations.Module](i),
+				SignupItems: do.MustInvoke[*signupitems.Module](i),
 			},
 			do.MustInvoke[Clock](i)), nil
 	}),
@@ -760,7 +761,8 @@ var identityPackage = do.Package(
 			throttle.WithRateLimits(do.MustInvoke[*config.Config](i).RateLimits)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*secondfactors.Module, error) {
-		return secondfactors.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*users.Module](i), do.MustInvoke[Clock](i)), nil
+		return secondfactors.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*users.Module](i),
+			do.MustInvoke[*passkeys.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The admission of a request made on a User's session (ADR 0061): /site's Access and the OAuth
 	// consent's decision.
@@ -789,7 +791,11 @@ var identityPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*passkeys.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
-		return passkeys.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*users.Module](i), cfg.AppURL, cfg.JWTSecret, do.MustInvoke[Clock](i))
+		party, err := passkeys.NewRelyingParty(cfg.AppURL, cfg.JWTSecret)
+		if err != nil {
+			return nil, err
+		}
+		return passkeys.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*users.Module](i), party, do.MustInvoke[Clock](i)), nil
 	}),
 )
 
@@ -977,7 +983,8 @@ var surfacesPackage = do.Package(
 	// The tokens whose request names no Workspace yet: a Connection the token endpoint exchanges a
 	// code or a refresh token for, and the Instance's first token, minted by its bootstrap token.
 	do.Lazy(func(i do.Injector) (*apitokens.Module, error) {
-		return apitokens.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*config.Config](i).BootstrapToken, do.MustInvoke[Clock](i)), nil
+		return apitokens.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*workspaces.Module](i), do.MustInvoke[*oauthclients.Module](i),
+			do.MustInvoke[*config.Config](i).BootstrapToken, do.MustInvoke[Clock](i)), nil
 	}),
 	// The OAuth server's protocol endpoints (internal/api/oauth), which the router mounts.
 	do.Lazy(func(i do.Injector) (*oauth.Server, error) {
@@ -1168,6 +1175,7 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		Memberships:           do.MustInvoke[*memberships.Module](i),
 		Attempts:              do.MustInvoke[*throttle.Attempts](i),
 		OAuth:                 do.MustInvoke[*oauthclients.Module](i),
+		APITokens:             do.MustInvoke[*apitokens.Module](i),
 		Bus:                   bus,
 		Webhooks:              do.MustInvoke[*webhookendpoints.Module](i),
 		IdentityTokens:        do.MustInvoke[*identitytokens.Module](i),

@@ -2,7 +2,7 @@ id: no-hand-mapped-list
 valid:
   - |
     func (h *Handlers) SiteTokensList(ctx context.Context, params siteapi.SiteTokensListParams) (siteapi.SiteTokensListRes, error) {
-    	tokens, err := apitokens.List(ctx, workspaceScope(ctx))
+    	tokens, err := h.apiTokens.List(ctx, workspaceScope(ctx))
     	if err != nil {
     		return nil, err
     	}

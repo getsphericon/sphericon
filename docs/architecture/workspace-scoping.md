@@ -123,7 +123,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    (`internal/domain/identity/signup`, its `afterProofIn`, ADR 0170) scopes the
    transaction of the provider link or the reset link in turn to each Workspace the User belongs to
    (from `memberships.OfUserIn`), to revoke the User's Personal tokens and Connections there
-   (`apitokens.RevokeOfUser`);
+   (`apitokens.Module.RevokeOfUser`);
 6. the Workspace comes from a secret rather than a login: the ingest hook
    `POST /hooks/{key}` (driver `internal/api/hooks`, ADR 0037), where the key belongs to one
    Integration, so the Callback interpretation (`callbackinterpretation.Module.Receive`) finds
@@ -140,7 +140,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    endpoint of the OAuth server (`internal/api/oauth`, over `apitokens.Module.ExchangeCode` and
    `Refresh`), where an authorization
    code or a refresh token names its grant: `apitokens`
-   claims the code through `oauthclients.ClaimCodeIn`, which reads the code by its secret with the
+   claims the code through `oauthclients.Module.ClaimCodeIn`, which reads the code by its secret with the
    raw client, checks the client, the redirect URI and the PKCE verifier first and marks it used
    through the scope of the Workspace the code names (`tx.Scoped(grant.WorkspaceID)`), or reads its
    own refresh token, and scopes the Connection's writes to the Workspace that row names;
@@ -181,10 +181,10 @@ looked up by its secret before any scope exists), `internal/domain/identity/apit
 token endpoint's exchange of a code or a refresh token, ADR 0110: a Connection's refresh tokens
 are its own, and a code or a refresh token is looked up by its secret before any scope exists;
 and the bootstrap, whose token names no Workspace, so it scopes to the oldest live one itself;
-every other function takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
+every other operation takes a `*ent.Scoped`), `internal/domain/identity/passkeys` and `internal/domain/identity/secondfactors`
 (a User's Passkeys, and a User's TOTP Second factor with its Recovery codes, ADR 0052, ADR 0020: they belong to the User, not a
 Workspace; the Second factor reset, `secondfactors.Module.Reset`, clears both in one transaction, and so does
-`secondfactors.ClearFactorAndPasskeysIn` on the transaction of an address's first proof, ADR 0170),
+`secondfactors.Module.ClearFactorAndPasskeysIn` on the transaction of an address's first proof, ADR 0170),
 `internal/domain/identity/noticedelivery` (Notice delivery, a module without a table: the Notices of
 the domain events, ADR 0105: an event of a User's account belongs to no Workspace, and a
 Workspace's Owners and Members are read by the id an event names),
