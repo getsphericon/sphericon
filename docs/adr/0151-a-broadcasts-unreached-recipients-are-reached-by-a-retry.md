@@ -45,16 +45,23 @@ Destination by design (ADR 0137: a Broadcast is about its moment).
   each Recipient passes Send-eligibility at send time. A Contact erased since is gone; a Contact whose
   address changed since is reached at its Channel's Destination now, which is often what fixed the
   failure.
-- **Only a finished Broadcast with someone to reach can be retried**: `sent` or `failed` with a
+- **Only a finished, kept Broadcast with someone to reach can be retried**: `sent` or `failed` with a
   Failed message, `cancelled` with a Failed message or a Recipient left without one. A draft,
-  scheduled or sending Broadcast has no outcome yet. Otherwise the call is a 409 naming why, and no
-  draft is made.
-- **A Broadcast has at most one Retry.** Two Retries of one source, both sent, would mail the same
-  people twice. What a Retry fails to reach is retried from the Retry, so retries form a chain. Deleting
-  a Retry's draft frees its source for another.
+  scheduled or sending Broadcast has no outcome yet, and an archived one is out of new work until it
+  is unarchived (ADR 0100). Otherwise the call is a 409 naming why, and no draft is made. The reasons
+  are one closed list in the contract (not finished, archived, nothing to reach, already retried,
+  frozen), so a client can tell them apart without reading the text.
+- **A Broadcast has at most one Retry, ever.** Two Retries of one source, both sent, would mail the
+  same people twice. What a Retry fails to reach is retried from the Retry, so retries form a chain.
+  Archiving a Retry does not free its source, whatever the Retry's status: a second `retry` is the
+  409 naming the first, archived or not, and Unarchive brings an archived Retry back to work. The
+  link is unique over every row, archived ones included: the index states why with `UniqueOverAll`,
+  as the schema check asks of a unique index on an archivable row.
 - **No window but retention.** A Broadcast can be retried while its Recipients exist, until ADR 0143
-  freezes it. Whether its content still makes sense days later is the sender's call, so the console
-  shows how long ago the source went out wherever it offers or schedules a Retry.
+  freezes it. A Retry whose source was frozen after the draft was made has no one left to resolve:
+  its Schedule and Send are the same 409 (frozen), and its count (ADR 0149) is zero with that reason,
+  never an empty send. Whether its content still makes sense days later is the sender's call, so
+  the console shows how long ago the source went out wherever it offers or schedules a Retry.
 
 ### A Retry is an ordinary send
 
@@ -96,6 +103,10 @@ window.
 - **Retrying Skipped Recipients, or deferring them for a Retry**: a Skip is final for that
   Destination by design, and a Retry would turn the Frequency cap's skip into the deferral ADR 0137
   rejected.
+- **Archive freeing the source** (the link unique only over unarchived rows): Archive takes a sent
+  Retry as well as a draft, so archiving a sent Retry would allow a second one to the same people,
+  and Unarchive of the first would then meet a live second. One Retry for ever, brought back by
+  Unarchive, has neither case.
 - **A fixed retry window** (refused Recipients kept for a few days): it is an opinion about the
   content the app does not have; showing the age is enough for the person who decides.
 - **Resending to those who did not open**: it mails people already reached, and opens are unreliable

@@ -609,8 +609,8 @@ _Avoid_: Abort, stop, pause, Unschedule (that returns a scheduled Broadcast to d
 A new Broadcast made from a finished one to reach the Recipients it did not: those whose message
 failed and, after a Cancel, those it never sent to. Its audience is exactly those Recipients, never a
 Segment, and it is sent like any Broadcast, every check made again, with figures of its own. A
-Broadcast has at most one Retry; what a Retry fails to reach is retried from it. Skipped Recipients
-are never retried.
+Broadcast has at most one Retry, archived or not; what a Retry fails to reach is retried from it.
+Skipped Recipients are never retried.
 _Avoid_: Resend (re-mailing those already reached, such as non-openers), retry failed, re-dispatch
 
 **Variant**:

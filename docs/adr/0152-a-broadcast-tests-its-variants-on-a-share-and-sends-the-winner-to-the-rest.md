@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: [1444]
+build: [1597, 1598, 1599]
 ---
 
 # A Broadcast tests its Variants on a share and sends the Winner to the rest
@@ -27,7 +27,7 @@ on small lists to test only large differences (the sender's name, the offer, the
 
 ### A Broadcast's content is its Variants
 
-- **A Broadcast holds one to N Variants**, each a Message content of the Broadcast's Channel, and on
+- **A Broadcast holds one to eight Variants**, each a Message content of the Broadcast's Channel, and on
   email also its own `from_name`. A Broadcast with one Variant is an ordinary send. Content has one
   model, so nothing asks whether a Broadcast is tested before it reads its content. Channel,
   Integration, audience and send time are the Broadcast's and never vary.
@@ -60,8 +60,9 @@ on small lists to test only large differences (the sender's name, the offer, the
   Variant's tracked messages. A message sent untracked (ADR 0120) counts in neither the numerator nor
   the denominator. The click rate is the default. Every Channel with tracked links can be tested.
 - **The leading Variant goes to the rest even when the difference is not significant**: something has
-  to be sent, and the leader is no worse on average. Below 95% confidence the report names no Winner
-  but "no significant winner", so no one learns a lesson from noise. An exact tie goes to the first
+  to be sent, and the leader is no worse on average. Below 95% confidence (a two-proportion test on
+  the click rate, Welch's t-test on revenue per tracked message) the report names no Winner but "no
+  significant winner", so no one learns a lesson from noise. An exact tie goes to the first
   Variant.
 - **The sample size is a warning, not a gate.** Before Schedule the console shows the group size per
   Variant against the size needed to see a 20% lift on the Workspace's recent click rate (two-sided

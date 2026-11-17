@@ -12,6 +12,13 @@ build: none
 > a series making an issue reads its rows under the lock and skips the occurrence when one is
 > discarded.
 
+> **Extended by [[0151-a-broadcasts-unreached-recipients-are-reached-by-a-retry]]:** a Retry of an
+> issue sends under the series' Sending source, so an opt-out of the series covers it, and is not an
+> issue: its content is edited apart and it does not move the schedule.
+
+> **Extended by [[0152-a-broadcast-tests-its-variants-on-a-share-and-sends-the-winner-to-the-rest]]:**
+> a series' content becomes each issue's one Variant; an issue is never a Split test.
+
 A Broadcast is a one-off send: authored, scheduled once and sent once. A weekly digest or a
 newsletter built from a blog's feed is a send that repeats on a schedule, and today it is a new
 Broadcast authored by hand each week. An Automation is the wrong home for it: it would enroll the
