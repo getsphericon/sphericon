@@ -5,6 +5,7 @@ package resources
 
 import (
 	"fmt"
+
 	broadcast "github.com/getsphericon/sphericon/ent/broadcast"
 	invitation "github.com/getsphericon/sphericon/ent/invitation"
 	membership "github.com/getsphericon/sphericon/ent/membership"
@@ -27,16 +28,17 @@ import (
 	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	webhookendpoints "github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
-	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -143,7 +145,7 @@ func (c *InputsImpl) AutomationStep(source site.AutomationStepInput) automations
 	automationstepStep.ID = stringIn(source.ID)
 	automationstepStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepStep.Headers = make([]httpheader.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
 			automationstepStep.Headers[j] = c.siteapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
 		}
@@ -650,26 +652,26 @@ func (c *InputsImpl) RevenueSettingsSet(source *site.SiteUpdateRevenueSettingsIn
 	}
 	return workspacesSetRevenueSettingsInput
 }
-func (c *InputsImpl) RuleActionType(source site.RuleActionType) rules.ActionType {
-	var rulesActionType rules.ActionType
+func (c *InputsImpl) RuleActionType(source site.RuleActionType) ruleaction.Type {
+	var rulesActionType ruleaction.Type
 	switch source {
 	case site.RuleActionTypeApplyTag:
-		rulesActionType = rules.ActionApplyTag
+		rulesActionType = ruleaction.ApplyTag
 	case site.RuleActionTypeEnrollAutomation:
-		rulesActionType = rules.ActionEnroll
+		rulesActionType = ruleaction.Enroll
 	case site.RuleActionTypeHTTP:
-		rulesActionType = rules.ActionHTTP
+		rulesActionType = ruleaction.HTTP
 	case site.RuleActionTypeRemoveTag:
-		rulesActionType = rules.ActionRemoveTag
+		rulesActionType = ruleaction.RemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return rulesActionType
 }
-func (c *InputsImpl) RuleActions(source []site.RuleActionInput) []rules.Action {
-	var rulesActionList []rules.Action
+func (c *InputsImpl) RuleActions(source []site.RuleActionInput) []ruleaction.Action {
+	var rulesActionList []ruleaction.Action
 	if source != nil {
-		rulesActionList = make([]rules.Action, len(source))
+		rulesActionList = make([]ruleaction.Action, len(source))
 		for i := 0; i < len(source); i++ {
 			rulesActionList[i] = c.siteapiRuleActionInputToRulesAction(source[i])
 		}
@@ -1071,21 +1073,21 @@ func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) work
 	}
 	return workspaceviewUpdateInput
 }
-func (c *InputsImpl) siteapiAutomationHttpHeaderInputToHttpcallHeader(source site.AutomationHttpHeaderInput) httpcall.Header {
-	var httpcallHeader httpcall.Header
+func (c *InputsImpl) siteapiAutomationHttpHeaderInputToHttpcallHeader(source site.AutomationHttpHeaderInput) httpheader.Header {
+	var httpcallHeader httpheader.Header
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
 }
-func (c *InputsImpl) siteapiRuleActionInputToRulesAction(source site.RuleActionInput) rules.Action {
-	var rulesAction rules.Action
+func (c *InputsImpl) siteapiRuleActionInputToRulesAction(source site.RuleActionInput) ruleaction.Action {
+	var rulesAction ruleaction.Action
 	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
 	rulesAction.AutomationID = entityIDIn(source.AutomationId)
 	rulesAction.ID = stringIn(source.ID)
 	rulesAction.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		rulesAction.Headers = make([]httpcall.Header, len(source.Headers))
+		rulesAction.Headers = make([]httpheader.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
 			rulesAction.Headers[i] = c.siteapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
 		}

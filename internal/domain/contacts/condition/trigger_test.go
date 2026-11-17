@@ -15,12 +15,13 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // triggerMatches reports whether g, compiled as a Rule's Condition against props, holds for the
 // Contact.
-func triggerMatches(t require.TestingT, s *ent.Scoped, g condition.Group, props map[string]any, id int64) bool {
+func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Group, props map[string]any, id int64) bool {
 	ctx := context.Background()
 	p, err := condition.New(time.Now).RulePredicate(ctx, s, encode(t, g), props)
 	require.NoError(t, err)
@@ -103,11 +104,11 @@ func TestTriggerLeafFoldsIntoTheRestOfTheTree(t *testing.T) {
 
 	assert.True(t, triggerMatches(t, s, opsGroup(hit, annaRow), props, anna))
 	assert.False(t, triggerMatches(t, s, opsGroup(miss, annaRow), props, anna))
-	or := condition.Group{Kind: "group", Combinator: condition.Or, Rules: marshal(miss, annaRow)}
+	or := conditiontree.Group{Kind: "group", Combinator: conditiontree.Or, Rules: marshal(miss, annaRow)}
 	assert.True(t, triggerMatches(t, s, or, props, anna))
-	not := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(miss)}
+	not := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(miss)}
 	assert.True(t, triggerMatches(t, s, not, props, anna), "not of a false leaf holds")
-	notHit := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(hit)}
+	notHit := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(hit)}
 	assert.False(t, triggerMatches(t, s, notHit, props, anna), "not of a true leaf holds for no one")
 	assert.True(t, triggerMatches(t, s, opsGroup(opsGroup(hit)), props, anna), "inside a nested group")
 }
@@ -144,7 +145,7 @@ func property(v *string) any {
 	return *v
 }
 
-func encode(t require.TestingT, g condition.Group) string {
+func encode(t require.TestingT, g conditiontree.Group) string {
 	b, err := json.Marshal(g)
 	require.NoError(t, err)
 	return string(b)

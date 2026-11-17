@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesuse"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -22,7 +23,7 @@ func appliedTags(t *testing.T, v *ent.RuleVersion) []string {
 	t.Helper()
 	actions, err := rules.DecodeActions(v.Actions)
 	require.NoError(t, err)
-	return lo.Map(actions, func(a rules.Action, _ int) string { return a.Tag })
+	return lo.Map(actions, func(a ruleaction.Action, _ int) string { return a.Tag })
 }
 
 // The lifecycle the Rule shares with the Automation (edit, Publish, Revert, Archive) is tested once,
@@ -139,7 +140,7 @@ func TestPublishRefusesADraftWithNoActions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	none := []rules.Action{}
+	none := []ruleaction.Action{}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &none})
 	require.NoError(t, err)
 
@@ -178,7 +179,7 @@ func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
-	enroll := []rules.Action{{Type: rules.ActionEnroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
+	enroll := []ruleaction.Action{{Type: ruleaction.Enroll, AutomationID: fixtures.AutomationJobsWaitFirstID}}
 	_, err := m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Actions: &enroll})
 	require.NoError(t, err)
 	_, err = m.Update(ctx, acme(env), fixtures.RuleTagClickedID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleTagClickedID), Actions: &enroll})

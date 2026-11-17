@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // EvaluateRulesArgs is the evaluation of one Event against the Workspace's Rules (ADR 0054): the
@@ -93,9 +94,9 @@ func (w *RunRuleActionsWorker) Work(ctx context.Context, job *river.Job[rules.Ac
 // already does the thing for an Automation step; internal/domain/orchestration/rules imports none of them.
 func RuleActionRunners(mod *outboundmessages.Module, tagging *contacts.Module, steps *automations.StepExecution) rules.ActionRunners {
 	return rules.ActionRunners{
-		rules.ActionApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
-		rules.ActionRemoveTag: tagAction{mod: mod, tags: tagging},
-		rules.ActionEnroll:    enrollAction{steps: steps},
+		ruleaction.ApplyTag:  tagAction{mod: mod, tags: tagging, apply: true},
+		ruleaction.RemoveTag: tagAction{mod: mod, tags: tagging},
+		ruleaction.Enroll:    enrollAction{steps: steps},
 	}
 }
 

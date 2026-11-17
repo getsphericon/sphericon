@@ -12,11 +12,12 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func opsGroup(entries ...any) condition.Group {
-	return condition.Group{Kind: "group", Combinator: condition.And, Rules: marshal(entries...)}
+func opsGroup(entries ...any) conditiontree.Group {
+	return conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: marshal(entries...)}
 }
 
 func TestPlainColumnOperators(t *testing.T) {
@@ -93,8 +94,8 @@ func TestEmptyGroupsMatchEveryoneUnlessNegated(t *testing.T) {
 
 	assert.Equal(t, []string{
 		fixtures.InitrodeOneEmail, fixtures.InitrodeQuoteEmail, fixtures.InitrodeThreeEmail, fixtures.InitrodeTwoEmail,
-	}, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: condition.And}))
-	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, condition.Group{Kind: "group", Combinator: condition.And, Not: true}),
+	}, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Group{Kind: "group", Combinator: conditiontree.And}))
+	assert.Empty(t, emailsIn(t, env, fixtures.InitrodeID, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true}),
 		"an empty negated group matches no one")
 }
 
@@ -154,27 +155,27 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
 	// A rules[] entry that is not an object at all.
-	_, err := condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`42`)}})
+	_, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`42`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// A nested group whose own rules are not a list.
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"group","combinator":"or","rules":"nope"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed group")
 
 	// A leaf whose value is not a string.
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"kind":"rule","field":"email","operator":"eq","value":{"a":1}}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "malformed rule")
 
 	// An entry whose kind is missing or unknown is refused, not guessed from its fields.
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: condition.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Rules: []json.RawMessage{json.RawMessage(`{"field":"email","operator":"eq","value":"x"}`)}})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown rule kind")
 
 	// An unknown combinator is refused, not read as "and".
-	_, err = condition.New(time.Now).Compile(ctx, ws, condition.Group{Kind: "group", Combinator: "xor"})
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{Kind: "group", Combinator: "xor"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown combinator")
 

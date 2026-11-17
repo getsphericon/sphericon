@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/go-faster/jx"
@@ -35,7 +37,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
@@ -46,10 +47,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
 	"github.com/getsphericon/sphericon/internal/infra/dkimstate"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
@@ -497,7 +498,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	RuleActionStatusToResource(source rules.Outcome) externalapi.RuleActionStatus
 	// goverter:enum:transform value
-	RuleActionTypeToResource(source rules.ActionType) externalapi.RuleActionType
+	RuleActionTypeToResource(source ruleaction.Type) externalapi.RuleActionType
 	// goverter:enum:transform value
 	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) externalapi.RuleDryRunOutcome
 	// goverter:enum:transform value
@@ -849,17 +850,17 @@ func ruleActions(c Converter, stored string) []externalapi.RuleAction {
 		slog.Error("rule: stored actions cannot be decoded", "error", err)
 		return nil
 	}
-	return lo.Map(actions, func(a rules.Action, _ int) externalapi.RuleAction {
+	return lo.Map(actions, func(a ruleaction.Action, _ int) externalapi.RuleAction {
 		out := externalapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
-		if a.Type == rules.ActionEnroll {
+		if a.Type == ruleaction.Enroll {
 			out.AutomationId = externalapi.NewOptEntityId(externalapi.EntityId(a.AutomationID))
 		}
-		if a.Type == rules.ActionHTTP {
+		if a.Type == ruleaction.HTTP {
 			// Masked: the URL, header values and signing secret never leave the server.
 			out.ID = optNonEmpty(a.ID)
 			out.Body = optNonEmpty(a.Body)
 			out.HasSecret = externalapi.NewOptBool(a.Secret != "")
-			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) externalapi.AutomationHttpHeader {
+			out.Headers = lo.Map(a.Headers, func(h httpheader.Header, _ int) externalapi.AutomationHttpHeader {
 				return externalapi.AutomationHttpHeader{Name: h.Name}
 			})
 		}

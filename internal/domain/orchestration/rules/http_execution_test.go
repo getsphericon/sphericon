@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -53,7 +54,7 @@ func TestHTTPExecutionRecordsSuccessOnItsFiring(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Succeeded}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -70,7 +71,7 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Pending}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Pending}}, results)
 	assert.Nil(t, stored.CompletedAt)
 
 	attempt := executionAttempt()
@@ -81,7 +82,7 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 	stored = env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err = rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Succeeded}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -96,7 +97,7 @@ func TestHTTPExecutionRecordsAGivenUpCallAsFailed(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Failed, Detail: "http_status 404: gone"}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Failed, Detail: "http_status 404: gone"}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -138,7 +139,7 @@ func TestHTTPExecutionDoesNotRepeatADecidedAction(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Succeeded}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Succeeded}}, results)
 }
 
 func TestHTTPExecutionOfAnErasedFiringDoesNothing(t *testing.T) {
@@ -170,7 +171,7 @@ func TestHTTPExecutionRecordsAMissingContactAsFailed(t *testing.T) {
 	stored := env.DB.RuleFiring.GetX(context.Background(), f.ID)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Failed, Detail: "contact not found"}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Failed, Detail: "contact not found"}}, results)
 	assert.NotNil(t, stored.CompletedAt)
 }
 
@@ -186,8 +187,8 @@ func TestHTTPExecutionDecidesOnlyTheSelectedPendingAction(t *testing.T) {
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
 	assert.Equal(t, []rules.Result{
-		{Type: rules.ActionHTTP, Status: rules.Pending},
-		{Type: rules.ActionHTTP, Status: rules.Succeeded},
+		{Type: ruleaction.HTTP, Status: rules.Pending},
+		{Type: ruleaction.HTTP, Status: rules.Succeeded},
 	}, results)
 	assert.Nil(t, stored.CompletedAt)
 }
@@ -210,6 +211,6 @@ func TestHTTPExecutionWaitsUntilRetryAfterFromTheResponseTime(t *testing.T) {
 	require.NoError(t, err)
 	results, err := rules.DecodeResults(stored.Results)
 	require.NoError(t, err)
-	assert.Equal(t, []rules.Result{{Type: rules.ActionHTTP, Status: rules.Pending}}, results)
+	assert.Equal(t, []rules.Result{{Type: ruleaction.HTTP, Status: rules.Pending}}, results)
 	assert.Nil(t, stored.CompletedAt)
 }

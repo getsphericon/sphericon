@@ -28,17 +28,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	"github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	"github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
@@ -231,7 +232,7 @@ type Inputs interface {
 	AutomationCreate(source *siteapi.CreateAutomationInput) automations.CreateInput
 	AutomationUpdate(source *siteapi.UpdateAutomationInput) automations.UpdateInput
 
-	RuleActions(source []siteapi.RuleActionInput) []rules.Action
+	RuleActions(source []siteapi.RuleActionInput) []ruleaction.Action
 	// goverter:map Condition | conditionIn
 	RuleCreate(source *siteapi.CreateRuleInput) (rules.CreateInput, error)
 	// goverter:map Condition | conditionIn
@@ -306,7 +307,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	PersonalScope(source siteapi.PersonalScope) tokenscope.PersonalScope
 	// goverter:enum:transform value
-	RuleActionType(source siteapi.RuleActionType) rules.ActionType
+	RuleActionType(source siteapi.RuleActionType) ruleaction.Type
 	// goverter:enum:transform value
 	SignupCompanySize(source siteapi.SignupCompanySize) signupsurveyresponse.CompanySize
 	// goverter:enum:transform value
@@ -425,7 +426,7 @@ func automationStepsPtrIn(c Inputs, steps []siteapi.AutomationStepInput) *[]auto
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
-func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]rules.Action {
+func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]ruleaction.Action {
 	if actions == nil {
 		return nil
 	}

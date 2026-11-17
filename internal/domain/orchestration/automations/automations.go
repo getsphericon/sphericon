@@ -1,6 +1,6 @@
 // Package automations is the one place an Automation's definition is stored,
 // validated and its lifecycle changed (ADR 0016). /site and /api handlers stay thin
-// adapters over it. internal/domain/orchestration/automationstep owns the stored Step format and its reader,
+// adapters over it. internal/kernel/automationstep owns the stored Step format and its reader,
 // shared by authoring, live-use checks and execution. The definition (Trigger, exit and goal events and
 // steps, each send step with its own Integration, ADR 0081) lives in versions (ADR 0049): an edit
 // writes the draft, Publish makes it live (ADR 0065). StepExecution walks the Enrollments through
@@ -23,7 +23,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
@@ -31,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emaildoc"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"

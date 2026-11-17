@@ -391,7 +391,7 @@ components:
   domain-sending: { in: 'internal/domain/sending/**' }
 
   # Orchestration, above sending: what targets Contacts and sends through the contexts below, the
-  # Broadcasts, the Automations with their stored Steps (automationstep), the Rules and the
+  # Broadcasts, the Automations, the Rules and the
   # Webhook endpoints, with the one shape of a refused removal (liveuse), a leaf below the modules
   # that return it, and the Removal check at its top (removalcheck, a component of its own).
   # The Removal check (GLOSSARY "Removal check"): the one importer of the readers of what may hold

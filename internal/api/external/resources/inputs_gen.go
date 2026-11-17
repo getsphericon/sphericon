@@ -5,6 +5,7 @@ package resources
 
 import (
 	"fmt"
+
 	external "github.com/getsphericon/sphericon/gen/external"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
@@ -14,15 +15,16 @@ import (
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	rules "github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	webhookendpoints "github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	integrations "github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	outboundmessages "github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
-	httpcall "github.com/getsphericon/sphericon/internal/infra/httpcall"
+	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	unsubscriberecording "github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
@@ -99,7 +101,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStepInput) automat
 	automationstepStep.ID = stringIn(source.ID)
 	automationstepStep.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
+		automationstepStep.Headers = make([]httpheader.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
 			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
 		}
@@ -440,26 +442,26 @@ func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscribe
 	}
 	return unsubscriberecordingOptOutInput
 }
-func (c *InputsImpl) RuleActionType(source external.RuleActionType) rules.ActionType {
-	var rulesActionType rules.ActionType
+func (c *InputsImpl) RuleActionType(source external.RuleActionType) ruleaction.Type {
+	var rulesActionType ruleaction.Type
 	switch source {
 	case external.RuleActionTypeApplyTag:
-		rulesActionType = rules.ActionApplyTag
+		rulesActionType = ruleaction.ApplyTag
 	case external.RuleActionTypeEnrollAutomation:
-		rulesActionType = rules.ActionEnroll
+		rulesActionType = ruleaction.Enroll
 	case external.RuleActionTypeHTTP:
-		rulesActionType = rules.ActionHTTP
+		rulesActionType = ruleaction.HTTP
 	case external.RuleActionTypeRemoveTag:
-		rulesActionType = rules.ActionRemoveTag
+		rulesActionType = ruleaction.RemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return rulesActionType
 }
-func (c *InputsImpl) RuleActions(source []external.RuleActionInput) []rules.Action {
-	var rulesActionList []rules.Action
+func (c *InputsImpl) RuleActions(source []external.RuleActionInput) []ruleaction.Action {
+	var rulesActionList []ruleaction.Action
 	if source != nil {
-		rulesActionList = make([]rules.Action, len(source))
+		rulesActionList = make([]ruleaction.Action, len(source))
 		for i := 0; i < len(source); i++ {
 			rulesActionList[i] = c.externalapiRuleActionInputToRulesAction(source[i])
 		}
@@ -657,8 +659,8 @@ func (c *InputsImpl) WebhookUpdate(source *external.UpdateWebhookInput) webhooke
 	}
 	return webhookendpointsUpdateInput
 }
-func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpcallHeader(source external.AutomationHttpHeaderInput) httpcall.Header {
-	var httpcallHeader httpcall.Header
+func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpcallHeader(source external.AutomationHttpHeaderInput) httpheader.Header {
+	var httpcallHeader httpheader.Header
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
@@ -670,15 +672,15 @@ func (c *InputsImpl) externalapiCreateConfirmationInputToConfirmationsEvidence(s
 	confirmationsEvidence.Brand = source.Brand
 	return confirmationsEvidence
 }
-func (c *InputsImpl) externalapiRuleActionInputToRulesAction(source external.RuleActionInput) rules.Action {
-	var rulesAction rules.Action
+func (c *InputsImpl) externalapiRuleActionInputToRulesAction(source external.RuleActionInput) ruleaction.Action {
+	var rulesAction ruleaction.Action
 	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
 	rulesAction.AutomationID = entityIDIn(source.AutomationId)
 	rulesAction.ID = stringIn(source.ID)
 	rulesAction.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		rulesAction.Headers = make([]httpcall.Header, len(source.Headers))
+		rulesAction.Headers = make([]httpheader.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
 			rulesAction.Headers[i] = c.externalapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
 		}

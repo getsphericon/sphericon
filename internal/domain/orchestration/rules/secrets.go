@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/ruleversion"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
@@ -40,7 +41,7 @@ func rewrapActions(cipher *secrets.Cipher, stored string) (sealed string, change
 		return "", false, err
 	}
 	for i := range actions {
-		if actions[i].Type != ActionHTTP {
+		if actions[i].Type != ruleaction.HTTP {
 			continue
 		}
 		did, err := httpcall.Rewrap(cipher, &actions[i].URL, &actions[i].Secret, actions[i].Headers)

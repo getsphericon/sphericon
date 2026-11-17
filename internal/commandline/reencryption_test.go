@@ -17,10 +17,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/commandline"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -182,9 +184,9 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	// deleting it discards it and keeps every version for them.
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	module := testhelper.Module[*rules.Module](env)
-	_, err = module.Update(ctx, acme, fixtures.RuleHTTPExecutionID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme, fixtures.RuleHTTPExecutionID), Actions: &[]rules.Action{{
-		Type: rules.ActionHTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: "whsec_rule_draft",
-		Headers: []httpcall.Header{{Name: "Authorization", Value: "Bearer rule-draft"}},
+	_, err = module.Update(ctx, acme, fixtures.RuleHTTPExecutionID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme, fixtures.RuleHTTPExecutionID), Actions: &[]ruleaction.Action{{
+		Type: ruleaction.HTTP, URL: "https://hooks.example.test/rule", Body: "{}", Secret: "whsec_rule_draft",
+		Headers: []httpheader.Header{{Name: "Authorization", Value: "Bearer rule-draft"}},
 	}}})
 	require.NoError(t, err)
 	require.NoError(t, module.Delete(ctx, acme, fixtures.RuleHTTPExecutionID))

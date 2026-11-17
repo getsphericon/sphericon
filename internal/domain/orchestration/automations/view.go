@@ -3,7 +3,7 @@ package automations
 import (
 	"encoding/json"
 
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 

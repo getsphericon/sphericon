@@ -15,6 +15,7 @@ import (
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -60,7 +61,7 @@ func TestNumberLeafComparesANumberCustomField(t *testing.T) {
 // does for a Rule's folded trigger leaf.
 func TestNotOfANumberLeafHoldsForAValueThatIsNotANumber(t *testing.T) {
 	env := testhelper.Setup(t)
-	not := condition.Group{Kind: "group", Combinator: condition.And, Not: true, Rules: marshal(numberLeaf(score, siteapi.ConditionNumberOperatorGt, -1000))}
+	not := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: true, Rules: marshal(numberLeaf(score, siteapi.ConditionNumberOperatorGt, -1000))}
 
 	got := emailsIn(t, env, fixtures.WonkaID, not)
 
@@ -162,8 +163,8 @@ func TestNumberLeavesAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 		not := rapid.Bool().Draw(rt, "not")
 		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
 		// The Contact's Custom fields are the Event's properties: the same value under the same key.
-		onContact := condition.Group{Kind: "group", Combinator: condition.And, Not: not, Rules: marshal(numberLeaf(score, op, want))}
-		onEvent := condition.Group{Kind: "group", Combinator: condition.And, Not: not, Rules: marshal(numberLeaf("trigger:"+fixtures.CustomFieldWonkaScoreKey, op, want))}
+		onContact := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: not, Rules: marshal(numberLeaf(score, op, want))}
+		onEvent := conditiontree.Group{Kind: "group", Combinator: conditiontree.And, Not: not, Rules: marshal(numberLeaf("trigger:"+fixtures.CustomFieldWonkaScoreKey, op, want))}
 
 		viaSQL := triggerMatches(rt, s, onContact, nil, c.ID)
 		viaGo := triggerMatches(rt, s, onEvent, c.CustomFields, c.ID)

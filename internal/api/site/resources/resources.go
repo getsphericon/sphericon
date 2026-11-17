@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -39,15 +41,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
@@ -744,7 +745,7 @@ type Converter interface {
 	// goverter:enum:transform value
 	RuleActionStatusToResource(source rules.Outcome) siteapi.RuleActionStatus
 	// goverter:enum:transform value
-	RuleActionTypeToResource(source rules.ActionType) siteapi.RuleActionType
+	RuleActionTypeToResource(source ruleaction.Type) siteapi.RuleActionType
 	// goverter:enum:transform value
 	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) siteapi.RuleDryRunOutcome
 	// goverter:enum:transform value
@@ -1246,17 +1247,17 @@ func ruleActions(c Converter, stored string) []siteapi.RuleAction {
 		slog.Error("rule: stored actions cannot be decoded", "error", err)
 		return nil
 	}
-	return lo.Map(actions, func(a rules.Action, _ int) siteapi.RuleAction {
+	return lo.Map(actions, func(a ruleaction.Action, _ int) siteapi.RuleAction {
 		out := siteapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
-		if a.Type == rules.ActionEnroll {
+		if a.Type == ruleaction.Enroll {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
-		if a.Type == rules.ActionHTTP {
+		if a.Type == ruleaction.HTTP {
 			// Masked: the URL, header values and signing secret never leave the server.
 			out.ID = optNonEmpty(a.ID)
 			out.Body = optNonEmpty(a.Body)
 			out.HasSecret = siteapi.NewOptBool(a.Secret != "")
-			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) siteapi.AutomationHttpHeader {
+			out.Headers = lo.Map(a.Headers, func(h httpheader.Header, _ int) siteapi.AutomationHttpHeader {
 				return siteapi.AutomationHttpHeader{Name: h.Name}
 			})
 		}

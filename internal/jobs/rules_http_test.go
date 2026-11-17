@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -86,7 +87,7 @@ func TestAnHTTPActionIsPendingWhileTheActionsAfterItRun(t *testing.T) {
 	f := env.DB.RuleFiring.GetX(context.Background(), fixtures.RuleFiringQuahogHookToRunID)
 	results := resultsOf(t, f)
 	require.Len(t, results, 2)
-	assert.Equal(t, rules.Result{Type: rules.ActionHTTP, Status: rules.Pending}, results[0])
+	assert.Equal(t, rules.Result{Type: ruleaction.HTTP, Status: rules.Pending}, results[0])
 	assert.Equal(t, rules.Succeeded, results[1].Status, "the next Action does not wait for the call")
 	assert.Nil(t, f.CompletedAt, "the Firing finishes when the call is recorded")
 	assert.Equal(t, []string{"after-hook"}, tagsOf(t, env, fixtures.ContactQuahogQuinnID))
@@ -109,7 +110,7 @@ func TestAnHTTPActionPostsTheContactAndTheEventAndFinishesTheFiring(t *testing.T
 	f := h.reload()
 	results := resultsOf(t, f)
 	require.Len(t, results, 2)
-	assert.Equal(t, rules.Result{Type: rules.ActionHTTP, Status: rules.Succeeded}, results[0])
+	assert.Equal(t, rules.Result{Type: ruleaction.HTTP, Status: rules.Succeeded}, results[0])
 	assert.Equal(t, rules.Succeeded, results[1].Status)
 	assert.NotNil(t, f.CompletedAt)
 }

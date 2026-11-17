@@ -45,7 +45,7 @@ raw `*ent.Client`: it only maps rows to users and states these shapes.
 
 ## Stored Automation Steps
 
-**Stored Automation Steps:** `internal/domain/orchestration/automationstep` owns the stored Step model, its kinds,
+**Stored Automation Steps:** `internal/kernel/automationstep` owns the stored Step model, its kinds,
 decoding and whether a definition sends email. Publish, Needs attention and live-use checks
 share that interpretation: an empty stored string means no Steps; damaged JSON returns an error,
 so a removal cannot treat an unreadable definition as unused. The reader chooses the version:

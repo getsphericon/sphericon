@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // HTTPArgs is the job of one http Action of one Firing, which the module queues when it records
@@ -67,7 +68,7 @@ func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPI
 	}
 	action := actions[index]
 	record := func(res Result) (httpcall.Execution, error) {
-		res.Type = ActionHTTP
+		res.Type = ruleaction.HTTP
 		_, err := m.record(ctx, s, f.ID, index, res, len(actions))
 		return httpcall.Execution{}, err
 	}

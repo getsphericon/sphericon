@@ -20,6 +20,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
 
@@ -37,18 +38,11 @@ type InvalidError string
 
 func (e InvalidError) Error() string { return string(e) }
 
-// Header is one request header. In a stored call Value is ciphertext. In a saved call, an empty
-// Value keeps the stored value of the header with the same name.
-type Header struct {
-	Name  string `json:"name"`
-	Value string `json:"value,omitempty"`
-}
-
 // Spec is a call. Stored, URL, header values and Secret are ciphertext; in a call being saved,
 // an empty one keeps the stored value, and ClearSecret drops the signing secret.
 type Spec struct {
 	URL         string
-	Headers     []Header
+	Headers     []httpheader.Header
 	Body        string
 	Secret      string
 	ClearSecret bool
@@ -110,7 +104,7 @@ func Open(c *secrets.Cipher, s Spec) (Opened, error) {
 
 // Rewrap rewraps in place a stored call's sealed URL, signing secret and header values under the
 // primary key of c (secrets.Cipher.Rewrap), and reports whether any was under an older key.
-func Rewrap(c *secrets.Cipher, target, secret *string, headers []Header) (bool, error) {
+func Rewrap(c *secrets.Cipher, target, secret *string, headers []httpheader.Header) (bool, error) {
 	fields := make([]*string, 0, 2+len(headers))
 	fields = append(fields, target, secret)
 	for j := range headers {
@@ -198,7 +192,7 @@ func Seal(c *secrets.Cipher, in, prev Spec, what string) (Spec, error) {
 		if value == "" {
 			return out, invalid("header %q needs a value", h.Name)
 		}
-		out.Headers = append(out.Headers, Header{Name: h.Name, Value: value})
+		out.Headers = append(out.Headers, httpheader.Header{Name: h.Name, Value: value})
 	}
 	switch {
 	case in.ClearSecret:

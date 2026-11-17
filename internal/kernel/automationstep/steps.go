@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"slices"
 
-	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -79,11 +79,11 @@ type Step struct {
 	// Secret. Stored, URL, header values and Secret are ciphertext, sealed per field;
 	// in a step being saved, an empty one keeps the stored value of the step with the
 	// same ID, and ClearSecret drops the signing secret.
-	ID          string            `json:"id,omitempty"`
-	URL         string            `json:"url,omitempty"`
-	Headers     []httpcall.Header `json:"headers,omitempty"`
-	Secret      string            `json:"secret,omitempty"`
-	ClearSecret bool              `json:"-"`
+	ID          string              `json:"id,omitempty"`
+	URL         string              `json:"url,omitempty"`
+	Headers     []httpheader.Header `json:"headers,omitempty"`
+	Secret      string              `json:"secret,omitempty"`
+	ClearSecret bool                `json:"-"`
 }
 
 // TracksLinks reports whether the links of an SMS step go out as short tracked links: unless the

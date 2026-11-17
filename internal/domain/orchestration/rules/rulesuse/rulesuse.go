@@ -17,6 +17,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/rule"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/condition"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // Module is the rules module's reader of the Definition use of a row
@@ -38,7 +39,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
 		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
 			g, err := condition.Parse(lo.FromPtr(v.Condition))
-			return err == nil && !g.FitsCustomFieldType(key, t)
+			return err == nil && !condition.FitsCustomFieldType(g, key, t)
 		})
 	}), nil
 }
@@ -85,12 +86,12 @@ func namesTag(v *ent.RuleVersion, name string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if g.NamesTag(name) {
+	if condition.NamesTag(g, name) {
 		return true, nil
 	}
 	actions, err := rules.DecodeActions(v.Actions)
 	if err != nil {
 		return false, err
 	}
-	return slices.ContainsFunc(actions, func(a rules.Action) bool { return a.NamesTag(name) }), nil
+	return slices.ContainsFunc(actions, func(a ruleaction.Action) bool { return a.NamesTag(name) }), nil
 }

@@ -35,7 +35,7 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 	var using []*ent.Segment
 	for _, seg := range all {
 		g, err := condition.Parse(lo.FromPtr(seg.Condition))
-		if err == nil && g.NamesTag(name) {
+		if err == nil && condition.NamesTag(g, name) {
 			using = append(using, seg)
 		}
 	}
@@ -53,6 +53,6 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 	}
 	return lo.Filter(all, func(seg *ent.Segment, _ int) bool {
 		g, err := condition.Parse(lo.FromPtr(seg.Condition))
-		return err == nil && !g.FitsCustomFieldType(key, t)
+		return err == nil && !condition.FitsCustomFieldType(g, key, t)
 	}), nil
 }
