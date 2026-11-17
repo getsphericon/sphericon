@@ -157,7 +157,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	})
 	require.NoError(t, err)
 	confirmSMS(t, env, number)
-	dec, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	dec, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
 	reached := s.Contact().Query().Where(contact.ID(int64(again.ID)),
@@ -170,7 +170,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 
 	// Its START lifts the opt-out the hash keeps.
 	textIn(t, env, account, "SM0303", number, "START")
-	dec, err = eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	dec, err = eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.True(t, dec.Eligible, dec.Reason)
 }
@@ -193,7 +193,7 @@ func TestAStartOlderThanAnErasedPersonsStopLiftsNothing(t *testing.T) {
 	require.NoError(t, env.Bus.Publish(ctx, &events.SmsStartObserved{
 		WorkspaceID: fixtures.AcmeID, Phone: number, DedupID: "start", ObservedAt: stopped.Add(-time.Minute),
 	}))
-	dec, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	dec, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	stamps := env.DB.ConsentStamp.Query().Where(consentstamp.Destination(number)).CountX(ctx)
 	assert.Equal(t, eligibility.ReasonUnsubscribedEverything, dec.Reason)
@@ -274,12 +274,12 @@ func TestLiftingTheSuppressionOfANumberThatCameBackLiftsItsErasedTwin(t *testing
 	reimport(t, env, number)
 	again, err := suppressions.AddManual(ctx, s, channels.SMS, number)
 	require.NoError(t, err)
-	before, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	before, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 
 	require.NoError(t, suppressions.Remove(ctx, s, again.ID, time.Now()))
 
-	after, err := eligibility.Check(ctx, s, channels.SMS, number, eligibility.SourceBroadcasts)
+	after, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, before.Reason)
 	assert.True(t, after.Eligible, after.Reason)

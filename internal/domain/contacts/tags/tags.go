@@ -1,7 +1,7 @@
 // Package tags is the catalogue of Tags and the one place a Contact's Tags are listed
 // (ADR 0016). A Tag is a presence-only, workspace-scoped label (GLOSSARY); it is
 // auto-created the first time it is applied (Module.EnsureIn), like a Custom field. Applying
-// and removing one writes the Contact, so it is the contacts module's (contacts.ApplyTagIn,
+// and removing one writes the Contact, so it is the contacts module's (contacts.Module.ApplyTagIn,
 // RemoveTagIn, SetTagsIn, ADR 0102: only the owner writes a table), which returns this
 // package's refusals. Handlers on /site and /api stay thin adapters: scope check, call,
 // map. Tag-based targeting is not here — it is the has-Tag rule of the segments engine. Deleting a Tag from the
@@ -61,7 +61,7 @@ var _ = db.Declare(
 )
 
 // EnsureIn returns the Tag named name, creating it on first use, inside the transaction s is
-// bound to: applying a Tag to a Contact (contacts.ApplyTagIn) auto-creates it, like a Custom field.
+// bound to: applying a Tag to a Contact (contacts.Module.ApplyTagIn) auto-creates it, like a Custom field.
 // The name is held to the name rule (validation.Name): trimmed, and refused when blank or too long.
 // A name that differs from a Tag's only in case is that Tag (tagname), which keeps its own name.
 func (m *Module) EnsureIn(ctx context.Context, s *ent.Scoped, name string) (*ent.Tag, error) {

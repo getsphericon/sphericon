@@ -73,7 +73,7 @@ func (r *retypeRace) fieldType(t *testing.T) customfield.Type {
 
 func (r *retypeRace) field(t *testing.T) *ent.CustomField {
 	t.Helper()
-	field, err := contacts.CustomField(context.Background(), r.scope, fixtures.CustomFieldDuffHasItID)
+	field, err := testhelper.Module[*contacts.Module](r.env).CustomField(context.Background(), r.scope, fixtures.CustomFieldDuffHasItID)
 	require.NoError(t, err)
 	return field
 }

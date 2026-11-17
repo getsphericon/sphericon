@@ -68,7 +68,7 @@ the lock does not compile:
   readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.ActiveEnrollingInto`,
   which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
 - the unchecked removals behind their check, opened on their row: `tagsunchecked.Module.DeletionIn`,
-  `contactsunchecked.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
+  `contactsunchecked.Module.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
   `sendingdomainsunchecked.Module.DeletionIn`. An Integration's deletion gives up its default in the
   statement that discards it (`schema.GivenUpOnDiscard`) and queues the release of a Telegram bot's
   webhook in the same transaction;

@@ -160,7 +160,7 @@ func TestUpsertDoesNotResolveAnotherWorkspacesContact(t *testing.T) {
 	assert.NotEqual(t, int64(fixtures.ContactAliceID), res.Contact.ID)
 	assert.Equal(t, int64(fixtures.GlobexID), res.Contact.WorkspaceID)
 
-	found, err := contacts.Resolve(context.Background(), env.DB.Scoped(fixtures.GlobexID), nil, lo.ToPtr(fixtures.ContactBobEmail), nil)
+	found, err := testhelper.Module[*contacts.Module](env).Resolve(context.Background(), env.DB.Scoped(fixtures.GlobexID), contacts.AliasKeys{Email: lo.ToPtr(fixtures.ContactBobEmail)})
 	require.NoError(t, err)
 	assert.Nil(t, found, "an Acme contact is invisible to a Globex-scoped resolve")
 }
@@ -169,15 +169,15 @@ func TestResolveIDFindsExistingContactsOnly(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	id, err := contacts.ResolveID(ctx, env.DB.Scoped(fixtures.AcmeID), "", lo.ToPtr(fixtures.ContactAliceEmail), nil)
+	id, err := testhelper.Module[*contacts.Module](env).ResolveID(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.AliasKeys{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.EqualValues(t, fixtures.ContactAliceID, id)
 
-	id, err = contacts.ResolveID(ctx, env.DB.Scoped(fixtures.AcmeID), "", new("nobody@example.com"), nil)
+	id, err = testhelper.Module[*contacts.Module](env).ResolveID(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.AliasKeys{Email: new("nobody@example.com")})
 	require.NoError(t, err)
 	assert.Zero(t, id, "never creates")
 
-	id, err = contacts.ResolveID(ctx, env.DB.Scoped(fixtures.GlobexID), "", lo.ToPtr(fixtures.ContactAliceEmail), nil)
+	id, err = testhelper.Module[*contacts.Module](env).ResolveID(ctx, env.DB.Scoped(fixtures.GlobexID), contacts.AliasKeys{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.Zero(t, id, "another workspace's contact is not resolved")
 }

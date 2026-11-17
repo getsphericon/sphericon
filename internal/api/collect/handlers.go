@@ -12,7 +12,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
-	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/usecase/visitoridentification"
 	"github.com/go-faster/jx"
@@ -20,15 +19,15 @@ import (
 )
 
 type Handlers struct {
-	bus      *events.Bus
+	visitors *visitors.Module
 	identify *visitoridentification.UseCase
-	now      func() time.Time
 }
 
-// NewHandlers builds the collect handlers. Payload size caps (batch, per event) are
-// enforced before decoding, in internal/server. now is the Instance clock a Visitor is seen by.
-func NewHandlers(bus *events.Bus, identification *visitoridentification.UseCase, now func() time.Time) *Handlers {
-	return &Handlers{bus: bus, identify: identification, now: now}
+// NewHandlers builds the collect handlers over the Visitors an Event is collected for and the
+// Visitor identification. Payload size caps (batch, per event) are enforced before decoding, in
+// internal/server.
+func NewHandlers(visits *visitors.Module, identification *visitoridentification.UseCase) *Handlers {
+	return &Handlers{visitors: visits, identify: identification}
 }
 
 // rawMap decodes an ogen map[string]jx.Raw into map[string]any using
@@ -88,7 +87,7 @@ func (h *Handlers) CollectEventsCreate(ctx context.Context, req *collectapi.Coll
 		return evt
 	})
 
-	return visitors.Collect(ctx, h.bus, auth.CollectScoped(ctx), evts, h.now())
+	return h.visitors.Collect(ctx, auth.CollectScoped(ctx), evts)
 }
 
 func (h *Handlers) CollectIdentifyCreate(ctx context.Context, req *collectapi.CollectIdentifyInput) (*collectapi.CollectOkResponse, error) {

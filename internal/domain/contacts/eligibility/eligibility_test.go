@@ -34,7 +34,7 @@ func inAudience(t *testing.T, env *testhelper.TestEnv, ws, contactID int64, sour
 // decide runs the point check for a destination in a Workspace.
 func decide(t *testing.T, env *testhelper.TestEnv, ws int64, destination, source string) eligibility.Decision {
 	t.Helper()
-	d, err := eligibility.Check(context.Background(), env.DB.Scoped(ws), channels.Email, destination, source)
+	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(ws), eligibility.CheckInput{Channel: channels.Email, Destination: destination, Source: source})
 	require.NoError(t, err)
 	return d
 }
@@ -168,7 +168,7 @@ func matrixEligibility(t *testing.T, env *testhelper.TestEnv, ws int64, source s
 	contacts, err := s.Contact().Query().All(ctx)
 	require.NoError(t, err)
 	for _, c := range contacts {
-		d, err := eligibility.Check(ctx, s, channels.Email, *c.Email, source)
+		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: *c.Email, Source: source})
 		require.NoError(t, err)
 		if d.Eligible {
 			byCheck = append(byCheck, *c.Email)
@@ -223,7 +223,7 @@ func TestCheckOnTelegramAsksNoConfirmation(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	d, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.LumonID), channels.Telegram, "70001", eligibility.SourceBroadcasts)
+	d, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.LumonID), eligibility.CheckInput{Channel: channels.Telegram, Destination: "70001", Source: eligibility.SourceBroadcasts})
 
 	require.NoError(t, err)
 	assert.True(t, d.Eligible)
@@ -237,7 +237,7 @@ func smsMatrix(t *testing.T, env *testhelper.TestEnv, ws int64, phones []string,
 	ctx := context.Background()
 	s := env.DB.Scoped(ws)
 	for _, p := range phones {
-		d, err := eligibility.Check(ctx, s, channels.SMS, p, source)
+		d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: p, Source: source})
 		require.NoError(t, err)
 		if d.Eligible {
 			byCheck = append(byCheck, p)
@@ -279,9 +279,9 @@ func TestSMSReasons(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.TyrellID)
 
-	unconfirmed, err := eligibility.Check(ctx, s, channels.SMS, fixtures.TyrellMatrixCleanPhone, eligibility.SourceBroadcasts)
+	unconfirmed, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixCleanPhone, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
-	optedOut, err := eligibility.Check(ctx, s, channels.SMS, fixtures.TyrellMatrixUnsubEverythingPhone, eligibility.AutomationSource(7))
+	optedOut, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Source: eligibility.AutomationSource(7)})
 	require.NoError(t, err)
 
 	assert.Equal(t, eligibility.ReasonUnconfirmed, unconfirmed.Reason)
@@ -340,7 +340,7 @@ func TestSMSOptOutKeptUnderTheNumbersHashStillBlocks(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, hashed)
 
-	d, err := eligibility.Check(ctx, s, channels.SMS, fixtures.TyrellMatrixUnsubEverythingPhone, eligibility.SourceBroadcasts)
+	d, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.TyrellMatrixUnsubEverythingPhone, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	byCheck, byPredicate := smsMatrix(t, env, fixtures.TyrellID,
 		[]string{fixtures.TyrellMatrixUnsubEverythingPhone, fixtures.TyrellMatrixConfirmedPhone}, eligibility.SourceBroadcasts)

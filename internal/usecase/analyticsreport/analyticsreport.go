@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -102,12 +103,13 @@ type UseCase struct {
 	clicks    *linkclick.Module
 	now       func() time.Time
 	retention time.Duration
+	revenues  *orders.Revenues
 }
 
 // New builds the use case over the count of the Link clicks and the Instance clock, with retention the Event retention it reports
 // (config.EventsRetention): the age past which Events are deleted, 0 when they are kept forever.
 func New(clicks *linkclick.Module, now func() time.Time, retention time.Duration) *UseCase {
-	return &UseCase{clicks: clicks, now: now, retention: retention}
+	return &UseCase{clicks: clicks, now: now, retention: retention, revenues: orders.NewRevenues()}
 }
 
 // RetentionDays is the Event retention in whole days, which a report over history states next

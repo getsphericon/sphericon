@@ -42,14 +42,19 @@ var (
 // is subtracted only at send, never folded into a count (ADR 0001).
 type Module struct {
 	bus *events.Bus
-	// now is the Instance clock a relative date of a rule counts back from.
+	// now is the Instance clock an archive is dated by.
 	now func() time.Time
+	// conditions compiles a rule over the same clock, which a relative date counts back from.
+	conditions  *condition.Module
+	eligibility *eligibility.Module
 }
 
 // New builds the Segments module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017); the bus runs a save and the archive each in one
 // transaction under the Workspace's lock (ADR 0099). now is the Instance clock.
-func New(bus *events.Bus, now func() time.Time) *Module { return &Module{bus: bus, now: now} }
+func New(bus *events.Bus, now func() time.Time) *Module {
+	return &Module{bus: bus, now: now, conditions: condition.New(now), eligibility: eligibility.New()}
+}
 
 // CreateInput is a new Segment. A nil or empty Condition means "no rules yet".
 type CreateInput struct {
@@ -73,7 +78,7 @@ func (s *Module) Validate(ctx context.Context, ws *ent.Scoped, cond string) erro
 	if cond == "" {
 		return nil
 	}
-	if _, err := condition.ContactPredicate(ctx, ws, cond, s.now()); err != nil {
+	if _, err := s.conditions.ContactPredicate(ctx, ws, cond); err != nil {
 		return ErrInvalidCondition.With(err.Error())
 	}
 	return nil
@@ -175,7 +180,7 @@ type PreviewInput struct {
 }
 
 // PreviewResult is what a preview counts: the Contacts the Condition matches, and, when a Channel
-// was asked for, how many of them a Broadcast there would take now (eligibility.BroadcastAudience).
+// was asked for, how many of them a Broadcast there would take now (eligibility.Module.BroadcastAudience).
 type PreviewResult struct {
 	Count      int
 	Recipients *int
@@ -185,7 +190,7 @@ type PreviewResult struct {
 // of a Broadcast on the Channel the input names. A Condition that does not compile is
 // ErrInvalidCondition.
 func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (PreviewResult, error) {
-	pred, err := condition.ContactPredicate(ctx, ws, lo.FromPtr(in.Condition), s.now())
+	pred, err := s.conditions.ContactPredicate(ctx, ws, lo.FromPtr(in.Condition))
 	if err != nil {
 		return PreviewResult{}, ErrInvalidCondition.With(err.Error())
 	}
@@ -197,7 +202,7 @@ func (s *Module) Preview(ctx context.Context, ws *ent.Scoped, in PreviewInput) (
 	if in.Channel == nil {
 		return res, nil
 	}
-	reached, err := eligibility.BroadcastAudience(ctx, ws, *in.Channel, in.IntegrationID)
+	reached, err := s.eligibility.BroadcastAudience(ctx, ws, *in.Channel, in.IntegrationID)
 	if err != nil {
 		return PreviewResult{}, err
 	}
@@ -235,7 +240,7 @@ func (s *Module) Contacts(ctx context.Context, ws *ent.Scoped, id int64, p pagin
 	if seg.Condition != nil {
 		cond = *seg.Condition
 	}
-	pred, err := condition.ContactPredicate(ctx, ws, cond, s.now())
+	pred, err := s.conditions.ContactPredicate(ctx, ws, cond)
 	if err != nil {
 		return pagination.Page[*ent.Contact]{}, ErrInvalidCondition.With(err.Error())
 	}

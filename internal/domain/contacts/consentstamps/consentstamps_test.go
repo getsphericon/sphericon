@@ -46,11 +46,11 @@ func TestAnObservationIsAdmittedOnlyWhenItOccurredLater(t *testing.T) {
 			env := testhelper.Setup(t)
 			s := env.DB.Scoped(fixtures.AcmeID)
 			k := consentstamps.Key{Channel: channels.Telegram, Destination: strconv.Itoa(9100 + i), Source: "everything"}
-			first, err := consentstamps.Admit(t.Context(), s, k, consentstamps.OptOut, c.standing, true)
+			first, err := consentstamps.New().Admit(t.Context(), s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: c.standing, Refusal: true})
 			require.NoError(t, err)
 			require.True(t, first, "nothing has set the state yet")
 
-			admitted, err := consentstamps.Admit(t.Context(), s, k, consentstamps.OptOut, c.next, c.refusal)
+			admitted, err := consentstamps.New().Admit(t.Context(), s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: c.next, Refusal: c.refusal})
 
 			require.NoError(t, err)
 			assert.Equal(t, c.admitted, admitted)
@@ -62,7 +62,7 @@ func TestAnObservationWithoutItsTimeIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 	k := consentstamps.Key{Channel: channels.Telegram, Destination: "9199", Source: "everything"}
 
-	_, err := consentstamps.Admit(t.Context(), env.DB.Scoped(fixtures.AcmeID), k, consentstamps.OptOut, consentstamps.Occurrence{}, true)
+	_, err := consentstamps.New().Admit(t.Context(), env.DB.Scoped(fixtures.AcmeID), consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Refusal: true})
 
 	require.ErrorIs(t, err, consentstamps.ErrNoOccurrence)
 }
