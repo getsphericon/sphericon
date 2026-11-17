@@ -22,6 +22,7 @@ import (
 	secondfactors "github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	signup "github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	users "github.com/getsphericon/sphericon/internal/domain/identity/users"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -408,6 +409,14 @@ func (c *InputsImpl) EmailBroadcastContentPatch(source site.EmailBroadcastConten
 	broadcastsEmailContentPatch.Body = stringPatch(source.Body)
 	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
 	return broadcastsEmailContentPatch
+}
+func (c *InputsImpl) EmailChange(source *site.SiteEmailChangeInput) users.EmailChangeInput {
+	var usersEmailChangeInput users.EmailChangeInput
+	if source != nil {
+		usersEmailChangeInput.NewEmail = string((*source).NewEmail)
+		usersEmailChangeInput.CurrentPassword = (*source).CurrentPassword
+	}
+	return usersEmailChangeInput
 }
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput

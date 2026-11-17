@@ -155,7 +155,7 @@ func (m *Module) signUpUser(ctx context.Context, n users.NewUser) (*ent.User, er
 			return nil, fmt.Errorf("signup: %q is taken but holds no User", email)
 		}
 	}
-	return m.users.ReplaceUnverifiedPassword(ctx, usr.ID, n.PasswordHash, n.Consents)
+	return m.users.ReplaceUnverifiedPassword(ctx, users.ReplaceUnverifiedPasswordInput{UserID: usr.ID, PasswordHash: n.PasswordHash, Consents: n.Consents})
 }
 
 // signUpVerified is a Sign-up on an Instance that does not require email verification: the

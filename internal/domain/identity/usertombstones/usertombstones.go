@@ -195,7 +195,7 @@ func touch(ctx context.Context, c *entclient.Client, which predicate.User) error
 	if err != nil {
 		return err
 	}
-	if err := users.SetFeedPosition(ctx, c, position, which); err != nil {
+	if err := users.NewFeed().SetPosition(ctx, c, position, which); err != nil {
 		return fmt.Errorf("user feed position: %w", err)
 	}
 	return nil

@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
@@ -98,7 +99,7 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	ctx := tb.Context()
 	id := uniq()
 
-	user, err := e.users.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
+	user, err := e.users.CreateUser(ctx, users.CreateUserInput{Name: "E2E " + id, Email: "owner-" + id + "@e2e.test", PasswordHash: "!"})
 	require.NoError(tb, err)
 	created, err := e.creation.Create(ctx, workspaceview.CreateInput{UserID: user.ID, Name: "e2e " + id})
 	require.NoError(tb, err)
@@ -183,7 +184,7 @@ func (w *Workspace) AddOwner() []int64 {
 	w.t.Helper()
 	ctx := w.t.Context()
 	id := uniq()
-	user, err := w.env.users.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
+	user, err := w.env.users.CreateUser(ctx, users.CreateUserInput{Name: "E2E co-owner " + id, Email: "co-owner-" + id + "@e2e.test", PasswordHash: "!"})
 	require.NoError(w.t, err)
 	// An owner change takes its Workspace feed position inside a transaction.
 	err = w.env.bus.WithinScopedTx(ctx, w.scoped, func(ts *ent.Scoped, _ events.Publisher) error {

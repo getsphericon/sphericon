@@ -21,7 +21,7 @@ func requests(env *testhelper.TestEnv) *users.Requests {
 	attempts := throttle.NewAttempts(env.DB, time.Now,
 		throttle.WithRule(throttle.KindPasswordReset, throttle.ResetRule(1)),
 		throttle.WithRule(throttle.KindEmailChange, throttle.ResetRule(1)))
-	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), time.Now, users.WithProver(proveByHash{})), attempts)
+	return users.NewRequests(users.New(env.DB, env.Bus, testhelper.Passwords(), testhelper.Module[*consentrecords.Module](env), proveByHash{}, time.Now), attempts)
 }
 
 // published are the account's events the test's requests published, oldest first.
@@ -78,8 +78,8 @@ func TestAnEmailChangeAsksForTheLinkOrClaimsATakenAddress(t *testing.T) {
 	r := requests(env)
 	john := env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID)
 
-	require.NoError(t, r.EmailChange(t.Context(), john, " john.new@example.com ", fixtures.OwnerJohnPassword))
-	require.NoError(t, r.EmailChange(t.Context(), john, fixtures.OwnerJaneEmail, fixtures.OwnerJohnPassword))
+	require.NoError(t, r.EmailChange(t.Context(), john, users.EmailChangeInput{NewEmail: " john.new@example.com ", CurrentPassword: fixtures.OwnerJohnPassword}))
+	require.NoError(t, r.EmailChange(t.Context(), john, users.EmailChangeInput{NewEmail: fixtures.OwnerJaneEmail, CurrentPassword: fixtures.OwnerJohnPassword}))
 
 	assert.Equal(t, []events.DomainEvent{
 		&events.LinkRequested{Action: events.NameUserEmailChangeRequested, UserID: fixtures.OwnerJohnID, Email: "john.new@example.com", Deliver: true},
@@ -94,8 +94,8 @@ func TestAnEmailChangeIsAskedOnlyWithTheCurrentPassword(t *testing.T) {
 	r := requests(env)
 	john := env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID)
 
-	wrong := r.EmailChange(t.Context(), john, "john.new@example.com", "wrong")
-	same := r.EmailChange(t.Context(), john, fixtures.OwnerJohnEmail, "wrong")
+	wrong := r.EmailChange(t.Context(), john, users.EmailChangeInput{NewEmail: "john.new@example.com", CurrentPassword: "wrong"})
+	same := r.EmailChange(t.Context(), john, users.EmailChangeInput{NewEmail: fixtures.OwnerJohnEmail, CurrentPassword: "wrong"})
 
 	require.ErrorIs(t, wrong, errWrongPassword)
 	require.ErrorIs(t, same, users.ErrNewEmailSame, "the address is checked before the password")

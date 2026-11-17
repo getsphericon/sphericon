@@ -150,23 +150,29 @@ func (l *Links) PasswordResetLink(u *ent.User) (string, error) {
 	return l.tokens.Mint(authtoken.PurposePasswordReset, uid, binding, resetLinkTTL, nil)
 }
 
+// ResetLinkRead is a read reset link: the User it names and the hash of the new password it sets.
+type ResetLinkRead struct {
+	UserID       int64
+	PasswordHash string
+}
+
 // PasswordReset reads a reset link and the new password it sets: the password rule first (a
 // refused one costs no hash), then the link (ErrResetLinkInvalid). It returns the User the link
 // names and the new password's hash, for the reset (internal/domain/identity/signup, which
 // completes the Sign-up of an Unverified User).
-func (l *Links) PasswordReset(ctx context.Context, token, password string) (userID int64, passwordHash string, err error) {
+func (l *Links) PasswordReset(ctx context.Context, token, password string) (ResetLinkRead, error) {
 	if err := checkPassword(password); err != nil {
-		return 0, "", err
+		return ResetLinkRead{}, err
 	}
 	uid, _, err := l.parse(token, authtoken.PurposePasswordReset, l.passwordHashOf(ctx), ErrResetLinkInvalid)
 	if err != nil {
-		return 0, "", err
+		return ResetLinkRead{}, err
 	}
 	hash, err := l.users.passwords.Hash(password)
 	if err != nil {
-		return 0, "", err
+		return ResetLinkRead{}, err
 	}
-	return uid, hash, nil
+	return ResetLinkRead{UserID: uid, PasswordHash: hash}, nil
 }
 
 // VerificationLink mints the token of the email verification link mailed to u (ADR 0030),
@@ -183,43 +189,58 @@ func (l *Links) VerificationLink(u *ent.User, browserHash string) (string, error
 		map[string]string{claimEmail: email, claimBrowser: browserHash})
 }
 
+// VerificationInput is a followed verification link: its token, the Sign-up browser cookie the
+// request carries ("" for none) and the password a request from another browser sends.
+type VerificationInput struct {
+	Token    string
+	Browser  string
+	Password string
+}
+
+// VerificationLinkRead is a read verification link: the User it names and the password hash to set,
+// nil to keep the one stored at Sign-up.
+type VerificationLinkRead struct {
+	UserID       int64
+	PasswordHash *string
+}
+
 // Verification reads a verification link (ADR 0030) for the completion of its Sign-up
 // (internal/domain/identity/signup): the User it names and the password hash to set, nil to
-// keep the one stored at Sign-up. browser is the Sign-up browser cookie the request carries, ""
+// keep the one stored at Sign-up. in.Browser is the Sign-up browser cookie the request carries, ""
 // for none: the Sign-up browser keeps the password stored at Sign-up, and any other browser must
-// send password, which replaces it. The link is single use and scoped to the address it was sent
+// send in.Password, which replaces it. The link is single use and scoped to the address it was sent
 // to. Refusals: ErrVerifyLinkInvalid, ErrVerifyLinkUsed, ErrVerifyLinkStale,
 // ErrVerifyPasswordNeeded, and a *validation.FieldsError for a password the rule refuses (the
 // link stays valid for a better one).
-func (l *Links) Verification(ctx context.Context, token, browser, password string) (userID int64, passwordHash *string, err error) {
-	uid, extra, err := l.parse(token, authtoken.PurposeEmailVerify, l.passwordHashOf(ctx), ErrVerifyLinkInvalid)
+func (l *Links) Verification(ctx context.Context, in VerificationInput) (VerificationLinkRead, error) {
+	uid, extra, err := l.parse(in.Token, authtoken.PurposeEmailVerify, l.passwordHashOf(ctx), ErrVerifyLinkInvalid)
 	if err != nil {
-		return 0, nil, err
+		return VerificationLinkRead{}, err
 	}
 	u, err := l.users.User(ctx, uid)
 	if ent.IsNotFound(err) {
-		return 0, nil, ErrVerifyLinkUsed
+		return VerificationLinkRead{}, ErrVerifyLinkUsed
 	}
 	if err != nil {
-		return 0, nil, err
+		return VerificationLinkRead{}, err
 	}
 	if u.EmailVerifiedAt != nil {
-		return 0, nil, ErrVerifyLinkUsed
+		return VerificationLinkRead{}, ErrVerifyLinkUsed
 	}
 	if extra[claimEmail] != u.Email {
-		return 0, nil, ErrVerifyLinkStale
+		return VerificationLinkRead{}, ErrVerifyLinkStale
 	}
-	if SameBrowser(extra[claimBrowser], browser) {
-		return uid, nil, nil
+	if SameBrowser(extra[claimBrowser], in.Browser) {
+		return VerificationLinkRead{UserID: uid}, nil
 	}
-	if password == "" {
-		return 0, nil, ErrVerifyPasswordNeeded
+	if in.Password == "" {
+		return VerificationLinkRead{}, ErrVerifyPasswordNeeded
 	}
-	replacement, err := l.hashPassword(password)
+	replacement, err := l.hashPassword(in.Password)
 	if err != nil {
-		return 0, nil, err
+		return VerificationLinkRead{}, err
 	}
-	return uid, &replacement, nil
+	return VerificationLinkRead{UserID: uid, PasswordHash: &replacement}, nil
 }
 
 // emailChange is what an email change link asks: the User and the address to change to.
