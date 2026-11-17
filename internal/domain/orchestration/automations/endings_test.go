@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
 	"github.com/getsphericon/sphericon/ent/event"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -184,7 +185,7 @@ func TestAStepEndsAnEnrollmentAtTheStepExecutionsClock(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	at := time.Date(2026, 3, 12, 9, 30, 0, 0, time.UTC)
-	steps := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, nil, func() time.Time { return at })
+	steps := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), noFence, env.Cipher, nil, func() time.Time { return at })
 
 	// The Enrollment walks its two tag steps and completes.
 	require.NoError(t, steps.Step(ctx, s, fixtures.AutomationRunTagOnEngagementAliceID, 0))

@@ -937,7 +937,7 @@ var contentPackage = do.Package(
 	// The steps of the Enrollments (the run_step and http_step jobs): a send is fenced against an
 	// exit of its Enrollment on the raw client.
 	do.Lazy(func(i do.Injector) (*automations.StepExecution, error) {
-		return automations.NewStepExecution(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)),
+		return automations.NewStepExecution(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*contacts.Module](i), automations.FenceOn(do.MustInvoke[*ent.Client](i)),
 			do.MustInvoke[*secrets.Cipher](i), webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*eventrecording.Module, error) {

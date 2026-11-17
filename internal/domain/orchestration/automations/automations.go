@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
@@ -232,6 +233,7 @@ type Module struct {
 	out      *outboundmessages.Module
 	clicks   *linkclick.Module
 	rules    *rules.Module
+	revenues *orders.Revenues
 	life     *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
 	// now is the Instance clock a report's period ends by, an activation is dated by and an
 	// Enrollment's exit is.
@@ -247,7 +249,8 @@ type Module struct {
 // the Rules that enroll Contacts in an Automation, which hold it against its Archive; now is the
 // Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, now: now}
+	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, now: now,
+		revenues: orders.NewRevenues()}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,

@@ -106,11 +106,11 @@ func (m *Module) resultsOf(ctx context.Context, s *ent.Scoped, id int64, p Repor
 	if err != nil {
 		return Results{}, err
 	}
-	current, err := periodResultsOf(ctx, s, id, cur, byDay)
+	current, err := m.periodResultsOf(ctx, s, id, cur, byDay)
 	if err != nil {
 		return Results{}, err
 	}
-	previous, err := periodResultsOf(ctx, s, id, prev, byDay)
+	previous, err := m.periodResultsOf(ctx, s, id, prev, byDay)
 	if err != nil {
 		return Results{}, err
 	}
@@ -168,7 +168,7 @@ func countsByDay(ctx context.Context, s *ent.Scoped, id int64, w reportday.Windo
 }
 
 // periodResultsOf sums the days of w and reads its average duration and revenue.
-func periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w reportday.Window, byDay map[string]ResultCounts) (PeriodResults, error) {
+func (m *Module) periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w reportday.Window, byDay map[string]ResultCounts) (PeriodResults, error) {
 	out := PeriodResults{From: w.First(), To: w.Last()}
 	for _, day := range w.Dates {
 		out.plus(byDay[day])
@@ -194,7 +194,7 @@ func periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w reportday.W
 		d := time.Duration(math.Round(*avg[0].Seconds)) * time.Second
 		out.AverageDuration = &d
 	}
-	revenue, err := orders.NewRevenues().CreditedToAutomationsOver(ctx, s, w, id)
+	revenue, err := m.revenues.CreditedToAutomationsOver(ctx, s, w, id)
 	if err != nil {
 		return PeriodResults{}, err
 	}

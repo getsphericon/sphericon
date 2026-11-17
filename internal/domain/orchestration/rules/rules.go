@@ -167,6 +167,8 @@ type Module struct {
 	cipher *secrets.Cipher
 	bus    *events.Bus
 	life   *versioneddefinition.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
+	// conditions compiles a Rule's Condition.
+	conditions *condition.Module
 	// client makes the call of an http Action.
 	client webhook.Doer
 	// now is the Instance clock a condition's relative date counts back from, a Firing completes
@@ -179,7 +181,7 @@ type Module struct {
 // (internal/domain/content/versioneddefinition); client is the protected HTTP client an http
 // Action calls through (ADR 0039). now is the Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, client webhook.Doer, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, bus: bus, client: client, now: now}
+	m := &Module{cipher: cipher, bus: bus, client: client, now: now, conditions: condition.New(now)}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound: ErrNotFound,
 		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
@@ -532,7 +534,7 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
 		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, g.Size()))
 	}
-	if _, err := condition.New(m.now).RulePredicate(ctx, s, *cond, nil); err != nil {
+	if _, err := m.conditions.RulePredicate(ctx, s, *cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
 	return nil
@@ -699,7 +701,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64
 func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Event) (bool, error) {
 	match := contact.ID(ev.ContactID)
 	if cond != nil && *cond != "" {
-		pred, err := condition.New(m.now).RulePredicate(ctx, s, *cond, ev.Properties)
+		pred, err := m.conditions.RulePredicate(ctx, s, *cond, ev.Properties)
 		if errors.Is(err, condition.ErrStorage) {
 			return false, err
 		}

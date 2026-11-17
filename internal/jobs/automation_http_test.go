@@ -21,11 +21,13 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
 // hookReceiver is a third party's endpoint: it records every call and answers as told.
@@ -141,7 +143,7 @@ func (h *httpStepHarness) stepper() *automations.StepExecution {
 }
 
 func (h *httpStepHarness) worker(allow webhook.Allowlist) *jobs.RunHTTPStepWorker {
-	steps := automations.NewStepExecution(h.Bus, newMod(h.TestEnv, resolvingTo(h.sender), time.Now), noFence, h.cipher,
+	steps := automations.NewStepExecution(h.Bus, newMod(h.TestEnv, resolvingTo(h.sender), time.Now), testhelper.Module[*contacts.Module](h.TestEnv), noFence, h.cipher,
 		h.rcv.routed(webhook.NewClientAllowing(2*time.Second, allow)), func() time.Time { return h.clock })
 	return jobs.NewRunHTTPStepWorker(h.DB, steps, lowestDraw)
 }

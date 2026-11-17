@@ -81,7 +81,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if err != nil {
 		return Report{}, err
 	}
-	revenue, err := orders.NewRevenues().CreditedToAutomations(ctx, s, id)
+	revenue, err := m.revenues.CreditedToAutomations(ctx, s, id)
 	if err != nil {
 		return Report{}, err
 	}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -47,7 +48,7 @@ func stepperWith(env *testhelper.TestEnv, mod *outboundmessages.Module) *automat
 
 // stepperAt is the Step execution over mod, on the clock now.
 func stepperAt(env *testhelper.TestEnv, mod *outboundmessages.Module, now func() time.Time) *automations.StepExecution {
-	return automations.NewStepExecution(env.Bus, mod, noFence, env.Cipher, nil, now)
+	return automations.NewStepExecution(env.Bus, mod, testhelper.Module[*contacts.Module](env), noFence, env.Cipher, nil, now)
 }
 
 // queueStep queues the step job of an Enrollment standing on a fixture, as the enroll or the
