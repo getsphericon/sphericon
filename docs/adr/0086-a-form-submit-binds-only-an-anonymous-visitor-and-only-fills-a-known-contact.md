@@ -4,6 +4,9 @@ status: accepted
 
 # A Form submit binds only an anonymous Visitor and only fills a known Contact
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> a submit fills no alias key of a Contact that exists.
+
 An On-site form (ADR 0085) captures people on the customer's site through the tracker. Identify
 already binds a Visitor to a Contact and writes its attributes (ADR 0002, ADR 0072): it resolves the
 Contact by subject_id, email or phone, moves the Visitor to it even when the Visitor belonged to

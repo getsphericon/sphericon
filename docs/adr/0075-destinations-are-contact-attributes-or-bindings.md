@@ -8,6 +8,11 @@ status: accepted
 > business-scoped user id is a second key of the WhatsApp phone Destination, and an inbound message
 > carrying only it is resolved through that key.
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> a Visitor's Binding reaches no Contact. A chat becomes a Contact's when a Start token issued to
+> the Contact starts it, or when a proven Identify hands the Visitor's Bindings to the Contact it
+> proves.
+
 ADR 0074 fixed six Channels and said that on most new ones a Destination is reachable only through
 the Integration that obtained it. It left open where each Destination lives. A Contact has three
 alias keys (subject_id, email, phone), and the phone was only trimmed, so `+7 999 123-45-67` and

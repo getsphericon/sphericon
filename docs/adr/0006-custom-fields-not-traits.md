@@ -4,6 +4,10 @@ status: accepted
 
 # One attribute concept: typed Custom fields, auto-created — no schemaless traits
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> the collect key declares no Custom field: Identify writes a trait only to a Custom field the
+> Workspace has defined and drops the rest, proven or not.
+
 Every Contact attribute beyond the core fields is a **Custom field**: a workspace-defined, typed,
 named definition. There is no second, schemaless "trait" concept living alongside it. When an
 unknown key arrives — from Identify or an Event payload — it is **auto-created** as a Custom field

@@ -4,6 +4,10 @@ status: accepted
 
 # Identify writes a Contact's core attributes
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> an Identify without an Identity token only fills: on a Contact that exists it writes only the core
+> attributes it has no value of. A proven Identify writes them as below.
+
 A Contact's core attributes are the ones sphericon itself reads (its time zone, its country) and the
 ones most marketing platforms model as standard (Segment's reserved traits, Braze's standard
 attributes): first and last name, time zone, country, locale, birthday, city and avatar. Everything

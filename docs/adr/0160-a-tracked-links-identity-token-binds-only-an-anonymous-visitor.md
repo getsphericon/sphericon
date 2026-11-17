@@ -4,6 +4,11 @@ status: accepted
 
 # A tracked link's identity token binds only an anonymous Visitor
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> an Identify without an Identity token is a claim and moves no Visitor that belongs to another
+> Contact, so a wrong binding from a forwarded message is corrected only by a proven Identify. A
+> Link identity token hands no Binding to the Contact.
+
 ## Context
 
 A person who clicks a link in a marketing message lands on the Workspace's site as an anonymous Visitor:
