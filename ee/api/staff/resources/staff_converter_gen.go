@@ -133,20 +133,6 @@ func (c *StaffConverterImpl) RateToResource(source reputation.Rate) staffee.Staf
 	staffeeapiStaffRate.Rate = nilFloat64(source.Rate)
 	return staffeeapiStaffRate
 }
-func (c *StaffConverterImpl) ReviewIn(source staffee.StaffWorkspaceReview) abusedetector.Review {
-	var abusedetectorReview abusedetector.Review
-	switch source {
-	case staffee.StaffWorkspaceReviewDeleted:
-		abusedetectorReview = abusedetector.ReviewDeleted
-	case staffee.StaffWorkspaceReviewSystemFrozen:
-		abusedetectorReview = abusedetector.ReviewSystemFrozen
-	case staffee.StaffWorkspaceReviewWarned:
-		abusedetectorReview = abusedetector.ReviewWarned
-	default:
-		panic(fmt.Sprintf("unexpected enum element: %v", source))
-	}
-	return abusedetectorReview
-}
 func (c *StaffConverterImpl) SendCapToResource(source *ent.Workspace) staffee.StaffSendCap {
 	var staffeeapiStaffSendCap staffee.StaffSendCap
 	if source != nil {
