@@ -21,7 +21,7 @@ import (
 // smsDecision is Send-eligibility of a number on sms for a Broadcast in Acme.
 func smsDecision(t *testing.T, env *testhelper.TestEnv, number string) eligibility.Decision {
 	t.Helper()
-	d, err := eligibility.Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), channels.SMS, number, eligibility.SourceBroadcasts)
+	d, err := eligibility.New().Check(context.Background(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	return d
 }

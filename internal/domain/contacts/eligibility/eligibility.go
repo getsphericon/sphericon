@@ -66,7 +66,21 @@ type Decision struct {
 	Reason string
 }
 
-// Check decides eligibility for one destination in the scoped Workspace. source is
+// Module decides eligibility. It holds nothing: every call takes the Workspace's scope.
+type Module struct{}
+
+// New builds the module.
+func New() *Module { return &Module{} }
+
+// CheckInput is the one destination Check decides for.
+type CheckInput struct {
+	Channel     channels.Channel
+	Destination string
+	// Source is the Sending source the message goes out under, "" for a transactional send.
+	Source string
+}
+
+// Check decides eligibility for one destination in the scoped Workspace. in.Source is
 // the Sending source the message goes out under, or "" for a transactional send. An
 // empty destination is treated as eligible — the caller decides what a missing
 // address means (there is nothing to suppress against).
@@ -77,8 +91,9 @@ type Decision struct {
 // It is anchored on the Workspace's Suppression query so it runs through the scoped
 // client; HAVING TRUE turns the select into a single-group one, so exactly one row
 // comes back whether or not the Workspace has any Suppression.
-func Check(ctx context.Context, s *ent.Scoped, channel channels.Channel, dest, source string) (Decision, error) {
-	d := emailcase.Of(dest)
+func (m *Module) Check(ctx context.Context, s *ent.Scoped, in CheckInput) (Decision, error) {
+	channel, source := in.Channel, in.Source
+	d := emailcase.Of(in.Destination)
 	if d == "" {
 		return Decision{Eligible: true}, nil
 	}
@@ -215,7 +230,7 @@ func Audience(dest Destination, source string) predicate.Contact {
 // routes through, the one integrationID names or the Channel's default (nil); a route with none
 // reaches nobody. It is the audience a Broadcast's plan takes and the one a Segment preview counts
 // for a Broadcast form, so the two cannot drift.
-func BroadcastAudience(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64) (predicate.Contact, error) {
+func (m *Module) BroadcastAudience(ctx context.Context, s *ent.Scoped, channel channels.Channel, integrationID *int64) (predicate.Contact, error) {
 	var dest Destination
 	switch channel {
 	case channels.Email:

@@ -31,7 +31,7 @@ var ErrReservedKey = validation.Refuse("contacts: a custom field key names a con
 // field's type is false on it. A person changes the type (the use case
 // internal/usecase/customfieldretyping). A key that names a core attribute or an alias key is
 // refused (ADR 0072).
-func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
+func (m *Module) EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
 	if len(kv) == 0 {
 		return nil, nil
 	}
@@ -73,7 +73,7 @@ func EnsureCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (
 // KnownCustomFields is the part of kv whose keys are defined Custom fields: what an Identify through
 // the public collect key may write, since it creates no definition (ADR 0171). The rest is dropped,
 // as an invalid value of a core attribute is (ADR 0072).
-func KnownCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
+func (m *Module) KnownCustomFields(ctx context.Context, s *ent.Scoped, kv map[string]any) (map[string]any, error) {
 	if len(kv) == 0 {
 		return nil, nil
 	}
@@ -106,7 +106,7 @@ type CustomFieldUpdateInput struct {
 
 // CustomField returns the Custom field with the given id, ErrCustomFieldNotFound when the Workspace
 // has none.
-func CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField, error) {
+func (m *Module) CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField, error) {
 	field, err := s.CustomField().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, ErrCustomFieldNotFound
@@ -116,7 +116,7 @@ func CustomField(ctx context.Context, s *ent.Scoped, id int64) (*ent.CustomField
 
 // CustomFields returns the Workspace's whole Custom field catalogue, ascending by key.
 // The catalogue is small and unpaginated.
-func CustomFields(ctx context.Context, s *ent.Scoped) ([]*ent.CustomField, error) {
+func (m *Module) CustomFields(ctx context.Context, s *ent.Scoped) ([]*ent.CustomField, error) {
 	return s.CustomField().Query().Order(ent.Asc(customfield.FieldKey)).All(ctx)
 }
 

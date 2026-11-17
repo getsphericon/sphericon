@@ -14,5 +14,5 @@ func (m *UseCase) Revenue(ctx context.Context, s *ent.Scoped, w Window) (*orders
 	if err != nil {
 		return nil, err
 	}
-	return orders.WorkspaceRevenueOver(ctx, s, days)
+	return m.revenues.WorkspaceRevenueOver(ctx, s, days)
 }

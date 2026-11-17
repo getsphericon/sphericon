@@ -28,12 +28,19 @@ type Locked struct {
 // Contact is the Contact as read under the lock.
 func (l Locked) Contact() *ent.Contact { return l.contact }
 
+// Module takes the Contact's row lock. It holds nothing: every call takes the scope whose
+// transaction the lock is held to the end of.
+type Module struct{}
+
+// New builds the module.
+func New() *Module { return &Module{} }
+
 // Lock reads the Contact under FOR NO KEY UPDATE, to the end of the transaction s is bound to. Not
 // FOR UPDATE: a row that references the Contact (an Event stored for it, the Outbound message of a
 // step's send) takes the key-share lock, which this one leaves free, so neither an Events consumer
 // nor a send in flight ever waits for it. The update of the Contact that follows takes the same
 // lock anyway. An ent not-found error when the Contact is not in the Workspace.
-func Lock(ctx context.Context, s *ent.Scoped, contactID int64) (Locked, error) {
+func (m *Module) Lock(ctx context.Context, s *ent.Scoped, contactID int64) (Locked, error) {
 	q := s.Contact().Query().Where(contact.ID(contactID))
 	q.Modify(func(sel *entsql.Selector) { sel.For(entsql.LockNoKeyUpdate) })
 	c, err := q.Only(ctx)
@@ -48,7 +55,7 @@ func Lock(ctx context.Context, s *ent.Scoped, contactID int64) (Locked, error) {
 // commits (ADR 0106); 0 when it is gone already (erased between a send and the click on its link).
 // A row keyed by its Destination is then written unlinked, rather than violating the foreign key.
 // contactID 0 is 0.
-func Referenced(ctx context.Context, s *ent.Scoped, contactID int64) (int64, error) {
+func (m *Module) Referenced(ctx context.Context, s *ent.Scoped, contactID int64) (int64, error) {
 	if contactID == 0 {
 		return 0, nil
 	}

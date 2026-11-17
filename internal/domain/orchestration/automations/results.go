@@ -194,7 +194,7 @@ func periodResultsOf(ctx context.Context, s *ent.Scoped, id int64, w reportday.W
 		d := time.Duration(math.Round(*avg[0].Seconds)) * time.Second
 		out.AverageDuration = &d
 	}
-	revenue, err := orders.CreditedToAutomationsBetween(ctx, s, w.Since, w.Until, id)
+	revenue, err := orders.NewRevenues().CreditedToAutomationsOver(ctx, s, w, id)
 	if err != nil {
 		return PeriodResults{}, err
 	}

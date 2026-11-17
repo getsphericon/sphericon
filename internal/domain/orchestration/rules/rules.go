@@ -532,7 +532,7 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
 		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, g.Size()))
 	}
-	if _, err := condition.RulePredicate(ctx, s, *cond, nil, m.now()); err != nil {
+	if _, err := condition.New(m.now).RulePredicate(ctx, s, *cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
 	return nil
@@ -699,7 +699,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64
 func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Event) (bool, error) {
 	match := contact.ID(ev.ContactID)
 	if cond != nil && *cond != "" {
-		pred, err := condition.RulePredicate(ctx, s, *cond, ev.Properties, m.now())
+		pred, err := condition.New(m.now).RulePredicate(ctx, s, *cond, ev.Properties)
 		if errors.Is(err, condition.ErrStorage) {
 			return false, err
 		}

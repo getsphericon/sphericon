@@ -178,7 +178,7 @@ package that owns its table in the ownership map (`owners` in `tools/analyzers/e
 test holds to `ent/schema` and to the directories of the repository), and a write to it from any
 other package fails the lint. The owner is the domain module of the entity (a module that owns
 several is named after the one the others belong to: `contacts` owns the Contact, its Custom fields
-and its join rows with Tags, so a Contact's Tags are applied there, `contacts.ApplyTagIn`, over the
+and its join rows with Tags, so a Contact's Tags are applied there, `contacts.Module.ApplyTagIn`, over the
 `tags` catalogue's `EnsureIn`); the infrastructure owns the tables of no domain (the bus the Events and external-fact receipts,
 `internal/infra/events`, which stores, prunes, stitches (`StitchVisitor`) and erases them and lists
 the Event log (`ListLog`, `DistinctActions`); the Login

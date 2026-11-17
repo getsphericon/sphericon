@@ -207,7 +207,7 @@ func enroll(ctx context.Context, s *ent.Scoped, pub events.Publisher, automation
 // an Enrollment in the transaction (the lock order above). false when the Contact is not in the
 // Workspace.
 func lockContact(ctx context.Context, s *ent.Scoped, contactID int64) (contactlock.Locked, bool, error) {
-	held, err := contactlock.Lock(ctx, s, contactID)
+	held, err := contactlock.New().Lock(ctx, s, contactID)
 	if ent.IsNotFound(err) {
 		return contactlock.Locked{}, false, nil
 	}
