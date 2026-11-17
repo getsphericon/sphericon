@@ -24,9 +24,35 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// janeResets is Jane, an Owner, resetting a member's Second factor as actor.
+// janeResets is Jane, the Owner of Globex alone, resetting a member's Second factor as actor.
 func janeResets(actor events.Actor) secondfactors.Caller {
 	return secondfactors.Caller{UserID: fixtures.OwnerJaneID, Role: membership.RoleOwner, Actor: actor}
+}
+
+// olga is Olga's actor: she owns Ollivanders and Gringotts, the two Workspaces of Reese.
+var olga = events.Actor{Kind: events.ActorUser, ID: "olga", Name: "Olga"}
+
+// olgaResets is Olga resetting a member's Second factor from Ollivanders.
+func olgaResets() secondfactors.Caller {
+	return secondfactors.Caller{UserID: fixtures.ResetOwnerOlgaID, Role: membership.RoleOwner, Actor: olga}
+}
+
+// resetReese is a reset of Reese's Second factor from Ollivanders by caller.
+func resetReese(t *testing.T, env *testhelper.TestEnv, caller secondfactors.Caller) error {
+	t.Helper()
+	return testhelper.Module[*secondfactors.Module](env).Reset(t.Context(), env.DB.Scoped(fixtures.OllivandersID), fixtures.OllivandersReeseMembershipID, caller)
+}
+
+// resetEntries are the `user.second_factor_reset` Audit entries, oldest Workspace first.
+func resetEntries(t *testing.T, env *testhelper.TestEnv) []*ent.AuditEntry {
+	t.Helper()
+	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
+	got, err := env.DB.AuditEntry.Query().
+		Where(auditentry.Action(events.ActionUserSecondFactorReset)).
+		Order(ent.Asc(auditentry.FieldWorkspaceID)).
+		All(t.Context())
+	require.NoError(t, err)
+	return got
 }
 
 // Nobody resets their own Second factor as a member's: they disable it in their account, which
@@ -47,15 +73,16 @@ func TestResetOfTheCallersOwnSecondFactorIsRefused(t *testing.T) {
 func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 	env, c := setup(t)
 	ctx := t.Context()
-	session := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
+	session := env.SiteToken(t, fixtures.SecondFactorReeseEmail, nil)
 
-	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
-	require.NoError(t, testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
+	require.NoError(t, resetReese(t, env, olgaResets()))
 
-	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorReeseID)
 	require.NoError(t, err)
 	assert.Equal(t, secondfactors.Status{}, st)
-	_, err = verify(t, env, fixtures.SecondFactorSamID, samCode(t, c))
+	code, err := totp.GenerateCode(fixtures.ReeseSecondFactorTotpSecret, c.Now())
+	require.NoError(t, err)
+	_, err = verify(t, env, fixtures.SecondFactorReeseID, code)
 	require.ErrorIs(t, err, secondfactors.ErrNotActive)
 
 	rec := httptest.NewRecorder()
@@ -65,21 +92,100 @@ func TestResetClearsTheFactorAndEndsEverySession(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }
 
-func TestResetIsAuditedInTheActingWorkspaceOnly(t *testing.T) {
+// The factor is the User's, so a reset is recorded in every Workspace of theirs, not only where
+// it was made (ADR 0177).
+func TestResetIsAuditedInEveryWorkspaceOfTheMember(t *testing.T) {
+	env, _ := setup(t)
+
+	require.NoError(t, resetReese(t, env, olgaResets()))
+
+	got := resetEntries(t, env)
+	require.Len(t, got, 2, "Reese belongs to Ollivanders and Gringotts")
+	assert.Equal(t, int64(fixtures.OllivandersID), got[0].WorkspaceID)
+	assert.Equal(t, int64(fixtures.GringottsID), got[1].WorkspaceID)
+	for _, e := range got {
+		assert.Equal(t, "Olga", *e.ActorName)
+		assert.Equal(t, "user", e.TargetType)
+		assert.Equal(t, "Reese", *e.TargetName)
+	}
+}
+
+// The member learns of the reset from a mail, whoever made it and wherever (ADR 0177).
+func TestResetMailsTheMember(t *testing.T) {
+	env, _ := setup(t)
+
+	require.NoError(t, resetReese(t, env, olgaResets()))
+
+	sent := env.SystemMail.Messages()
+	require.Len(t, sent, 1)
+	assert.Equal(t, fixtures.SecondFactorReeseEmail, sent[0].To)
+	assert.Contains(t, sent[0].Subject, "two-factor authentication of your Sphericon account was reset")
+	assert.Contains(t, sent[0].Text, "every session of yours has ended")
+}
+
+// An Admin of both of the member's Workspaces may reset their Second factor.
+func TestAnAdminOfEveryWorkspaceOfTheMemberResetsIt(t *testing.T) {
+	env, _ := setup(t)
+	abe := secondfactors.Caller{UserID: fixtures.ResetAdminAbeID, Role: membership.RoleAdmin, Actor: events.Actor{Kind: events.ActorUser, ID: "abe"}}
+
+	require.NoError(t, resetReese(t, env, abe))
+
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorReeseID)
+	require.NoError(t, err)
+	assert.False(t, st.Enabled)
+}
+
+// A caller who is no member of another Workspace of the member may not reset the factor that guards
+// the member there: nothing changes, nothing is recorded and nobody is mailed (ADR 0177).
+func TestResetIsRefusedWhenTheCallerIsNoMemberOfAnotherWorkspaceOfTheMember(t *testing.T) {
 	env, _ := setup(t)
 	ctx := t.Context()
-	jane := events.Actor{Kind: events.ActorUser, ID: "2", Name: "Jane"}
+	before := env.DB.User.GetX(ctx, fixtures.SecondFactorSamID)
 
-	require.NoError(t, testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(jane)))
+	err := testhelper.Module[*secondfactors.Module](env).Reset(ctx, env.DB.Scoped(fixtures.GlobexID), fixtures.GlobexSamMembershipID, janeResets(events.Actor{Kind: events.ActorUser, ID: "2"}))
 
-	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	got, err := env.DB.AuditEntry.Query().Where(auditentry.Action(events.ActionUserSecondFactorReset)).All(ctx)
+	require.ErrorIs(t, err, memberships.ErrSecondFactorResetElsewhere, "Sam also belongs to Umbrella, where Jane is no member")
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, fixtures.SecondFactorSamID)
 	require.NoError(t, err)
-	require.Len(t, got, 1)
-	assert.Equal(t, int64(fixtures.GlobexID), got[0].WorkspaceID)
-	assert.Equal(t, "Jane", *got[0].ActorName)
-	assert.Equal(t, "user", got[0].TargetType)
-	assert.Equal(t, "Sam", *got[0].TargetName)
+	assert.True(t, st.Enabled)
+	after := env.DB.User.GetX(ctx, fixtures.SecondFactorSamID)
+	assert.Equal(t, before.SessionEpoch, after.SessionEpoch, "no session ends")
+	assert.Empty(t, resetEntries(t, env))
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+// A caller who is a plain member of another Workspace of the member holds no right to reset it
+// there (ADR 0177).
+func TestResetIsRefusedWhenTheCallerIsAPlainMemberOfAnotherWorkspaceOfTheMember(t *testing.T) {
+	env, _ := setup(t)
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Membership.UpdateOneID(fixtures.GringottsAbeMembershipID).SetRole(membership.RoleMember).Exec(t.Context())
+	})
+	abe := secondfactors.Caller{UserID: fixtures.ResetAdminAbeID, Role: membership.RoleAdmin, Actor: events.Actor{Kind: events.ActorUser, ID: "abe"}}
+
+	err := resetReese(t, env, abe)
+
+	require.ErrorIs(t, err, memberships.ErrSecondFactorResetElsewhere)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorReeseID)
+	require.NoError(t, err)
+	assert.True(t, st.Enabled)
+}
+
+// In another Workspace of the member the caller needs the same right as in this one: an Admin does
+// not reset the factor of a member who is an Owner there (ADR 0177).
+func TestResetIsRefusedWhenTheMemberIsAnOwnerOfAnotherWorkspaceTheCallerOnlyAdministers(t *testing.T) {
+	env, _ := setup(t)
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Membership.UpdateOneID(fixtures.GringottsReeseMembershipID).SetRole(membership.RoleOwner).Exec(t.Context())
+	})
+	abe := secondfactors.Caller{UserID: fixtures.ResetAdminAbeID, Role: membership.RoleAdmin, Actor: events.Actor{Kind: events.ActorUser, ID: "abe"}}
+
+	err := resetReese(t, env, abe)
+
+	require.ErrorIs(t, err, memberships.ErrSecondFactorResetElsewhere)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorReeseID)
+	require.NoError(t, err)
+	assert.True(t, st.Enabled)
 }
 
 func TestResetWithoutASecondFactorChangesNothing(t *testing.T) {
@@ -123,6 +229,9 @@ func TestStaffResetIsAuditedInEveryWorkspaceOfTheUser(t *testing.T) {
 	for _, e := range got {
 		assert.Equal(t, auditentry.ActorKindStaff, e.ActorKind)
 	}
+	sent := env.SystemMail.Messages()
+	require.Len(t, sent, 1, "Sam is told of the reset")
+	assert.Equal(t, fixtures.SecondFactorSamEmail, sent[0].To)
 }
 
 func TestStaffResetOfAUserWithNothingToClearChangesNothing(t *testing.T) {

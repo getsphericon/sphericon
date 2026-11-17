@@ -566,8 +566,9 @@ func (a *Module) RecordUserAction(ctx context.Context, tx *ent.Client, in UserAc
 }
 
 // RecordActionOnUser publishes, in the bus transaction tx is bound to, in.Action by in.Actor on
-// in.User into the log of every Workspace that User holds a Membership in (a staff member acting
-// on a User), and none anywhere else.
+// in.User into the log of every Workspace that User holds a Membership in, and none anywhere else:
+// a change of the User reaches every Workspace of theirs, whoever made it (a staff member, an Owner
+// or Admin resetting their Second factor, ADR 0177).
 func (a *Module) RecordActionOnUser(ctx context.Context, tx *ent.Client, in ActionOnUser) error {
 	held, err := tx.Membership.Query().Where(membership.UserID(in.User.ID)).All(ctx)
 	if err != nil {
@@ -575,13 +576,6 @@ func (a *Module) RecordActionOnUser(ctx context.Context, tx *ent.Client, in Acti
 	}
 	ids := lo.Map(held, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID })
 	return a.recordActionOnUserIn(ctx, tx, in, ids...)
-}
-
-// RecordActionOnUserIn publishes in.Action by in.Actor on in.User into the log of the Workspace of
-// the scope ts only, in the bus transaction ts is bound to: an Owner or Admin acting on a member is
-// recorded where they hold that authority, not in the member's other Workspaces.
-func (a *Module) RecordActionOnUserIn(ctx context.Context, ts *ent.Scoped, in ActionOnUser) error {
-	return a.recordActionOnUserIn(ctx, ts, in, ts.WorkspaceID())
 }
 
 // recordActionOnUserIn publishes in into the logs of the given Workspaces only, in the bus

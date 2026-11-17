@@ -26,35 +26,55 @@ func resetSecondFactor(t *testing.T, env *testhelper.TestEnv, email string, work
 
 func TestOwnerResetsAMembersSecondFactorAndEndsTheirSessions(t *testing.T) {
 	env := testhelper.Setup(t)
-	sam := env.SiteToken(t, fixtures.SecondFactorSamEmail, nil)
-	jane := env.SiteToken(t, fixtures.OwnerJaneEmail, nil)
+	reese := env.SiteToken(t, fixtures.SecondFactorReeseEmail, nil)
+	olga := env.SiteToken(t, fixtures.ResetOwnerOlgaEmail, nil)
 
-	res := sendWithSession(t, env, http.MethodPost, fmt.Sprintf("/site/workspaces/%s/memberships/%s/reset-second-factor", fixtures.GlobexPublicID, testhelper.ID(fixtures.GlobexSamMembershipID)), jane, "")
+	res := sendWithSession(t, env, http.MethodPost, fmt.Sprintf("/site/workspaces/%s/memberships/%s/reset-second-factor", fixtures.OllivandersPublicID, testhelper.ID(fixtures.OllivandersReeseMembershipID)), olga, "")
 	require.Equal(t, http.StatusNoContent, res.Code)
 
 	assert.Empty(t, reissued(t, res), "the acting session belongs to someone else: nothing to reissue")
-	assert.Equal(t, http.StatusOK, workspacesStatus(t, env, jane), "the acting session continues")
-	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, sam), "the member's sessions end")
-	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorSamID)
+	assert.Equal(t, http.StatusOK, workspacesStatus(t, env, olga), "the acting session continues")
+	assert.Equal(t, http.StatusUnauthorized, workspacesStatus(t, env, reese), "the member's sessions end")
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorReeseID)
 	require.NoError(t, err)
 	assert.False(t, st.Enabled)
 	assert.Zero(t, st.RecoveryCodesRemaining)
 
-	got := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, events.ActionUserSecondFactorReset)
-	require.Len(t, got, 1)
-	assert.Equal(t, "Jane", got[0].Actor.Name.Value)
-	assert.Equal(t, "user", got[0].Target.Type)
+	for _, ws := range []siteapi.WorkspaceId{fixtures.OllivandersPublicID, fixtures.GringottsPublicID} {
+		got := entriesNamed(t, env, fixtures.ResetOwnerOlgaEmail, ws, events.ActionUserSecondFactorReset)
+		require.Len(t, got, 1, "recorded in every Workspace of the member")
+		assert.Equal(t, "Olga", got[0].Actor.Name.Value)
+		assert.Equal(t, "user", got[0].Target.Type)
+	}
+	sent := env.SystemMail.Messages()
+	require.Len(t, sent, 1)
+	assert.Equal(t, fixtures.SecondFactorReeseEmail, sent[0].To)
 }
 
 func TestAdminResetsAMembersSecondFactor(t *testing.T) {
 	env := testhelper.Setup(t)
-	env.Feed(t, func(tx *ent.Client) error {
-		return tx.Membership.UpdateOneID(fixtures.GlobexMaryMembershipID).SetRole(membership.RoleAdmin).Exec(t.Context())
-	})
 
-	err := resetSecondFactor(t, env, fixtures.MemberMaryEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
+	err := resetSecondFactor(t, env, fixtures.ResetAdminAbeEmail, fixtures.OllivandersPublicID, fixtures.OllivandersReeseMembershipID)
 
 	require.NoError(t, err)
+}
+
+// A member who belongs to a Workspace where the caller may not reset their Second factor is
+// refused on the member, in words that name no Workspace (ADR 0177).
+func TestSecondFactorResetOfAMemberOfAnotherWorkspaceIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	err := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexSamMembershipID)
+
+	problem := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
+	detail := problem.Errors.Value["member"]
+	require.Len(t, detail, 1)
+	assert.Contains(t, detail[0], "also belongs to other workspaces")
+	assert.NotContains(t, detail[0], fixtures.UmbrellaName)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorSamID)
+	require.NoError(t, err)
+	assert.True(t, st.Enabled)
+	assert.Empty(t, env.SystemMail.Messages())
 }
 
 func TestMemberCannotResetASecondFactor(t *testing.T) {
@@ -92,7 +112,7 @@ func TestSecondFactorResetRefusesOneselfAndAMemberWithoutAFactor(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	self := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexOwnerMembershipID)
-	none := resetSecondFactor(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, fixtures.GlobexMaryMembershipID)
+	none := resetSecondFactor(t, env, fixtures.ResetOwnerOlgaEmail, fixtures.OllivandersPublicID, fixtures.OllivandersAbeMembershipID)
 
 	testhelper.SiteRefusal(t, self, http.StatusUnprocessableEntity)
 	testhelper.SiteRefusal(t, none, http.StatusUnprocessableEntity)

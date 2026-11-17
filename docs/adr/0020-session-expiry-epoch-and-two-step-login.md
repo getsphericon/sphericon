@@ -8,6 +8,10 @@ status: accepted
 > token with typed claims, whose parser enforces the expiry on the Instance clock; go-pkgz is no
 > longer a dependency. The session rules below stand.
 
+> **Amended by [[0177-a-second-factor-reset-needs-the-right-in-every-workspace-of-the-member]]:** a
+> Second factor reset by an Owner or Admin needs that right in every Workspace of the member, and
+> every reset is recorded in each of their Workspaces and mailed to the User.
+
 Site sessions are stateless JWT cookies. go-pkgz's `Parse` ignores an expired `exp` (it expects its
 own middleware to refresh), and the site security handler only calls `Parse`, so the 1h token TTL
 was never enforced: a stolen cookie stayed valid until the signing secret changed. We keep go-pkgz

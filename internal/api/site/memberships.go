@@ -54,11 +54,11 @@ func (h *Handlers) SiteMembershipsDelete(ctx context.Context, params siteapi.Sit
 	return nil
 }
 
-// SiteMembershipsResetSecondFactor resets a member's Second factor (ADR 0020):
-// second_factor:manage, and owners:manage for an owner's. It ends every session of the member
-// and records `user.second_factor_reset` in this Workspace; the acting session is
-// someone else's, so nothing is reissued. A member resets nobody, and nobody resets
-// their own here (disabling takes a password and a code).
+// SiteMembershipsResetSecondFactor resets a member's Second factor (ADR 0020, ADR 0177):
+// second_factor:manage, and owners:manage for an owner's, here and in every other Workspace of the
+// member. It ends every session of the member, records `user.second_factor_reset` in each of
+// their Workspaces and mails them; the acting session is someone else's, so nothing is reissued.
+// A member resets nobody, and nobody resets their own here (disabling takes a password and a code).
 func (h *Handlers) SiteMembershipsResetSecondFactor(ctx context.Context, params siteapi.SiteMembershipsResetSecondFactorParams) error {
 	callerID, err := sessionUserID(ctx)
 	if err != nil {

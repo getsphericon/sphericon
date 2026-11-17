@@ -86,7 +86,6 @@ type Users interface {
 	BumpSessionEpochFromIn(ctx context.Context, tx *ent.Client, before *ent.User) (*ent.User, error)
 	RecordUserAction(ctx context.Context, tx *ent.Client, in users.UserAction) error
 	RecordActionOnUser(ctx context.Context, tx *ent.Client, in users.ActionOnUser) error
-	RecordActionOnUserIn(ctx context.Context, ts *ent.Scoped, in users.ActionOnUser) error
 }
 
 // Module enrolls, verifies and removes Second factors, and reads them.

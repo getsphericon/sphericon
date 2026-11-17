@@ -2,8 +2,8 @@
 // without a table (ADR 0112, amended by #1362): what sphericon
 // tells a person on its own behalf when one of its domain events says something happened that they
 // must know of. A User is sent their account's links and notices (a verification link, a password
-// reset, a deleted Passkey, …), a Member their Workspace's invitation and Second factor deadline,
-// and the Owners of a Workspace what happened to its standing and its configuration (a suspension,
+// reset, a deleted Passkey, a Second factor reset, …), a Member their Workspace's invitation and
+// Second factor deadline, and the Owners of a Workspace what happened to its standing and its configuration (a suspension,
 // a lost domain, a disabled Webhook endpoint, …).
 //
 // The events are published by the modules that make the change, in its transaction, and know
@@ -99,6 +99,8 @@ func (u *Module) Issue(ctx context.Context, ev events.DomainEvent) ([]Notice, er
 		return []Notice{userDeleted(e)}, nil
 	case *events.PasskeyChange:
 		return passkeyChanged(e)
+	case *events.SecondFactorReset:
+		return []Notice{secondFactorReset(e)}, nil
 	case *events.InvitationCreated:
 		return u.invitation(ctx, e)
 	case *events.SecondFactorRequired:
@@ -263,6 +265,14 @@ func passkeyChanged(e *events.PasskeyChange) ([]Notice, error) {
 	}
 	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(c[1], map[string]any{"Name": e.Name}), i18n.T(i18n.EmailPasskeyChangedNotMe, nil))
 	return []Notice{{To: e.Email, Subject: i18n.T(c[0], nil), Text: body}}, nil
+}
+
+// secondFactorReset tells the owner of the account that a Second factor reset cleared their
+// Second factor, Recovery codes and Passkeys and ended their sessions (ADR 0177): whoever reset it,
+// in whichever Workspace, the User learns of it. No token and no link.
+func secondFactorReset(e *events.SecondFactorReset) Notice {
+	body := fmt.Sprintf("%s\n\n%s\n", i18n.T(i18n.EmailSecondFactorResetIntro, nil), i18n.T(i18n.EmailSecondFactorResetNotMe, nil))
+	return Notice{To: e.Email, Subject: i18n.T(i18n.EmailSecondFactorResetSubject, nil), Text: body}
 }
 
 // invitation is the mail of an Invitation, with its one-time link. The Workspace and the inviter

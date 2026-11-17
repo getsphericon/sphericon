@@ -303,3 +303,41 @@
   role: owner
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# The rosters of Ollivanders and Gringotts (ADR 0177): Olga owns both, Abe is an admin of both
+# and Reese, with a Second factor, a member of both.
+- id: 7950 # fixture: OllivandersOlgaMembership
+  user_id: 7950
+  workspace_id: 97
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7951 # fixture: GringottsOlgaMembership
+  user_id: 7950
+  workspace_id: 98
+  role: owner
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7952 # fixture: OllivandersAbeMembership
+  user_id: 7951
+  workspace_id: 97
+  role: admin
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7953 # fixture: GringottsAbeMembership
+  user_id: 7951
+  workspace_id: 98
+  role: admin
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7954 # fixture: OllivandersReeseMembership
+  user_id: 7952
+  workspace_id: 97
+  role: member
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 7955 # fixture: GringottsReeseMembership
+  user_id: 7952
+  workspace_id: 98
+  role: member
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'

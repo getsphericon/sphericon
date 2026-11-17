@@ -18,7 +18,7 @@ var notAContact = []string{
 	events.NameInvitationCreated, events.NameUserAddressClaimed, events.NameUserDeleted,
 	events.NameUserDeletionRequested, events.NameUserEmailChangeRequested, events.NameUserIdentityLinked,
 	events.NameUserPasskeyAdded, events.NameUserPasskeyRemoved, events.NameUserPasswordResetRequested,
-	events.NameUserSignedUp, events.NameUserVerificationRequested,
+	events.NameUserSecondFactorReset, events.NameUserSignedUp, events.NameUserVerificationRequested,
 }
 
 // carriesAPerson reports whether the events of name have a field that names a person: an id of a

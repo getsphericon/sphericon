@@ -30,6 +30,9 @@ const (
 	// (ADR 0052).
 	NameUserPasskeyAdded   = "user.passkey_added"
 	NameUserPasskeyRemoved = "user.passkey_removed"
+	// NameUserSecondFactorReset: the Second factor, Recovery codes and Passkeys of the User were
+	// cleared by a Second factor reset, of an Owner or Admin or of a Staff member (ADR 0177).
+	NameUserSecondFactorReset = "user.second_factor_reset"
 )
 
 // LinkRequested is a request for a one-time link to the address Email: a verification, a
@@ -106,3 +109,13 @@ type PasskeyChange struct {
 
 func (e *PasskeyChange) EventName() string { return e.Action }
 func (*PasskeyChange) EventVersion() int   { return 1 }
+
+// SecondFactorReset is a Second factor reset of the User at Email: their Second factor, Recovery
+// codes and Passkeys are gone and every session of theirs ended (ADR 0177).
+type SecondFactorReset struct {
+	UserID int64  `json:"userId"`
+	Email  string `json:"email"`
+}
+
+func (*SecondFactorReset) EventName() string { return NameUserSecondFactorReset }
+func (*SecondFactorReset) EventVersion() int { return 1 }

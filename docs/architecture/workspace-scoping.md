@@ -111,7 +111,9 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    which only they build, through `ent.Scoped.LockWorkspace`, ADR 0108), and `tx.Scoped(...)` inside
    `users.Module.AcceptInvitation` (its `acceptInvitationIn`, which the completion of a pending
    sign-up also runs in its own transaction) and inside `secondfactors.Module.Reset` (the Second
-   factor reset reads its target Membership in the reset's transaction), re-scope a transaction's
+   factor reset reads its target Membership in the reset's transaction; the member's other
+   Workspaces it asks of `memberships.Module.SecondFactorResetElsewhereIn`, on the raw transaction,
+   ADR 0177), re-scope a transaction's
    client to the same Workspace;
    `events.Bus.WithinHandOverTx` also scopes it to the Workspace a Join domain moves away from
    (acting as the system), after `joindomains` has read that Workspace off the holder's row;
@@ -175,7 +177,8 @@ token, the only handle, before any Workspace is known; issuing and revoking take
 tenant, not a tenant-owned entity, so the scoped client has no wrapper for it; a setting is written on the Workspace a
 scope names, and a suspension from the command line resolves a Workspace id in its transaction, `workspaces.Module.IDByPublicIDIn`), `internal/domain/identity/memberships` (the Memberships, ADR 0061, ADR 0102:
 the lookup of a User's Membership that builds a Workspace's scope, the list of a User's Workspaces, the Owners of
-several Workspaces, and the creation of a Workspace with its Owner, `CreateWorkspaceIn`, on the raw transaction of the
+several Workspaces, whether a caller may reset a member's Second factor in every other Workspace of the member
+(`SecondFactorResetElsewhereIn`, ADR 0177), and the creation of a Workspace with its Owner, `CreateWorkspaceIn`, on the raw transaction of the
 use case `workspaceview` or of the Sign-up, since no Workspace exists yet), `internal/api/auth` (credentials, token and key lookup),
 `internal/domain/identity/oauthclients` (the OAuth clients with their authorization codes,
 ADR 0016: a client and its codes belong to no Workspace until a code is exchanged, and a code is

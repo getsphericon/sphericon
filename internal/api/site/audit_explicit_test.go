@@ -255,8 +255,8 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 		CurrentPassword: siteapi.NewOptString("another-pass-1"), Code: regenerated.Response.Codes[0]})
 	require.NoError(t, err)
 
-	err = env.SiteActor(t, fixtures.OwnerJaneEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
-		siteapi.SiteMembershipsResetSecondFactorParams{WorkspaceId: fixtures.GlobexPublicID, ID: idStr(fixtures.GlobexSamMembershipID)})
+	err = env.SiteActor(t, fixtures.ResetOwnerOlgaEmail).SiteMembershipsResetSecondFactor(ctx, // user.second_factor_reset
+		siteapi.SiteMembershipsResetSecondFactorParams{WorkspaceId: fixtures.OllivandersPublicID, ID: idStr(fixtures.OllivandersReeseMembershipID)})
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesCreate(ctx, &siteapi.SiteCreateWorkspaceInput{Name: "Acme Three"}) // workspace.create
 	require.NoError(t, err)

@@ -56,6 +56,9 @@ var (
 	EmailSecondFactorReminderSubject                      = ID{key: "email.second_factor_reminder.subject"}
 	EmailSecondFactorRequiredBody                         = ID{key: "email.second_factor_required.body"}
 	EmailSecondFactorRequiredSubject                      = ID{key: "email.second_factor_required.subject"}
+	EmailSecondFactorResetIntro                           = ID{key: "email.second_factor_reset.intro"}
+	EmailSecondFactorResetNotMe                           = ID{key: "email.second_factor_reset.not_me"}
+	EmailSecondFactorResetSubject                         = ID{key: "email.second_factor_reset.subject"}
 	EmailSendingDomainUnverifiedBody                      = ID{key: "email.sending_domain_unverified.body"}
 	EmailSendingDomainUnverifiedSubject                   = ID{key: "email.sending_domain_unverified.subject"}
 	EmailTrackingDomainRegressedBody                      = ID{key: "email.tracking_domain_regressed.body"}
@@ -298,6 +301,7 @@ var (
 	ErrorsSecondFactorNoPending                           = ID{key: "errors.second_factor_no_pending"}
 	ErrorsSecondFactorNotActive                           = ID{key: "errors.second_factor_not_active"}
 	ErrorsSecondFactorRequired                            = ID{key: "errors.second_factor_required"}
+	ErrorsSecondFactorResetElsewhere                      = ID{key: "errors.second_factor_reset_elsewhere"}
 	ErrorsSecondFactorResetNothing                        = ID{key: "errors.second_factor_reset_nothing"}
 	ErrorsSecondFactorResetSelf                           = ID{key: "errors.second_factor_reset_self"}
 	ErrorsSegmentArchived                                 = ID{key: "errors.segment_archived"}
