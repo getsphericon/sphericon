@@ -6,7 +6,8 @@ status: accepted
 
 > **Amended by [[0120-engagement-tracking-is-consented-per-destination]]:** a message's links are
 > also kept as written when its Destination's Engagement tracking consent does not allow tracking,
-> on SMS and Telegram alike, whatever the author's switch says.
+> on SMS and Telegram alike, whatever the author's switch says. A refusal of tracking takes back
+> the credit an Order took from a click of that Destination.
 
 Email links go through the Tracking domain and record `email.clicked`; a click by software is
 machine engagement and counts nothing (ADR 0053); revenue goes to the Broadcast or Automation of the

@@ -17,7 +17,8 @@ reaches every Segment, Rule and Branch that counts engagement.
 
 - **A test of engagement history is unknown for a Contact whose Destination on that Channel is not
   tracked now**: a count of `email.opened` or `email.clicked` against the Contact's email, of
-  `sms.clicked` against its phone, of `telegram.clicked` against its Bindings, in either direction
+  `sms.clicked` against its phone, of `telegram.clicked` against its Bindings (unknown when any of
+  them is not tracked), in either direction
   ("at least" and "at most"). "Not tracked" is the Destination's effective state today: its
   Engagement tracking consent, or the Workspace's default where none is recorded. It does not look
   at which days of the window were tracked: someone tracked for 80 of 90 days and not today is
