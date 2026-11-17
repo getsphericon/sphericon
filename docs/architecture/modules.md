@@ -225,7 +225,9 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   its importers (`<module>unchecked`, `<module>use`, ADR 0110): each importer builds its own in its
   constructor from what the wiring gave it, so the fence stays as it is. `tagdeletion.New` takes the
   `*tags.Module` and builds `tagsunchecked.New(catalogue)`; `removalcheck.New` builds
-  `segmentsuse.New()`.
+  `segmentsuse.New()`. A type with no dependencies, no field at all, is built where it is used
+  (`eligibility.New()`, `contactlock.New()`, `users.NewFeed()`): two of them have nothing to
+  disagree on.
 - **A `<module>unchecked` subpackage** exports one type, `Module`, built by `New`, and each of its
   unchecked operations is a method of it (`tagsunchecked.Module`).
 - **A plan, then its apply** (ADR 0145). Opening is a method `<Plan>In` of that `Module`

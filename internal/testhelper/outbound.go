@@ -7,14 +7,32 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
+	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
+	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
 // OutboundModule is the Outbound module the harness's own sends run through, for a test that
 // sends from a surface the API does not expose (an Automation step).
 func (env *TestEnv) OutboundModule() *outboundmessages.Module {
 	return Module[*outboundmessages.Module](env)
+}
+
+// OutboundModules are the Modules of an Outbound send module a test builds over bus and now: the
+// env's Contacts (a send only reads through it), and the Chats, the Provider limit's reads and the
+// Standing over that bus and clock, as the wiring builds them over the Instance's. A test with a
+// bus or a clock of its own passes it, so the chats publish in its send's transaction.
+func (env *TestEnv) OutboundModules(bus *events.Bus, now func() time.Time) outboundmessages.Modules {
+	return outboundmessages.Modules{
+		Contacts: Module[*contacts.Module](env),
+		Chats:    bindings.NewChats(bus, now),
+		Limits:   providerlimit.New(now),
+		Standing: integrations.NewStanding(now),
+	}
 }
 
 // ClaimOutbound moves the claim of a fixture Outbound message to `at`: a pending fixture message

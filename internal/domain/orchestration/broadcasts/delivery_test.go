@@ -69,7 +69,7 @@ func newDelivery(t *testing.T, now func() time.Time) *delivery {
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
+	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
 	sched := &recordingScheduler{}
 	return &delivery{
 		t: t, env: env, box: box, res: res,

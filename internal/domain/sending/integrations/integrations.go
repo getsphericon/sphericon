@@ -143,12 +143,12 @@ func (m *Module) editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.In
 
 // New builds the module. presets is the Instance's Preset registry, appURL the public origin the
 // hook URLs are built from, confirm performs a Preset's confirm action (WebConfirmer; a test's
-// stand-in records it) and now the Instance clock a quota lookup and the 24-hour usage are read
-// against.
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, confirm Confirmer, now func() time.Time) *Module {
+// stand-in records it), limits the Provider limit's reads the 24-hour usage comes from, and now
+// the Instance clock a quota lookup is read against.
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, confirm Confirmer, limits *providerlimit.Module, now func() time.Time) *Module {
 	return &Module{
 		bus: bus, cipher: cipher, catalog: catalog, presets: presets, appURL: appURL, confirm: confirm,
-		limits: providerlimit.New(now), now: now,
+		limits: limits, now: now,
 	}
 }
 

@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -88,6 +89,7 @@ type Handlers struct {
 	unsubscribe   *unsubscriberecording.UseCase
 	suppressions  *suppressions.Module
 	confirmations *confirmations.Module
+	exports       *dataexport.Exporter
 }
 
 // Deps is everything the /api handlers are built from. The domain modules are
@@ -139,6 +141,9 @@ type Deps struct {
 	Suppressions *suppressions.Module
 	// Confirmations records the consent a customer collected and reads a Contact's SMS consent.
 	Confirmations *confirmations.Module
+	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
+	// (resources.ExportMapper).
+	Exports *dataexport.Exporter
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -152,6 +157,7 @@ func NewHandlers(d Deps) *Handlers {
 		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,
 		unsubscribe: d.Unsubscribe, suppressions: d.Suppressions, confirmations: d.Confirmations,
+		exports: d.Exports,
 	}
 }
 

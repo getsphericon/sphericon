@@ -40,7 +40,7 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	bus := events.New(pool, entclient.Core.NewTx, time.Now)
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
-		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now),
+		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Modules{}, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now),
 		Cipher: cipher, SystemSender: mail, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
 		Workspaces: workspaces.New(entClient, bus, time.Now),
 	})

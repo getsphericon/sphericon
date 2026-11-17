@@ -32,6 +32,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
@@ -46,7 +47,7 @@ import (
 // erase erases what id names in the Workspace, as an API token asks for it.
 func erase(t *testing.T, env *testhelper.TestEnv, workspaceID int64, id contacterasure.Identifier) error {
 	t.Helper()
-	return contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(workspaceID), id, apiRequester)
+	return contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), testhelper.Module[*bindings.Chats](env), time.Now).Erase(t.Context(), env.DB.Scoped(workspaceID), id, apiRequester)
 }
 
 // eraseErasable erases ContactErasable by its id.

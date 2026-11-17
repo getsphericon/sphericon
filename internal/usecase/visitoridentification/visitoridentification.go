@@ -61,9 +61,10 @@ type UseCase struct {
 
 // New builds the Identify use case; people resolves and upserts the Contact, visits sees and binds
 // the Visitor, tokens checks an Identity token, bindings issues start links and hands a Visitor's
-// over, and now is the Instance clock a hand-over is dated by.
-func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, chats: bindings.NewChats(bus, now), now: now}
+// over, chats hands a Visitor's chats over to the Contact, and now is the Instance clock a
+// hand-over is dated by.
+func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, chats *bindings.Chats, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, chats: chats, now: now}
 }
 
 var (

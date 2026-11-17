@@ -44,7 +44,7 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module,
 }
 
 func tracked(env *testhelper.TestEnv, deps outboundmessages.Deps) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local", time.Now), deps, outboundmessages.Config{}, time.Now)
+	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), deps, outboundmessages.Config{}, time.Now)
 }
 
 // trackingDomains is what the composition root passes while the Instance offers Tracking domains.

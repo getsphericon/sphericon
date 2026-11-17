@@ -173,7 +173,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	queueStep(t, env, fixtures.AutomationRunJobsSingleEmailLiamID)
 
 	fs := &fakeSender{}
-	mod := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolvingTo(fs), messagetoken.New("secret", "https://app.test", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	mod := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolvingTo(fs), messagetoken.New("secret", "https://app.test", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 	env.RunQueuedSteps(t, stepperWith(env, mod))
 
 	require.Len(t, fs.sent, 1)
