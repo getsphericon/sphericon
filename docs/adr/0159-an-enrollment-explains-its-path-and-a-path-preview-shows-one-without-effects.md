@@ -5,6 +5,9 @@ build: [1458]
 
 # An Enrollment explains its path, and a Path preview shows one without effects
 
+> **Amended by [[0178-a-frequency-cap-counts-each-destination-a-message-is-claimed-for-after-eligibility]]:**
+> a send the Path preview would defer shows as deferred, with the cause and until when.
+
 ## Context
 
 An author cannot see why a Contact took the path it took, nor where a Contact would go through a version
