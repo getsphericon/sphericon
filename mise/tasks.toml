@@ -780,6 +780,7 @@ description = "Build .bin/custom-gcl: golangci-lint with our analyzers (.custom-
 sources = [
   ".custom-gcl.yml",
   "tools/analyzers/**/*.go",
+  "tools/analyzers/**/*.txt",
   "tools/analyzers/go.mod",
   "tools/analyzers/go.sum",
   "mise.lock",
