@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # Two Contacts of one person are merged by a deliberate act

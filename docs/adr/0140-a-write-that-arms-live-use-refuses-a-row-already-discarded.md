@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # A write that arms Live use refuses a row already discarded
