@@ -2,6 +2,7 @@ package integrations_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -85,17 +86,32 @@ func TestAnEditWithoutTheSetClearsIt(t *testing.T) {
 	assert.False(t, got.ConfigurationSetMissing)
 }
 
-func TestAConfigurationSetSESWouldNotTakeIsRefused(t *testing.T) {
-	env := testhelper.Setup(t)
-
+func createSESNamed(t *testing.T, env *testhelper.TestEnv, set string) error {
+	t.Helper()
 	_, err := testhelper.Module[*integrations.Module](env).Create(t.Context(), env.DB.Scoped(fixtures.AcmeID), integrations.CreateInput{
 		Name: "Marketing",
 		Config: integrations.ConfigInput{SES: &integrations.SESConfig{
-			Region: "eu-west-1", AccessKeyID: "AKIA1234", SecretAccessKey: "s", From: "news@acme.test", ConfigurationSet: "my set",
+			Region: "eu-west-1", AccessKeyID: "AKIA1234", SecretAccessKey: "s", From: "news@acme.test", ConfigurationSet: set,
 		}},
+		Params: map[string]any{"topic_arn": "arn:aws:sns:eu-west-1:123456789012:acme-marketing"},
 	})
+	return err
+}
+
+// A configuration set is named as SES names one: up to 64 letters, digits, hyphens and underscores.
+func TestAConfigurationSetSESWouldNotTakeIsRefused(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	spaced := createSESNamed(t, env, "my set")
+	long := createSESNamed(t, env, strings.Repeat("s", 65))
+	longest := createSESNamed(t, env, strings.Repeat("s", 64))
 
 	var refusal *validation.RefusalError
-	require.ErrorAs(t, err, &refusal)
+	require.ErrorAs(t, spaced, &refusal)
 	assert.Equal(t, "config.configurationSet", refusal.Field())
+	require.ErrorIs(t, spaced, validation.ErrPatternMismatch)
+	require.ErrorAs(t, long, &refusal)
+	assert.Equal(t, "config.configurationSet", refusal.Field())
+	require.ErrorIs(t, long, validation.ErrTooLong)
+	assert.NoError(t, longest)
 }

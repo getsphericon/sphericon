@@ -246,16 +246,16 @@ func TestExternalIntegrationsSESConfigurationSet(t *testing.T) {
 		Name: externalapi.Name("SES marketing"),
 		Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
 			Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
-			ConfigurationSet: externalapi.NewOptNilString("marketing"),
+			ConfigurationSet: externalapi.NewOptNilSesConfigurationSetName("marketing"),
 		})},
 		Params: externalapi.NewOptJsonObject(externalapi.JsonObject{"topic_arn": jx.Raw(`"arn:aws:sns:eu-west-1:123456789012:ses-events"`)}),
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "marketing", created.Config.OneOf.SesConfig.ConfigurationSet.Or(""))
+	assert.Equal(t, "marketing", string(created.Config.OneOf.SesConfig.ConfigurationSet.Or("")))
 	assert.True(t, created.Config.OneOf.SesConfig.ConfigurationSetMissing)
 
 	got, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: created.ID})
 	require.NoError(t, err)
-	assert.Equal(t, "marketing", got.Config.OneOf.SesConfig.ConfigurationSet.Or(""))
+	assert.Equal(t, "marketing", string(got.Config.OneOf.SesConfig.ConfigurationSet.Or("")))
 	assert.True(t, got.Config.OneOf.SesConfig.ConfigurationSetMissing)
 }

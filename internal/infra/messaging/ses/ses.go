@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"slices"
 	"time"
 
@@ -91,21 +90,8 @@ func validate(raw []byte) error {
 	case cfg.From == "":
 		return errors.New("ses: from is required")
 	}
-	if err := validEndpoint(cfg.Endpoint); err != nil {
-		return err
-	}
-	if cfg.ConfigurationSet != "" && !configurationSetName.MatchString(cfg.ConfigurationSet) {
-		return ErrConfigurationSet
-	}
-	return nil
+	return validEndpoint(cfg.Endpoint)
 }
-
-// configurationSetName is SES's rule for the name of a configuration set: up to 64 letters,
-// digits, hyphens and underscores.
-var configurationSetName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
-
-// ErrConfigurationSet is a configuration set name SES would not take.
-var ErrConfigurationSet = errors.New("ses: configurationSet must be up to 64 letters, digits, hyphens or underscores")
 
 // validEndpoint accepts no endpoint (AWS) or an absolute https URL with a host. Which
 // addresses it may reach is decided when the request dials, not here.

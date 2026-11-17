@@ -1401,7 +1401,7 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) ext
 	externalapiSesConfig.FromName = omitEmpty(source.FromName)
 	externalapiSesConfig.Endpoint = omitEmpty(source.Endpoint)
 	externalapiSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
-	externalapiSesConfig.ConfigurationSet = omitEmpty(source.ConfigurationSet)
+	externalapiSesConfig.ConfigurationSet = omitEmptyConfigurationSet(source.ConfigurationSet)
 	externalapiSesConfig.ConfigurationSetMissing = source.ConfigurationSetMissing
 	return externalapiSesConfig
 }

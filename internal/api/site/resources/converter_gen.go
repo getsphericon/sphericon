@@ -2175,7 +2175,7 @@ func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) sit
 	siteapiSesConfig.FromName = omitEmpty(source.FromName)
 	siteapiSesConfig.Endpoint = omitEmpty(source.Endpoint)
 	siteapiSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
-	siteapiSesConfig.ConfigurationSet = omitEmpty(source.ConfigurationSet)
+	siteapiSesConfig.ConfigurationSet = omitEmptyConfigurationSet(source.ConfigurationSet)
 	siteapiSesConfig.ConfigurationSetMissing = source.ConfigurationSetMissing
 	return siteapiSesConfig
 }

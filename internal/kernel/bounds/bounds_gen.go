@@ -56,6 +56,14 @@ const (
 	MaxPerSecondMax = 10000
 )
 
+// SesConfigurationSet is the name of the SES configuration set an SES Integration's sends name.
+// From site SesConfigurationSetName.
+const (
+	SesConfigurationSetMinLength = 1
+	SesConfigurationSetMaxLength = 64
+	SesConfigurationSetPattern   = `^[A-Za-z0-9_-]+$`
+)
+
 // AttributionWindowDays is how many days a Workspace's Attribution window lasts.
 // From site AttributionWindowDays.
 const (
@@ -333,6 +341,9 @@ var Owners = map[string][]string{
 	"MaxPerDayMax":                       {"Workspace", "DefaultSendCap", "Integration"},
 	"MaxPerSecondMin":                    {"Integration"},
 	"MaxPerSecondMax":                    {"Integration"},
+	"SesConfigurationSetMinLength":       {"internal/domain/sending/integrations"},
+	"SesConfigurationSetMaxLength":       {"internal/domain/sending/integrations"},
+	"SesConfigurationSetPattern":         {"internal/domain/sending/integrations"},
 	"AttributionWindowDaysMin":           {"Workspace"},
 	"AttributionWindowDaysMax":           {"Workspace"},
 	"RetentionDaysMin":                   {"Workspace"},
