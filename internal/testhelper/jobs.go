@@ -182,8 +182,9 @@ func (env *TestEnv) TryDeliverQueuedBroadcasts(t *testing.T) error {
 // (ErrBroadcastWaits) and at a plan job's error.
 func (env *TestEnv) DeliverQueuedBroadcastsThrough(t *testing.T, mod *outboundmessages.Module) error {
 	t.Helper()
-	plan := broadcastWorker(t, env, jobs.NewSendBroadcastWorker(env.DB, mod))
-	send := broadcastWorker(t, env, jobs.NewSendRecipientWorker(env.DB, mod))
+	del := broadcasts.NewDelivery(mod, jobs.RecipientJobs{})
+	plan := broadcastWorker(t, env, jobs.NewSendBroadcastWorker(env.DB, del))
+	send := broadcastWorker(t, env, jobs.NewSendRecipientWorker(env.DB, del))
 	workers := map[string]performFunc{broadcasts.SendArgs{}.Kind(): plan, jobs.SendRecipientArgs{}.Kind(): send}
 	params := river.NewJobListParams().Kinds(broadcasts.SendArgs{}.Kind(), jobs.SendRecipientArgs{}.Kind()).
 		States(rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable).

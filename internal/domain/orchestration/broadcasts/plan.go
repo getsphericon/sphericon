@@ -34,10 +34,11 @@ type Send struct {
 }
 
 // Scheduler is the seam of the Broadcast lifecycle: "schedule this recipient's send at time
-// T". The river adapter inserts a job per send at its time; the synchronous adapter sends in
-// order at once. The module computes the times either way, so both run one sequence.
+// T". The river adapter inserts a job per send at its time, named by the Broadcast's Workspace, on
+// the queue's client of the job it runs in (which the context carries); a synchronous adapter would
+// send in order at once. The module computes the times either way, so both run one sequence.
 type Scheduler interface {
-	Schedule(ctx context.Context, broadcastID int64, sends []Send) error
+	Schedule(ctx context.Context, workspaceID, broadcastID int64, sends []Send) error
 }
 
 // ErrPlanFailed marks a plan that failed the Broadcast for good (a template that does not
@@ -54,18 +55,18 @@ func failPlan(ctx context.Context, s *ent.Scoped, id int64, cause error, at time
 }
 
 // Run is the whole delivery sequence of a Broadcast: plan the audience, pace the recipients
-// and hand each send to the scheduler. It returns *HeldError when the Broadcast is held (it
+// and hand each send to the Delivery's scheduler. It returns *HeldError when the Broadcast is held (it
 // keeps its status and records why, to be run again), lifecycle.ErrInvalidTransition when it
 // is past its plan (a stale job), and a plain error on a fault. A plan that failed the
 // Broadcast (see ErrPlanFailed) is recorded and returns nil. An empty audience
 // settles the Broadcast and schedules nothing. Eligibility is still checked per message at
 // send time, so an unsubscribe or Suppression that lands after planning is honoured. The pace
 // starts at Outbound send's clock, the one its Deferrals of the same recipients read.
-func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler) error {
-	return d.run(ctx, s, id, sched, triggerPlan)
+func (d *Delivery) Run(ctx context.Context, s *ent.Scoped, id int64) error {
+	return d.run(ctx, s, id, triggerPlan)
 }
 
-func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Scheduler, t trigger) error {
+func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, t trigger) error {
 	ids, err := d.plan(ctx, s, id, t)
 	if errors.Is(err, ErrPlanFailed) {
 		return nil // the Broadcast failed once, recorded as such: a retry would only fail again
@@ -73,7 +74,7 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 	if err != nil || len(ids) == 0 {
 		return err
 	}
-	times, err := d.Pace(ctx, s, id, ids, d.out.Now())
+	times, err := d.Pace(ctx, s, id, ids)
 	if err != nil {
 		return err
 	}
@@ -84,7 +85,7 @@ func (d *Delivery) run(ctx context.Context, s *ent.Scoped, id int64, sched Sched
 			sends[i].At = times[i]
 		}
 	}
-	return sched.Schedule(ctx, id, sends)
+	return d.sched.Schedule(ctx, s.WorkspaceID(), id, sends)
 }
 
 // The unique constraint of the Broadcast's recipients (ADR 0106): no client can break it.
@@ -191,7 +192,7 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 	}
 
 	if len(ids) == 0 {
-		if err := Finalize(ctx, s, b.ID, d.out.Now()); err != nil {
+		if err := finalize(ctx, s, b.ID, d.out.Now()); err != nil {
 			return nil, err
 		}
 	}
@@ -244,10 +245,10 @@ func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.T
 }
 
 // AudienceSize is how many Contacts the plan of the Broadcast b, which has left draft, would take
-// if it ran at now: an estimate for a scheduled Broadcast, whose audience is taken when it starts.
-// ErrNoAudience when its plan would fail it instead.
-func AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (int, error) {
-	audience, err := audienceOf(ctx, s, b, now)
+// if it ran now, on Outbound send's clock: an estimate for a scheduled Broadcast, whose audience is
+// taken when it starts. ErrNoAudience when its plan would fail it instead.
+func (m *Module) AudienceSize(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (int, error) {
+	audience, err := audienceOf(ctx, s, b, m.out.Now())
 	if err != nil {
 		return 0, err
 	}
@@ -316,14 +317,15 @@ func callsPerRecipient(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rou
 // Pace spreads the sends to the recipients over time at the Provider limit of the Broadcast's Send
 // route (ADR 0023): a send is scheduled one step after the one before it per call that one makes
 // to the provider (a Telegram Contact with several chats makes one per chat), a step being one over
-// the effective rate, so the limiter is a guard and a Deferral the rare case. The start is now, or
-// the Broadcast's scheduled time when that is later. It records the last scheduled time on the
+// the effective rate, so the limiter is a guard and a Deferral the rare case. The start is now on
+// Outbound send's clock, the one its Deferrals of the same recipients read, or the Broadcast's
+// scheduled time when that is later. It records the last scheduled time on the
 // Broadcast, from which the progress estimate is derived, and returns nil (every send at once)
 // when nothing limits the route. A route that cannot send is not paced: the Broadcast is held
 // (*HeldError, its reason recorded), as Send would hold each of its messages, so the pace and the
 // hold never disagree. Pacing decides only when a send runs: eligibility is still checked per
 // message at send time.
-func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, recipientIDs []int64, now time.Time) ([]time.Time, error) {
+func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, recipientIDs []int64) ([]time.Time, error) {
 	b, err := s.Broadcast().Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("load broadcast %d: %w", id, err)
@@ -344,7 +346,7 @@ func (d *Delivery) Pace(ctx context.Context, s *ent.Scoped, id int64, recipientI
 	if step <= 0 || n == 0 {
 		return nil, s.Broadcast().UpdateOneID(b.ID).ClearLastScheduledAt().Exec(ctx)
 	}
-	start := now
+	start := d.out.Now()
 	if b.ScheduledAt != nil && b.ScheduledAt.After(start) {
 		start = *b.ScheduledAt
 	}

@@ -10,11 +10,18 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
-// Finalize flips a Broadcast to "sent" once none of its recipients' sends is still pending.
-// The finalize move (sending -> sent, a compare-and-swap) makes concurrent finalizers (one per
-// per-recipient job, or an Erasure that removed the last pending recipient) a no-op
-// after the first, as is a Broadcast that is not sending at all, so sent_at is set exactly once.
-func Finalize(ctx context.Context, s *ent.Scoped, broadcastID int64, at time.Time) error {
+// Finalize flips a Broadcast to "sent" once none of its recipients' sends is still pending, at now on
+// Outbound send's clock: what an Erasure that removed a Contact's pending recipients asks of each
+// Broadcast it touched (broadcastsunchecked). The Delivery settles the same way after each send.
+func (m *Module) Finalize(ctx context.Context, s *ent.Scoped, broadcastID int64) error {
+	return finalize(ctx, s, broadcastID, m.out.Now())
+}
+
+// finalize is Finalize at the time at. The finalize move (sending -> sent, a compare-and-swap) makes
+// concurrent finalizers (one per per-recipient job, or an Erasure that removed the last pending
+// recipient) a no-op after the first, as is a Broadcast that is not sending at all, so sent_at is
+// set exactly once.
+func finalize(ctx context.Context, s *ent.Scoped, broadcastID int64, at time.Time) error {
 	pending, err := s.BroadcastRecipient().Query().
 		Where(broadcastrecipient.BroadcastID(broadcastID), Pending()).
 		Exist(ctx)

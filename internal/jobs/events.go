@@ -249,13 +249,14 @@ func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
 type BroadcastUnsubscribeEventWorker struct {
 	river.WorkerDefaults[BroadcastUnsubscribeEventArgs]
 
-	ent *ent.Client
+	ent        *ent.Client
+	broadcasts *broadcasts.Module
 }
 
 // NewBroadcastUnsubscribeEventWorker is the broadcasts consumer's worker over the raw client: the
-// envelope names the Workspace, which Work scopes to.
-func NewBroadcastUnsubscribeEventWorker(client *ent.Client) *BroadcastUnsubscribeEventWorker {
-	return &BroadcastUnsubscribeEventWorker{ent: client}
+// envelope names the Workspace, which Work scopes to, and the Broadcasts record the unsubscribe.
+func NewBroadcastUnsubscribeEventWorker(client *ent.Client, mod *broadcasts.Module) *BroadcastUnsubscribeEventWorker {
+	return &BroadcastUnsubscribeEventWorker{ent: client, broadcasts: mod}
 }
 
 // Work marks the received message's recipient as unsubscribed, without restoring identity.
@@ -263,7 +264,7 @@ func (w *BroadcastUnsubscribeEventWorker) Work(ctx context.Context, job *river.J
 	if job.Args.MessageID == 0 {
 		return nil
 	}
-	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.MessageID, job.Args.ObservedAt); err != nil {
+	if _, err := w.broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.MessageID, job.Args.ObservedAt); err != nil {
 		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
 	}
 	return nil

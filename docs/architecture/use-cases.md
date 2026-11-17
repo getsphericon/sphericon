@@ -152,7 +152,7 @@ Enrollment, in the opt-out's transaction. No opt-out writes a Broadcast row: the
 Channel or a Telegram button, publishes the internal `message.unsubscribed` in its transaction
 (`unsubscriberecording`, or `channelstop` for an SMS link and a Telegram button), and the broadcasts
 consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) is the one caller of
-`broadcasts.RecordUnsubscribe`, after the opt-out commits (ADR 0115). The public
+`broadcasts.Module.RecordUnsubscribe`, after the opt-out commits (ADR 0115). The public
 `email.unsubscribed`, `telegram.unsubscribed` and `sms.unsubscribed` name the Broadcast on the
 Contact's Event only and count nothing. Nothing is lost: the job is inserted in the opt-out's
 transaction, and the count is set once.

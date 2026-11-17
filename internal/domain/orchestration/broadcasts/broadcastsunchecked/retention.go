@@ -3,12 +3,10 @@ package broadcastsunchecked
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcastfigure"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
@@ -21,12 +19,12 @@ import (
 // Freeze writes the Broadcast's figures, as its rows count them, to its BroadcastFigure, unless
 // one is there already: a figures row is written once and never recomputed, so a prune cut short
 // and run again keeps the figures it froze before it deleted anything.
-func Freeze(ctx context.Context, s *ent.Scoped, id int64) error {
+func (m *Module) Freeze(ctx context.Context, s *ent.Scoped, id int64) error {
 	frozen, err := s.BroadcastFigure().Query().Where(broadcastfigure.BroadcastID(id)).Exist(ctx)
 	if err != nil || frozen {
 		return err
 	}
-	stats, err := broadcasts.RowStatsOf(ctx, s, id)
+	stats, err := m.catalogue.RowStatsOf(ctx, s, id)
 	if err != nil {
 		return err
 	}
@@ -44,7 +42,7 @@ func Freeze(ctx context.Context, s *ent.Scoped, id int64) error {
 }
 
 // RecipientsOf lists up to limit of the Broadcast's recipients.
-func RecipientsOf(ctx context.Context, s *ent.Scoped, id int64, limit int) ([]int64, error) {
+func (m *Module) RecipientsOf(ctx context.Context, s *ent.Scoped, id int64, limit int) ([]int64, error) {
 	return s.BroadcastRecipient().Query().
 		Where(broadcastrecipient.BroadcastID(id)).
 		Limit(limit).
@@ -52,14 +50,15 @@ func RecipientsOf(ctx context.Context, s *ent.Scoped, id int64, limit int) ([]in
 }
 
 // DeleteRecipients deletes the recipients, once their messages are gone.
-func DeleteRecipients(ctx context.Context, s *ent.Scoped, ids []int64) error {
+func (m *Module) DeleteRecipients(ctx context.Context, s *ent.Scoped, ids []int64) error {
 	_, err := s.BroadcastRecipient().Delete().Where(broadcastrecipient.IDIn(ids...)).Exec(ctx)
 	return err
 }
 
-// Pruned marks the frozen Broadcast pruned at now: none of its recipients and messages is left. One
-// marked already keeps its moment.
-func Pruned(ctx context.Context, s *ent.Scoped, id int64, now time.Time) error {
+// Pruned marks the frozen Broadcast pruned now, on the Module's clock: none of its recipients and
+// messages is left. One marked already keeps its moment.
+func (m *Module) Pruned(ctx context.Context, s *ent.Scoped, id int64) error {
+	now := m.now()
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := s.BroadcastFigure().Update().
 			Where(broadcastfigure.BroadcastID(id), broadcastfigure.PrunedAtIsNil()).
