@@ -6,6 +6,36 @@ export type ClientOptions = {
 };
 
 /**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export const AbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
+
+/**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export type AbuseMetric = typeof AbuseMetric[keyof typeof AbuseMetric];
+
+/**
+ * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored.
+ */
+export type AbuseWarning = {
+  /**
+   * The Sending domain over the limit
+   */
+  domain: string;
+  /**
+   * Which rate is over
+   */
+  metric: AbuseMetric;
+  /**
+   * The rate, 0–1
+   */
+  rate: number;
+};
+
+/**
  * Every API token scope: the one vocabulary of the external API
  */
 export const ApiTokenScope = {
@@ -172,6 +202,110 @@ export const AuditAction = {
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
 
 /**
+ * The actor of an Audit entry
+ */
+export type AuditActor = {
+  /**
+   * The kind of actor; a staff member is shown to the customer as "Sphericon staff"
+   */
+  kind: AuditActorKind;
+  /**
+   * The actor's id (a User id or an API token id); absent for the system
+   */
+  id?: string | null;
+  /**
+   * Display name snapshot taken when the entry was written
+   */
+  name?: string | null;
+};
+
+/**
+ * Who performed an audited change
+ */
+export const AuditActorKind = {
+  USER: 'user',
+  API_TOKEN: 'api_token',
+  STAFF: 'staff',
+  SYSTEM: 'system'
+} as const;
+
+/**
+ * Who performed an audited change
+ */
+export type AuditActorKind = typeof AuditActorKind[keyof typeof AuditActorKind];
+
+/**
+ * A page of Audit entries, newest first
+ */
+export type AuditEntryList = {
+  items: Array<AuditEntryResource>;
+  /**
+   * Pass as `cursor` for the next page; absent on the last page
+   */
+  nextCursor?: string | null;
+};
+
+/**
+ * One immutable Audit entry (Enterprise)
+ */
+export type AuditEntryResource = {
+  /**
+   * Unique identifier
+   */
+  id: EntityId;
+  /**
+   * When the change happened
+   */
+  occurredAt: Timestamp;
+  /**
+   * Who did it
+   */
+  actor: AuditActor;
+  /**
+   * What was done
+   */
+  action: AuditAction;
+  /**
+   * What it was done to
+   */
+  target: AuditTarget;
+  /**
+   * Before/after of the changed fields; secrets appear as changed only
+   */
+  diff?: JsonObject | null;
+  /**
+   * Request id of the change
+   */
+  requestId?: string | null;
+  /**
+   * Client address of the change
+   */
+  ip?: string | null;
+  /**
+   * Client user agent of the change
+   */
+  userAgent?: string | null;
+};
+
+/**
+ * What an audited change was done to
+ */
+export type AuditTarget = {
+  /**
+   * Entity type, e.g. membership
+   */
+  type: string;
+  /**
+   * The target's id
+   */
+  id?: string | null;
+  /**
+   * Name snapshot taken when the entry was written; absent for a Contact
+   */
+  name?: string | null;
+};
+
+/**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
 export const BroadcastChannel = {
@@ -206,6 +340,22 @@ export type BroadcastContentInput = ({
 } & TelegramBroadcastContentInput) | ({
   channel: 'sms';
 } & SmsBroadcastContentInput);
+
+/**
+ * Broadcast lifecycle status
+ */
+export const BroadcastStatus = {
+  DRAFT: 'draft',
+  SCHEDULED: 'scheduled',
+  SENDING: 'sending',
+  SENT: 'sent',
+  FAILED: 'failed'
+} as const;
+
+/**
+ * Broadcast lifecycle status
+ */
+export type BroadcastStatus = typeof BroadcastStatus[keyof typeof BroadcastStatus];
 
 /**
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
@@ -1330,6 +1480,26 @@ export type ProblemDetails = {
 };
 
 /**
+ * A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no
+ * display floor: the rate is null only when the denominator is zero, an undefined rate never
+ * being reported as 0.
+ */
+export type RateTriple = {
+  /**
+   * Events counted against the rate
+   */
+  numerator: number;
+  /**
+   * The population the rate is over
+   */
+  denominator: number;
+  /**
+   * numerator / denominator, null when the denominator is zero, never reported as 0
+   */
+  rate: number | null;
+};
+
+/**
  * A BCP 47 tag, with its region, that a User picks for how the app shows dates, times and
  * numbers (`en-GB`, `de-DE`). A malformed tag is refused by the handler (422).
  */
@@ -1446,6 +1616,40 @@ export const SetupScope = {
 export type SetupScope = typeof SetupScope[keyof typeof SetupScope];
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const SignupCompanySize = {
+  1: '1',
+  '2_10': '2_10',
+  '11_50': '11_50',
+  '51_200': '51_200',
+  '201_1000': '201_1000',
+  '1000_PLUS': '1000_plus',
+  OTHER: 'other'
+} as const;
+
+/**
+ * How many people work at the User's company (second question)
+ */
+export type SignupCompanySize = typeof SignupCompanySize[keyof typeof SignupCompanySize];
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const SignupGoal = {
+  BROADCASTS: 'broadcasts',
+  AUTOMATIONS: 'automations',
+  TRACKING: 'tracking',
+  MIGRATING: 'migrating',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export type SignupGoal = typeof SignupGoal[keyof typeof SignupGoal];
+
+/**
  * A Sign-up item's key: its address, and the last segment of its Legal document's public page
  */
 export type SignupItemKey = string;
@@ -1470,34 +1674,36 @@ export type SignupItemKind = typeof SignupItemKind[keyof typeof SignupItemKind];
 export type SignupItemTitle = string;
 
 /**
- * The metric of a Sending domain that is over a warning limit of the abuse detector
+ * What the User does (Sign-up survey, first question)
  */
-export const SiteAbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
+export const SignupRole = {
+  FOUNDER: 'founder',
+  MARKETER: 'marketer',
+  DEVELOPER: 'developer',
+  PRODUCT: 'product',
+  OTHER: 'other'
+} as const;
 
 /**
- * The metric of a Sending domain that is over a warning limit of the abuse detector
+ * What the User does (Sign-up survey, first question)
  */
-export type SiteAbuseMetric = typeof SiteAbuseMetric[keyof typeof SiteAbuseMetric];
+export type SignupRole = typeof SignupRole[keyof typeof SignupRole];
 
 /**
- * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
- * over the warning limit but under the freeze limit. Computed live from the trailing
- * 24 hours since any clearance, never stored.
+ * Where the User heard about the product (fourth question, optional)
  */
-export type SiteAbuseWarning = {
-  /**
-   * The Sending domain over the limit
-   */
-  domain: string;
-  /**
-   * Which rate is over
-   */
-  metric: SiteAbuseMetric;
-  /**
-   * The rate, 0–1
-   */
-  rate: number;
-};
+export const SignupSource = {
+  SEARCH: 'search',
+  GITHUB: 'github',
+  SOCIAL: 'social',
+  RECOMMENDATION: 'recommendation',
+  OTHER: 'other'
+} as const;
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export type SignupSource = typeof SignupSource[keyof typeof SignupSource];
 
 /**
  * Accept an invite. For an address with no User or an Unverified User, name + password
@@ -2072,7 +2278,7 @@ export type SiteAttentionItem = {
   /**
    * The rate behind a deliverability warning
    */
-  abuse?: SiteAbuseWarning | null;
+  abuse?: AbuseWarning | null;
   /**
    * When the Send cap is expected to have let the Broadcast out, set on a
    * `scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once
@@ -2146,99 +2352,13 @@ export type SiteAttentionSubject = {
 };
 
 /**
- * The actor of an Audit entry
- */
-export type SiteAuditActor = {
-  /**
-   * The kind of actor; a staff member is shown to the customer as "Sphericon staff"
-   */
-  kind: SiteAuditActorKind;
-  /**
-   * The actor's id (a User id or an API token id); absent for the system
-   */
-  id?: string | null;
-  /**
-   * Display name snapshot taken when the entry was written
-   */
-  name?: string | null;
-};
-
-/**
- * Who performed an audited change
- */
-export const SiteAuditActorKind = {
-  USER: 'user',
-  API_TOKEN: 'api_token',
-  STAFF: 'staff',
-  SYSTEM: 'system'
-} as const;
-
-/**
- * Who performed an audited change
- */
-export type SiteAuditActorKind = typeof SiteAuditActorKind[keyof typeof SiteAuditActorKind];
-
-/**
- * A page of Audit entries, newest first
- */
-export type SiteAuditEntryList = {
-  items: Array<SiteAuditEntryResource>;
-  /**
-   * Pass as `cursor` for the next page; absent on the last page
-   */
-  nextCursor?: string | null;
-};
-
-/**
- * One immutable Audit entry (Enterprise)
- */
-export type SiteAuditEntryResource = {
-  /**
-   * Unique identifier
-   */
-  id: EntityId;
-  /**
-   * When the change happened
-   */
-  occurredAt: Timestamp;
-  /**
-   * Who did it
-   */
-  actor: SiteAuditActor;
-  /**
-   * What was done
-   */
-  action: AuditAction;
-  /**
-   * What it was done to
-   */
-  target: SiteAuditTarget;
-  /**
-   * Before/after of the changed fields; secrets appear as changed only
-   */
-  diff?: JsonObject | null;
-  /**
-   * Request id of the change
-   */
-  requestId?: string | null;
-  /**
-   * Client address of the change
-   */
-  ip?: string | null;
-  /**
-   * Client user agent of the change
-   */
-  userAgent?: string | null;
-};
-
-/**
  * The values that occur in a Workspace's Audit log, offered as the choices of its filter
  */
 export type SiteAuditFacets = {
   /**
    * Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands for the platform staff, and each actor carries its latest name snapshot
    */
-  actors: Array<SiteAuditActor>;
+  actors: Array<AuditActor>;
   /**
    * Every action with an entry in the log, sorted
    */
@@ -2275,24 +2395,6 @@ export type SiteAuditRetentionInput = {
    * The Workspace's revision (ADR 0119): what a read answers and a change names, the one it was read with
    */
   revision: Revision;
-};
-
-/**
- * What an audited change was done to
- */
-export type SiteAuditTarget = {
-  /**
-   * Entity type, e.g. membership
-   */
-  type: string;
-  /**
-   * The target's id
-   */
-  id?: string | null;
-  /**
-   * Name snapshot taken when the entry was written; absent for a Contact
-   */
-  name?: string | null;
 };
 
 /**
@@ -3025,7 +3127,7 @@ export type SiteBroadcastResource = {
   /**
    * Lifecycle status
    */
-  status: SiteBroadcastStatus;
+  status: BroadcastStatus;
   /**
    * Why sending is currently held, when it is
    */
@@ -3162,22 +3264,6 @@ export type SiteBroadcastStats = {
    */
   revenue: SiteMessageRevenue;
 };
-
-/**
- * Broadcast lifecycle status
- */
-export const SiteBroadcastStatus = {
-  DRAFT: 'draft',
-  SCHEDULED: 'scheduled',
-  SENDING: 'sending',
-  SENT: 'sent',
-  FAILED: 'failed'
-} as const;
-
-/**
- * Broadcast lifecycle status
- */
-export type SiteBroadcastStatus = typeof SiteBroadcastStatus[keyof typeof SiteBroadcastStatus];
 
 /**
  * The order of the broadcast list
@@ -5591,25 +5677,6 @@ export const SiteProviderLimitWarning = {
 export type SiteProviderLimitWarning = typeof SiteProviderLimitWarning[keyof typeof SiteProviderLimitWarning];
 
 /**
- * A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,
- * with no display floor: the rate is null only when the denominator is zero.
- */
-export type SiteRate = {
-  /**
-   * Events counted against the rate
-   */
-  numerator: number;
-  /**
-   * The population the rate is over
-   */
-  denominator: number;
-  /**
-   * numerator / denominator, null when the denominator is zero, never reported as 0
-   */
-  rate: number | null;
-};
-
-/**
  * A fresh set of Recovery codes. They are shown only in this response.
  */
 export type SiteRecoveryCodes = {
@@ -6213,11 +6280,11 @@ export type SiteSendingDomainRates = {
   /**
    * Complaints over delivered mail; the rate is null when nothing was delivered in the window
    */
-  complaintRate: SiteRate;
+  complaintRate: RateTriple;
   /**
    * Hard bounces over sent
    */
-  bounceRate: SiteRate;
+  bounceRate: RateTriple;
 };
 
 /**
@@ -6470,40 +6537,6 @@ export type SiteSigninProviders = {
 };
 
 /**
- * How many people work at the User's company (second question)
- */
-export const SiteSignupCompanySize = {
-  1: '1',
-  '2_10': '2_10',
-  '11_50': '11_50',
-  '51_200': '51_200',
-  '201_1000': '201_1000',
-  '1000_PLUS': '1000_plus',
-  OTHER: 'other'
-} as const;
-
-/**
- * How many people work at the User's company (second question)
- */
-export type SiteSignupCompanySize = typeof SiteSignupCompanySize[keyof typeof SiteSignupCompanySize];
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export const SiteSignupGoal = {
-  BROADCASTS: 'broadcasts',
-  AUTOMATIONS: 'automations',
-  TRACKING: 'tracking',
-  MIGRATING: 'migrating',
-  OTHER: 'other'
-} as const;
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export type SiteSignupGoal = typeof SiteSignupGoal[keyof typeof SiteSignupGoal];
-
-/**
  * A Sign-up item in effect, with the label of its current Legal document version: what the
  * sign-up form asks (ADR 0062)
  */
@@ -6545,38 +6578,6 @@ export type SiteSignupItemList = {
 };
 
 /**
- * What the User does (Sign-up survey, first question)
- */
-export const SiteSignupRole = {
-  FOUNDER: 'founder',
-  MARKETER: 'marketer',
-  DEVELOPER: 'developer',
-  PRODUCT: 'product',
-  OTHER: 'other'
-} as const;
-
-/**
- * What the User does (Sign-up survey, first question)
- */
-export type SiteSignupRole = typeof SiteSignupRole[keyof typeof SiteSignupRole];
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export const SiteSignupSource = {
-  SEARCH: 'search',
-  GITHUB: 'github',
-  SOCIAL: 'social',
-  RECOMMENDATION: 'recommendation',
-  OTHER: 'other'
-} as const;
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export type SiteSignupSource = typeof SiteSignupSource[keyof typeof SiteSignupSource];
-
-/**
  * The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize`
  * and `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only
  * with its question's `other` choice.
@@ -6585,7 +6586,7 @@ export type SiteSignupSurveyInput = {
   /**
    * What the User does
    */
-  role: SiteSignupRole;
+  role: SignupRole;
   /**
    * What the User does, when `role` is `other`
    */
@@ -6593,7 +6594,7 @@ export type SiteSignupSurveyInput = {
   /**
    * How many people work at the User's company
    */
-  companySize: SiteSignupCompanySize;
+  companySize: SignupCompanySize;
   /**
    * The company size, when `companySize` is `other`
    */
@@ -6601,7 +6602,7 @@ export type SiteSignupSurveyInput = {
   /**
    * What the User mainly wants to do with the product
    */
-  mainGoal: SiteSignupGoal;
+  mainGoal: SignupGoal;
   /**
    * The main goal, when `mainGoal` is `other`
    */
@@ -6609,7 +6610,7 @@ export type SiteSignupSurveyInput = {
   /**
    * Where the User heard about the product
    */
-  heardFrom?: SiteSignupSource;
+  heardFrom?: SignupSource;
   /**
    * Where the User heard about the product, when `heardFrom` is `other`
    */
@@ -7531,7 +7532,7 @@ export type SiteWorkspaceResource = {
    */
   createdAt: Timestamp;
   /**
-   * The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's completion) does not move it
+   * The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. What the service keeps about it for itself (the service feed's position, the abuse detector's notices, the Setup checklist's completion) lives beside it (ADR 0168) and does not move it
    */
   revision: Revision;
 };
@@ -8167,6 +8168,51 @@ export type WorkspaceId = string;
 export type ArchivedFilter = boolean;
 
 /**
+ * Only entries with exactly this action
+ */
+export type AuditFilterAction = AuditAction;
+
+/**
+ * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
+ */
+export type AuditFilterActorId = string;
+
+/**
+ * Only entries by this kind of actor
+ */
+export type AuditFilterActorKind = AuditActorKind;
+
+/**
+ * Only entries at or after this time
+ */
+export type AuditFilterFrom = Timestamp;
+
+/**
+ * Only entries from this client address
+ */
+export type AuditFilterIp = string;
+
+/**
+ * Only entries made under this request id
+ */
+export type AuditFilterRequestId = string;
+
+/**
+ * Only entries about the target with this id
+ */
+export type AuditFilterTargetId = string;
+
+/**
+ * Only entries about this target type, e.g. integration
+ */
+export type AuditFilterTargetType = string;
+
+/**
+ * Only entries strictly before this time
+ */
+export type AuditFilterTo = Timestamp;
+
+/**
  * Page number (1-based)
  */
 export type PageQueryPage = number;
@@ -8192,51 +8238,6 @@ export type SiteApiTokenResourceKeyWorkspaceId = WorkspaceId;
  * workspace resources (ADR 0043)
  */
 export type SiteApiTokenResourceParentKey = WorkspaceId;
-
-/**
- * Only entries with exactly this action
- */
-export type SiteAuditFilterAction = AuditAction;
-
-/**
- * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
- */
-export type SiteAuditFilterActorId = string;
-
-/**
- * Only entries by this kind of actor
- */
-export type SiteAuditFilterActorKind = SiteAuditActorKind;
-
-/**
- * Only entries at or after this time
- */
-export type SiteAuditFilterFrom = Timestamp;
-
-/**
- * Only entries from this client address
- */
-export type SiteAuditFilterIp = string;
-
-/**
- * Only entries made under this request id
- */
-export type SiteAuditFilterRequestId = string;
-
-/**
- * Only entries about the target with this id
- */
-export type SiteAuditFilterTargetId = string;
-
-/**
- * Only entries about this target type, e.g. integration
- */
-export type SiteAuditFilterTargetType = string;
-
-/**
- * Only entries strictly before this time
- */
-export type SiteAuditFilterTo = Timestamp;
 
 /**
  * Unique identifier
@@ -8315,7 +8316,7 @@ export type SiteBroadcastsListFilterOrder = SiteBroadcastsOrder;
 /**
  * Only the broadcasts in one of these statuses; every status when absent
  */
-export type SiteBroadcastsListFilterStatus = Array<SiteBroadcastStatus>;
+export type SiteBroadcastsListFilterStatus = Array<BroadcastStatus>;
 
 /**
  * Unique identifier
@@ -10826,7 +10827,7 @@ export type SiteAuditListData = {
     /**
      * Only entries by this kind of actor
      */
-    actorKind?: SiteAuditActorKind;
+    actorKind?: AuditActorKind;
     /**
      * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
      */
@@ -10881,7 +10882,7 @@ export type SiteAuditListResponses = {
   /**
    * The request has succeeded.
    */
-  200: SiteAuditEntryList;
+  200: AuditEntryList;
 };
 
 export type SiteAuditListResponse = SiteAuditListResponses[keyof SiteAuditListResponses];
@@ -10903,7 +10904,7 @@ export type SiteAuditExportData = {
     /**
      * Only entries by this kind of actor
      */
-    actorKind?: SiteAuditActorKind;
+    actorKind?: AuditActorKind;
     /**
      * Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind
      */
@@ -11749,7 +11750,7 @@ export type SiteBroadcastsListData = {
     /**
      * Only the broadcasts in one of these statuses; every status when absent
      */
-    status?: Array<SiteBroadcastStatus>;
+    status?: Array<BroadcastStatus>;
     /**
      * Only the broadcasts on this Channel; every Channel when absent
      */

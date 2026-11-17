@@ -186,7 +186,7 @@ export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
  */
 export type AuditActor = {
   /**
-   * The kind of actor; a staff member is shown as "Sphericon staff"
+   * The kind of actor; a staff member is shown to the customer as "Sphericon staff"
    */
   kind: AuditActorKind;
   /**
@@ -4023,8 +4023,9 @@ export const ProviderLimitWarning = {
 export type ProviderLimitWarning = typeof ProviderLimitWarning[keyof typeof ProviderLimitWarning];
 
 /**
- * A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is
- * null when the denominator is zero: an undefined rate is never reported as 0.
+ * A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no
+ * display floor: the rate is null only when the denominator is zero, an undefined rate never
+ * being reported as 0.
  */
 export type RateTriple = {
   /**
@@ -4036,7 +4037,7 @@ export type RateTriple = {
    */
   denominator: number;
   /**
-   * numerator / denominator, null when the denominator is zero
+   * numerator / denominator, null when the denominator is zero, never reported as 0
    */
   rate: number | null;
 };

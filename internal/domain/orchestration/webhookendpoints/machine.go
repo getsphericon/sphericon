@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
 
-// HealthState is derived from the endpoint's existing disable moment and failure run.
+// HealthState is derived from the endpoint's disable moment and its failure run (HealthOf).
 // No second status column duplicates those facts.
 type HealthState string
 
@@ -45,16 +45,16 @@ func healthState(e *ent.WebhookEndpoint) HealthState {
 	if e.DisabledAt != nil {
 		return Disabled
 	}
-	if e.ConsecutiveFailures != nil && *e.ConsecutiveFailures > 0 {
+	if h := HealthOf(e); h.ConsecutiveFailures != nil && *h.ConsecutiveFailures > 0 {
 		return Failing
 	}
 	return Healthy
 }
 
-// HealthMachine configures one change against a freshly loaded endpoint. Fire change.Trigger
-// once, within the transaction that owns storage. storage.Write is the compare-and-swap of the
-// endpoint's health (ADR 0109); its Read is not called, since the machine reads the state of
-// before. Internal transitions explicitly invoke Write: stateless does not invoke its external
+// HealthMachine configures one change against an endpoint freshly loaded with its health
+// (withHealth). Fire change.Trigger once, within the transaction that owns storage. storage.Write is
+// the compare-and-swap of the endpoint's health (ADR 0109); its Read is not called, since the
+// machine reads the state of before. Internal transitions explicitly invoke Write: stateless does not invoke its external
 // storage mutator for them.
 func HealthMachine(before *ent.WebhookEndpoint, change HealthChange, storage lifecycle.Storage[HealthState]) *stateless.StateMachine {
 	current := healthState(before)
@@ -124,11 +124,12 @@ func disableReason(e *ent.WebhookEndpoint, failure *webhook.DeliveryError, now t
 	if failure.Kind == webhook.KindHTTPStatus && failure.Status == http.StatusGone {
 		return webhookendpoint.DisabledReasonGone, true
 	}
+	h := HealthOf(e)
 	failures := 1
-	if e.ConsecutiveFailures != nil {
-		failures += *e.ConsecutiveFailures
+	if h.ConsecutiveFailures != nil {
+		failures += *h.ConsecutiveFailures
 	}
-	if failures >= DisableFailures && e.FailingSince != nil && now.Sub(*e.FailingSince) >= DisableWindow {
+	if failures >= DisableFailures && h.FailingSince != nil && now.Sub(*h.FailingSince) >= DisableWindow {
 		return webhookendpoint.DisabledReasonPersistentFailure, true
 	}
 	return "", false

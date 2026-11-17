@@ -3,11 +3,13 @@ package workspaces
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -137,29 +139,86 @@ func CheckSendCap(sendCap *int) error {
 // MarkAbuseFreezeNotified stamps, at `at`, that the Owners of the Workspace id were told of its
 // suspension.
 func MarkAbuseFreezeNotified(ctx context.Context, client *ent.Client, id int64, at time.Time) error {
-	return client.Workspace.UpdateOneID(id).SetAbuseFreezeNotifiedAt(at).Exec(ctx)
+	return wroteStanding(standingOf(client, id).SetAbuseFreezeNotifiedAt(at).Save(ctx))
 }
 
 // MarkAbuseWarned records, at, that the Owners of the Workspace id were warned of a breach.
 func MarkAbuseWarned(ctx context.Context, client *ent.Client, id int64, at time.Time) error {
-	return client.Workspace.UpdateOneID(id).SetAbuseWarningNotifiedAt(at).Exec(ctx)
+	return wroteStanding(standingOf(client, id).SetAbuseWarningNotifiedAt(at).Save(ctx))
 }
 
 // ClearAbuseWarning ends the warning episode of the Workspace id.
 func ClearAbuseWarning(ctx context.Context, client *ent.Client, id int64) error {
-	return client.Workspace.UpdateOneID(id).ClearAbuseWarningNotifiedAt().Exec(ctx)
+	return wroteStanding(standingOf(client, id).ClearAbuseWarningNotifiedAt().Save(ctx))
 }
 
 // ClearAbuseWarnings ends the warning episode of every Workspace that is warned and matches which.
 func ClearAbuseWarnings(ctx context.Context, client *ent.Client, which ...predicate.Workspace) error {
-	return client.Workspace.Update().
-		Where(append([]predicate.Workspace{workspace.AbuseWarningNotifiedAtNotNil()}, which...)...).
+	return client.WorkspaceStanding.Update().
+		Where(workspacestanding.AbuseWarningNotifiedAtNotNil(), workspacestanding.HasWorkspaceWith(which...)).
 		ClearAbuseWarningNotifiedAt().
 		Exec(ctx)
 }
 
+// AbuseWarned matches the Workspaces whose Owners were warned of the current breach.
+func AbuseWarned() predicate.Workspace {
+	return workspace.HasStandingWith(workspacestanding.AbuseWarningNotifiedAtNotNil())
+}
+
 // SetFeedPosition gives the Workspaces ids the service feed position (ADR 0062): the write of
-// internal/domain/identity/workspacefeed's hook, which takes the position under its lock.
+// internal/domain/identity/workspacefeed's hook, which takes the position under its lock. The hook
+// runs on the creation of a Workspace too, before CreateIn makes its standing, so the write makes
+// the standing of a Workspace that has none yet.
 func SetFeedPosition(ctx context.Context, client *ent.Client, position int64, ids ...int64) error {
-	return client.Workspace.Update().Where(workspace.IDIn(ids...)).SetFeedPosition(position).Exec(ctx)
+	builders := make([]*ent.WorkspaceStandingCreate, len(ids))
+	for i, id := range ids {
+		builders[i] = client.WorkspaceStanding.Create().SetWorkspaceID(id).SetFeedPosition(position)
+	}
+	return client.WorkspaceStanding.CreateBulk(builders...).
+		OnConflictColumns(workspacestanding.FieldWorkspaceID).
+		Update(func(u *ent.WorkspaceStandingUpsert) { u.UpdateFeedPosition() }).
+		Exec(ctx)
+}
+
+// TopFeedPosition is the highest service feed position any Workspace holds, 0 when none took one
+// (on a new Instance, the first Workspace has no standing yet when it takes its position).
+func TopFeedPosition(ctx context.Context, client *ent.Client) (int64, error) {
+	top, err := client.WorkspaceStanding.Query().
+		Order(ent.Desc(workspacestanding.FieldFeedPosition)).Limit(1).
+		Select(workspacestanding.FieldFeedPosition).Ints(ctx)
+	if err != nil || len(top) == 0 {
+		return 0, err
+	}
+	return int64(top[0]), nil
+}
+
+// StandingOf is what the service keeps about ws for itself (ADR 0168), read through its standing
+// edge, which a read that shows or judges it loads (WithStanding). Every Workspace has the row, made
+// with it: an edge not loaded, or loaded empty, is a reader's bug, and reading it as "never warned"
+// would warn the owners twice, so it panics.
+func StandingOf(ws *ent.Workspace) *ent.WorkspaceStanding {
+	standing, err := ws.Edges.StandingOrErr()
+	if err != nil {
+		panic(fmt.Sprintf("workspaces: Workspace %d read without its standing: %v", ws.ID, err))
+	}
+	return standing
+}
+
+// StandingIn reads the standing of the Workspace id (ADR 0168).
+func StandingIn(ctx context.Context, client *ent.Client, id int64) (*ent.WorkspaceStanding, error) {
+	return client.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(id)).Only(ctx)
+}
+
+// wroteStanding is the error of a write of one Workspace's standing: one that found no row is one,
+// since every Workspace has its row.
+func wroteStanding(n int, err error) error {
+	if err == nil && n != 1 {
+		return fmt.Errorf("workspaces: the write of a standing found %d rows, not 1", n)
+	}
+	return err
+}
+
+// standingOf is the update of the standing of the Workspace id (ADR 0168).
+func standingOf(client *ent.Client, id int64) *ent.WorkspaceStandingUpdate {
+	return client.WorkspaceStanding.Update().Where(workspacestanding.WorkspaceID(id))
 }

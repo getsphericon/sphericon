@@ -11,9 +11,11 @@ import (
 
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
+	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -56,9 +58,10 @@ func TestSiteWebhookUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 	assert.EqualValues(t, first.Revision, stored.Revision)
 }
 
-// A delivery that records a failure while the Webhook's editor is open writes Bookkeeping columns
-// alone: the save goes through. One that turns the endpoint off changes what the editor sends
-// (enabled): the save, which would turn it back on, is refused, and the endpoint stays off.
+// A delivery that fails while the Webhook's editor is open writes its failure beside the endpoint
+// (ADR 0168): the endpoint's row is left as it was, the Webhook shows the failure, and the save goes
+// through. One that turns the endpoint off changes what the editor sends (enabled): the save, which
+// would turn it back on, is refused, and the endpoint stays off.
 func TestSiteWebhookSaveSurvivesAFailureRecordButNotATurnOff(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -66,10 +69,18 @@ func TestSiteWebhookSaveSurvivesAFailureRecordButNotATurnOff(t *testing.T) {
 	params := siteapi.SiteWebhooksUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookCodebasicsID)}
 	read, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams(params))
 	require.NoError(t, err)
+	before := env.DB.WebhookEndpoint.GetX(ctx, fixtures.WebhookCodebasicsID)
 
-	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).AddConsecutiveFailures(1).SetLastFailureAt(time.Now()).ExecX(ctx)
+	failure := &webhook.DeliveryError{Kind: webhook.KindHTTPStatus, Status: http.StatusServiceUnavailable}
+	require.NoError(t, testhelper.Module[*webhookendpoints.Module](env).RecordDelivery(ctx, env.DB.Scoped(fixtures.AcmeID), before, failure, time.Now()))
+	failed, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams(params))
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), failed.Failure.Value.ConsecutiveFailures, "the Webhook shows the failure")
+	assert.Equal(t, read.Revision, failed.Revision)
+	afterFailure := env.DB.WebhookEndpoint.GetX(ctx, fixtures.WebhookCodebasicsID)
+	assert.Equal(t, before.UpdatedAt, afterFailure.UpdatedAt, "the failure leaves the endpoint's row")
 	saved, err := c.SiteWebhooksUpdate(ctx, &siteapi.UpdateWebhookInput{Revision: read.Revision, URL: siteapi.NewOptString("https://hooks.example.com/kept")}, params)
-	require.NoError(t, err, "a failure record alone leaves the revision")
+	require.NoError(t, err, "a failure record leaves the revision")
 
 	env.DB.WebhookEndpoint.UpdateOneID(fixtures.WebhookCodebasicsID).
 		SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonPersistentFailure).ExecX(ctx)
@@ -104,8 +115,9 @@ func TestSiteBrandKitSaveOnAStaleRevisionIsRefused(t *testing.T) {
 
 // Two renames of an Integration made on one revision: the second is a 409 revision_changed, and the
 // Integration keeps the first's name (ADR 0119). The quota read every credentials save schedules
-// writes only the provider's reading (schema.Bookkeeping): run between the load and a save, it does
-// not refuse that save.
+// writes the provider's reading beside the Integration (ADR 0168): run between the load and a save,
+// it leaves the Integration's row as it was, so it does not refuse that save, and the Integration
+// still shows the limit it read.
 func TestSiteIntegrationUpdateOnAStaleRevisionIsRefusedButNotOverAQuotaRead(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
@@ -116,10 +128,15 @@ func TestSiteIntegrationUpdateOnAStaleRevisionIsRefusedButNotOverAQuotaRead(t *t
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	params := siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID}
+	before := env.DB.Integration.GetX(ctx, int64(created.ID))
 
 	env.PerformEnqueuedJobs(t, integrations.RefreshQuotaArgs{})
-	refreshed := env.DB.Integration.GetX(ctx, int64(created.ID))
-	require.NotNil(t, refreshed.ProviderQuotaCheckedAt, "the quota read ran")
+	read, err := c.SiteIntegrationsGet(ctx, siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
+	require.NoError(t, err)
+	assert.Equal(t, siteapi.NewNilInt32(14), read.ProviderLimit.PerSecond.Limit, "the Integration shows the limit the read found")
+	assert.Equal(t, created.Revision, read.Revision)
+	afterRead := env.DB.Integration.GetX(ctx, int64(created.ID))
+	assert.Equal(t, before.UpdatedAt, afterRead.UpdatedAt, "the quota read leaves the Integration's row")
 	first, err := c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: created.Revision, Name: siteapi.NewOptName("First")}, params)
 	require.NoError(t, err, "the quota read leaves the revision the editor loaded")
 	_, err = c.SiteIntegrationsUpdate(ctx, &siteapi.UpdateIntegrationInput{Revision: created.Revision, Name: siteapi.NewOptName("Second")}, params)

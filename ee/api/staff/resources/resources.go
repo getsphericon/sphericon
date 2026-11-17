@@ -18,6 +18,7 @@ import (
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
@@ -50,7 +51,7 @@ type StaffConverter interface {
 	// member sees the real actor id, which a customer never does.
 	// goverter:map PublicID ID
 	// goverter:map AbuseExempt Exempt
-	// goverter:map AbuseWarningNotifiedAt Warned | isSet
+	// goverter:map . Warned | abuseWarned
 	// goverter:map . Suspension | workspaceSuspension
 	WorkspaceToResource(source *ent.Workspace) staffeeapi.StaffWorkspaceResource
 
@@ -59,7 +60,7 @@ type StaffConverter interface {
 	// attaches them, each through its own converter method.
 	// goverter:map PublicID ID
 	// goverter:map AbuseExempt Exempt
-	// goverter:map AbuseWarningNotifiedAt Warned | isSet
+	// goverter:map . Warned | abuseWarned
 	// goverter:map . Suspension | workspaceSuspension
 	// The Send cap is attached through SendCapToResource only on an Instance that has Send caps.
 	// goverter:ignore Holds
@@ -80,12 +81,12 @@ type StaffConverter interface {
 
 	// The detected breach, if any, is attached by the handler.
 	// goverter:map AbuseExempt Exempt
-	// goverter:map AbuseWarningNotifiedAt WarningNotifiedAt
-	// goverter:map AbuseFreezeNotifiedAt FreezeNotifiedAt
+	// goverter:map . WarningNotifiedAt | abuseWarningNotifiedAt
+	// goverter:map . FreezeNotifiedAt | abuseFreezeNotifiedAt
 	// goverter:ignore Warning
 	AbuseToResource(source *ent.Workspace) staffeeapi.StaffAbuse
 	// goverter:map . Rate | breachRate
-	BreachToWarning(source abusedetector.Breach) staffeeapi.StaffAbuseWarning
+	BreachToWarning(source abusedetector.Breach) staffeeapi.AbuseWarning
 
 	// goverter:map Complaint ComplaintRate
 	// goverter:map Bounce BounceRate
@@ -105,7 +106,7 @@ type StaffConverter interface {
 	// goverter:map TargetType Type
 	// goverter:map TargetID ID
 	// goverter:map TargetName Name
-	AuditTargetToResource(source auditlog.View) staffeeapi.StaffAuditTarget
+	AuditTargetToResource(source auditlog.View) staffeeapi.AuditTarget
 	// goverter:useEmptyOnNil:slice
 	AuditEntriesToResources(source []auditlog.View) []staffeeapi.StaffAuditEntryResource
 
@@ -133,19 +134,19 @@ type StaffConverter interface {
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// goverter:enum:transform value
-	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.StaffAbuseMetric
+	AbuseMetricToResource(source abusedetector.Metric) staffeeapi.AbuseMetric
 	// The review state a list is filtered by: the input direction, the one enum the console sends.
 	// goverter:enum:transform value
 	// goverter:enum:map StaffWorkspaceReviewSystemFrozen ReviewSystemFrozen
 	ReviewIn(source staffeeapi.StaffWorkspaceReview) abusedetector.Review
 	// goverter:enum:transform value
-	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.StaffSignupCompanySize
+	SignupCompanySizeToResource(source signupsurveyresponse.CompanySize) staffeeapi.SignupCompanySize
 	// goverter:enum:transform value
-	SignupGoalToResource(source signupsurveyresponse.MainGoal) staffeeapi.StaffSignupGoal
+	SignupGoalToResource(source signupsurveyresponse.MainGoal) staffeeapi.SignupGoal
 	// goverter:enum:transform value
-	SignupRoleToResource(source signupsurveyresponse.Role) staffeeapi.StaffSignupRole
+	SignupRoleToResource(source signupsurveyresponse.Role) staffeeapi.SignupRole
 	// goverter:enum:transform value
-	SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffeeapi.StaffSignupSource
+	SignupSourceToResource(source signupsurveyresponse.HeardFrom) staffeeapi.SignupSource
 	// goverter:enum:transform value
 	SuspensionActorKindToResource(source workspace.SuspendedByKind) staffeeapi.StaffSuspensionActorKind
 }
@@ -275,7 +276,21 @@ func serviceOptNilTimestampAt(t time.Time) serviceapi.OptNilTimestamp {
 	return serviceapi.NewOptNilTimestamp(serviceapi.Timestamp(t))
 }
 
-func isSet(t *time.Time) bool { return t != nil }
+// abuseWarned reports whether the Workspace's owners were warned of the current breach: its
+// standing, read with it (workspaces.StandingOf).
+func abuseWarned(w *ent.Workspace) bool {
+	return workspaces.StandingOf(w).AbuseWarningNotifiedAt != nil
+}
+
+// abuseWarningNotifiedAt is when the Workspace's owners were warned of the current breach.
+func abuseWarningNotifiedAt(w *ent.Workspace) staffeeapi.OptNilTimestamp {
+	return optNilTimestamp(workspaces.StandingOf(w).AbuseWarningNotifiedAt)
+}
+
+// abuseFreezeNotifiedAt is when the Workspace's owners were told of its freeze.
+func abuseFreezeNotifiedAt(w *ent.Workspace) staffeeapi.OptNilTimestamp {
+	return optNilTimestamp(workspaces.StandingOf(w).AbuseFreezeNotifiedAt)
+}
 
 func breachRate(b abusedetector.Breach) float64 { return b.Rate() }
 
@@ -319,8 +334,8 @@ func nilMaxPerDay(v *int) staffeeapi.NilMaxPerDay {
 // count narrows a count to the contract's int32.
 func count(n int) int32 { return narrow.Int32(n) }
 
-func optNilSource(c StaffConverter, v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilStaffSignupSource {
-	return convert.OptVia[staffeeapi.OptNilStaffSignupSource](v, c.SignupSourceToResource)
+func optNilSource(c StaffConverter, v *signupsurveyresponse.HeardFrom) staffeeapi.OptNilSignupSource {
+	return convert.OptVia[staffeeapi.OptNilSignupSource](v, c.SignupSourceToResource)
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }

@@ -49,24 +49,12 @@ const (
 	FieldMaxPerSecond = "max_per_second"
 	// FieldMaxPerDay holds the string denoting the max_per_day field in the database.
 	FieldMaxPerDay = "max_per_day"
-	// FieldProviderMaxPerSecond holds the string denoting the provider_max_per_second field in the database.
-	FieldProviderMaxPerSecond = "provider_max_per_second"
-	// FieldProviderMaxPerDay holds the string denoting the provider_max_per_day field in the database.
-	FieldProviderMaxPerDay = "provider_max_per_day"
-	// FieldProviderEnforcement holds the string denoting the provider_enforcement field in the database.
-	FieldProviderEnforcement = "provider_enforcement"
-	// FieldProviderSandbox holds the string denoting the provider_sandbox field in the database.
-	FieldProviderSandbox = "provider_sandbox"
-	// FieldProviderRefusedAt holds the string denoting the provider_refused_at field in the database.
-	FieldProviderRefusedAt = "provider_refused_at"
-	// FieldProviderQuotaCheckedAt holds the string denoting the provider_quota_checked_at field in the database.
-	FieldProviderQuotaCheckedAt = "provider_quota_checked_at"
-	// FieldProviderQuotaFailedAt holds the string denoting the provider_quota_failed_at field in the database.
-	FieldProviderQuotaFailedAt = "provider_quota_failed_at"
 	// EdgeWorkspace holds the string denoting the workspace edge name in mutations.
 	EdgeWorkspace = "workspace"
 	// EdgeProviderLimiter holds the string denoting the provider_limiter edge name in mutations.
 	EdgeProviderLimiter = "provider_limiter"
+	// EdgeProviderState holds the string denoting the provider_state edge name in mutations.
+	EdgeProviderState = "provider_state"
 	// EdgeCapturedMessages holds the string denoting the captured_messages edge name in mutations.
 	EdgeCapturedMessages = "captured_messages"
 	// EdgeBindings holds the string denoting the bindings edge name in mutations.
@@ -89,6 +77,13 @@ const (
 	ProviderLimiterInverseTable = "provider_limiters"
 	// ProviderLimiterColumn is the table column denoting the provider_limiter relation/edge.
 	ProviderLimiterColumn = "integration_id"
+	// ProviderStateTable is the table that holds the provider_state relation/edge.
+	ProviderStateTable = "integration_provider_state"
+	// ProviderStateInverseTable is the table name for the IntegrationProviderState entity.
+	// It exists in this package in order to avoid circular dependency with the "integrationproviderstate" package.
+	ProviderStateInverseTable = "integration_provider_state"
+	// ProviderStateColumn is the table column denoting the provider_state relation/edge.
+	ProviderStateColumn = "integration_id"
 	// CapturedMessagesTable is the table that holds the captured_messages relation/edge.
 	CapturedMessagesTable = "captured_messages"
 	// CapturedMessagesInverseTable is the table name for the CapturedMessage entity.
@@ -131,13 +126,6 @@ var Columns = []string{
 	FieldIsDefault,
 	FieldMaxPerSecond,
 	FieldMaxPerDay,
-	FieldProviderMaxPerSecond,
-	FieldProviderMaxPerDay,
-	FieldProviderEnforcement,
-	FieldProviderSandbox,
-	FieldProviderRefusedAt,
-	FieldProviderQuotaCheckedAt,
-	FieldProviderQuotaFailedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -175,8 +163,6 @@ var (
 	MaxPerSecondValidator func(int) error
 	// MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	MaxPerDayValidator func(int) error
-	// DefaultProviderSandbox holds the default value on creation for the "provider_sandbox" field.
-	DefaultProviderSandbox bool
 )
 
 // ChannelValidator is a validator for the "channel" field enum values. It is called by the builders before save.
@@ -196,16 +182,6 @@ func ProviderValidator(pr providers.Provider) error {
 		return nil
 	default:
 		return fmt.Errorf("integration: invalid enum value for provider field: %q", pr)
-	}
-}
-
-// ProviderEnforcementValidator is a validator for the "provider_enforcement" field enum values. It is called by the builders before save.
-func ProviderEnforcementValidator(pe providers.Enforcement) error {
-	switch pe {
-	case "probation", "shutdown":
-		return nil
-	default:
-		return fmt.Errorf("integration: invalid enum value for provider_enforcement field: %q", pe)
 	}
 }
 
@@ -297,41 +273,6 @@ func ByMaxPerDay(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldMaxPerDay, opts...).ToFunc()
 }
 
-// ByProviderMaxPerSecond orders the results by the provider_max_per_second field.
-func ByProviderMaxPerSecond(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderMaxPerSecond, opts...).ToFunc()
-}
-
-// ByProviderMaxPerDay orders the results by the provider_max_per_day field.
-func ByProviderMaxPerDay(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderMaxPerDay, opts...).ToFunc()
-}
-
-// ByProviderEnforcement orders the results by the provider_enforcement field.
-func ByProviderEnforcement(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderEnforcement, opts...).ToFunc()
-}
-
-// ByProviderSandbox orders the results by the provider_sandbox field.
-func ByProviderSandbox(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderSandbox, opts...).ToFunc()
-}
-
-// ByProviderRefusedAt orders the results by the provider_refused_at field.
-func ByProviderRefusedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderRefusedAt, opts...).ToFunc()
-}
-
-// ByProviderQuotaCheckedAt orders the results by the provider_quota_checked_at field.
-func ByProviderQuotaCheckedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderQuotaCheckedAt, opts...).ToFunc()
-}
-
-// ByProviderQuotaFailedAt orders the results by the provider_quota_failed_at field.
-func ByProviderQuotaFailedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldProviderQuotaFailedAt, opts...).ToFunc()
-}
-
 // ByWorkspaceField orders the results by workspace field.
 func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -343,6 +284,13 @@ func ByWorkspaceField(field string, opts ...sql.OrderTermOption) OrderOption {
 func ByProviderLimiterField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newProviderLimiterStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByProviderStateField orders the results by provider_state field.
+func ByProviderStateField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProviderStateStep(), sql.OrderByField(field, opts...))
 	}
 }
 
@@ -399,6 +347,13 @@ func newProviderLimiterStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProviderLimiterInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, ProviderLimiterTable, ProviderLimiterColumn),
+	)
+}
+func newProviderStateStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProviderStateInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ProviderStateTable, ProviderStateColumn),
 	)
 }
 func newCapturedMessagesStep() *sqlgraph.Step {

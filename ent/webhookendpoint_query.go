@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -14,6 +15,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
 )
 
@@ -25,6 +27,7 @@ type WebhookEndpointQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.WebhookEndpoint
 	withWorkspace *WorkspaceQuery
+	withHealth    *WebhookEndpointHealthQuery
 	modifiers     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -77,6 +80,28 @@ func (_q *WebhookEndpointQuery) QueryWorkspace() *WorkspaceQuery {
 			sqlgraph.From(webhookendpoint.Table, webhookendpoint.FieldID, selector),
 			sqlgraph.To(workspace.Table, workspace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, webhookendpoint.WorkspaceTable, webhookendpoint.WorkspaceColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryHealth chains the current query on the "health" edge.
+func (_q *WebhookEndpointQuery) QueryHealth() *WebhookEndpointHealthQuery {
+	query := (&WebhookEndpointHealthClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(webhookendpoint.Table, webhookendpoint.FieldID, selector),
+			sqlgraph.To(webhookendpointhealth.Table, webhookendpointhealth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, webhookendpoint.HealthTable, webhookendpoint.HealthColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -277,6 +302,7 @@ func (_q *WebhookEndpointQuery) Clone() *WebhookEndpointQuery {
 		inters:        append([]Interceptor{}, _q.inters...),
 		predicates:    append([]predicate.WebhookEndpoint{}, _q.predicates...),
 		withWorkspace: _q.withWorkspace.Clone(),
+		withHealth:    _q.withHealth.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -292,6 +318,17 @@ func (_q *WebhookEndpointQuery) WithWorkspace(opts ...func(*WorkspaceQuery)) *We
 		opt(query)
 	}
 	_q.withWorkspace = query
+	return _q
+}
+
+// WithHealth tells the query-builder to eager-load the nodes that are connected to
+// the "health" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WebhookEndpointQuery) WithHealth(opts ...func(*WebhookEndpointHealthQuery)) *WebhookEndpointQuery {
+	query := (&WebhookEndpointHealthClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withHealth = query
 	return _q
 }
 
@@ -373,8 +410,9 @@ func (_q *WebhookEndpointQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	var (
 		nodes       = []*WebhookEndpoint{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withWorkspace != nil,
+			_q.withHealth != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -401,6 +439,12 @@ func (_q *WebhookEndpointQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if query := _q.withWorkspace; query != nil {
 		if err := _q.loadWorkspace(ctx, query, nodes, nil,
 			func(n *WebhookEndpoint, e *Workspace) { n.Edges.Workspace = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withHealth; query != nil {
+		if err := _q.loadHealth(ctx, query, nodes, nil,
+			func(n *WebhookEndpoint, e *WebhookEndpointHealth) { n.Edges.Health = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -433,6 +477,33 @@ func (_q *WebhookEndpointQuery) loadWorkspace(ctx context.Context, query *Worksp
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
+	}
+	return nil
+}
+func (_q *WebhookEndpointQuery) loadHealth(ctx context.Context, query *WebhookEndpointHealthQuery, nodes []*WebhookEndpoint, init func(*WebhookEndpoint), assign func(*WebhookEndpoint, *WebhookEndpointHealth)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*WebhookEndpoint)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(webhookendpointhealth.FieldWebhookEndpointID)
+	}
+	query.Where(predicate.WebhookEndpointHealth(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(webhookendpoint.HealthColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WebhookEndpointID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "webhook_endpoint_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
 	}
 	return nil
 }

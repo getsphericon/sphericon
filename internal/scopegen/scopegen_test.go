@@ -61,11 +61,13 @@ func TestGenerateRefusesPermissionsOnAnOperationWithoutAWorkspace(t *testing.T) 
 	require.ErrorContains(t, err, "has no workspaceId")
 }
 
-func TestGenerateRefusesTheWithheldMarkOnAnOperationWithoutAWorkspace(t *testing.T) {
-	_, err := scopegen.SitePermissions.Generate([]byte(`{"paths":{"/me":{"get":{"operationId":"SiteUser_getMe","x-allowed-while-withheld":true}}}}`))
+// The Two-factor requirement applies only in a Workspace, so the withheld mark of an operation of no
+// Workspace lets nothing through and is left out of its row (`tsp compile` refuses it first).
+func TestGenerateLeavesTheWithheldMarkOutOfAnOperationWithoutAWorkspace(t *testing.T) {
+	src, err := scopegen.SitePermissions.Generate([]byte(`{"paths":{"/me":{"get":{"operationId":"SiteUser_getMe","x-allowed-while-withheld":true}}}}`))
+	require.NoError(t, err)
 
-	require.ErrorContains(t, err, "SiteUser_getMe")
-	require.ErrorContains(t, err, "x-allowed-while-withheld")
+	require.Regexp(t, `SiteUserGetMeOperation:\s+\{\},`, string(src))
 }
 
 func TestGenerateMarksTheOperationsAUserWithAnAcceptancePendingMayCall(t *testing.T) {

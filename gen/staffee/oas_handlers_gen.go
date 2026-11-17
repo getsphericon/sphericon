@@ -965,7 +965,7 @@ func (s *Server) handleStaffWorkspacesExemptRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *StaffExemptionChange
+	var response *StaffWorkspaceChange
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -986,7 +986,7 @@ func (s *Server) handleStaffWorkspacesExemptRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = StaffWorkspacesExemptParams
-			Response = *StaffExemptionChange
+			Response = *StaffWorkspaceChange
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -1810,7 +1810,7 @@ func (s *Server) handleStaffWorkspacesSuspendRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response *StaffSuspensionChange
+	var response *StaffWorkspaceChange
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -1831,7 +1831,7 @@ func (s *Server) handleStaffWorkspacesSuspendRequest(args [1]string, argsEscaped
 		type (
 			Request  = *StaffSuspendInput
 			Params   = StaffWorkspacesSuspendParams
-			Response = *StaffSuspensionChange
+			Response = *StaffWorkspaceChange
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2010,7 +2010,7 @@ func (s *Server) handleStaffWorkspacesUnexemptRequest(args [1]string, argsEscape
 
 	var rawBody []byte
 
-	var response *StaffExemptionChange
+	var response *StaffWorkspaceChange
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2031,7 +2031,7 @@ func (s *Server) handleStaffWorkspacesUnexemptRequest(args [1]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = StaffWorkspacesUnexemptParams
-			Response = *StaffExemptionChange
+			Response = *StaffWorkspaceChange
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -2211,7 +2211,7 @@ func (s *Server) handleStaffWorkspacesUnsuspendRequest(args [1]string, argsEscap
 
 	var rawBody []byte
 
-	var response *StaffSuspensionChange
+	var response *StaffWorkspaceChange
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2232,7 +2232,7 @@ func (s *Server) handleStaffWorkspacesUnsuspendRequest(args [1]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = StaffWorkspacesUnsuspendParams
-			Response = *StaffSuspensionChange
+			Response = *StaffWorkspaceChange
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

@@ -6,6 +6,36 @@ export type ClientOptions = {
 };
 
 /**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export const AbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
+
+/**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export type AbuseMetric = typeof AbuseMetric[keyof typeof AbuseMetric];
+
+/**
+ * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored.
+ */
+export type AbuseWarning = {
+  /**
+   * The Sending domain over the limit
+   */
+  domain: string;
+  /**
+   * Which rate is over
+   */
+  metric: AbuseMetric;
+  /**
+   * The rate, 0–1
+   */
+  rate: number;
+};
+
+/**
  * What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its
  * own, or the create, update or delete of an audited object
  */
@@ -106,6 +136,24 @@ export const AuditAction = {
  * own, or the create, update or delete of an audited object
  */
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];
+
+/**
+ * What an audited change was done to
+ */
+export type AuditTarget = {
+  /**
+   * Entity type, e.g. membership
+   */
+  type: string;
+  /**
+   * The target's id
+   */
+  id?: string | null;
+  /**
+   * Name snapshot taken when the entry was written; absent for a Contact
+   */
+  name?: string | null;
+};
 
 /**
  * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
@@ -298,6 +346,72 @@ export type RevisionInput = {
 };
 
 /**
+ * How many people work at the User's company (second question)
+ */
+export const SignupCompanySize = {
+  1: '1',
+  '2_10': '2_10',
+  '11_50': '11_50',
+  '51_200': '51_200',
+  '201_1000': '201_1000',
+  '1000_PLUS': '1000_plus',
+  OTHER: 'other'
+} as const;
+
+/**
+ * How many people work at the User's company (second question)
+ */
+export type SignupCompanySize = typeof SignupCompanySize[keyof typeof SignupCompanySize];
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export const SignupGoal = {
+  BROADCASTS: 'broadcasts',
+  AUTOMATIONS: 'automations',
+  TRACKING: 'tracking',
+  MIGRATING: 'migrating',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User mainly wants to do with the product (third question)
+ */
+export type SignupGoal = typeof SignupGoal[keyof typeof SignupGoal];
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export const SignupRole = {
+  FOUNDER: 'founder',
+  MARKETER: 'marketer',
+  DEVELOPER: 'developer',
+  PRODUCT: 'product',
+  OTHER: 'other'
+} as const;
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export type SignupRole = typeof SignupRole[keyof typeof SignupRole];
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export const SignupSource = {
+  SEARCH: 'search',
+  GITHUB: 'github',
+  SOCIAL: 'social',
+  RECOMMENDATION: 'recommendation',
+  OTHER: 'other'
+} as const;
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export type SignupSource = typeof SignupSource[keyof typeof SignupSource];
+
+/**
  * A Workspace the User is the only Owner of, which blocks User deletion
  */
 export type SoleOwnedWorkspace = {
@@ -334,29 +448,7 @@ export type StaffAbuse = {
   /**
    * Present while the Workspace is in the warning tier, computed now
    */
-  warning?: StaffAbuseWarning | null;
-};
-
-/**
- * Which metric of a Sending domain breached the abuse detector's warning limit
- */
-export const StaffAbuseMetric = { COMPLAINT: 'complaint', BOUNCE: 'bounce' } as const;
-
-/**
- * Which metric of a Sending domain breached the abuse detector's warning limit
- */
-export type StaffAbuseMetric = typeof StaffAbuseMetric[keyof typeof StaffAbuseMetric];
-
-/**
- * A Sending domain in the warning tier (ADR 0026), by the detector's own computation
- */
-export type StaffAbuseWarning = {
-  domain: string;
-  metric: StaffAbuseMetric;
-  /**
-   * The rate, 0–1
-   */
-  rate: number;
+  warning?: AbuseWarning | null;
 };
 
 /**
@@ -427,9 +519,9 @@ export type StaffAuditEntryResource = {
   /**
    * What it was done to
    */
-  target: StaffAuditTarget;
+  target: AuditTarget;
   /**
-   * Before/after of the changed fields
+   * Before/after of the changed fields; secrets appear as changed only
    */
   diff?: JsonObject | null;
   /**
@@ -444,24 +536,6 @@ export type StaffAuditEntryResource = {
    * Client user agent of the change
    */
   userAgent?: string | null;
-};
-
-/**
- * What an audited change was done to
- */
-export type StaffAuditTarget = {
-  /**
-   * Entity type, e.g. membership
-   */
-  type: string;
-  /**
-   * The target's id
-   */
-  id?: string | null;
-  /**
-   * Name snapshot taken when the entry was written
-   */
-  name?: string | null;
 };
 
 /**
@@ -507,15 +581,6 @@ export type StaffDomainRates = {
    * Hard bounces over sent
    */
   bounceRate: StaffRate;
-};
-
-/**
- * The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
- * anything changed
- */
-export type StaffExemptionChange = {
-  changed: boolean;
-  workspace: StaffWorkspaceResource;
 };
 
 /**
@@ -607,52 +672,18 @@ export type StaffSendCapInput = {
 };
 
 /**
- * How many people work at the User's company (second question)
- */
-export const StaffSignupCompanySize = {
-  1: '1',
-  '2_10': '2_10',
-  '11_50': '11_50',
-  '51_200': '51_200',
-  '201_1000': '201_1000',
-  '1000_PLUS': '1000_plus',
-  OTHER: 'other'
-} as const;
-
-/**
- * How many people work at the User's company (second question)
- */
-export type StaffSignupCompanySize = typeof StaffSignupCompanySize[keyof typeof StaffSignupCompanySize];
-
-/**
  * How many Users chose a company size
  */
 export type StaffSignupCompanySizeCount = {
-  choice: StaffSignupCompanySize;
+  choice: SignupCompanySize;
   count: number;
 };
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export const StaffSignupGoal = {
-  BROADCASTS: 'broadcasts',
-  AUTOMATIONS: 'automations',
-  TRACKING: 'tracking',
-  MIGRATING: 'migrating',
-  OTHER: 'other'
-} as const;
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export type StaffSignupGoal = typeof StaffSignupGoal[keyof typeof StaffSignupGoal];
 
 /**
  * How many Users chose a main goal
  */
 export type StaffSignupGoalCount = {
-  choice: StaffSignupGoal;
+  choice: SignupGoal;
   count: number;
 };
 
@@ -665,50 +696,18 @@ export type StaffSignupOtherTextCount = {
 };
 
 /**
- * What the User does (Sign-up survey, first question)
- */
-export const StaffSignupRole = {
-  FOUNDER: 'founder',
-  MARKETER: 'marketer',
-  DEVELOPER: 'developer',
-  PRODUCT: 'product',
-  OTHER: 'other'
-} as const;
-
-/**
- * What the User does (Sign-up survey, first question)
- */
-export type StaffSignupRole = typeof StaffSignupRole[keyof typeof StaffSignupRole];
-
-/**
  * How many Users chose a role
  */
 export type StaffSignupRoleCount = {
-  choice: StaffSignupRole;
+  choice: SignupRole;
   count: number;
 };
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export const StaffSignupSource = {
-  SEARCH: 'search',
-  GITHUB: 'github',
-  SOCIAL: 'social',
-  RECOMMENDATION: 'recommendation',
-  OTHER: 'other'
-} as const;
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export type StaffSignupSource = typeof StaffSignupSource[keyof typeof StaffSignupSource];
 
 /**
  * How many Users chose a source
  */
 export type StaffSignupSourceCount = {
-  choice: StaffSignupSource;
+  choice: SignupSource;
   count: number;
 };
 
@@ -746,7 +745,7 @@ export type StaffSignupSurveyResponseResource = {
   /**
    * What the User does
    */
-  role: StaffSignupRole;
+  role: SignupRole;
   /**
    * What the User does, when `role` is `other`
    */
@@ -754,7 +753,7 @@ export type StaffSignupSurveyResponseResource = {
   /**
    * How many people work at the User's company
    */
-  companySize: StaffSignupCompanySize;
+  companySize: SignupCompanySize;
   /**
    * The company size, when `companySize` is `other`
    */
@@ -762,7 +761,7 @@ export type StaffSignupSurveyResponseResource = {
   /**
    * What the User mainly wants to do with the product
    */
-  mainGoal: StaffSignupGoal;
+  mainGoal: SignupGoal;
   /**
    * The main goal, when `mainGoal` is `other`
    */
@@ -770,7 +769,7 @@ export type StaffSignupSurveyResponseResource = {
   /**
    * Where the User heard about the product; absent when the optional question was skipped
    */
-  heardFrom?: StaffSignupSource | null;
+  heardFrom?: SignupSource | null;
   /**
    * Where the User heard about the product, when `heardFrom` is `other`
    */
@@ -835,11 +834,11 @@ export const StaffSuspensionActorKind = {
 export type StaffSuspensionActorKind = typeof StaffSuspensionActorKind[keyof typeof StaffSuspensionActorKind];
 
 /**
- * The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether
- * anything changed (suspending a suspended Workspace and unsuspending an active one
- * change nothing).
+ * The outcome of a suspend, unsuspend, exempt or un-exempt: the Workspace as it now stands,
+ * and whether anything changed (suspending a suspended Workspace and unsuspending an active
+ * one change nothing, nor does exempting an exempt one).
  */
-export type StaffSuspensionChange = {
+export type StaffWorkspaceChange = {
   changed: boolean;
   workspace: StaffWorkspaceResource;
 };
@@ -1243,7 +1242,7 @@ export type StaffWorkspacesExemptResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffExemptionChange;
+  200: StaffWorkspaceChange;
 };
 
 export type StaffWorkspacesExemptResponse = StaffWorkspacesExemptResponses[keyof StaffWorkspacesExemptResponses];
@@ -1339,7 +1338,7 @@ export type StaffWorkspacesSuspendResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffSuspensionChange;
+  200: StaffWorkspaceChange;
 };
 
 export type StaffWorkspacesSuspendResponse = StaffWorkspacesSuspendResponses[keyof StaffWorkspacesSuspendResponses];
@@ -1371,7 +1370,7 @@ export type StaffWorkspacesUnexemptResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffExemptionChange;
+  200: StaffWorkspaceChange;
 };
 
 export type StaffWorkspacesUnexemptResponse = StaffWorkspacesUnexemptResponses[keyof StaffWorkspacesUnexemptResponses];
@@ -1403,7 +1402,7 @@ export type StaffWorkspacesUnsuspendResponses = {
   /**
    * The request has succeeded.
    */
-  200: StaffSuspensionChange;
+  200: StaffWorkspaceChange;
 };
 
 export type StaffWorkspacesUnsuspendResponse = StaffWorkspacesUnsuspendResponses[keyof StaffWorkspacesUnsuspendResponses];

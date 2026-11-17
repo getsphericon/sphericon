@@ -356,23 +356,23 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 		return w.Work(ctx, job(jobs.DeliverWebhookArgs{EndpointID: fixtures.WebhookCodebasicsID, EventName: systemevent.EmailOpened, DeliveryID: "msg_1", Body: []byte(`{}`)}))
 	}
 	state := func() *ent.WebhookEndpoint {
-		return ws.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).OnlyX(ctx)
+		return ws.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().OnlyX(ctx)
 	}
 
 	// A healthy endpoint carries no failure state.
 	require.NoError(t, deliver(worker(rcv.allow, 2*time.Second)))
-	assert.Nil(t, state().ConsecutiveFailures)
+	assert.Nil(t, state().Edges.Health.ConsecutiveFailures)
 
 	// A non-2xx answer: the run begins, with the status.
 	rcv.setStatus(http.StatusServiceUnavailable)
 	require.Error(t, deliver(worker(rcv.allow, 2*time.Second)))
 	e := state()
-	require.NotNil(t, e.ConsecutiveFailures)
-	assert.Equal(t, 1, *e.ConsecutiveFailures)
-	assert.True(t, clock.Equal(*e.FailingSince))
-	assert.True(t, clock.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhook.KindHTTPStatus, *e.LastErrorKind)
-	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
+	require.NotNil(t, e.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, 1, *e.Edges.Health.ConsecutiveFailures)
+	assert.True(t, clock.Equal(*e.Edges.Health.FailingSince))
+	assert.True(t, clock.Equal(*e.Edges.Health.LastFailureAt))
+	assert.Equal(t, webhook.KindHTTPStatus, *e.Edges.Health.LastErrorKind)
+	assert.Equal(t, http.StatusServiceUnavailable, *e.Edges.Health.LastErrorStatus)
 	assert.Nil(t, e.DisabledAt, "a failure alone does not disable (that is the disable rule's job)")
 
 	// A later failure of another kind extends the run, which keeps its start.
@@ -380,11 +380,11 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	clock = clock.Add(90 * time.Minute)
 	require.Error(t, deliver(worker(webhook.Allowlist{}, 2*time.Second)))
 	e = state()
-	assert.Equal(t, 2, *e.ConsecutiveFailures)
-	assert.True(t, began.Equal(*e.FailingSince))
-	assert.True(t, clock.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhook.KindBlockedAddress, *e.LastErrorKind)
-	assert.Nil(t, e.LastErrorStatus)
+	assert.Equal(t, 2, *e.Edges.Health.ConsecutiveFailures)
+	assert.True(t, began.Equal(*e.Edges.Health.FailingSince))
+	assert.True(t, clock.Equal(*e.Edges.Health.LastFailureAt))
+	assert.Equal(t, webhook.KindBlockedAddress, *e.Edges.Health.LastErrorKind)
+	assert.Nil(t, e.Edges.Health.LastErrorStatus)
 
 	// A receiver that does not answer in time is a timeout.
 	release := make(chan struct{})
@@ -403,7 +403,7 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	slowAllow, err := webhook.ParseAllowlist(slowURL.Host)
 	require.NoError(t, err)
 	require.Error(t, deliver(worker(slowAllow, 50*time.Millisecond)))
-	assert.Equal(t, webhook.KindTimeout, *state().LastErrorKind)
+	assert.Equal(t, webhook.KindTimeout, *state().Edges.Health.LastErrorKind)
 
 	// A 2xx resets the state.
 	_, err = ws.WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).SetURL(rcv.srv.URL).Save(ctx)
@@ -411,11 +411,11 @@ func TestDeliverWebhookWorkerRemembersFailures(t *testing.T) {
 	rcv.setStatus(http.StatusOK)
 	require.NoError(t, deliver(worker(rcv.allow, 2*time.Second)))
 	e = state()
-	assert.Nil(t, e.ConsecutiveFailures)
-	assert.Nil(t, e.FailingSince)
-	assert.Nil(t, e.LastErrorKind)
-	assert.Nil(t, e.LastErrorStatus)
-	assert.Nil(t, e.LastFailureAt)
+	assert.Nil(t, e.Edges.Health.ConsecutiveFailures)
+	assert.Nil(t, e.Edges.Health.FailingSince)
+	assert.Nil(t, e.Edges.Health.LastErrorKind)
+	assert.Nil(t, e.Edges.Health.LastErrorStatus)
+	assert.Nil(t, e.Edges.Health.LastFailureAt)
 }
 
 // disableHarness delivers to the WebhookCodebasics endpoint pointed at a receiver the test
@@ -445,7 +445,7 @@ func (h *disableHarness) deliver() error {
 }
 
 func (h *disableHarness) endpoint() *ent.WebhookEndpoint {
-	return h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).OnlyX(context.Background())
+	return h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().OnlyX(context.Background())
 }
 
 // A 410 retires the endpoint on that delivery, whatever the run of failures so far.

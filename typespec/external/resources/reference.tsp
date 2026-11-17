@@ -1,3 +1,5 @@
+import "../../common/rates.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.OpenAPI;
@@ -126,21 +128,6 @@ model ProviderLimitStatus {
 
   /** Reasons to review the limit; empty when there is nothing to flag */
   warnings: ProviderLimitWarning[];
-}
-
-/**
- * A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is
- * null when the denominator is zero: an undefined rate is never reported as 0.
- */
-model RateTriple {
-  /** Events counted against the rate */
-  numerator: int32;
-
-  /** The population the rate is over */
-  denominator: int32;
-
-  /** numerator / denominator, null when the denominator is zero */
-  rate: float64 | null;
 }
 
 /**

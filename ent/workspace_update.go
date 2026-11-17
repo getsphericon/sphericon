@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -60,7 +61,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 )
 
 // WorkspaceUpdate is the builder for updating Workspace entities.
@@ -233,26 +236,6 @@ func (_u *WorkspaceUpdate) ClearTimezone() *WorkspaceUpdate {
 	return _u
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (_u *WorkspaceUpdate) SetSetupCompletedAt(v time.Time) *WorkspaceUpdate {
-	_u.mutation.SetSetupCompletedAt(v)
-	return _u
-}
-
-// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetSetupCompletedAt(*v)
-	}
-	return _u
-}
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (_u *WorkspaceUpdate) ClearSetupCompletedAt() *WorkspaceUpdate {
-	_u.mutation.ClearSetupCompletedAt()
-	return _u
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_u *WorkspaceUpdate) SetReportingCurrency(v string) *WorkspaceUpdate {
 	_u.mutation.SetReportingCurrency(v)
@@ -352,27 +335,6 @@ func (_u *WorkspaceUpdate) SetNillableSecondFactorRequiredAt(v *time.Time) *Work
 // ClearSecondFactorRequiredAt clears the value of the "second_factor_required_at" field.
 func (_u *WorkspaceUpdate) ClearSecondFactorRequiredAt() *WorkspaceUpdate {
 	_u.mutation.ClearSecondFactorRequiredAt()
-	return _u
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (_u *WorkspaceUpdate) SetFeedPosition(v int64) *WorkspaceUpdate {
-	_u.mutation.ResetFeedPosition()
-	_u.mutation.SetFeedPosition(v)
-	return _u
-}
-
-// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableFeedPosition(v *int64) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetFeedPosition(*v)
-	}
-	return _u
-}
-
-// AddFeedPosition adds value to the "feed_position" field.
-func (_u *WorkspaceUpdate) AddFeedPosition(v int64) *WorkspaceUpdate {
-	_u.mutation.AddFeedPosition(v)
 	return _u
 }
 
@@ -507,46 +469,6 @@ func (_u *WorkspaceUpdate) SetNillableAbuseExempt(v *bool) *WorkspaceUpdate {
 	if v != nil {
 		_u.SetAbuseExempt(*v)
 	}
-	return _u
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (_u *WorkspaceUpdate) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpdate {
-	_u.mutation.SetAbuseWarningNotifiedAt(v)
-	return _u
-}
-
-// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetAbuseWarningNotifiedAt(*v)
-	}
-	return _u
-}
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (_u *WorkspaceUpdate) ClearAbuseWarningNotifiedAt() *WorkspaceUpdate {
-	_u.mutation.ClearAbuseWarningNotifiedAt()
-	return _u
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (_u *WorkspaceUpdate) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpdate {
-	_u.mutation.SetAbuseFreezeNotifiedAt(v)
-	return _u
-}
-
-// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
-func (_u *WorkspaceUpdate) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceUpdate {
-	if v != nil {
-		_u.SetAbuseFreezeNotifiedAt(*v)
-	}
-	return _u
-}
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (_u *WorkspaceUpdate) ClearAbuseFreezeNotifiedAt() *WorkspaceUpdate {
-	_u.mutation.ClearAbuseFreezeNotifiedAt()
 	return _u
 }
 
@@ -1268,6 +1190,55 @@ func (_u *WorkspaceUpdate) AddUsages(v ...*Usage) *WorkspaceUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddUsageIDs(ids...)
+}
+
+// AddIntegrationProviderStateIDs adds the "integration_provider_states" edge to the IntegrationProviderState entity by IDs.
+func (_u *WorkspaceUpdate) AddIntegrationProviderStateIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddIntegrationProviderStateIDs(ids...)
+	return _u
+}
+
+// AddIntegrationProviderStates adds the "integration_provider_states" edges to the IntegrationProviderState entity.
+func (_u *WorkspaceUpdate) AddIntegrationProviderStates(v ...*IntegrationProviderState) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddIntegrationProviderStateIDs(ids...)
+}
+
+// AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
+func (_u *WorkspaceUpdate) AddWebhookEndpointHealthIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.AddWebhookEndpointHealthIDs(ids...)
+	return _u
+}
+
+// AddWebhookEndpointHealths adds the "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
+func (_u *WorkspaceUpdate) AddWebhookEndpointHealths(v ...*WebhookEndpointHealth) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddWebhookEndpointHealthIDs(ids...)
+}
+
+// SetStandingID sets the "standing" edge to the WorkspaceStanding entity by ID.
+func (_u *WorkspaceUpdate) SetStandingID(id int64) *WorkspaceUpdate {
+	_u.mutation.SetStandingID(id)
+	return _u
+}
+
+// SetNillableStandingID sets the "standing" edge to the WorkspaceStanding entity by ID if the given value is not nil.
+func (_u *WorkspaceUpdate) SetNillableStandingID(id *int64) *WorkspaceUpdate {
+	if id != nil {
+		_u = _u.SetStandingID(*id)
+	}
+	return _u
+}
+
+// SetStanding sets the "standing" edge to the WorkspaceStanding entity.
+func (_u *WorkspaceUpdate) SetStanding(v *WorkspaceStanding) *WorkspaceUpdate {
+	return _u.SetStandingID(v.ID)
 }
 
 // Mutation returns the WorkspaceMutation object of the builder.
@@ -2283,6 +2254,54 @@ func (_u *WorkspaceUpdate) RemoveUsages(v ...*Usage) *WorkspaceUpdate {
 	return _u.RemoveUsageIDs(ids...)
 }
 
+// ClearIntegrationProviderStates clears all "integration_provider_states" edges to the IntegrationProviderState entity.
+func (_u *WorkspaceUpdate) ClearIntegrationProviderStates() *WorkspaceUpdate {
+	_u.mutation.ClearIntegrationProviderStates()
+	return _u
+}
+
+// RemoveIntegrationProviderStateIDs removes the "integration_provider_states" edge to IntegrationProviderState entities by IDs.
+func (_u *WorkspaceUpdate) RemoveIntegrationProviderStateIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveIntegrationProviderStateIDs(ids...)
+	return _u
+}
+
+// RemoveIntegrationProviderStates removes "integration_provider_states" edges to IntegrationProviderState entities.
+func (_u *WorkspaceUpdate) RemoveIntegrationProviderStates(v ...*IntegrationProviderState) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveIntegrationProviderStateIDs(ids...)
+}
+
+// ClearWebhookEndpointHealths clears all "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
+func (_u *WorkspaceUpdate) ClearWebhookEndpointHealths() *WorkspaceUpdate {
+	_u.mutation.ClearWebhookEndpointHealths()
+	return _u
+}
+
+// RemoveWebhookEndpointHealthIDs removes the "webhook_endpoint_healths" edge to WebhookEndpointHealth entities by IDs.
+func (_u *WorkspaceUpdate) RemoveWebhookEndpointHealthIDs(ids ...int64) *WorkspaceUpdate {
+	_u.mutation.RemoveWebhookEndpointHealthIDs(ids...)
+	return _u
+}
+
+// RemoveWebhookEndpointHealths removes "webhook_endpoint_healths" edges to WebhookEndpointHealth entities.
+func (_u *WorkspaceUpdate) RemoveWebhookEndpointHealths(v ...*WebhookEndpointHealth) *WorkspaceUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveWebhookEndpointHealthIDs(ids...)
+}
+
+// ClearStanding clears the "standing" edge to the WorkspaceStanding entity.
+func (_u *WorkspaceUpdate) ClearStanding() *WorkspaceUpdate {
+	_u.mutation.ClearStanding()
+	return _u
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *WorkspaceUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -2427,12 +2446,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
 	}
-	if value, ok := _u.mutation.SetupCompletedAt(); ok {
-		_spec.SetField(workspace.FieldSetupCompletedAt, field.TypeTime, value)
-	}
-	if _u.mutation.SetupCompletedAtCleared() {
-		_spec.ClearField(workspace.FieldSetupCompletedAt, field.TypeTime)
-	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
 	}
@@ -2462,12 +2475,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.SecondFactorRequiredAtCleared() {
 		_spec.ClearField(workspace.FieldSecondFactorRequiredAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.FeedPosition(); ok {
-		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedFeedPosition(); ok {
-		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.ErasedAt(); ok {
 		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
@@ -2507,18 +2514,6 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AbuseExempt(); ok {
 		_spec.SetField(workspace.FieldAbuseExempt, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.AbuseWarningNotifiedAt(); ok {
-		_spec.SetField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime, value)
-	}
-	if _u.mutation.AbuseWarningNotifiedAtCleared() {
-		_spec.ClearField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.AbuseFreezeNotifiedAt(); ok {
-		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
-	}
-	if _u.mutation.AbuseFreezeNotifiedAtCleared() {
-		_spec.ClearField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime)
 	}
 	if _u.mutation.ContactsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -4680,6 +4675,125 @@ func (_u *WorkspaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.IntegrationProviderStatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedIntegrationProviderStatesIDs(); len(nodes) > 0 && !_u.mutation.IntegrationProviderStatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationProviderStatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.WebhookEndpointHealthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedWebhookEndpointHealthsIDs(); len(nodes) > 0 && !_u.mutation.WebhookEndpointHealthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WebhookEndpointHealthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StandingCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   workspace.StandingTable,
+			Columns: []string{workspace.StandingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspacestanding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StandingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   workspace.StandingTable,
+			Columns: []string{workspace.StandingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspacestanding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -4858,26 +4972,6 @@ func (_u *WorkspaceUpdateOne) ClearTimezone() *WorkspaceUpdateOne {
 	return _u
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (_u *WorkspaceUpdateOne) SetSetupCompletedAt(v time.Time) *WorkspaceUpdateOne {
-	_u.mutation.SetSetupCompletedAt(v)
-	return _u
-}
-
-// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetSetupCompletedAt(*v)
-	}
-	return _u
-}
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (_u *WorkspaceUpdateOne) ClearSetupCompletedAt() *WorkspaceUpdateOne {
-	_u.mutation.ClearSetupCompletedAt()
-	return _u
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_u *WorkspaceUpdateOne) SetReportingCurrency(v string) *WorkspaceUpdateOne {
 	_u.mutation.SetReportingCurrency(v)
@@ -4977,27 +5071,6 @@ func (_u *WorkspaceUpdateOne) SetNillableSecondFactorRequiredAt(v *time.Time) *W
 // ClearSecondFactorRequiredAt clears the value of the "second_factor_required_at" field.
 func (_u *WorkspaceUpdateOne) ClearSecondFactorRequiredAt() *WorkspaceUpdateOne {
 	_u.mutation.ClearSecondFactorRequiredAt()
-	return _u
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (_u *WorkspaceUpdateOne) SetFeedPosition(v int64) *WorkspaceUpdateOne {
-	_u.mutation.ResetFeedPosition()
-	_u.mutation.SetFeedPosition(v)
-	return _u
-}
-
-// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableFeedPosition(v *int64) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetFeedPosition(*v)
-	}
-	return _u
-}
-
-// AddFeedPosition adds value to the "feed_position" field.
-func (_u *WorkspaceUpdateOne) AddFeedPosition(v int64) *WorkspaceUpdateOne {
-	_u.mutation.AddFeedPosition(v)
 	return _u
 }
 
@@ -5132,46 +5205,6 @@ func (_u *WorkspaceUpdateOne) SetNillableAbuseExempt(v *bool) *WorkspaceUpdateOn
 	if v != nil {
 		_u.SetAbuseExempt(*v)
 	}
-	return _u
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (_u *WorkspaceUpdateOne) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpdateOne {
-	_u.mutation.SetAbuseWarningNotifiedAt(v)
-	return _u
-}
-
-// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetAbuseWarningNotifiedAt(*v)
-	}
-	return _u
-}
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (_u *WorkspaceUpdateOne) ClearAbuseWarningNotifiedAt() *WorkspaceUpdateOne {
-	_u.mutation.ClearAbuseWarningNotifiedAt()
-	return _u
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (_u *WorkspaceUpdateOne) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpdateOne {
-	_u.mutation.SetAbuseFreezeNotifiedAt(v)
-	return _u
-}
-
-// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
-func (_u *WorkspaceUpdateOne) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceUpdateOne {
-	if v != nil {
-		_u.SetAbuseFreezeNotifiedAt(*v)
-	}
-	return _u
-}
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (_u *WorkspaceUpdateOne) ClearAbuseFreezeNotifiedAt() *WorkspaceUpdateOne {
-	_u.mutation.ClearAbuseFreezeNotifiedAt()
 	return _u
 }
 
@@ -5893,6 +5926,55 @@ func (_u *WorkspaceUpdateOne) AddUsages(v ...*Usage) *WorkspaceUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddUsageIDs(ids...)
+}
+
+// AddIntegrationProviderStateIDs adds the "integration_provider_states" edge to the IntegrationProviderState entity by IDs.
+func (_u *WorkspaceUpdateOne) AddIntegrationProviderStateIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddIntegrationProviderStateIDs(ids...)
+	return _u
+}
+
+// AddIntegrationProviderStates adds the "integration_provider_states" edges to the IntegrationProviderState entity.
+func (_u *WorkspaceUpdateOne) AddIntegrationProviderStates(v ...*IntegrationProviderState) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddIntegrationProviderStateIDs(ids...)
+}
+
+// AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
+func (_u *WorkspaceUpdateOne) AddWebhookEndpointHealthIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.AddWebhookEndpointHealthIDs(ids...)
+	return _u
+}
+
+// AddWebhookEndpointHealths adds the "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
+func (_u *WorkspaceUpdateOne) AddWebhookEndpointHealths(v ...*WebhookEndpointHealth) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddWebhookEndpointHealthIDs(ids...)
+}
+
+// SetStandingID sets the "standing" edge to the WorkspaceStanding entity by ID.
+func (_u *WorkspaceUpdateOne) SetStandingID(id int64) *WorkspaceUpdateOne {
+	_u.mutation.SetStandingID(id)
+	return _u
+}
+
+// SetNillableStandingID sets the "standing" edge to the WorkspaceStanding entity by ID if the given value is not nil.
+func (_u *WorkspaceUpdateOne) SetNillableStandingID(id *int64) *WorkspaceUpdateOne {
+	if id != nil {
+		_u = _u.SetStandingID(*id)
+	}
+	return _u
+}
+
+// SetStanding sets the "standing" edge to the WorkspaceStanding entity.
+func (_u *WorkspaceUpdateOne) SetStanding(v *WorkspaceStanding) *WorkspaceUpdateOne {
+	return _u.SetStandingID(v.ID)
 }
 
 // Mutation returns the WorkspaceMutation object of the builder.
@@ -6908,6 +6990,54 @@ func (_u *WorkspaceUpdateOne) RemoveUsages(v ...*Usage) *WorkspaceUpdateOne {
 	return _u.RemoveUsageIDs(ids...)
 }
 
+// ClearIntegrationProviderStates clears all "integration_provider_states" edges to the IntegrationProviderState entity.
+func (_u *WorkspaceUpdateOne) ClearIntegrationProviderStates() *WorkspaceUpdateOne {
+	_u.mutation.ClearIntegrationProviderStates()
+	return _u
+}
+
+// RemoveIntegrationProviderStateIDs removes the "integration_provider_states" edge to IntegrationProviderState entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveIntegrationProviderStateIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveIntegrationProviderStateIDs(ids...)
+	return _u
+}
+
+// RemoveIntegrationProviderStates removes "integration_provider_states" edges to IntegrationProviderState entities.
+func (_u *WorkspaceUpdateOne) RemoveIntegrationProviderStates(v ...*IntegrationProviderState) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveIntegrationProviderStateIDs(ids...)
+}
+
+// ClearWebhookEndpointHealths clears all "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
+func (_u *WorkspaceUpdateOne) ClearWebhookEndpointHealths() *WorkspaceUpdateOne {
+	_u.mutation.ClearWebhookEndpointHealths()
+	return _u
+}
+
+// RemoveWebhookEndpointHealthIDs removes the "webhook_endpoint_healths" edge to WebhookEndpointHealth entities by IDs.
+func (_u *WorkspaceUpdateOne) RemoveWebhookEndpointHealthIDs(ids ...int64) *WorkspaceUpdateOne {
+	_u.mutation.RemoveWebhookEndpointHealthIDs(ids...)
+	return _u
+}
+
+// RemoveWebhookEndpointHealths removes "webhook_endpoint_healths" edges to WebhookEndpointHealth entities.
+func (_u *WorkspaceUpdateOne) RemoveWebhookEndpointHealths(v ...*WebhookEndpointHealth) *WorkspaceUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveWebhookEndpointHealthIDs(ids...)
+}
+
+// ClearStanding clears the "standing" edge to the WorkspaceStanding entity.
+func (_u *WorkspaceUpdateOne) ClearStanding() *WorkspaceUpdateOne {
+	_u.mutation.ClearStanding()
+	return _u
+}
+
 // Where appends a list predicates to the WorkspaceUpdate builder.
 func (_u *WorkspaceUpdateOne) Where(ps ...predicate.Workspace) *WorkspaceUpdateOne {
 	_u.mutation.Where(ps...)
@@ -7082,12 +7212,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	if _u.mutation.TimezoneCleared() {
 		_spec.ClearField(workspace.FieldTimezone, field.TypeString)
 	}
-	if value, ok := _u.mutation.SetupCompletedAt(); ok {
-		_spec.SetField(workspace.FieldSetupCompletedAt, field.TypeTime, value)
-	}
-	if _u.mutation.SetupCompletedAtCleared() {
-		_spec.ClearField(workspace.FieldSetupCompletedAt, field.TypeTime)
-	}
 	if value, ok := _u.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
 	}
@@ -7117,12 +7241,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if _u.mutation.SecondFactorRequiredAtCleared() {
 		_spec.ClearField(workspace.FieldSecondFactorRequiredAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.FeedPosition(); ok {
-		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedFeedPosition(); ok {
-		_spec.AddField(workspace.FieldFeedPosition, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.ErasedAt(); ok {
 		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
@@ -7162,18 +7280,6 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 	}
 	if value, ok := _u.mutation.AbuseExempt(); ok {
 		_spec.SetField(workspace.FieldAbuseExempt, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.AbuseWarningNotifiedAt(); ok {
-		_spec.SetField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime, value)
-	}
-	if _u.mutation.AbuseWarningNotifiedAtCleared() {
-		_spec.ClearField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.AbuseFreezeNotifiedAt(); ok {
-		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
-	}
-	if _u.mutation.AbuseFreezeNotifiedAtCleared() {
-		_spec.ClearField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime)
 	}
 	if _u.mutation.ContactsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -9328,6 +9434,125 @@ func (_u *WorkspaceUpdateOne) sqlSave(ctx context.Context) (_node *Workspace, er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usage.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.IntegrationProviderStatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedIntegrationProviderStatesIDs(); len(nodes) > 0 && !_u.mutation.IntegrationProviderStatesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.IntegrationProviderStatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.WebhookEndpointHealthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedWebhookEndpointHealthsIDs(); len(nodes) > 0 && !_u.mutation.WebhookEndpointHealthsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.WebhookEndpointHealthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.StandingCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   workspace.StandingTable,
+			Columns: []string{workspace.StandingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspacestanding.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.StandingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   workspace.StandingTable,
+			Columns: []string{workspace.StandingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspacestanding.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

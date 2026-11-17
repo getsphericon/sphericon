@@ -250,13 +250,13 @@ type Inputs interface {
 	// goverter:enum:map SiteAutomationReportsGetPeriod90d ReportPeriod90Days
 	AutomationReportPeriod(source siteapi.SiteAutomationReportsGetPeriod) automations.ReportPeriod
 	// ent's Status has a Default constant beside StatusDraft, so every member is mapped.
-	// goverter:enum:map SiteBroadcastStatusDraft StatusDraft
-	// goverter:enum:map SiteBroadcastStatusScheduled StatusScheduled
-	// goverter:enum:map SiteBroadcastStatusSending StatusSending
-	// goverter:enum:map SiteBroadcastStatusSent StatusSent
-	// goverter:enum:map SiteBroadcastStatusFailed StatusFailed
-	BroadcastStatus(source siteapi.SiteBroadcastStatus) broadcast.Status
-	BroadcastStatuses(source []siteapi.SiteBroadcastStatus) []broadcast.Status
+	// goverter:enum:map BroadcastStatusDraft StatusDraft
+	// goverter:enum:map BroadcastStatusScheduled StatusScheduled
+	// goverter:enum:map BroadcastStatusSending StatusSending
+	// goverter:enum:map BroadcastStatusSent StatusSent
+	// goverter:enum:map BroadcastStatusFailed StatusFailed
+	BroadcastStatus(source siteapi.BroadcastStatus) broadcast.Status
+	BroadcastStatuses(source []siteapi.BroadcastStatus) []broadcast.Status
 	// goverter:enum:transform value
 	BroadcastsOrder(source siteapi.SiteBroadcastsOrder) broadcasts.Order
 	// goverter:enum:transform value
@@ -278,13 +278,13 @@ type Inputs interface {
 	// goverter:enum:transform value
 	RuleActionType(source siteapi.SiteRuleActionType) rules.ActionType
 	// goverter:enum:transform value
-	SignupCompanySize(source siteapi.SiteSignupCompanySize) signupsurveyresponse.CompanySize
+	SignupCompanySize(source siteapi.SignupCompanySize) signupsurveyresponse.CompanySize
 	// goverter:enum:transform value
-	SignupGoal(source siteapi.SiteSignupGoal) signupsurveyresponse.MainGoal
+	SignupGoal(source siteapi.SignupGoal) signupsurveyresponse.MainGoal
 	// goverter:enum:transform value
-	SignupRole(source siteapi.SiteSignupRole) signupsurveyresponse.Role
+	SignupRole(source siteapi.SignupRole) signupsurveyresponse.Role
 	// goverter:enum:transform value
-	SignupSource(source siteapi.SiteSignupSource) signupsurveyresponse.HeardFrom
+	SignupSource(source siteapi.SignupSource) signupsurveyresponse.HeardFrom
 }
 
 func stringPatch(o siteapi.OptString) patch.Field[string] { return convert.Patch(o) }
@@ -374,7 +374,7 @@ func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
 }
 
 // signupSourcePtrIn is where the User heard about the product, nil when the request does not say.
-func signupSourcePtrIn(c Inputs, o siteapi.OptSiteSignupSource) *signupsurveyresponse.HeardFrom {
+func signupSourcePtrIn(c Inputs, o siteapi.OptSignupSource) *signupsurveyresponse.HeardFrom {
 	return convert.PtrVia(o, c.SignupSource)
 }
 

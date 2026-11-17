@@ -113,11 +113,11 @@ func TestExternalSendingDomainWritesAreAuditedUnderTheToken(t *testing.T) {
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	page, err := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(ctx, siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	domainEntries := lo.Filter(page.Items, func(item siteapi.SiteAuditEntryResource, _ int) bool {
+	domainEntries := lo.Filter(page.Items, func(item siteapi.AuditEntryResource, _ int) bool {
 		return strings.HasPrefix(string(item.Action), "sending_domain.")
 	})
 	for _, item := range domainEntries {
-		assert.Equal(t, siteapi.SiteAuditActorKindAPIToken, item.Actor.Kind)
+		assert.Equal(t, siteapi.AuditActorKindAPIToken, item.Actor.Kind)
 	}
 	assert.Len(t, domainEntries, 3)
 }

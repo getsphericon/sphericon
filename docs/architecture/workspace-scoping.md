@@ -18,8 +18,8 @@ row as its own (`ent/template/scoped_tenant.tmpl`): `Scoped.EditWorkspaceAt(revi
 setting made on a revision (ADR 0119), `Scoped.UpdateWorkspace()` one that names none (lifting the
 Two-factor requirement). Both write through the Workspace's one write, which records a change of its
 audited fields as a `workspace.update` Audit entry of the scope's actor, as every audited entity's
-write does. The Workspace's lifecycle (creation, deletion, erasure, suspension) and its bookkeeping
-stay the `workspaces` module's writes over the raw client. Every Workspace-owned type with a revision
+write does. The Workspace's lifecycle (creation, deletion, erasure, suspension) and its standing
+beside it (ADR 0168) stay the `workspaces` module's writes over the raw client. Every Workspace-owned type with a revision
 but a Versioned definition gets `EditAt(id, revision)` (ADR 0119): an update by id conditional on
 the revision, whose miss is a typed `<N>Miss` read again in the same transaction; its `Refuse`
 gives the owner's refusal, gone, then the owner's state guards, then stale, and the owner names
@@ -43,7 +43,9 @@ it (ADR 0109). An entity with `ArchiveMixin` gets `Archive`, `Unarchive`,
 `Discard` and `Purge` (ADR 0100); `internal/scopedclient` tests them on the production entities.
 
 A Webhook endpoint's health is also a `lifecycle` table in its owner, `webhookendpoints`:
-healthy, failing and disabled are derived from its existing moments and failure run. Another
+healthy, failing and disabled are derived from its disable moment and from the failure run, which
+lives beside the endpoint in `webhook_endpoint_health` (ADR 0168), so a delivery leaves the
+endpoint's row and its revision alone. Another
 failure in the same run is an internal transition. An explicit owner enable starts a new durable
 `health_generation` and clears the run, even when the endpoint was already enabled. A delivery
 carries the generation loaded before its HTTP request; a result from an earlier generation, or

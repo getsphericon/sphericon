@@ -111,7 +111,7 @@ type Invoker interface {
 	// List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
-	SiteAuditList(ctx context.Context, params SiteAuditListParams) (*SiteAuditEntryList, error)
+	SiteAuditList(ctx context.Context, params SiteAuditListParams) (*AuditEntryList, error)
 	// SiteAuditSetRetention invokes SiteAudit_setRetention operation.
 	//
 	// Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin
@@ -3557,12 +3557,12 @@ func (c *Client) sendSiteAuditGetRetention(ctx context.Context, params SiteAudit
 // List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries
-func (c *Client) SiteAuditList(ctx context.Context, params SiteAuditListParams) (*SiteAuditEntryList, error) {
+func (c *Client) SiteAuditList(ctx context.Context, params SiteAuditListParams) (*AuditEntryList, error) {
 	res, err := c.sendSiteAuditList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListParams) (res *SiteAuditEntryList, err error) {
+func (c *Client) sendSiteAuditList(ctx context.Context, params SiteAuditListParams) (res *AuditEntryList, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAudit_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),

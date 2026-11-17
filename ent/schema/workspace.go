@@ -8,7 +8,6 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"entgo.io/ent/schema/index"
 )
 
 type Workspace struct {
@@ -87,13 +86,6 @@ func (Workspace) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			NotEmpty(),
-		// When the Setup checklist was first found complete. Stamped once, by the read that first
-		// finds every step done, and never cleared: after it the overview shows no checklist, and a
-		// step that regresses (a domain that loses its record) is an item that needs attention.
-		field.Time("setup_completed_at").
-			Annotations(Bookkeeping{}, Latch()).
-			Optional().
-			Nillable(),
 		// The Reporting currency (ADR 0064): the ISO 4217 code every revenue figure is in. NULL until
 		// an Owner or Admin chooses one; internal/accounts checks the code against the registry.
 		field.String("reporting_currency").
@@ -124,13 +116,6 @@ func (Workspace) Fields() []ent.Field {
 			Annotations(Attribute(reasonSetting)).
 			Optional().
 			Nillable(),
-		// The Workspace's place in the service feed (ADR 0009): a position that only
-		// grows, taken whenever the Workspace is created or an owner is added, removed,
-		// transferred or changes email or verification. 0 until the first change. Set
-		// only by internal/workspacefeed.
-		field.Int64("feed_position").
-			Annotations(Bookkeeping{}).
-			Default(0),
 		// Workspace deletion (ADR 0043): discarded_at (DiscardMixin) starts the 30-day window, in
 		// which the Workspace is frozen, hidden and restorable; erased_at is set when the erasure
 		// job has removed its data and left the row as a tombstone. Both NULL for a live Workspace.
@@ -170,24 +155,6 @@ func (Workspace) Fields() []ent.Field {
 		field.Bool("abuse_exempt").
 			Annotations(Attribute(reasonSetting)).
 			Default(false),
-		// When the owners were last told of the current warning / of an automatic freeze
-		// (ADR 0026). The warning marker is cleared once the Workspace leaves the
-		// warning tier, which is what makes one email per episode.
-		field.Time("abuse_warning_notified_at").
-			Annotations(Bookkeeping{}, Attribute(reasonNotice)).
-			Optional().
-			Nillable(),
-		field.Time("abuse_freeze_notified_at").
-			Annotations(Bookkeeping{}, Attribute(reasonNotice)).
-			Optional().
-			Nillable(),
-	}
-}
-
-func (Workspace) Indexes() []ent.Index {
-	return []ent.Index{
-		// The feed pages by (feed_position, id).
-		index.Fields("feed_position", "id"),
 	}
 }
 
@@ -242,6 +209,9 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("audit_entries", AuditEntry.Type),
 		edge.To("erasures", Erasure.Type),
 		edge.To("usages", Usage.Type),
+		edge.To("integration_provider_states", IntegrationProviderState.Type),
+		edge.To("webhook_endpoint_healths", WebhookEndpointHealth.Type),
+		edge.To("standing", WorkspaceStanding.Type).Unique(),
 	}
 }
 

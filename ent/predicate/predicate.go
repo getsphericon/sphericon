@@ -99,6 +99,9 @@ type InstanceState func(*sql.Selector)
 // Integration is the predicate function for integration builders.
 type Integration func(*sql.Selector)
 
+// IntegrationProviderState is the predicate function for integrationproviderstate builders.
+type IntegrationProviderState func(*sql.Selector)
+
 // Invitation is the predicate function for invitation builders.
 type Invitation func(*sql.Selector)
 
@@ -228,5 +231,11 @@ type Visitor func(*sql.Selector)
 // WebhookEndpoint is the predicate function for webhookendpoint builders.
 type WebhookEndpoint func(*sql.Selector)
 
+// WebhookEndpointHealth is the predicate function for webhookendpointhealth builders.
+type WebhookEndpointHealth func(*sql.Selector)
+
 // Workspace is the predicate function for workspace builders.
 type Workspace func(*sql.Selector)
+
+// WorkspaceStanding is the predicate function for workspacestanding builders.
+type WorkspaceStanding func(*sql.Selector)

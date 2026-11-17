@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -36,18 +38,10 @@ model ServiceUserResource {
 }
 
 /** One page of the Users feed */
-model ServiceUserFeedPage {
-  /** Users created or changed after the requested cursor, in change order */
-  items: ServiceUserResource[];
-
-  /** Pass it back as the cursor to read what follows this page. It is the requested
-   * cursor itself when the page is empty. Saving it is what advances the caller: the
-   * core keeps no position of its own. */
-  nextCursor: string;
-
-  /** Whether more entries follow this page right now */
-  hasMore: boolean;
-}
+model ServiceUserFeedPage is FeedPage<
+  ServiceUserResource,
+  "Users created or changed after the requested cursor, in change order"
+>;
 
 @tag("Service Users")
 @route("/users/changes")
@@ -60,14 +54,5 @@ namespace ServiceUserFeed {
    * from the beginning. */
   @get
   @requiresServiceScopes(#[ServiceScope.usersRead])
-  op list(
-    /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
-    @query cursor?: string,
-
-    /** Most entries on the page */
-    @query
-    @minValue(1)
-    @maxValue(200)
-    limit?: int32 = 100,
-  ): ServiceUserFeedPage | Problem;
+  op list(...FeedQuery): ServiceUserFeedPage | Problem;
 }

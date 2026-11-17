@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -35,7 +36,7 @@ func TestSiteWebhookRegenerateSecretReturnsTheNewSecretAndIsAudited(t *testing.T
 
 	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "webhook_endpoint.update")
 	require.Len(t, entries, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, entries[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, entries[0].Actor.Kind)
 
 	_, err = owner.SiteWebhooksRegenerateSecret(ctx, siteapi.SiteWebhooksRegenerateSecretParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.WebhookGlobexID)})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
@@ -61,10 +62,10 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	assert.Equal(t, siteapi.SiteWebhookErrorKindHTTPStatus, got.Kind.Value)
 	assert.Equal(t, int32(http.StatusGone), got.Status.Value)
 
-	row, err := env.DB.WebhookEndpoint.Get(ctx, fixtures.WebhookCodebasicsID)
+	row, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 	assert.Nil(t, row.DisabledAt, "a 410 on a test does not disable the endpoint")
-	assert.Nil(t, row.ConsecutiveFailures)
+	assert.Nil(t, row.Edges.Health.ConsecutiveFailures)
 
 	entries := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWebhookEndpointTest)
 	require.Len(t, entries, 1)

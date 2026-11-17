@@ -16,6 +16,92 @@ func (s *ProblemDetailsStatusCode) Error() string {
 	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
 }
 
+// The metric of a Sending domain that is over a warning limit of the abuse detector.
+// Ref: #/components/schemas/AbuseMetric
+type AbuseMetric string
+
+const (
+	AbuseMetricComplaint AbuseMetric = "complaint"
+	AbuseMetricBounce    AbuseMetric = "bounce"
+)
+
+// AllValues returns all AbuseMetric values.
+func (AbuseMetric) AllValues() []AbuseMetric {
+	return []AbuseMetric{
+		AbuseMetricComplaint,
+		AbuseMetricBounce,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AbuseMetric) MarshalText() ([]byte, error) {
+	switch s {
+	case AbuseMetricComplaint:
+		return []byte(s), nil
+	case AbuseMetricBounce:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AbuseMetric) UnmarshalText(data []byte) error {
+	switch AbuseMetric(data) {
+	case AbuseMetricComplaint:
+		*s = AbuseMetricComplaint
+		return nil
+	case AbuseMetricBounce:
+		*s = AbuseMetricBounce
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is over the warning
+// limit but under the freeze limit. Computed live from the trailing 24 hours since any clearance,
+// never stored.
+// Ref: #/components/schemas/AbuseWarning
+type AbuseWarning struct {
+	// The Sending domain over the limit.
+	Domain string `json:"domain"`
+	// Which rate is over.
+	Metric AbuseMetric `json:"metric"`
+	// The rate, 0–1.
+	Rate float64 `json:"rate"`
+}
+
+// GetDomain returns the value of Domain.
+func (s *AbuseWarning) GetDomain() string {
+	return s.Domain
+}
+
+// GetMetric returns the value of Metric.
+func (s *AbuseWarning) GetMetric() AbuseMetric {
+	return s.Metric
+}
+
+// GetRate returns the value of Rate.
+func (s *AbuseWarning) GetRate() float64 {
+	return s.Rate
+}
+
+// SetDomain sets the value of Domain.
+func (s *AbuseWarning) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetMetric sets the value of Metric.
+func (s *AbuseWarning) SetMetric(val AbuseMetric) {
+	s.Metric = val
+}
+
+// SetRate sets the value of Rate.
+func (s *AbuseWarning) SetRate(val float64) {
+	s.Rate = val
+}
+
 type ApiKeyAuth struct {
 	APIKey string
 	Roles  []string
@@ -1008,6 +1094,286 @@ func (s *AuditAction) UnmarshalText(data []byte) error {
 	}
 }
 
+// The actor of an Audit entry.
+// Ref: #/components/schemas/AuditActor
+type AuditActor struct {
+	// The kind of actor; a staff member is shown to the customer as "Sphericon staff".
+	Kind AuditActorKind `json:"kind"`
+	// The actor's id (a User id or an API token id); absent for the system.
+	ID OptNilString `json:"id"`
+	// Display name snapshot taken when the entry was written.
+	Name OptNilString `json:"name"`
+}
+
+// GetKind returns the value of Kind.
+func (s *AuditActor) GetKind() AuditActorKind {
+	return s.Kind
+}
+
+// GetID returns the value of ID.
+func (s *AuditActor) GetID() OptNilString {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *AuditActor) GetName() OptNilString {
+	return s.Name
+}
+
+// SetKind sets the value of Kind.
+func (s *AuditActor) SetKind(val AuditActorKind) {
+	s.Kind = val
+}
+
+// SetID sets the value of ID.
+func (s *AuditActor) SetID(val OptNilString) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *AuditActor) SetName(val OptNilString) {
+	s.Name = val
+}
+
+// Who performed an audited change.
+// Ref: #/components/schemas/AuditActorKind
+type AuditActorKind string
+
+const (
+	AuditActorKindUser     AuditActorKind = "user"
+	AuditActorKindAPIToken AuditActorKind = "api_token"
+	AuditActorKindStaff    AuditActorKind = "staff"
+	AuditActorKindSystem   AuditActorKind = "system"
+)
+
+// AllValues returns all AuditActorKind values.
+func (AuditActorKind) AllValues() []AuditActorKind {
+	return []AuditActorKind{
+		AuditActorKindUser,
+		AuditActorKindAPIToken,
+		AuditActorKindStaff,
+		AuditActorKindSystem,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AuditActorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AuditActorKindUser:
+		return []byte(s), nil
+	case AuditActorKindAPIToken:
+		return []byte(s), nil
+	case AuditActorKindStaff:
+		return []byte(s), nil
+	case AuditActorKindSystem:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AuditActorKind) UnmarshalText(data []byte) error {
+	switch AuditActorKind(data) {
+	case AuditActorKindUser:
+		*s = AuditActorKindUser
+		return nil
+	case AuditActorKindAPIToken:
+		*s = AuditActorKindAPIToken
+		return nil
+	case AuditActorKindStaff:
+		*s = AuditActorKindStaff
+		return nil
+	case AuditActorKindSystem:
+		*s = AuditActorKindSystem
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A page of Audit entries, newest first.
+// Ref: #/components/schemas/AuditEntryList
+type AuditEntryList struct {
+	Items []AuditEntryResource `json:"items"`
+	// Pass as `cursor` for the next page; absent on the last page.
+	NextCursor OptNilString `json:"nextCursor"`
+}
+
+// GetItems returns the value of Items.
+func (s *AuditEntryList) GetItems() []AuditEntryResource {
+	return s.Items
+}
+
+// GetNextCursor returns the value of NextCursor.
+func (s *AuditEntryList) GetNextCursor() OptNilString {
+	return s.NextCursor
+}
+
+// SetItems sets the value of Items.
+func (s *AuditEntryList) SetItems(val []AuditEntryResource) {
+	s.Items = val
+}
+
+// SetNextCursor sets the value of NextCursor.
+func (s *AuditEntryList) SetNextCursor(val OptNilString) {
+	s.NextCursor = val
+}
+
+// One immutable Audit entry (Enterprise).
+// Ref: #/components/schemas/AuditEntryResource
+type AuditEntryResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// When the change happened.
+	OccurredAt Timestamp `json:"occurredAt"`
+	// Who did it.
+	Actor AuditActor `json:"actor"`
+	// What was done.
+	Action AuditAction `json:"action"`
+	// What it was done to.
+	Target AuditTarget `json:"target"`
+	// Before/after of the changed fields; secrets appear as changed only.
+	Diff OptNilJsonObject `json:"diff"`
+	// Request id of the change.
+	RequestId OptNilString `json:"requestId"`
+	// Client address of the change.
+	IP OptNilString `json:"ip"`
+	// Client user agent of the change.
+	UserAgent OptNilString `json:"userAgent"`
+}
+
+// GetID returns the value of ID.
+func (s *AuditEntryResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetOccurredAt returns the value of OccurredAt.
+func (s *AuditEntryResource) GetOccurredAt() Timestamp {
+	return s.OccurredAt
+}
+
+// GetActor returns the value of Actor.
+func (s *AuditEntryResource) GetActor() AuditActor {
+	return s.Actor
+}
+
+// GetAction returns the value of Action.
+func (s *AuditEntryResource) GetAction() AuditAction {
+	return s.Action
+}
+
+// GetTarget returns the value of Target.
+func (s *AuditEntryResource) GetTarget() AuditTarget {
+	return s.Target
+}
+
+// GetDiff returns the value of Diff.
+func (s *AuditEntryResource) GetDiff() OptNilJsonObject {
+	return s.Diff
+}
+
+// GetRequestId returns the value of RequestId.
+func (s *AuditEntryResource) GetRequestId() OptNilString {
+	return s.RequestId
+}
+
+// GetIP returns the value of IP.
+func (s *AuditEntryResource) GetIP() OptNilString {
+	return s.IP
+}
+
+// GetUserAgent returns the value of UserAgent.
+func (s *AuditEntryResource) GetUserAgent() OptNilString {
+	return s.UserAgent
+}
+
+// SetID sets the value of ID.
+func (s *AuditEntryResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetOccurredAt sets the value of OccurredAt.
+func (s *AuditEntryResource) SetOccurredAt(val Timestamp) {
+	s.OccurredAt = val
+}
+
+// SetActor sets the value of Actor.
+func (s *AuditEntryResource) SetActor(val AuditActor) {
+	s.Actor = val
+}
+
+// SetAction sets the value of Action.
+func (s *AuditEntryResource) SetAction(val AuditAction) {
+	s.Action = val
+}
+
+// SetTarget sets the value of Target.
+func (s *AuditEntryResource) SetTarget(val AuditTarget) {
+	s.Target = val
+}
+
+// SetDiff sets the value of Diff.
+func (s *AuditEntryResource) SetDiff(val OptNilJsonObject) {
+	s.Diff = val
+}
+
+// SetRequestId sets the value of RequestId.
+func (s *AuditEntryResource) SetRequestId(val OptNilString) {
+	s.RequestId = val
+}
+
+// SetIP sets the value of IP.
+func (s *AuditEntryResource) SetIP(val OptNilString) {
+	s.IP = val
+}
+
+// SetUserAgent sets the value of UserAgent.
+func (s *AuditEntryResource) SetUserAgent(val OptNilString) {
+	s.UserAgent = val
+}
+
+// What an audited change was done to.
+// Ref: #/components/schemas/AuditTarget
+type AuditTarget struct {
+	// Entity type, e.g. membership.
+	Type string `json:"type"`
+	// The target's id.
+	ID OptNilString `json:"id"`
+	// Name snapshot taken when the entry was written; absent for a Contact.
+	Name OptNilString `json:"name"`
+}
+
+// GetType returns the value of Type.
+func (s *AuditTarget) GetType() string {
+	return s.Type
+}
+
+// GetID returns the value of ID.
+func (s *AuditTarget) GetID() OptNilString {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *AuditTarget) GetName() OptNilString {
+	return s.Name
+}
+
+// SetType sets the value of Type.
+func (s *AuditTarget) SetType(val string) {
+	s.Type = val
+}
+
+// SetID sets the value of ID.
+func (s *AuditTarget) SetID(val OptNilString) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *AuditTarget) SetName(val OptNilString) {
+	s.Name = val
+}
+
 // The Channel a Broadcast sends on, fixed when it is created (ADR 0080).
 // Ref: #/components/schemas/BroadcastChannel
 type BroadcastChannel string
@@ -1282,6 +1648,70 @@ func NewSmsBroadcastContentBroadcastContentSum(v SmsBroadcastContent) BroadcastC
 	var s BroadcastContentSum
 	s.SetSmsBroadcastContent(v)
 	return s
+}
+
+// Broadcast lifecycle status.
+// Ref: #/components/schemas/BroadcastStatus
+type BroadcastStatus string
+
+const (
+	BroadcastStatusDraft     BroadcastStatus = "draft"
+	BroadcastStatusScheduled BroadcastStatus = "scheduled"
+	BroadcastStatusSending   BroadcastStatus = "sending"
+	BroadcastStatusSent      BroadcastStatus = "sent"
+	BroadcastStatusFailed    BroadcastStatus = "failed"
+)
+
+// AllValues returns all BroadcastStatus values.
+func (BroadcastStatus) AllValues() []BroadcastStatus {
+	return []BroadcastStatus{
+		BroadcastStatusDraft,
+		BroadcastStatusScheduled,
+		BroadcastStatusSending,
+		BroadcastStatusSent,
+		BroadcastStatusFailed,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s BroadcastStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case BroadcastStatusDraft:
+		return []byte(s), nil
+	case BroadcastStatusScheduled:
+		return []byte(s), nil
+	case BroadcastStatusSending:
+		return []byte(s), nil
+	case BroadcastStatusSent:
+		return []byte(s), nil
+	case BroadcastStatusFailed:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *BroadcastStatus) UnmarshalText(data []byte) error {
+	switch BroadcastStatus(data) {
+	case BroadcastStatusDraft:
+		*s = BroadcastStatusDraft
+		return nil
+	case BroadcastStatusScheduled:
+		*s = BroadcastStatusScheduled
+		return nil
+	case BroadcastStatusSending:
+		*s = BroadcastStatusSending
+		return nil
+	case BroadcastStatusSent:
+		*s = BroadcastStatusSent
+		return nil
+	case BroadcastStatusFailed:
+		*s = BroadcastStatusFailed
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a
@@ -4585,6 +5015,52 @@ func (o OptAuditAction) Or(d AuditAction) AuditAction {
 	return d
 }
 
+// NewOptAuditActorKind returns new OptAuditActorKind with value set to v.
+func NewOptAuditActorKind(v AuditActorKind) OptAuditActorKind {
+	return OptAuditActorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAuditActorKind is optional AuditActorKind.
+type OptAuditActorKind struct {
+	Value AuditActorKind
+	Set   bool
+}
+
+// IsSet returns true if OptAuditActorKind was set.
+func (o OptAuditActorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAuditActorKind) Reset() {
+	var v AuditActorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAuditActorKind) SetTo(v AuditActorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAuditActorKind) Get() (v AuditActorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAuditActorKind) Or(d AuditActorKind) AuditActorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -5131,6 +5607,74 @@ func (o OptName) Get() (v Name, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptName) Or(d Name) Name {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilAbuseWarning returns new OptNilAbuseWarning with value set to v.
+func NewOptNilAbuseWarning(v AbuseWarning) OptNilAbuseWarning {
+	return OptNilAbuseWarning{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilAbuseWarning is optional nullable AbuseWarning.
+type OptNilAbuseWarning struct {
+	Value AbuseWarning
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilAbuseWarning was set.
+func (o OptNilAbuseWarning) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilAbuseWarning) Reset() {
+	var v AbuseWarning
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilAbuseWarning) SetTo(v AbuseWarning) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilAbuseWarning) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilAbuseWarning) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v AbuseWarning
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilAbuseWarning) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilAbuseWarning) Get() (v AbuseWarning, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilAbuseWarning) Or(d AbuseWarning) AbuseWarning {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6157,74 +6701,6 @@ func (o OptNilRegionalFormat) Or(d RegionalFormat) RegionalFormat {
 	return d
 }
 
-// NewOptNilSiteAbuseWarning returns new OptNilSiteAbuseWarning with value set to v.
-func NewOptNilSiteAbuseWarning(v SiteAbuseWarning) OptNilSiteAbuseWarning {
-	return OptNilSiteAbuseWarning{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteAbuseWarning is optional nullable SiteAbuseWarning.
-type OptNilSiteAbuseWarning struct {
-	Value SiteAbuseWarning
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteAbuseWarning was set.
-func (o OptNilSiteAbuseWarning) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteAbuseWarning) Reset() {
-	var v SiteAbuseWarning
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteAbuseWarning) SetTo(v SiteAbuseWarning) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteAbuseWarning) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteAbuseWarning) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteAbuseWarning
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteAbuseWarning) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteAbuseWarning) Get() (v SiteAbuseWarning, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteAbuseWarning) Or(d SiteAbuseWarning) SiteAbuseWarning {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptNilSiteAttentionSubject returns new OptNilSiteAttentionSubject with value set to v.
 func NewOptNilSiteAttentionSubject(v SiteAttentionSubject) OptNilSiteAttentionSubject {
 	return OptNilSiteAttentionSubject{
@@ -7027,6 +7503,52 @@ func (o OptProblemDetailsFields) Or(d ProblemDetailsFields) ProblemDetailsFields
 	return d
 }
 
+// NewOptSignupSource returns new OptSignupSource with value set to v.
+func NewOptSignupSource(v SignupSource) OptSignupSource {
+	return OptSignupSource{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSignupSource is optional SignupSource.
+type OptSignupSource struct {
+	Value SignupSource
+	Set   bool
+}
+
+// IsSet returns true if OptSignupSource was set.
+func (o OptSignupSource) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSignupSource) Reset() {
+	var v SignupSource
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSignupSource) SetTo(v SignupSource) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSignupSource) Get() (v SignupSource, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSignupSource) Or(d SignupSource) SignupSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptSiteAnalyticsRange returns new OptSiteAnalyticsRange with value set to v.
 func NewOptSiteAnalyticsRange(v SiteAnalyticsRange) OptSiteAnalyticsRange {
 	return OptSiteAnalyticsRange{
@@ -7113,52 +7635,6 @@ func (o OptSiteAnalyticsRevenueRange) Get() (v SiteAnalyticsRevenueRange, ok boo
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteAnalyticsRevenueRange) Or(d SiteAnalyticsRevenueRange) SiteAnalyticsRevenueRange {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteAuditActorKind returns new OptSiteAuditActorKind with value set to v.
-func NewOptSiteAuditActorKind(v SiteAuditActorKind) OptSiteAuditActorKind {
-	return OptSiteAuditActorKind{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteAuditActorKind is optional SiteAuditActorKind.
-type OptSiteAuditActorKind struct {
-	Value SiteAuditActorKind
-	Set   bool
-}
-
-// IsSet returns true if OptSiteAuditActorKind was set.
-func (o OptSiteAuditActorKind) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteAuditActorKind) Reset() {
-	var v SiteAuditActorKind
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteAuditActorKind) SetTo(v SiteAuditActorKind) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteAuditActorKind) Get() (v SiteAuditActorKind, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteAuditActorKind) Or(d SiteAuditActorKind) SiteAuditActorKind {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -8033,52 +8509,6 @@ func (o OptSitePasskeyRequestOptionsUserVerification) Get() (v SitePasskeyReques
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSitePasskeyRequestOptionsUserVerification) Or(d SitePasskeyRequestOptionsUserVerification) SitePasskeyRequestOptionsUserVerification {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteSignupSource returns new OptSiteSignupSource with value set to v.
-func NewOptSiteSignupSource(v SiteSignupSource) OptSiteSignupSource {
-	return OptSiteSignupSource{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteSignupSource is optional SiteSignupSource.
-type OptSiteSignupSource struct {
-	Value SiteSignupSource
-	Set   bool
-}
-
-// IsSet returns true if OptSiteSignupSource was set.
-func (o OptSiteSignupSource) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteSignupSource) Reset() {
-	var v SiteSignupSource
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteSignupSource) SetTo(v SiteSignupSource) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteSignupSource) Get() (v SiteSignupSource, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteSignupSource) Or(d SiteSignupSource) SiteSignupSource {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9299,6 +9729,49 @@ func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
+// A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no display
+// floor: the rate is null only when the denominator is zero, an undefined rate never being reported as
+// 0.
+// Ref: #/components/schemas/RateTriple
+type RateTriple struct {
+	// Events counted against the rate.
+	Numerator int32 `json:"numerator"`
+	// The population the rate is over.
+	Denominator int32 `json:"denominator"`
+	// Numerator / denominator, null when the denominator is zero, never reported as 0.
+	Rate NilFloat64 `json:"rate"`
+}
+
+// GetNumerator returns the value of Numerator.
+func (s *RateTriple) GetNumerator() int32 {
+	return s.Numerator
+}
+
+// GetDenominator returns the value of Denominator.
+func (s *RateTriple) GetDenominator() int32 {
+	return s.Denominator
+}
+
+// GetRate returns the value of Rate.
+func (s *RateTriple) GetRate() NilFloat64 {
+	return s.Rate
+}
+
+// SetNumerator sets the value of Numerator.
+func (s *RateTriple) SetNumerator(val int32) {
+	s.Numerator = val
+}
+
+// SetDenominator sets the value of Denominator.
+func (s *RateTriple) SetDenominator(val int32) {
+	s.Denominator = val
+}
+
+// SetRate sets the value of Rate.
+func (s *RateTriple) SetRate(val NilFloat64) {
+	s.Rate = val
+}
+
 type RegionalFormat string
 
 type RetentionDays int32
@@ -9608,6 +10081,148 @@ func (s *SetupScope) UnmarshalText(data []byte) error {
 	}
 }
 
+// How many people work at the User's company (second question).
+// Ref: #/components/schemas/SignupCompanySize
+type SignupCompanySize string
+
+const (
+	SignupCompanySize1        SignupCompanySize = "1"
+	SignupCompanySize210      SignupCompanySize = "2_10"
+	SignupCompanySize1150     SignupCompanySize = "11_50"
+	SignupCompanySize51200    SignupCompanySize = "51_200"
+	SignupCompanySize2011000  SignupCompanySize = "201_1000"
+	SignupCompanySize1000Plus SignupCompanySize = "1000_plus"
+	SignupCompanySizeOther    SignupCompanySize = "other"
+)
+
+// AllValues returns all SignupCompanySize values.
+func (SignupCompanySize) AllValues() []SignupCompanySize {
+	return []SignupCompanySize{
+		SignupCompanySize1,
+		SignupCompanySize210,
+		SignupCompanySize1150,
+		SignupCompanySize51200,
+		SignupCompanySize2011000,
+		SignupCompanySize1000Plus,
+		SignupCompanySizeOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SignupCompanySize) MarshalText() ([]byte, error) {
+	switch s {
+	case SignupCompanySize1:
+		return []byte(s), nil
+	case SignupCompanySize210:
+		return []byte(s), nil
+	case SignupCompanySize1150:
+		return []byte(s), nil
+	case SignupCompanySize51200:
+		return []byte(s), nil
+	case SignupCompanySize2011000:
+		return []byte(s), nil
+	case SignupCompanySize1000Plus:
+		return []byte(s), nil
+	case SignupCompanySizeOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SignupCompanySize) UnmarshalText(data []byte) error {
+	switch SignupCompanySize(data) {
+	case SignupCompanySize1:
+		*s = SignupCompanySize1
+		return nil
+	case SignupCompanySize210:
+		*s = SignupCompanySize210
+		return nil
+	case SignupCompanySize1150:
+		*s = SignupCompanySize1150
+		return nil
+	case SignupCompanySize51200:
+		*s = SignupCompanySize51200
+		return nil
+	case SignupCompanySize2011000:
+		*s = SignupCompanySize2011000
+		return nil
+	case SignupCompanySize1000Plus:
+		*s = SignupCompanySize1000Plus
+		return nil
+	case SignupCompanySizeOther:
+		*s = SignupCompanySizeOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What the User mainly wants to do with the product (third question).
+// Ref: #/components/schemas/SignupGoal
+type SignupGoal string
+
+const (
+	SignupGoalBroadcasts  SignupGoal = "broadcasts"
+	SignupGoalAutomations SignupGoal = "automations"
+	SignupGoalTracking    SignupGoal = "tracking"
+	SignupGoalMigrating   SignupGoal = "migrating"
+	SignupGoalOther       SignupGoal = "other"
+)
+
+// AllValues returns all SignupGoal values.
+func (SignupGoal) AllValues() []SignupGoal {
+	return []SignupGoal{
+		SignupGoalBroadcasts,
+		SignupGoalAutomations,
+		SignupGoalTracking,
+		SignupGoalMigrating,
+		SignupGoalOther,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SignupGoal) MarshalText() ([]byte, error) {
+	switch s {
+	case SignupGoalBroadcasts:
+		return []byte(s), nil
+	case SignupGoalAutomations:
+		return []byte(s), nil
+	case SignupGoalTracking:
+		return []byte(s), nil
+	case SignupGoalMigrating:
+		return []byte(s), nil
+	case SignupGoalOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SignupGoal) UnmarshalText(data []byte) error {
+	switch SignupGoal(data) {
+	case SignupGoalBroadcasts:
+		*s = SignupGoalBroadcasts
+		return nil
+	case SignupGoalAutomations:
+		*s = SignupGoalAutomations
+		return nil
+	case SignupGoalTracking:
+		*s = SignupGoalTracking
+		return nil
+	case SignupGoalMigrating:
+		*s = SignupGoalMigrating
+		return nil
+	case SignupGoalOther:
+		*s = SignupGoalOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 type SignupItemKey string
 
 // What a Sign-up item asks of a person (ADR 0062).
@@ -9660,29 +10275,41 @@ func (s *SignupItemKind) UnmarshalText(data []byte) error {
 	}
 }
 
-// The metric of a Sending domain that is over a warning limit of the abuse detector.
-// Ref: #/components/schemas/SiteAbuseMetric
-type SiteAbuseMetric string
+// What the User does (Sign-up survey, first question).
+// Ref: #/components/schemas/SignupRole
+type SignupRole string
 
 const (
-	SiteAbuseMetricComplaint SiteAbuseMetric = "complaint"
-	SiteAbuseMetricBounce    SiteAbuseMetric = "bounce"
+	SignupRoleFounder   SignupRole = "founder"
+	SignupRoleMarketer  SignupRole = "marketer"
+	SignupRoleDeveloper SignupRole = "developer"
+	SignupRoleProduct   SignupRole = "product"
+	SignupRoleOther     SignupRole = "other"
 )
 
-// AllValues returns all SiteAbuseMetric values.
-func (SiteAbuseMetric) AllValues() []SiteAbuseMetric {
-	return []SiteAbuseMetric{
-		SiteAbuseMetricComplaint,
-		SiteAbuseMetricBounce,
+// AllValues returns all SignupRole values.
+func (SignupRole) AllValues() []SignupRole {
+	return []SignupRole{
+		SignupRoleFounder,
+		SignupRoleMarketer,
+		SignupRoleDeveloper,
+		SignupRoleProduct,
+		SignupRoleOther,
 	}
 }
 
 // MarshalText implements encoding.TextMarshaler.
-func (s SiteAbuseMetric) MarshalText() ([]byte, error) {
+func (s SignupRole) MarshalText() ([]byte, error) {
 	switch s {
-	case SiteAbuseMetricComplaint:
+	case SignupRoleFounder:
 		return []byte(s), nil
-	case SiteAbuseMetricBounce:
+	case SignupRoleMarketer:
+		return []byte(s), nil
+	case SignupRoleDeveloper:
+		return []byte(s), nil
+	case SignupRoleProduct:
+		return []byte(s), nil
+	case SignupRoleOther:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -9690,60 +10317,90 @@ func (s SiteAbuseMetric) MarshalText() ([]byte, error) {
 }
 
 // UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteAbuseMetric) UnmarshalText(data []byte) error {
-	switch SiteAbuseMetric(data) {
-	case SiteAbuseMetricComplaint:
-		*s = SiteAbuseMetricComplaint
+func (s *SignupRole) UnmarshalText(data []byte) error {
+	switch SignupRole(data) {
+	case SignupRoleFounder:
+		*s = SignupRoleFounder
 		return nil
-	case SiteAbuseMetricBounce:
-		*s = SiteAbuseMetricBounce
+	case SignupRoleMarketer:
+		*s = SignupRoleMarketer
+		return nil
+	case SignupRoleDeveloper:
+		*s = SignupRoleDeveloper
+		return nil
+	case SignupRoleProduct:
+		*s = SignupRoleProduct
+		return nil
+	case SignupRoleOther:
+		*s = SignupRoleOther
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
 
-// A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is over the warning
-// limit but under the freeze limit. Computed live from the trailing 24 hours since any clearance,
-// never stored.
-// Ref: #/components/schemas/SiteAbuseWarning
-type SiteAbuseWarning struct {
-	// The Sending domain over the limit.
-	Domain string `json:"domain"`
-	// Which rate is over.
-	Metric SiteAbuseMetric `json:"metric"`
-	// The rate, 0–1.
-	Rate float64 `json:"rate"`
+// Where the User heard about the product (fourth question, optional).
+// Ref: #/components/schemas/SignupSource
+type SignupSource string
+
+const (
+	SignupSourceSearch         SignupSource = "search"
+	SignupSourceGithub         SignupSource = "github"
+	SignupSourceSocial         SignupSource = "social"
+	SignupSourceRecommendation SignupSource = "recommendation"
+	SignupSourceOther          SignupSource = "other"
+)
+
+// AllValues returns all SignupSource values.
+func (SignupSource) AllValues() []SignupSource {
+	return []SignupSource{
+		SignupSourceSearch,
+		SignupSourceGithub,
+		SignupSourceSocial,
+		SignupSourceRecommendation,
+		SignupSourceOther,
+	}
 }
 
-// GetDomain returns the value of Domain.
-func (s *SiteAbuseWarning) GetDomain() string {
-	return s.Domain
+// MarshalText implements encoding.TextMarshaler.
+func (s SignupSource) MarshalText() ([]byte, error) {
+	switch s {
+	case SignupSourceSearch:
+		return []byte(s), nil
+	case SignupSourceGithub:
+		return []byte(s), nil
+	case SignupSourceSocial:
+		return []byte(s), nil
+	case SignupSourceRecommendation:
+		return []byte(s), nil
+	case SignupSourceOther:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
 }
 
-// GetMetric returns the value of Metric.
-func (s *SiteAbuseWarning) GetMetric() SiteAbuseMetric {
-	return s.Metric
-}
-
-// GetRate returns the value of Rate.
-func (s *SiteAbuseWarning) GetRate() float64 {
-	return s.Rate
-}
-
-// SetDomain sets the value of Domain.
-func (s *SiteAbuseWarning) SetDomain(val string) {
-	s.Domain = val
-}
-
-// SetMetric sets the value of Metric.
-func (s *SiteAbuseWarning) SetMetric(val SiteAbuseMetric) {
-	s.Metric = val
-}
-
-// SetRate sets the value of Rate.
-func (s *SiteAbuseWarning) SetRate(val float64) {
-	s.Rate = val
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SignupSource) UnmarshalText(data []byte) error {
+	switch SignupSource(data) {
+	case SignupSourceSearch:
+		*s = SignupSourceSearch
+		return nil
+	case SignupSourceGithub:
+		*s = SignupSourceGithub
+		return nil
+	case SignupSourceSocial:
+		*s = SignupSourceSocial
+		return nil
+	case SignupSourceRecommendation:
+		*s = SignupSourceRecommendation
+		return nil
+	case SignupSourceOther:
+		*s = SignupSourceOther
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
 }
 
 // Accept an invite. For an address with no User or an Unverified User, name + password are required
@@ -11144,7 +11801,7 @@ type SiteAttentionItem struct {
 	// reason of the object's own source makes an item: a Workspace-level hold is the layout's banner.
 	HoldReason OptNilHoldReason `json:"holdReason"`
 	// The rate behind a deliverability warning.
-	Abuse OptNilSiteAbuseWarning `json:"abuse"`
+	Abuse OptNilAbuseWarning `json:"abuse"`
 	// When the Send cap is expected to have let the Broadcast out, set on a
 	// `scheduledBroadcastOverSendCap` item only: the same estimate as the Broadcast's progress once it is
 	// sending.
@@ -11182,7 +11839,7 @@ func (s *SiteAttentionItem) GetHoldReason() OptNilHoldReason {
 }
 
 // GetAbuse returns the value of Abuse.
-func (s *SiteAttentionItem) GetAbuse() OptNilSiteAbuseWarning {
+func (s *SiteAttentionItem) GetAbuse() OptNilAbuseWarning {
 	return s.Abuse
 }
 
@@ -11222,7 +11879,7 @@ func (s *SiteAttentionItem) SetHoldReason(val OptNilHoldReason) {
 }
 
 // SetAbuse sets the value of Abuse.
-func (s *SiteAttentionItem) SetAbuse(val OptNilSiteAbuseWarning) {
+func (s *SiteAttentionItem) SetAbuse(val OptNilAbuseWarning) {
 	s.Abuse = val
 }
 
@@ -11470,245 +12127,6 @@ func (s *SiteAttentionSubject) SetName(val string) {
 	s.Name = val
 }
 
-// The actor of an Audit entry.
-// Ref: #/components/schemas/SiteAuditActor
-type SiteAuditActor struct {
-	// The kind of actor; a staff member is shown to the customer as "Sphericon staff".
-	Kind SiteAuditActorKind `json:"kind"`
-	// The actor's id (a User id or an API token id); absent for the system.
-	ID OptNilString `json:"id"`
-	// Display name snapshot taken when the entry was written.
-	Name OptNilString `json:"name"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteAuditActor) GetKind() SiteAuditActorKind {
-	return s.Kind
-}
-
-// GetID returns the value of ID.
-func (s *SiteAuditActor) GetID() OptNilString {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *SiteAuditActor) GetName() OptNilString {
-	return s.Name
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteAuditActor) SetKind(val SiteAuditActorKind) {
-	s.Kind = val
-}
-
-// SetID sets the value of ID.
-func (s *SiteAuditActor) SetID(val OptNilString) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteAuditActor) SetName(val OptNilString) {
-	s.Name = val
-}
-
-// Who performed an audited change.
-// Ref: #/components/schemas/SiteAuditActorKind
-type SiteAuditActorKind string
-
-const (
-	SiteAuditActorKindUser     SiteAuditActorKind = "user"
-	SiteAuditActorKindAPIToken SiteAuditActorKind = "api_token"
-	SiteAuditActorKindStaff    SiteAuditActorKind = "staff"
-	SiteAuditActorKindSystem   SiteAuditActorKind = "system"
-)
-
-// AllValues returns all SiteAuditActorKind values.
-func (SiteAuditActorKind) AllValues() []SiteAuditActorKind {
-	return []SiteAuditActorKind{
-		SiteAuditActorKindUser,
-		SiteAuditActorKindAPIToken,
-		SiteAuditActorKindStaff,
-		SiteAuditActorKindSystem,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteAuditActorKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteAuditActorKindUser:
-		return []byte(s), nil
-	case SiteAuditActorKindAPIToken:
-		return []byte(s), nil
-	case SiteAuditActorKindStaff:
-		return []byte(s), nil
-	case SiteAuditActorKindSystem:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteAuditActorKind) UnmarshalText(data []byte) error {
-	switch SiteAuditActorKind(data) {
-	case SiteAuditActorKindUser:
-		*s = SiteAuditActorKindUser
-		return nil
-	case SiteAuditActorKindAPIToken:
-		*s = SiteAuditActorKindAPIToken
-		return nil
-	case SiteAuditActorKindStaff:
-		*s = SiteAuditActorKindStaff
-		return nil
-	case SiteAuditActorKindSystem:
-		*s = SiteAuditActorKindSystem
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A page of Audit entries, newest first.
-// Ref: #/components/schemas/SiteAuditEntryList
-type SiteAuditEntryList struct {
-	Items []SiteAuditEntryResource `json:"items"`
-	// Pass as `cursor` for the next page; absent on the last page.
-	NextCursor OptNilString `json:"nextCursor"`
-}
-
-// GetItems returns the value of Items.
-func (s *SiteAuditEntryList) GetItems() []SiteAuditEntryResource {
-	return s.Items
-}
-
-// GetNextCursor returns the value of NextCursor.
-func (s *SiteAuditEntryList) GetNextCursor() OptNilString {
-	return s.NextCursor
-}
-
-// SetItems sets the value of Items.
-func (s *SiteAuditEntryList) SetItems(val []SiteAuditEntryResource) {
-	s.Items = val
-}
-
-// SetNextCursor sets the value of NextCursor.
-func (s *SiteAuditEntryList) SetNextCursor(val OptNilString) {
-	s.NextCursor = val
-}
-
-// One immutable Audit entry (Enterprise).
-// Ref: #/components/schemas/SiteAuditEntryResource
-type SiteAuditEntryResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// When the change happened.
-	OccurredAt Timestamp `json:"occurredAt"`
-	// Who did it.
-	Actor SiteAuditActor `json:"actor"`
-	// What was done.
-	Action AuditAction `json:"action"`
-	// What it was done to.
-	Target SiteAuditTarget `json:"target"`
-	// Before/after of the changed fields; secrets appear as changed only.
-	Diff OptNilJsonObject `json:"diff"`
-	// Request id of the change.
-	RequestId OptNilString `json:"requestId"`
-	// Client address of the change.
-	IP OptNilString `json:"ip"`
-	// Client user agent of the change.
-	UserAgent OptNilString `json:"userAgent"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteAuditEntryResource) GetID() EntityId {
-	return s.ID
-}
-
-// GetOccurredAt returns the value of OccurredAt.
-func (s *SiteAuditEntryResource) GetOccurredAt() Timestamp {
-	return s.OccurredAt
-}
-
-// GetActor returns the value of Actor.
-func (s *SiteAuditEntryResource) GetActor() SiteAuditActor {
-	return s.Actor
-}
-
-// GetAction returns the value of Action.
-func (s *SiteAuditEntryResource) GetAction() AuditAction {
-	return s.Action
-}
-
-// GetTarget returns the value of Target.
-func (s *SiteAuditEntryResource) GetTarget() SiteAuditTarget {
-	return s.Target
-}
-
-// GetDiff returns the value of Diff.
-func (s *SiteAuditEntryResource) GetDiff() OptNilJsonObject {
-	return s.Diff
-}
-
-// GetRequestId returns the value of RequestId.
-func (s *SiteAuditEntryResource) GetRequestId() OptNilString {
-	return s.RequestId
-}
-
-// GetIP returns the value of IP.
-func (s *SiteAuditEntryResource) GetIP() OptNilString {
-	return s.IP
-}
-
-// GetUserAgent returns the value of UserAgent.
-func (s *SiteAuditEntryResource) GetUserAgent() OptNilString {
-	return s.UserAgent
-}
-
-// SetID sets the value of ID.
-func (s *SiteAuditEntryResource) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetOccurredAt sets the value of OccurredAt.
-func (s *SiteAuditEntryResource) SetOccurredAt(val Timestamp) {
-	s.OccurredAt = val
-}
-
-// SetActor sets the value of Actor.
-func (s *SiteAuditEntryResource) SetActor(val SiteAuditActor) {
-	s.Actor = val
-}
-
-// SetAction sets the value of Action.
-func (s *SiteAuditEntryResource) SetAction(val AuditAction) {
-	s.Action = val
-}
-
-// SetTarget sets the value of Target.
-func (s *SiteAuditEntryResource) SetTarget(val SiteAuditTarget) {
-	s.Target = val
-}
-
-// SetDiff sets the value of Diff.
-func (s *SiteAuditEntryResource) SetDiff(val OptNilJsonObject) {
-	s.Diff = val
-}
-
-// SetRequestId sets the value of RequestId.
-func (s *SiteAuditEntryResource) SetRequestId(val OptNilString) {
-	s.RequestId = val
-}
-
-// SetIP sets the value of IP.
-func (s *SiteAuditEntryResource) SetIP(val OptNilString) {
-	s.IP = val
-}
-
-// SetUserAgent sets the value of UserAgent.
-func (s *SiteAuditEntryResource) SetUserAgent(val OptNilString) {
-	s.UserAgent = val
-}
-
 type SiteAuditExportOK struct {
 	Data io.Reader
 }
@@ -11754,7 +12172,7 @@ func (s *SiteAuditExportOKHeaders) SetResponse(val SiteAuditExportOK) {
 type SiteAuditFacets struct {
 	// Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands
 	// for the platform staff, and each actor carries its latest name snapshot.
-	Actors []SiteAuditActor `json:"actors"`
+	Actors []AuditActor `json:"actors"`
 	// Every action with an entry in the log, sorted.
 	Actions []AuditAction `json:"actions"`
 	// Every target type with an entry in the log, sorted.
@@ -11762,7 +12180,7 @@ type SiteAuditFacets struct {
 }
 
 // GetActors returns the value of Actors.
-func (s *SiteAuditFacets) GetActors() []SiteAuditActor {
+func (s *SiteAuditFacets) GetActors() []AuditActor {
 	return s.Actors
 }
 
@@ -11777,7 +12195,7 @@ func (s *SiteAuditFacets) GetTargetTypes() []string {
 }
 
 // SetActors sets the value of Actors.
-func (s *SiteAuditFacets) SetActors(val []SiteAuditActor) {
+func (s *SiteAuditFacets) SetActors(val []AuditActor) {
 	s.Actors = val
 }
 
@@ -11849,47 +12267,6 @@ func (s *SiteAuditRetentionInput) SetRetentionDays(val NilRetentionDays) {
 // SetRevision sets the value of Revision.
 func (s *SiteAuditRetentionInput) SetRevision(val Revision) {
 	s.Revision = val
-}
-
-// What an audited change was done to.
-// Ref: #/components/schemas/SiteAuditTarget
-type SiteAuditTarget struct {
-	// Entity type, e.g. membership.
-	Type string `json:"type"`
-	// The target's id.
-	ID OptNilString `json:"id"`
-	// Name snapshot taken when the entry was written; absent for a Contact.
-	Name OptNilString `json:"name"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteAuditTarget) GetType() string {
-	return s.Type
-}
-
-// GetID returns the value of ID.
-func (s *SiteAuditTarget) GetID() OptNilString {
-	return s.ID
-}
-
-// GetName returns the value of Name.
-func (s *SiteAuditTarget) GetName() OptNilString {
-	return s.Name
-}
-
-// SetType sets the value of Type.
-func (s *SiteAuditTarget) SetType(val string) {
-	s.Type = val
-}
-
-// SetID sets the value of ID.
-func (s *SiteAuditTarget) SetID(val OptNilString) {
-	s.ID = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteAuditTarget) SetName(val OptNilString) {
-	s.Name = val
 }
 
 // SiteAuthConfirmEmailChangeOK is response for SiteAuthConfirmEmailChange operation.
@@ -14014,7 +14391,7 @@ type SiteBroadcastResource struct {
 	// Sending integration; null means the workspace default.
 	IntegrationId OptNilEntityId `json:"integrationId"`
 	// Lifecycle status.
-	Status SiteBroadcastStatus `json:"status"`
+	Status BroadcastStatus `json:"status"`
 	// Why sending is currently held, when it is.
 	HoldReason OptNilHoldReason `json:"holdReason"`
 	// When the broadcast is scheduled to send.
@@ -14080,7 +14457,7 @@ func (s *SiteBroadcastResource) GetIntegrationId() OptNilEntityId {
 }
 
 // GetStatus returns the value of Status.
-func (s *SiteBroadcastResource) GetStatus() SiteBroadcastStatus {
+func (s *SiteBroadcastResource) GetStatus() BroadcastStatus {
 	return s.Status
 }
 
@@ -14175,7 +14552,7 @@ func (s *SiteBroadcastResource) SetIntegrationId(val OptNilEntityId) {
 }
 
 // SetStatus sets the value of Status.
-func (s *SiteBroadcastResource) SetStatus(val SiteBroadcastStatus) {
+func (s *SiteBroadcastResource) SetStatus(val BroadcastStatus) {
 	s.Status = val
 }
 
@@ -14488,70 +14865,6 @@ func (s *SiteBroadcastStats) SetFailureRate(val float32) {
 // SetRevenue sets the value of Revenue.
 func (s *SiteBroadcastStats) SetRevenue(val SiteMessageRevenue) {
 	s.Revenue = val
-}
-
-// Broadcast lifecycle status.
-// Ref: #/components/schemas/SiteBroadcastStatus
-type SiteBroadcastStatus string
-
-const (
-	SiteBroadcastStatusDraft     SiteBroadcastStatus = "draft"
-	SiteBroadcastStatusScheduled SiteBroadcastStatus = "scheduled"
-	SiteBroadcastStatusSending   SiteBroadcastStatus = "sending"
-	SiteBroadcastStatusSent      SiteBroadcastStatus = "sent"
-	SiteBroadcastStatusFailed    SiteBroadcastStatus = "failed"
-)
-
-// AllValues returns all SiteBroadcastStatus values.
-func (SiteBroadcastStatus) AllValues() []SiteBroadcastStatus {
-	return []SiteBroadcastStatus{
-		SiteBroadcastStatusDraft,
-		SiteBroadcastStatusScheduled,
-		SiteBroadcastStatusSending,
-		SiteBroadcastStatusSent,
-		SiteBroadcastStatusFailed,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteBroadcastStatus) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteBroadcastStatusDraft:
-		return []byte(s), nil
-	case SiteBroadcastStatusScheduled:
-		return []byte(s), nil
-	case SiteBroadcastStatusSending:
-		return []byte(s), nil
-	case SiteBroadcastStatusSent:
-		return []byte(s), nil
-	case SiteBroadcastStatusFailed:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteBroadcastStatus) UnmarshalText(data []byte) error {
-	switch SiteBroadcastStatus(data) {
-	case SiteBroadcastStatusDraft:
-		*s = SiteBroadcastStatusDraft
-		return nil
-	case SiteBroadcastStatusScheduled:
-		*s = SiteBroadcastStatusScheduled
-		return nil
-	case SiteBroadcastStatusSending:
-		*s = SiteBroadcastStatusSending
-		return nil
-	case SiteBroadcastStatusSent:
-		*s = SiteBroadcastStatusSent
-		return nil
-	case SiteBroadcastStatusFailed:
-		*s = SiteBroadcastStatusFailed
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 // Paginated response.
@@ -22874,48 +23187,6 @@ type SitePublicInvitationsAcceptOK struct{}
 // SitePublicUnsubscribesPerformNoContent is response for SitePublicUnsubscribesPerform operation.
 type SitePublicUnsubscribesPerformNoContent struct{}
 
-// A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is, with no
-// display floor: the rate is null only when the denominator is zero.
-// Ref: #/components/schemas/SiteRate
-type SiteRate struct {
-	// Events counted against the rate.
-	Numerator int32 `json:"numerator"`
-	// The population the rate is over.
-	Denominator int32 `json:"denominator"`
-	// Numerator / denominator, null when the denominator is zero, never reported as 0.
-	Rate NilFloat64 `json:"rate"`
-}
-
-// GetNumerator returns the value of Numerator.
-func (s *SiteRate) GetNumerator() int32 {
-	return s.Numerator
-}
-
-// GetDenominator returns the value of Denominator.
-func (s *SiteRate) GetDenominator() int32 {
-	return s.Denominator
-}
-
-// GetRate returns the value of Rate.
-func (s *SiteRate) GetRate() NilFloat64 {
-	return s.Rate
-}
-
-// SetNumerator sets the value of Numerator.
-func (s *SiteRate) SetNumerator(val int32) {
-	s.Numerator = val
-}
-
-// SetDenominator sets the value of Denominator.
-func (s *SiteRate) SetDenominator(val int32) {
-	s.Denominator = val
-}
-
-// SetRate sets the value of Rate.
-func (s *SiteRate) SetRate(val NilFloat64) {
-	s.Rate = val
-}
-
 // A fresh set of Recovery codes. They are shown only in this response.
 // Ref: #/components/schemas/SiteRecoveryCodes
 type SiteRecoveryCodes struct {
@@ -24724,9 +24995,9 @@ type SiteSendingDomainRates struct {
 	// The domain the rates are for.
 	Domain string `json:"domain"`
 	// Complaints over delivered mail; the rate is null when nothing was delivered in the window.
-	ComplaintRate SiteRate `json:"complaintRate"`
+	ComplaintRate RateTriple `json:"complaintRate"`
 	// Hard bounces over sent.
-	BounceRate SiteRate `json:"bounceRate"`
+	BounceRate RateTriple `json:"bounceRate"`
 }
 
 // GetSendingDomainId returns the value of SendingDomainId.
@@ -24740,12 +25011,12 @@ func (s *SiteSendingDomainRates) GetDomain() string {
 }
 
 // GetComplaintRate returns the value of ComplaintRate.
-func (s *SiteSendingDomainRates) GetComplaintRate() SiteRate {
+func (s *SiteSendingDomainRates) GetComplaintRate() RateTriple {
 	return s.ComplaintRate
 }
 
 // GetBounceRate returns the value of BounceRate.
-func (s *SiteSendingDomainRates) GetBounceRate() SiteRate {
+func (s *SiteSendingDomainRates) GetBounceRate() RateTriple {
 	return s.BounceRate
 }
 
@@ -24760,12 +25031,12 @@ func (s *SiteSendingDomainRates) SetDomain(val string) {
 }
 
 // SetComplaintRate sets the value of ComplaintRate.
-func (s *SiteSendingDomainRates) SetComplaintRate(val SiteRate) {
+func (s *SiteSendingDomainRates) SetComplaintRate(val RateTriple) {
 	s.ComplaintRate = val
 }
 
 // SetBounceRate sets the value of BounceRate.
-func (s *SiteSendingDomainRates) SetBounceRate(val SiteRate) {
+func (s *SiteSendingDomainRates) SetBounceRate(val RateTriple) {
 	s.BounceRate = val
 }
 
@@ -25461,148 +25732,6 @@ func (s *SiteSigninProviders) SetItems(val []SiteSigninProvider) {
 	s.Items = val
 }
 
-// How many people work at the User's company (second question).
-// Ref: #/components/schemas/SiteSignupCompanySize
-type SiteSignupCompanySize string
-
-const (
-	SiteSignupCompanySize1        SiteSignupCompanySize = "1"
-	SiteSignupCompanySize210      SiteSignupCompanySize = "2_10"
-	SiteSignupCompanySize1150     SiteSignupCompanySize = "11_50"
-	SiteSignupCompanySize51200    SiteSignupCompanySize = "51_200"
-	SiteSignupCompanySize2011000  SiteSignupCompanySize = "201_1000"
-	SiteSignupCompanySize1000Plus SiteSignupCompanySize = "1000_plus"
-	SiteSignupCompanySizeOther    SiteSignupCompanySize = "other"
-)
-
-// AllValues returns all SiteSignupCompanySize values.
-func (SiteSignupCompanySize) AllValues() []SiteSignupCompanySize {
-	return []SiteSignupCompanySize{
-		SiteSignupCompanySize1,
-		SiteSignupCompanySize210,
-		SiteSignupCompanySize1150,
-		SiteSignupCompanySize51200,
-		SiteSignupCompanySize2011000,
-		SiteSignupCompanySize1000Plus,
-		SiteSignupCompanySizeOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSignupCompanySize) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSignupCompanySize1:
-		return []byte(s), nil
-	case SiteSignupCompanySize210:
-		return []byte(s), nil
-	case SiteSignupCompanySize1150:
-		return []byte(s), nil
-	case SiteSignupCompanySize51200:
-		return []byte(s), nil
-	case SiteSignupCompanySize2011000:
-		return []byte(s), nil
-	case SiteSignupCompanySize1000Plus:
-		return []byte(s), nil
-	case SiteSignupCompanySizeOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSignupCompanySize) UnmarshalText(data []byte) error {
-	switch SiteSignupCompanySize(data) {
-	case SiteSignupCompanySize1:
-		*s = SiteSignupCompanySize1
-		return nil
-	case SiteSignupCompanySize210:
-		*s = SiteSignupCompanySize210
-		return nil
-	case SiteSignupCompanySize1150:
-		*s = SiteSignupCompanySize1150
-		return nil
-	case SiteSignupCompanySize51200:
-		*s = SiteSignupCompanySize51200
-		return nil
-	case SiteSignupCompanySize2011000:
-		*s = SiteSignupCompanySize2011000
-		return nil
-	case SiteSignupCompanySize1000Plus:
-		*s = SiteSignupCompanySize1000Plus
-		return nil
-	case SiteSignupCompanySizeOther:
-		*s = SiteSignupCompanySizeOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// What the User mainly wants to do with the product (third question).
-// Ref: #/components/schemas/SiteSignupGoal
-type SiteSignupGoal string
-
-const (
-	SiteSignupGoalBroadcasts  SiteSignupGoal = "broadcasts"
-	SiteSignupGoalAutomations SiteSignupGoal = "automations"
-	SiteSignupGoalTracking    SiteSignupGoal = "tracking"
-	SiteSignupGoalMigrating   SiteSignupGoal = "migrating"
-	SiteSignupGoalOther       SiteSignupGoal = "other"
-)
-
-// AllValues returns all SiteSignupGoal values.
-func (SiteSignupGoal) AllValues() []SiteSignupGoal {
-	return []SiteSignupGoal{
-		SiteSignupGoalBroadcasts,
-		SiteSignupGoalAutomations,
-		SiteSignupGoalTracking,
-		SiteSignupGoalMigrating,
-		SiteSignupGoalOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSignupGoal) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSignupGoalBroadcasts:
-		return []byte(s), nil
-	case SiteSignupGoalAutomations:
-		return []byte(s), nil
-	case SiteSignupGoalTracking:
-		return []byte(s), nil
-	case SiteSignupGoalMigrating:
-		return []byte(s), nil
-	case SiteSignupGoalOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSignupGoal) UnmarshalText(data []byte) error {
-	switch SiteSignupGoal(data) {
-	case SiteSignupGoalBroadcasts:
-		*s = SiteSignupGoalBroadcasts
-		return nil
-	case SiteSignupGoalAutomations:
-		*s = SiteSignupGoalAutomations
-		return nil
-	case SiteSignupGoalTracking:
-		*s = SiteSignupGoalTracking
-		return nil
-	case SiteSignupGoalMigrating:
-		*s = SiteSignupGoalMigrating
-		return nil
-	case SiteSignupGoalOther:
-		*s = SiteSignupGoalOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // A Sign-up item in effect, with the label of its current Legal document version: what the sign-up
 // form asks (ADR 0062).
 // Ref: #/components/schemas/SiteSignupItem
@@ -25713,159 +25842,31 @@ func (s *SiteSignupItemList) SetItems(val []SiteSignupItem) {
 	s.Items = val
 }
 
-// What the User does (Sign-up survey, first question).
-// Ref: #/components/schemas/SiteSignupRole
-type SiteSignupRole string
-
-const (
-	SiteSignupRoleFounder   SiteSignupRole = "founder"
-	SiteSignupRoleMarketer  SiteSignupRole = "marketer"
-	SiteSignupRoleDeveloper SiteSignupRole = "developer"
-	SiteSignupRoleProduct   SiteSignupRole = "product"
-	SiteSignupRoleOther     SiteSignupRole = "other"
-)
-
-// AllValues returns all SiteSignupRole values.
-func (SiteSignupRole) AllValues() []SiteSignupRole {
-	return []SiteSignupRole{
-		SiteSignupRoleFounder,
-		SiteSignupRoleMarketer,
-		SiteSignupRoleDeveloper,
-		SiteSignupRoleProduct,
-		SiteSignupRoleOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSignupRole) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSignupRoleFounder:
-		return []byte(s), nil
-	case SiteSignupRoleMarketer:
-		return []byte(s), nil
-	case SiteSignupRoleDeveloper:
-		return []byte(s), nil
-	case SiteSignupRoleProduct:
-		return []byte(s), nil
-	case SiteSignupRoleOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSignupRole) UnmarshalText(data []byte) error {
-	switch SiteSignupRole(data) {
-	case SiteSignupRoleFounder:
-		*s = SiteSignupRoleFounder
-		return nil
-	case SiteSignupRoleMarketer:
-		*s = SiteSignupRoleMarketer
-		return nil
-	case SiteSignupRoleDeveloper:
-		*s = SiteSignupRoleDeveloper
-		return nil
-	case SiteSignupRoleProduct:
-		*s = SiteSignupRoleProduct
-		return nil
-	case SiteSignupRoleOther:
-		*s = SiteSignupRoleOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Where the User heard about the product (fourth question, optional).
-// Ref: #/components/schemas/SiteSignupSource
-type SiteSignupSource string
-
-const (
-	SiteSignupSourceSearch         SiteSignupSource = "search"
-	SiteSignupSourceGithub         SiteSignupSource = "github"
-	SiteSignupSourceSocial         SiteSignupSource = "social"
-	SiteSignupSourceRecommendation SiteSignupSource = "recommendation"
-	SiteSignupSourceOther          SiteSignupSource = "other"
-)
-
-// AllValues returns all SiteSignupSource values.
-func (SiteSignupSource) AllValues() []SiteSignupSource {
-	return []SiteSignupSource{
-		SiteSignupSourceSearch,
-		SiteSignupSourceGithub,
-		SiteSignupSourceSocial,
-		SiteSignupSourceRecommendation,
-		SiteSignupSourceOther,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSignupSource) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSignupSourceSearch:
-		return []byte(s), nil
-	case SiteSignupSourceGithub:
-		return []byte(s), nil
-	case SiteSignupSourceSocial:
-		return []byte(s), nil
-	case SiteSignupSourceRecommendation:
-		return []byte(s), nil
-	case SiteSignupSourceOther:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSignupSource) UnmarshalText(data []byte) error {
-	switch SiteSignupSource(data) {
-	case SiteSignupSourceSearch:
-		*s = SiteSignupSourceSearch
-		return nil
-	case SiteSignupSourceGithub:
-		*s = SiteSignupSourceGithub
-		return nil
-	case SiteSignupSourceSocial:
-		*s = SiteSignupSourceSocial
-		return nil
-	case SiteSignupSourceRecommendation:
-		*s = SiteSignupSourceRecommendation
-		return nil
-	case SiteSignupSourceOther:
-		*s = SiteSignupSourceOther
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // The answers to the Sign-up survey, sent once after its last screen. `role`, `companySize` and
 // `mainGoal` are required; `heardFrom` is optional. Each `…Other` text is allowed only with its
 // question's `other` choice.
 // Ref: #/components/schemas/SiteSignupSurveyInput
 type SiteSignupSurveyInput struct {
 	// What the User does.
-	Role SiteSignupRole `json:"role"`
+	Role SignupRole `json:"role"`
 	// What the User does, when `role` is `other`.
 	RoleOther OptString `json:"roleOther"`
 	// How many people work at the User's company.
-	CompanySize SiteSignupCompanySize `json:"companySize"`
+	CompanySize SignupCompanySize `json:"companySize"`
 	// The company size, when `companySize` is `other`.
 	CompanySizeOther OptString `json:"companySizeOther"`
 	// What the User mainly wants to do with the product.
-	MainGoal SiteSignupGoal `json:"mainGoal"`
+	MainGoal SignupGoal `json:"mainGoal"`
 	// The main goal, when `mainGoal` is `other`.
 	MainGoalOther OptString `json:"mainGoalOther"`
 	// Where the User heard about the product.
-	HeardFrom OptSiteSignupSource `json:"heardFrom"`
+	HeardFrom OptSignupSource `json:"heardFrom"`
 	// Where the User heard about the product, when `heardFrom` is `other`.
 	HeardFromOther OptString `json:"heardFromOther"`
 }
 
 // GetRole returns the value of Role.
-func (s *SiteSignupSurveyInput) GetRole() SiteSignupRole {
+func (s *SiteSignupSurveyInput) GetRole() SignupRole {
 	return s.Role
 }
 
@@ -25875,7 +25876,7 @@ func (s *SiteSignupSurveyInput) GetRoleOther() OptString {
 }
 
 // GetCompanySize returns the value of CompanySize.
-func (s *SiteSignupSurveyInput) GetCompanySize() SiteSignupCompanySize {
+func (s *SiteSignupSurveyInput) GetCompanySize() SignupCompanySize {
 	return s.CompanySize
 }
 
@@ -25885,7 +25886,7 @@ func (s *SiteSignupSurveyInput) GetCompanySizeOther() OptString {
 }
 
 // GetMainGoal returns the value of MainGoal.
-func (s *SiteSignupSurveyInput) GetMainGoal() SiteSignupGoal {
+func (s *SiteSignupSurveyInput) GetMainGoal() SignupGoal {
 	return s.MainGoal
 }
 
@@ -25895,7 +25896,7 @@ func (s *SiteSignupSurveyInput) GetMainGoalOther() OptString {
 }
 
 // GetHeardFrom returns the value of HeardFrom.
-func (s *SiteSignupSurveyInput) GetHeardFrom() OptSiteSignupSource {
+func (s *SiteSignupSurveyInput) GetHeardFrom() OptSignupSource {
 	return s.HeardFrom
 }
 
@@ -25905,7 +25906,7 @@ func (s *SiteSignupSurveyInput) GetHeardFromOther() OptString {
 }
 
 // SetRole sets the value of Role.
-func (s *SiteSignupSurveyInput) SetRole(val SiteSignupRole) {
+func (s *SiteSignupSurveyInput) SetRole(val SignupRole) {
 	s.Role = val
 }
 
@@ -25915,7 +25916,7 @@ func (s *SiteSignupSurveyInput) SetRoleOther(val OptString) {
 }
 
 // SetCompanySize sets the value of CompanySize.
-func (s *SiteSignupSurveyInput) SetCompanySize(val SiteSignupCompanySize) {
+func (s *SiteSignupSurveyInput) SetCompanySize(val SignupCompanySize) {
 	s.CompanySize = val
 }
 
@@ -25925,7 +25926,7 @@ func (s *SiteSignupSurveyInput) SetCompanySizeOther(val OptString) {
 }
 
 // SetMainGoal sets the value of MainGoal.
-func (s *SiteSignupSurveyInput) SetMainGoal(val SiteSignupGoal) {
+func (s *SiteSignupSurveyInput) SetMainGoal(val SignupGoal) {
 	s.MainGoal = val
 }
 
@@ -25935,7 +25936,7 @@ func (s *SiteSignupSurveyInput) SetMainGoalOther(val OptString) {
 }
 
 // SetHeardFrom sets the value of HeardFrom.
-func (s *SiteSignupSurveyInput) SetHeardFrom(val OptSiteSignupSource) {
+func (s *SiteSignupSurveyInput) SetHeardFrom(val OptSignupSource) {
 	s.HeardFrom = val
 }
 
@@ -28773,9 +28774,9 @@ type SiteWorkspaceResource struct {
 	AccountLinkAvailable bool `json:"accountLinkAvailable"`
 	// Creation timestamp.
 	CreatedAt Timestamp `json:"createdAt"`
-	// The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its
-	// bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's
-	// completion) does not move it.
+	// The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. What
+	// the service keeps about it for itself (the service feed's position, the abuse detector's notices,
+	// the Setup checklist's completion) lives beside it (ADR 0168) and does not move it.
 	Revision Revision `json:"revision"`
 }
 

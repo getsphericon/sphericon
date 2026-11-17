@@ -21,6 +21,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -67,7 +68,7 @@ func TestCreateReturnsTheEndpointWithItsDecryptedStandardWebhooksSecret(t *testi
 	require.NoError(t, err)
 	assert.Len(t, raw, 24)
 
-	stored, err := acme.WebhookEndpoint().Get(ctx, got.ID)
+	stored, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(got.ID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 	assert.NotContains(t, stored.SecretEncrypted, got.Secret, "stored sealed")
 
@@ -314,9 +315,9 @@ func TestTestSendReportsTheErrorKindAndLeavesTheFailureStateAlone(t *testing.T) 
 	ctx := context.Background()
 	rcv := newReceiver(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", http.StatusGone)
 	pointAt(t, env, fixtures.WebhookCodebasicsFailingID, rcv.srv.URL)
-	before, err := acme.WebhookEndpoint().Get(ctx, fixtures.WebhookCodebasicsFailingID)
+	before, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsFailingID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
-	require.NotNil(t, before.ConsecutiveFailures)
+	require.NotNil(t, before.Edges.Health.ConsecutiveFailures)
 
 	res, err := moduleAllowing(t, env, rcv).TestSend(ctx, acme, fixtures.WebhookCodebasicsFailingID, systemevent.EmailOpened)
 	require.NoError(t, err)
@@ -330,12 +331,12 @@ func TestTestSendReportsTheErrorKindAndLeavesTheFailureStateAlone(t *testing.T) 
 	assert.Equal(t, webhook.KindBlockedAddress, res.Kind)
 	assert.Zero(t, res.Status)
 
-	after, err := acme.WebhookEndpoint().Get(ctx, fixtures.WebhookCodebasicsFailingID)
+	after, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsFailingID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, before.ConsecutiveFailures, after.ConsecutiveFailures)
-	assert.Equal(t, before.LastErrorKind, after.LastErrorKind)
-	assert.Equal(t, before.LastErrorStatus, after.LastErrorStatus)
-	assert.True(t, before.LastFailureAt.Equal(*after.LastFailureAt))
+	assert.Equal(t, before.Edges.Health.ConsecutiveFailures, after.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, before.Edges.Health.LastErrorKind, after.Edges.Health.LastErrorKind)
+	assert.Equal(t, before.Edges.Health.LastErrorStatus, after.Edges.Health.LastErrorStatus)
+	assert.True(t, before.Edges.Health.LastFailureAt.Equal(*after.Edges.Health.LastFailureAt))
 	assert.Nil(t, after.DisabledAt)
 }
 
@@ -385,20 +386,20 @@ func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
 	ctx := context.Background()
 	on := true
 
-	before, err := acme.WebhookEndpoint().Get(ctx, fixtures.WebhookCodebasicsGoneID)
+	before, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsGoneID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, before.DisabledReason)
-	require.NotNil(t, before.ConsecutiveFailures)
+	require.NotNil(t, before.Edges.Health.ConsecutiveFailures)
 
 	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsGoneID), Enabled: patch.Set(on)})
 	require.NoError(t, err)
 	assert.Nil(t, got.DisabledAt)
 	assert.Nil(t, got.DisabledReason)
-	assert.Nil(t, got.ConsecutiveFailures)
-	assert.Nil(t, got.FailingSince)
-	assert.Nil(t, got.LastErrorKind)
-	assert.Nil(t, got.LastErrorStatus)
-	assert.Nil(t, got.LastFailureAt)
+	assert.Nil(t, got.Edges.Health.ConsecutiveFailures)
+	assert.Nil(t, got.Edges.Health.FailingSince)
+	assert.Nil(t, got.Edges.Health.LastErrorKind)
+	assert.Nil(t, got.Edges.Health.LastErrorStatus)
+	assert.Nil(t, got.Edges.Health.LastFailureAt)
 }
 
 // recording is the module with the clock the test injects.
@@ -430,7 +431,7 @@ func (r *recording) scope() *ent.Scoped { return r.env.DB.Scoped(fixtures.AcmeID
 
 func (r *recording) endpoint() *ent.WebhookEndpoint {
 	r.t.Helper()
-	e, err := r.scope().WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
+	e, err := r.scope().WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(context.Background())
 	require.NoError(r.t, err)
 	return e
 }
@@ -438,7 +439,7 @@ func (r *recording) endpoint() *ent.WebhookEndpoint {
 // midRun puts the endpoint mid-run: failures already in a row, the first of them failingFor ago.
 func (r *recording) midRun(failures int, failingFor time.Duration) {
 	r.t.Helper()
-	_, err := r.scope().WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
+	_, err := r.scope().WebhookEndpointHealth().Update().Where(webhookendpointhealth.WebhookEndpointID(fixtures.WebhookCodebasicsID)).
 		SetConsecutiveFailures(failures).SetFailingSince(r.now.Add(-failingFor)).Save(context.Background())
 	require.NoError(r.t, err)
 }
@@ -460,35 +461,35 @@ func TestRecordDeliveryRemembersFailuresAndASuccessClearsThem(t *testing.T) {
 
 	r.record(nil)
 	healthy := r.endpoint()
-	assert.Nil(t, healthy.ConsecutiveFailures)
+	assert.Nil(t, healthy.Edges.Health.ConsecutiveFailures)
 
 	r.record(status(http.StatusServiceUnavailable))
 	e := r.endpoint()
-	require.NotNil(t, e.ConsecutiveFailures)
-	assert.Equal(t, 1, *e.ConsecutiveFailures)
-	assert.True(t, r.now.Equal(*e.FailingSince))
-	assert.True(t, r.now.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhook.KindHTTPStatus, *e.LastErrorKind)
-	assert.Equal(t, http.StatusServiceUnavailable, *e.LastErrorStatus)
+	require.NotNil(t, e.Edges.Health.ConsecutiveFailures)
+	assert.Equal(t, 1, *e.Edges.Health.ConsecutiveFailures)
+	assert.True(t, r.now.Equal(*e.Edges.Health.FailingSince))
+	assert.True(t, r.now.Equal(*e.Edges.Health.LastFailureAt))
+	assert.Equal(t, webhook.KindHTTPStatus, *e.Edges.Health.LastErrorKind)
+	assert.Equal(t, http.StatusServiceUnavailable, *e.Edges.Health.LastErrorStatus)
 	assert.Nil(t, e.DisabledAt)
 
 	began := r.now
 	r.now = r.now.Add(90 * time.Minute)
 	r.record(&webhook.DeliveryError{Kind: webhook.KindBlockedAddress})
 	e = r.endpoint()
-	assert.Equal(t, 2, *e.ConsecutiveFailures)
-	assert.True(t, began.Equal(*e.FailingSince))
-	assert.True(t, r.now.Equal(*e.LastFailureAt))
-	assert.Equal(t, webhook.KindBlockedAddress, *e.LastErrorKind)
-	assert.Nil(t, e.LastErrorStatus)
+	assert.Equal(t, 2, *e.Edges.Health.ConsecutiveFailures)
+	assert.True(t, began.Equal(*e.Edges.Health.FailingSince))
+	assert.True(t, r.now.Equal(*e.Edges.Health.LastFailureAt))
+	assert.Equal(t, webhook.KindBlockedAddress, *e.Edges.Health.LastErrorKind)
+	assert.Nil(t, e.Edges.Health.LastErrorStatus)
 
 	r.record(nil)
 	e = r.endpoint()
-	assert.Nil(t, e.ConsecutiveFailures)
-	assert.Nil(t, e.FailingSince)
-	assert.Nil(t, e.LastErrorKind)
-	assert.Nil(t, e.LastErrorStatus)
-	assert.Nil(t, e.LastFailureAt)
+	assert.Nil(t, e.Edges.Health.ConsecutiveFailures)
+	assert.Nil(t, e.Edges.Health.FailingSince)
+	assert.Nil(t, e.Edges.Health.LastErrorKind)
+	assert.Nil(t, e.Edges.Health.LastErrorStatus)
+	assert.Nil(t, e.Edges.Health.LastFailureAt)
 }
 
 // A 429 is the receiver asking us to slow down: the counters stay as they are. So does an
@@ -501,7 +502,7 @@ func TestRecordDeliveryLeavesTheCountersAloneOnA429OrANonDeliveryError(t *testin
 	r.record(errors.New("unusable secret"))
 
 	e := r.endpoint()
-	assert.Equal(t, 3, *e.ConsecutiveFailures)
+	assert.Equal(t, 3, *e.Edges.Health.ConsecutiveFailures)
 	assert.Nil(t, e.DisabledAt)
 }
 
@@ -553,7 +554,7 @@ func TestRecordDeliveryDisablesOnlyWhenTheRunReachedTheCountAndTheWindow(t *test
 	r.midRun(webhookendpoints.DisableFailures-1, webhookendpoints.DisableWindow-time.Minute)
 	r.record(status(http.StatusServiceUnavailable))
 	e := r.endpoint()
-	assert.Equal(t, webhookendpoints.DisableFailures, *e.ConsecutiveFailures)
+	assert.Equal(t, webhookendpoints.DisableFailures, *e.Edges.Health.ConsecutiveFailures)
 	assert.Nil(t, e.DisabledAt, "the count inside the window (a restart mid-burst)")
 
 	r.midRun(webhookendpoints.DisableFailures-2, 2*webhookendpoints.DisableWindow)
@@ -579,13 +580,13 @@ func TestRecordDeliveryDisablesWithoutASystemSender(t *testing.T) {
 	env := testhelper.Setup(t, testhelper.WithoutSystemSender())
 	mod := webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), time.Now)
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	e, err := acme.WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
+	e, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(context.Background())
 	require.NoError(t, err)
 
 	err = mod.RecordDelivery(context.Background(), acme, e, status(http.StatusGone), time.Now())
 	require.NoError(t, err)
 
-	after, err := acme.WebhookEndpoint().Get(context.Background(), fixtures.WebhookCodebasicsID)
+	after, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(context.Background())
 	require.NoError(t, err)
 	assert.NotNil(t, after.DisabledAt)
 }

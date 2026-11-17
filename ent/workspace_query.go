@@ -38,6 +38,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -63,66 +64,71 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 )
 
 // WorkspaceQuery is the builder for querying Workspace entities.
 type WorkspaceQuery struct {
 	config
-	ctx                     *QueryContext
-	order                   []workspace.OrderOption
-	inters                  []Interceptor
-	predicates              []predicate.Workspace
-	withContacts            *ContactQuery
-	withCustomFields        *CustomFieldQuery
-	withTags                *TagQuery
-	withContactTags         *ContactTagQuery
-	withSegments            *SegmentQuery
-	withEvents              *EventQuery
-	withEventJournalEntries *EventJournalEntryQuery
-	withOrders              *OrderQuery
-	withOrderMovements      *OrderMovementQuery
-	withHeldOrderEvents     *HeldOrderEventQuery
-	withVisitors            *VisitorQuery
-	withBindings            *BindingQuery
-	withStartTokens         *StartTokenQuery
-	withAPITokens           *ApiTokenQuery
-	withOauthCodes          *OAuthCodeQuery
-	withIntegrations        *IntegrationQuery
-	withSendingDomains      *SendingDomainQuery
-	withJoinDomains         *JoinDomainQuery
-	withTrackingDomains     *TrackingDomainQuery
-	withProviderLimiters    *ProviderLimiterQuery
-	withSendCapLimiters     *SendCapLimiterQuery
-	withHolds               *HoldQuery
-	withBroadcasts          *BroadcastQuery
-	withBroadcastRecipients *BroadcastRecipientQuery
-	withBroadcastFigures    *BroadcastFigureQuery
-	withAutomationFigures   *AutomationFigureQuery
-	withEmailTemplates      *EmailTemplateQuery
-	withBrandKits           *BrandKitQuery
-	withIdentitySecrets     *IdentitySecretQuery
-	withAutomations         *AutomationQuery
-	withAutomationVersions  *AutomationVersionQuery
-	withAutomationRuns      *AutomationRunQuery
-	withRules               *RuleQuery
-	withRuleVersions        *RuleVersionQuery
-	withRuleVersionTriggers *RuleVersionTriggerQuery
-	withRuleFirings         *RuleFiringQuery
-	withWebhookEndpoints    *WebhookEndpointQuery
-	withSuppressions        *SuppressionQuery
-	withUnsubscribes        *UnsubscribeQuery
-	withConfirmations       *ConfirmationQuery
-	withConsentStamps       *ConsentStampQuery
-	withOutboundMessages    *OutboundMessageQuery
-	withTrackedLinks        *TrackedLinkQuery
-	withCapturedMessages    *CapturedMessageQuery
-	withMemberships         *MembershipQuery
-	withInvitations         *InvitationQuery
-	withAuditEntries        *AuditEntryQuery
-	withErasures            *ErasureQuery
-	withUsages              *UsageQuery
-	modifiers               []func(*sql.Selector)
+	ctx                           *QueryContext
+	order                         []workspace.OrderOption
+	inters                        []Interceptor
+	predicates                    []predicate.Workspace
+	withContacts                  *ContactQuery
+	withCustomFields              *CustomFieldQuery
+	withTags                      *TagQuery
+	withContactTags               *ContactTagQuery
+	withSegments                  *SegmentQuery
+	withEvents                    *EventQuery
+	withEventJournalEntries       *EventJournalEntryQuery
+	withOrders                    *OrderQuery
+	withOrderMovements            *OrderMovementQuery
+	withHeldOrderEvents           *HeldOrderEventQuery
+	withVisitors                  *VisitorQuery
+	withBindings                  *BindingQuery
+	withStartTokens               *StartTokenQuery
+	withAPITokens                 *ApiTokenQuery
+	withOauthCodes                *OAuthCodeQuery
+	withIntegrations              *IntegrationQuery
+	withSendingDomains            *SendingDomainQuery
+	withJoinDomains               *JoinDomainQuery
+	withTrackingDomains           *TrackingDomainQuery
+	withProviderLimiters          *ProviderLimiterQuery
+	withSendCapLimiters           *SendCapLimiterQuery
+	withHolds                     *HoldQuery
+	withBroadcasts                *BroadcastQuery
+	withBroadcastRecipients       *BroadcastRecipientQuery
+	withBroadcastFigures          *BroadcastFigureQuery
+	withAutomationFigures         *AutomationFigureQuery
+	withEmailTemplates            *EmailTemplateQuery
+	withBrandKits                 *BrandKitQuery
+	withIdentitySecrets           *IdentitySecretQuery
+	withAutomations               *AutomationQuery
+	withAutomationVersions        *AutomationVersionQuery
+	withAutomationRuns            *AutomationRunQuery
+	withRules                     *RuleQuery
+	withRuleVersions              *RuleVersionQuery
+	withRuleVersionTriggers       *RuleVersionTriggerQuery
+	withRuleFirings               *RuleFiringQuery
+	withWebhookEndpoints          *WebhookEndpointQuery
+	withSuppressions              *SuppressionQuery
+	withUnsubscribes              *UnsubscribeQuery
+	withConfirmations             *ConfirmationQuery
+	withConsentStamps             *ConsentStampQuery
+	withOutboundMessages          *OutboundMessageQuery
+	withTrackedLinks              *TrackedLinkQuery
+	withCapturedMessages          *CapturedMessageQuery
+	withMemberships               *MembershipQuery
+	withInvitations               *InvitationQuery
+	withAuditEntries              *AuditEntryQuery
+	withErasures                  *ErasureQuery
+	withUsages                    *UsageQuery
+	withIntegrationProviderStates *IntegrationProviderStateQuery
+	withWebhookEndpointHealths    *WebhookEndpointHealthQuery
+	withStanding                  *WorkspaceStandingQuery
+	modifiers                     []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -1237,6 +1243,72 @@ func (_q *WorkspaceQuery) QueryUsages() *UsageQuery {
 	return query
 }
 
+// QueryIntegrationProviderStates chains the current query on the "integration_provider_states" edge.
+func (_q *WorkspaceQuery) QueryIntegrationProviderStates() *IntegrationProviderStateQuery {
+	query := (&IntegrationProviderStateClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(integrationproviderstate.Table, integrationproviderstate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.IntegrationProviderStatesTable, workspace.IntegrationProviderStatesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryWebhookEndpointHealths chains the current query on the "webhook_endpoint_healths" edge.
+func (_q *WorkspaceQuery) QueryWebhookEndpointHealths() *WebhookEndpointHealthQuery {
+	query := (&WebhookEndpointHealthClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(webhookendpointhealth.Table, webhookendpointhealth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.WebhookEndpointHealthsTable, workspace.WebhookEndpointHealthsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryStanding chains the current query on the "standing" edge.
+func (_q *WorkspaceQuery) QueryStanding() *WorkspaceStandingQuery {
+	query := (&WorkspaceStandingClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, selector),
+			sqlgraph.To(workspacestanding.Table, workspacestanding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, workspace.StandingTable, workspace.StandingColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Workspace entity from the query.
 // Returns a *NotFoundError when no Workspace was found.
 func (_q *WorkspaceQuery) First(ctx context.Context) (*Workspace, error) {
@@ -1424,60 +1496,63 @@ func (_q *WorkspaceQuery) Clone() *WorkspaceQuery {
 		return nil
 	}
 	return &WorkspaceQuery{
-		config:                  _q.config,
-		ctx:                     _q.ctx.Clone(),
-		order:                   append([]workspace.OrderOption{}, _q.order...),
-		inters:                  append([]Interceptor{}, _q.inters...),
-		predicates:              append([]predicate.Workspace{}, _q.predicates...),
-		withContacts:            _q.withContacts.Clone(),
-		withCustomFields:        _q.withCustomFields.Clone(),
-		withTags:                _q.withTags.Clone(),
-		withContactTags:         _q.withContactTags.Clone(),
-		withSegments:            _q.withSegments.Clone(),
-		withEvents:              _q.withEvents.Clone(),
-		withEventJournalEntries: _q.withEventJournalEntries.Clone(),
-		withOrders:              _q.withOrders.Clone(),
-		withOrderMovements:      _q.withOrderMovements.Clone(),
-		withHeldOrderEvents:     _q.withHeldOrderEvents.Clone(),
-		withVisitors:            _q.withVisitors.Clone(),
-		withBindings:            _q.withBindings.Clone(),
-		withStartTokens:         _q.withStartTokens.Clone(),
-		withAPITokens:           _q.withAPITokens.Clone(),
-		withOauthCodes:          _q.withOauthCodes.Clone(),
-		withIntegrations:        _q.withIntegrations.Clone(),
-		withSendingDomains:      _q.withSendingDomains.Clone(),
-		withJoinDomains:         _q.withJoinDomains.Clone(),
-		withTrackingDomains:     _q.withTrackingDomains.Clone(),
-		withProviderLimiters:    _q.withProviderLimiters.Clone(),
-		withSendCapLimiters:     _q.withSendCapLimiters.Clone(),
-		withHolds:               _q.withHolds.Clone(),
-		withBroadcasts:          _q.withBroadcasts.Clone(),
-		withBroadcastRecipients: _q.withBroadcastRecipients.Clone(),
-		withBroadcastFigures:    _q.withBroadcastFigures.Clone(),
-		withAutomationFigures:   _q.withAutomationFigures.Clone(),
-		withEmailTemplates:      _q.withEmailTemplates.Clone(),
-		withBrandKits:           _q.withBrandKits.Clone(),
-		withIdentitySecrets:     _q.withIdentitySecrets.Clone(),
-		withAutomations:         _q.withAutomations.Clone(),
-		withAutomationVersions:  _q.withAutomationVersions.Clone(),
-		withAutomationRuns:      _q.withAutomationRuns.Clone(),
-		withRules:               _q.withRules.Clone(),
-		withRuleVersions:        _q.withRuleVersions.Clone(),
-		withRuleVersionTriggers: _q.withRuleVersionTriggers.Clone(),
-		withRuleFirings:         _q.withRuleFirings.Clone(),
-		withWebhookEndpoints:    _q.withWebhookEndpoints.Clone(),
-		withSuppressions:        _q.withSuppressions.Clone(),
-		withUnsubscribes:        _q.withUnsubscribes.Clone(),
-		withConfirmations:       _q.withConfirmations.Clone(),
-		withConsentStamps:       _q.withConsentStamps.Clone(),
-		withOutboundMessages:    _q.withOutboundMessages.Clone(),
-		withTrackedLinks:        _q.withTrackedLinks.Clone(),
-		withCapturedMessages:    _q.withCapturedMessages.Clone(),
-		withMemberships:         _q.withMemberships.Clone(),
-		withInvitations:         _q.withInvitations.Clone(),
-		withAuditEntries:        _q.withAuditEntries.Clone(),
-		withErasures:            _q.withErasures.Clone(),
-		withUsages:              _q.withUsages.Clone(),
+		config:                        _q.config,
+		ctx:                           _q.ctx.Clone(),
+		order:                         append([]workspace.OrderOption{}, _q.order...),
+		inters:                        append([]Interceptor{}, _q.inters...),
+		predicates:                    append([]predicate.Workspace{}, _q.predicates...),
+		withContacts:                  _q.withContacts.Clone(),
+		withCustomFields:              _q.withCustomFields.Clone(),
+		withTags:                      _q.withTags.Clone(),
+		withContactTags:               _q.withContactTags.Clone(),
+		withSegments:                  _q.withSegments.Clone(),
+		withEvents:                    _q.withEvents.Clone(),
+		withEventJournalEntries:       _q.withEventJournalEntries.Clone(),
+		withOrders:                    _q.withOrders.Clone(),
+		withOrderMovements:            _q.withOrderMovements.Clone(),
+		withHeldOrderEvents:           _q.withHeldOrderEvents.Clone(),
+		withVisitors:                  _q.withVisitors.Clone(),
+		withBindings:                  _q.withBindings.Clone(),
+		withStartTokens:               _q.withStartTokens.Clone(),
+		withAPITokens:                 _q.withAPITokens.Clone(),
+		withOauthCodes:                _q.withOauthCodes.Clone(),
+		withIntegrations:              _q.withIntegrations.Clone(),
+		withSendingDomains:            _q.withSendingDomains.Clone(),
+		withJoinDomains:               _q.withJoinDomains.Clone(),
+		withTrackingDomains:           _q.withTrackingDomains.Clone(),
+		withProviderLimiters:          _q.withProviderLimiters.Clone(),
+		withSendCapLimiters:           _q.withSendCapLimiters.Clone(),
+		withHolds:                     _q.withHolds.Clone(),
+		withBroadcasts:                _q.withBroadcasts.Clone(),
+		withBroadcastRecipients:       _q.withBroadcastRecipients.Clone(),
+		withBroadcastFigures:          _q.withBroadcastFigures.Clone(),
+		withAutomationFigures:         _q.withAutomationFigures.Clone(),
+		withEmailTemplates:            _q.withEmailTemplates.Clone(),
+		withBrandKits:                 _q.withBrandKits.Clone(),
+		withIdentitySecrets:           _q.withIdentitySecrets.Clone(),
+		withAutomations:               _q.withAutomations.Clone(),
+		withAutomationVersions:        _q.withAutomationVersions.Clone(),
+		withAutomationRuns:            _q.withAutomationRuns.Clone(),
+		withRules:                     _q.withRules.Clone(),
+		withRuleVersions:              _q.withRuleVersions.Clone(),
+		withRuleVersionTriggers:       _q.withRuleVersionTriggers.Clone(),
+		withRuleFirings:               _q.withRuleFirings.Clone(),
+		withWebhookEndpoints:          _q.withWebhookEndpoints.Clone(),
+		withSuppressions:              _q.withSuppressions.Clone(),
+		withUnsubscribes:              _q.withUnsubscribes.Clone(),
+		withConfirmations:             _q.withConfirmations.Clone(),
+		withConsentStamps:             _q.withConsentStamps.Clone(),
+		withOutboundMessages:          _q.withOutboundMessages.Clone(),
+		withTrackedLinks:              _q.withTrackedLinks.Clone(),
+		withCapturedMessages:          _q.withCapturedMessages.Clone(),
+		withMemberships:               _q.withMemberships.Clone(),
+		withInvitations:               _q.withInvitations.Clone(),
+		withAuditEntries:              _q.withAuditEntries.Clone(),
+		withErasures:                  _q.withErasures.Clone(),
+		withUsages:                    _q.withUsages.Clone(),
+		withIntegrationProviderStates: _q.withIntegrationProviderStates.Clone(),
+		withWebhookEndpointHealths:    _q.withWebhookEndpointHealths.Clone(),
+		withStanding:                  _q.withStanding.Clone(),
 		// clone intermediate query.
 		sql:       _q.sql.Clone(),
 		path:      _q.path,
@@ -2024,6 +2099,39 @@ func (_q *WorkspaceQuery) WithUsages(opts ...func(*UsageQuery)) *WorkspaceQuery 
 	return _q
 }
 
+// WithIntegrationProviderStates tells the query-builder to eager-load the nodes that are connected to
+// the "integration_provider_states" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithIntegrationProviderStates(opts ...func(*IntegrationProviderStateQuery)) *WorkspaceQuery {
+	query := (&IntegrationProviderStateClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withIntegrationProviderStates = query
+	return _q
+}
+
+// WithWebhookEndpointHealths tells the query-builder to eager-load the nodes that are connected to
+// the "webhook_endpoint_healths" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithWebhookEndpointHealths(opts ...func(*WebhookEndpointHealthQuery)) *WorkspaceQuery {
+	query := (&WebhookEndpointHealthClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withWebhookEndpointHealths = query
+	return _q
+}
+
+// WithStanding tells the query-builder to eager-load the nodes that are connected to
+// the "standing" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *WorkspaceQuery) WithStanding(opts ...func(*WorkspaceStandingQuery)) *WorkspaceQuery {
+	query := (&WorkspaceStandingClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withStanding = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -2102,7 +2210,7 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 	var (
 		nodes       = []*Workspace{}
 		_spec       = _q.querySpec()
-		loadedTypes = [49]bool{
+		loadedTypes = [52]bool{
 			_q.withContacts != nil,
 			_q.withCustomFields != nil,
 			_q.withTags != nil,
@@ -2152,6 +2260,9 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 			_q.withAuditEntries != nil,
 			_q.withErasures != nil,
 			_q.withUsages != nil,
+			_q.withIntegrationProviderStates != nil,
+			_q.withWebhookEndpointHealths != nil,
+			_q.withStanding != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -2525,6 +2636,30 @@ func (_q *WorkspaceQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Wo
 		if err := _q.loadUsages(ctx, query, nodes,
 			func(n *Workspace) { n.Edges.Usages = []*Usage{} },
 			func(n *Workspace, e *Usage) { n.Edges.Usages = append(n.Edges.Usages, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withIntegrationProviderStates; query != nil {
+		if err := _q.loadIntegrationProviderStates(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.IntegrationProviderStates = []*IntegrationProviderState{} },
+			func(n *Workspace, e *IntegrationProviderState) {
+				n.Edges.IntegrationProviderStates = append(n.Edges.IntegrationProviderStates, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withWebhookEndpointHealths; query != nil {
+		if err := _q.loadWebhookEndpointHealths(ctx, query, nodes,
+			func(n *Workspace) { n.Edges.WebhookEndpointHealths = []*WebhookEndpointHealth{} },
+			func(n *Workspace, e *WebhookEndpointHealth) {
+				n.Edges.WebhookEndpointHealths = append(n.Edges.WebhookEndpointHealths, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withStanding; query != nil {
+		if err := _q.loadStanding(ctx, query, nodes, nil,
+			func(n *Workspace, e *WorkspaceStanding) { n.Edges.Standing = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -3989,6 +4124,93 @@ func (_q *WorkspaceQuery) loadUsages(ctx context.Context, query *UsageQuery, nod
 	}
 	query.Where(predicate.Usage(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(workspace.UsagesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadIntegrationProviderStates(ctx context.Context, query *IntegrationProviderStateQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *IntegrationProviderState)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(integrationproviderstate.FieldWorkspaceID)
+	}
+	query.Where(predicate.IntegrationProviderState(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.IntegrationProviderStatesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadWebhookEndpointHealths(ctx context.Context, query *WebhookEndpointHealthQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *WebhookEndpointHealth)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(webhookendpointhealth.FieldWorkspaceID)
+	}
+	query.Where(predicate.WebhookEndpointHealth(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.WebhookEndpointHealthsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.WorkspaceID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "workspace_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *WorkspaceQuery) loadStanding(ctx context.Context, query *WorkspaceStandingQuery, nodes []*Workspace, init func(*Workspace), assign func(*Workspace, *WorkspaceStanding)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Workspace)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(workspacestanding.FieldWorkspaceID)
+	}
+	query.Where(predicate.WorkspaceStanding(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(workspace.StandingColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

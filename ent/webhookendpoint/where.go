@@ -8,7 +8,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // ID filters vertices based on their ID field.
@@ -94,26 +93,6 @@ func DisabledAt(v time.Time) predicate.WebhookEndpoint {
 // HealthGeneration applies equality check predicate on the "health_generation" field. It's identical to HealthGenerationEQ.
 func HealthGeneration(v int64) predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldEQ(FieldHealthGeneration, v))
-}
-
-// ConsecutiveFailures applies equality check predicate on the "consecutive_failures" field. It's identical to ConsecutiveFailuresEQ.
-func ConsecutiveFailures(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldConsecutiveFailures, v))
-}
-
-// FailingSince applies equality check predicate on the "failing_since" field. It's identical to FailingSinceEQ.
-func FailingSince(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldFailingSince, v))
-}
-
-// LastErrorStatus applies equality check predicate on the "last_error_status" field. It's identical to LastErrorStatusEQ.
-func LastErrorStatus(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastErrorStatus, v))
-}
-
-// LastFailureAt applies equality check predicate on the "last_failure_at" field. It's identical to LastFailureAtEQ.
-func LastFailureAt(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastFailureAt, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -496,246 +475,6 @@ func HealthGenerationNotNil() predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldHealthGeneration))
 }
 
-// ConsecutiveFailuresEQ applies the EQ predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresEQ(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldConsecutiveFailures, v))
-}
-
-// ConsecutiveFailuresNEQ applies the NEQ predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresNEQ(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldConsecutiveFailures, v))
-}
-
-// ConsecutiveFailuresIn applies the In predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresIn(vs ...int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIn(FieldConsecutiveFailures, vs...))
-}
-
-// ConsecutiveFailuresNotIn applies the NotIn predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresNotIn(vs ...int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldConsecutiveFailures, vs...))
-}
-
-// ConsecutiveFailuresGT applies the GT predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresGT(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGT(FieldConsecutiveFailures, v))
-}
-
-// ConsecutiveFailuresGTE applies the GTE predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresGTE(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGTE(FieldConsecutiveFailures, v))
-}
-
-// ConsecutiveFailuresLT applies the LT predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresLT(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLT(FieldConsecutiveFailures, v))
-}
-
-// ConsecutiveFailuresLTE applies the LTE predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresLTE(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLTE(FieldConsecutiveFailures, v))
-}
-
-// ConsecutiveFailuresIsNil applies the IsNil predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresIsNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldConsecutiveFailures))
-}
-
-// ConsecutiveFailuresNotNil applies the NotNil predicate on the "consecutive_failures" field.
-func ConsecutiveFailuresNotNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldConsecutiveFailures))
-}
-
-// FailingSinceEQ applies the EQ predicate on the "failing_since" field.
-func FailingSinceEQ(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldFailingSince, v))
-}
-
-// FailingSinceNEQ applies the NEQ predicate on the "failing_since" field.
-func FailingSinceNEQ(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldFailingSince, v))
-}
-
-// FailingSinceIn applies the In predicate on the "failing_since" field.
-func FailingSinceIn(vs ...time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIn(FieldFailingSince, vs...))
-}
-
-// FailingSinceNotIn applies the NotIn predicate on the "failing_since" field.
-func FailingSinceNotIn(vs ...time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldFailingSince, vs...))
-}
-
-// FailingSinceGT applies the GT predicate on the "failing_since" field.
-func FailingSinceGT(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGT(FieldFailingSince, v))
-}
-
-// FailingSinceGTE applies the GTE predicate on the "failing_since" field.
-func FailingSinceGTE(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGTE(FieldFailingSince, v))
-}
-
-// FailingSinceLT applies the LT predicate on the "failing_since" field.
-func FailingSinceLT(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLT(FieldFailingSince, v))
-}
-
-// FailingSinceLTE applies the LTE predicate on the "failing_since" field.
-func FailingSinceLTE(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLTE(FieldFailingSince, v))
-}
-
-// FailingSinceIsNil applies the IsNil predicate on the "failing_since" field.
-func FailingSinceIsNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldFailingSince))
-}
-
-// FailingSinceNotNil applies the NotNil predicate on the "failing_since" field.
-func FailingSinceNotNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldFailingSince))
-}
-
-// LastErrorKindEQ applies the EQ predicate on the "last_error_kind" field.
-func LastErrorKindEQ(v webhook.ErrorKind) predicate.WebhookEndpoint {
-	vc := v
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastErrorKind, vc))
-}
-
-// LastErrorKindNEQ applies the NEQ predicate on the "last_error_kind" field.
-func LastErrorKindNEQ(v webhook.ErrorKind) predicate.WebhookEndpoint {
-	vc := v
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldLastErrorKind, vc))
-}
-
-// LastErrorKindIn applies the In predicate on the "last_error_kind" field.
-func LastErrorKindIn(vs ...webhook.ErrorKind) predicate.WebhookEndpoint {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.WebhookEndpoint(sql.FieldIn(FieldLastErrorKind, v...))
-}
-
-// LastErrorKindNotIn applies the NotIn predicate on the "last_error_kind" field.
-func LastErrorKindNotIn(vs ...webhook.ErrorKind) predicate.WebhookEndpoint {
-	v := make([]any, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldLastErrorKind, v...))
-}
-
-// LastErrorKindIsNil applies the IsNil predicate on the "last_error_kind" field.
-func LastErrorKindIsNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldLastErrorKind))
-}
-
-// LastErrorKindNotNil applies the NotNil predicate on the "last_error_kind" field.
-func LastErrorKindNotNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldLastErrorKind))
-}
-
-// LastErrorStatusEQ applies the EQ predicate on the "last_error_status" field.
-func LastErrorStatusEQ(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastErrorStatus, v))
-}
-
-// LastErrorStatusNEQ applies the NEQ predicate on the "last_error_status" field.
-func LastErrorStatusNEQ(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldLastErrorStatus, v))
-}
-
-// LastErrorStatusIn applies the In predicate on the "last_error_status" field.
-func LastErrorStatusIn(vs ...int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIn(FieldLastErrorStatus, vs...))
-}
-
-// LastErrorStatusNotIn applies the NotIn predicate on the "last_error_status" field.
-func LastErrorStatusNotIn(vs ...int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldLastErrorStatus, vs...))
-}
-
-// LastErrorStatusGT applies the GT predicate on the "last_error_status" field.
-func LastErrorStatusGT(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGT(FieldLastErrorStatus, v))
-}
-
-// LastErrorStatusGTE applies the GTE predicate on the "last_error_status" field.
-func LastErrorStatusGTE(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGTE(FieldLastErrorStatus, v))
-}
-
-// LastErrorStatusLT applies the LT predicate on the "last_error_status" field.
-func LastErrorStatusLT(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLT(FieldLastErrorStatus, v))
-}
-
-// LastErrorStatusLTE applies the LTE predicate on the "last_error_status" field.
-func LastErrorStatusLTE(v int) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLTE(FieldLastErrorStatus, v))
-}
-
-// LastErrorStatusIsNil applies the IsNil predicate on the "last_error_status" field.
-func LastErrorStatusIsNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldLastErrorStatus))
-}
-
-// LastErrorStatusNotNil applies the NotNil predicate on the "last_error_status" field.
-func LastErrorStatusNotNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldLastErrorStatus))
-}
-
-// LastFailureAtEQ applies the EQ predicate on the "last_failure_at" field.
-func LastFailureAtEQ(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldEQ(FieldLastFailureAt, v))
-}
-
-// LastFailureAtNEQ applies the NEQ predicate on the "last_failure_at" field.
-func LastFailureAtNEQ(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNEQ(FieldLastFailureAt, v))
-}
-
-// LastFailureAtIn applies the In predicate on the "last_failure_at" field.
-func LastFailureAtIn(vs ...time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIn(FieldLastFailureAt, vs...))
-}
-
-// LastFailureAtNotIn applies the NotIn predicate on the "last_failure_at" field.
-func LastFailureAtNotIn(vs ...time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotIn(FieldLastFailureAt, vs...))
-}
-
-// LastFailureAtGT applies the GT predicate on the "last_failure_at" field.
-func LastFailureAtGT(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGT(FieldLastFailureAt, v))
-}
-
-// LastFailureAtGTE applies the GTE predicate on the "last_failure_at" field.
-func LastFailureAtGTE(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldGTE(FieldLastFailureAt, v))
-}
-
-// LastFailureAtLT applies the LT predicate on the "last_failure_at" field.
-func LastFailureAtLT(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLT(FieldLastFailureAt, v))
-}
-
-// LastFailureAtLTE applies the LTE predicate on the "last_failure_at" field.
-func LastFailureAtLTE(v time.Time) predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldLTE(FieldLastFailureAt, v))
-}
-
-// LastFailureAtIsNil applies the IsNil predicate on the "last_failure_at" field.
-func LastFailureAtIsNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldIsNull(FieldLastFailureAt))
-}
-
-// LastFailureAtNotNil applies the NotNil predicate on the "last_failure_at" field.
-func LastFailureAtNotNil() predicate.WebhookEndpoint {
-	return predicate.WebhookEndpoint(sql.FieldNotNull(FieldLastFailureAt))
-}
-
 // DisabledReasonEQ applies the EQ predicate on the "disabled_reason" field.
 func DisabledReasonEQ(v DisabledReason) predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(sql.FieldEQ(FieldDisabledReason, v))
@@ -781,6 +520,29 @@ func HasWorkspace() predicate.WebhookEndpoint {
 func HasWorkspaceWith(preds ...predicate.Workspace) predicate.WebhookEndpoint {
 	return predicate.WebhookEndpoint(func(s *sql.Selector) {
 		step := newWorkspaceStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasHealth applies the HasEdge predicate on the "health" edge.
+func HasHealth() predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, HealthTable, HealthColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasHealthWith applies the HasEdge predicate on the "health" edge with a given conditions (other predicates).
+func HasHealthWith(preds ...predicate.WebhookEndpointHealth) predicate.WebhookEndpoint {
+	return predicate.WebhookEndpoint(func(s *sql.Selector) {
+		step := newHealthStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
