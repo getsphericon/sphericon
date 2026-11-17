@@ -57,22 +57,22 @@ type Source interface {
 
 // HTTPSource fetches the list from Apple over HTTPS.
 type HTTPSource struct {
-	URL    string
-	Client *http.Client
+	url    string
+	client *http.Client
 }
 
 // NewHTTPSource is the source of the composition root: Apple's published URL.
-func NewHTTPSource() HTTPSource {
-	return HTTPSource{URL: RangesURL, Client: &http.Client{Timeout: 2 * time.Minute}}
+func NewHTTPSource() *HTTPSource {
+	return &HTTPSource{url: RangesURL, client: &http.Client{Timeout: 2 * time.Minute}}
 }
 
 // Fetch implements Source.
-func (s HTTPSource) Fetch(ctx context.Context) (io.ReadCloser, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL, http.NoBody)
+func (s *HTTPSource) Fetch(ctx context.Context) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.url, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.Client.Do(req)
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -60,16 +60,26 @@ func (m *Module) Prepare(ctx context.Context, subject *string, doc []byte) (emai
 	return emailrender.FromDocument(ctx, m.renderer, subject, doc)
 }
 
-// Lint is the lint of ADR 0040 without a save, against the Workspace's Brand kit: of body as it is,
-// or of doc rendered as a save renders it (Prepare), which may set the subject. Exactly one of body
-// and doc is sent, nil when absent (ErrLintBodyOrDoc). A message that cannot render, a document
-// included, is the report's Error; its warnings are advice for the author.
-func (m *Module) Lint(ctx context.Context, s *ent.Scoped, subject string, body *string, doc []byte) (emailrender.Report, error) {
-	if (body == nil) == (doc == nil) {
+// LintInput is a message to lint without a save: its subject and exactly one of Body and Doc, nil
+// when absent.
+type LintInput struct {
+	Subject string
+	Body    *string
+	// Doc is the editor's JSON document, rendered as a save renders it (Prepare).
+	Doc json.RawMessage
+}
+
+// Lint is the lint of ADR 0040 without a save, against the Workspace's Brand kit: of the body as it
+// is, or of the document rendered as a save renders it (Prepare), which may set the subject.
+// Exactly one of the body and the document is sent (ErrLintBodyOrDoc). A message that cannot
+// render, a document included, is the report's Error; its warnings are advice for the author.
+func (m *Module) Lint(ctx context.Context, s *ent.Scoped, in LintInput) (emailrender.Report, error) {
+	subject, body := in.Subject, in.Body
+	if (body == nil) == (in.Doc == nil) {
 		return emailrender.Report{}, ErrLintBodyOrDoc
 	}
 	if body == nil {
-		authored, err := m.Prepare(ctx, &subject, doc)
+		authored, err := m.Prepare(ctx, &subject, in.Doc)
 		if errors.Is(err, emailrender.ErrInvalidContent) {
 			return emailrender.Report{Error: err}, nil
 		}
@@ -142,15 +152,25 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (*en
 	return create(ctx, s, in.Name, in.Subject, c, in.Doc)
 }
 
+// CreatePreparedInput is a Template of a document already rendered by Prepare: its name, its
+// subject, the document and what Prepare rendered of it.
+type CreatePreparedInput struct {
+	Name     string
+	Subject  string
+	Doc      json.RawMessage
+	Authored emailrender.Authored
+}
+
 // CreatePrepared stores a Template of a document already rendered by Prepare, for a caller that
 // renders before it opens a transaction so that no database connection is held through the render
 // (the Brand kit's starters). It is not linted: the caller wrote the document.
-func (m *Module) CreatePrepared(ctx context.Context, s *ent.Scoped, name, subject string, doc json.RawMessage, authored emailrender.Authored) (*ent.EmailTemplate, error) {
-	name, err := validation.Name(name)
+func (m *Module) CreatePrepared(ctx context.Context, s *ent.Scoped, in CreatePreparedInput) (*ent.EmailTemplate, error) {
+	name, err := validation.Name(in.Name)
 	if err != nil {
 		return nil, err
 	}
-	return create(ctx, s, name, &subject, emailrender.Content{Body: &authored.Body, Authored: &authored}, doc)
+	authored := in.Authored
+	return create(ctx, s, name, &in.Subject, emailrender.Content{Body: &authored.Body, Authored: &authored}, in.Doc)
 }
 
 func create(ctx context.Context, s *ent.Scoped, name string, subject *string, c emailrender.Content, doc json.RawMessage) (*ent.EmailTemplate, error) {

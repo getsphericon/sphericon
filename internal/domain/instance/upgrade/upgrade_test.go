@@ -61,6 +61,9 @@ func newSetup(t *testing.T) setup {
 	return setup{dir: t.TempDir(), install: install, target: target}
 }
 
+// upgrader steps and walks from the Source of each test's Options; Run's own GitHub is no test's.
+var upgrader = upgrade.New(nil)
+
 func (s setup) opts(version string) upgrade.Options {
 	return upgrade.Options{
 		Source: upgrade.DirSource(s.dir), Target: s.target, Current: "v0.1.0",
@@ -108,7 +111,7 @@ func TestUpgradeMigratesWithTheNewBinarySwapsAndKeepsTheOldOne(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.2.0", "", false)
 
-	got, err := drain(upgrade.Step(t.Context(), s.opts("")))
+	got, err := drain(upgrader.Step(t.Context(), s.opts("")))
 
 	require.NoError(t, err)
 	assert.Equal(t, []upgrade.Installed{{
@@ -127,7 +130,7 @@ func TestUpgradeWithAChecksumMismatchChangesNothing(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(s.dir, "checksums.txt"),
 		[]byte(fmt.Sprintf("%064d  sphericon_0.2.0_linux_arm64.tar.gz\n", 0)), 0o644))
 
-	_, err := drain(upgrade.Step(t.Context(), s.opts("")))
+	_, err := drain(upgrader.Step(t.Context(), s.opts("")))
 
 	require.ErrorContains(t, err, "checksum")
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -140,7 +143,7 @@ func TestUpgradeStopsBeforeTheSwapWhenTheMigrationFails(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.2.0", "", true)
 
-	_, err := drain(upgrade.Step(t.Context(), s.opts("")))
+	_, err := drain(upgrader.Step(t.Context(), s.opts("")))
 
 	require.Error(t, err)
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -152,7 +155,7 @@ func TestUpgradeWaitsForYesWhenThereAreNotes(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.2.0", "0.2.0\n  - export your segments\n", false)
 
-	got, err := drain(upgrade.Step(t.Context(), s.opts("")))
+	got, err := drain(upgrader.Step(t.Context(), s.opts("")))
 
 	require.ErrorIs(t, err, upgrade.ErrNeedsConfirmation)
 	assert.Equal(t, []upgrade.Notes{{From: "v0.1.0", To: "0.2.0", Text: "0.2.0\n  - export your segments\n"}}, of[upgrade.Notes](got))
@@ -161,7 +164,7 @@ func TestUpgradeWaitsForYesWhenThereAreNotes(t *testing.T) {
 
 	o := s.opts("")
 	o.Yes = true
-	_, err = drain(upgrade.Step(t.Context(), o))
+	_, err = drain(upgrader.Step(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.True(t, s.exists("migrated"))
@@ -175,7 +178,7 @@ func TestUpgradeRefusesInAContainerAndNamesTheCommand(t *testing.T) {
 		o := s.opts("")
 		o.Container = func() upgrade.Container { return kind }
 
-		_, err := drain(upgrade.Step(t.Context(), o))
+		_, err := drain(upgrader.Step(t.Context(), o))
 
 		require.ErrorContains(t, err, want)
 		assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -185,12 +188,12 @@ func TestUpgradeRefusesInAContainerAndNamesTheCommand(t *testing.T) {
 func TestUpgradeRefusesADowngradeAndLeavesACurrentInstanceAlone(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.0.9", "", false)
-	_, err := drain(upgrade.Step(t.Context(), s.opts("v0.0.9")))
+	_, err := drain(upgrader.Step(t.Context(), s.opts("v0.0.9")))
 	require.ErrorIs(t, err, upgrade.ErrDowngrade)
 
 	s2 := newSetup(t)
 	release(t, s2.dir, "0.1.0", "", false)
-	got, err := drain(upgrade.Step(t.Context(), s2.opts("")))
+	got, err := drain(upgrader.Step(t.Context(), s2.opts("")))
 	require.NoError(t, err)
 	assert.Equal(t, []upgrade.Progress{upgrade.AlreadyRunning{Version: "0.1.0"}}, got)
 	assert.Equal(t, "old binary", s2.read(t, "sphericon"))
@@ -201,14 +204,14 @@ func TestUpgradeTakesTheNewestReleaseInTheDirectoryUnlessOnePinned(t *testing.T)
 	release(t, s.dir, "0.2.0", "", false)
 	release(t, s.dir, "0.10.0", "", false)
 
-	pinned, err := drain(upgrade.Step(t.Context(), s.opts("v0.2.0")))
+	pinned, err := drain(upgrader.Step(t.Context(), s.opts("v0.2.0")))
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](pinned)))
 
 	s2 := newSetup(t)
 	release(t, s2.dir, "0.2.0", "", false)
 	release(t, s2.dir, "0.10.0", "", false)
-	newest, err := drain(upgrade.Step(t.Context(), s2.opts("")))
+	newest, err := drain(upgrader.Step(t.Context(), s2.opts("")))
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.10.0"}, versions(of[upgrade.Installed](newest)))
 }
@@ -216,7 +219,7 @@ func TestUpgradeTakesTheNewestReleaseInTheDirectoryUnlessOnePinned(t *testing.T)
 func TestUpgradeNeedsAnArchiveForThisPlatform(t *testing.T) {
 	s := newSetup(t)
 
-	_, err := drain(upgrade.Step(t.Context(), s.opts("v0.2.0")))
+	_, err := drain(upgrader.Step(t.Context(), s.opts("v0.2.0")))
 
 	require.Error(t, err)
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -228,7 +231,7 @@ func TestTheRestartHintNamesTheServiceItWasGiven(t *testing.T) {
 	o := s.opts("")
 	o.Service = "sphericon-prod"
 
-	got, err := drain(upgrade.Step(t.Context(), o))
+	got, err := drain(upgrader.Step(t.Context(), o))
 
 	require.NoError(t, err)
 	installed := of[upgrade.Installed](got)
@@ -245,7 +248,7 @@ func TestPostSwapStepDecidesWhatTheInstallReports(t *testing.T) {
 		return upgrade.Installed{Result: r, Service: "custom", Restarted: true}, nil
 	}
 
-	got, err := drain(upgrade.Step(t.Context(), o))
+	got, err := drain(upgrader.Step(t.Context(), o))
 
 	require.NoError(t, err)
 	installed := of[upgrade.Installed](got)

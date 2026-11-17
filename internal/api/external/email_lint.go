@@ -5,7 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
 )
 
@@ -13,7 +12,7 @@ import (
 // and the send planner, with the Workspace's Brand kit. What cannot render is an error;
 // everything else is a warning. It needs only the right to read Templates, as it stores nothing.
 func (h *Handlers) EmailLintLint(ctx context.Context, req *externalapi.LintEmailInput) (*externalapi.LintEmailResult, error) {
-	report, err := h.templates.Lint(ctx, auth.TokenScoped(ctx), req.Subject.Value, convert.StringPtr(req.Body), convert.DocJSON(req.Doc.Value, req.Doc.Set))
+	report, err := h.templates.Lint(ctx, auth.TokenScoped(ctx), inputs.EmailLint(req))
 	if err != nil {
 		return nil, err
 	}

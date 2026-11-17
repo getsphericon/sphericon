@@ -18,26 +18,29 @@ import (
 
 // deletion opens the Deletion of the Sending domain id under Acme's lock and runs then on it, in
 // the transaction that holds the lock.
-func deletion(t *testing.T, env *testhelper.TestEnv, id int64, then func(ctx context.Context, d *sendingdomainsunchecked.Deletion) error) error {
+func deletion(t *testing.T, env *testhelper.TestEnv, id int64, then func(ctx context.Context, l *ent.WorkspaceLocked, d *sendingdomainsunchecked.Deletion) error) error {
 	t.Helper()
 	ctx := t.Context()
 	return env.Bus.WithinWorkspaceLockTx(ctx, env.DB.Scoped(fixtures.AcmeID), func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		d, err := sendingdomainsunchecked.DeletionIn(ctx, wl, id)
+		d, err := unchecked.DeletionIn(ctx, wl, id)
 		if err != nil {
 			return err
 		}
-		return then(ctx, d)
+		return then(ctx, wl, d)
 	})
 }
+
+// unchecked is the module under test, on the wall clock.
+var unchecked = sendingdomainsunchecked.New(time.Now)
 
 func TestApplyingTheDeletionOfAKeptSendingDomainDiscardsIt(t *testing.T) {
 	env := testhelper.Setup(t)
 	var domain string
 	var done bool
 
-	err := deletion(t, env, fixtures.SendingDomainVerifiedID, func(ctx context.Context, d *sendingdomainsunchecked.Deletion) error {
+	err := deletion(t, env, fixtures.SendingDomainVerifiedID, func(ctx context.Context, l *ent.WorkspaceLocked, d *sendingdomainsunchecked.Deletion) error {
 		domain, done = d.Domain(), d.Done()
-		return d.Apply(ctx, time.Now())
+		return unchecked.ApplyDeletion(ctx, l, d)
 	})
 
 	require.NoError(t, err)
@@ -57,9 +60,9 @@ func TestTheDeletionOfADeletedSendingDomainIsDone(t *testing.T) {
 	require.NoError(t, err)
 	var done bool
 
-	err = deletion(t, env, fixtures.SendingDomainArchivedID, func(ctx context.Context, d *sendingdomainsunchecked.Deletion) error {
+	err = deletion(t, env, fixtures.SendingDomainArchivedID, func(ctx context.Context, l *ent.WorkspaceLocked, d *sendingdomainsunchecked.Deletion) error {
 		done = d.Done()
-		return d.Apply(ctx, time.Now())
+		return unchecked.ApplyDeletion(ctx, l, d)
 	})
 
 	require.NoError(t, err)
@@ -74,7 +77,7 @@ func TestTheDeletionOfAnUnknownSendingDomainIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	for name, id := range map[string]int64{"unknown": 999999, "another Workspace's": fixtures.SendingDomainGlobexID} {
 		t.Run(name, func(t *testing.T) {
-			err := deletion(t, env, id, func(context.Context, *sendingdomainsunchecked.Deletion) error { return nil })
+			err := deletion(t, env, id, func(context.Context, *ent.WorkspaceLocked, *sendingdomainsunchecked.Deletion) error { return nil })
 
 			require.ErrorIs(t, err, sendingdomains.ErrNotFound)
 		})

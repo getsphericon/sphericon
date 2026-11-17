@@ -20,9 +20,6 @@ internal/domain/contacts/unsubscribes
 internal/domain/contacts/unsubscribes/unsubscribesunchecked
 internal/domain/contacts/visitors
 internal/domain/contacts/visitors/visitorsunchecked
-internal/domain/content/brandkits
-internal/domain/content/emailtemplates
-internal/domain/content/versioneddefinition
 internal/domain/identity/consentrecords
 internal/domain/identity/invitations
 internal/domain/identity/joindomains
@@ -30,9 +27,6 @@ internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
 internal/domain/identity/workspaces
 internal/domain/identity/workspaces/workspacesunchecked
-internal/domain/insights/dataexport
-internal/domain/instance/instanceauditentries
-internal/domain/instance/upgrade
 internal/domain/orchestration/automations
 internal/domain/orchestration/automations/automationsunchecked
 internal/domain/orchestration/automations/automationsuse
@@ -45,8 +39,4 @@ internal/domain/sending/holds
 internal/domain/sending/integrations
 internal/domain/sending/integrations/integrationsunchecked
 internal/domain/sending/preset
-internal/domain/sending/privaterelayranges
 internal/domain/sending/providerlimit
-internal/domain/sending/sendingdomains
-internal/domain/sending/sendingdomains/sendingdomainsunchecked
-internal/domain/sending/trackingdomains

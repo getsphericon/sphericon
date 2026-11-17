@@ -20,7 +20,7 @@ import (
 // are the outcome. It confirms the domain is in the Workspace and kept first: an unknown or a
 // deleted domain is ErrNotFound.
 func (m *Module) Verify(ctx context.Context, s *ent.Scoped, id int64) (*ent.SendingDomain, error) {
-	if _, err := Editable(ctx, s, id); err != nil {
+	if _, err := editable(ctx, s, id); err != nil {
 		return nil, err
 	}
 	if err := m.Recheck(ctx, s, id); err != nil {
@@ -52,7 +52,7 @@ func (m *Module) Recheck(ctx context.Context, s *ent.Scoped, id int64) error {
 // (recordDKIM). The write lands only while the domain is still kept, so one deleted during the
 // lookup is neither changed nor reported.
 func (m *Module) checkDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) error {
-	verified, err := VerifyDKIM(ctx, m.lookup, dom.DkimSelector, dom.Domain, dom.DkimPublicKey)
+	verified, err := m.dns.VerifyDKIM(ctx, dom)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (m *Module) checkDKIM(ctx context.Context, s *ent.Scoped, dom *ent.SendingD
 // checkDMARC looks the domain's DMARC record up and stores the answer (recordDMARC). A failed
 // lookup or write is logged and changes nothing: the domain stays as the last answer left it.
 func (m *Module) checkDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain) {
-	found, err := LookupDMARC(ctx, m.lookup, dom.Domain)
+	found, err := m.dns.LookupDMARC(ctx, dom.Domain)
 	if err != nil {
 		slog.WarnContext(ctx, "sending domain DMARC lookup failed",
 			"sending_domain_id", dom.ID, "workspace_id", dom.WorkspaceID, "domain", dom.Domain, "err", err)
@@ -153,9 +153,9 @@ func recordDMARC(ctx context.Context, s *ent.Scoped, dom *ent.SendingDomain, fou
 // least-recently-checked first with NULLS FIRST: a freshly added, never-checked domain
 // is verified soonest rather than starved behind already-checked ones (plain ASC sorts NULLs last
 // in Postgres). A deleted (discarded) domain is skipped (ADR 0099). It reads across Workspaces,
-// before any scope exists, so it takes the raw client.
-func Due(ctx context.Context, client *ent.Client, limit int) ([]*ent.SendingDomain, error) {
-	return client.SendingDomain.Query().
+// before any scope exists, through the module's raw client.
+func (m *Module) Due(ctx context.Context, limit int) ([]*ent.SendingDomain, error) {
+	return m.client.SendingDomain.Query().
 		Where(sendingdomain.DiscardedAtIsNil()).
 		Order(sendingdomain.ByLastCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
 		Limit(limit).

@@ -224,26 +224,27 @@ func (m *Module) ServingHost(ctx context.Context, s *ent.Scoped) (string, error)
 	return row.Host, nil
 }
 
-// HostWorkspace is the Workspace a host is served for (ADR 0038): a Tracking domain whose DNS is
-// verified (trackinghostchanges.Serving, in any role: a retired host still serves what was sent on
-// it), of a live Workspace. It reads the Instance-wide host index before any scope exists: the host
-// gate of the public listener and the edge's on-demand TLS question ask it. ok is false, with a nil
-// error, for a host that is served for none; the partial unique index makes a served host one row.
-func (m *Module) HostWorkspace(ctx context.Context, host string) (workspaceID int64, ok bool, err error) {
+// HostWorkspace is the id of the Workspace a host is served for (ADR 0038): a Tracking domain whose
+// DNS is verified (trackinghostchanges.Serving, in any role: a retired host still serves what was
+// sent on it), of a live Workspace. It reads the Instance-wide host index before any scope exists:
+// the host gate of the public listener and the edge's on-demand TLS question ask it. It is 0, with
+// a nil error, for a host that is served for none; the partial unique index makes a served host one
+// row.
+func (m *Module) HostWorkspace(ctx context.Context, host string) (int64, error) {
 	host = normalize(host)
 	if host == "" {
-		return 0, false, nil
+		return 0, nil
 	}
 	row, err := m.client.TrackingDomain.Query().
 		Where(trackingdomain.Host(host), trackinghostchanges.Serving(), trackingdomain.HasWorkspaceWith(workspaces.Live())).
 		Only(ctx)
 	if ent.IsNotFound(err) {
-		return 0, false, nil
+		return 0, nil
 	}
 	if err != nil {
-		return 0, false, err
+		return 0, err
 	}
-	return row.WorkspaceID, true, nil
+	return row.WorkspaceID, nil
 }
 
 // CanonicalHost validates raw as a Tracking domain host and returns its canonical form: lower
