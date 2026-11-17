@@ -51,20 +51,20 @@ func ObservationOf(env events.Envelope, ev events.DomainEvent) (Observation, boo
 
 // RecordObservation keeps the earliest observation regardless of delivery order or retries.
 // An anonymous Outbound message is still a report record; this updates no personal field.
-func RecordObservation(ctx context.Context, s *ent.Scoped, o Observation) error {
+func (m *Module) RecordObservation(ctx context.Context, s *ent.Scoped, o Observation) error {
 	switch o.Action {
 	case systemevent.EmailOpened:
-		_, err := StampOpened(ctx, s, o.MessageID, o.ObservedAt)
+		_, err := m.StampOpened(ctx, s, o.MessageID, o.ObservedAt)
 		return err
 	case systemevent.EmailClicked, systemevent.SmsClicked, systemevent.TelegramClicked:
-		_, err := StampClicked(ctx, s, o.MessageID, o.ObservedAt)
+		_, err := m.StampClicked(ctx, s, o.MessageID, o.ObservedAt)
 		return err
 	case systemevent.EmailDelivered:
-		return StampDelivery(ctx, s, o.MessageID, ResultDelivered, o.ObservedAt)
+		return stampDelivery(ctx, s, o.MessageID, ResultDelivered, o.ObservedAt)
 	case systemevent.EmailBounced:
-		return StampDelivery(ctx, s, o.MessageID, ResultBounced, o.ObservedAt)
+		return stampDelivery(ctx, s, o.MessageID, ResultBounced, o.ObservedAt)
 	case systemevent.EmailComplained:
-		return StampDelivery(ctx, s, o.MessageID, ResultComplained, o.ObservedAt)
+		return stampDelivery(ctx, s, o.MessageID, ResultComplained, o.ObservedAt)
 	default:
 		return fmt.Errorf("unknown message observation %q", o.Action)
 	}

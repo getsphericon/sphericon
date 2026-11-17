@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -60,13 +61,13 @@ type delivery struct {
 	s   *ent.Scoped
 }
 
-// newDelivery builds the delivery over an Outbound send module with opts (a clock of the test's).
-func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Option) *delivery {
+// newDelivery builds the delivery over an Outbound send module on a clock of the test's.
+func newDelivery(t *testing.T, now func() time.Time) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
 	return &delivery{
 		t: t, env: env, box: box, res: res,
 		out: out, del: broadcasts.NewDelivery(out),
@@ -76,7 +77,7 @@ func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Op
 
 // detail is the sending Broadcast's figures and progress at now, paced by the delivery's Outbound send.
 func (d *delivery) detail(now time.Time) (broadcasts.Detail, error) {
-	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out).Detail(d.t.Context(), d.s, d.broadcastRow(), now)
+	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out, linkclick.New()).Detail(d.t.Context(), d.s, d.broadcastRow(), now)
 }
 
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.

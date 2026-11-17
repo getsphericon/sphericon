@@ -37,7 +37,7 @@ func lateNotices(t *testing.T, env *testhelper.TestEnv) []callbackinterpretation
 // workLate reads the deferred notice again, as its job does.
 func workLate(t *testing.T, env *testhelper.TestEnv, args callbackinterpretation.LateNoticeArgs) {
 	t.Helper()
-	w := jobs.NewLateNoticeWorker(env.DB, callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), time.Now))
+	w := jobs.NewLateNoticeWorker(env.DB, callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), time.Now))
 	require.NoError(t, w.Work(t.Context(), &river.Job[callbackinterpretation.LateNoticeArgs]{Args: args}))
 }
 

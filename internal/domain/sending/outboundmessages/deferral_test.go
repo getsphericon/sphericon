@@ -86,7 +86,7 @@ func TestTransactionalBusyReplyIsARetryableErrorNotADeferral(t *testing.T) {
 func TestGenuineProviderFailureStillFailsTheMessage(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := newModule(env, c.Now, outboundmessages.WithLease(time.Nanosecond))
+	m := configured(env, c.Now, outboundmessages.Config{Lease: time.Nanosecond})
 	ctx := context.Background()
 
 	env.CustomerMail.SetErr(errors.New("554 mailbox does not exist"))

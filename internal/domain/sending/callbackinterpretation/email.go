@@ -16,7 +16,11 @@ import (
 )
 
 // email reads Delivery notices; email has no Inbound messages or Reachability changes.
-type email struct{ ignore }
+type email struct {
+	ignore
+
+	out *outboundmessages.Module
+}
 
 // DeliveryNotice publishes the notice as an email delivery Event, linked to the Contact with
 // the address and to the Outbound message the provider's message id names, and stamps that
@@ -24,7 +28,7 @@ type email struct{ ignore }
 // DedupID (the provider's event id plus the Destination), and a stamp is set only while it is
 // empty, so it never changes. Every kind is published; only a hard bounce and a complaint enter
 // Suppression, which is the suppression consumer's rule.
-func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
+func (e email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
 	address := emailcase.Of(n.Destination)
 	if address == "" {
 		return nil
@@ -57,7 +61,7 @@ func (email) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice)
 			ev.BounceKind = systemevent.BounceKindHard
 		}
 	}
-	msg, err := outboundmessages.FindByProviderMessageID(ctx, tx.Scoped, n.MessageID)
+	msg, err := e.out.FindByProviderMessageID(ctx, tx.Scoped, n.MessageID)
 	if err != nil {
 		return err
 	}

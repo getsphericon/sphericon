@@ -24,14 +24,21 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// Module holds the one setting a capture needs: how many Captured messages a Workspace keeps. The
-// Workspace comes with each call.
+// Module holds the one setting a capture needs, how many Captured messages a Workspace keeps, and
+// what the Instance-wide Purge needs: the raw client and the clock. The Workspace comes with each
+// other call.
 type Module struct {
-	kept int
+	client *ent.Client
+	kept   int
+	now    func() time.Time
 }
 
-// New builds the module; a Workspace keeps its newest `kept` Captured messages (at least one).
-func New(kept int) *Module { return &Module{kept: max(kept, 1)} }
+// New builds the module over the raw client, which only Purge uses; a Workspace keeps its newest
+// `kept` Captured messages (at least one); now is the Instance clock (app.Clock) a retention is
+// counted back from.
+func New(client *ent.Client, kept int, now func() time.Time) *Module {
+	return &Module{client: client, kept: max(kept, 1), now: now}
+}
 
 // Capturer is the messaging.Capturer of one Workspace's Test inbox: what it is sent is kept as
 // a Captured message owned by that Workspace and Integration.
@@ -114,12 +121,14 @@ func (c capturer) trim(ctx context.Context) error {
 
 // Purge deletes the Captured messages of every Workspace that are older than retention, in batches
 // of batch rows so a large backlog never holds a long lock, and returns how many went. It is
-// Instance-wide, so it takes the raw client; a retention of zero or less deletes nothing.
-func Purge(ctx context.Context, client *ent.Client, retention time.Duration, batch int, now time.Time) (int64, error) {
+// Instance-wide, so it reads through the module's raw client; a retention of zero or less deletes
+// nothing.
+func (m *Module) Purge(ctx context.Context, retention time.Duration, batch int) (int64, error) {
 	if retention <= 0 {
 		return 0, nil
 	}
-	cutoff := now.Add(-retention)
+	cutoff := m.now().Add(-retention)
+	client := m.client
 	total, err := drain.Batches(batch, func() (int, error) {
 		ids, err := client.CapturedMessage.Query().
 			Where(capturedmessage.CreatedAtLT(cutoff)).

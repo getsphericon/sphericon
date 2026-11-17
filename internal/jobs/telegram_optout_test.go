@@ -220,7 +220,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
+	err := callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))
@@ -427,7 +427,7 @@ func TestATelegramLinkClickedAgainAfterAStartIsANewOptOut(t *testing.T) {
 		OutboundMessageID: fixtures.OutboundMessageParkedClaimID,
 	}
 	clock := testhelper.NewClock(time.Now())
-	u := unsubscriberecording.New(env.Bus, clock.Now)
+	u := unsubscriberecording.New(env.Bus, env.OutboundModule(), clock.Now)
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, u.RecordLink(t.Context(), scope, link))
 	// The start is sent after the click (Telegram dates it, to the second), the second click after it.

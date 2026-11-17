@@ -164,12 +164,16 @@ type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.Purging
 type UseCase struct {
 	bus *events.Bus
 	now func() time.Time
+	// outbound and captured are the Erasure steps of the Outbound messages and the Captured
+	// messages, which New builds (ADR 0110: only a use case imports them).
+	outbound *outboundmessagesunchecked.Module
+	captured *capturedmessagesunchecked.Module
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in;
 // now is the Instance clock a Broadcast left with nothing pending settles by.
 func New(bus *events.Bus, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, now: now}
+	return &UseCase{bus: bus, now: now, outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New()}
 }
 
 // Erase erases the identified data subject in one transaction: either all of it
@@ -238,7 +242,7 @@ func (u *UseCase) steps() []step {
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return outboundmessagesunchecked.EraseShortLinks(ctx, s, t.ContactID)
+			return u.outbound.EraseShortLinks(ctx, s, t.ContactID)
 		},
 		// The bus, which stores the Events, deletes the subject's customer-tracked Events and
 		// anonymizes its system Events in place.
@@ -256,10 +260,10 @@ func (u *UseCase) steps() []step {
 			return confirmationsunchecked.EraseNumber(ctx, s, t.Phone)
 		},
 		detachOptOuts,
-		anonymizeDelivery,
+		u.anonymizeDelivery,
 		// The Captured messages (Test inbox, ADR 0058) addressed to the subject's Destinations.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return capturedmessagesunchecked.EraseTo(ctx, s, t.Destinations)
+			return u.captured.EraseTo(ctx, s, t.Destinations)
 		},
 		// The Contact itself. Its Custom field values go with the row, and its foreign keys delete
 		// its Tag links, Automation runs, Rule firings, Bindings, Start tokens and Confirmations and

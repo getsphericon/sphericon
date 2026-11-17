@@ -11,7 +11,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 )
 
@@ -96,8 +95,8 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 	// An open and a click are stamps of the recipient's Outbound message (ADR 0053), read by the
 	// Broadcast's figures from there.
 	for name, record := range map[string]func() (bool, error){
-		"open":  func() (bool, error) { return outboundmessages.StampOpened(d.t.Context(), d.s, messageID, time.Now()) },
-		"click": func() (bool, error) { return outboundmessages.StampClicked(d.t.Context(), d.s, messageID, time.Now()) },
+		"open":  func() (bool, error) { return d.out.StampOpened(d.t.Context(), d.s, messageID, time.Now()) },
+		"click": func() (bool, error) { return d.out.StampClicked(d.t.Context(), d.s, messageID, time.Now()) },
 		"unsubscribe": func() (bool, error) {
 			return broadcasts.RecordUnsubscribe(d.t.Context(), d.s, messageID, time.Now())
 		},
@@ -116,7 +115,7 @@ func TestEngagementIsRecordedOnce(t *testing.T) {
 func TestEngagementOfAnUnknownMessageIsNothing(t *testing.T) {
 	d := newDelivery(t, time.Now)
 
-	recorded, err := outboundmessages.StampOpened(d.t.Context(), d.s, 424242, time.Now())
+	recorded, err := d.out.StampOpened(d.t.Context(), d.s, 424242, time.Now())
 	require.NoError(t, err)
 	assert.False(t, recorded)
 

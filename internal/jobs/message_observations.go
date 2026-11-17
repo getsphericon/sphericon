@@ -37,11 +37,12 @@ type MessageObservationWorker struct {
 	river.WorkerDefaults[MessageObservationArgs]
 
 	ent *ent.Client
+	out *outboundmessages.Module
 }
 
-func NewMessageObservationWorker(client *ent.Client) *MessageObservationWorker {
-	return &MessageObservationWorker{ent: client}
+func NewMessageObservationWorker(client *ent.Client, out *outboundmessages.Module) *MessageObservationWorker {
+	return &MessageObservationWorker{ent: client, out: out}
 }
 func (w *MessageObservationWorker) Work(ctx context.Context, job *river.Job[MessageObservationArgs]) error {
-	return outboundmessages.RecordObservation(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.Observation)
+	return w.out.RecordObservation(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.Observation)
 }

@@ -31,7 +31,11 @@ import (
 // of them: a STOP's or a START's confirmation is the provider's auto-reply.
 //
 // It also reads the delivery reports of the texts sent through the Integration (ADR 0079).
-type sms struct{ ignore }
+type sms struct {
+	ignore
+
+	out *outboundmessages.Module
+}
 
 // DeliveryNotice reads a final delivery report of a text: delivered, or undelivered with the
 // provider's error code. It lands on the text the provider's id names among the Integration's, and
@@ -42,7 +46,7 @@ type sms struct{ ignore }
 // not send, records nothing. An undelivered report saying the number reaches no handset suppresses the
 // number like a hard bounce, as the same answer at send time does. A report of a text whose Contact
 // was erased records nothing: Erasure dropped the provider's id the report names the text by.
-func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
+func (t sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) error {
 	result, action := outboundmessages.ResultDelivered, systemevent.SmsDelivered
 	switch n.Kind {
 	case preset.Delivery:
@@ -51,7 +55,7 @@ func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) e
 	case preset.Bounce, preset.Complaint, preset.Delay, preset.Drop:
 		return nil // email's kinds: a Preset that names one on sms reports no final state
 	}
-	msg, err := outboundmessages.FindSMSMessage(ctx, tx.Scoped, tx.Integration.ID, n.MessageID)
+	msg, err := t.out.FindSMSMessage(ctx, tx.Scoped, tx.Integration.ID, n.MessageID)
 	if err != nil {
 		return err
 	}
@@ -59,7 +63,7 @@ func (sms) DeliveryNotice(ctx context.Context, tx Tx, n preset.DeliveryNotice) e
 		return tx.deferNotice(ctx, n)
 	}
 	code := lo.Ternary(result == outboundmessages.ResultUndelivered, n.ErrorCode, "")
-	err = outboundmessages.StampFinal(ctx, tx.Scoped, msg.ID, result, code, tx.Now)
+	err = t.out.StampFinal(ctx, tx.Scoped, msg.ID, outboundmessages.StampFinalInput{Result: result, Code: code, At: tx.Now})
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return nil // the text has its final report already, or was never sent: this one records nothing
 	}

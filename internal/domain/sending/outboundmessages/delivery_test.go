@@ -24,7 +24,7 @@ func TestAFinalReportStampsNothingOnATextThatWasNotSent(t *testing.T) {
 			// test writes: no fixture text is pending; the sent one is put back before the provider's answer.
 			env.DB.OutboundMessage.UpdateOneID(fixtures.OutboundTexterSmsID).SetStatus(outboundmessage.StatusPending).ExecX(t.Context())
 
-			err := outboundmessages.StampFinal(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.OutboundTexterSmsID, result, "30003", time.Now())
+			err := env.OutboundModule().StampFinal(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.OutboundTexterSmsID, outboundmessages.StampFinalInput{Result: result, Code: "30003", At: time.Now()})
 
 			require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 			got := env.DB.OutboundMessage.GetX(t.Context(), fixtures.OutboundTexterSmsID)
@@ -40,7 +40,7 @@ func TestAFinalReportStampsNothingOnATextThatWasNotSent(t *testing.T) {
 func TestTheDatabaseRefusesAMessageBothDeliveredAndUndelivered(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	err := outboundmessages.StampFinal(t.Context(), s, fixtures.OutboundTexterSmsID, outboundmessages.ResultDelivered, "", time.Now())
+	err := env.OutboundModule().StampFinal(t.Context(), s, fixtures.OutboundTexterSmsID, outboundmessages.StampFinalInput{Result: outboundmessages.ResultDelivered, At: time.Now()})
 	require.NoError(t, err)
 
 	err = env.DB.OutboundMessage.UpdateOneID(fixtures.OutboundTexterSmsID).SetUndeliveredAt(time.Now()).Exec(t.Context())
