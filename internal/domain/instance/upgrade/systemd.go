@@ -19,7 +19,7 @@ func NewSystemd(service string) *Systemd { return &Systemd{service: service} }
 
 var environmentFile = regexp.MustCompile(`(\S+) \(ignore_errors=(yes|no)\)`)
 
-// Run is Options.Run: `migrate` (and `migrate --status --json`, which reads the database)
+// Run is Seams.Run: `migrate` (and `migrate --status --json`, which reads the database)
 // goes through systemd-run, everything else runs directly.
 func (s *Systemd) Run(ctx context.Context, bin string, args []string) ([]byte, error) {
 	if len(args) == 0 || args[0] != "migrate" {
@@ -58,7 +58,7 @@ func (s *Systemd) properties(ctx context.Context) ([]string, error) {
 	return args, nil
 }
 
-// PostSwap is Options.PostSwap: it restarts the service and fails when it is not active.
+// PostSwap is Seams.PostSwap: it restarts the service and fails when it is not active.
 func (s *Systemd) PostSwap(ctx context.Context, r Result) (Installed, error) {
 	if _, err := execRun(ctx, "systemctl", []string{"restart", s.service}); err != nil {
 		return Installed{}, fmt.Errorf("restart %s (the previous binary is %s): %w", s.service, r.Old, err)

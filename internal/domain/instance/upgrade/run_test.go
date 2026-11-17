@@ -42,15 +42,14 @@ func TestCheckFailsWhenGitHubDoes(t *testing.T) {
 	require.Error(t, err)
 }
 
-// A check changes nothing, so it takes none of the options of an install.
+// A check changes nothing, so it takes none of the options of an install (the command refuses
+// --from and --restart, which choose the Upgrader's seams, the same way).
 func TestCheckRefusesTheOptionsOfAnInstall(t *testing.T) {
 	for _, r := range []upgrade.Request{
-		{Check: true, From: t.TempDir()},
 		{Check: true, Version: "v0.2.0"},
 		{Check: true, Yes: true},
-		{Check: true, Restart: true},
 	} {
-		_, err := drain(upgrader.Run(t.Context(), r))
+		_, err := drain(with(upgrade.Seams{}).Run(t.Context(), r))
 
 		require.EqualError(t, err, upgrade.Usage, "%+v", r)
 	}

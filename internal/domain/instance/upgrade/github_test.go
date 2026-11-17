@@ -119,10 +119,10 @@ func TestUpgradeDownloadsTheLatestRelease(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.2.0", "", false)
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.2.0"})
-	o := s.opts("")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	got, err := drain(upgrader.Step(t.Context(), o))
+	got, err := drain(with(seams).Step(t.Context(), s.opts("")))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](got)))
@@ -135,10 +135,10 @@ func TestUpgradeDownloadsThePinnedRelease(t *testing.T) {
 	release(t, s.dir, "0.2.0", "", false)
 	release(t, s.dir, "0.3.0", "", false)
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.3.0"}, fakeRelease{Tag: "v0.2.0"})
-	o := s.opts("v0.2.0")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	got, err := drain(upgrader.Step(t.Context(), o))
+	got, err := drain(with(seams).Step(t.Context(), s.opts("v0.2.0")))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](got)))
@@ -148,10 +148,10 @@ func TestUpgradeRefusesADowngradeFromGitHub(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.0.9", "", false)
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.0.9"})
-	o := s.opts("v0.0.9")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	_, err := drain(upgrader.Step(t.Context(), o))
+	_, err := drain(with(seams).Step(t.Context(), s.opts("v0.0.9")))
 
 	assert.ErrorIs(t, err, upgrade.ErrDowngrade)
 }
@@ -161,10 +161,10 @@ func TestUpgradeRejectsATamperedDownload(t *testing.T) {
 	release(t, s.dir, "0.2.0", "", false)
 	require.NoError(t, os.WriteFile(filepath.Join(s.dir, "sphericon_0.2.0_linux_arm64.tar.gz"), []byte("tampered"), 0o644))
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.2.0"})
-	o := s.opts("")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	_, err := drain(upgrader.Step(t.Context(), o))
+	_, err := drain(with(seams).Step(t.Context(), s.opts("")))
 
 	require.ErrorContains(t, err, "checksum mismatch")
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
