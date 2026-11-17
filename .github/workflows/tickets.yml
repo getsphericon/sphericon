@@ -1,0 +1,47 @@
+name: Tickets
+
+# A ticket labelled ready-for-agent must build on ADRs that are built (internal/ticketcheck): an ADR
+# it names whose `build:` says it is not built is waited for or waived in the ticket. A ticket that
+# fails goes back to needs-triage with a comment naming the ADRs. It runs when a ticket is opened,
+# labelled or edited, and over every ready ticket when an ADR changes on main (an ADR a ticket names
+# may land, or its `build:` change, after the ticket was labelled).
+on:
+  issues:
+    types: [opened, edited, labeled]
+  push:
+    branches: [main]
+    paths: ['docs/adr/**']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.issue.number || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  foundations:
+    if: github.event_name != 'issues' || contains(github.event.issue.labels.*.name, 'ready-for-agent')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup mise
+        uses: jdx/mise-action@f5be966e4a917d54244728e6a5fdcd1d93a35e6c # v5.2.6
+
+      # The issue's title and body are read through gh, never through the script; the number is all
+      # the event passes. Without one every open ready-for-agent issue is checked.
+      - name: Check the ready tickets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: mise run tickets:check -- --apply ${ISSUE:+"$ISSUE"}

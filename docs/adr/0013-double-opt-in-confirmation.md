@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: [1500]
 ---
 
 # Double opt-in: confirmation as a positive event, not a subscription status

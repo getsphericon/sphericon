@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: [1439, 1440]
 ---
 
 # A Broadcast's unreached Recipients are reached by a Retry

@@ -524,7 +524,7 @@ components:
     isolated: true
   # The packages behind the repository's own commands under cmd/ that are not the application: the
   # generators (scopegen, boundgen, entgen, the fixture catalog, goverter's enum transformer) and the CI
-  # checks (contractcopy, contractrevision, prcheck, upgradecheck). No tier, no driver and no wiring imports one.
+  # checks (contractcopy, contractrevision, prcheck, ticketcheck, upgradecheck). No tier, no driver and no wiring imports one.
   tools:
     in:
       [
@@ -536,6 +536,7 @@ components:
         internal/goverterenum,
         internal/prcheck,
         internal/scopegen,
+        internal/ticketcheck,
         internal/upgradecheck,
       ]
     allow_importers: [commands]

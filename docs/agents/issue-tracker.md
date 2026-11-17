@@ -5,6 +5,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 ## Conventions
 
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
+- **Before `ready-for-agent`**: `mise run tickets:check -- <number>`. It reads the ADRs the ticket names, not those its own ADR names, so the ticket names every ADR it builds on; it reports each that is not built yet (the ADR's `build:` field, see `domain.md`). The ticket either waits for a ticket that builds it (`Blocked by #<n>`, or a native edge) or says why it builds without it on a line `Without ADR <NNNN>: <why>`. A ticket that implements an ADR goes into that ADR's `build:`. CI (`.github/workflows/tickets.yml`) runs the same check when the label is set and moves a ticket that fails back to `needs-triage`.
 - **Read an issue**: `gh issue view <number> --json number,title,body,labels,comments`.
 - **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
 - **Make an issue a sub-issue of a parent**: `gh issue create --parent <parent> ...`, or `gh issue edit <parent> --add-sub-issue <child>` afterwards (`gh` 2.94+). Older `gh`: `gh api --method POST repos/<owner>/<repo>/issues/<parent>/sub_issues -F sub_issue_id=<child-db-id>` (database id, as in **Blocking** below). Without sub-issues, put `Part of #<parent>` at the top of the child body.

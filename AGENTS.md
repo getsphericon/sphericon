@@ -213,7 +213,8 @@ The rest of this file is for maintainers and the agents they run: how work lands
   providers, billing or the words that describe them in code, docs, UI strings or contracts. A Staff hold carries a free-form reason code, a
   message and an optional action URL, and the core attaches no meaning to the code.
 - ADR numbers are unique (`mise run check:adr`). Take the next free number when you add an ADR,
-  and re-check after merging `main`: parallel branches pick the same one.
+  and re-check after merging `main`: parallel branches pick the same one. A new ADR says whether it
+  is built (`build:` in its front matter, `docs/agents/domain.md`).
 - After changing TypeSpec or `ent/schema`, run `mise run generate` and commit the generated output.
 - Coding standards (tests, plain-table schema, no custom CSS, theming, lint) are in
   `CODING_STANDARDS.md`: read it before writing code. The numbered review rules every change is
