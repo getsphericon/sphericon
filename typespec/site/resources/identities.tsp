@@ -18,9 +18,31 @@ model SiteLinkedIdentity {
   createdAt: Timestamp;
 }
 
-/** The Linked identities of the authenticated User */
+/** The Linked identities of the authenticated User, and what proves the User for a link */
 model SiteLinkedIdentities {
   items: SiteLinkedIdentity[];
+
+  /** Whether the User has a password. Without one, linking a provider asks for a fresh
+   * sign-in with a Sign-in provider or a Passkey check instead. */
+  passwordSet: boolean;
+
+  /** Whether the session holds a fresh proof that stands in for the password: a Sign-in
+   * provider login or a Passkey check of the last few minutes (a User with a password always
+   * proves the password). */
+  identityProofFresh: boolean;
+}
+
+/** The provider to link, and the proof of identity a link asks for */
+model SiteIdentityLinkInput {
+  /** The registry name of the Sign-in provider to link */
+  provider: string;
+
+  ...SiteReauthentication;
+}
+
+/** Where to send the browser to link the provider account: the provider's authorization URL */
+model SiteIdentityLinkStarted {
+  redirectUrl: string;
 }
 
 @route("/me/identities")
@@ -35,28 +57,25 @@ namespace SiteIdentities {
       }
     | Problem;
 
-  /** Start linking another Sign-in provider account to the authenticated User. Works like
+  /** Start linking another Sign-in provider account to the authenticated User, proving the
+   * password (or a fresh provider login or Passkey check) as adding a Passkey does. Works like
    * `start` of a sign-in, but the flow cookie also names the User, and the shared callback
-   * adds the provider's subject to that User whatever email the provider reports. The
-   * callback redirects to `return_to` (default the account security page); a refusal goes
-   * to the account security page with the `error` code (see SiteSigninError). 404 for a
-   * provider that is not configured. */
-  @get
-  @route("/{provider}/link")
-  op link(
-    @path provider: string,
-
-    /** A relative in-app path to land on afterwards */
-    @query(#{ name: "return_to" }) returnTo?: string,
-  ):
+   * adds the provider's subject to that User whatever email the provider reports; the owner
+   * is then mailed a notice with a link that undoes it. The browser is sent on to
+   * `redirectUrl`; the callback lands on the account security page, with the `error` code
+   * of a refusal (see SiteSigninError). 403 on a wrong or missing proof (a wrong password
+   * feeds the Login throttle: 429 while its delay runs), 404 for a provider that is not
+   * configured. */
+  @post
+  @route("/link")
+  op link(@body body: SiteIdentityLinkInput):
     | {
-        @statusCode statusCode: 302;
-
-        /** The provider's authorization URL */
-        @header("Location") location: string;
+        @statusCode statusCode: 200;
 
         /** The flow cookie */
         @header("Set-Cookie") setCookie: string;
+
+        @body body: SiteIdentityLinkStarted;
       }
     | Problem;
 

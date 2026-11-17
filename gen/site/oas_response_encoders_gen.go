@@ -1177,23 +1177,12 @@ func encodeSiteEventsListResponse(response *SiteEventsListOK, w http.ResponseWri
 	return nil
 }
 
-func encodeSiteIdentitiesLinkResponse(response *SiteIdentitiesLinkFound, w http.ResponseWriter, span trace.Span) error {
-	w.Header().Set("Access-Control-Expose-Headers", "Location,Set-Cookie")
+func encodeSiteIdentitiesLinkResponse(response *SiteIdentityLinkStartedHeaders, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Access-Control-Expose-Headers", "Set-Cookie")
 	// Encoding response headers.
 	{
 		h := uri.NewHeaderEncoder(w.Header())
-		// Encode "Location" header.
-		{
-			cfg := uri.HeaderParameterEncodingConfig{
-				Name:    "Location",
-				Explode: false,
-			}
-			if err := h.EncodeParam(cfg, func(e uri.Encoder) error {
-				return e.EncodeValue(conv.StringToString(response.Location))
-			}); err != nil {
-				return errors.Wrap(err, "encode Location header")
-			}
-		}
 		// Encode "Set-Cookie" header.
 		{
 			cfg := uri.HeaderParameterEncodingConfig{
@@ -1207,7 +1196,13 @@ func encodeSiteIdentitiesLinkResponse(response *SiteIdentitiesLinkFound, w http.
 			}
 		}
 	}
-	w.WriteHeader(302)
+	w.WriteHeader(200)
+
+	e := new(jx.Encoder)
+	response.Response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
 
 	return nil
 }

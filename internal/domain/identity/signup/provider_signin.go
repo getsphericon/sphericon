@@ -154,6 +154,39 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 	return &ProviderSignInResult{Outcome: SignedIn, User: usr, At: at}, nil
 }
 
+// LinkStartInput is a link of the Sign-in provider Provider (its registry name) the signed-in
+// User asks to start, with the proof of identity they give: the password typed, and the times of
+// their session's provider login and Passkey check.
+type LinkStartInput struct {
+	Provider string
+	Proof    users.IdentityProof
+}
+
+// LinkStarted is a link flow begun: the provider's authorization URL to send the browser to, and
+// the flow the driver seals into the flow cookie until the callback.
+type LinkStarted struct {
+	AuthURL string
+	Flow    signinprovider.Flow
+}
+
+// StartLink begins linking a provider account to the signed-in User u (ADR 0048, ADR 0176): it
+// asks the same fresh proof of identity as adding a Passkey (users.Module.ProveIdentity: the
+// password, or a provider login or Passkey check of the last few minutes for a User without one),
+// then draws a flow that names u, which the callback completes (linkIdentity). A proof that does
+// not hold is the users module's refusal, before any flow; signinprovider.ErrProviderUnknown for a
+// provider the Instance does not offer. The callback lands on the account's settings.
+func (m *Module) StartLink(ctx context.Context, u *ent.User, in LinkStartInput) (*LinkStarted, error) {
+	if err := m.users.ProveIdentity(ctx, u, in.Proof); err != nil {
+		return nil, err
+	}
+	authURL, flow, err := m.providers.Providers.Start(in.Provider, "")
+	if err != nil {
+		return nil, err
+	}
+	flow.LinkUserID = u.ID
+	return &LinkStarted{AuthURL: authURL, Flow: flow}, nil
+}
+
 // linkIdentity finishes a link flow: only the browser whose live session is the User's the flow
 // names adds the provider's subject to that User (ADR 0048). A session of another User, or one a
 // later session epoch ended, is ReasonInvalidState; a subject of another User ReasonIdentityInUse.

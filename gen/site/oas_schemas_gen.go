@@ -21410,32 +21410,6 @@ func (s *SiteForgotPasswordInput) SetEmail(val EmailAddress) {
 	s.Email = val
 }
 
-// SiteIdentitiesLinkFound is response for SiteIdentitiesLink operation.
-type SiteIdentitiesLinkFound struct {
-	Location  string
-	SetCookie string
-}
-
-// GetLocation returns the value of Location.
-func (s *SiteIdentitiesLinkFound) GetLocation() string {
-	return s.Location
-}
-
-// GetSetCookie returns the value of SetCookie.
-func (s *SiteIdentitiesLinkFound) GetSetCookie() string {
-	return s.SetCookie
-}
-
-// SetLocation sets the value of Location.
-func (s *SiteIdentitiesLinkFound) SetLocation(val string) {
-	s.Location = val
-}
-
-// SetSetCookie sets the value of SetCookie.
-func (s *SiteIdentitiesLinkFound) SetSetCookie(val string) {
-	s.SetCookie = val
-}
-
 // SiteIdentitiesUnlinkNoContent is response for SiteIdentitiesUnlink operation.
 type SiteIdentitiesUnlinkNoContent struct {
 	SetCookie string
@@ -21449,6 +21423,78 @@ func (s *SiteIdentitiesUnlinkNoContent) GetSetCookie() string {
 // SetSetCookie sets the value of SetCookie.
 func (s *SiteIdentitiesUnlinkNoContent) SetSetCookie(val string) {
 	s.SetCookie = val
+}
+
+// The provider to link, and the proof of identity a link asks for.
+// Ref: #/components/schemas/SiteIdentityLinkInput
+type SiteIdentityLinkInput struct {
+	// The registry name of the Sign-in provider to link.
+	Provider string `json:"provider"`
+	// Current password. Left out by a User with no password, who proves a provider or Passkey sign-in of
+	// the last few minutes instead (ADR 0048).
+	CurrentPassword OptString `json:"currentPassword"`
+}
+
+// GetProvider returns the value of Provider.
+func (s *SiteIdentityLinkInput) GetProvider() string {
+	return s.Provider
+}
+
+// GetCurrentPassword returns the value of CurrentPassword.
+func (s *SiteIdentityLinkInput) GetCurrentPassword() OptString {
+	return s.CurrentPassword
+}
+
+// SetProvider sets the value of Provider.
+func (s *SiteIdentityLinkInput) SetProvider(val string) {
+	s.Provider = val
+}
+
+// SetCurrentPassword sets the value of CurrentPassword.
+func (s *SiteIdentityLinkInput) SetCurrentPassword(val OptString) {
+	s.CurrentPassword = val
+}
+
+// Where to send the browser to link the provider account: the provider's authorization URL.
+// Ref: #/components/schemas/SiteIdentityLinkStarted
+type SiteIdentityLinkStarted struct {
+	RedirectUrl string `json:"redirectUrl"`
+}
+
+// GetRedirectUrl returns the value of RedirectUrl.
+func (s *SiteIdentityLinkStarted) GetRedirectUrl() string {
+	return s.RedirectUrl
+}
+
+// SetRedirectUrl sets the value of RedirectUrl.
+func (s *SiteIdentityLinkStarted) SetRedirectUrl(val string) {
+	s.RedirectUrl = val
+}
+
+// SiteIdentityLinkStartedHeaders wraps SiteIdentityLinkStarted with response headers.
+type SiteIdentityLinkStartedHeaders struct {
+	SetCookie string
+	Response  SiteIdentityLinkStarted
+}
+
+// GetSetCookie returns the value of SetCookie.
+func (s *SiteIdentityLinkStartedHeaders) GetSetCookie() string {
+	return s.SetCookie
+}
+
+// GetResponse returns the value of Response.
+func (s *SiteIdentityLinkStartedHeaders) GetResponse() SiteIdentityLinkStarted {
+	return s.Response
+}
+
+// SetSetCookie sets the value of SetCookie.
+func (s *SiteIdentityLinkStartedHeaders) SetSetCookie(val string) {
+	s.SetCookie = val
+}
+
+// SetResponse sets the value of Response.
+func (s *SiteIdentityLinkStartedHeaders) SetResponse(val SiteIdentityLinkStarted) {
+	s.Response = val
 }
 
 // The workspace's identity secret (ADR 0171): its server signs identity tokens with it (HS256), so an
@@ -22041,10 +22087,16 @@ func (s *SiteLegalDocument) SetPublishedAt(val Timestamp) {
 	s.PublishedAt = val
 }
 
-// The Linked identities of the authenticated User.
+// The Linked identities of the authenticated User, and what proves the User for a link.
 // Ref: #/components/schemas/SiteLinkedIdentities
 type SiteLinkedIdentities struct {
 	Items []SiteLinkedIdentity `json:"items"`
+	// Whether the User has a password. Without one, linking a provider asks for a fresh sign-in with a
+	// Sign-in provider or a Passkey check instead.
+	PasswordSet bool `json:"passwordSet"`
+	// Whether the session holds a fresh proof that stands in for the password: a Sign-in provider login or
+	// a Passkey check of the last few minutes (a User with a password always proves the password).
+	IdentityProofFresh bool `json:"identityProofFresh"`
 }
 
 // GetItems returns the value of Items.
@@ -22052,9 +22104,29 @@ func (s *SiteLinkedIdentities) GetItems() []SiteLinkedIdentity {
 	return s.Items
 }
 
+// GetPasswordSet returns the value of PasswordSet.
+func (s *SiteLinkedIdentities) GetPasswordSet() bool {
+	return s.PasswordSet
+}
+
+// GetIdentityProofFresh returns the value of IdentityProofFresh.
+func (s *SiteLinkedIdentities) GetIdentityProofFresh() bool {
+	return s.IdentityProofFresh
+}
+
 // SetItems sets the value of Items.
 func (s *SiteLinkedIdentities) SetItems(val []SiteLinkedIdentity) {
 	s.Items = val
+}
+
+// SetPasswordSet sets the value of PasswordSet.
+func (s *SiteLinkedIdentities) SetPasswordSet(val bool) {
+	s.PasswordSet = val
+}
+
+// SetIdentityProofFresh sets the value of IdentityProofFresh.
+func (s *SiteLinkedIdentities) SetIdentityProofFresh(val bool) {
+	s.IdentityProofFresh = val
 }
 
 // One Linked identity of the authenticated User (ADR 0048): a Sign-in provider the User can sign in

@@ -42,7 +42,7 @@ func squatterSession(t *testing.T, env *testhelper.TestEnv) *testhelper.Redirect
 // session.
 func squatterLinksGoogle(t *testing.T, fake *testhelper.FakeSignin, squatter *testhelper.RedirectBrowser) {
 	t.Helper()
-	link(t, fake, squatter, squatterWithGoogle)
+	link(t, fake, squatter, squatterWithGoogle, fixtures.OwnerJohnPassword)
 	linked := listIdentities(t, squatter)
 	require.Len(t, linked.Items, 1, "the squatter's Google account is linked to John's")
 }

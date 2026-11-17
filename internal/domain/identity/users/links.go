@@ -363,7 +363,7 @@ func (l *Links) CheckDeletionLink(token string, u *ent.User) error {
 }
 
 // NotMeLink mints the token of the "this was not me" link of the notice mailed when a Sign-in
-// provider was linked to u silently (ADR 0048): it names the Linked identity to undo and has
+// provider was linked to u (ADR 0048, ADR 0176): it names the Linked identity to undo and has
 // no binding, since once the identity is gone the link has nothing left to do.
 func (l *Links) NotMeLink(u *ent.User, identityID int64) (string, error) {
 	return l.tokens.Mint(authtoken.PurposeIdentityNotMe, u.ID, "", notMeLinkTTL,

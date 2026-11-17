@@ -10,6 +10,7 @@ import (
 
 	entuser "github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/ent/useridentity"
+	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -17,7 +18,7 @@ import (
 
 const (
 	identitiesPath = "/site/me/identities"
-	linkPath       = "/site/me/identities/google/link"
+	linkPath       = "/site/me/identities/link"
 	settingsPath   = "/account/security"
 )
 
@@ -33,6 +34,8 @@ type linkedIdentities struct {
 		Provider    string `json:"provider"`
 		DisplayName string `json:"displayName"`
 	} `json:"items"`
+	PasswordSet        bool `json:"passwordSet"`
+	IdentityProofFresh bool `json:"identityProofFresh"`
 }
 
 // signedIn is a browser holding a session of the person who signed in with who.
@@ -53,13 +56,35 @@ func listIdentities(t *testing.T, b *testhelper.RedirectBrowser) linkedIdentitie
 	return list
 }
 
-// link runs the whole round trip of linking who to the signed-in person and returns the
-// callback's answer.
-func link(t *testing.T, fake *testhelper.FakeSignin, b *testhelper.RedirectBrowser, who testhelper.SigninIdentity) testhelper.Reply {
+// startLink asks to link a provider account of the given provider to the signed-in person,
+// proving it with the password typed ("" for none).
+func startLink(t *testing.T, b *testhelper.RedirectBrowser, provider, password string) testhelper.Reply {
 	t.Helper()
-	started := b.Get(t, linkPath)
-	require.Equal(t, http.StatusFound, started.StatusCode)
-	return b.Get(t, fake.Authorize(t, started.Header.Get("Location"), who))
+	body, err := json.Marshal(struct {
+		Provider        string `json:"provider"`
+		CurrentPassword string `json:"currentPassword,omitempty"`
+	}{provider, password})
+	require.NoError(t, err)
+	return b.PostJSON(t, linkPath, string(body))
+}
+
+// providerURL is where a link that started sends the browser: the provider's authorization URL.
+func providerURL(t *testing.T, started testhelper.Reply) string {
+	t.Helper()
+	require.Equal(t, http.StatusOK, started.StatusCode, started.Body)
+	var answer struct {
+		RedirectURL string `json:"redirectUrl"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(started.Body), &answer))
+	return answer.RedirectURL
+}
+
+// link runs the whole round trip of linking who to the signed-in person, who proves it with the
+// password typed ("" for a person with none, whose session holds a fresh proof), and returns the
+// callback's answer.
+func link(t *testing.T, fake *testhelper.FakeSignin, b *testhelper.RedirectBrowser, who testhelper.SigninIdentity, password string) testhelper.Reply {
+	t.Helper()
+	return b.Get(t, fake.Authorize(t, providerURL(t, startLink(t, b, "google", password)), who))
 }
 
 func TestIdentitiesListShowsTheProvidersLinked(t *testing.T) {
@@ -81,12 +106,82 @@ func TestIdentitiesListNeedsASession(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
+func TestIdentitiesListSaysWhatProvesTheUserForALink(t *testing.T) {
+	env, fake := signinEnv(t)
+
+	withPassword := listIdentities(t, signedIn(t, env, fake, mary))
+	without := listIdentities(t, signedIn(t, env, fake, newcomer))
+
+	assert.True(t, withPassword.PasswordSet)
+	assert.False(t, without.PasswordSet)
+	assert.True(t, without.IdentityProofFresh, "the provider login just made stands in for the password")
+}
+
 func TestIdentitiesLinkNeedsASession(t *testing.T) {
 	env, _ := signinEnv(t)
 
-	resp := env.NewRedirectBrowser(t).Get(t, linkPath)
+	resp := startLink(t, env.NewRedirectBrowser(t), "google", "")
 
 	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+// ADR 0176: a link asks for the password of a User who has one, as adding a Passkey does, even
+// right after a provider login.
+func TestIdentitiesLinkingIsRefusedWithoutThePassword(t *testing.T) {
+	env, fake := signinEnv(t)
+	b := signedIn(t, env, fake, mary)
+	before := listIdentities(t, b)
+
+	missing := startLink(t, b, "google", "")
+	wrong := startLink(t, b, "google", "not the password")
+
+	assert.Equal(t, http.StatusForbidden, missing.StatusCode)
+	assert.Equal(t, http.StatusForbidden, wrong.StatusCode)
+	after := listIdentities(t, b)
+	assert.Len(t, after.Items, len(before.Items))
+	assert.Empty(t, env.SystemMail.Messages())
+}
+
+func TestIdentitiesLinkingAProviderTheInstanceDoesNotOfferIsNotFound(t *testing.T) {
+	env, fake := signinEnv(t)
+	b := signedIn(t, env, fake, mary)
+
+	resp := startLink(t, b, "myspace", fixtures.MemberMaryPassword)
+
+	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+}
+
+// ADR 0176: every link tells the owner, and the notice's link undoes it.
+func TestIdentitiesLinkingMailsTheOwnerANoticeWhoseLinkUndoesIt(t *testing.T) {
+	env, fake := signinEnv(t)
+	acting := signedIn(t, env, fake, mary)
+	other := signedIn(t, env, fake, mary)
+	before := len(env.SystemMail.Messages())
+	link(t, fake, acting, maryAtWork, fixtures.MemberMaryPassword)
+	messages := env.SystemMail.Messages()
+	require.Len(t, messages, before+1)
+	assert.Equal(t, fixtures.MemberMaryEmail, messages[len(messages)-1].To)
+	token := notMeLink(t, env)
+
+	err := env.SiteAnonymous(t).SiteAuthSigninNotMe(t.Context(), &siteapi.SiteSigninNotMeInput{Token: token})
+
+	require.NoError(t, err)
+	linked, err := env.DB.UserIdentity.Query().Where(useridentity.Subject(maryAtWork.Subject)).Exist(t.Context())
+	require.NoError(t, err)
+	assert.False(t, linked, "the identity is gone")
+	assert.Equal(t, http.StatusUnauthorized, meStatus(t, acting), "the session that linked it ended")
+	assert.Equal(t, http.StatusUnauthorized, meStatus(t, other))
+}
+
+func TestIdentitiesLinkingAProviderAccountTheUserHoldsMailsNothing(t *testing.T) {
+	env, fake := signinEnv(t)
+	b := signedIn(t, env, fake, mary)
+	before := len(env.SystemMail.Messages())
+
+	resp := link(t, fake, b, mary, fixtures.MemberMaryPassword)
+
+	assert.Equal(t, settingsPath, resp.Header.Get("Location"))
+	assert.Len(t, env.SystemMail.Messages(), before)
 }
 
 func TestIdentitiesAProviderWithAnotherEmailCanBeLinked(t *testing.T) {
@@ -94,7 +189,7 @@ func TestIdentitiesAProviderWithAnotherEmailCanBeLinked(t *testing.T) {
 	b := signedIn(t, env, fake, mary)
 	before := listIdentities(t, b)
 
-	resp := link(t, fake, b, maryAtWork)
+	resp := link(t, fake, b, maryAtWork, fixtures.MemberMaryPassword)
 
 	assert.Equal(t, http.StatusFound, resp.StatusCode)
 	assert.Equal(t, settingsPath, resp.Header.Get("Location"))
@@ -117,7 +212,7 @@ func TestIdentitiesLinkingKeepsTheOtherSessions(t *testing.T) {
 	acting := signedIn(t, env, fake, mary)
 	other := signedIn(t, env, fake, mary)
 
-	link(t, fake, acting, maryAtWork)
+	link(t, fake, acting, maryAtWork, fixtures.MemberMaryPassword)
 
 	assert.Equal(t, http.StatusOK, meStatus(t, acting))
 	assert.Equal(t, http.StatusOK, meStatus(t, other), "a new way to sign in ends no session")
@@ -129,7 +224,7 @@ func TestIdentitiesLinkingASubjectOfAnotherUserIsRefused(t *testing.T) {
 	before := listIdentities(t, b)
 	sams := testhelper.SigninIdentity{Subject: fixtures.SamGoogleIdentitySubject, Email: "sam@gmail.com", EmailVerified: true}
 
-	resp := link(t, fake, b, sams)
+	resp := link(t, fake, b, sams, fixtures.MemberMaryPassword)
 
 	assert.Equal(t, signinprovider.ReasonIdentityInUse, refusalCode(t, resp, settingsPath))
 	after := listIdentities(t, b)
@@ -142,9 +237,9 @@ func TestIdentitiesLinkingASubjectOfAnotherUserIsRefused(t *testing.T) {
 func TestIdentitiesLinkingADeniedConsentReportsItOnTheSettingsPage(t *testing.T) {
 	env, fake := signinEnv(t)
 	b := signedIn(t, env, fake, mary)
-	started := b.Get(t, linkPath)
+	started := startLink(t, b, "google", fixtures.MemberMaryPassword)
 
-	resp := b.Get(t, fake.Deny(t, started.Header.Get("Location")))
+	resp := b.Get(t, fake.Deny(t, providerURL(t, started)))
 
 	assert.Equal(t, signinprovider.ReasonDenied, refusalCode(t, resp, settingsPath))
 }
@@ -152,8 +247,8 @@ func TestIdentitiesLinkingADeniedConsentReportsItOnTheSettingsPage(t *testing.T)
 func TestIdentitiesALinkFlowOfASessionThatEndedIsRefused(t *testing.T) {
 	env, fake := signinEnv(t)
 	b := signedIn(t, env, fake, mary)
-	started := b.Get(t, linkPath)
-	callback := fake.Authorize(t, started.Header.Get("Location"), maryAtWork)
+	started := startLink(t, b, "google", fixtures.MemberMaryPassword)
+	callback := fake.Authorize(t, providerURL(t, started), maryAtWork)
 	_, err := env.DB.User.Update().Where(entuser.Email(fixtures.MemberMaryEmail)).AddSessionEpoch(1).Save(t.Context())
 	require.NoError(t, err)
 
@@ -183,7 +278,7 @@ func TestIdentitiesUnlinkingWorksWhenAnotherWayRemainsAndEndsTheOtherSessions(t 
 	acting := signedIn(t, env, fake, newcomer)
 	other := signedIn(t, env, fake, newcomer)
 	second := testhelper.SigninIdentity{Subject: "google-subject-of-nina-at-work", Email: "nina@work.test", EmailVerified: true, HostedDomain: "work.test"}
-	link(t, fake, acting, second)
+	link(t, fake, acting, second, "")
 	list := listIdentities(t, acting)
 	require.Len(t, list.Items, 2)
 

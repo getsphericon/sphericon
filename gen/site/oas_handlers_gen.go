@@ -4420,7 +4420,7 @@ func (s *Server) handleSiteAuthSigninCallbackRequest(args [1]string, argsEscaped
 
 // handleSiteAuthSigninNotMeRequest handles SiteAuth_signinNotMe operation.
 //
-// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+// Undo a link from the notice mailed to the owner (ADR 0048, ADR 0176): the token names one Linked
 // identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
 // opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 //
@@ -15438,20 +15438,23 @@ func (s *Server) handleSiteEventsListRequest(args [1]string, argsEscaped bool, w
 
 // handleSiteIdentitiesLinkRequest handles SiteIdentities_link operation.
 //
-// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
-// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
-// subject to that User whatever email the provider reports. The callback redirects to `return_to`
-// (default the account security page); a refusal goes to the account security page with the `error`
-// code (see SiteSigninError). 404 for a provider that is not configured.
+// Start linking another Sign-in provider account to the authenticated User, proving the password (or a
+// fresh provider login or Passkey check) as adding a Passkey does. Works like `start` of a sign-in,
+// but the flow cookie also names the User, and the shared callback adds the provider's subject to that
+// User whatever email the provider reports; the owner is then mailed a notice with a link that undoes
+// it. The browser is sent on to `redirectUrl`; the callback lands on the account security page, with
+// the `error` code of a refusal (see SiteSigninError). 403 on a wrong or missing proof (a wrong
+// password feeds the Login throttle: 429 while its delay runs), 404 for a provider that is not
+// configured.
 //
-// GET /me/identities/{provider}/link
-func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+// POST /me/identities/link
+func (s *Server) handleSiteIdentitiesLinkRequest(args [0]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
 	statusWriter := &codeRecorder{ResponseWriter: w}
 	w = statusWriter
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteIdentities_link"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.HTTPRouteKey.String("/me/identities/{provider}/link"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.HTTPRouteKey.String("/me/identities/link"),
 	}
 	// Add attributes from config.
 	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
@@ -15562,45 +15565,41 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 			return
 		}
 	}
-	params, err := decodeSiteIdentitiesLinkParams(args, argsEscaped, r)
+
+	var rawBody []byte
+	request, rawBody, close, err := s.decodeSiteIdentitiesLinkRequest(r)
 	if err != nil {
-		err = &ogenerrors.DecodeParamsError{
+		err = &ogenerrors.DecodeRequestError{
 			OperationContext: opErrContext,
 			Err:              err,
 		}
-		defer recordError("DecodeParams", err)
+		defer recordError("DecodeRequest", err)
 		s.cfg.ErrorHandler(ctx, w, r, err)
 		return
 	}
+	defer func() {
+		if err := close(); err != nil {
+			recordError("CloseRequest", err)
+		}
+	}()
 
-	var rawBody []byte
-
-	var response *SiteIdentitiesLinkFound
+	var response *SiteIdentityLinkStartedHeaders
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
 			OperationName:    SiteIdentitiesLinkOperation,
 			OperationSummary: "",
 			OperationID:      "SiteIdentities_link",
-			Body:             nil,
+			Body:             request,
 			RawBody:          rawBody,
-			Params: middleware.Parameters{
-				{
-					Name: "provider",
-					In:   "path",
-				}: params.Provider,
-				{
-					Name: "return_to",
-					In:   "query",
-				}: params.ReturnTo,
-			},
-			Raw: r,
+			Params:           middleware.Parameters{},
+			Raw:              r,
 		}
 
 		type (
-			Request  = struct{}
-			Params   = SiteIdentitiesLinkParams
-			Response = *SiteIdentitiesLinkFound
+			Request  = *SiteIdentityLinkInput
+			Params   = struct{}
+			Response = *SiteIdentityLinkStartedHeaders
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -15609,14 +15608,14 @@ func (s *Server) handleSiteIdentitiesLinkRequest(args [1]string, argsEscaped boo
 		](
 			m,
 			mreq,
-			unpackSiteIdentitiesLinkParams,
+			nil,
 			func(ctx context.Context, request Request, params Params) (response Response, err error) {
-				response, err = s.h.SiteIdentitiesLink(ctx, params)
+				response, err = s.h.SiteIdentitiesLink(ctx, request)
 				return response, err
 			},
 		)
 	} else {
-		response, err = s.h.SiteIdentitiesLink(ctx, params)
+		response, err = s.h.SiteIdentitiesLink(ctx, request)
 	}
 	if err != nil {
 		if errRes, ok := errors.Into[*ProblemDetailsStatusCode](err); ok {

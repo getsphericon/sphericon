@@ -20,7 +20,7 @@
   "email.user_deleted.intro": "The Sphericon user with this email address was deleted at its owner's request: its workspace memberships, sign-in methods and second factor are gone, and every session has ended.",
   "email.user_deleted.not_me": "If you did not do this, someone had your password. Contact the administrator of your Sphericon instance.",
   "email.identity_linked.subject": "A sign-in provider was linked to your Sphericon account",
-  "email.identity_linked.intro": "{{.Provider}} was linked to your Sphericon account: it can now be used to sign in with this email address.",
+  "email.identity_linked.intro": "A {{.Provider}} account was linked to your Sphericon account and can now be used to sign in.",
   "email.identity_linked.not_me": "If this was not you, follow this link to unlink it and sign out everywhere:",
   "email.auth.footer": "If you didn't request this, you can ignore this email.",
   "email.welcome.subject": "Welcome to Sphericon",

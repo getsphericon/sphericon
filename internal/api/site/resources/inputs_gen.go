@@ -433,6 +433,14 @@ func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) au
 	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
 	return automationsEnrollmentsFilter
 }
+func (c *InputsImpl) IdentityLinkStart(source *site.SiteIdentityLinkInput) signup.LinkStartInput {
+	var signupLinkStartInput signup.LinkStartInput
+	if source != nil {
+		signupLinkStartInput.Provider = (*source).Provider
+		// signupLinkStartInput.Proof: ignore
+	}
+	return signupLinkStartInput
+}
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
 	if source != nil {

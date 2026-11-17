@@ -280,7 +280,7 @@ export const siteAuthSignUpMutation = (options?: Partial<Options<SiteAuthSignUpD
 export const siteAuthSigninNotMeMutationKey = (options?: Partial<Options<SiteAuthSigninNotMeData>>) => createMutationKey('siteAuthSigninNotMe', options, ['Site Auth']);
 
 /**
- * Undo a silent link from the notice mailed to the owner (ADR 0048): the token names
+ * Undo a link from the notice mailed to the owner (ADR 0048, ADR 0176): the token names
  * one Linked identity of the User, which is unlinked, and every session of the User ends.
  * Public: the link may be opened from a browser without a session. A link works once; one
  * whose identity is gone answers 400.
@@ -757,6 +757,34 @@ export const siteIdentitiesListOptions = (options?: Options<SiteIdentitiesListDa
   queryKey: siteIdentitiesListQueryKey(options)
 });
 
+export const siteIdentitiesLinkMutationKey = (options?: Partial<Options<SiteIdentitiesLinkData>>) => createMutationKey('siteIdentitiesLink', options, ['Site Linked Identities']);
+
+/**
+ * Start linking another Sign-in provider account to the authenticated User, proving the
+ * password (or a fresh provider login or Passkey check) as adding a Passkey does. Works like
+ * `start` of a sign-in, but the flow cookie also names the User, and the shared callback
+ * adds the provider's subject to that User whatever email the provider reports; the owner
+ * is then mailed a notice with a link that undoes it. The browser is sent on to
+ * `redirectUrl`; the callback lands on the account security page, with the `error` code
+ * of a refusal (see SiteSigninError). 403 on a wrong or missing proof (a wrong password
+ * feeds the Login throttle: 429 while its delay runs), 404 for a provider that is not
+ * configured.
+ */
+export const siteIdentitiesLinkMutation = (options?: Partial<Options<SiteIdentitiesLinkData>>): UseMutationOptions<SiteIdentitiesLinkResponse, SiteIdentitiesLinkError, Options<SiteIdentitiesLinkData>> => {
+  const mutationOptions: UseMutationOptions<SiteIdentitiesLinkResponse, SiteIdentitiesLinkError, Options<SiteIdentitiesLinkData>> = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await siteIdentitiesLink({
+        ...options,
+        ...fnOptions,
+        throwOnError: true
+      });
+      return data;
+    },
+    mutationKey: siteIdentitiesLinkMutationKey(options)
+  };
+  return mutationOptions;
+};
+
 export const siteIdentitiesUnlinkMutationKey = (options?: Partial<Options<SiteIdentitiesUnlinkData>>) => createMutationKey('siteIdentitiesUnlink', options, ['Site Linked Identities']);
 
 /**
@@ -778,29 +806,6 @@ export const siteIdentitiesUnlinkMutation = (options?: Partial<Options<SiteIdent
   };
   return mutationOptions;
 };
-
-export const siteIdentitiesLinkQueryKey = (options: Options<SiteIdentitiesLinkData>) => createQueryKey('siteIdentitiesLink', options, false, ['Site Linked Identities']);
-
-/**
- * Start linking another Sign-in provider account to the authenticated User. Works like
- * `start` of a sign-in, but the flow cookie also names the User, and the shared callback
- * adds the provider's subject to that User whatever email the provider reports. The
- * callback redirects to `return_to` (default the account security page); a refusal goes
- * to the account security page with the `error` code (see SiteSigninError). 404 for a
- * provider that is not configured.
- */
-export const siteIdentitiesLinkOptions = (options: Options<SiteIdentitiesLinkData>) => queryOptions<SiteIdentitiesLinkResponse, SiteIdentitiesLinkError, SiteIdentitiesLinkResponse, ReturnType<typeof siteIdentitiesLinkQueryKey>>({
-  queryFn: async ({ queryKey, signal }) => {
-    const { data } = await siteIdentitiesLink({
-      ...options,
-      ...queryKey[0],
-      signal,
-      throwOnError: true
-    });
-    return data;
-  },
-  queryKey: siteIdentitiesLinkQueryKey(options)
-});
 
 export const siteOptionalConsentsListQueryKey = (options?: Options<SiteOptionalConsentsListData>) => createQueryKey('siteOptionalConsentsList', options, false, ['Site User']);
 

@@ -466,7 +466,7 @@ namespace SiteAuth {
       }
     | Problem;
 
-  /** Undo a silent link from the notice mailed to the owner (ADR 0048): the token names
+  /** Undo a link from the notice mailed to the owner (ADR 0048, ADR 0176): the token names
    * one Linked identity of the User, which is unlinked, and every session of the User ends.
    * Public: the link may be opened from a browser without a session. A link works once; one
    * whose identity is gone answers 400. */

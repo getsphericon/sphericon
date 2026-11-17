@@ -137,6 +137,10 @@ type Inputs interface {
 	// assigns.
 	// goverter:ignore Proof
 	PasskeyRemove(source siteapi.SitePasskeysRemoveParams) passkeys.RemoveInput
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
+	IdentityLinkStart(source *siteapi.SiteIdentityLinkInput) signup.LinkStartInput
 
 	// The restoring User, the actor the Audit log records and whether the session is strong come
 	// from the session, which the handler assigns.

@@ -457,7 +457,7 @@ export function SecurityPage() {
 
       <Passkeys returnTo={securityRoute.to} />
 
-      <LinkedIdentities />
+      <LinkedIdentities returnTo={securityRoute.to} />
     </Stack>
   )
 }

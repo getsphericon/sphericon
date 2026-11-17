@@ -42,7 +42,7 @@ const (
 	PurposeEmailVerify   Purpose = "email_verify"
 	PurposeEmailChange   Purpose = "email_change"
 	// PurposeIdentityNotMe is the "this was not me" link of the notice mailed when a
-	// Sign-in provider was linked silently (ADR 0048). It carries the Linked identity to
+	// Sign-in provider was linked (ADR 0048, ADR 0176). It carries the Linked identity to
 	// undo and has no binding: once the identity is gone the link has nothing left to do.
 	PurposeIdentityNotMe Purpose = "identity_not_me"
 	// PurposeUserDeletion is the one-time link mailed to a User with no password to confirm

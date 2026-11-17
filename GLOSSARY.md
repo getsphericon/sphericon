@@ -1644,7 +1644,9 @@ notice with a "this was not me" link that unlinks it and ends every session. If 
 never proven (an install with verification off marks it Verified without proof), the link also
 drops what was set up before it (the password, the other Linked identities, the Second factor,
 Passkeys, Personal tokens and Connections; a first reset link drops the same, ADR 0170), so whoever
-proves the address is the one who controls it.
+proves the address is the one who controls it. A signed-in User links one explicitly only with a
+fresh proof of identity, as for adding a Passkey (the password, or a fresh provider sign-in or Passkey
+check for a User without one), and the owner is mailed the same notice.
 _Avoid_: Social account, connected account
 
 **Pending sign-up**:

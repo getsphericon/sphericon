@@ -73,7 +73,7 @@ func TestAuditLinkAndUnlinkNameTheProviderInEachOfTheUsersWorkspaces(t *testing.
 	env, fake := signinEnv(t)
 	b := signedIn(t, env, fake, mary)
 
-	link(t, fake, b, maryAtWork)
+	link(t, fake, b, maryAtWork, fixtures.MemberMaryPassword)
 
 	acme, globex := entriesInMarysWorkspaces(t, env, events.ActionUserIdentityLink)
 	require.Len(t, acme, 1)

@@ -189,7 +189,7 @@ type Handler interface {
 	SiteAuthSigninCallback(ctx context.Context, params SiteAuthSigninCallbackParams) (*SiteAuthSigninCallbackFound, error)
 	// SiteAuthSigninNotMe implements SiteAuth_signinNotMe operation.
 	//
-	// Undo a silent link from the notice mailed to the owner (ADR 0048): the token names one Linked
+	// Undo a link from the notice mailed to the owner (ADR 0048, ADR 0176): the token names one Linked
 	// identity of the User, which is unlinked, and every session of the User ends. Public: the link may be
 	// opened from a browser without a session. A link works once; one whose identity is gone answers 400.
 	//
@@ -580,14 +580,17 @@ type Handler interface {
 	SiteEventsList(ctx context.Context, params SiteEventsListParams) (*SiteEventsListOK, error)
 	// SiteIdentitiesLink implements SiteIdentities_link operation.
 	//
-	// Start linking another Sign-in provider account to the authenticated User. Works like `start` of a
-	// sign-in, but the flow cookie also names the User, and the shared callback adds the provider's
-	// subject to that User whatever email the provider reports. The callback redirects to `return_to`
-	// (default the account security page); a refusal goes to the account security page with the `error`
-	// code (see SiteSigninError). 404 for a provider that is not configured.
+	// Start linking another Sign-in provider account to the authenticated User, proving the password (or a
+	// fresh provider login or Passkey check) as adding a Passkey does. Works like `start` of a sign-in,
+	// but the flow cookie also names the User, and the shared callback adds the provider's subject to that
+	// User whatever email the provider reports; the owner is then mailed a notice with a link that undoes
+	// it. The browser is sent on to `redirectUrl`; the callback lands on the account security page, with
+	// the `error` code of a refusal (see SiteSigninError). 403 on a wrong or missing proof (a wrong
+	// password feeds the Login throttle: 429 while its delay runs), 404 for a provider that is not
+	// configured.
 	//
-	// GET /me/identities/{provider}/link
-	SiteIdentitiesLink(ctx context.Context, params SiteIdentitiesLinkParams) (*SiteIdentitiesLinkFound, error)
+	// POST /me/identities/link
+	SiteIdentitiesLink(ctx context.Context, req *SiteIdentityLinkInput) (*SiteIdentityLinkStartedHeaders, error)
 	// SiteIdentitiesList implements SiteIdentities_list operation.
 	//
 	// List the authenticated User's Linked identities.
