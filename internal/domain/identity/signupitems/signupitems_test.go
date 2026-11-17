@@ -133,7 +133,7 @@ func TestEveryChangeOfTheItemsIsRecordedInTheInstanceAuditLog(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, m.Delete(ctx, staff, added.ID))
 
-	page, err := instanceauditentries.Entries(ctx, env.DB, "", 20)
+	page, err := instanceauditentries.New(env.DB).Entries(ctx, "", 20)
 	require.NoError(t, err)
 	ours := lo.Filter(page.Entries, func(e *ent.InstanceAuditEntry, _ int) bool {
 		return e.Action != instanceauditentries.ActionDefaultSendCapChange // the fixtures' own entries

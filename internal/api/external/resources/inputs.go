@@ -105,6 +105,7 @@ type Inputs interface {
 
 	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput
+	EmailLint(source *externalapi.LintEmailInput) emailtemplates.LintInput
 
 	BroadcastCreate(source *externalapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)

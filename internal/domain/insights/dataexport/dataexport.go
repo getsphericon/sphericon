@@ -45,7 +45,7 @@ var ErrNotFound = validation.NotFound("contactexport: contact not found", i18n.E
 var ErrIdentifier = validation.Refuse("contactexport: exactly one of id or email is required", i18n.ErrorsContactExportIdentifier)
 
 // Ref is the optional string of a query parameter read as "(value, present)": nil
-// when absent. It lets a handler pass its generated Opt parameters straight to Open.
+// when absent. It lets a handler pass its generated Opt parameters straight to Exporter.Open.
 func Ref[T ~string](v T, ok bool) *string {
 	if !ok {
 		return nil
@@ -62,16 +62,25 @@ type Download struct {
 	Chunks iter.Seq2[[]byte, error]
 }
 
+// Exporter makes the Data export of a Contact, each row projected by its Mapper: one per surface,
+// as each surface has the contract's members of its own.
+type Exporter struct {
+	mapper Mapper
+}
+
+// New builds the exporter over the surface's Mapper.
+func New(m Mapper) *Exporter { return &Exporter{mapper: m} }
+
 // Open is the Data export of the Contact named by exactly one of its id or email, inside the
 // Workspace of s: another Workspace's Contact is not found. Its two refusals (ErrIdentifier,
 // ErrNotFound) come before any chunk and answer alike on both surfaces. The Contact and every
 // member are read through s, so nothing outside the Workspace can appear.
-func Open(ctx context.Context, s *ent.Scoped, m Mapper, id *int64, email *string) (Download, error) {
+func (e *Exporter) Open(ctx context.Context, s *ent.Scoped, id *int64, email *string) (Download, error) {
 	c, err := find(ctx, s, id, email)
 	if err != nil {
 		return Download{}, err
 	}
-	return Download{Filename: filename(c), Chunks: chunks(ctx, s, m, c)}, nil
+	return Download{Filename: filename(c), Chunks: chunks(ctx, s, e.mapper, c)}, nil
 }
 
 // find resolves the Contact to export.

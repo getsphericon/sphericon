@@ -157,7 +157,7 @@ func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (Vie
 	if err != nil || b.Channel != channels.Email {
 		return view, err
 	}
-	brand, err := brandkits.Brands{}.Brand(ctx, s)
+	brand, err := brandkits.NewBrands().Brand(ctx, s)
 	if err != nil {
 		return View{}, err
 	}

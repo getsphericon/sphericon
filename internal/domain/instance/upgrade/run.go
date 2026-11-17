@@ -29,31 +29,37 @@ type Request struct {
 	Service string
 }
 
+// Upgrader installs a release over the running binary (ADR 0034): `sphericon upgrade`.
+type Upgrader struct {
+	// gh is where Run checks for a newer release and, without a directory, downloads it from.
+	gh *GitHub
+}
+
+// New builds the upgrader over GitHub, the release source of Run; Step and Walk read the Source
+// of their Options.
+func New(gh *GitHub) *Upgrader { return &Upgrader{gh: gh} }
+
 // Run does what r asks (ADR 0034), yielding its Progress. With Check it yields whether GitHub
 // has a newer stable release (Latest) and takes no other option. Otherwise it walks the running
 // binary to the release, from the directory From or from GitHub.
-func Run(ctx context.Context, r Request) iter.Seq2[Progress, error] {
-	return progressOf(func(emit emitter) error { return r.run(ctx, emit) })
+func (u *Upgrader) Run(ctx context.Context, r Request) iter.Seq2[Progress, error] {
+	return progressOf(func(emit emitter) error { return u.run(ctx, r, emit) })
 }
 
-func (r Request) run(ctx context.Context, emit emitter) error {
+func (u *Upgrader) run(ctx context.Context, r Request, emit emitter) error {
 	if r.Check {
 		if r.From != "" || r.Version != "" || r.Yes || r.Restart {
 			return errors.New(Usage)
 		}
-		gh, err := NewGitHub()
-		if err != nil {
-			return err
-		}
-		latest, err := CheckLatest(ctx, gh, buildinfo.Current().Version)
+		latest, err := u.gh.CheckLatest(ctx, buildinfo.Current().Version)
 		if err != nil {
 			return err
 		}
 		return emit(latest)
 	}
-	source, err := r.source()
-	if err != nil {
-		return err
+	var source Source = u.gh
+	if r.From != "" {
+		source = DirSource(r.From)
 	}
 	target, err := os.Executable()
 	if err != nil {
@@ -68,22 +74,15 @@ func (r Request) run(ctx context.Context, emit emitter) error {
 		Service: r.Service,
 	}
 	if r.Restart {
-		sd := Systemd{Service: r.Service}
+		sd := NewSystemd(r.Service)
 		opts.Run, opts.PostSwap = sd.Run, sd.PostSwap
 	}
 	return walk(ctx, opts, emit)
 }
 
-func (r Request) source() (Source, error) {
-	if r.From != "" {
-		return DirSource(r.From), nil
-	}
-	return NewGitHub()
-}
-
-// CheckLatest says whether gh has a stable release newer than current, changing nothing.
-func CheckLatest(ctx context.Context, gh *GitHub, current string) (Latest, error) {
-	latest, err := gh.LatestRelease(ctx)
+// CheckLatest says whether GitHub has a stable release newer than current, changing nothing.
+func (g *GitHub) CheckLatest(ctx context.Context, current string) (Latest, error) {
+	latest, err := g.LatestRelease(ctx)
 	if err != nil {
 		return Latest{}, err
 	}

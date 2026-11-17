@@ -410,7 +410,7 @@ var staffPackage = do.Package(
 	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
-		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), instanceauditentries.Record), nil
+		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), instanceauditentries.New(do.MustInvoke[*ent.Client](i)).Record), nil
 	}),
 	// The Users' Consent records on those items (ADR 0062).
 	do.Lazy(func(i do.Injector) (*consentrecords.Module, error) {
@@ -743,10 +743,11 @@ var identityPackage = do.Package(
 		cfg := do.MustInvoke[*config.Config](i)
 		lapsedAt, _ := do.MustInvoke[*licensekey.License](i).LapsedAt()
 		version := string(do.MustInvoke[Version](i))
-		source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
+		endpoint, err := upgrade.NewGitHubEndpoint(cfg.GitHubAPIURL)
 		if err != nil {
 			return nil, err
 		}
+		source := upgrade.NewGitHub(endpoint)
 		receiver, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
 		if err != nil {
 			return nil, err
@@ -825,7 +826,7 @@ var audiencePackage = do.Package(
 		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
-		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
+		return sendingdomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomaindeletion.UseCase, error) {
 		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
@@ -847,7 +848,7 @@ var contentPackage = do.Package(
 		return emaildoc.New(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*emailtemplates.Module, error) {
-		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i), brandkits.Brands{}), nil
+		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i), brandkits.NewBrands()), nil
 	}),
 	// The views answer a save with its lint, for the surfaces whose contract shows it.
 	do.Lazy(func(i do.Injector) (*emailtemplates.Views, error) {

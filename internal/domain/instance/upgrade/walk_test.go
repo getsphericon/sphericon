@@ -85,7 +85,7 @@ func TestWalkInstallsTheLastReleaseOfEachMajorThenTheTarget(t *testing.T) {
 	}
 	o := s.opts("")
 
-	got, err := drain(upgrade.Walk(t.Context(), o))
+	got, err := drain(upgrader.Walk(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
@@ -100,7 +100,7 @@ func TestWalkSkipsMajorsTheDatabaseAlreadyPassed(t *testing.T) {
 	o := s.opts("")
 	o.Current = "v0.4.0"
 
-	got, err := drain(upgrade.Walk(t.Context(), o))
+	got, err := drain(upgrader.Walk(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
@@ -114,7 +114,7 @@ func TestWalkInsideAMajorIsOneStep(t *testing.T) {
 	o := s.opts("")
 	o.Current = "v0.5.2"
 
-	got, err := drain(upgrade.Walk(t.Context(), o))
+	got, err := drain(upgrader.Walk(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.6.0"}, versions(of[upgrade.Installed](got)))
@@ -127,7 +127,7 @@ func TestWalkToAPinnedTargetStopsBeforeLaterBoundaries(t *testing.T) {
 	}
 	o := s.opts("v0.4.0")
 
-	got, err := drain(upgrade.Walk(t.Context(), o))
+	got, err := drain(upgrader.Walk(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.3.2", "0.4.0"}, versions(of[upgrade.Installed](got)))
@@ -140,7 +140,7 @@ func TestWalkWithAMissingArchiveRefusesBeforeInstallingAnything(t *testing.T) {
 	}
 	o := s.opts("")
 
-	_, err := drain(upgrade.Walk(t.Context(), o))
+	_, err := drain(upgrader.Walk(t.Context(), o))
 
 	require.ErrorContains(t, err, "0.3.2")
 	assert.Empty(t, s.installed(t))
@@ -158,7 +158,7 @@ func TestWalkShowsTheNotesOfEveryReleaseAndWaitsForYesBeforeChangingAnything(t *
 	}
 	walkReleaseWithNotes(t, s.dir, "0.6.0", boundaries(1), notes)
 
-	got, err := drain(upgrade.Walk(t.Context(), s.opts("")))
+	got, err := drain(upgrader.Walk(t.Context(), s.opts("")))
 
 	require.ErrorIs(t, err, upgrade.ErrNeedsConfirmation)
 	assert.Equal(t, []upgrade.Notes{{From: "v0.1.0", To: "0.6.0", Text: notes}}, of[upgrade.Notes](got), "the notes of both Majors, from the target")
@@ -170,7 +170,7 @@ func TestWalkShowsTheNotesOfEveryReleaseAndWaitsForYesBeforeChangingAnything(t *
 
 	o := s.opts("")
 	o.Yes = true
-	got, err = drain(upgrade.Walk(t.Context(), o))
+	got, err = drain(upgrader.Walk(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))
@@ -204,7 +204,7 @@ func TestWalkInstallsTheTargetFromTheCopyItStagedInsteadOfFetchingItAgain(t *tes
 	o := s.opts("")
 	o.Source = &onceSource{Source: o.Source, target: "0.6.0"}
 
-	got, err := drain(upgrade.Walk(t.Context(), o))
+	got, err := drain(upgrader.Walk(t.Context(), o))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.3.2", "0.5.1", "0.6.0"}, versions(of[upgrade.Installed](got)))

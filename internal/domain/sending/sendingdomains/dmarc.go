@@ -16,8 +16,8 @@ import (
 // the name starts with v=DMARC1; any policy counts, p=none too (ADR 0012). Two or more end the
 // discovery with no record, as receivers ignore them. A missing record is false with a nil error;
 // a resolver failure returns the error, so the caller keeps what it knew.
-func LookupDMARC(ctx context.Context, lookup domainname.TXTLookup, domain string) (bool, error) {
-	n, err := dmarcRecords(ctx, lookup, domain)
+func (d *DNS) LookupDMARC(ctx context.Context, domain string) (bool, error) {
+	n, err := dmarcRecords(ctx, d.lookup, domain)
 	if err != nil || n > 0 {
 		return n == 1, err
 	}
@@ -25,7 +25,7 @@ func LookupDMARC(ctx context.Context, lookup domainname.TXTLookup, domain string
 	if !ok {
 		return false, nil
 	}
-	n, err = dmarcRecords(ctx, lookup, org)
+	n, err = dmarcRecords(ctx, d.lookup, org)
 	return n == 1, err
 }
 
@@ -40,7 +40,7 @@ func organizationalDomain(domain string) (string, bool) {
 // dmarcRecords counts the DMARC records at _dmarc.<domain>; NXDOMAIN is none.
 func dmarcRecords(ctx context.Context, lookup domainname.TXTLookup, domain string) (int, error) {
 	host, _ := DMARCRecord(domain)
-	// Fully qualified, for the reason VerifyDKIM gives.
+	// Fully qualified, for the reason DNS.VerifyDKIM gives.
 	records, err := lookup(ctx, host+".")
 	if err != nil {
 		if dnsIsNotFound(err) {
