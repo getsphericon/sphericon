@@ -258,6 +258,14 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadca
 	}
 	return broadcastsCreateInput, nil
 }
+func (c *InputsImpl) BroadcastSchedule(source *site.ScheduleBroadcastInput) broadcasts.ScheduleInput {
+	var broadcastsScheduleInput broadcasts.ScheduleInput
+	if source != nil {
+		broadcastsScheduleInput.Revision = revisionIn((*source).Revision)
+		broadcastsScheduleInput.ScheduledAt = timeIn((*source).ScheduledAt)
+	}
+	return broadcastsScheduleInput
+}
 func (c *InputsImpl) BroadcastStatus(source site.SiteBroadcastStatus) broadcast.Status {
 	var broadcastStatus broadcast.Status
 	switch source {
@@ -306,6 +314,7 @@ func (c *InputsImpl) BroadcastsListFilter(source site.SiteBroadcastsListParams) 
 	broadcastsListFilter.Archived = boolIn(source.Archived)
 	broadcastsListFilter.Statuses = c.BroadcastStatuses(source.Status)
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	// broadcastsListFilter.Order: ignore
 	return broadcastsListFilter
 }
 func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts.Order {

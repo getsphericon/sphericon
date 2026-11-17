@@ -145,16 +145,18 @@ type Item struct {
 
 // UseCase reads the items.
 type UseCase struct {
-	now   func() time.Time
-	watch abusewarning.Watch
-	out   *outboundmessages.Module
+	now        func() time.Time
+	watch      abusewarning.Watch
+	out        *outboundmessages.Module
+	broadcasts *broadcasts.Module
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
 // run, out is the send path, whose Preflight says whether an Automation's email step could send
-// now and whose SendCapStatus says which Send cap applies (ADR 0067), and now is the Instance clock.
-func New(watch abusewarning.Watch, out *outboundmessages.Module, now func() time.Time) *UseCase {
-	return &UseCase{now: now, watch: watch, out: out}
+// now and whose SendCapStatus says which Send cap applies (ADR 0067), catalogue counts what the
+// Broadcasts draw from the Send cap, and now is the Instance clock.
+func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
+	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a
@@ -368,7 +370,7 @@ func (m *UseCase) sendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]
 	if st.Sent24h >= st.PerDay {
 		items = append(items, Item{Kind: KindSendCapSpent, Count: 1})
 	}
-	over, err := scheduledOverSendCap(ctx, s, st.PerDay, now)
+	over, err := m.scheduledOverSendCap(ctx, s, st.PerDay, now)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +410,7 @@ const overCapWindow = 24 * time.Hour
 // item when there is a wait, finishing at its start plus the wait. Taking the earlier audiences at
 // its start leaves out what the bucket refills between their starts, so the read errs towards an
 // item. perDay is the Send cap that applies.
-func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now time.Time) ([]Item, error) {
+func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now time.Time) ([]Item, error) {
 	scheduled, err := s.Broadcast().Query().
 		Where(
 			broadcast.StatusEQ(broadcast.StatusScheduled),
@@ -421,13 +423,13 @@ func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now ti
 		return nil, err
 	}
 	// What the sending Broadcasts still have to send goes out of the bucket before any of these.
-	accumulated, err := broadcasts.PendingOfSending(ctx, s)
+	accumulated, err := m.broadcasts.PendingOfSending(ctx, s)
 	if err != nil {
 		return nil, err
 	}
 	var items []Item
 	for _, b := range scheduled {
-		audience, err := broadcasts.AudienceSize(ctx, s, b, now)
+		audience, err := m.broadcasts.AudienceSize(ctx, s, b)
 		if errors.Is(err, broadcasts.ErrNoAudience) {
 			// Its plan fails it instead, a failure of its own: it draws nothing from the bucket.
 			continue

@@ -75,7 +75,7 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
 		require.Greater(t, len(ids), 2, "the fixture audience must outgrow one second of capacity")
-		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		w := jobs.NewSendRecipientWorker(e.DB, deliveryOf(mod))
 
 		start := now
 		now = driveRecipients(t, e, w, ids, now)
@@ -110,14 +110,14 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 		perToken := 24 * time.Hour / time.Duration(sendCap)
 
 		detail, err := broadcasts.New(e.Bus, testhelper.Renderer(), mod).
-			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID), now)
+			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID))
 		require.NoError(t, err)
 		require.NotNil(t, detail.Progress)
 		assert.Equal(t, providerlimit.CauseSendCap, detail.Progress.LimitedBy)
 		require.NotNil(t, detail.Progress.EstimatedCompletion)
 		assert.WithinDuration(t, now.Add(perToken), *detail.Progress.EstimatedCompletion, time.Second, "the one beyond the bucket waits a token")
 
-		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		w := jobs.NewSendRecipientWorker(e.DB, deliveryOf(mod))
 		start := now
 		now = driveRecipients(t, e, w, ids, now)
 
@@ -219,7 +219,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
-		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		w := jobs.NewSendRecipientWorker(e.DB, deliveryOf(mod))
 		err = w.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))
 		var snooze *river.JobSnoozeError
 		require.ErrorAs(t, err, &snooze, "the Broadcast recipient finds the Automation's spend")

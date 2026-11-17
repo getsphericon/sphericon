@@ -30,6 +30,13 @@ func sendingWithPending(t *testing.T, env *testhelper.TestEnv, n int) *broadcast
 
 type broadcastsFixture struct{ id int64 }
 
+// setupAt is the test environment with the Instance clock standing still at now: the clock the
+// progress estimate reads.
+func setupAt(t *testing.T, now time.Time) *testhelper.TestEnv {
+	t.Helper()
+	return testhelper.Setup(t, testhelper.WithClock(func() time.Time { return now }))
+}
+
 // With no job scheduled ahead the ETA is the remaining recipients at the effective
 // rate, and the effective rate includes the provider-discovered ceiling (ADR 0023).
 func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
@@ -45,15 +52,15 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			env := testhelper.Setup(t)
+			now := time.Now()
+			env := setupAt(t, now)
 			ctx := context.Background()
 			f := sendingWithPending(t, env, 3)
 			upd := env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID)
 			upd.SetNillableMaxPerSecond(c.manual).SetNillableProviderMaxPerSecond(c.prov).ExecX(ctx)
 			b := env.DB.Broadcast.GetX(ctx, f.id)
 
-			now := time.Now()
-			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), b, now)
+			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), b)
 			require.NoError(t, err)
 			p := detail.Progress
 			require.NotNil(t, p.EstimatedCompletion)
@@ -67,7 +74,7 @@ func TestProgressHasNoETAWithoutALimit(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	f := sendingWithPending(t, env, 3)
-	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)
 	p := detail.Progress
 	require.NotNil(t, p)
@@ -91,13 +98,13 @@ func TestProgressNamesTheSendCapAndEstimatesTheRecipientsBeyondItsTokens(t *test
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			env := testhelper.Setup(t)
+			now := time.Now()
+			env := setupAt(t, now)
 			ctx := context.Background()
 			f := sendingWithPending(t, env, 3)
 			env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(c.sendCap).ExecX(ctx)
 
-			now := time.Now()
-			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), now)
+			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id))
 			require.NoError(t, err)
 			p := detail.Progress
 			assert.Equal(t, providerlimit.CauseSendCap, p.LimitedBy)
@@ -126,15 +133,15 @@ func TestProgressReportsTheLaterOfTheProviderLimitAndTheSendCap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			env := testhelper.Setup(t)
-			ctx := context.Background()
 			now := time.Now()
+			env := setupAt(t, now)
+			ctx := context.Background()
 			f := sendingWithPending(t, env, 3)
 			env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(c.sendCap).ExecX(ctx)
 			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetNillableMaxPerSecond(c.perSecond).ExecX(ctx)
 			env.DB.Broadcast.UpdateOneID(f.id).SetLastScheduledAt(now.Add(c.lastScheduled)).ExecX(ctx)
 
-			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), now)
+			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id))
 			require.NoError(t, err)
 			p := detail.Progress
 			assert.Equal(t, c.wantLimit, p.LimitedBy)
@@ -147,15 +154,15 @@ func TestProgressReportsTheLaterOfTheProviderLimitAndTheSendCap(t *testing.T) {
 // The estimate reads the Send cap's bucket as it stands (ADR 0067): a bucket other sends (the
 // Transactional ones too) emptied just now pushes every remaining recipient a full 24h/cap further out.
 func TestProgressCountsTheSendCapAlreadySpent(t *testing.T) {
-	env := testhelper.Setup(t)
+	now := time.Now()
+	env := setupAt(t, now)
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	f := sendingWithPending(t, env, 3)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(2).ExecX(ctx)
-	now := time.Now()
 	env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(now).ExecX(ctx)
 
-	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id), now)
+	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)
 	p := detail.Progress
 	assert.Equal(t, providerlimit.CauseSendCap, p.LimitedBy)
@@ -171,7 +178,7 @@ func TestProgressIgnoresAStoredSendCapOnSelfhosted(t *testing.T) {
 	f := sendingWithPending(t, env, 3)
 	env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 
-	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)
 	p := detail.Progress
 	assert.Empty(t, p.LimitedBy)
@@ -185,13 +192,13 @@ func TestDetailHasProgressOnlyWhileSending(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	sent, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID), time.Now())
+	sent, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastSentID))
 	require.NoError(t, err)
 	assert.Nil(t, sent.Progress)
 	assert.Equal(t, 11, sent.Stats.Sent)
 
 	f := sendingWithPending(t, env, 2)
-	sending, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id), time.Now())
+	sending, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, s, env.DB.Broadcast.GetX(ctx, f.id))
 	require.NoError(t, err)
 	require.NotNil(t, sending.Progress)
 	assert.Equal(t, sending.Stats.Pending, sending.Progress.Remaining)

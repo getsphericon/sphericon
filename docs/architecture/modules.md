@@ -240,6 +240,9 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
   to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
   operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument.
+  An Erasure's step takes no `events.QueuePurger` either: `Bus.PurgeJobsIn(ctx, s, key, ids)`
+  purges the scope's Workspace's jobs in the Erasure's transaction `s` is bound to, and refuses
+  any other (`events.ErrNotPurging`).
 - **A `<module>use` reader** exports one type, `Module`, built by `New`, whose methods are the
   questions another module asks of the owner's rows (`segmentsuse.Module.UsingTag` and
   `UnfitForCustomFieldType`). The module that asks holds it as a field its own constructor builds.

@@ -34,9 +34,10 @@ type Detail struct {
 	Progress *Progress
 }
 
-// Detail reads a Broadcast's figures and, when it is sending, its Progress.
-func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
-	figures, err := StatsFor(ctx, s, b)
+// Detail reads a Broadcast's figures and, when it is sending, its Progress at now on Outbound
+// send's clock.
+func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (Detail, error) {
+	figures, err := m.StatsFor(ctx, s, b)
 	if err != nil {
 		return Detail{}, err
 	}
@@ -44,7 +45,7 @@ func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, no
 	if b.Status != broadcast.StatusSending {
 		return d, nil
 	}
-	d.Progress, err = m.progressOf(ctx, s, b, d.Stats, now)
+	d.Progress, err = m.progressOf(ctx, s, b, d.Stats, m.out.Now())
 	return d, err
 }
 

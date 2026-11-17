@@ -16,7 +16,7 @@ import (
 
 // RecordUnsubscribe attributes an opt-out to a received message. Its anonymous delivery and
 // recipient references survive Erasure; a missing, foreign or unsent message counts nothing.
-func RecordUnsubscribe(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
+func (m *Module) RecordUnsubscribe(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
 	msg, err := s.OutboundMessage().Query().Where(outboundmessage.ID(messageID), outboundmessage.StatusEQ(outboundmessage.StatusSent)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return false, nil

@@ -42,11 +42,13 @@ func atFixedNow() func() time.Time {
 // recordingScheduler is the scheduling seam recording what it is asked, so a test asserts
 // the pacing times without waiting for them.
 type recordingScheduler struct {
+	workspaceID int64
 	broadcastID int64
 	sends       []broadcasts.Send
 }
 
-func (r *recordingScheduler) Schedule(_ context.Context, broadcastID int64, sends []broadcasts.Send) error {
+func (r *recordingScheduler) Schedule(_ context.Context, workspaceID, broadcastID int64, sends []broadcasts.Send) error {
+	r.workspaceID = workspaceID
 	r.broadcastID = broadcastID
 	r.sends = append(r.sends, sends...)
 	return nil
@@ -60,11 +62,11 @@ func (r *recordingScheduler) times() []time.Time {
 	return out
 }
 
-// run plans, paces and schedules the draft Broadcast and returns what the scheduler saw.
+// run plans, paces and schedules the draft Broadcast and returns what the scheduler saw of this run.
 func (d *delivery) run(id int64) (*recordingScheduler, error) {
-	sched := &recordingScheduler{}
-	err := d.del.Run(d.t.Context(), d.s, id, sched)
-	return sched, err
+	*d.sched = recordingScheduler{}
+	err := d.del.Run(d.t.Context(), d.s, id)
+	return d.sched, err
 }
 
 // A late or retried plan on a finished Broadcast must not move it back to sending.
@@ -207,7 +209,7 @@ func TestEmptyAudienceFinalizes(t *testing.T) {
 	assert.Empty(t, sched.sends, "nothing to schedule")
 	got := d.env.DB.Broadcast.GetX(d.t.Context(), fixtures.BroadcastEmptyAudienceID)
 	assert.Equal(t, broadcast.StatusSent, got.Status)
-	figures, err := broadcasts.StatsOf(d.t.Context(), d.s, fixtures.BroadcastEmptyAudienceID)
+	figures, err := d.broadcasts().StatsOf(d.t.Context(), d.s, fixtures.BroadcastEmptyAudienceID)
 	require.NoError(t, err)
 	assert.Zero(t, figures[fixtures.BroadcastEmptyAudienceID])
 	assert.NotNil(t, got.SentAt)
@@ -223,7 +225,7 @@ func TestFinalizeIsIdempotent(t *testing.T) {
 	require.Equal(t, broadcast.StatusSent, first.Status)
 	require.NotNil(t, first.SentAt)
 
-	require.NoError(t, broadcasts.Finalize(d.t.Context(), d.s, fixtures.BroadcastSendingID, time.Now()))
+	require.NoError(t, d.broadcasts().Finalize(d.t.Context(), d.s, fixtures.BroadcastSendingID))
 
 	assert.True(t, first.SentAt.Equal(*d.broadcastRow().SentAt))
 }
@@ -241,6 +243,7 @@ func TestPaceSpreadsSendsAtTheEffectiveRate(t *testing.T) {
 	times := sched.times()
 	require.Greater(t, len(times), 2)
 	assert.EqualValues(t, fixtures.BroadcastDraftID, sched.broadcastID)
+	assert.EqualValues(t, fixtures.AcmeID, sched.workspaceID, "the sends are named by the Broadcast's Workspace")
 	assert.True(t, fixedNow.Equal(times[0]), "starts now")
 	for i := 1; i < len(times); i++ {
 		assert.Equal(t, 500*time.Millisecond, times[i].Sub(times[i-1]), "one over the rate")
@@ -332,7 +335,7 @@ func TestAnotherWorkspacesLimitDoesNotPaceThisBroadcast(t *testing.T) {
 	d := newDelivery(t, time.Now)
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationGlobexID).SetMaxPerSecond(1).ExecX(d.t.Context())
 
-	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, 50), fixedNow)
+	times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, 50))
 
 	require.NoError(t, err)
 	assert.Nil(t, times)
@@ -341,13 +344,13 @@ func TestAnotherWorkspacesLimitDoesNotPaceThisBroadcast(t *testing.T) {
 // The progress estimate and the planner pace by the same interval: with the planned jobs
 // behind us, the estimate is the remaining recipients at the planner's step.
 func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
-	d := newDelivery(t, time.Now)
+	d := newDelivery(t, atFixedNow())
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(d.t.Context())
 	d.recipient(fixtures.ContactAliceID)
 	d.recipient(fixtures.ContactBobID)
 	now := fixedNow
 
-	detail, err := d.detail(now)
+	detail, err := d.detail()
 
 	require.NoError(t, err)
 	p := detail.Progress
@@ -357,13 +360,13 @@ func TestProgressEstimateUsesThePlannersInterval(t *testing.T) {
 
 // The estimate follows the Broadcast's own Integration too, not the default's.
 func TestProgressEstimateUsesTheBroadcastsOwnIntegration(t *testing.T) {
-	d := newDelivery(t, time.Now)
+	d := newDelivery(t, atFixedNow())
 	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeMailgunID).SetMaxPerSecond(2).ExecX(d.t.Context())
 	d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastSendingID).SetIntegrationID(fixtures.IntegrationAcmeMailgunID).ExecX(d.t.Context())
 	d.recipient(fixtures.ContactAliceID)
 	d.recipient(fixtures.ContactBobID)
 
-	detail, err := d.detail(fixedNow)
+	detail, err := d.detail()
 
 	require.NoError(t, err)
 	require.NotNil(t, detail.Progress.EstimatedCompletion)
@@ -520,7 +523,7 @@ func TestDeferralBacklogIgnoresRecipientsAsleepOnTheirOwnDeferral(t *testing.T) 
 // Whatever the rate, the start and the number of sends, pacing starts at the start, puts the
 // sends exactly one step (one over the rate) apart and records the last one on the Broadcast.
 func TestPaceSpreadsEverySendOneStepApartFromTheStart(t *testing.T) {
-	d := newDelivery(t, time.Now)
+	d := newDelivery(t, atFixedNow())
 	rapid.Check(t, func(rt *rapid.T) {
 		n := rapid.IntRange(1, 500).Draw(rt, "n")
 		perSecond := rapid.IntRange(1, 1000).Draw(rt, "perSecond")
@@ -530,7 +533,7 @@ func TestPaceSpreadsEverySendOneStepApartFromTheStart(t *testing.T) {
 		d.env.DB.Broadcast.UpdateOneID(fixtures.BroadcastDraftID).SetScheduledAt(start).ExecX(d.t.Context())
 		step := time.Second / time.Duration(perSecond)
 
-		times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, n), fixedNow)
+		times, err := d.del.Pace(d.t.Context(), d.s, fixtures.BroadcastDraftID, make([]int64, n))
 
 		require.NoError(rt, err)
 		require.Len(rt, times, n)

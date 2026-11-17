@@ -180,6 +180,22 @@ func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (bro
 	}
 	return broadcastsCreateInput, nil
 }
+func (c *InputsImpl) BroadcastSchedule(source *external.ScheduleBroadcastInput) broadcasts.ScheduleInput {
+	var broadcastsScheduleInput broadcasts.ScheduleInput
+	if source != nil {
+		broadcastsScheduleInput.Revision = revisionIn((*source).Revision)
+		broadcastsScheduleInput.ScheduledAt = timeIn((*source).ScheduledAt)
+	}
+	return broadcastsScheduleInput
+}
+func (c *InputsImpl) BroadcastSetSegment(source *external.SetBroadcastSegmentInput) broadcasts.SetSegmentInput {
+	var broadcastsSetSegmentInput broadcasts.SetSegmentInput
+	if source != nil {
+		broadcastsSetSegmentInput.Revision = revisionIn((*source).Revision)
+		broadcastsSetSegmentInput.SegmentID = requiredNilEntityIDPtrIn((*source).SegmentId)
+	}
+	return broadcastsSetSegmentInput
+}
 func (c *InputsImpl) BroadcastUpdate(source *external.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
@@ -200,6 +216,7 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	broadcastsListFilter.Archived = boolIn(source.Archived)
 	// broadcastsListFilter.Statuses: ignore
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	// broadcastsListFilter.Order: ignore
 	return broadcastsListFilter
 }
 func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) confirmations.Evidence {

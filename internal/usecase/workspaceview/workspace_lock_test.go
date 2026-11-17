@@ -76,7 +76,7 @@ func newPostalAddressRace(t *testing.T) postalAddressRace {
 			return err
 		}},
 		schedule: testhelper.Writer{Name: "schedule", Run: func() error {
-			_, err := sends.Schedule(ctx, s, fixtures.BroadcastGlobexID, testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastGlobexID), time.Now().Add(time.Hour))
+			_, err := sends.Schedule(ctx, s, fixtures.BroadcastGlobexID, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastGlobexID), ScheduledAt: time.Now().Add(time.Hour)})
 			return err
 		}},
 	}

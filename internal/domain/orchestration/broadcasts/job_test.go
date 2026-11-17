@@ -22,9 +22,9 @@ import (
 // runQueued runs the plan job queued for a Broadcast (at the schedule given, nil for a send now)
 // and returns its outcome with what the scheduler saw.
 func (d *delivery) runQueued(id int64, scheduledAt *time.Time) (broadcasts.Outcome, *recordingScheduler) {
-	sched := &recordingScheduler{}
-	out := d.del.RunQueued(d.t.Context(), d.s, broadcasts.SendArgs{BroadcastID: id, ScheduledAt: scheduledAt}, sched)
-	return out, sched
+	*d.sched = recordingScheduler{}
+	out := d.del.RunQueued(d.t.Context(), d.s, broadcasts.SendArgs{BroadcastID: id, ScheduledAt: scheduledAt})
+	return out, d.sched
 }
 
 // firstAttempt and lastAttempt are a recipient job's runs under a budget of three.

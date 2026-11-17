@@ -109,40 +109,47 @@ func (m *Module) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (*
 	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, requirePostalAddress)
 }
 
-// Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
-// job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
+// Schedule moves a draft or scheduled Broadcast to scheduled at the input's ScheduledAt and queues a
+// delayed job in the same transaction. Scheduling arms the send, so a Broadcast whose Send route cannot
 // send (its Integration is disabled or archived, or the Workspace has no default) is refused with
 // outboundmessages.ErrRouteHeld and stays as it was; a route that stops sending after it holds the plan.
-// An email Broadcast of a Workspace with no postal address is refused as Send refuses it. revision
-// is the one of what the person scheduling was shown, as for Send. The answer carries the Recipients
+// An email Broadcast of a Workspace with no postal address is refused as Send refuses it. The
+// input's Revision is the one of what the person scheduling was shown, as for Send. The answer carries the Recipients
 // the Broadcast would take at that moment (ADR 0149), counted in the claim's transaction on the
 // Condition it has just copied, so a Broadcast whose audience cannot be resolved is not scheduled
 // (ErrAudienceUncountable).
-func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (Scheduled, error) {
+func (m *Module) Schedule(ctx context.Context, s *ent.Scoped, id int64, in ScheduleInput) (Scheduled, error) {
 	var recipients int
 	counted := func(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
 		if err := m.armable(ctx, ts, b); err != nil {
 			return err
 		}
-		n, err := AudienceSize(ctx, ts, b, m.out.Now())
+		n, err := m.AudienceSize(ctx, ts, b)
 		if errors.Is(err, ErrNoAudience) {
 			return ErrAudienceUncountable.With(err.Error())
 		}
 		recipients = n
 		return err
 	}
-	b, err := m.claim(ctx, s, id, revision, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, counted)
+	when := in.ScheduledAt
+	b, err := m.claim(ctx, s, id, in.Revision, triggerSchedule, func(u *ent.BroadcastScopedUpdate) { u.SetScheduledAt(when) }, &when, counted)
 	if err != nil {
 		return Scheduled{}, err
 	}
 	return Scheduled{Broadcast: b, Recipients: recipients}, nil
 }
 
+// ScheduleInput is when Schedule arms a Broadcast to send and the revision of what the person
+// scheduling it was shown (ADR 0119).
+type ScheduleInput struct {
+	Revision    int64
+	ScheduledAt time.Time
+}
+
 // Scheduled is a Broadcast Schedule has armed and the Recipients it would take at that moment: the
 // count at Schedule, not a promise, since its Recipients are resolved when it sends (ADR 0065).
 type Scheduled struct {
-	*ent.Broadcast
-
+	Broadcast  *ent.Broadcast
 	Recipients int
 }
 
@@ -479,16 +486,18 @@ func (m *Module) SendTest(ctx context.Context, s *ent.Scoped, id int64, to outbo
 	return m.out.SendBroadcastTest(ctx, s, b, to)
 }
 
-// ListFilter narrows the Broadcast list: the archived ones instead of the kept ones, only some
-// statuses (every one when empty), only one Channel (every one when nil).
+// ListFilter narrows the Broadcast list and orders it: the archived ones instead of the kept ones,
+// only some statuses (every one when empty), only one Channel (every one when nil), in Order (the
+// newest first when empty).
 type ListFilter struct {
 	Archived bool
 	Statuses []broadcast.Status
 	Channel  *channels.Channel
+	Order    Order
 }
 
-// List returns one page of the Workspace's Broadcasts that f lets through, in order.
-func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[*ent.Broadcast], error) {
+// List returns one page of the Workspace's Broadcasts that f lets through, in its order.
+func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter) (pagination.Page[*ent.Broadcast], error) {
 	q := s.Broadcast().Query()
 	if f.Archived {
 		q = s.Broadcast().QueryArchived()
@@ -499,7 +508,7 @@ func (m *Module) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f
 	if f.Channel != nil {
 		q = q.Where(broadcast.ChannelEQ(*f.Channel))
 	}
-	return pagination.List(ctx, p, q.Order(order.terms()...))
+	return pagination.List(ctx, p, q.Order(f.Order.terms()...))
 }
 
 // Order is the order of the Broadcast list.
@@ -565,9 +574,17 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, f UpdateIn
 	return m.editDraft(ctx, s, id, u)
 }
 
-// SetSegment points a draft at a Segment, or at all contacts when segmentID
-// is nil. It never schedules or sends. revision is the one the change was made on, as for Update.
-func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id, revision int64, segmentID *int64) (*ent.Broadcast, error) {
+// SetSegmentInput is the Segment a draft is pointed at, nil for all contacts, and the revision the
+// change was made on, as for Update (ADR 0119).
+type SetSegmentInput struct {
+	Revision  int64
+	SegmentID *int64
+}
+
+// SetSegment points a draft at a Segment, or at all contacts when the input's SegmentID is nil. It
+// never schedules or sends.
+func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, in SetSegmentInput) (*ent.Broadcast, error) {
+	segmentID := in.SegmentID
 	if segmentID != nil {
 		if _, err := keptSegment(ctx, s, *segmentID); err != nil {
 			// A foreign or unknown broadcast is still reported as such first.
@@ -577,7 +594,7 @@ func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id, revision int
 			return nil, err
 		}
 	}
-	u := editOfDraft(s, id, revision).SetNillableSegmentID(segmentID)
+	u := editOfDraft(s, id, in.Revision).SetNillableSegmentID(segmentID)
 	if segmentID == nil {
 		u.ClearSegmentID()
 	}
@@ -645,7 +662,7 @@ func (m *Module) Report(ctx context.Context, s *ent.Scoped, id int64) (Report, e
 	if err != nil {
 		return Report{}, err
 	}
-	figures, err := StatsFor(ctx, s, b)
+	figures, err := m.StatsFor(ctx, s, b)
 	if err != nil {
 		return Report{}, err
 	}
