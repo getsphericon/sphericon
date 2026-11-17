@@ -57,7 +57,7 @@ func TestAnSMSBroadcastsDeliveredAndUndeliveredFiguresMatchTheReports(t *testing
 	reportStatus(t, env, account, beaText, "delivered", "")
 
 	b := env.DB.Broadcast.GetX(ctx, id)
-	st, err := broadcasts.StatsFor(ctx, env.DB.Scoped(fixtures.LacunaID), b)
+	st, err := testhelper.Module[*broadcasts.Module](env).StatsFor(ctx, env.DB.Scoped(fixtures.LacunaID), b)
 	require.NoError(t, err)
 	assert.Equal(t, broadcasts.Stats{Channel: channels.SMS, Recipients: 4, Sent: 4, Delivered: 1, Undelivered: 1}, st[id],
 		"Cyd's and Dot's texts have no final report: they are neither")

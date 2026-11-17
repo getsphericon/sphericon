@@ -16,7 +16,7 @@ import (
 
 func prunePasskeyChallenges(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	keys := passkeys.New(env.DB, env.Bus, testhelper.ProvenUsers{}, passkeys.RelyingParty{}, func() time.Time { return now })
+	keys := passkeys.New(env.DB, env.Bus, testhelper.NewProvenUsers(env), passkeys.RelyingParty{}, func() time.Time { return now })
 	w := jobs.NewPrunePasskeyChallengesWorker(keys)
 	require.NoError(t, w.Work(t.Context(), job(jobs.PrunePasskeyChallengesArgs{})))
 }

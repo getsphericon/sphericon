@@ -28,10 +28,11 @@ const PendingSignupTTL = 10 * time.Minute
 var ErrPendingSignupGone = validation.UnknownReference("users: the pending sign-up is gone", i18n.ErrorsSigninPendingGone)
 
 // HoldPending keeps what the provider proved as a pending sign-up instead of creating the User
-// (ADR 0062), open until PendingSignupTTL after now. A pending sign-up of the same provider account
+// (ADR 0062), open until PendingSignupTTL after now by the module's clock. A pending sign-up of the same provider account
 // is replaced, so only the latest flow's reference works; of two holds of the account that race,
 // both answer with the one that was written.
 func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.PendingSignup, error) {
+	now := a.now()
 	var held *ent.PendingSignup
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		if _, err := tx.PendingSignup.Delete().
@@ -44,8 +45,8 @@ func (a *Module) HoldPending(ctx context.Context, in ProviderLogin) (*ent.Pendin
 			SetSubject(in.Subject).
 			SetEmail(emailcase.Of(in.Email)).
 			SetName(strings.TrimSpace(in.Name)).
-			SetExpiresAt(in.Now.Add(PendingSignupTTL)).
-			SetCreatedAt(in.Now)
+			SetExpiresAt(now.Add(PendingSignupTTL)).
+			SetCreatedAt(now)
 		if in.Invitation != nil {
 			create = create.SetInvitationID(in.Invitation.ID)
 		}
@@ -77,17 +78,42 @@ func (a *Module) pendingSignup(ctx context.Context, id int64, now time.Time) (*e
 	return p, err
 }
 
+// CompletePendingSignupInput is the person's answers to the Sign-up items of the pending sign-up
+// ID: the Consent records they make, and whether the User it creates owes the Sign-up survey.
+type CompletePendingSignupInput struct {
+	ID        int64
+	Consents  consentrecords.Consents
+	SurveyDue bool
+}
+
+// CompletedSignup is the User a completed pending sign-up made, and the pending sign-up it came
+// from.
+type CompletedSignup struct {
+	User    *ent.User
+	Pending *ent.PendingSignup
+}
+
 // CompletePendingSignupIn writes, in tx, the person's answers to the Sign-up items completing
-// the pending sign-up with id (ADR 0062): it takes the pending sign-up (open at now), creates the
-// Verified User with the provider's address and name, or takes over the Unverified User that
-// holds the address, as a provider sign-in without items does, its Linked identity, the Consent
-// records of the answers and the Membership of the Invitation the flow began from. The caller
-// creates the first Workspace on the same transaction (internal/domain/identity/signup).
-// surveyDue marks the User as owing the Sign-up survey, unless the sign-up accepts an Invitation.
-// It returns the User and the pending sign-up it came from. ErrPendingSignupGone when the pending
+// the pending sign-up in.ID (ADR 0062): it takes the pending sign-up (open now by the module's
+// clock), creates the Verified User with the provider's address and name, or takes over the
+// Unverified User that holds the address, as a provider sign-in without items does, its Linked
+// identity, the Consent records of the answers and the Membership of the Invitation the flow began
+// from, publishing in the bus transaction tx is bound to. The caller creates the first Workspace on
+// the same transaction (internal/domain/identity/signup). in.SurveyDue marks the User as owing the
+// Sign-up survey, unless the sign-up accepts an Invitation. ErrPendingSignupGone when the pending
 // sign-up is no longer open, its Invitation no longer pending, or its address or provider
 // account was taken meanwhile.
-func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, consents consentrecords.Consents, surveyDue bool, now time.Time) (*ent.User, *ent.PendingSignup, error) {
+func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, in CompletePendingSignupInput) (CompletedSignup, error) {
+	u, p, err := a.completePendingSignupIn(ctx, tx, in, a.now())
+	if err != nil {
+		return CompletedSignup{}, err
+	}
+	return CompletedSignup{User: u, Pending: p}, nil
+}
+
+// completePendingSignupIn is CompletePendingSignupIn at now.
+func (a *Module) completePendingSignupIn(ctx context.Context, tx *ent.Client, in CompletePendingSignupInput, now time.Time) (*ent.User, *ent.PendingSignup, error) {
+	id, consents, surveyDue := in.ID, in.Consents, in.SurveyDue
 	p, err := tx.PendingSignup.Query().
 		Where(pendingsignup.ID(id), openAt(now)).
 		ForUpdate().
@@ -130,7 +156,7 @@ func (a *Module) CompletePendingSignupIn(ctx context.Context, tx *ent.Client, pu
 	if inv != nil {
 		// The provider's proof of the address is the session proof the acceptance asks of a
 		// Verified User, as on a provider sign-up without items.
-		if err := a.acceptInvitationIn(ctx, tx, pub, inv, newAccount{}, u.Email); err != nil {
+		if err := a.acceptInvitationIn(ctx, tx, a.pub(tx), inv, newAccount{}, u.Email); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -149,9 +175,9 @@ func completeProviderSignup(ctx context.Context, tx *ent.Client, in ProviderLogi
 	}
 	switch DecideSignin(factsOf(known, holder, in)).Outcome {
 	case SigninCreate:
-		return CreateProviderUserIn(ctx, tx, in, now)
+		return createProviderUserIn(ctx, tx, in, now)
 	case SigninTakeOver:
-		u, err := TakeOverIn(ctx, tx, holder.ID, in, now)
+		u, err := takeOverIn(ctx, tx, holder.ID, in, now)
 		if errors.Is(err, ErrAlreadyVerified) {
 			return nil, ErrPendingSignupGone
 		}
@@ -168,8 +194,8 @@ func (a *Module) declinePendingSignup(ctx context.Context, id int64) error {
 	return err
 }
 
-// PruneExpiredPendingSignups deletes the pending sign-ups no longer open at now, so what an
-// abandoned provider sign-up proved is not kept, and returns how many went.
-func (a *Module) PruneExpiredPendingSignups(ctx context.Context, now time.Time) (int, error) {
-	return a.ent.PendingSignup.Delete().Where(pendingsignup.ExpiresAtLTE(now)).Exec(ctx)
+// PruneExpiredPendingSignups deletes the pending sign-ups no longer open now, by the module's
+// clock, so what an abandoned provider sign-up proved is not kept, and returns how many went.
+func (a *Module) PruneExpiredPendingSignups(ctx context.Context) (int, error) {
+	return a.ent.PendingSignup.Delete().Where(pendingsignup.ExpiresAtLTE(a.now())).Exec(ctx)
 }

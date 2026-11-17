@@ -18,8 +18,6 @@ internal/domain/identity/invitations
 internal/domain/identity/joindomains
 internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
-internal/domain/identity/users
-internal/domain/identity/users/usersunchecked
 internal/domain/identity/workspaces
 internal/domain/identity/workspaces/workspacesunchecked
 internal/domain/insights/dataexport
@@ -28,9 +26,6 @@ internal/domain/instance/upgrade
 internal/domain/orchestration/automations
 internal/domain/orchestration/automations/automationsunchecked
 internal/domain/orchestration/automations/automationsuse
-internal/domain/orchestration/broadcasts
-internal/domain/orchestration/broadcasts/broadcastsunchecked
-internal/domain/orchestration/broadcasts/broadcastsuse
 internal/domain/orchestration/rules
 internal/domain/orchestration/rules/rulesunchecked
 internal/domain/orchestration/rules/rulesuse

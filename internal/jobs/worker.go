@@ -80,7 +80,11 @@ type Deps struct {
 	Ent      *ent.Client
 	Bus      *events.Bus
 	Outbound *outboundmessages.Module
-	Cipher   *secrets.Cipher
+	// Broadcasts records an unsubscribe on the Broadcast that sent the message, and
+	// BroadcastDelivery plans and sends a Broadcast, its sends scheduled as RecipientJobs.
+	Broadcasts        *broadcasts.Module
+	BroadcastDelivery *broadcasts.Delivery
+	Cipher            *secrets.Cipher
 	// SystemSender is the platform's own sender, which delivers the Notices (nil on an Instance
 	// with no outbound mail).
 	SystemSender messaging.EmailSender
@@ -138,8 +142,8 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 		return nil, errors.New("jobs: Deps.Clock is required: the workers read the Instance clock")
 	}
 	workers := river.NewWorkers()
-	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
-	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
+	river.AddWorker(workers, NewSendBroadcastWorker(entClient, deps.BroadcastDelivery))
+	river.AddWorker(workers, NewSendRecipientWorker(entClient, deps.BroadcastDelivery))
 	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
@@ -171,13 +175,13 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(deps.Passkeys))
-	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users))
 	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
 	river.AddWorker(workers, NewSuppressEventWorker(entClient))
-	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient))
+	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient, deps.Broadcasts))
 	river.AddWorker(workers, NewMessageObservationWorker(entClient, mod))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
 	dispatcher := NewWebhookDispatcher()

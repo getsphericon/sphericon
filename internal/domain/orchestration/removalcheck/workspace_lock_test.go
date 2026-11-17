@@ -40,7 +40,7 @@ func TestEveryWriteThatCreatesAUseWaitsForTheWorkspaceLock(t *testing.T) {
 			return err
 		}},
 		{"schedule a Broadcast", func() error {
-			_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), time.Now().Add(time.Hour))
+			_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), ScheduledAt: time.Now().Add(time.Hour)})
 			return err
 		}},
 		{"send a Broadcast", func() error {

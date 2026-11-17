@@ -101,8 +101,9 @@ func TestScheduleSetsTimeAndQueuesTheJobForThen(t *testing.T) {
 	m := testhelper.Module[*broadcasts.Module](env)
 	when := time.Now().Add(24 * time.Hour).Truncate(time.Second)
 
-	b, err := m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), when)
+	scheduled, err := m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), ScheduledAt: when})
 	require.NoError(t, err)
+	b := scheduled.Broadcast
 
 	assert.Equal(t, broadcast.StatusScheduled, b.Status)
 	require.NotNil(t, b.ScheduledAt)
@@ -120,7 +121,7 @@ func TestScheduleLeavesTheBroadcastADraftWithNoTimeWhenTheJobCannotBeQueued(t *t
 	boom := errors.New("queue down")
 	env.Bus.UseJobs(failingQueue{err: boom})
 
-	_, err := testhelper.Module[*broadcasts.Module](env).Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), time.Now().Add(time.Hour))
+	_, err := testhelper.Module[*broadcasts.Module](env).Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), ScheduledAt: time.Now().Add(time.Hour)})
 
 	require.ErrorIs(t, err, boom)
 	got := env.DB.Broadcast.GetX(context.Background(), fixtures.BroadcastDraftID)
@@ -134,7 +135,7 @@ func TestTransitionsOutOfSendingAreRefused(t *testing.T) {
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID))
 	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
-	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID), time.Now().Add(time.Hour))
+	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastSendingID), ScheduledAt: time.Now().Add(time.Hour)})
 	require.ErrorIs(t, err, broadcasts.ErrNotSendable)
 	assert.Empty(t, env.JobsOf(t, sendKind), "a refused claim queues nothing")
 }
@@ -173,6 +174,6 @@ func TestUnknownOrForeignBroadcastIsNotFound(t *testing.T) {
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID+1000), fixtures.BroadcastDraftID))
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
-	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), 999999), time.Now().Add(time.Hour))
+	_, err = m.Schedule(context.Background(), env.DB.Scoped(fixtures.AcmeID), 999999, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(context.Background(), t, env.DB.Scoped(fixtures.AcmeID), 999999), ScheduledAt: time.Now().Add(time.Hour)})
 	assert.ErrorIs(t, err, broadcasts.ErrNotFound)
 }

@@ -565,33 +565,35 @@ var jobsPackage = do.Package(
 		edition := do.MustInvoke[*ee.Edition](i)
 		pool := do.MustInvoke[*riverPool](i)
 		jc, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool.DB, pool.listener), jobs.Deps{
-			Ent:              do.MustInvoke[*ent.Client](i),
-			Bus:              do.MustInvoke[*events.Bus](i),
-			Outbound:         do.MustInvoke[*outboundmessages.Module](i),
-			Cipher:           do.MustInvoke[*secrets.Cipher](i),
-			SystemSender:     do.MustInvoke[SystemSender](i).EmailSender,
-			Notices:          do.MustInvoke[*noticedelivery.Module](i),
-			Callbacks:        do.MustInvoke[*callbackinterpretation.Module](i),
-			Rules:            do.MustInvoke[*rules.Module](i),
-			Users:            do.MustInvoke[*users.Module](i),
-			SecondFactor:     do.MustInvoke[*secondfactors.Module](i),
-			Passkeys:         do.MustInvoke[*passkeys.Module](i),
-			Orders:           do.MustInvoke[*orders.Module](i),
-			Contacts:         do.MustInvoke[*contacts.Module](i),
-			CapturedMessages: do.MustInvoke[*capturedmessages.Module](i),
-			Deletion:         do.MustInvoke[*workspacedeletion.UseCase](i),
-			MessageRetention: do.MustInvoke[*messageretention.UseCase](i),
-			SendingDomains:   do.MustInvoke[*sendingdomains.Module](i),
-			StepExecution:    do.MustInvoke[*automations.StepExecution](i),
-			JoinDomains:      do.MustInvoke[*joindomains.Module](i),
-			Integrations:     do.MustInvoke[*integrations.Module](i),
-			TrackingDomains:  do.MustInvoke[*trackingdomains.Module](i),
-			Machine:          do.MustInvoke[*privaterelayranges.Detector](i),
-			Clock:            do.MustInvoke[Clock](i),
-			OutboundAllow:    cfg.OutboundAllow,
-			Retention:        jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
-			Webhooks:         edition.Webhooks,
-			Instance:         do.MustInvoke[*instancestates.Module](i),
+			Ent:               do.MustInvoke[*ent.Client](i),
+			Bus:               do.MustInvoke[*events.Bus](i),
+			Outbound:          do.MustInvoke[*outboundmessages.Module](i),
+			Broadcasts:        do.MustInvoke[*broadcasts.Module](i),
+			BroadcastDelivery: do.MustInvoke[*broadcasts.Delivery](i),
+			Cipher:            do.MustInvoke[*secrets.Cipher](i),
+			SystemSender:      do.MustInvoke[SystemSender](i).EmailSender,
+			Notices:           do.MustInvoke[*noticedelivery.Module](i),
+			Callbacks:         do.MustInvoke[*callbackinterpretation.Module](i),
+			Rules:             do.MustInvoke[*rules.Module](i),
+			Users:             do.MustInvoke[*users.Module](i),
+			SecondFactor:      do.MustInvoke[*secondfactors.Module](i),
+			Passkeys:          do.MustInvoke[*passkeys.Module](i),
+			Orders:            do.MustInvoke[*orders.Module](i),
+			Contacts:          do.MustInvoke[*contacts.Module](i),
+			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
+			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
+			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
+			SendingDomains:    do.MustInvoke[*sendingdomains.Module](i),
+			StepExecution:     do.MustInvoke[*automations.StepExecution](i),
+			JoinDomains:       do.MustInvoke[*joindomains.Module](i),
+			Integrations:      do.MustInvoke[*integrations.Module](i),
+			TrackingDomains:   do.MustInvoke[*trackingdomains.Module](i),
+			Machine:           do.MustInvoke[*privaterelayranges.Detector](i),
+			Clock:             do.MustInvoke[Clock](i),
+			OutboundAllow:     cfg.OutboundAllow,
+			Retention:         jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention, CapturedMessages: cfg.TestInboxRetention},
+			Webhooks:          edition.Webhooks,
+			Instance:          do.MustInvoke[*instancestates.Module](i),
 		}, eejobs.Extension(eejobs.Deps{
 			Retention:       do.MustInvoke[*auditlogretention.UseCase](i),
 			Detector:        do.MustInvoke[*abusedetector.Detector](i),
@@ -692,8 +694,8 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
 		passwords := do.MustInvoke[*credentials.Hasher](i)
 		prover := login.New(login.Config[*ent.User]{Throttle: do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), Passwords: passwords})
-		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i),
-			users.WithProver(prover)), nil
+		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), prover,
+			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a domain module
 	// of identity, ADR 0102), which starts with the default Send cap (suspension's, ADR 0146) where
@@ -733,7 +735,7 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*signupsurveyresponses.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		enabled := signupsurveyresponses.Enabled(cfg.SignupSurvey, do.MustInvoke[*ee.Edition](i).StaffLicensed(), slog.Default())
-		return signupsurveyresponses.New(do.MustInvoke[*events.Bus](i), enabled), nil
+		return signupsurveyresponses.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*users.Module](i), enabled), nil
 	}),
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
@@ -741,7 +743,8 @@ var identityPackage = do.Package(
 	}),
 	// The use case of message retention (ADR 0143), over the raw client.
 	do.Lazy(func(i do.Injector) (*messageretention.UseCase, error) {
-		return messageretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*config.Config](i).MessagesRetention, messageretention.Batch, do.MustInvoke[Clock](i)), nil
+		return messageretention.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
+			do.MustInvoke[*config.Config](i).MessagesRetention, messageretention.Batch, do.MustInvoke[Clock](i)), nil
 	}),
 	// The use case of the Workspace deletion cycle (ADR 0043, ADR 0102), over the raw client; its
 	// erase removes every Workspace-owned table's rows itself, the Enterprise Edition's too (ADR 0110).
@@ -826,7 +829,7 @@ var audiencePackage = do.Package(
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
-		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[Clock](i)), nil
+		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -940,7 +943,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return needsattentionreport.New(watch, do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
+		return needsattentionreport.New(watch, do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Workspace view: the Workspace summary and the operations of a member that answer with it
 	// (a use case, ADR 0111), creating a Verified User's Workspace among them: on an Instance that
@@ -948,7 +951,7 @@ var contentPackage = do.Package(
 	// none.
 	do.Lazy(func(i do.Injector) (*workspaceview.UseCase, error) {
 		return workspaceview.New(do.MustInvoke[*events.Bus](i), workspaceview.Modules{
-			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
+			Users: do.MustInvoke[*users.Module](i), Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
 			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i), RemovalCheck: do.MustInvoke[*removalcheck.Module](i),
@@ -969,6 +972,11 @@ var contentPackage = do.Package(
 	// shows them.
 	do.Lazy(func(i do.Injector) (*broadcasts.Views, error) {
 		return broadcasts.NewViews(do.MustInvoke[*broadcasts.Module](i)), nil
+	}),
+	// The delivery plans, paces and sends a Broadcast through Outbound send; it hands the sends to the
+	// job queue, one recipient job each.
+	do.Lazy(func(i do.Injector) (*broadcasts.Delivery, error) {
+		return broadcasts.NewDelivery(do.MustInvoke[*outboundmessages.Module](i), jobs.RecipientJobs{}), nil
 	}),
 )
 

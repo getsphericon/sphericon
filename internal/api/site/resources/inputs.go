@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -111,6 +112,7 @@ import (
 // goverter:extend automationStateIn
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
+// goverter:extend timeIn
 type Inputs interface {
 	// The proof of identity comes from the session and the password typed, which the handler
 	// assigns.
@@ -148,6 +150,7 @@ type Inputs interface {
 	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
 	// goverter:ignore Browser
 	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput
+	EmailChange(source *siteapi.SiteEmailChangeInput) users.EmailChangeInput
 	// The flow and the session holder are the request's cookies, which the handler opens and
 	// assigns.
 	// goverter:ignore Flow Session
@@ -171,9 +174,12 @@ type Inputs interface {
 	TelegramBroadcastContentPatch(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
 	SmsBroadcastContentIn(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
 	SmsBroadcastContentPatch(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
-	// The list's filter; the statuses go member by member (BroadcastStatuses).
+	// The list's filter; the statuses go member by member (BroadcastStatuses). The order, which has a
+	// default of its own, is BroadcastsOrder's.
 	// goverter:map Status Statuses
+	// goverter:ignore Order
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
+	BroadcastSchedule(source *siteapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
@@ -363,6 +369,9 @@ func buttonsPtrIn(c Inputs, list []siteapi.TelegramButtonInput) *[]telegramrende
 func buttonsPatch(c Inputs, list []siteapi.TelegramButtonInput) patch.Field[[]telegramrender.Button] {
 	return patch.FromPtr(buttonsPtrIn(c, list))
 }
+
+// timeIn is a required time as the module takes it.
+func timeIn(v siteapi.Timestamp) time.Time { return time.Time(v) }
 
 func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
 	v, ok := o.Get()
