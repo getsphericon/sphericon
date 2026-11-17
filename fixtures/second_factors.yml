@@ -15,6 +15,14 @@
   confirmed_at: '2026-01-01 00:00:00'
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
+# Reese's, whom an Owner or Admin of Ollivanders and Gringotts resets (ADR 0177).
+- id: 3 # fixture: ReeseSecondFactor
+  user_id: 7952
+  secret_encrypted: '{{encrypt "JBSWY3DPEHPK3PXP"}}'
+  generation: 1
+  confirmed_at: '2026-01-01 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
 
 # --- Brightpath (workspace 20): Ana and Milo, the two with a Second factor ---
 - id: 20000

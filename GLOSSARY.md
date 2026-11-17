@@ -1697,13 +1697,16 @@ _Avoid_: Enforced 2FA, mandatory MFA
 
 **Second factor reset**:
 An Owner or Admin removing another User's Second factor, including a pending enrollment, and
-Passkeys so they can re-enroll after losing both authenticator and Recovery codes. Recorded as an Audit entry.
+Passkeys so they can re-enroll after losing both authenticator and Recovery codes. The factor is the
+User's, so the resetter must hold that right in every Workspace the User belongs to; otherwise an
+Owner of the User's other Workspaces or a Staff member resets it. Every reset, a Staff member's too,
+is recorded as an Audit entry in each Workspace of the User, and the User is told of it by a Notice.
 _Avoid_: Unlock, disable 2FA
 
 **Second factor check**:
 The check that comes before every change of a User's **Second factor**: a current code (or a
 **Recovery code**) to confirm, regenerate the codes or disable, a factor not yet active to enroll, and
-for a **Second factor reset** the resetter's Role; a code accepted at login is single-use. Each change
+for a **Second factor reset** the resetter's Role in every Workspace of the User; a code accepted at login is single-use. Each change
 then writes the factor, its Recovery codes, the User's session epoch and, for a reset, its Passkeys
 in one transaction.
 _Avoid_: 2FA flow, MFA verification

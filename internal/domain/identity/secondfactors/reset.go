@@ -26,48 +26,58 @@ type Caller struct {
 	Actor  events.Actor
 }
 
-// Reset is the Second factor reset (GLOSSARY, ADR 0020): it clears the Second factor, Recovery
-// codes and Passkeys of the member whose Membership is membershipID in the Workspace behind s, so
-// they can enroll again after losing both their authenticator and their codes, and bumps their
-// session epoch, ending every session of theirs. The caller may reset them as
-// memberships.Module.SecondFactorResetTarget decides (owners:manage for an Owner's, never their own), read
-// in the reset's transaction. It records `user.second_factor_reset` by the caller's actor in that
-// Workspace only. ErrNothingToReset without an active or pending factor or a Passkey (nothing
-// changes).
+// Reset is the Second factor reset (GLOSSARY, ADR 0020, ADR 0177): it clears the Second factor,
+// Recovery codes and Passkeys of the member whose Membership is membershipID in the Workspace
+// behind s, so they can enroll again after losing both their authenticator and their codes, and
+// bumps their session epoch, ending every session of theirs. These are the User's, not the
+// Workspace's, so the caller may reset them only where they may reset the member in every Workspace
+// of theirs, read in the reset's transaction: in this one as
+// memberships.Module.SecondFactorResetTarget decides (owners:manage for an Owner's, never their
+// own), in the others as memberships.Module.SecondFactorResetElsewhereIn decides
+// (memberships.ErrSecondFactorResetElsewhere). The reset is then told as resetAndTellIn tells it.
+// ErrNothingToReset without an active or pending factor or a Passkey (nothing changes).
 func (m *Module) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, caller Caller) error {
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		ts := tx.Scoped(s.WorkspaceID())
-		target, err := m.members.SecondFactorResetTarget(ctx, ts, memberships.SecondFactorResetTargetInput{
+	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		target, err := m.members.SecondFactorResetTarget(ctx, tx.Scoped(s.WorkspaceID()), memberships.SecondFactorResetTargetInput{
 			CallerID: caller.UserID, CallerRole: caller.Role, TargetID: membershipID,
 		})
 		if err != nil {
 			return err
 		}
-		u, err := m.resetIn(ctx, tx, target.UserID)
+		err = m.members.SecondFactorResetElsewhereIn(ctx, tx, memberships.SecondFactorResetElsewhereInput{CallerID: caller.UserID, Target: target})
 		if err != nil {
 			return err
 		}
-		return m.users.RecordActionOnUserIn(ctx, ts, users.ActionOnUser{Actor: caller.Actor, User: u, Action: events.ActionUserSecondFactorReset})
+		return m.resetAndTellIn(ctx, tx, pub, target.UserID, caller.Actor)
 	})
 }
 
 // ResetByStaff is Reset from the staff member command, of the User with this login email
-// (whatever its case; an unknown one fails as `user "<email>"`): the platform Staff member `by`
-// (shown to customers as "Sphericon staff") is recorded in every Workspace the User holds a
-// Membership in.
+// (whatever its case; an unknown one fails as `user "<email>"`), by the platform Staff member `by`
+// (shown to customers as "Sphericon staff"), told as resetAndTellIn tells it.
 func (m *Module) ResetByStaff(ctx context.Context, email, by string) error {
 	actor := events.Actor{Kind: events.ActorStaff, ID: by}
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		target, err := m.users.UserByEmailIn(ctx, tx, email)
 		if err != nil {
 			return fmt.Errorf("user %q: %w", email, err)
 		}
-		u, err := m.resetIn(ctx, tx, target.ID)
-		if err != nil {
-			return err
-		}
-		return m.users.RecordActionOnUser(ctx, tx, users.ActionOnUser{Actor: actor, User: u, Action: events.ActionUserSecondFactorReset})
+		return m.resetAndTellIn(ctx, tx, pub, target.ID, actor)
 	})
+}
+
+// resetAndTellIn resets the User's Second factor on the transaction tx (resetIn) and tells of it:
+// `user.second_factor_reset` by actor in the log of every Workspace the User holds a Membership in,
+// and events.SecondFactorReset, whose Notice mails the User (ADR 0177).
+func (m *Module) resetAndTellIn(ctx context.Context, tx *ent.Client, pub events.Publisher, userID int64, actor events.Actor) error {
+	u, err := m.resetIn(ctx, tx, userID)
+	if err != nil {
+		return err
+	}
+	if err := m.users.RecordActionOnUser(ctx, tx, users.ActionOnUser{Actor: actor, User: u, Action: events.ActionUserSecondFactorReset}); err != nil {
+		return err
+	}
+	return pub.Publish(ctx, &events.SecondFactorReset{UserID: u.ID, Email: u.Email})
 }
 
 // ClearFactorAndPasskeysIn clears whatever Second factor, Recovery codes and Passkeys the User holds on the

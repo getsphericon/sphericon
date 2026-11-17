@@ -40,6 +40,7 @@ func TestDecodeKnowsEveryEventName(t *testing.T) {
 		events.NameUserDeleted,
 		events.NameUserPasskeyAdded,
 		events.NameUserPasskeyRemoved,
+		events.NameUserSecondFactorReset,
 		events.NameInvitationCreated,
 		events.NameWorkspaceSecondFactorRequired,
 		events.NameMembershipSecondFactorReminderDue,

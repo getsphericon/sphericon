@@ -428,3 +428,27 @@
   created_at: '2026-01-01 00:00:00'
   updated_at: '2026-01-01 00:00:00'
   email_verified_at: '2026-01-01 00:00:00'
+# Ollivanders and Gringotts (ADR 0177): Olga owns both, Abe is an admin of both, and Reese, a
+# member of both, has a Second factor (second_factors.yml) for them to reset.
+- id: 7950 # fixture: ResetOwnerOlga
+  name: Olga
+  email: olga@ollivanders.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7951 # fixture: ResetAdminAbe
+  name: Abe
+  email: abe@ollivanders.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+- id: 7952 # fixture: SecondFactorReese
+  name: Reese
+  email: reese@ollivanders.test
+  password_hash: '{{argonHash "password"}}'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+  email_verified_at: '2026-01-01 00:00:00'
+  email_proven_at: '2026-01-01 00:00:00'

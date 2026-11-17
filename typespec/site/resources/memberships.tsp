@@ -87,10 +87,12 @@ namespace SiteMemberships {
     | NoContentResponse
     | Problem;
 
-  /** Reset the member's Second factor (owner/admin only; owner-only for an owner):
-   * clears an active or pending factor, its Recovery codes and Passkeys, and ends every session of theirs. The
-   * acting session is untouched. 422 when the member has neither an active or pending Second factor nor a Passkey, or is the
-   * caller (who disables their own with a password and a code). */
+  /** Reset the member's Second factor (owner/admin only; owner-only for an owner), which needs the same right in
+   * every other Workspace of the member: clears an active or pending factor, its Recovery codes and Passkeys, ends
+   * every session of theirs, records the reset in each of their Workspaces and mails them. The acting session is
+   * untouched. 422 when the member has neither an active or pending Second factor nor a Passkey, is the caller (who
+   * disables their own with a password and a code), or belongs to another Workspace where the caller may not reset
+   * it (the refusal names no Workspace). */
   @action("reset-second-factor")
   @autoRoute
   @requiresPermissions(#[Permission.secondFactorManage])

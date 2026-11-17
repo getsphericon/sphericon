@@ -2073,6 +2073,20 @@ const (
 	GothamOwnerGusPassword = "password"
 	// GothamPublicID is from fixtures/workspaces.
 	GothamPublicID = "GothmW61"
+	// GringottsAbeMembershipID is from fixtures/memberships.
+	GringottsAbeMembershipID = 7953
+	// GringottsCollectKey is from fixtures/workspaces.
+	GringottsCollectKey = "omck_test_gringotts_collect_key"
+	// GringottsID is from fixtures/workspaces.
+	GringottsID = 98
+	// GringottsName is from fixtures/workspaces.
+	GringottsName = "Gringotts"
+	// GringottsOlgaMembershipID is from fixtures/memberships.
+	GringottsOlgaMembershipID = 7951
+	// GringottsPublicID is from fixtures/workspaces.
+	GringottsPublicID = "GrngtW98"
+	// GringottsReeseMembershipID is from fixtures/memberships.
+	GringottsReeseMembershipID = 7955
 	// HeldOrderEventAcmeEventID is from fixtures/held_order_events.
 	HeldOrderEventAcmeEventID = "fixture-held-event-1"
 	// HeldOrderEventAcmeID is from fixtures/held_order_events.
@@ -2871,6 +2885,20 @@ const (
 	OAuthCodeGlobexCode = "globex-oauth-code"
 	// OAuthCodeGlobexID is from fixtures/oauth_codes.
 	OAuthCodeGlobexID = 7701
+	// OllivandersAbeMembershipID is from fixtures/memberships.
+	OllivandersAbeMembershipID = 7952
+	// OllivandersCollectKey is from fixtures/workspaces.
+	OllivandersCollectKey = "omck_test_ollivanders_collect_key"
+	// OllivandersID is from fixtures/workspaces.
+	OllivandersID = 97
+	// OllivandersName is from fixtures/workspaces.
+	OllivandersName = "Ollivanders"
+	// OllivandersOlgaMembershipID is from fixtures/memberships.
+	OllivandersOlgaMembershipID = 7950
+	// OllivandersPublicID is from fixtures/workspaces.
+	OllivandersPublicID = "OllvnW97"
+	// OllivandersReeseMembershipID is from fixtures/memberships.
+	OllivandersReeseMembershipID = 7954
 	// OperatorNewsCurrentID is from fixtures/legal_document_versions.
 	OperatorNewsCurrentID = 3
 	// OperatorNewsCurrentLabel is from fixtures/legal_document_versions.
@@ -3195,6 +3223,26 @@ const (
 	QuahogName = "Quahog"
 	// QuahogPublicID is from fixtures/workspaces.
 	QuahogPublicID = "QuahgW92"
+	// ReeseSecondFactorID is from fixtures/second_factors.
+	ReeseSecondFactorID = 3
+	// ReeseSecondFactorTotpSecret is from fixtures/second_factors.
+	ReeseSecondFactorTotpSecret = "JBSWY3DPEHPK3PXP"
+	// ResetAdminAbeEmail is from fixtures/users.
+	ResetAdminAbeEmail = "abe@ollivanders.test"
+	// ResetAdminAbeID is from fixtures/users.
+	ResetAdminAbeID = 7951
+	// ResetAdminAbeName is from fixtures/users.
+	ResetAdminAbeName = "Abe"
+	// ResetAdminAbePassword is from fixtures/users.
+	ResetAdminAbePassword = "password"
+	// ResetOwnerOlgaEmail is from fixtures/users.
+	ResetOwnerOlgaEmail = "olga@ollivanders.test"
+	// ResetOwnerOlgaID is from fixtures/users.
+	ResetOwnerOlgaID = 7950
+	// ResetOwnerOlgaName is from fixtures/users.
+	ResetOwnerOlgaName = "Olga"
+	// ResetOwnerOlgaPassword is from fixtures/users.
+	ResetOwnerOlgaPassword = "password"
 	// RevenueOwnerRitaEmail is from fixtures/users.
 	RevenueOwnerRitaEmail = "rita@revenue.test"
 	// RevenueOwnerRitaID is from fixtures/users.
@@ -3407,6 +3455,14 @@ const (
 	SamSecondFactorID = 1
 	// SamSecondFactorTotpSecret is from fixtures/second_factors.
 	SamSecondFactorTotpSecret = "JBSWY3DPEHPK3PXP"
+	// SecondFactorReeseEmail is from fixtures/users.
+	SecondFactorReeseEmail = "reese@ollivanders.test"
+	// SecondFactorReeseID is from fixtures/users.
+	SecondFactorReeseID = 7952
+	// SecondFactorReeseName is from fixtures/users.
+	SecondFactorReeseName = "Reese"
+	// SecondFactorReesePassword is from fixtures/users.
+	SecondFactorReesePassword = "password"
 	// SecondFactorSamEmail is from fixtures/users.
 	SecondFactorSamEmail = "sam@globex.test"
 	// SecondFactorSamID is from fixtures/users.

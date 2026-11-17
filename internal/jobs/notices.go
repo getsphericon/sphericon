@@ -36,7 +36,7 @@ func callsForNotices(_ events.Envelope, ev events.DomainEvent) bool {
 		*events.UserDeleted, *events.PasskeyChange, *events.InvitationCreated, *events.SecondFactorRequired,
 		*events.SecondFactorReminderDue, *events.WorkspaceSuspended, *events.AbuseWarned, *events.JoinDomainLost,
 		*events.SendingDomainVerificationLost, *events.TrackingDomainReplaced, *events.TrackingDomainRemoved,
-		*events.WebhookEndpointDisabled:
+		*events.WebhookEndpointDisabled, *events.SecondFactorReset:
 		return true
 	case *events.TrackingDomainChanged:
 		return e.Regressed

@@ -142,6 +142,12 @@ const (
 
 var ErrResetOwnSecondFactor = validation.RefuseField(FieldMember, "memberships: cannot reset your own second factor", i18n.ErrorsSecondFactorResetSelf)
 
+// ErrSecondFactorResetElsewhere refuses a Second factor reset of a member who also belongs to
+// another Workspace where the caller may not reset it (ADR 0177): the factor is the User's, so the
+// right to clear it is needed wherever it guards them. It names no Workspace; the caller learns only
+// that the member belongs to others, whose Owners or a Staff member reset it.
+var ErrSecondFactorResetElsewhere = validation.RefuseField(FieldMember, "memberships: the member belongs to other workspaces where the caller may not reset their second factor", i18n.ErrorsSecondFactorResetElsewhere)
+
 // SecondFactorResetTargetInput is a Second factor reset of a member: the User who resets it, their
 // Role, and the Membership whose Second factor is reset.
 type SecondFactorResetTargetInput struct {
@@ -151,21 +157,70 @@ type SecondFactorResetTargetInput struct {
 }
 
 // SecondFactorResetTarget loads the Membership in.TargetID of the Workspace s as the target of a
-// Second factor reset by the User in.CallerID holding in.CallerRole: resetting an Owner's needs
-// owners:manage, refused as Require refuses it, and nobody resets their own
-// (ErrResetOwnSecondFactor). A target outside the Workspace is ErrMemberNotFound.
+// Second factor reset by the User in.CallerID holding in.CallerRole there, by the rule of one
+// Workspace (resetRight): second_factor:manage, and owners:manage for an Owner's, refused as
+// Require refuses them; and nobody resets their own (ErrResetOwnSecondFactor). A target outside the
+// Workspace is ErrMemberNotFound. The member's other Workspaces are SecondFactorResetElsewhereIn's.
 func (ms *Module) SecondFactorResetTarget(ctx context.Context, s *ent.Scoped, in SecondFactorResetTargetInput) (*ent.Membership, error) {
 	target, err := s.Membership().Get(ctx, in.TargetID)
 	if err != nil {
 		return nil, memberTarget(err)
 	}
-	if IsOwner(target.Role) {
-		if err := Require(in.CallerRole, PermOwnersManage); err != nil {
-			return nil, err
-		}
+	if err := resetRight(in.CallerRole, target); err != nil {
+		return nil, err
 	}
 	if target.UserID == in.CallerID {
 		return nil, ErrResetOwnSecondFactor
 	}
 	return target, nil
+}
+
+// SecondFactorResetElsewhereInput is a Second factor reset SecondFactorResetTarget allowed: the User
+// who resets it and the target Membership it loaded in the Workspace the reset is made in.
+type SecondFactorResetElsewhereInput struct {
+	CallerID int64
+	Target   *ent.Membership
+}
+
+// SecondFactorResetElsewhereIn is nil when the User in.CallerID may reset the Second factor of the
+// User of in.Target in every other Workspace that User holds a Membership in, a Workspace in its
+// deletion window included, read on the transaction tx of the reset (ADR 0177): there the caller
+// holds a Membership whose Role passes the rule of one Workspace (resetRight). Otherwise
+// ErrSecondFactorResetElsewhere, whichever Workspace refused.
+func (ms *Module) SecondFactorResetElsewhereIn(ctx context.Context, tx *ent.Client, in SecondFactorResetElsewhereInput) error {
+	held, err := ms.OfUserIn(ctx, tx, in.Target.UserID)
+	if err != nil {
+		return err
+	}
+	callers, err := ms.OfUserIn(ctx, tx, in.CallerID)
+	if err != nil {
+		return err
+	}
+	callerRoles := make(map[int64]membership.Role, len(callers))
+	for _, m := range callers {
+		callerRoles[m.WorkspaceID] = m.Role
+	}
+	for _, m := range held {
+		if m.WorkspaceID == in.Target.WorkspaceID {
+			continue
+		}
+		role, member := callerRoles[m.WorkspaceID]
+		if !member || resetRight(role, m) != nil {
+			return ErrSecondFactorResetElsewhere
+		}
+	}
+	return nil
+}
+
+// resetRight is nil when a caller holding role in a Workspace may reset the Second factor of its
+// member target there: second_factor:manage, and owners:manage for an Owner's. Otherwise the
+// refusal of the Permission the role lacks.
+func resetRight(role membership.Role, target *ent.Membership) error {
+	if err := Require(role, PermSecondFactorManage); err != nil {
+		return err
+	}
+	if IsOwner(target.Role) {
+		return Require(role, PermOwnersManage)
+	}
+	return nil
 }

@@ -94,6 +94,23 @@ func TestACompletedSignUpIsWelcomed(t *testing.T) {
 	assert.Contains(t, msgs[1].Text, i18n.T(i18n.EmailWelcomeGreetingFallback, nil))
 }
 
+// A Second factor reset tells the owner of the account what is gone, that every session ended and
+// what to do if they did not expect it (ADR 0177). It carries no link, so it is no way in.
+func TestASecondFactorResetIsMailedToTheMember(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	publish(t, env, &events.SecondFactorReset{UserID: fixtures.SecondFactorSamID, Email: fixtures.SecondFactorSamEmail})
+
+	msgs := env.SystemMail.Messages()
+	require.Len(t, msgs, 1)
+	assert.Equal(t, fixtures.SecondFactorSamEmail, msgs[0].To)
+	assert.Equal(t, "The two-factor authentication of your Sphericon account was reset", msgs[0].Subject)
+	assert.Contains(t, msgs[0].Text, "your authenticator app, your recovery codes and your passkeys no longer work")
+	assert.Contains(t, msgs[0].Text, "every session of yours has ended")
+	assert.Contains(t, msgs[0].Text, "If you did not expect this, contact an administrator")
+	assert.NotContains(t, msgs[0].Text, "http")
+}
+
 // An Invitation mails its link, naming the Workspace and the inviter; an inviter gone since is
 // "Someone".
 func TestAnInvitationMailsItsLink(t *testing.T) {

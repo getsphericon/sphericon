@@ -326,6 +326,7 @@ var registry = map[string]func() DomainEvent{
 	NameUserDeleted:                func() DomainEvent { return &UserDeleted{} },
 	NameUserPasskeyAdded:           func() DomainEvent { return &PasskeyChange{} },
 	NameUserPasskeyRemoved:         func() DomainEvent { return &PasskeyChange{} },
+	NameUserSecondFactorReset:      func() DomainEvent { return &SecondFactorReset{} },
 
 	NameInvitationCreated:                 func() DomainEvent { return &InvitationCreated{} },
 	NameWorkspaceSecondFactorRequired:     func() DomainEvent { return &SecondFactorRequired{} },
