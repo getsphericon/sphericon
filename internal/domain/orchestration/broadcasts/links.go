@@ -16,5 +16,5 @@ func (m *Module) LinkClicksOf(ctx context.Context, s *ent.Scoped, id int64) ([]l
 	if _, err := m.Get(ctx, s, id); err != nil {
 		return nil, err
 	}
-	return linkclick.ByLink(ctx, s, linkclick.Between{}, event.BroadcastID(id))
+	return m.clicks.ByLink(ctx, s, linkclick.Between{}, event.BroadcastID(id))
 }

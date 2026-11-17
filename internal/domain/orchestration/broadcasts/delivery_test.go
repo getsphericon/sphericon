@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -76,7 +77,7 @@ func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Op
 
 // detail is the sending Broadcast's figures and progress at now, paced by the delivery's Outbound send.
 func (d *delivery) detail(now time.Time) (broadcasts.Detail, error) {
-	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out).Detail(d.t.Context(), d.s, d.broadcastRow(), now)
+	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out, linkclick.New()).Detail(d.t.Context(), d.s, d.broadcastRow(), now)
 }
 
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.

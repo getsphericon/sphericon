@@ -85,6 +85,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/engagement"
@@ -358,7 +359,12 @@ var messagingPackage = do.Package(
 	// The Test inbox keeps its messages here; the resolver binds it to a Workspace and an
 	// Integration, and the site API reads it.
 	do.Lazy(func(i do.Injector) (*capturedmessages.Module, error) {
-		return capturedmessages.New(do.MustInvoke[*config.Config](i).TestInboxMaxMessages), nil
+		return capturedmessages.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*config.Config](i).TestInboxMaxMessages, do.MustInvoke[Clock](i)), nil
+	}),
+	// The count of the Link clicks the Broadcast and Automation reports and the Clicks by link
+	// report share.
+	do.Lazy(func(do.Injector) (*linkclick.Module, error) {
+		return linkclick.New(), nil
 	}),
 	// The workspace→sender resolver.
 	do.Lazy(func(i do.Injector) (*messaging.Resolver, error) {
@@ -570,6 +576,7 @@ var jobsPackage = do.Package(
 			SecondFactor:     do.MustInvoke[*secondfactors.Module](i),
 			Passkeys:         do.MustInvoke[*passkeys.Module](i),
 			Orders:           do.MustInvoke[*orders.Module](i),
+			CapturedMessages: do.MustInvoke[*capturedmessages.Module](i),
 			Deletion:         do.MustInvoke[*workspacedeletion.UseCase](i),
 			MessageRetention: do.MustInvoke[*messageretention.UseCase](i),
 			SendingDomains:   do.MustInvoke[*sendingdomains.Module](i),
@@ -897,7 +904,7 @@ var contentPackage = do.Package(
 	}),
 	// Publish asks the Send route of Outbound send whether the email steps can send.
 	do.Lazy(func(i do.Injector) (*automations.Module, error) {
-		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
+		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*linkclick.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		client := webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow)
@@ -940,7 +947,7 @@ var contentPackage = do.Package(
 		}, do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*analyticsreport.UseCase, error) {
-		return analyticsreport.New(do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
+		return analyticsreport.New(do.MustInvoke[*linkclick.Module](i), do.MustInvoke[Clock](i), do.MustInvoke[*config.Config](i).EventsRetention), nil
 	}),
 	do.Lazy(func(do.Injector) (*reputation.Module, error) {
 		return reputation.New(), nil
@@ -948,7 +955,7 @@ var contentPackage = do.Package(
 	// The broadcasts module claims a Broadcast and queues its send job on the bus's transaction;
 	// Schedule and the progress estimate ask the Send route of Outbound send.
 	do.Lazy(func(i do.Injector) (*broadcasts.Module, error) {
-		return broadcasts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i)), nil
+		return broadcasts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*linkclick.Module](i)), nil
 	}),
 	// The views answer with a Broadcast's figures, Progress and lint, for the surfaces whose contract
 	// shows them.

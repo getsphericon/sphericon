@@ -16,13 +16,13 @@ import (
 
 // DeleteOfRecipients deletes the messages of the Broadcast recipients, in the transaction that
 // deletes the recipients, so none of them reads as pending without its message.
-func DeleteOfRecipients(ctx context.Context, s *ent.Scoped, recipientIDs []int64) (int, error) {
+func (m *Module) DeleteOfRecipients(ctx context.Context, s *ent.Scoped, recipientIDs []int64) (int, error) {
 	return s.OutboundMessage().Delete().Where(outboundmessage.BroadcastRecipientIDIn(recipientIDs...)).Exec(ctx)
 }
 
 // DeleteOfBroadcast deletes up to limit of the Broadcast's messages and returns how many: the ones
 // left once its recipients are gone, whose recipient an Erasure had removed.
-func DeleteOfBroadcast(ctx context.Context, s *ent.Scoped, broadcastID int64, limit int) (int, error) {
+func (m *Module) DeleteOfBroadcast(ctx context.Context, s *ent.Scoped, broadcastID int64, limit int) (int, error) {
 	ids, err := s.OutboundMessage().Query().
 		Where(outboundmessage.BroadcastID(broadcastID)).
 		Limit(limit).
@@ -33,19 +33,27 @@ func DeleteOfBroadcast(ctx context.Context, s *ent.Scoped, broadcastID int64, li
 	return s.OutboundMessage().Delete().Where(outboundmessage.IDIn(ids...)).Exec(ctx)
 }
 
-// TakeExpired deletes up to limit of the Workspace's messages of the kind created before cutoff
-// that have left pending, oldest first, and returns them as they were, so the caller counts in the
-// same transaction what they made. The rows are locked until the commit, so a late stamp waits and
-// finds its message gone rather than slipping past the count.
-func TakeExpired(ctx context.Context, s *ent.Scoped, kind outboundmessage.Kind, cutoff time.Time, limit int) ([]*ent.OutboundMessage, error) {
+// TakeExpiredInput names the messages TakeExpired takes: those of Kind created before Cutoff, at
+// most Limit of them.
+type TakeExpiredInput struct {
+	Kind   outboundmessage.Kind
+	Cutoff time.Time
+	Limit  int
+}
+
+// TakeExpired deletes up to in.Limit of the Workspace's messages of in.Kind created before
+// in.Cutoff that have left pending, oldest first, and returns them as they were, so the caller
+// counts in the same transaction what they made. The rows are locked until the commit, so a late
+// stamp waits and finds its message gone rather than slipping past the count.
+func (m *Module) TakeExpired(ctx context.Context, s *ent.Scoped, in TakeExpiredInput) ([]*ent.OutboundMessage, error) {
 	msgs, err := s.OutboundMessage().Query().
 		Where(
-			outboundmessage.KindEQ(kind),
-			outboundmessage.CreatedAtLT(cutoff),
+			outboundmessage.KindEQ(in.Kind),
+			outboundmessage.CreatedAtLT(in.Cutoff),
 			outboundmessage.StatusNEQ(outboundmessage.StatusPending),
 		).
 		Order(outboundmessage.ByCreatedAt()).
-		Limit(limit).
+		Limit(in.Limit).
 		ForUpdate().
 		All(ctx)
 	if err != nil || len(msgs) == 0 {

@@ -30,6 +30,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
@@ -93,7 +94,9 @@ type Deps struct {
 	// Passkeys prunes the spent challenges of the Passkey ceremonies (ADR 0051).
 	Passkeys *passkeys.Module
 	Orders   *orders.Module
-	Deletion *workspacedeletion.UseCase
+	// CapturedMessages prunes the Captured messages past the Test inbox's retention (ADR 0058).
+	CapturedMessages *capturedmessages.Module
+	Deletion         *workspacedeletion.UseCase
 	// MessageRetention deletes old Outbound messages, keeping their figures (ADR 0143).
 	MessageRetention *messageretention.UseCase
 	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
@@ -162,7 +165,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events, now))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
-	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages, now))
+	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
 	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(deps.Passkeys))
 	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))

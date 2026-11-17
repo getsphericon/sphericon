@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -109,7 +110,7 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 		e.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(sendCap).ExecX(ctx)
 		perToken := 24 * time.Hour / time.Duration(sendCap)
 
-		detail, err := broadcasts.New(e.Bus, testhelper.Renderer(), mod).
+		detail, err := broadcasts.New(e.Bus, testhelper.Renderer(), mod, linkclick.New()).
 			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID), now)
 		require.NoError(t, err)
 		require.NotNil(t, detail.Progress)

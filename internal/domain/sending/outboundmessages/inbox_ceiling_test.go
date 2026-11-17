@@ -27,7 +27,7 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Cl
 	t.Helper()
 	s := env.DB.Scoped(fixtures.PinewoodID)
 	built, err := inbox.Descriptor().Build(nil, messaging.Deps{
-		Capturer: capturedmessages.New(inbox.PerDay).Capturer(s, fixtures.IntegrationPinewoodInboxID),
+		Capturer: capturedmessages.New(env.DB, inbox.PerDay, time.Now).Capturer(s, fixtures.IntegrationPinewoodInboxID),
 	})
 	require.NoError(t, err)
 	sender, ok := built.(messaging.EmailSender)

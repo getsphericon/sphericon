@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -18,7 +19,7 @@ import (
 
 func overviewAt(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window, now time.Time) *analyticsreport.Overview {
 	t.Helper()
-	m := analyticsreport.New(func() time.Time { return now }, 0)
+	m := analyticsreport.New(linkclick.New(), func() time.Time { return now }, 0)
 	ov, err := m.Overview(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return ov
@@ -35,7 +36,7 @@ func sentPerDay(ov *analyticsreport.Overview) map[string]int {
 func overview(t *testing.T, ws int64, w analyticsreport.Window) *analyticsreport.Overview {
 	t.Helper()
 	env := testhelper.Setup(t)
-	ov, err := analyticsreport.New(time.Now, 0).Overview(context.Background(), env.DB.Scoped(ws), w)
+	ov, err := analyticsreport.New(linkclick.New(), time.Now, 0).Overview(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return ov
 }
@@ -107,7 +108,7 @@ func TestAnAutomationMessageIsCountedAndATransactionalOneIsNot(t *testing.T) {
 	ctx := t.Context()
 	acme := env.DB.Scoped(fixtures.AcmeID)
 	read := func() *analyticsreport.Overview {
-		ov, err := analyticsreport.New(time.Now, 0).Overview(ctx, acme, analyticsreport.Window7Days)
+		ov, err := analyticsreport.New(linkclick.New(), time.Now, 0).Overview(ctx, acme, analyticsreport.Window7Days)
 		require.NoError(t, err)
 		return ov
 	}
@@ -173,11 +174,11 @@ func TestArchivedAutomationsAreNotCounted(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	acme := env.DB.Scoped(fixtures.AcmeID)
-	before, err := analyticsreport.New(time.Now, 0).Overview(ctx, acme, analyticsreport.Window30Days)
+	before, err := analyticsreport.New(linkclick.New(), time.Now, 0).Overview(ctx, acme, analyticsreport.Window30Days)
 	require.NoError(t, err)
 	require.NoError(t, acme.Automation().Archive(ctx, fixtures.AutomationWelcomeSeriesID, time.Now()))
 
-	after, err := analyticsreport.New(time.Now, 0).Overview(ctx, acme, analyticsreport.Window30Days)
+	after, err := analyticsreport.New(linkclick.New(), time.Now, 0).Overview(ctx, acme, analyticsreport.Window30Days)
 	require.NoError(t, err)
 	assert.Equal(t, before.Automations.Total-1, after.Automations.Total)
 	assert.Equal(t, before.Automations.Active-1, after.Automations.Active)
@@ -266,7 +267,7 @@ func TestEachPeriodFigureIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) 
 // them is credited to Gotham results.
 func TestRevenueIsReadForThePeriodJustBeforeTheWindowToo(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := analyticsreport.New(func() time.Time { return time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC) }, 0)
+	m := analyticsreport.New(linkclick.New(), func() time.Time { return time.Date(2026, 3, 14, 12, 0, 0, 0, time.UTC) }, 0)
 
 	report, err := m.Revenue(context.Background(), env.DB.Scoped(fixtures.GothamID), analyticsreport.Window7Days)
 	require.NoError(t, err)

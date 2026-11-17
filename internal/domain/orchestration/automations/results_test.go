@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -22,7 +23,7 @@ var gothamToday = time.Date(2026, 3, 17, 12, 0, 0, 0, time.UTC)
 
 func resultsAt(t *testing.T, env *testhelper.TestEnv, id int64, p automations.ReportPeriod, now time.Time) automations.Results {
 	t.Helper()
-	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), func() time.Time { return now })
+	m := automations.New(env.Cipher, env.Bus, testhelper.Renderer(), env.OutboundModule(), linkclick.New(), func() time.Time { return now })
 	report, err := m.ReportOf(context.Background(), env.DB.Scoped(fixtures.GothamID), id, p)
 	require.NoError(t, err)
 	return report.Results

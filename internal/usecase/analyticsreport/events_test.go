@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -17,7 +18,7 @@ import (
 
 func eventActions(t *testing.T, env *testhelper.TestEnv, ws int64, w analyticsreport.Window) []analyticsreport.EventAction {
 	t.Helper()
-	rows, err := analyticsreport.New(time.Now, 0).Events(context.Background(), env.DB.Scoped(ws), w)
+	rows, err := analyticsreport.New(linkclick.New(), time.Now, 0).Events(context.Background(), env.DB.Scoped(ws), w)
 	require.NoError(t, err)
 	return rows
 }

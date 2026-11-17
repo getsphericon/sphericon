@@ -27,6 +27,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -90,13 +91,14 @@ type Module struct {
 	bus      *events.Bus
 	renderer *emaildoc.Renderer
 	out      *outboundmessages.Module
+	clicks   *linkclick.Module
 }
 
 // New builds the module. The bus runs a claim and its send job in one transaction; the renderer
 // builds a body from its document; out is Outbound send, whose Send route Schedule asks whether the
-// Broadcast can send and the progress estimate paces by.
-func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module) *Module {
-	return &Module{bus: bus, renderer: renderer, out: out}
+// Broadcast can send and the progress estimate paces by; clicks counts its Link clicks.
+func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module) *Module {
+	return &Module{bus: bus, renderer: renderer, out: out, clicks: clicks}
 }
 
 // Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
