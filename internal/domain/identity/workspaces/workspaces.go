@@ -74,7 +74,7 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 
 // HasPostalAddress reports whether the Workspace has a postal address, which the footer of every
 // marketing email carries: non-empty text after trimming, nothing checked further (ADR 0156). Its
-// rename and the change of its address are workspacesunchecked.EditIn's: clearing an address is
+// rename and the change of its address are workspacesunchecked.Module.EditIn's: clearing an address is
 // refused while marketing email is armed, which a check above identity finds.
 func HasPostalAddress(ws *ent.Workspace) bool {
 	return strings.TrimSpace(ws.PostalAddress) != ""

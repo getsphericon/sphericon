@@ -91,6 +91,16 @@ func TestTheJobRunnerRefusesToStartWithoutTheInstanceClock(t *testing.T) {
 	require.ErrorContains(t, err, "Deps.Clock is required")
 }
 
+// The job runner refuses to start without the Workspaces, which tell it a job's Workspace is
+// erased: a job of an erased Workspace is cancelled before its worker runs.
+func TestTheJobRunnerRefusesToStartWithoutTheWorkspaces(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := jobs.NewClient(riverdatabasesql.New(env.SQLDB), jobs.Deps{Ent: env.DB, Bus: env.Bus, Clock: time.Now})
+
+	require.ErrorContains(t, err, "Deps.Workspaces is required")
+}
+
 // riverEnvOf is a river client over env's database, with the workers' senders of its own.
 func riverEnvOf(t *testing.T, env *testhelper.TestEnv) *riverEnv {
 	t.Helper()
