@@ -42,22 +42,24 @@ type Request struct {
 
 // UseCase deletes Users.
 type UseCase struct {
-	bus     *events.Bus
-	users   *users.Module
-	removal *usersunchecked.Module
-	links   *users.Links
-	factors *secondfactors.Module
-	login   *login.Module[*ent.User]
+	bus        *events.Bus
+	users      *users.Module
+	removal    *usersunchecked.Module
+	links      *users.Links
+	factors    *secondfactors.Module
+	workspaces *workspaces.Module
+	login      *login.Module[*ent.User]
 }
 
 // New builds the use case over the bus whose transaction it opens. budget is the Login throttle
 // of the Users (throttle.KindLogin), the budget every proof of a signed-in User feeds, and passwords
 // the hasher the stored passwords were made with: the password is proven through the login
-// module's one prove path over them.
-func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors *secondfactors.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
+// module's one prove path over them. The Workspaces say which of the User's sole-owned ones are live.
+func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors *secondfactors.Module, ws *workspaces.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
 	return &UseCase{
 		bus: bus, users: usersModule, removal: usersunchecked.New(usersModule, bus), links: links, factors: factors,
-		login: login.New(login.Config[*ent.User]{Throttle: budget, Passwords: passwords}),
+		workspaces: ws,
+		login:      login.New(login.Config[*ent.User]{Throttle: budget, Passwords: passwords}),
 	}
 }
 
@@ -125,7 +127,7 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 	if err != nil {
 		return err
 	}
-	live, err := workspaces.LiveIn(ctx, tx, soleOwned...)
+	live, err := uc.workspaces.LiveIn(ctx, tx, soleOwned...)
 	if err != nil {
 		return err
 	}

@@ -83,7 +83,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := int64(fixtures.AutomationRunJobsPendingID)
 		queueStep(t, env, id)
-		_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
+		_, err := testhelper.Module[*suspension.Suspender](env).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 		require.NoError(t, err)
 		fs := &fakeSender{}
 		require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
@@ -120,7 +120,7 @@ func TestOwnerNoticeIsRetriedWhenTheSystemSenderFails(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	_, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 	require.NoError(t, err)
 	assert.Empty(t, env.SystemMail.Messages(), "the send failed")
 

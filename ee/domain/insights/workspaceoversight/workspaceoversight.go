@@ -37,6 +37,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
@@ -72,6 +73,7 @@ type Module struct {
 	ent      *ent.Client
 	bus      *events.Bus
 	suspend  *suspension.Suspender
+	ws       *workspaces.Module
 	rates    *reputation.Module
 	lic      *licensekey.License
 	audit    *auditentries.Log
@@ -83,8 +85,9 @@ type Module struct {
 	sendCaps providerlimit.SendCaps
 }
 
-// New builds the module over the raw client, the Audit log and the Usage it shows.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
+// New builds the module over the raw client, the Audit log and the Usage it shows, and the
+// Workspaces it finds by their id.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, ws *workspaces.Module, rates *reputation.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
 		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
@@ -94,7 +97,7 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog 
 		holdMax = holds.DefaultMaxExpiry
 	}
 	return &Module{
-		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
+		ent: client, bus: bus, suspend: suspender, ws: ws, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
 		sendCaps: cfg.SendCaps,
 	}
 }

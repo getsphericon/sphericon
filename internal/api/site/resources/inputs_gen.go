@@ -23,6 +23,7 @@ import (
 	signup "github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	users "github.com/getsphericon/sphericon/internal/domain/identity/users"
+	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -598,6 +599,15 @@ func (c *InputsImpl) ReAcceptances(source []site.SiteAcceptance) []consentrecord
 		}
 	}
 	return consentrecordsReAcceptanceList
+}
+func (c *InputsImpl) RevenueSettingsSet(source *site.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput {
+	var workspacesSetRevenueSettingsInput workspaces.SetRevenueSettingsInput
+	if source != nil {
+		workspacesSetRevenueSettingsInput.Revision = revisionIn((*source).Revision)
+		workspacesSetRevenueSettingsInput.ReportingCurrency = currencyCodePtrIn((*source).ReportingCurrency)
+		workspacesSetRevenueSettingsInput.AttributionWindowDays = attributionWindowDaysPtrIn((*source).AttributionWindowDays)
+	}
+	return workspacesSetRevenueSettingsInput
 }
 func (c *InputsImpl) RuleActionType(source site.SiteRuleActionType) rules.ActionType {
 	var rulesActionType rules.ActionType

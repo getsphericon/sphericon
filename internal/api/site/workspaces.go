@@ -244,17 +244,7 @@ func (h *Handlers) SiteWorkspacesGetRevenueSettings(ctx context.Context, _ sitea
 // (Owner and Admin, Permission revenue:configure, ADR 0064).
 func (h *Handlers) SiteWorkspacesUpdateRevenueSettings(ctx context.Context, req *siteapi.SiteUpdateRevenueSettingsInput, _ siteapi.SiteWorkspacesUpdateRevenueSettingsParams) (*siteapi.SiteRevenueSettingsResource, error) {
 	s := workspaceScope(ctx)
-	var code *string
-	if c, ok := req.ReportingCurrency.Get(); ok {
-		str := string(c)
-		code = &str
-	}
-	var days *int
-	if d, ok := req.AttributionWindowDays.Get(); ok {
-		n := int(d)
-		days = &n
-	}
-	w, err := h.workspaces.SetRevenueSettings(ctx, s, int64(req.Revision), code, days)
+	w, err := h.workspaces.SetRevenueSettings(ctx, s, inputs.RevenueSettingsSet(req))
 	if err != nil {
 		return nil, err
 	}

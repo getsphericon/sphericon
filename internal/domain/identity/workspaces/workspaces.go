@@ -74,7 +74,7 @@ func (m *Module) LinkScope(workspaceID int64) *ent.Scoped {
 
 // HasPostalAddress reports whether the Workspace has a postal address, which the footer of every
 // marketing email carries: non-empty text after trimming, nothing checked further (ADR 0156). Its
-// rename and the change of its address are workspacesunchecked.EditIn's: clearing an address is
+// rename and the change of its address are workspacesunchecked.Module.EditIn's: clearing an address is
 // refused while marketing email is armed, which a check above identity finds.
 func HasPostalAddress(ws *ent.Workspace) bool {
 	return strings.TrimSpace(ws.PostalAddress) != ""
@@ -126,12 +126,21 @@ func CheckZone(name string) error {
 	return nil
 }
 
+// SetRevenueSettingsInput is the change of the Reporting currency and the Attribution window made
+// on Revision (ADR 0119): a nil field stays as it is.
+type SetRevenueSettingsInput struct {
+	Revision              int64
+	ReportingCurrency     *string
+	AttributionWindowDays *int
+}
+
 // SetRevenueSettings changes the Reporting currency and the Attribution window (a nil field stays
 // as it is, ADR 0064). A code not in the contract's form (bounds.CurrencyCode) is refused, one
 // outside ISO 4217 with ErrUnknownCurrency, and a window outside the contract's bounds
 // (bounds.AttributionWindowDays) too.
-// It is an edit made on revision, as every edit of its settings is (ADR 0119): one that names neither writes nothing.
-func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision int64, code *string, windowDays *int) (*ent.Workspace, error) {
+// It is an edit made on in.Revision, as every edit of its settings is (ADR 0119): one that names neither writes nothing.
+func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, in SetRevenueSettingsInput) (*ent.Workspace, error) {
+	code, windowDays := in.ReportingCurrency, in.AttributionWindowDays
 	if windowDays != nil {
 		if err := validation.Range(fieldname.AttributionWindowDays, *windowDays,
 			bounds.AttributionWindowDaysMin, bounds.AttributionWindowDaysMax); err != nil {
@@ -149,7 +158,7 @@ func (m *Module) SetRevenueSettings(ctx context.Context, s *ent.Scoped, revision
 		canonical := unit.String()
 		code = &canonical
 	}
-	upd := edit(s, revision)
+	upd := edit(s, in.Revision)
 	if code != nil {
 		upd.SetReportingCurrency(*code)
 	}
@@ -177,17 +186,18 @@ func (m *Module) AdoptReportingCurrency(ctx context.Context, s *ent.Scoped, code
 // SetupCompletedAt is when the scoped Workspace's Setup checklist was first found complete, nil
 // before (its standing, ADR 0168).
 func (m *Module) SetupCompletedAt(ctx context.Context, s *ent.Scoped) (*time.Time, error) {
-	standing, err := StandingIn(ctx, m.client, s.WorkspaceID())
+	standing, err := standingIn(ctx, m.client, s.WorkspaceID())
 	if err != nil {
 		return nil, err
 	}
 	return standing.SetupCompletedAt, nil
 }
 
-// MarkSetupComplete stamps the scoped Workspace's Setup checklist complete at now, once: a
+// MarkSetupComplete stamps the scoped Workspace's Setup checklist complete now, once: a
 // Workspace already stamped keeps its first moment. It returns the moment the Workspace holds.
 // Nothing a member chose changes, so no Audit entry is written.
-func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error) {
+func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped) (time.Time, error) {
+	now := m.now()
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		n, err := m.client.WorkspaceStanding.Update().
 			Where(workspacestanding.WorkspaceID(s.WorkspaceID()), workspacestanding.SetupCompletedAtIsNil()).
@@ -198,34 +208,43 @@ func (m *Module) MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.
 	if err != nil && !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return time.Time{}, err
 	}
-	standing, err := StandingIn(ctx, m.client, s.WorkspaceID())
+	standing, err := standingIn(ctx, m.client, s.WorkspaceID())
 	if err != nil {
 		return time.Time{}, err
 	}
 	return *standing.SetupCompletedAt, nil
 }
 
+// SetSecondFactorRequirementInput is the switch of the Two-factor requirement: Required on or off,
+// made on Revision (ADR 0119), which lifting it may leave nil.
+type SetSecondFactorRequirementInput struct {
+	Revision *int64
+	Required bool
+}
+
 // SetSecondFactorRequirement switches the scoped Workspace's Two-factor requirement
-// (ADR 0020) on, starting at now, or off. Switching it on while it is on keeps the
+// (ADR 0020) on, starting now, or off. Switching it on while it is on keeps the
 // original start, so no member's grace restarts. A change is recorded as a
 // `workspace.update` Audit entry of the scope's actor, and switching it on publishes
 // events.SecondFactorRequired in the same transaction, which tells the members without a Second
-// factor (ADR 0105). Switching it on is an edit made on revision,
+// factor (ADR 0105). Switching it on is an edit made on in.Revision,
 // as every edit of its settings is (ADR 0119); lifting it names none (nil): it is the one operation a member withheld by the
 // requirement may still perform, and it takes away a demand rather than writing over anything an
 // editor shows.
-func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, revision *int64, required bool, now time.Time) (updated *ent.Workspace, err error) {
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, in SetSecondFactorRequirementInput) (*ent.Workspace, error) {
+	now := m.now()
+	var updated *ent.Workspace
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		before, err := ts.Workspace(ctx)
 		if err != nil {
 			return err
 		}
 		upd := ts.UpdateWorkspace()
-		if revision != nil {
-			upd = edit(ts, *revision)
+		if in.Revision != nil {
+			upd = edit(ts, *in.Revision)
 		}
 		switch {
-		case !required:
+		case !in.Required:
 			upd.ClearSecondFactorRequiredAt()
 		case before.SecondFactorRequiredAt != nil:
 			upd.SetSecondFactorRequiredAt(*before.SecondFactorRequiredAt)
@@ -233,7 +252,7 @@ func (m *Module) SetSecondFactorRequirement(ctx context.Context, s *ent.Scoped, 
 			upd.SetSecondFactorRequiredAt(now)
 		}
 		updated, err = upd.Save(ctx)
-		if err != nil || !required || before.SecondFactorRequiredAt != nil {
+		if err != nil || !in.Required || before.SecondFactorRequiredAt != nil {
 			return err
 		}
 		return pub.Publish(ctx, &events.SecondFactorRequired{WorkspaceID: ts.WorkspaceID()})
@@ -259,11 +278,11 @@ func (m *Module) Get(ctx context.Context, s *ent.Scoped) (*ent.Workspace, error)
 	return s.Workspace(ctx)
 }
 
-// ByPublicIDIn loads the Workspace a Workspace id (ADR 0043) names, live or deleted, through client
+// ByPublicIDIn loads the Workspace a Workspace id (ADR 0043) names, live or deleted, through c
 // (the raw client or the caller's transaction): an operator addresses a Workspace by its id (a
 // suspension from the command line, the Staff console). An unknown id is an ent NotFound error.
-func ByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (*ent.Workspace, error) {
-	w, err := client.Workspace.Query().Where(workspace.PublicID(publicID)).Only(ctx)
+func (m *Module) ByPublicIDIn(ctx context.Context, c *ent.Client, publicID string) (*ent.Workspace, error) {
+	w, err := c.Workspace.Query().Where(workspace.PublicID(publicID)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("workspace %q: %w", publicID, err)
 	}
@@ -271,8 +290,8 @@ func ByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (*en
 }
 
 // IDByPublicIDIn is the internal key of the Workspace ByPublicIDIn loads.
-func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (int64, error) {
-	w, err := ByPublicIDIn(ctx, client, publicID)
+func (m *Module) IDByPublicIDIn(ctx context.Context, c *ent.Client, publicID string) (int64, error) {
+	w, err := m.ByPublicIDIn(ctx, c, publicID)
 	if err != nil {
 		return 0, err
 	}
@@ -283,7 +302,7 @@ func IDByPublicIDIn(ctx context.Context, client *ent.Client, publicID string) (i
 // the Workspace's deletion state: the event history of a Workspace is read while it awaits
 // deletion. An unknown one is ErrNotFound.
 func (m *Module) IDByPublicID(ctx context.Context, publicID string) (int64, error) {
-	id, err := IDByPublicIDIn(ctx, m.client, publicID)
+	id, err := m.IDByPublicIDIn(ctx, m.client, publicID)
 	if ent.IsNotFound(err) {
 		return 0, fmt.Errorf("%w: %w", ErrNotFound, err)
 	}
@@ -297,20 +316,8 @@ func Live() predicate.Workspace { return workspace.DiscardedAtIsNil() }
 
 // LiveIn loads, on the transaction tx, the Workspaces among ids that are Live, in ascending id
 // order.
-func LiveIn(ctx context.Context, tx *ent.Client, ids ...int64) ([]*ent.Workspace, error) {
+func (m *Module) LiveIn(ctx context.Context, tx *ent.Client, ids ...int64) ([]*ent.Workspace, error) {
 	return tx.Workspace.Query().Where(workspace.IDIn(ids...), Live()).Order(ent.Asc(workspace.FieldID)).All(ctx)
-}
-
-// ErasedIn reports whether the scope's Workspace is erased (ADR 0043): its rows are gone and its
-// tombstone is all that is left, so a write on its behalf that arrives late (a signed link clicked
-// long after) has nothing to record into. A Workspace in its deletion window is not erased: a
-// restore brings it back with what was recorded meanwhile.
-func ErasedIn(ctx context.Context, s *ent.Scoped) (bool, error) {
-	ws, err := s.Workspace(ctx)
-	if err != nil {
-		return false, err
-	}
-	return ws.ErasedAt != nil, nil
 }
 
 // Deleted is a Workspace in its deletion window or erased (ADR 0043): the complement of Live.

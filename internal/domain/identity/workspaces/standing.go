@@ -89,23 +89,30 @@ func moveStanding(ctx context.Context, tx *ent.Client, id int64, trigger standin
 	return moved, err
 }
 
+// SuspendInput is who suspends a Workspace (Kind, and ByID for a Staff member) and why.
+type SuspendInput struct {
+	Kind   workspace.SuspendedByKind
+	ByID   *string
+	Reason string
+}
+
 // SuspendIn suspends the Workspace id inside tx while it is not suspended: it sets suspended_at to
-// `at` with who did it (kind, and byID for a Staff member) and why. It reports whether it did:
-// false when the Workspace was already suspended, whose first actor and reason stand.
-func SuspendIn(ctx context.Context, tx *ent.Client, id int64, kind workspace.SuspendedByKind, byID *string, reason string, at time.Time) (bool, error) {
-	return moveStanding(ctx, tx, id, triggerSuspend, suspension{kind: kind, byID: byID, reason: reason}, at)
+// now with who did it and why (in). It reports whether it did: false when the Workspace was
+// already suspended, whose first actor and reason stand.
+func (m *Module) SuspendIn(ctx context.Context, tx *ent.Client, id int64, in SuspendInput) (bool, error) {
+	return moveStanding(ctx, tx, id, triggerSuspend, suspension{kind: in.Kind, byID: in.ByID, reason: in.Reason}, m.now())
 }
 
 // UnsuspendIn lifts the suspension of the Workspace id inside tx while it is suspended: it clears
-// the suspension and its attribution and stamps cleared_at with `at`. It reports whether it did:
+// the suspension and its attribution and stamps cleared_at now. It reports whether it did:
 // false when the Workspace was not suspended.
-func UnsuspendIn(ctx context.Context, tx *ent.Client, id int64, at time.Time) (bool, error) {
-	return moveStanding(ctx, tx, id, triggerUnsuspend, suspension{}, at)
+func (m *Module) UnsuspendIn(ctx context.Context, tx *ent.Client, id int64) (bool, error) {
+	return moveStanding(ctx, tx, id, triggerUnsuspend, suspension{}, m.now())
 }
 
 // SetAbuseExemptIn sets the abuse exemption of the Workspace id inside tx while it differs, and
 // returns how many rows it changed.
-func SetAbuseExemptIn(ctx context.Context, tx *ent.Client, id int64, exempt bool) (int, error) {
+func (m *Module) SetAbuseExemptIn(ctx context.Context, tx *ent.Client, id int64, exempt bool) (int, error) {
 	return tx.Workspace.Update().
 		Where(workspace.ID(id), workspace.AbuseExempt(!exempt)).
 		SetAbuseExempt(exempt).
@@ -114,7 +121,7 @@ func SetAbuseExemptIn(ctx context.Context, tx *ent.Client, id int64, exempt bool
 
 // SetSendCapIn sets the Send cap of the Workspace id inside tx, or clears it with nil. A Send cap
 // outside the contract's bounds is refused (CheckSendCap).
-func SetSendCapIn(ctx context.Context, tx *ent.Client, id int64, sendCap *int) error {
+func (m *Module) SetSendCapIn(ctx context.Context, tx *ent.Client, id int64, sendCap *int) error {
 	if err := CheckSendCap(sendCap); err != nil {
 		return err
 	}
@@ -136,25 +143,27 @@ func CheckSendCap(sendCap *int) error {
 	return validation.Range(fieldname.PerDay, *sendCap, bounds.MaxPerDayMin, bounds.MaxPerDayMax)
 }
 
-// MarkAbuseFreezeNotified stamps, at `at`, that the Owners of the Workspace id were told of its
-// suspension.
-func MarkAbuseFreezeNotified(ctx context.Context, client *ent.Client, id int64, at time.Time) error {
-	return wroteStanding(standingOf(client, id).SetAbuseFreezeNotifiedAt(at).Save(ctx))
+// MarkAbuseFreezeNotified stamps, now, that the Owners of the Workspace id were told of its
+// suspension, through c.
+func (m *Module) MarkAbuseFreezeNotified(ctx context.Context, c *ent.Client, id int64) error {
+	return wroteStanding(standingOf(c, id).SetAbuseFreezeNotifiedAt(m.now()).Save(ctx))
 }
 
-// MarkAbuseWarned records, at, that the Owners of the Workspace id were warned of a breach.
-func MarkAbuseWarned(ctx context.Context, client *ent.Client, id int64, at time.Time) error {
-	return wroteStanding(standingOf(client, id).SetAbuseWarningNotifiedAt(at).Save(ctx))
+// MarkAbuseWarned records, now, that the Owners of the Workspace id were warned of a breach,
+// through c.
+func (m *Module) MarkAbuseWarned(ctx context.Context, c *ent.Client, id int64) error {
+	return wroteStanding(standingOf(c, id).SetAbuseWarningNotifiedAt(m.now()).Save(ctx))
 }
 
-// ClearAbuseWarning ends the warning episode of the Workspace id.
-func ClearAbuseWarning(ctx context.Context, client *ent.Client, id int64) error {
-	return wroteStanding(standingOf(client, id).ClearAbuseWarningNotifiedAt().Save(ctx))
+// ClearAbuseWarning ends the warning episode of the Workspace id, through c.
+func (m *Module) ClearAbuseWarning(ctx context.Context, c *ent.Client, id int64) error {
+	return wroteStanding(standingOf(c, id).ClearAbuseWarningNotifiedAt().Save(ctx))
 }
 
-// ClearAbuseWarnings ends the warning episode of every Workspace that is warned and matches which.
-func ClearAbuseWarnings(ctx context.Context, client *ent.Client, which ...predicate.Workspace) error {
-	return client.WorkspaceStanding.Update().
+// ClearAbuseWarnings ends the warning episode of every Workspace that is warned and matches which,
+// through c.
+func (m *Module) ClearAbuseWarnings(ctx context.Context, c *ent.Client, which ...predicate.Workspace) error {
+	return c.WorkspaceStanding.Update().
 		Where(workspacestanding.AbuseWarningNotifiedAtNotNil(), workspacestanding.HasWorkspaceWith(which...)).
 		ClearAbuseWarningNotifiedAt().
 		Exec(ctx)
@@ -165,25 +174,33 @@ func AbuseWarned() predicate.Workspace {
 	return workspace.HasStandingWith(workspacestanding.AbuseWarningNotifiedAtNotNil())
 }
 
-// SetFeedPosition gives the Workspaces ids the service feed position (ADR 0062): the write of
-// internal/domain/identity/workspacefeed's hook, which takes the position under its lock. The hook
-// runs on the creation of a Workspace too, before CreateIn makes its standing, so the write makes
-// the standing of a Workspace that has none yet.
-func SetFeedPosition(ctx context.Context, client *ent.Client, position int64, ids ...int64) error {
+// Feed is the service feed's write of the Workspaces' positions (ADR 0062): what the hook of
+// internal/domain/identity/workspacefeed calls, which takes the position under its lock and holds
+// no module, so the type needs nothing.
+type Feed struct{}
+
+// NewFeed builds the feed's write.
+func NewFeed() *Feed { return &Feed{} }
+
+// SetPosition gives the Workspaces ids the service feed position, through c. The hook runs on the
+// creation of a Workspace too, before Creation.CreateIn makes its standing, so the write makes the
+// standing of a Workspace that has none yet.
+func (f *Feed) SetPosition(ctx context.Context, c *ent.Client, position int64, ids ...int64) error {
 	builders := make([]*ent.WorkspaceStandingCreate, len(ids))
 	for i, id := range ids {
-		builders[i] = client.WorkspaceStanding.Create().SetWorkspaceID(id).SetFeedPosition(position)
+		builders[i] = c.WorkspaceStanding.Create().SetWorkspaceID(id).SetFeedPosition(position)
 	}
-	return client.WorkspaceStanding.CreateBulk(builders...).
+	return c.WorkspaceStanding.CreateBulk(builders...).
 		OnConflictColumns(workspacestanding.FieldWorkspaceID).
 		Update(func(u *ent.WorkspaceStandingUpsert) { u.UpdateFeedPosition() }).
 		Exec(ctx)
 }
 
-// TopFeedPosition is the highest service feed position any Workspace holds, 0 when none took one
-// (on a new Instance, the first Workspace has no standing yet when it takes its position).
-func TopFeedPosition(ctx context.Context, client *ent.Client) (int64, error) {
-	top, err := client.WorkspaceStanding.Query().
+// TopPosition is the highest service feed position any Workspace holds, read through c, 0 when
+// none took one (on a new Instance, the first Workspace has no standing yet when it takes its
+// position).
+func (f *Feed) TopPosition(ctx context.Context, c *ent.Client) (int64, error) {
+	top, err := c.WorkspaceStanding.Query().
 		Order(ent.Desc(workspacestanding.FieldFeedPosition)).Limit(1).
 		Select(workspacestanding.FieldFeedPosition).Ints(ctx)
 	if err != nil || len(top) == 0 {
@@ -204,8 +221,8 @@ func StandingOf(ws *ent.Workspace) *ent.WorkspaceStanding {
 	return standing
 }
 
-// StandingIn reads the standing of the Workspace id (ADR 0168).
-func StandingIn(ctx context.Context, client *ent.Client, id int64) (*ent.WorkspaceStanding, error) {
+// standingIn reads the standing of the Workspace id (ADR 0168).
+func standingIn(ctx context.Context, client *ent.Client, id int64) (*ent.WorkspaceStanding, error) {
 	return client.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(id)).Only(ctx)
 }
 

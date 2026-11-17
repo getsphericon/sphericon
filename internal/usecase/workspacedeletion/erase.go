@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/apitoken"
@@ -52,7 +51,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/drain"
 )
@@ -71,19 +69,18 @@ const maxErasePasses = 10
 // transaction of its own through the event bus, so the ent hooks run (the tracking host change log
 // records the released hosts, the workspace feed advances) and a crash resumes on the rows that
 // are left. The last transaction removes the Workspace's jobs from the queue and the OAuth codes
-// that name it, and writes the tombstone (workspacesunchecked.TombstoneIn). A Workspace that fails
+// that name it, and writes the tombstone (workspacesunchecked.Module.TombstoneIn). A Workspace that fails
 // does not stop the others; the errors are joined. The scope of each step is built here, after the
 // Workspace's row is listed; it has no actor, so the deletes are not audited.
 func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
-	now := m.now()
-	ids, err := m.workspaces.DueForErase(ctx, now)
+	ids, err := m.workspaces.DueForErase(ctx)
 	if err != nil {
 		return 0, err
 	}
 	var errs []error
 	erased := 0
 	for _, id := range ids {
-		tombstoned, err := m.eraseWorkspace(ctx, id, now)
+		tombstoned, err := m.eraseWorkspace(ctx, id)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("erase workspace %d: %w", id, err))
 			continue
@@ -96,9 +93,9 @@ func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 }
 
 // eraseWorkspace removes the Workspace's rows, then its jobs, then writes the tombstone, and
-// reports whether it wrote it. The tombstone keeps the window itself (workspacesunchecked.TombstoneIn),
-// and the restore is refused once the window has passed, so nothing moves a listed row back to
-// active. A Workspace no longer pending deletion when the tombstone is written (erased already)
+// reports whether it wrote it. The tombstone keeps the window itself, on the clock DueForErase
+// listed it by (workspacesunchecked.Module.TombstoneIn): a row past its window stays past it, and
+// the restore is refused once the window has passed, so nothing moves a listed row back to active. A Workspace no longer pending deletion when the tombstone is written (erased already)
 // is the tombstone's no-op: nothing is tombstoned, and the purge of its jobs and OAuth codes,
 // of a Workspace whose rows are gone, commits.
 //
@@ -108,10 +105,10 @@ func (m *UseCase) EraseDue(ctx context.Context) (int, error) {
 // steps publish nothing and no hook of theirs or of the tombstone queues one),
 // so nothing it does queues one after the purge. A job running meanwhile is left to finish, and
 // the job runner cancels any job of the Workspace that starts after the tombstone
-// (events.WorkspacePurger says what is left). The purge runs before workspacesunchecked.TombstoneIn, whose feed hook
+// (events.WorkspacePurger says what is left). The purge runs before workspacesunchecked.Module.TombstoneIn, whose feed hook
 // holds the feed's Instance-wide lock to the commit, so the deletes never hold up another
 // Workspace's change.
-func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) (bool, error) {
+func (m *UseCase) eraseWorkspace(ctx context.Context, id int64) (bool, error) {
 	// Rerun every step until a whole pass finds nothing to remove: a row written while
 	// another kind was being deleted is then removed too, before the tombstone is made.
 	settled := false
@@ -131,7 +128,7 @@ func (m *UseCase) eraseWorkspace(ctx context.Context, id int64, now time.Time) (
 			return err
 		}
 		var err error
-		erased, err = workspacesunchecked.TombstoneIn(ctx, tx, id, now)
+		erased, err = m.unchecked.TombstoneIn(ctx, tx, id)
 		return err
 	})
 	return erased, err

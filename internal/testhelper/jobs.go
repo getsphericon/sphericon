@@ -17,6 +17,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -212,7 +213,7 @@ func (env *TestEnv) DeliverQueuedBroadcastsThrough(t *testing.T, mod *outboundme
 // broadcastWorker is the performFunc of worker, run with the worker client's configuration.
 func broadcastWorker[T river.JobArgs](t *testing.T, env *TestEnv, worker river.Worker[T]) performFunc {
 	t.Helper()
-	return rivertest.NewWorker(t, riverdatabasesql.New(env.SQLDB), jobs.WorkerConfig(env.DB), worker).WorkJob
+	return rivertest.NewWorker(t, riverdatabasesql.New(env.SQLDB), jobs.WorkerConfig(Module[*workspaces.Module](env)), worker).WorkJob
 }
 
 // SendBroadcastThrough sends Broadcast id as a person's Send does (broadcasts.Module.Send, which

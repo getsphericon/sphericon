@@ -15,8 +15,6 @@ internal/domain/identity/invitations
 internal/domain/identity/joindomains
 internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
-internal/domain/identity/workspaces
-internal/domain/identity/workspaces/workspacesunchecked
 internal/domain/orchestration/automations
 internal/domain/orchestration/automations/automationsunchecked
 internal/domain/orchestration/automations/automationsuse

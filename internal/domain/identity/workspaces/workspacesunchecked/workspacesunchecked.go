@@ -1,4 +1,5 @@
-// Package workspacesunchecked holds the workspaces module's unchecked operations (ADR 0110): the
+// Package workspacesunchecked holds the workspaces module's unchecked operations (ADR 0110), the
+// methods of its Module, which each importer builds in its own constructor: the
 // restore and the erase of the deletion cycle, which need a Membership that holds the delete
 // Permission and every owner's rows removed, and the edit of the name and the postal address,
 // whose clearing needs no marketing email armed (ADR 0156). Their checks are the use cases'
@@ -23,35 +24,50 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
+// Module is the workspaces module's unchecked operations, which date their moves by the clock it
+// is built with.
+type Module struct {
+	now func() time.Time
+}
+
+// New builds the unchecked operations on the Instance clock now.
+func New(now func() time.Time) *Module { return &Module{now: now} }
+
 // Edit is the rename of the Workspace of a locked scope and, when it carries one, the change of its
-// postal address, opened on the row and written by Apply once the use case's check holds: clearing
-// a stored address is refused while marketing email is armed (ADR 0156), which the Removal check
-// above identity finds, so the use case asks ClearsPostalAddress first.
+// postal address, opened on the row and written by ApplyEdit once the use case's check holds:
+// clearing a stored address is refused while marketing email is armed (ADR 0156), which the Removal
+// check above identity finds, so the use case asks ClearsPostalAddress first.
 type Edit struct {
-	l             *ent.WorkspaceLocked
 	revision      int64
 	name          string
 	postalAddress *string
 	clears        bool
 }
 
-// EditIn opens the edit made on revision (ADR 0119) under the Workspace lock l: name is held to the
-// name rule (validation.Name), and postalAddress, when non-nil, is trimmed, so whitespace alone
-// clears it ("" clears it, nil leaves it).
-func EditIn(ctx context.Context, l *ent.WorkspaceLocked, revision int64, name string, postalAddress *string) (*Edit, error) {
-	name, err := validation.Name(name)
+// EditInput is the edit made on Revision (ADR 0119): the Name, and the PostalAddress, which nil
+// leaves as it is and "" clears.
+type EditInput struct {
+	Revision      int64
+	Name          string
+	PostalAddress *string
+}
+
+// EditIn opens the edit under the Workspace lock l: in.Name is held to the name rule
+// (validation.Name), and in.PostalAddress, when non-nil, is trimmed, so whitespace alone clears it.
+func (m *Module) EditIn(ctx context.Context, l *ent.WorkspaceLocked, in EditInput) (*Edit, error) {
+	name, err := validation.Name(in.Name)
 	if err != nil {
 		return nil, err
 	}
-	e := &Edit{l: l, revision: revision, name: name}
-	if postalAddress == nil {
+	e := &Edit{revision: in.Revision, name: name}
+	if in.PostalAddress == nil {
 		return e, nil
 	}
 	stored, err := l.Scope().Workspace(ctx)
 	if err != nil {
 		return nil, err
 	}
-	trimmed := strings.TrimSpace(*postalAddress)
+	trimmed := strings.TrimSpace(*in.PostalAddress)
 	e.postalAddress = &trimmed
 	e.clears = trimmed == "" && workspaces.HasPostalAddress(stored)
 	return e, nil
@@ -61,12 +77,12 @@ func EditIn(ctx context.Context, l *ent.WorkspaceLocked, revision int64, name st
 // empty one over none clears nothing.
 func (e *Edit) ClearsPostalAddress() bool { return e.clears }
 
-// Apply writes the edit through the scope's tenant edit and returns the Workspace as it now reads:
-// workspaces.ErrRevisionChanged when the Workspace has moved past the revision, nothing written for
-// an edit that changes nothing, and a change recorded as a `workspace.update` Audit entry of the
-// scope's actor (ADR 0022).
-func (e *Edit) Apply(ctx context.Context) (*ent.Workspace, error) {
-	upd := e.l.Scope().EditWorkspaceAt(e.revision).Refusing(workspaces.ErrNotFound, workspaces.ErrRevisionChanged).SetName(e.name)
+// ApplyEdit writes the edit e, opened under the Workspace lock l, through the scope's tenant edit
+// and returns the Workspace as it now reads: workspaces.ErrRevisionChanged when the Workspace has
+// moved past the revision, nothing written for an edit that changes nothing, and a change recorded
+// as a `workspace.update` Audit entry of the scope's actor (ADR 0022).
+func (m *Module) ApplyEdit(ctx context.Context, l *ent.WorkspaceLocked, e *Edit) (*ent.Workspace, error) {
+	upd := l.Scope().EditWorkspaceAt(e.revision).Refusing(workspaces.ErrNotFound, workspaces.ErrRevisionChanged).SetName(e.name)
 	if e.postalAddress != nil {
 		upd.SetPostalAddress(*e.postalAddress)
 	}
@@ -74,23 +90,23 @@ func (e *Edit) Apply(ctx context.Context) (*ent.Workspace, error) {
 }
 
 // RestoreIn moves the Workspace id from pending deletion back to active inside tx, only while
-// it is inside its deletion window at now, and returns it as it now reads. One past it, already
+// it is inside its deletion window now, and returns it as it now reads. One past it, already
 // erased or not deleted is lifecycle.ErrInvalidTransition and nothing changes.
-func RestoreIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (*ent.Workspace, error) {
-	if err := workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerRestore); err != nil {
+func (m *Module) RestoreIn(ctx context.Context, tx *ent.Client, id int64) (*ent.Workspace, error) {
+	if err := workspaces.DeletionCycle(cycleStorage(tx, id, m.now())).FireCtx(ctx, workspaces.TriggerRestore); err != nil {
 		return nil, err
 	}
 	return tx.Workspace.Get(ctx, id)
 }
 
 // TombstoneIn moves the Workspace id from pending deletion to erased inside tx, only once it is
-// past its deletion window at now: it writes the tombstone and erased_at in one conditional
+// past its deletion window now: it writes the tombstone and erased_at in one conditional
 // update, and reports whether it did. One still inside its window is refused
 // (lifecycle.ErrInvalidTransition) and nothing changes. One not pending deletion (never deleted,
 // restored, or erased already) is its no-op: it reports false with no error (ADR 0145). The
 // caller has removed what the Workspace owned.
-func TombstoneIn(ctx context.Context, tx *ent.Client, id int64, now time.Time) (erased bool, err error) {
-	err = workspaces.DeletionCycle(cycleStorage(tx, id, now)).FireCtx(ctx, workspaces.TriggerErase)
+func (m *Module) TombstoneIn(ctx context.Context, tx *ent.Client, id int64) (bool, error) {
+	err := workspaces.DeletionCycle(cycleStorage(tx, id, m.now())).FireCtx(ctx, workspaces.TriggerErase)
 	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return err == nil, err
 	}

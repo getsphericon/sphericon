@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/dnstest"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -90,6 +91,16 @@ func TestTheJobRunnerRefusesToStartWithoutTheInstanceClock(t *testing.T) {
 	require.ErrorContains(t, err, "Deps.Clock is required")
 }
 
+// The job runner refuses to start without the Workspaces, which tell it a job's Workspace is
+// erased: a job of an erased Workspace is cancelled before its worker runs.
+func TestTheJobRunnerRefusesToStartWithoutTheWorkspaces(t *testing.T) {
+	env := testhelper.Setup(t)
+
+	_, err := jobs.NewClient(riverdatabasesql.New(env.SQLDB), jobs.Deps{Ent: env.DB, Bus: env.Bus, Clock: time.Now})
+
+	require.ErrorContains(t, err, "Deps.Workspaces is required")
+}
+
 // riverEnvOf is a river client over env's database, with the workers' senders of its own.
 func riverEnvOf(t *testing.T, env *testhelper.TestEnv) *riverEnv {
 	t.Helper()
@@ -101,7 +112,7 @@ func riverEnvOf(t *testing.T, env *testhelper.TestEnv) *riverEnv {
 	mod := newMod(env, resolvingTo(fs), time.Now)
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: cipher, SystemSender: env.SystemMail,
-		OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
+		OutboundAllow: cfg.OutboundAllow, Clock: time.Now, Workspaces: testhelper.Module[*workspaces.Module](env),
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)
@@ -645,7 +656,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	assert.NotErrorAs(t, err, &snooze, "a failure is not a snooze")
 
 	// A suspended workspace holds: the job snoozes rather than fails.
-	_, err = suspension.NewSuspender(e.Bus, time.Now).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
+	_, err = testhelper.Module[*suspension.Suspender](e.TestEnv).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 	require.NoError(t, err)
 	require.ErrorAs(t, w.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID})), &snooze)
 	assert.Equal(t, outboundmessages.HoldBackoff, snooze.Duration, "a hold asks again after the hold backoff")
