@@ -34,6 +34,9 @@ model BroadcastResource {
   /** The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065). */
   recipients?: int32;
 
+  /** The recipients Cancel left unsent: those with no message when it landed (ADR 0150). A message already handed to the provider goes out and is not counted. Answered by Cancel only. */
+  unsent?: int32;
+
   /** When the broadcast finished sending */
   sentAt?: Timestamp | null;
 
@@ -87,8 +90,11 @@ model BroadcastReport {
   /** Messages that failed to send */
   failedCount: int32;
 
-  /** Recipients whose send has not ended yet */
+  /** Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed over */
   pendingCount: int32;
+
+  /** Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the broadcast is cancelled. */
+  cancelledCount: int32;
 
   /** Recipients that opened the email; null on a Channel that cannot tell */
   openedCount: int32 | null;
@@ -178,6 +184,12 @@ interface Broadcasts
     | BroadcastResource
     | Problem;
 
+  /** Cancel a sending broadcast (ADR 0150): it moves to `cancelled`, final, and no recipient without a message gets one afterwards. A message already handed to the provider goes out, since a provider cannot be called back. The answer carries `unsent`, the recipients left unsent. A held broadcast is sending and is cancelled like any other. Anything but a sending broadcast is a 409. Not send-class: it only narrows reach, so it needs broadcasts:write, and over MCP no mcp:send. */
+  @action("cancel")
+  @autoRoute
+  @requiresScopes(#[ApiTokenScope.broadcastsWrite])
+  cancel(...ResourceParameters<BroadcastResource>): BroadcastResource | Problem;
+
   /** Read the delivery report: sent, skipped, failed, opened and clicked counts */
   @action("report")
   @get
@@ -188,7 +200,7 @@ interface Broadcasts
 
 @@doc(
   Broadcasts.archive,
-  "Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing."
+  "Archive a draft, sent, failed or cancelled broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing."
 );
 
 @@doc(

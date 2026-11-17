@@ -147,6 +147,8 @@ type Converter interface {
 	ContactsToResources(source []*ent.Contact) []externalapi.ContactResource
 	// Recipients are counted by Schedule (ADR 0149): the handler attaches them to its answer.
 	// goverter:ignore Recipients
+	// The unsent are counted by Cancel (ADR 0150): the handler attaches them to its answer.
+	// goverter:ignore Unsent
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) externalapi.BroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
@@ -165,6 +167,7 @@ type Converter interface {
 	// goverter:map Figures.Skipped SkippedCount
 	// goverter:map Figures.Pending PendingCount
 	// goverter:map Figures.Failed FailedCount
+	// goverter:map Figures.Cancelled CancelledCount
 	// goverter:map Figures.Opened OpenedCount
 	// goverter:map Figures.Clicked ClickedCount
 	// goverter:map Figures.Unsubscribed UnsubscribedCount

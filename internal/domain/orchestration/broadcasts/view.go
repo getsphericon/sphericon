@@ -18,13 +18,15 @@ import (
 // while it is sending (ADR 0023); a list leaves it out, as it costs a query per sending row. The
 // view a save returns (Create, Update) adds the lint warnings of its email content (ADR 0040),
 // advice for the author that never blocks the save. The view Schedule returns adds the Recipients
-// the Broadcast would take at that moment (ADR 0149).
+// the Broadcast would take at that moment (ADR 0149), and the one Cancel returns the Recipients it
+// left unsent (ADR 0150).
 type View struct {
 	Broadcast  *ent.Broadcast
 	Stats      Stats
 	Progress   *Progress
 	Warnings   []emailrender.Finding
 	Recipients *int
+	Unsent     *int
 }
 
 // Views are the Module's operations answered with the View: the figures, the Progress and the lint
@@ -109,7 +111,22 @@ func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id int64, in Schedu
 	return view, nil
 }
 
-// Archive puts a draft, sent or failed Broadcast aside (Module.Archive) and returns its view: its
+// Cancel ends a sending Broadcast (Module.Cancel) and returns its view, with the Recipients it left
+// unsent.
+func (v *Views) Cancel(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
+	cancelled, err := v.m.Cancel(ctx, s, id)
+	if err != nil {
+		return View{}, err
+	}
+	view, err := v.figured(ctx, s, cancelled.Broadcast)
+	if err != nil {
+		return View{}, err
+	}
+	view.Unsent = &cancelled.Unsent
+	return view, nil
+}
+
+// Archive puts a draft, sent, failed or cancelled Broadcast aside (Module.Archive) and returns its view: its
 // figures stay.
 func (v *Views) Archive(ctx context.Context, s *ent.Scoped, id int64) (View, error) {
 	b, err := v.m.Archive(ctx, s, id)

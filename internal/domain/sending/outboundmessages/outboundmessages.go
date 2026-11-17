@@ -84,6 +84,10 @@ const (
 	// Refused: a Test send the System sender will not make (ADR 0041). Reason is a Refuse*
 	// constant; unlike a Held it does not clear by waiting.
 	Refused Outcome = "refused"
+	// Withdrawn: the source stopped taking new messages before this one was claimed
+	// (Request.Stopped, a cancelled Broadcast, ADR 0150). Nothing was sent or recorded, and it is
+	// final: the same Request is withdrawn again.
+	Withdrawn Outcome = "withdrawn"
 )
 
 // Backoffs for a provider reply that says it is busy (ADR 0023). The core does not
@@ -401,6 +405,15 @@ type Request struct {
 
 	// Ref is the surface record the message is sent for, and so its kind. Required.
 	Ref Ref
+
+	// Stopped, when set, says when the source stopped taking new messages: the surface that owns
+	// it reads its own state (a cancelled Broadcast, ADR 0150). It is asked once a new claim is
+	// written, so a stop that raced the claim is seen: one committed before the question withdraws
+	// the claim (Withdrawn, nothing recorded), and one committed after it finds the claim, a
+	// message that goes out. A claim another attempt left behind is asked too, once its lease has
+	// run out: one written after the stop is a withdrawal that never finished, and is withdrawn
+	// instead of taken over; one written before it goes on.
+	Stopped SourceStop
 
 	// digest is what a Transactional request with the caller's key asked for (requestDigest); ""
 	// for every other send. Only Transactional sets it.
@@ -782,6 +795,18 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, caus
 	return err
 }
 
+// SourceStop says when a message's source stopped taking new messages (a cancelled Broadcast, ADR
+// 0150): nil while it still takes them.
+type SourceStop func(context.Context, *ent.Scoped) (*time.Time, error)
+
+// Failure is a Broadcast recipient's send that can never go out: the recipient, why, and the
+// source's stop (Request.Stopped), asked as a claim asks it.
+type Failure struct {
+	Recipient *ent.BroadcastRecipient
+	Cause     error
+	Stopped   SourceStop
+}
+
 // FailRecipient ends a Broadcast recipient's send as Failed with cause, for a recipient that
 // can never go out: its Contact has no address, or its last attempt failed. Every recipient
 // ends with exactly one Outbound message (ADR 0015), so this records one even when no attempt
@@ -789,8 +814,11 @@ func (m *Module) MarkFailed(ctx context.Context, s *ent.Scoped, key string, caus
 // (a send that reached the provider stays Sent).
 //
 // A live claim is another attempt that may still reach the provider, so nothing is failed and
-// the error is ErrInProgress: the caller waits out the lease and asks again.
-func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, cause error) (Result, error) {
+// the error is ErrInProgress: the caller waits out the lease and asks again. The source's stop is
+// asked as a claim asks it (Failure.Stopped): a failure recorded where no message was, and a claim
+// left behind after the stop, are withdrawn, and the recipient keeps no row.
+func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, f Failure) (Result, error) {
+	rec, cause := f.Recipient, f.Cause
 	key := broadcastRecipientKey(rec.ID)
 	msg, err := m.find(ctx, s, key)
 	if err != nil {
@@ -814,6 +842,10 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.Broa
 		case err != nil:
 			return Result{}, err
 		case inserted:
+			withdrawn, err := withdrawIfStopped(ctx, s, f.Stopped, id, outboundmessage.StatusEQ(outboundmessage.StatusFailed))
+			if err != nil || withdrawn {
+				return lo.FromPtr(withdrawnResult(withdrawn)), err
+			}
 			return Result{Outcome: Failed, Reason: cause.Error(), MessageID: id}, nil
 		}
 		// Lost the insert race to an attempt's claim: judge that row like any other.
@@ -826,6 +858,9 @@ func (m *Module) FailRecipient(ctx context.Context, s *ent.Scoped, rec *ent.Broa
 	}
 	if m.now().Sub(msg.ClaimedAt) < m.lease {
 		return Result{}, ErrInProgress
+	}
+	if withdrawn, err := m.withdrawLeftBehind(ctx, s, f.Stopped, msg); err != nil || withdrawn {
+		return lo.FromPtr(withdrawnResult(withdrawn)), err
 	}
 	err = move(ctx, s, msg, []predicate.OutboundMessage{
 		outboundmessage.ClaimedAtLT(m.now().Add(-m.lease)),

@@ -10574,6 +10574,7 @@ type BroadcastMutation struct {
 	scheduled_at       *time.Time
 	sent_at            *time.Time
 	failed_at          *time.Time
+	cancelled_at       *time.Time
 	hold_reason        *holdreason.Reason
 	last_scheduled_at  *time.Time
 	clearedFields      map[string]struct{}
@@ -11907,6 +11908,55 @@ func (m *BroadcastMutation) ResetFailedAt() {
 	delete(m.clearedFields, broadcast.FieldFailedAt)
 }
 
+// SetCancelledAt sets the "cancelled_at" field.
+func (m *BroadcastMutation) SetCancelledAt(t time.Time) {
+	m.cancelled_at = &t
+}
+
+// CancelledAt returns the value of the "cancelled_at" field in the mutation.
+func (m *BroadcastMutation) CancelledAt() (r time.Time, exists bool) {
+	v := m.cancelled_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCancelledAt returns the old "cancelled_at" field's value of the Broadcast entity.
+// If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *BroadcastMutation) OldCancelledAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCancelledAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCancelledAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCancelledAt: %w", err)
+	}
+	return oldValue.CancelledAt, nil
+}
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (m *BroadcastMutation) ClearCancelledAt() {
+	m.cancelled_at = nil
+	m.clearedFields[broadcast.FieldCancelledAt] = struct{}{}
+}
+
+// CancelledAtCleared returns if the "cancelled_at" field was cleared in this mutation.
+func (m *BroadcastMutation) CancelledAtCleared() bool {
+	_, ok := m.clearedFields[broadcast.FieldCancelledAt]
+	return ok
+}
+
+// ResetCancelledAt resets all changes to the "cancelled_at" field.
+func (m *BroadcastMutation) ResetCancelledAt() {
+	m.cancelled_at = nil
+	delete(m.clearedFields, broadcast.FieldCancelledAt)
+}
+
 // SetHoldReason sets the "hold_reason" field.
 func (m *BroadcastMutation) SetHoldReason(h holdreason.Reason) {
 	m.hold_reason = &h
@@ -12228,7 +12278,7 @@ func (m *BroadcastMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BroadcastMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, broadcast.FieldCreatedAt)
 	}
@@ -12307,6 +12357,9 @@ func (m *BroadcastMutation) Fields() []string {
 	if m.failed_at != nil {
 		fields = append(fields, broadcast.FieldFailedAt)
 	}
+	if m.cancelled_at != nil {
+		fields = append(fields, broadcast.FieldCancelledAt)
+	}
 	if m.hold_reason != nil {
 		fields = append(fields, broadcast.FieldHoldReason)
 	}
@@ -12373,6 +12426,8 @@ func (m *BroadcastMutation) Field(name string) (ent.Value, bool) {
 		return m.SentAt()
 	case broadcast.FieldFailedAt:
 		return m.FailedAt()
+	case broadcast.FieldCancelledAt:
+		return m.CancelledAt()
 	case broadcast.FieldHoldReason:
 		return m.HoldReason()
 	case broadcast.FieldLastScheduledAt:
@@ -12438,6 +12493,8 @@ func (m *BroadcastMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldSentAt(ctx)
 	case broadcast.FieldFailedAt:
 		return m.OldFailedAt(ctx)
+	case broadcast.FieldCancelledAt:
+		return m.OldCancelledAt(ctx)
 	case broadcast.FieldHoldReason:
 		return m.OldHoldReason(ctx)
 	case broadcast.FieldLastScheduledAt:
@@ -12633,6 +12690,13 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetFailedAt(v)
 		return nil
+	case broadcast.FieldCancelledAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCancelledAt(v)
+		return nil
 	case broadcast.FieldHoldReason:
 		v, ok := value.(holdreason.Reason)
 		if !ok {
@@ -12743,6 +12807,9 @@ func (m *BroadcastMutation) ClearedFields() []string {
 	if m.FieldCleared(broadcast.FieldFailedAt) {
 		fields = append(fields, broadcast.FieldFailedAt)
 	}
+	if m.FieldCleared(broadcast.FieldCancelledAt) {
+		fields = append(fields, broadcast.FieldCancelledAt)
+	}
 	if m.FieldCleared(broadcast.FieldHoldReason) {
 		fields = append(fields, broadcast.FieldHoldReason)
 	}
@@ -12813,6 +12880,9 @@ func (m *BroadcastMutation) ClearField(name string) error {
 		return nil
 	case broadcast.FieldFailedAt:
 		m.ClearFailedAt()
+		return nil
+	case broadcast.FieldCancelledAt:
+		m.ClearCancelledAt()
 		return nil
 	case broadcast.FieldHoldReason:
 		m.ClearHoldReason()
@@ -12905,6 +12975,9 @@ func (m *BroadcastMutation) ResetField(name string) error {
 		return nil
 	case broadcast.FieldFailedAt:
 		m.ResetFailedAt()
+		return nil
+	case broadcast.FieldCancelledAt:
+		m.ResetCancelledAt()
 		return nil
 	case broadcast.FieldHoldReason:
 		m.ResetHoldReason()

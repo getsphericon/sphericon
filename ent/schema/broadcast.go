@@ -119,7 +119,7 @@ func (Broadcast) Fields() []ent.Field {
 			Nillable(),
 		field.Enum("status").
 			Annotations(Machine()).
-			Values("draft", "scheduled", "sending", "sent", "failed").
+			Values("draft", "scheduled", "sending", "sent", "failed", "cancelled").
 			Default("draft"),
 		field.Time("scheduled_at").
 			Annotations(Attribute("the planned send time, written with its status by its machine")).
@@ -132,6 +132,12 @@ func (Broadcast) Fields() []ent.Field {
 		// When the Broadcast failed, set in the write that moves it to failed: Needs attention
 		// reads a recent failure from it, so a later edit of the row does not move its age.
 		field.Time("failed_at").
+			Annotations(Attribute(reasonWithStatus)).
+			Optional().
+			Nillable(),
+		// When the Broadcast was cancelled (ADR 0150), set in the write that moves it to cancelled:
+		// a cancelled Broadcast is finished, as a sent or failed one is.
+		field.Time("cancelled_at").
 			Annotations(Attribute(reasonWithStatus)).
 			Optional().
 			Nillable(),
@@ -185,14 +191,15 @@ func (Broadcast) Indexes() []ent.Index {
 }
 
 // broadcastTable adds the timestamps a status promises to the enum checks: a scheduled
-// Broadcast has its time, a sent one its sent_at, a failed one its failed_at (each set in the
-// write that moves the status). It also checks that the content is exactly the Channel's.
+// Broadcast has its time, a sent one its sent_at, a failed one its failed_at, a cancelled one its
+// cancelled_at (each set in the write that moves the status). It also checks that the content is exactly the Channel's.
 func broadcastTable() entsql.Annotation {
 	a := TableWithEnumChecks("broadcasts", Broadcast{}.Fields())
 	a.Checks["broadcasts_content_check"] = variantCheck("channel", broadcastContents)
 	a.Checks["broadcasts_scheduled_at_check"] = "status <> 'scheduled' OR scheduled_at IS NOT NULL"
 	a.Checks["broadcasts_sent_at_check"] = "status <> 'sent' OR sent_at IS NOT NULL"
 	a.Checks["broadcasts_failed_at_check"] = "status <> 'failed' OR failed_at IS NOT NULL"
+	a.Checks["broadcasts_cancelled_at_check"] = "status <> 'cancelled' OR cancelled_at IS NOT NULL"
 	a.Checks["broadcasts_condition_check"] = conditionCheck("condition")
 	return a
 }

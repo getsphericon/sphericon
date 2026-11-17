@@ -160,6 +160,18 @@ func TestBroadcastNotScheduledReadsWithoutAPrefix(t *testing.T) {
 	assert.Equal(t, "only scheduled broadcasts can be unscheduled", problemDetail(t, err))
 }
 
+// A Cancel of a Broadcast that is not sending reads the same on both surfaces (ADR 0150).
+func TestBroadcastNotSendingReadsTheSameOnBothSurfaces(t *testing.T) {
+	env := testhelper.Setup(t)
+	_, siteErr := env.SiteActor(t, fixtures.OwnerJohnEmail).SiteBroadcastsCancel(t.Context(),
+		siteapi.SiteBroadcastsCancelParams{WorkspaceId: fixtures.AcmePublicID, ID: fixtures.BroadcastDraftID})
+	_, apiErr := env.ExternalScoped(t, apitokens.ScopeBroadcastsWrite).BroadcastsCancel(t.Context(),
+		externalapi.BroadcastsCancelParams{ID: fixtures.BroadcastDraftID})
+
+	assert.Equal(t, "only a sending broadcast can be cancelled", problemDetail(t, siteErr))
+	assert.Equal(t, "only a sending broadcast can be cancelled", problemDetail(t, apiErr))
+}
+
 func TestTemplateRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 	const missing = 99999
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)

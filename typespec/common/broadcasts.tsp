@@ -9,6 +9,9 @@ enum BroadcastStatus {
   sending,
   sent,
   failed,
+
+  /** Cancelled while sending (ADR 0150): final, its Recipients without a message were never sent */
+  cancelled,
 }
 
 /** The Channel a Broadcast sends on, fixed when it is created (ADR 0080) */

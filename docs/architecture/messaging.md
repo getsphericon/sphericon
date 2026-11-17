@@ -50,11 +50,20 @@ guarantees: a request accepted before a failed result write may be repeated.
 **Broadcast send jobs** (ADR 0107, ADR 0111): `broadcasts.Delivery.RunQueued` runs a plan job
 and `DeliverRecipient` one attempt at a recipient's job (`broadcasts.Attempt`, the number and
 the limit). The module decides what the run comes to, as a `broadcasts.Outcome` without River
-types: a job superseded by a reschedule or stale (unscheduled, sent or failed meanwhile) is done,
+types: a job superseded by a reschedule or stale (unscheduled, sent, failed or cancelled meanwhile) is done,
 a hold, a Deferral or a live claim waits the time it asks for, any other failure spends an
 attempt, and on the last attempt a failed recipient is given up so the Broadcast settles. The
 River workers load the row that names the Workspace, hand over the attempt and turn the outcome
 into a snooze or an error; the synchronous adapter runs every send as its last attempt.
+
+A Cancel (ADR 0150) stops what has not started: a recipient of a cancelled Broadcast with no
+Outbound message gets none, from the plan or from a send job, and on no attempt is it given up as
+failed. The job asks at the claim too: the Request carries `Stopped`, which Outbound send asks once
+its new claim is written, so a claim that raced the move is withdrawn (`outboundmessages.Withdrawn`,
+the row deleted) and one written before it goes out; a failure recorded for a recipient asks the
+same (`outboundmessages.Failure.Stopped`), a claim left behind after the move by an attempt that died
+is withdrawn instead of taken over, and a plan asks once its rows are written, scheduling none. The figures derive the rest: a cancelled
+Broadcast's recipients without a message are `cancelled`, and no row is written for them.
 
 ## Email rendering
 

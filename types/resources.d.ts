@@ -69,6 +69,7 @@ export default interface Resources {
       "automationSaveErrorTitle": "Failed to save automation",
       "automationStatusErrorTitle": "Failed to change automation status",
       "broadcastArchiveErrorTitle": "Failed to archive broadcast",
+      "broadcastCancelErrorTitle": "Failed to cancel broadcast",
       "broadcastLoadErrorTitle": "Failed to load broadcasts",
       "broadcastRestoreErrorTitle": "Failed to restore broadcast",
       "broadcastSaveErrorTitle": "Failed to save broadcast",
@@ -511,6 +512,14 @@ export default interface Resources {
         "placeholder": "Choose a segment or all contacts",
         "segment": "Audience: segment {{name}}"
       },
+      "cancel": {
+        "action": "Cancel sending",
+        "confirm": "Cancel broadcast",
+        "description": "{{count, number}} recipient has not been sent it yet and will not get it. Messages already sent cannot be recalled." | "{{count, number}} recipients have not been sent it yet and will not get it. Messages already sent cannot be recalled.",
+        "keep": "Keep sending",
+        "title": "Cancel “{{name}}”?",
+        "unsent": "{{count, number}} not sent" | "{{count, number}} not sent"
+      },
       "channelAll": "Every channel",
       "channelFilter": "Channel",
       "channelHint": "Fixed once the broadcast is created: its content is written for this channel only.",
@@ -572,6 +581,7 @@ export default interface Resources {
       "sendNow": "Send now",
       "stats": {
         "bounced": "Bounced",
+        "cancelled": "Cancelled",
         "captured": "Captured, not delivered",
         "clickRate": "Click rate",
         "clickToOpenRate": "Click-to-open",
@@ -592,12 +602,15 @@ export default interface Resources {
         "unsubscribed": "Unsubscribed"
       },
       "status": {
+        "cancelled": "Cancelled",
         "draft": "Draft",
         "failed": "Failed",
         "scheduled": "Scheduled",
         "sending": "Sending",
         "sent": "Sent"
       },
+      "statusAll": "All statuses",
+      "statusFilter": "Status",
       "statusLabel": "Status",
       "subjectLabel": "Subject",
       "testSendButton": "Send test",
@@ -1326,6 +1339,7 @@ export default interface Resources {
       "automationReverted": "Unpublished changes reverted",
       "automationUpdated": "Automation updated",
       "broadcastArchived": "Broadcast archived",
+      "broadcastCancelled": "Broadcast cancelled: {{count, number}} recipient left unsent" | "Broadcast cancelled: {{count, number}} recipients left unsent",
       "broadcastCreated": "Broadcast created",
       "broadcastRestored": "Broadcast restored",
       "broadcastScheduled": "Broadcast scheduled",

@@ -21,6 +21,9 @@ func broadcastResource(v broadcasts.View) siteapi.SiteBroadcastResource {
 	if v.Recipients != nil {
 		res.Recipients = siteapi.NewOptInt32(narrow.Int32(*v.Recipients))
 	}
+	if v.Unsent != nil {
+		res.Unsent = siteapi.NewOptInt32(narrow.Int32(*v.Unsent))
+	}
 	res.Warnings = mapper.LintFindingsToResource(v.Warnings)
 	return res
 }
@@ -130,6 +133,17 @@ func (h *Handlers) SiteBroadcastsSchedule(ctx context.Context, req *siteapi.Sche
 	id := int64(params.ID)
 
 	v, err := h.broadcastViews.Schedule(ctx, ws, id, inputs.BroadcastSchedule(req))
+	if err != nil {
+		return nil, err
+	}
+	res := broadcastResource(v)
+	return &res, nil
+}
+
+// SiteBroadcastsCancel ends a sending broadcast (ADR 0150) and answers it with the recipients it
+// left unsent.
+func (h *Handlers) SiteBroadcastsCancel(ctx context.Context, params siteapi.SiteBroadcastsCancelParams) (*siteapi.SiteBroadcastResource, error) {
+	v, err := h.broadcastViews.Cancel(ctx, workspaceScope(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}

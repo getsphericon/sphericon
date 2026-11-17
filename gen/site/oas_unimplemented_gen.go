@@ -502,12 +502,24 @@ func (UnimplementedHandler) SiteBroadcastLinksList(ctx context.Context, params S
 
 // SiteBroadcastsArchive implements SiteBroadcasts_archive operation.
 //
-// Archive a draft, sent or failed broadcast: it leaves the list, keeps its report, tracking and
-// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+// Archive a draft, sent, failed or cancelled broadcast: it leaves the list, keeps its report, tracking
+// and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
 // archived (409). Archiving an archived broadcast changes nothing.
 //
 // POST /workspaces/{workspaceId}/broadcasts/{id}/archive
 func (UnimplementedHandler) SiteBroadcastsArchive(ctx context.Context, params SiteBroadcastsArchiveParams) (r *SiteBroadcastResource, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SiteBroadcastsCancel implements SiteBroadcasts_cancel operation.
+//
+// Cancel a sending broadcast (ADR 0150): it moves to `cancelled`, final, and no recipient without a
+// message gets one afterwards. A message already handed to the provider goes out, since a provider
+// cannot be called back. The answer carries `unsent`, the recipients left unsent. A held broadcast is
+// sending and is cancelled like any other. Anything but a sending broadcast is a 409.
+//
+// POST /workspaces/{workspaceId}/broadcasts/{id}/cancel
+func (UnimplementedHandler) SiteBroadcastsCancel(ctx context.Context, params SiteBroadcastsCancelParams) (r *SiteBroadcastResource, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

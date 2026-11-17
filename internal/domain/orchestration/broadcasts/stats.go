@@ -31,8 +31,13 @@ type Stats struct {
 	Recipients int
 	// Sent, Skipped and Failed count the recipients whose message ended that way.
 	Sent, Skipped, Failed int
+	// Cancelled counts the recipients of a cancelled Broadcast that have no message (ADR 0150):
+	// Cancel left them unsent, and none is created for them afterwards. It is zero on any other
+	// Broadcast, and no row is written for them.
+	Cancelled int
 	// Pending counts the recipients whose send has not ended: no message yet, or one still
-	// claimed. It is Recipients less the three above.
+	// claimed. It is Recipients less the four above, so a cancelled Broadcast's are only its
+	// claims still in flight.
 	Pending int
 	// Opened, Clicked and Unsubscribed count the recipients with that engagement.
 	Opened, Clicked, Unsubscribed int
@@ -54,7 +59,7 @@ type Stats struct {
 // undelivered, bounced, complained and captured, and the rates built on them, are nil on a Channel
 // that does not report them, never zero. Telegram and SMS have no delivery rate and no open rate.
 type Figures struct {
-	Recipients, Sent, Skipped, Failed, Pending, Clicked, Unsubscribed int
+	Recipients, Sent, Skipped, Failed, Cancelled, Pending, Clicked, Unsubscribed int
 
 	Opened, Delivered, Undelivered, Bounced, Complained, Captured *int
 
@@ -67,7 +72,8 @@ type Figures struct {
 // Figures reads the Stats as the Channel of the Broadcast reports them.
 func (st Stats) Figures() Figures {
 	f := Figures{
-		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed, Pending: st.Pending,
+		Recipients: st.Recipients, Sent: st.Sent, Skipped: st.Skipped, Failed: st.Failed,
+		Cancelled: st.Cancelled, Pending: st.Pending,
 		Clicked: st.Clicked, Unsubscribed: st.Unsubscribed,
 		ClickRate: st.ClickRate(), UnsubscribeRate: st.UnsubscribeRate(), FailureRate: st.FailureRate(),
 		Revenue: st.Revenue,
@@ -142,6 +148,19 @@ func Ratio(num, denom int) float32 {
 		return 0
 	}
 	return float32(num) / float32(denom)
+}
+
+// unclaimed matches the recipients no Outbound message was created for: nothing was claimed or
+// recorded for them. On a cancelled Broadcast they are the ones Cancel left unsent (ADR 0150).
+func unclaimed() predicate.BroadcastRecipient {
+	return func(sel *sql.Selector) {
+		m := sql.Table(outboundmessage.Table).As("claimed")
+		sel.Where(sql.NotExists(
+			sql.Select(m.C(outboundmessage.FieldID)).From(m).Where(
+				sql.ColumnsEQ(m.C(outboundmessage.FieldBroadcastRecipientID), sel.C(broadcastrecipient.FieldID)),
+			),
+		))
+	}
 }
 
 // Pending matches the recipients whose send has not ended: no Outbound message of theirs has
@@ -299,9 +318,29 @@ func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (m
 		}
 		out[row.BroadcastID] = st
 	}
+	var cancelled []struct {
+		BroadcastID int64 `json:"broadcast_id"`
+		Count       int   `json:"count"`
+	}
+	if err := s.BroadcastRecipient().Query().
+		Where(
+			broadcastrecipient.BroadcastIDIn(ids...),
+			broadcastrecipient.HasBroadcastWith(broadcast.StatusEQ(broadcast.StatusCancelled)),
+			unclaimed(),
+		).
+		GroupBy(broadcastrecipient.FieldBroadcastID).
+		Aggregate(ent.As(ent.Count(), "count")).
+		Scan(ctx, &cancelled); err != nil {
+		return nil, err
+	}
+	for _, c := range cancelled {
+		st := out[c.BroadcastID]
+		st.Cancelled = c.Count
+		out[c.BroadcastID] = st
+	}
 	for id := range out {
 		st := out[id]
-		st.Pending = max(0, st.Recipients-st.Sent-st.Skipped-st.Failed)
+		st.Pending = max(0, st.Recipients-st.Sent-st.Skipped-st.Failed-st.Cancelled)
 		out[id] = st
 	}
 	return out, nil

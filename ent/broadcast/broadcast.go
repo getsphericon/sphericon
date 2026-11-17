@@ -69,6 +69,8 @@ const (
 	FieldSentAt = "sent_at"
 	// FieldFailedAt holds the string denoting the failed_at field in the database.
 	FieldFailedAt = "failed_at"
+	// FieldCancelledAt holds the string denoting the cancelled_at field in the database.
+	FieldCancelledAt = "cancelled_at"
 	// FieldHoldReason holds the string denoting the hold_reason field in the database.
 	FieldHoldReason = "hold_reason"
 	// FieldLastScheduledAt holds the string denoting the last_scheduled_at field in the database.
@@ -151,6 +153,7 @@ var Columns = []string{
 	FieldScheduledAt,
 	FieldSentAt,
 	FieldFailedAt,
+	FieldCancelledAt,
 	FieldHoldReason,
 	FieldLastScheduledAt,
 }
@@ -207,6 +210,7 @@ const (
 	StatusSending   Status = "sending"
 	StatusSent      Status = "sent"
 	StatusFailed    Status = "failed"
+	StatusCancelled Status = "cancelled"
 )
 
 func (s Status) String() string {
@@ -216,7 +220,7 @@ func (s Status) String() string {
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s Status) error {
 	switch s {
-	case StatusDraft, StatusScheduled, StatusSending, StatusSent, StatusFailed:
+	case StatusDraft, StatusScheduled, StatusSending, StatusSent, StatusFailed, StatusCancelled:
 		return nil
 	default:
 		return fmt.Errorf("broadcast: invalid enum value for status field: %q", s)
@@ -359,6 +363,11 @@ func BySentAt(opts ...sql.OrderTermOption) OrderOption {
 // ByFailedAt orders the results by the failed_at field.
 func ByFailedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFailedAt, opts...).ToFunc()
+}
+
+// ByCancelledAt orders the results by the cancelled_at field.
+func ByCancelledAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCancelledAt, opts...).ToFunc()
 }
 
 // ByHoldReason orders the results by the hold_reason field.

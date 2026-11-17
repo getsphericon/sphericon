@@ -1,4 +1,4 @@
-import { Group, Menu, Select, Stack, Title } from '@mantine/core'
+import { Group, Menu, Select, Stack, Text, Title } from '@mantine/core'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
@@ -12,7 +12,7 @@ import {
   siteBroadcastsUnarchiveMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type { SiteBroadcastResource } from '../../generated/site/types.gen.ts'
-import { zBroadcastChannel } from '../../generated/site/zod.gen.ts'
+import { zBroadcastChannel, zBroadcastStatus } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as broadcastsEditRoute } from '../../routes/workspaces/$workspaceId/broadcasts/$broadcastId/edit.tsx'
@@ -24,6 +24,7 @@ import { messageRevenueCells } from '../../utils/messageRevenue.ts'
 import type { FieldColumn } from '../../utils/tableColumns.ts'
 import { BroadcastHoldBadge } from './BroadcastHold.tsx'
 import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
+import { useCancelBroadcast } from './cancelBroadcast.tsx'
 
 export function BroadcastsListPage() {
   const { t } = useTranslation()
@@ -41,8 +42,15 @@ export function BroadcastsListPage() {
     successMessage: t(($) => $.notifications.broadcastRestored),
     errorTitle: t(($) => $.alerts.broadcastRestoreErrorTitle),
   })
-  const { archived = false, channel, page } = broadcastsRoute.useSearch()
+  const cancelBroadcast = useCancelBroadcast(workspaceId)
+  const { archived = false, channel, status, page } = broadcastsRoute.useSearch()
   const routeNavigate = broadcastsRoute.useNavigate()
+  // The filters a change keeps; a change starts again from the first page.
+  const filters = {
+    archived: archived || undefined,
+    ...(channel && { channel }),
+    ...(status && { status }),
+  }
 
   return (
     <Stack flex={1}>
@@ -58,7 +66,7 @@ export function BroadcastsListPage() {
           archived={archived}
           onChange={(next) =>
             void routeNavigate({
-              search: { archived: next || undefined, ...(channel && { channel }) },
+              search: { ...filters, archived: next || undefined },
               replace: true,
               viewTransition: false,
             })
@@ -78,8 +86,32 @@ export function BroadcastsListPage() {
             void routeNavigate({
               // A new filter starts again from the first page.
               search: {
-                archived: archived || undefined,
+                ...filters,
                 channel: zBroadcastChannel
+                  .optional()
+                  .catch(undefined)
+                  .parse(next ?? undefined),
+              },
+              replace: true,
+              viewTransition: false,
+            })
+          }
+        />
+        <Select
+          w={200}
+          clearable
+          label={t(($) => $.broadcasts.statusFilter)}
+          placeholder={t(($) => $.broadcasts.statusAll)}
+          data={zBroadcastStatus.options.map((value) => ({
+            value,
+            label: t(($) => $.broadcasts.status[value]),
+          }))}
+          value={status ?? null}
+          onChange={(next) =>
+            void routeNavigate({
+              search: {
+                ...filters,
+                status: zBroadcastStatus
                   .optional()
                   .catch(undefined)
                   .parse(next ?? undefined),
@@ -99,7 +131,12 @@ export function BroadcastsListPage() {
         options={(query) =>
           siteBroadcastsListOptions({
             path: { workspaceId },
-            query: { ...query, archived, ...(channel && { channel }) },
+            query: {
+              ...query,
+              archived,
+              ...(channel && { channel }),
+              ...(status && { status: [status] }),
+            },
           })
         }
         loadErrorTitle={t(($) => $.alerts.broadcastLoadErrorTitle)}
@@ -135,6 +172,11 @@ export function BroadcastsListPage() {
               <Group gap="xs">
                 <BroadcastStatusBadge status={record.status} />
                 {record.holdReason && <BroadcastHoldBadge />}
+                {record.status === 'cancelled' && (
+                  <Text size="sm" c="dimmed">
+                    {t(($) => $.broadcasts.cancel.unsent, { count: record.stats.cancelledCount })}
+                  </Text>
+                )}
               </Group>
             ),
           },
@@ -177,6 +219,11 @@ export function BroadcastsListPage() {
                   >
                     {t(($) => $.actions.edit)}
                   </MenuItemLink>
+                  {record.status === 'sending' && (
+                    <Menu.Item color="red" onClick={() => cancelBroadcast(record)}>
+                      {t(($) => $.broadcasts.cancel.action)}
+                    </Menu.Item>
+                  )}
                   {record.status !== 'scheduled' &&
                     record.status !== 'sending' &&
                     (record.archivedAt ? (

@@ -125,12 +125,22 @@ type Handler interface {
 	BrandKitGet(ctx context.Context) (*BrandKitResource, error)
 	// BroadcastsArchive implements Broadcasts_archive operation.
 	//
-	// Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and
-	// can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409).
-	// Archiving an archived broadcast changes nothing.
+	// Archive a draft, sent, failed or cancelled broadcast: it leaves the list but keeps its report and
+	// figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be
+	// archived (409). Archiving an archived broadcast changes nothing.
 	//
 	// POST /broadcasts/{id}/archive
 	BroadcastsArchive(ctx context.Context, params BroadcastsArchiveParams) (*BroadcastResource, error)
+	// BroadcastsCancel implements Broadcasts_cancel operation.
+	//
+	// Cancel a sending broadcast (ADR 0150): it moves to `cancelled`, final, and no recipient without a
+	// message gets one afterwards. A message already handed to the provider goes out, since a provider
+	// cannot be called back. The answer carries `unsent`, the recipients left unsent. A held broadcast is
+	// sending and is cancelled like any other. Anything but a sending broadcast is a 409. Not send-class:
+	// it only narrows reach, so it needs broadcasts:write, and over MCP no mcp:send.
+	//
+	// POST /broadcasts/{id}/cancel
+	BroadcastsCancel(ctx context.Context, params BroadcastsCancelParams) (*BroadcastResource, error)
 	// BroadcastsCreate implements Broadcasts_create operation.
 	//
 	// Create a resource.

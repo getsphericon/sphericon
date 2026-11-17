@@ -61,6 +61,10 @@ func idGuardCases() []guardCase {
 			_, err := c.BroadcastsUnschedule(ctx, externalapi.BroadcastsUnscheduleParams{ID: id})
 			return err
 		}},
+		{"BroadcastsCancel", func(c *externalapi.Client, id externalapi.EntityId) error {
+			_, err := c.BroadcastsCancel(ctx, externalapi.BroadcastsCancelParams{ID: id})
+			return err
+		}},
 		{"BroadcastsTestSend", func(c *externalapi.Client, id externalapi.EntityId) error {
 			return c.BroadcastsTestSend(ctx, &externalapi.TestSendBroadcastInput{Email: externalapi.NewOptEmailAddress("qa@example.com")}, externalapi.BroadcastsTestSendParams{ID: id})
 		}},

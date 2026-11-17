@@ -141,7 +141,7 @@ func (m *Module) sendEmailBroadcastTest(ctx context.Context, s *ent.Scoped, b *e
 		return Result{}, ErrTestRefused.With(RefuseDetail(res.Reason))
 	case Failed: // the content did not render
 		return Result{}, fmt.Errorf("%w: %s", emailrender.ErrInvalidContent, res.Reason)
-	case Sent, Skipped, Deferral:
+	case Sent, Skipped, Deferral, Withdrawn:
 	}
 	return res, nil
 }

@@ -55,6 +55,7 @@ const RESOURCE: SiteBroadcastResource = {
     skippedCount: 0,
     failedCount: 0,
     pendingCount: 0,
+    cancelledCount: 0,
     openedCount: 0,
     clickedCount: 0,
     unsubscribedCount: 0,

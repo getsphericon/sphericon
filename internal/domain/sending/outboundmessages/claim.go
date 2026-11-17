@@ -42,8 +42,7 @@ func (m *Module) find(ctx context.Context, s *ent.Scoped, key string) (*ent.Outb
 // its lease has expired, and otherwise reported as ErrInProgress.
 func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest string, g gateResult, existing *ent.OutboundMessage) (*ent.OutboundMessage, *Result, error) {
 	if existing != nil {
-		msg, err := m.takeOver(ctx, s, existing)
-		return msg, nil, err
+		return m.adopt(ctx, s, req, existing)
 	}
 
 	onChannel := req.Channel()
@@ -79,7 +78,14 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		return nil, nil, err
 	case inserted:
 		msg, err := s.OutboundMessage().Get(ctx, id)
-		return msg, nil, err
+		if err != nil {
+			return nil, nil, err
+		}
+		withdrawn, err := withdrawIfStopped(ctx, s, req.Stopped, msg.ID, ownsClaim(msg)...)
+		if err != nil || withdrawn {
+			return nil, withdrawnResult(withdrawn), err
+		}
+		return msg, nil, nil
 	}
 	// Lost the insert race: another attempt claimed this key between our replay
 	// check and now. Treat its row exactly like one we found up front.
@@ -97,8 +103,75 @@ func (m *Module) claim(ctx context.Context, s *ent.Scoped, req Request, dest str
 		r := replayResult(other)
 		return nil, &r, nil
 	}
-	msg, err := m.takeOver(ctx, s, other)
+	return m.adopt(ctx, s, req, other)
+}
+
+// adopt takes over a pending claim another attempt left (takeOver), unless it was left behind
+// after the source stopped (withdrawLeftBehind): that one is withdrawn.
+func (m *Module) adopt(ctx context.Context, s *ent.Scoped, req Request, existing *ent.OutboundMessage) (*ent.OutboundMessage, *Result, error) {
+	withdrawn, err := m.withdrawLeftBehind(ctx, s, req.Stopped, existing)
+	if err != nil || withdrawn {
+		return nil, withdrawnResult(withdrawn), err
+	}
+	msg, err := m.takeOver(ctx, s, existing)
 	return msg, nil, err
+}
+
+// withdrawLeftBehind withdraws a pending claim whose lease has run out when it was written after
+// its source stopped (SourceStop): the withdrawal of a claim that raced the stop never finished (the
+// attempt died between the claim and the question), and taking it over would send what the stop
+// refused. A claim written before the stop goes on, as any claim does. A live claim is left to
+// takeOver, which reports it in progress.
+func (m *Module) withdrawLeftBehind(ctx context.Context, s *ent.Scoped, stopped SourceStop, claim *ent.OutboundMessage) (bool, error) {
+	if stopped == nil || m.now().Sub(claim.ClaimedAt) < m.lease {
+		return false, nil
+	}
+	at, err := stopped(ctx, s)
+	if err != nil {
+		return false, fmt.Errorf("outbound: ask whether the source stopped: %w", err)
+	}
+	if at == nil || claim.ClaimedAt.Before(*at) {
+		return false, nil
+	}
+	n, err := s.OutboundMessage().Delete().Where(ownsClaim(claim)...).Exec(ctx)
+	if err != nil {
+		return false, fmt.Errorf("outbound: withdraw message %d: %w", claim.ID, err)
+	}
+	if n == 0 {
+		return false, ErrInProgress // another attempt took the claim meanwhile: look again later
+	}
+	return true, nil
+}
+
+// withdrawIfStopped asks a message's source, once the message's row is written (a new claim, or a
+// recipient's failure), whether it has stopped (Request.Stopped, Failure.Stopped). A stopped
+// source gets the row deleted, matched by fence, and the message reports withdrawn: no row is left behind, so the
+// Recipient it was for still reads as never claimed. A nil stop takes every message. The deletion
+// must land: a claim left behind would be taken over once its lease runs out, unless
+// withdrawLeftBehind catches it.
+func withdrawIfStopped(ctx context.Context, s *ent.Scoped, stopped SourceStop, id int64, fence ...predicate.OutboundMessage) (bool, error) {
+	if stopped == nil {
+		return false, nil
+	}
+	at, err := stopped(ctx, s)
+	if err == nil && at == nil {
+		return false, nil
+	}
+	if _, derr := s.OutboundMessage().Delete().Where(append(fence, outboundmessage.ID(id))...).Exec(ctx); derr != nil {
+		return false, errors.Join(err, fmt.Errorf("outbound: withdraw message %d: %w", id, derr))
+	}
+	if err != nil {
+		return false, fmt.Errorf("outbound: ask whether the source stopped: %w", err)
+	}
+	return true, nil
+}
+
+// withdrawnResult is the Result of a withdrawn message, nil for one that was not.
+func withdrawnResult(withdrawn bool) *Result {
+	if !withdrawn {
+		return nil
+	}
+	return &Result{Outcome: Withdrawn}
 }
 
 // takeOver adopts a pending claim, but only when its lease has expired (a crashed

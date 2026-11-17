@@ -1200,7 +1200,42 @@
     "/broadcasts/{id}/archive": {
       "post": {
         "operationId": "Broadcasts_archive",
-        "description": "Archive a draft, sent or failed broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing.",
+        "description": "Archive a draft, sent, failed or cancelled broadcast: it leaves the list but keeps its report and figures, and can be unarchived. A scheduled or sending broadcast is work in flight and cannot be archived (409). Archiving an archived broadcast changes nothing.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/BroadcastResourceKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastResource"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the\nstatus is the response's and the body's `status`, and `code` tells apart the answers a client\nbranches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the\nrate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's\n`retryAfter` is the wait for a client that reads only the body. Every operation declares it,\nas the `default` response (ADR 0103).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Broadcasts"],
+        "x-required-scopes": ["broadcasts:write"]
+      }
+    },
+    "/broadcasts/{id}/cancel": {
+      "post": {
+        "operationId": "Broadcasts_cancel",
+        "description": "Cancel a sending broadcast (ADR 0150): it moves to `cancelled`, final, and no recipient without a message gets one afterwards. A message already handed to the provider goes out, since a provider cannot be called back. The answer carries `unsent`, the recipients left unsent. A held broadcast is sending and is cancelled like any other. Anything but a sending broadcast is a 409. Not send-class: it only narrows reach, so it needs broadcasts:write, and over MCP no mcp:send.",
         "parameters": [
           {
             "$ref": "#/components/parameters/BroadcastResourceKey"
@@ -6668,6 +6703,7 @@
           "skippedCount",
           "failedCount",
           "pendingCount",
+          "cancelledCount",
           "openedCount",
           "clickedCount",
           "unsubscribedCount",
@@ -6720,7 +6756,12 @@
           "pendingCount": {
             "type": "integer",
             "format": "int32",
-            "description": "Recipients whose send has not ended yet"
+            "description": "Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed over"
+          },
+          "cancelledCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the broadcast is cancelled."
           },
           "openedCount": {
             "type": "integer",
@@ -6856,6 +6897,11 @@
             "format": "int32",
             "description": "The recipients the broadcast would take at the moment it was scheduled: its audience's contacts with a destination on its Channel that is neither suppressed nor unsubscribed (ADR 0149). Answered by Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from the condition copied then (ADR 0065)."
           },
+          "unsent": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The recipients Cancel left unsent: those with no message when it landed (ADR 0150). A message already handed to the provider goes out and is not counted. Answered by Cancel only."
+          },
           "sentAt": {
             "type": "string",
             "allOf": [
@@ -6915,7 +6961,7 @@
       },
       "BroadcastStatus": {
         "type": "string",
-        "enum": ["draft", "scheduled", "sending", "sent", "failed"],
+        "enum": ["draft", "scheduled", "sending", "sent", "failed", "cancelled"],
         "description": "Broadcast lifecycle status"
       },
       "CapturedMessageFields": {

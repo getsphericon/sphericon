@@ -355,6 +355,20 @@ func (_c *BroadcastCreate) SetNillableFailedAt(v *time.Time) *BroadcastCreate {
 	return _c
 }
 
+// SetCancelledAt sets the "cancelled_at" field.
+func (_c *BroadcastCreate) SetCancelledAt(v time.Time) *BroadcastCreate {
+	_c.mutation.SetCancelledAt(v)
+	return _c
+}
+
+// SetNillableCancelledAt sets the "cancelled_at" field if the given value is not nil.
+func (_c *BroadcastCreate) SetNillableCancelledAt(v *time.Time) *BroadcastCreate {
+	if v != nil {
+		_c.SetCancelledAt(*v)
+	}
+	return _c
+}
+
 // SetHoldReason sets the "hold_reason" field.
 func (_c *BroadcastCreate) SetHoldReason(v holdreason.Reason) *BroadcastCreate {
 	_c.mutation.SetHoldReason(v)
@@ -676,6 +690,10 @@ func (_c *BroadcastCreate) createSpec() (*Broadcast, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.FailedAt(); ok {
 		_spec.SetField(broadcast.FieldFailedAt, field.TypeTime, value)
 		_node.FailedAt = &value
+	}
+	if value, ok := _c.mutation.CancelledAt(); ok {
+		_spec.SetField(broadcast.FieldCancelledAt, field.TypeTime, value)
+		_node.CancelledAt = &value
 	}
 	if value, ok := _c.mutation.HoldReason(); ok {
 		_spec.SetField(broadcast.FieldHoldReason, field.TypeEnum, value)
@@ -1213,6 +1231,24 @@ func (u *BroadcastUpsert) UpdateFailedAt() *BroadcastUpsert {
 // ClearFailedAt clears the value of the "failed_at" field.
 func (u *BroadcastUpsert) ClearFailedAt() *BroadcastUpsert {
 	u.SetNull(broadcast.FieldFailedAt)
+	return u
+}
+
+// SetCancelledAt sets the "cancelled_at" field.
+func (u *BroadcastUpsert) SetCancelledAt(v time.Time) *BroadcastUpsert {
+	u.Set(broadcast.FieldCancelledAt, v)
+	return u
+}
+
+// UpdateCancelledAt sets the "cancelled_at" field to the value that was provided on create.
+func (u *BroadcastUpsert) UpdateCancelledAt() *BroadcastUpsert {
+	u.SetExcluded(broadcast.FieldCancelledAt)
+	return u
+}
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (u *BroadcastUpsert) ClearCancelledAt() *BroadcastUpsert {
+	u.SetNull(broadcast.FieldCancelledAt)
 	return u
 }
 
@@ -1765,6 +1801,27 @@ func (u *BroadcastUpsertOne) UpdateFailedAt() *BroadcastUpsertOne {
 func (u *BroadcastUpsertOne) ClearFailedAt() *BroadcastUpsertOne {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearFailedAt()
+	})
+}
+
+// SetCancelledAt sets the "cancelled_at" field.
+func (u *BroadcastUpsertOne) SetCancelledAt(v time.Time) *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetCancelledAt(v)
+	})
+}
+
+// UpdateCancelledAt sets the "cancelled_at" field to the value that was provided on create.
+func (u *BroadcastUpsertOne) UpdateCancelledAt() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateCancelledAt()
+	})
+}
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (u *BroadcastUpsertOne) ClearCancelledAt() *BroadcastUpsertOne {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearCancelledAt()
 	})
 }
 
@@ -2489,6 +2546,27 @@ func (u *BroadcastUpsertBulk) UpdateFailedAt() *BroadcastUpsertBulk {
 func (u *BroadcastUpsertBulk) ClearFailedAt() *BroadcastUpsertBulk {
 	return u.Update(func(s *BroadcastUpsert) {
 		s.ClearFailedAt()
+	})
+}
+
+// SetCancelledAt sets the "cancelled_at" field.
+func (u *BroadcastUpsertBulk) SetCancelledAt(v time.Time) *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.SetCancelledAt(v)
+	})
+}
+
+// UpdateCancelledAt sets the "cancelled_at" field to the value that was provided on create.
+func (u *BroadcastUpsertBulk) UpdateCancelledAt() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.UpdateCancelledAt()
+	})
+}
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (u *BroadcastUpsertBulk) ClearCancelledAt() *BroadcastUpsertBulk {
+	return u.Update(func(s *BroadcastUpsert) {
+		s.ClearCancelledAt()
 	})
 }
 

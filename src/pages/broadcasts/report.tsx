@@ -1,4 +1,4 @@
-import { Badge, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Badge, Button, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
@@ -19,6 +19,7 @@ import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 import { BroadcastHoldAlert } from './BroadcastHold.tsx'
 import { BroadcastProgress } from './BroadcastProgress.tsx'
 import { BroadcastStatusBadge } from './BroadcastStatusBadge.tsx'
+import { useCancelBroadcast } from './cancelBroadcast.tsx'
 
 interface Entry<V> {
   label: string
@@ -32,17 +33,23 @@ function reported<V>(entries: Entry<V>[]): { label: string; value: V }[] {
   return entries.flatMap(({ label, value }) => (value === null ? [] : [{ label, value }]))
 }
 
+// The cancelled figure is a cancelled Broadcast's own: on any other it is zero, and has no card.
 function statEntries(
   t: TFunction,
-  stats: SiteBroadcastStats,
+  broadcast: SiteBroadcastResource,
   locale: string,
 ): { label: string; value: number | string }[] {
+  const { stats } = broadcast
   return [
     ...reported<number | string>([
       { label: t(($) => $.broadcasts.stats.recipients), value: stats.recipientsTotal },
       { label: t(($) => $.broadcasts.stats.sent), value: stats.sentCount },
       { label: t(($) => $.broadcasts.stats.skipped), value: stats.skippedCount },
       { label: t(($) => $.broadcasts.stats.pending), value: stats.pendingCount },
+      {
+        label: t(($) => $.broadcasts.stats.cancelled),
+        value: broadcast.status === 'cancelled' ? stats.cancelledCount : null,
+      },
       { label: t(($) => $.broadcasts.stats.delivered), value: stats.deliveredCount },
       { label: t(($) => $.broadcasts.stats.undelivered), value: stats.undeliveredCount },
       { label: t(($) => $.broadcasts.stats.bounced), value: stats.bouncedCount },
@@ -159,12 +166,20 @@ function BroadcastReport() {
   const broadcast = useSuspenseQuery(
     siteBroadcastsGetOptions({ path: { workspaceId, id: broadcastId } }),
   ).data
+  const cancelBroadcast = useCancelBroadcast(workspaceId)
 
   return (
     <Stack>
       <Group justify="space-between">
         <Title order={4}>{broadcast.name}</Title>
-        <BroadcastStatusBadge status={broadcast.status} size="lg" />
+        <Group gap="sm">
+          {broadcast.status === 'sending' && (
+            <Button variant="default" color="red" onClick={() => cancelBroadcast(broadcast)}>
+              {t(($) => $.broadcasts.cancel.action)}
+            </Button>
+          )}
+          <BroadcastStatusBadge status={broadcast.status} size="lg" />
+        </Group>
       </Group>
       {broadcast.content.channel === 'email' && <Text c="dimmed">{broadcast.content.subject}</Text>}
       <BroadcastAudience workspaceId={workspaceId} broadcast={broadcast} />
@@ -172,7 +187,7 @@ function BroadcastReport() {
       {broadcast.progress && <BroadcastProgress progress={broadcast.progress} />}
 
       <SimpleGrid cols={{ base: 2, sm: 3 }}>
-        {statEntries(t, broadcast.stats, locale).map((entry) => (
+        {statEntries(t, broadcast, locale).map((entry) => (
           <StatCard key={entry.label} label={entry.label} value={entry.value} />
         ))}
       </SimpleGrid>

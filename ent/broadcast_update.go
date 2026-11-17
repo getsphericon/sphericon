@@ -471,6 +471,26 @@ func (_u *BroadcastUpdate) ClearFailedAt() *BroadcastUpdate {
 	return _u
 }
 
+// SetCancelledAt sets the "cancelled_at" field.
+func (_u *BroadcastUpdate) SetCancelledAt(v time.Time) *BroadcastUpdate {
+	_u.mutation.SetCancelledAt(v)
+	return _u
+}
+
+// SetNillableCancelledAt sets the "cancelled_at" field if the given value is not nil.
+func (_u *BroadcastUpdate) SetNillableCancelledAt(v *time.Time) *BroadcastUpdate {
+	if v != nil {
+		_u.SetCancelledAt(*v)
+	}
+	return _u
+}
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (_u *BroadcastUpdate) ClearCancelledAt() *BroadcastUpdate {
+	_u.mutation.ClearCancelledAt()
+	return _u
+}
+
 // SetHoldReason sets the "hold_reason" field.
 func (_u *BroadcastUpdate) SetHoldReason(v holdreason.Reason) *BroadcastUpdate {
 	_u.mutation.SetHoldReason(v)
@@ -823,6 +843,12 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.FailedAtCleared() {
 		_spec.ClearField(broadcast.FieldFailedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CancelledAt(); ok {
+		_spec.SetField(broadcast.FieldCancelledAt, field.TypeTime, value)
+	}
+	if _u.mutation.CancelledAtCleared() {
+		_spec.ClearField(broadcast.FieldCancelledAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.HoldReason(); ok {
 		_spec.SetField(broadcast.FieldHoldReason, field.TypeEnum, value)
@@ -1468,6 +1494,26 @@ func (_u *BroadcastUpdateOne) ClearFailedAt() *BroadcastUpdateOne {
 	return _u
 }
 
+// SetCancelledAt sets the "cancelled_at" field.
+func (_u *BroadcastUpdateOne) SetCancelledAt(v time.Time) *BroadcastUpdateOne {
+	_u.mutation.SetCancelledAt(v)
+	return _u
+}
+
+// SetNillableCancelledAt sets the "cancelled_at" field if the given value is not nil.
+func (_u *BroadcastUpdateOne) SetNillableCancelledAt(v *time.Time) *BroadcastUpdateOne {
+	if v != nil {
+		_u.SetCancelledAt(*v)
+	}
+	return _u
+}
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (_u *BroadcastUpdateOne) ClearCancelledAt() *BroadcastUpdateOne {
+	_u.mutation.ClearCancelledAt()
+	return _u
+}
+
 // SetHoldReason sets the "hold_reason" field.
 func (_u *BroadcastUpdateOne) SetHoldReason(v holdreason.Reason) *BroadcastUpdateOne {
 	_u.mutation.SetHoldReason(v)
@@ -1850,6 +1896,12 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 	}
 	if _u.mutation.FailedAtCleared() {
 		_spec.ClearField(broadcast.FieldFailedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.CancelledAt(); ok {
+		_spec.SetField(broadcast.FieldCancelledAt, field.TypeTime, value)
+	}
+	if _u.mutation.CancelledAtCleared() {
+		_spec.ClearField(broadcast.FieldCancelledAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.HoldReason(); ok {
 		_spec.SetField(broadcast.FieldHoldReason, field.TypeEnum, value)

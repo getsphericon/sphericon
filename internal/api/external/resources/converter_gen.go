@@ -372,6 +372,7 @@ func (c *ConverterImpl) BroadcastReportToResource(source broadcasts.Report) exte
 	externalapiBroadcastReport.SkippedCount = count(source.Figures.Skipped)
 	externalapiBroadcastReport.FailedCount = count(source.Figures.Failed)
 	externalapiBroadcastReport.PendingCount = count(source.Figures.Pending)
+	externalapiBroadcastReport.CancelledCount = count(source.Figures.Cancelled)
 	externalapiBroadcastReport.OpenedCount = nilInt32(source.Figures.Opened)
 	externalapiBroadcastReport.ClickedCount = count(source.Figures.Clicked)
 	externalapiBroadcastReport.UnsubscribedCount = count(source.Figures.Unsubscribed)
@@ -389,6 +390,8 @@ func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) exter
 	switch source {
 	case broadcast.DefaultStatus:
 		externalapiBroadcastStatus = external.BroadcastStatusDraft
+	case broadcast.StatusCancelled:
+		externalapiBroadcastStatus = external.BroadcastStatusCancelled
 	// Skipped StatusDraft(draft) -> BroadcastStatusDraft(draft) because it duplicates DefaultStatus(draft) -> BroadcastStatusDraft(draft)
 	case broadcast.StatusFailed:
 		externalapiBroadcastStatus = external.BroadcastStatusFailed
@@ -414,6 +417,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) external.Broa
 		externalapiBroadcastResource.Status = c.BroadcastStatusToResource((*source).Status)
 		externalapiBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		// externalapiBroadcastResource.Recipients: ignore
+		// externalapiBroadcastResource.Unsent: ignore
 		externalapiBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		externalapiBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		externalapiBroadcastResource.ArchivedAt = optNilTimestamp((*source).ArchivedAt)

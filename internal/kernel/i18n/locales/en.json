@@ -181,6 +181,7 @@
   "errors.broadcast_not_draft": "only draft broadcasts can be changed",
   "errors.broadcast_not_sendable": "only draft or scheduled broadcasts can be sent or scheduled",
   "errors.broadcast_not_scheduled": "only scheduled broadcasts can be unscheduled",
+  "errors.broadcast_not_sending": "only a sending broadcast can be cancelled",
   "errors.broadcast_not_archivable": "a scheduled or sending broadcast cannot be archived",
   "errors.broadcast_archived": "the broadcast is archived: unarchive it to change it",
   "errors.broadcast_segment_not_found": "segment not found",

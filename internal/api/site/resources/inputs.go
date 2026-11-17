@@ -284,6 +284,7 @@ type Inputs interface {
 	// goverter:enum:map BroadcastStatusSending StatusSending
 	// goverter:enum:map BroadcastStatusSent StatusSent
 	// goverter:enum:map BroadcastStatusFailed StatusFailed
+	// goverter:enum:map BroadcastStatusCancelled StatusCancelled
 	BroadcastStatus(source siteapi.BroadcastStatus) broadcast.Status
 	BroadcastStatuses(source []siteapi.BroadcastStatus) []broadcast.Status
 	// goverter:enum:transform value

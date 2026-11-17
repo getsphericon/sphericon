@@ -323,3 +323,44 @@ func TestExternalBroadcastSegmentRefusesAForeignSegment(t *testing.T) {
 	testhelper.ExternalRefusal(t, err, http.StatusUnprocessableEntity)
 	assert.Equal(t, before, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).SegmentID)
 }
+
+// Cancel ends a sending Broadcast with the write scope alone (ADR 0150): it only narrows reach. The
+// answer is the cancelled Broadcast and how many Recipients it left unsent, and its report shows them
+// cancelled, none pending.
+func TestExternalBroadcastCancelEndsASendingBroadcast(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)
+	c := env.ExternalScoped(t, authorScopes...)
+	sending := entityIDString(fixtures.BroadcastSendingID)
+
+	b, err := c.BroadcastsCancel(ctx, externalapi.BroadcastsCancelParams{ID: sending})
+	require.NoError(t, err)
+	report, err := c.BroadcastsReport(ctx, externalapi.BroadcastsReportParams{ID: sending})
+	require.NoError(t, err)
+
+	assert.Equal(t, externalapi.BroadcastStatusCancelled, b.Status)
+	assert.Equal(t, externalapi.NewOptInt32(1), b.Unsent)
+	assert.Equal(t, externalapi.BroadcastStatusCancelled, report.Status)
+	assert.EqualValues(t, 1, report.CancelledCount)
+	assert.Zero(t, report.PendingCount)
+}
+
+// Only a sending Broadcast is cancelled: a draft, a scheduled, a sent, a failed and a cancelled one
+// are a 409, and an unknown one a 404.
+func TestExternalBroadcastCancelRefusesWhatIsNotSending(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, authorScopes...)
+	sending := entityIDString(fixtures.BroadcastSendingID)
+	_, err := c.BroadcastsCancel(ctx, externalapi.BroadcastsCancelParams{ID: sending})
+	require.NoError(t, err)
+
+	for _, id := range []externalapi.EntityId{draftBroadcast, schedBroadcast, sentBroadcast, failedBroadcast, sending} {
+		_, err := c.BroadcastsCancel(ctx, externalapi.BroadcastsCancelParams{ID: id})
+		testhelper.ExternalRefusal(t, err, http.StatusConflict, "broadcast %d", id)
+	}
+	_, err = c.BroadcastsCancel(ctx, externalapi.BroadcastsCancelParams{ID: 999999})
+	testhelper.ExternalRefusal(t, err, http.StatusNotFound)
+	assert.Equal(t, broadcast.StatusDraft, env.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID).Status)
+}

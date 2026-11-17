@@ -53,7 +53,9 @@ namespace Sphericon;
 
 // Send is a second lock (ADR 0016): send-class tools are listed over MCP, and
 // callable, only for tokens that also carry the `mcp:send` scope (ADR 0065). Deactivating
-// an Automation or a Rule only stops new Enrollments or Firings, so it stays an authoring tool.
+// an Automation or a Rule only stops new Enrollments or Firings, and cancelling a sending Broadcast
+// only stops its unsent Recipients (ADR 0150), so they stay authoring tools: a Connection that
+// cannot send can still stop a send.
 @@mcp(Automations.publish, #{ send: true });
 @@mcp(Rules.publish, #{ send: true });
 @@mcp(Emails.send, #{ send: true });
