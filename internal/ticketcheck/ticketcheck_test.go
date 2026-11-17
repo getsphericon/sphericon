@@ -142,4 +142,5 @@ func TestCommentNamesEveryGapAndTheWayOut(t *testing.T) {
 	require.Contains(t, comment, "- ADR 0136 is not built, and no ticket builds it yet\n")
 	require.Contains(t, comment, "- ADR 0126 is not built yet: #1400 builds it\n")
 	require.Contains(t, comment, "`Without ADR <NNNN>: <why>`")
+	require.Contains(t, comment, "not a request for `/triage`")
 }

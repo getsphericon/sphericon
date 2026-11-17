@@ -266,6 +266,7 @@ func Comment(gaps []Gap) string {
 	b.WriteString("\nFor each of them, either wait for a ticket that builds it (`Blocked by #<n>`, or a native " +
 		"blocking edge; file one and add its number to the ADR's `build:` when there is none), or say why this " +
 		"ticket builds without it on a line `Without ADR <NNNN>: <why>`. Then label it `ready-for-agent` again; " +
-		"`mise run tickets:check -- <number>` runs the same check.\n")
+		"`mise run tickets:check -- <number>` runs the same check. This is not a request for `/triage`: the ticket " +
+		"is already written, so add the edges or waivers, or slice it again with `/to-tickets`.\n")
 	return b.String()
 }
