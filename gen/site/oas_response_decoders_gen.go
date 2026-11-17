@@ -3004,7 +3004,7 @@ func decodeSiteAuthVerifyEmailResponse(resp *http.Response) (res *SiteVerifyEmai
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteAutomationReportsGetResponse(resp *http.Response) (res *SiteAutomationReport, _ error) {
+func decodeSiteAutomationReportsGetResponse(resp *http.Response) (res *AutomationReport, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3020,7 +3020,7 @@ func decodeSiteAutomationReportsGetResponse(resp *http.Response) (res *SiteAutom
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteAutomationReport
+			var response AutomationReport
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -3408,7 +3408,7 @@ func decodeSiteAutomationsDeactivateResponse(resp *http.Response) (res *SiteAuto
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteAutomationsDryRunHttpStepResponse(resp *http.Response) (res *SiteDryRunHttpStepResult, _ error) {
+func decodeSiteAutomationsDryRunHttpStepResponse(resp *http.Response) (res *DryRunHttpStepResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -3424,7 +3424,7 @@ func decodeSiteAutomationsDryRunHttpStepResponse(resp *http.Response) (res *Site
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteDryRunHttpStepResult
+			var response DryRunHttpStepResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4115,7 +4115,7 @@ func decodeSiteAutomationsUpdateResponse(resp *http.Response) (res *SiteAutomati
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteBrandKitGetResponse(resp *http.Response) (res *SiteBrandKitResource, _ error) {
+func decodeSiteBrandKitGetResponse(resp *http.Response) (res *BrandKitResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4131,7 +4131,7 @@ func decodeSiteBrandKitGetResponse(resp *http.Response) (res *SiteBrandKitResour
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteBrandKitResource
+			var response BrandKitResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -4342,7 +4342,7 @@ func decodeSiteBrandKitRecreateStarterTemplatesResponse(resp *http.Response) (re
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteBrandKitSaveResponse(resp *http.Response) (res *SiteBrandKitResource, _ error) {
+func decodeSiteBrandKitSaveResponse(resp *http.Response) (res *BrandKitResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -4358,7 +4358,7 @@ func decodeSiteBrandKitSaveResponse(resp *http.Response) (res *SiteBrandKitResou
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteBrandKitResource
+			var response BrandKitResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -7262,7 +7262,7 @@ func decodeSiteDomainJoinSetResponse(resp *http.Response) (res *SiteDomainJoinRe
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteEnrollmentsGetResponse(resp *http.Response) (res *SiteEnrollmentResource, _ error) {
+func decodeSiteEnrollmentsGetResponse(resp *http.Response) (res *EnrollmentResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -7278,7 +7278,7 @@ func decodeSiteEnrollmentsGetResponse(resp *http.Response) (res *SiteEnrollmentR
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteEnrollmentResource
+			var response EnrollmentResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -11925,7 +11925,7 @@ func decodeSitePersonalTokensListResponse(resp *http.Response) (res []SitePerson
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSitePresetsListResponse(resp *http.Response) (res []SitePresetResource, _ error) {
+func decodeSitePresetsListResponse(resp *http.Response) (res []PresetResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -11941,11 +11941,11 @@ func decodeSitePresetsListResponse(resp *http.Response) (res []SitePresetResourc
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response []SitePresetResource
+			var response []PresetResource
 			if err := func() error {
-				response = make([]SitePresetResource, 0)
+				response = make([]PresetResource, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem SitePresetResource
+					var elem PresetResource
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -12678,7 +12678,7 @@ func decodeSiteRulesDeleteResponse(resp *http.Response) (res *SiteRulesDeleteNoC
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteRulesDryRunResponse(resp *http.Response) (res *SiteRuleDryRunResource, _ error) {
+func decodeSiteRulesDryRunResponse(resp *http.Response) (res *RuleDryRunResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -12694,7 +12694,7 @@ func decodeSiteRulesDryRunResponse(resp *http.Response) (res *SiteRuleDryRunReso
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteRuleDryRunResource
+			var response RuleDryRunResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -14693,7 +14693,7 @@ func decodeSiteSegmentsUpdateResponse(resp *http.Response) (res *SiteSegmentReso
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteSendingDomainsCreateResponse(resp *http.Response) (res *SiteSendingDomainResource, _ error) {
+func decodeSiteSendingDomainsCreateResponse(resp *http.Response) (res *SendingDomainResource, _ error) {
 	switch resp.StatusCode {
 	case 201:
 		// Code 201.
@@ -14709,7 +14709,7 @@ func decodeSiteSendingDomainsCreateResponse(resp *http.Response) (res *SiteSendi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSendingDomainResource
+			var response SendingDomainResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -14854,7 +14854,7 @@ func decodeSiteSendingDomainsDeleteResponse(resp *http.Response) (res *SiteSendi
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteSendingDomainsGetResponse(resp *http.Response) (res *SiteSendingDomainResource, _ error) {
+func decodeSiteSendingDomainsGetResponse(resp *http.Response) (res *SendingDomainResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -14870,7 +14870,7 @@ func decodeSiteSendingDomainsGetResponse(resp *http.Response) (res *SiteSendingD
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSendingDomainResource
+			var response SendingDomainResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -15056,7 +15056,7 @@ func decodeSiteSendingDomainsListResponse(resp *http.Response) (res *SiteSending
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteSendingDomainsVerifyResponse(resp *http.Response) (res *SiteSendingDomainResource, _ error) {
+func decodeSiteSendingDomainsVerifyResponse(resp *http.Response) (res *SendingDomainResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -15072,7 +15072,7 @@ func decodeSiteSendingDomainsVerifyResponse(resp *http.Response) (res *SiteSendi
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteSendingDomainResource
+			var response SendingDomainResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -17350,7 +17350,7 @@ func decodeSiteTokensUpdateResponse(resp *http.Response) (res *SiteApiTokenResou
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteTrackingDomainsListResponse(resp *http.Response) (res []SiteTrackingDomainResource, _ error) {
+func decodeSiteTrackingDomainsListResponse(resp *http.Response) (res []TrackingDomainResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -17366,11 +17366,11 @@ func decodeSiteTrackingDomainsListResponse(resp *http.Response) (res []SiteTrack
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response []SiteTrackingDomainResource
+			var response []TrackingDomainResource
 			if err := func() error {
-				response = make([]SiteTrackingDomainResource, 0)
+				response = make([]TrackingDomainResource, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem SiteTrackingDomainResource
+					var elem TrackingDomainResource
 					if err := elem.Decode(d); err != nil {
 						return err
 					}
@@ -17536,7 +17536,7 @@ func decodeSiteTrackingDomainsRemoveResponse(resp *http.Response) (res *SiteTrac
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteTrackingDomainsSetResponse(resp *http.Response) (res *SiteTrackingDomainResource, _ error) {
+func decodeSiteTrackingDomainsSetResponse(resp *http.Response) (res *TrackingDomainResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -17552,7 +17552,7 @@ func decodeSiteTrackingDomainsSetResponse(resp *http.Response) (res *SiteTrackin
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteTrackingDomainResource
+			var response TrackingDomainResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -17637,7 +17637,7 @@ func decodeSiteTrackingDomainsSetResponse(resp *http.Response) (res *SiteTrackin
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteTrackingDomainsVerifyResponse(resp *http.Response) (res *SiteTrackingDomainResource, _ error) {
+func decodeSiteTrackingDomainsVerifyResponse(resp *http.Response) (res *TrackingDomainResource, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -17653,7 +17653,7 @@ func decodeSiteTrackingDomainsVerifyResponse(resp *http.Response) (res *SiteTrac
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteTrackingDomainResource
+			var response TrackingDomainResource
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -18954,7 +18954,7 @@ func decodeSiteWebhooksRegenerateSecretResponse(resp *http.Response) (res *SiteW
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeSiteWebhooksTestResponse(resp *http.Response) (res *SiteWebhookTestResult, _ error) {
+func decodeSiteWebhooksTestResponse(resp *http.Response) (res *WebhookTestResult, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -18970,7 +18970,7 @@ func decodeSiteWebhooksTestResponse(resp *http.Response) (res *SiteWebhookTestRe
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response SiteWebhookTestResult
+			var response WebhookTestResult
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

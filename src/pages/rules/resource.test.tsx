@@ -17,10 +17,10 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type {
   SiteAutomationResource,
-  SiteConditionGroup,
+  ConditionGroup,
   SiteRuleResource,
 } from '../../generated/site/types.gen.ts'
-import { zSiteUpdateRuleInput } from '../../generated/site/zod.gen.ts'
+import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { Route as rulesEditRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/edit.tsx'
 import { Route as rulesCreateRoute } from '../../routes/workspaces/$workspaceId/rules/new.tsx'
 import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
@@ -32,7 +32,7 @@ import { RuleCreatePage, RuleEditPage } from './resource.tsx'
 
 const REFRESH_RULE = 'Refresh rule'
 
-const CONDITION: SiteConditionGroup = {
+const CONDITION: ConditionGroup = {
   kind: 'group',
   combinator: 'and',
   rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
@@ -347,7 +347,7 @@ function gatedRuleServer(initial: SiteRuleResource) {
   worker.use(
     handleSiteRulesGet(() => HttpResponse.json(server)),
     handleSiteRulesUpdate(async ({ request }) => {
-      const { name, ...definition } = zSiteUpdateRuleInput.parse(await request.json())
+      const { name, ...definition } = zUpdateRuleInput.parse(await request.json())
       await gate.hold()
       server = {
         ...server,

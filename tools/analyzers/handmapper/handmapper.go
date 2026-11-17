@@ -237,7 +237,7 @@ func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector, skipped
 // or the use case tier (tier.IsCore), of either edition. The name is the modules' own convention for
 // what an operation takes (automations.CreateInput, apitokens.Input, eventrecording.Input), so a new
 // module is covered the day it is written, where a list of types would go stale. A type of a
-// generated API package (siteapi.SiteCreateAutomationInput) is the request itself, and a type the
+// generated API package (siteapi.CreateAutomationInput) is the request itself, and a type the
 // handler package declares is its own.
 func isModuleInput(self *types.Package, n *types.Named) bool {
 	pkg := n.Obj().Pkg()

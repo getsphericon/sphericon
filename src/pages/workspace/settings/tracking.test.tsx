@@ -13,7 +13,7 @@ import {
 } from '../../../generated/site/msw.gen.ts'
 import type {
   Permission,
-  SiteTrackingDomainResource,
+  TrackingDomainResource,
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
 import { Route as activityRoute } from '../../../routes/workspaces/$workspaceId/activity.tsx'
@@ -60,7 +60,7 @@ function serveWorkspace(totalItems = 0) {
 // serveTrackingDomains serves a workspace on an Instance that offers Tracking domains, its member
 // holding the given permissions, and the Workspace's Tracking domains.
 function serveTrackingDomains(
-  domains: SiteTrackingDomainResource[],
+  domains: TrackingDomainResource[],
   permissions: Permission[] = ['tracking_domains:manage'],
 ) {
   worker.use(
@@ -74,9 +74,7 @@ function serveTrackingDomains(
   )
 }
 
-function trackingDomain(
-  over: Partial<SiteTrackingDomainResource> = {},
-): SiteTrackingDomainResource {
+function trackingDomain(over: Partial<TrackingDomainResource> = {}): TrackingDomainResource {
   const host = over.host ?? 't.acme.test'
   return {
     id: testId(1),

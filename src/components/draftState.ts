@@ -1,7 +1,7 @@
-import type { SiteAutomationStatus, SiteRuleStatus } from '../generated/site/types.gen.ts'
+import type { AutomationStatus, RuleStatus } from '../generated/site/types.gen.ts'
 
 // The status of a resource with a draft above a live version: an Automation's or a Rule's.
-export type DraftStatus = SiteAutomationStatus | SiteRuleStatus
+export type DraftStatus = AutomationStatus | RuleStatus
 
 // What an Automation or a Rule can do with its draft (ADR 0065). A draft above a live version is
 // pending, so it can be reverted. Publish makes the draft live, or resumes an inactive live version

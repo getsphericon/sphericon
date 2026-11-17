@@ -5,21 +5,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** The Orders credited to one Broadcast or Automation and the net revenue of their Movements
- * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
- * lowers `amount` on its own day. Until the currency is set `reportingCurrency` is null and
- * there is no figure to show. Orders in another currency are counted in neither field. */
-model SiteMessageRevenue {
-  /** The Reporting currency, null until set */
-  reportingCurrency: CurrencyCode | null;
-
-  /** Orders completed that are credited to it, in the Reporting currency */
-  orders: int32;
-
-  /** Net revenue of those Orders, in the minor unit of the Reporting currency */
-  amount: int64;
-}
-
 /**
  * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
  * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
@@ -87,7 +72,7 @@ model SiteBroadcastStats {
   failureRate: float32;
 
   /** Orders credited to the Broadcast and their net revenue (ADR 0064) */
-  revenue: SiteMessageRevenue;
+  revenue: MessageRevenue;
 }
 
 /** What slows a sending broadcast */
@@ -300,7 +285,7 @@ interface SiteBroadcasts
 /** A broadcast's per-link click figures, most clicked first */
 model SiteBroadcastLinkClicksList {
   /** One entry per clicked link */
-  items: SiteLinkClicks[];
+  items: LinkClicks[];
 }
 
 @route("/workspaces/{workspaceId}/broadcasts/{broadcastId}/links")

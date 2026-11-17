@@ -12,9 +12,9 @@ import (
 
 // SiteRuleGroup builds a site API rule group from its JSON, so a test reads as the rule
 // it sends instead of the nested generated union.
-func SiteRuleGroup(tb testing.TB, def string) siteapi.SiteConditionGroupInput {
+func SiteRuleGroup(tb testing.TB, def string) siteapi.ConditionGroupInput {
 	tb.Helper()
-	var group siteapi.SiteConditionGroupInput
+	var group siteapi.ConditionGroupInput
 	require.NoError(tb, condition.Decode(def, &group))
 	return group
 }

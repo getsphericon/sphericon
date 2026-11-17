@@ -9,7 +9,7 @@ import {
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, SiteAutomationStep } from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -22,7 +22,7 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   automationId: testId(5),
 })
 
-const STEP: SiteAutomationStep = {
+const STEP: AutomationStep = {
   type: 'sms',
   text: 'Hi {{ first_name }}',
   integrationId: testId(41),
@@ -68,7 +68,7 @@ const INTEGRATIONS = [
   }),
 ]
 
-function stored(steps: SiteAutomationStep[]): SiteAutomationResource {
+function stored(steps: AutomationStep[]): SiteAutomationResource {
   return {
     id: testId(5),
     name: 'Cart reminder',
@@ -89,7 +89,7 @@ function flowNode(index: number) {
 }
 
 test('an SMS step round-trips: its Integration and text load, an edit saves them back', async () => {
-  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  const bodies: { steps?: AutomationStep[] }[] = []
   let current = stored([STEP])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),

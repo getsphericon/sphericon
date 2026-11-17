@@ -26,9 +26,9 @@ func TestSiteCustomFieldUpdateOnAStaleRevisionIsRefused(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	field := fieldByKey(t, c, fixtures.AcmePublicID, "plan")
 
-	first, err := updateField(c, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("First")})
+	first, err := updateField(c, fixtures.AcmePublicID, field.ID, &siteapi.UpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("First")})
 	require.NoError(t, err)
-	_, err = updateField(c, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Second")})
+	_, err = updateField(c, fixtures.AcmePublicID, field.ID, &siteapi.UpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Second")})
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
 	assert.Equal(t, siteapi.ProblemCodeRevisionChanged, refused.Code.Value)

@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next'
 
 import { HttpHeaderRows } from '../../components/HttpHeaderRows.tsx'
 import { PasswordField } from '../../components/PasswordField.tsx'
-import type { SiteRuleAction } from '../../generated/site/types.gen.ts'
+import type { RuleAction } from '../../generated/site/types.gen.ts'
 
 interface HttpActionFieldsProps {
-  action: SiteRuleAction
+  action: RuleAction
   // The form's props of a field of the Action (`url`, `headers.0.name`): its value, its change,
   // its error and its path.
   inputProps: (field: string) => GetInputPropsReturnType

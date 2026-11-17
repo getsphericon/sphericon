@@ -282,19 +282,19 @@ type Converter interface {
 	EventToResource(source *ent.Event) siteapi.SiteEventResource
 	// goverter:useEmptyOnNil:slice
 	EventsToResources(source []*ent.Event) []siteapi.SiteEventResource
-	LinkClicksToResource(source []linkclick.Clicks) []siteapi.SiteLinkClicks
+	LinkClicksToResource(source []linkclick.Clicks) []siteapi.LinkClicks
 	// The Reporting currency is the Workspace's, null until chosen; the sums are minor units.
 	// goverter:autoMap Credited
 	// goverter:map Currency ReportingCurrency
-	MessageRevenueToResource(source orders.Revenue) siteapi.SiteMessageRevenue
-	AutomationReportToResource(source automations.Report) siteapi.SiteAutomationReport
+	MessageRevenueToResource(source orders.Revenue) siteapi.MessageRevenue
+	AutomationReportToResource(source automations.Report) siteapi.AutomationReport
 	// goverter:autoMap ResultCounts
 	// goverter:map AverageDuration AverageDurationSeconds
-	AutomationPeriodResultsToResource(source automations.PeriodResults) siteapi.SiteAutomationPeriodResults
+	AutomationPeriodResultsToResource(source automations.PeriodResults) siteapi.AutomationPeriodResults
 	// goverter:autoMap ResultCounts
-	AutomationResultsPointToResource(source automations.ResultsPoint) siteapi.SiteAutomationResultsPoint
+	AutomationResultsPointToResource(source automations.ResultsPoint) siteapi.AutomationResultsPoint
 	// The period is the one the request named: the handler attaches it.
-	AutomationResultsToResource(source automations.Results) siteapi.SiteAutomationResults
+	AutomationResultsToResource(source automations.Results) siteapi.AutomationResults
 
 	// The delivery figures are derived from the Broadcast's recipients and their Outbound
 	// messages, which the mapper cannot see: the handler attaches them (BroadcastStatsToResource).
@@ -374,16 +374,16 @@ type Converter interface {
 	// DTO at this boundary. The contract names the version "number".
 	// goverter:map Version Number | count
 	// goverter:map Steps | automationSteps
-	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.SiteAutomationVersion
+	AutomationVersionToResource(source *ent.AutomationVersion) siteapi.AutomationVersion
 	// A step is the module's masked view: what it hides is never mapped.
 	// goverter:ignore URL
 	// goverter:ignore Secret
 	// goverter:ignore ClearSecret
 	// goverter:map IntegrationID IntegrationId
-	AutomationStepToResource(source automations.StepView) siteapi.SiteAutomationStep
-	AutomationStepsToResources(source []automations.StepView) []siteapi.SiteAutomationStep
+	AutomationStepToResource(source automations.StepView) siteapi.AutomationStep
+	AutomationStepsToResources(source []automations.StepView) []siteapi.AutomationStep
 	// goverter:ignore Value
-	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.SiteAutomationHttpHeader
+	AutomationHttpHeaderToResource(source automations.HeaderName) siteapi.AutomationHttpHeader
 	TelegramButtonToResource(source telegramrender.Button) siteapi.TelegramButton
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
@@ -398,24 +398,24 @@ type Converter interface {
 	// The redacted provider configs: the handler only wraps the one that is set in the
 	// contract's oneOf, which goverter cannot express. Empty optional fields are omitted.
 	// goverter:map . Kind | smtpConfigKind
-	SmtpConfigToResource(source integrations.RedactedSMTP) siteapi.SiteSmtpConfig
+	SmtpConfigToResource(source integrations.RedactedSMTP) siteapi.SmtpConfig
 	// goverter:map . Kind | sesConfigKind
-	SesConfigToResource(source integrations.RedactedSES) siteapi.SiteSesConfig
+	SesConfigToResource(source integrations.RedactedSES) siteapi.SesConfig
 	// goverter:map . Kind | telegramConfigKind
 	// goverter:map BotID BotId
-	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.SiteTelegramConfig
+	TelegramConfigToResource(source integrations.RedactedTelegram) siteapi.TelegramConfig
 	// goverter:enum:transform value
 	SmsFromKindToResource(source messaging.SMSFromKind) siteapi.SmsFromKind
 	// goverter:map . Kind | twilioConfigKind
 	// goverter:map AccountSID AccountSid
 	// goverter:map . ApiKeySid | twilioAPIKeySID
-	TwilioConfigToResource(source integrations.RedactedTwilio) siteapi.SiteTwilioConfig
+	TwilioConfigToResource(source integrations.RedactedTwilio) siteapi.TwilioConfig
 	// goverter:map Sent24h SentLast24h
-	ProviderLimitToStatus(source providerlimit.Status) siteapi.SiteProviderLimitStatus
+	ProviderLimitToStatus(source providerlimit.Status) siteapi.ProviderLimitStatus
 	// goverter:map Sent24h SentLast24h
-	SendCapToResource(source providerlimit.SendCapStatus) siteapi.SiteSendCap
+	SendCapToResource(source providerlimit.SendCapStatus) siteapi.SendCap
 	// The Send cap that applies (outboundmessages.Module.SendCapStatus), null when none does.
-	SendCapStatusToResource(source *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap
+	SendCapStatusToResource(source *providerlimit.SendCapStatus) siteapi.OptNilSendCap
 	PasskeyToResource(source *ent.Passkey) siteapi.SitePasskey
 	// goverter:useEmptyOnNil:slice
 	PasskeysToResources(source []*ent.Passkey) []siteapi.SitePasskey
@@ -506,20 +506,20 @@ type Converter interface {
 	// loaded with it, and the stored actions JSON is decoded into the typed Actions.
 	// goverter:map Version Number
 	// goverter:map . TriggerEvents | ruleTriggerEvents
-	RuleVersionToResource(source *ent.RuleVersion) siteapi.SiteRuleVersion
+	RuleVersionToResource(source *ent.RuleVersion) siteapi.RuleVersion
 
 	// The store names the Event's source id; the contract says whose it is.
 	// goverter:map SourceID EventSourceId
-	RuleFiringToResource(source *ent.RuleFiring) siteapi.SiteRuleFiringResource
+	RuleFiringToResource(source *ent.RuleFiring) siteapi.RuleFiringResource
 	// goverter:useEmptyOnNil:slice
-	RuleFiringsToResources(source []*ent.RuleFiring) []siteapi.SiteRuleFiringResource
+	RuleFiringsToResources(source []*ent.RuleFiring) []siteapi.RuleFiringResource
 
-	RuleDryRunToResource(source rules.DryRun) siteapi.SiteRuleDryRunResource
+	RuleDryRunToResource(source rules.DryRun) siteapi.RuleDryRunResource
 
 	// goverter:map . Failure | enrollmentFailure
-	EnrollmentToResource(source *ent.AutomationRun) siteapi.SiteEnrollmentResource
+	EnrollmentToResource(source *ent.AutomationRun) siteapi.EnrollmentResource
 	// goverter:useEmptyOnNil:slice
-	EnrollmentsToResources(source []*ent.AutomationRun) []siteapi.SiteEnrollmentResource
+	EnrollmentsToResources(source []*ent.AutomationRun) []siteapi.EnrollmentResource
 
 	// The deletion window: the date the Workspace's data will be erased.
 	// goverter:map PublicID ID
@@ -551,23 +551,23 @@ type Converter interface {
 	// goverter:ignore SpfRecord
 	// goverter:ignore DmarcRecord
 	// goverter:map . Verified | sendingDomainVerified
-	SendingDomainToResource(source *ent.SendingDomain) siteapi.SiteSendingDomainResource
+	SendingDomainToResource(source *ent.SendingDomain) siteapi.SendingDomainResource
 	// goverter:map . Type | dnsRecordType
-	DnsRecordToResource(source sendingdomains.Record) siteapi.SiteDnsRecord
+	DnsRecordToResource(source sendingdomains.Record) siteapi.DnsRecord
 
 	// The CNAME target is the module's, which the mapper cannot see: the handler attaches it.
 	// goverter:ignore Record OwnershipRecord
 	// goverter:map CheckedAt LastCheckedAt
-	TrackingDomainToResource(source *ent.TrackingDomain) siteapi.SiteTrackingDomainResource
+	TrackingDomainToResource(source *ent.TrackingDomain) siteapi.TrackingDomainResource
 	// goverter:map . Type | cnameRecordType
-	CnameRecordToResource(source trackingdomains.Record) siteapi.SiteCnameRecord
+	CnameRecordToResource(source trackingdomains.Record) siteapi.CnameRecord
 	// goverter:map . Type | ownershipRecordType
-	OwnershipRecordToResource(source trackingdomains.OwnershipRecord) siteapi.SiteDnsRecord
+	OwnershipRecordToResource(source trackingdomains.OwnershipRecord) siteapi.DnsRecord
 
 	// A Workspace that has not saved a Brand kit has no row to convert, so the mapper
 	// takes the module's Kit.
 	// goverter:map . UpdatedAt | brandKitUpdatedAt
-	BrandKitToResource(source brandkits.Kit) siteapi.SiteBrandKitResource
+	BrandKitToResource(source brandkits.Kit) siteapi.BrandKitResource
 
 	// goverter:map . Actor
 	// goverter:map . Target
@@ -661,7 +661,7 @@ type Converter interface {
 	WebhooksListPage(source pagination.Page[siteapi.SiteWebhookEndpointResource]) *siteapi.SiteWebhooksListOK
 	// goverter:useEmptyOnNil:slice
 	// goverter:skipCopySameType
-	SendingDomainsListPage(source pagination.Page[siteapi.SiteSendingDomainResource]) *siteapi.SiteSendingDomainsListOK
+	SendingDomainsListPage(source pagination.Page[siteapi.SendingDomainResource]) *siteapi.SiteSendingDomainsListOK
 	// goverter:useEmptyOnNil:slice
 	// goverter:skipCopySameType
 	BroadcastsListPage(source pagination.Page[siteapi.SiteBroadcastResource]) *siteapi.SiteBroadcastsListOK
@@ -680,11 +680,11 @@ type Converter interface {
 	// Enums: goverter checks each member, matched by value (cmd/goverter); a member with no
 	// counterpart is mapped with enum:map.
 	// The contract names a period "7d", the module counts its days: each member is mapped.
-	// goverter:enum:map ReportPeriod7Days SiteAutomationReportPeriod7d
-	// goverter:enum:map ReportPeriod14Days SiteAutomationReportPeriod14d
-	// goverter:enum:map ReportPeriod30Days SiteAutomationReportPeriod30d
-	// goverter:enum:map ReportPeriod90Days SiteAutomationReportPeriod90d
-	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.SiteAutomationReportPeriod
+	// goverter:enum:map ReportPeriod7Days AutomationReportPeriod7d
+	// goverter:enum:map ReportPeriod14Days AutomationReportPeriod14d
+	// goverter:enum:map ReportPeriod30Days AutomationReportPeriod30d
+	// goverter:enum:map ReportPeriod90Days AutomationReportPeriod90d
+	AutomationReportPeriodToResource(source automations.ReportPeriod) siteapi.AutomationReportPeriod
 	// goverter:enum:transform value
 	AbuseMetricToResource(source abusewarning.Metric) siteapi.AbuseMetric
 	// goverter:enum:transform value
@@ -694,29 +694,29 @@ type Converter interface {
 	// goverter:enum:transform value
 	AnalyticsOwnerKindToResource(source linkclick.OwnerKind) siteapi.SiteAnalyticsOwnerKind
 	// goverter:enum:transform value
-	AutomationStatusToResource(source automation.Status) siteapi.SiteAutomationStatus
+	AutomationStatusToResource(source automation.Status) siteapi.AutomationStatus
 	// goverter:enum:transform value
-	AutomationStepTypeToResource(source automationstep.Kind) siteapi.SiteAutomationStepType
+	AutomationStepTypeToResource(source automationstep.Kind) siteapi.AutomationStepType
 	// goverter:enum:transform value
 	BroadcastStatusToResource(source broadcast.Status) siteapi.BroadcastStatus
 	// goverter:enum:transform value
 	BroadcastChannelToResource(source channels.Channel) siteapi.BroadcastChannel
 	// goverter:enum:transform value
-	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.SiteCapturedMessageSurface
+	CapturedMessageSurfaceToResource(source capturedmessage.Surface) siteapi.CapturedMessageSurface
 	// goverter:enum:transform value
 	ContactExportSourceToResource(source contact.Source) siteapi.ContactExportSource
 	// goverter:enum:transform value
 	HoldReasonToResource(source holdreason.Reason) siteapi.HoldReason
 	// goverter:enum:transform value
-	CustomFieldTypeToResource(source customfield.Type) siteapi.SiteCustomFieldType
+	CustomFieldTypeToResource(source customfield.Type) siteapi.CustomFieldType
 	// goverter:enum:transform value
-	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.SiteEnrollmentFailureKind
+	EnrollmentFailureKindToResource(source automationrun.FailureKind) siteapi.EnrollmentFailureKind
 	// goverter:enum:transform value
-	EnrollmentStatusToResource(source automationrun.Status) siteapi.SiteEnrollmentStatus
+	EnrollmentStatusToResource(source automationrun.Status) siteapi.EnrollmentStatus
 	// goverter:enum:transform value
-	IntegrationChannelToResource(source channels.Channel) siteapi.SiteIntegrationChannel
+	IntegrationChannelToResource(source channels.Channel) siteapi.IntegrationChannel
 	// goverter:enum:transform value
-	IntegrationProviderToResource(source providers.Provider) siteapi.SiteIntegrationProvider
+	IntegrationProviderToResource(source providers.Provider) siteapi.IntegrationProvider
 	// goverter:enum:transform value
 	InvitableRoleToResource(source invitation.Role) siteapi.SiteInvitableRole
 	// goverter:enum:transform value
@@ -734,36 +734,36 @@ type Converter interface {
 	// goverter:enum:transform value
 	PersonalScopeToResource(source tokenscope.PersonalScope) siteapi.PersonalScope
 	// goverter:enum:transform value
-	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.SiteProviderLimitSource
+	ProviderLimitSourceToResource(source providerlimit.Source) siteapi.ProviderLimitSource
 	// goverter:enum:transform value
-	ProviderLimitWarningToResource(source providerlimit.Warning) siteapi.SiteProviderLimitWarning
+	ProviderLimitWarningToResource(source providerlimit.Warning) siteapi.ProviderLimitWarning
 	// goverter:enum:transform value
-	RuleActionStatusToResource(source rules.Outcome) siteapi.SiteRuleActionStatus
+	RuleActionStatusToResource(source rules.Outcome) siteapi.RuleActionStatus
 	// goverter:enum:transform value
-	RuleActionTypeToResource(source rules.ActionType) siteapi.SiteRuleActionType
+	RuleActionTypeToResource(source rules.ActionType) siteapi.RuleActionType
 	// goverter:enum:transform value
-	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) siteapi.SiteRuleDryRunOutcome
+	RuleDryRunOutcomeToResource(source rules.DryRunOutcome) siteapi.RuleDryRunOutcome
 	// goverter:enum:transform value
-	RuleStatusToResource(source rule.Status) siteapi.SiteRuleStatus
+	RuleStatusToResource(source rule.Status) siteapi.RuleStatus
 	// goverter:enum:transform value
 	SetupStepStatusToResource(source setupchecklist.Status) siteapi.SiteSetupStepStatus
 	// goverter:enum:transform value
 	SignupItemKindToResource(source signupitem.Kind) siteapi.SignupItemKind
 	// goverter:enum:transform value
-	SuppressionChannelToResource(source channels.Channel) siteapi.SiteSuppressionChannel
+	SuppressionChannelToResource(source channels.Channel) siteapi.SuppressionChannel
 	// goverter:enum:transform value
-	SuppressionReasonToResource(source suppression.Reason) siteapi.SiteSuppressionReason
+	SuppressionReasonToResource(source suppression.Reason) siteapi.SuppressionReason
 	// goverter:enum:transform value
-	TrackingReasonToResource(source trackingdomain.Reason) siteapi.SiteTrackingReason
+	TrackingReasonToResource(source trackingdomain.Reason) siteapi.TrackingReason
 	// goverter:enum:transform value
-	TrackingStateToResource(source trackingdomain.State) siteapi.SiteTrackingState
+	TrackingStateToResource(source trackingdomain.State) siteapi.TrackingState
 	// goverter:enum:transform value
-	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.SiteTrackingDomainRole
+	TrackingDomainRoleToResource(source trackingdomain.Role) siteapi.TrackingDomainRole
 	// goverter:enum:transform value
-	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) siteapi.SiteWebhookDisabledReason
+	WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) siteapi.WebhookDisabledReason
 	// What a delivery failed with: the kind a test send answers and a Webhook endpoint keeps.
 	// goverter:enum:transform value
-	WebhookErrorKindToResource(source webhook.ErrorKind) siteapi.SiteWebhookErrorKind
+	WebhookErrorKindToResource(source webhook.ErrorKind) siteapi.WebhookErrorKind
 }
 
 // ExportMapper adapts the Converter to dataexport.Mapper.
@@ -814,16 +814,16 @@ func nilInt32(v *int) siteapi.NilInt32 {
 }
 
 // providerLimitSource is null exactly when the window has no limit (its source is empty).
-func providerLimitSource(c Converter, v providerlimit.Source) siteapi.NilSiteProviderLimitSource {
+func providerLimitSource(c Converter, v providerlimit.Source) siteapi.NilProviderLimitSource {
 	if v == "" {
-		return siteapi.NilSiteProviderLimitSource{Null: true}
+		return siteapi.NilProviderLimitSource{Null: true}
 	}
-	return siteapi.NewNilSiteProviderLimitSource(c.ProviderLimitSourceToResource(v))
+	return siteapi.NewNilProviderLimitSource(c.ProviderLimitSourceToResource(v))
 }
 
 // optNilSendCap is null exactly when no Send cap applies.
-func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) siteapi.OptNilSiteSendCap {
-	return convert.NilVia[siteapi.OptNilSiteSendCap](v, c.SendCapToResource)
+func optNilSendCap(c Converter, v *providerlimit.SendCapStatus) siteapi.OptNilSendCap {
+	return convert.NilVia[siteapi.OptNilSendCap](v, c.SendCapToResource)
 }
 
 // optNilSmsConfirmation is absent exactly when the phone has no SMS Confirmation.
@@ -1014,16 +1014,16 @@ func nilTimestamp(v *time.Time) siteapi.NilTimestamp {
 }
 
 // automationVersionOrNull is a version of the Automation, or null when it has none.
-func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilSiteAutomationVersion {
+func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilAutomationVersion {
 	if v == nil {
-		return siteapi.NilSiteAutomationVersion{Null: true}
+		return siteapi.NilAutomationVersion{Null: true}
 	}
-	return siteapi.NewNilSiteAutomationVersion(c.AutomationVersionToResource(v))
+	return siteapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
 }
 
 // automationSteps decodes the stored definition (the executor's JSON format) into the typed steps
 // DTO, through the automations module's masked view of each step.
-func automationSteps(c Converter, definition string) []siteapi.SiteAutomationStep {
+func automationSteps(c Converter, definition string) []siteapi.AutomationStep {
 	return c.AutomationStepsToResources(automations.Views(definition))
 }
 
@@ -1037,15 +1037,15 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 
 // segmentCondition decodes the stored rule group into the typed DTO. A segment with no
 // definition (or one that no longer decodes) reads as having none.
-func segmentCondition(def *string) siteapi.OptSiteConditionGroup {
+func segmentCondition(def *string) siteapi.OptConditionGroup {
 	if def == nil || *def == "" {
-		return siteapi.OptSiteConditionGroup{}
+		return siteapi.OptConditionGroup{}
 	}
-	var group siteapi.SiteConditionGroup
+	var group siteapi.ConditionGroup
 	if err := condition.Decode(*def, &group); err != nil {
-		return siteapi.OptSiteConditionGroup{}
+		return siteapi.OptConditionGroup{}
 	}
-	return siteapi.NewOptSiteConditionGroup(group)
+	return siteapi.NewOptConditionGroup(group)
 }
 
 func optTimestamp(v *time.Time) siteapi.OptTimestamp {
@@ -1078,8 +1078,8 @@ func optConsentDecision(c Converter, v *consentrecord.Decision) siteapi.OptSiteO
 	return convert.OptVia[siteapi.OptSiteOptionalConsentDecision](v, c.OptionalConsentDecisionToResource)
 }
 
-func optTrackingReason(c Converter, v *trackingdomain.Reason) siteapi.OptSiteTrackingReason {
-	return convert.OptVia[siteapi.OptSiteTrackingReason](v, c.TrackingReasonToResource)
+func optTrackingReason(c Converter, v *trackingdomain.Reason) siteapi.OptTrackingReason {
+	return convert.OptVia[siteapi.OptTrackingReason](v, c.TrackingReasonToResource)
 }
 
 // tagNames lists the names of a contact's loaded tags, in the order they were read.
@@ -1118,11 +1118,11 @@ func inviterEmail(inv ent.Invitation) siteapi.OptNilString {
 }
 
 // enrollmentFailure is the enrollment's failure detail; absent unless it failed.
-func enrollmentFailure(c Converter, r ent.AutomationRun) siteapi.OptSiteEnrollmentFailure {
+func enrollmentFailure(c Converter, r ent.AutomationRun) siteapi.OptEnrollmentFailure {
 	if r.FailureKind == nil {
-		return siteapi.OptSiteEnrollmentFailure{}
+		return siteapi.OptEnrollmentFailure{}
 	}
-	return siteapi.NewOptSiteEnrollmentFailure(siteapi.SiteEnrollmentFailure{
+	return siteapi.NewOptEnrollmentFailure(siteapi.EnrollmentFailure{
 		Kind:    c.EnrollmentFailureKindToResource(*r.FailureKind),
 		Status:  optInt32(r.FailureStatus),
 		Excerpt: optString(r.FailureExcerpt),
@@ -1130,19 +1130,19 @@ func enrollmentFailure(c Converter, r ent.AutomationRun) siteapi.OptSiteEnrollme
 }
 
 // joinDomainRecord is the TXT record the Owner publishes to prove the domain.
-func joinDomainRecord(d ent.JoinDomain) siteapi.SiteDnsRecord {
+func joinDomainRecord(d ent.JoinDomain) siteapi.DnsRecord {
 	rec := joindomains.RecordOf(&d)
-	return siteapi.SiteDnsRecord{Type: siteapi.SiteDnsRecordTypeTXT, Host: rec.Host, Value: rec.Value}
+	return siteapi.DnsRecord{Type: siteapi.DnsRecordTypeTXT, Host: rec.Host, Value: rec.Value}
 }
 
 func joinDomainVerified(d ent.JoinDomain) bool { return joindomains.Verified(&d) }
 
-func dnsRecordType(sendingdomains.Record) siteapi.SiteDnsRecordType {
-	return siteapi.SiteDnsRecordTypeTXT
+func dnsRecordType(sendingdomains.Record) siteapi.DnsRecordType {
+	return siteapi.DnsRecordTypeTXT
 }
 
-func cnameRecordType(trackingdomains.Record) siteapi.SiteCnameRecordType {
-	return siteapi.SiteCnameRecordTypeCNAME
+func cnameRecordType(trackingdomains.Record) siteapi.CnameRecordType {
+	return siteapi.CnameRecordTypeCNAME
 }
 
 // brandKitUpdatedAt is set only once the Brand kit has been saved.
@@ -1158,12 +1158,12 @@ func auditDiff(d map[string]jx.Raw) siteapi.OptNilJsonObject {
 }
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
-func webhookFailure(c Converter, e ent.WebhookEndpoint) siteapi.OptSiteWebhookFailure {
+func webhookFailure(c Converter, e ent.WebhookEndpoint) siteapi.OptWebhookFailure {
 	h := webhookendpoints.HealthOf(&e)
 	if h.ConsecutiveFailures == nil || h.FailingSince == nil || h.LastFailureAt == nil || h.LastErrorKind == nil {
-		return siteapi.OptSiteWebhookFailure{}
+		return siteapi.OptWebhookFailure{}
 	}
-	return siteapi.NewOptSiteWebhookFailure(siteapi.SiteWebhookFailure{
+	return siteapi.NewOptWebhookFailure(siteapi.WebhookFailure{
 		ConsecutiveFailures: narrow.Int32(*h.ConsecutiveFailures),
 		Since:               siteapi.Timestamp(*h.FailingSince),
 		LastFailureAt:       siteapi.Timestamp(*h.LastFailureAt),
@@ -1173,8 +1173,8 @@ func webhookFailure(c Converter, e ent.WebhookEndpoint) siteapi.OptSiteWebhookFa
 }
 
 // optWebhookDisabledReason is why the endpoint turned itself off; absent otherwise.
-func optWebhookDisabledReason(c Converter, v *webhookendpoint.DisabledReason) siteapi.OptSiteWebhookDisabledReason {
-	return convert.OptVia[siteapi.OptSiteWebhookDisabledReason](v, c.WebhookDisabledReasonToResource)
+func optWebhookDisabledReason(c Converter, v *webhookendpoint.DisabledReason) siteapi.OptWebhookDisabledReason {
+	return convert.OptVia[siteapi.OptWebhookDisabledReason](v, c.WebhookDisabledReasonToResource)
 }
 
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
@@ -1182,16 +1182,16 @@ func omitEmpty(s string) siteapi.OptNilString {
 	return convert.OptNonZero[siteapi.OptNilString](s)
 }
 
-func smtpConfigKind(integrations.RedactedSMTP) siteapi.SiteSmtpConfigKind {
-	return siteapi.SiteSmtpConfigKindSMTP
+func smtpConfigKind(integrations.RedactedSMTP) siteapi.SmtpConfigKind {
+	return siteapi.SmtpConfigKindSMTP
 }
 
-func sesConfigKind(integrations.RedactedSES) siteapi.SiteSesConfigKind {
-	return siteapi.SiteSesConfigKindSes
+func sesConfigKind(integrations.RedactedSES) siteapi.SesConfigKind {
+	return siteapi.SesConfigKindSes
 }
 
-func twilioConfigKind(integrations.RedactedTwilio) siteapi.SiteTwilioConfigKind {
-	return siteapi.SiteTwilioConfigKindTwilio
+func twilioConfigKind(integrations.RedactedTwilio) siteapi.TwilioConfigKind {
+	return siteapi.TwilioConfigKindTwilio
 }
 
 // twilioAPIKeySID is the API key messages are sent with, null when they are sent with the Auth Token.
@@ -1202,8 +1202,8 @@ func twilioAPIKeySID(c integrations.RedactedTwilio) siteapi.NilString {
 	return siteapi.NewNilString(c.APIKeySID)
 }
 
-func telegramConfigKind(integrations.RedactedTelegram) siteapi.SiteTelegramConfigKind {
-	return siteapi.SiteTelegramConfigKindTelegram
+func telegramConfigKind(integrations.RedactedTelegram) siteapi.TelegramConfigKind {
+	return siteapi.TelegramConfigKindTelegram
 }
 
 // sendingDomainVerified derives the verified flag from the verified and lost moments.
@@ -1216,11 +1216,11 @@ func webhookEnabled(e ent.WebhookEndpoint) bool { return e.DisabledAt == nil }
 func ruleTriggerEvents(v *ent.RuleVersion) []string { return rules.Triggers(v) }
 
 // ruleVersionOrNull is a version of the Rule, or null when it has none.
-func ruleVersionOrNull(c Converter, v *ent.RuleVersion) siteapi.NilSiteRuleVersion {
+func ruleVersionOrNull(c Converter, v *ent.RuleVersion) siteapi.NilRuleVersion {
 	if v == nil {
-		return siteapi.NilSiteRuleVersion{Null: true}
+		return siteapi.NilRuleVersion{Null: true}
 	}
-	return siteapi.NewNilSiteRuleVersion(c.RuleVersionToResource(v))
+	return siteapi.NewNilRuleVersion(c.RuleVersionToResource(v))
 }
 
 // optNonEmpty is a text that is absent when empty.
@@ -1231,14 +1231,14 @@ func optNonEmpty(s string) siteapi.OptString {
 // ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
 // decode (only ever written by the module itself) yields none, and is logged: a converter has
 // no way to fail a response, and nobody reading the page can act on it.
-func ruleActions(c Converter, stored string) []siteapi.SiteRuleAction {
+func ruleActions(c Converter, stored string) []siteapi.RuleAction {
 	actions, err := rules.DecodeActions(stored)
 	if err != nil {
 		slog.Error("rule: stored actions cannot be decoded", "error", err)
 		return nil
 	}
-	return lo.Map(actions, func(a rules.Action, _ int) siteapi.SiteRuleAction {
-		out := siteapi.SiteRuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
+	return lo.Map(actions, func(a rules.Action, _ int) siteapi.RuleAction {
+		out := siteapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == rules.ActionEnroll {
 			out.AutomationId = siteapi.NewOptEntityId(siteapi.EntityId(a.AutomationID))
 		}
@@ -1247,8 +1247,8 @@ func ruleActions(c Converter, stored string) []siteapi.SiteRuleAction {
 			out.ID = optNonEmpty(a.ID)
 			out.Body = optNonEmpty(a.Body)
 			out.HasSecret = siteapi.NewOptBool(a.Secret != "")
-			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) siteapi.SiteAutomationHttpHeader {
-				return siteapi.SiteAutomationHttpHeader{Name: h.Name}
+			out.Headers = lo.Map(a.Headers, func(h httpcall.Header, _ int) siteapi.AutomationHttpHeader {
+				return siteapi.AutomationHttpHeader{Name: h.Name}
 			})
 		}
 		return out
@@ -1257,14 +1257,14 @@ func ruleActions(c Converter, stored string) []siteapi.SiteRuleAction {
 
 // ruleResults decodes a Firing's stored results into the typed DTO; stored text the module
 // cannot decode yields none and is logged, as ruleActions does.
-func ruleResults(c Converter, stored string) []siteapi.SiteRuleActionResult {
+func ruleResults(c Converter, stored string) []siteapi.RuleActionResult {
 	results, err := rules.DecodeResults(stored)
 	if err != nil {
 		slog.Error("rule: stored results cannot be decoded", "error", err)
 		return nil
 	}
-	return lo.Map(results, func(r rules.Result, _ int) siteapi.SiteRuleActionResult {
-		return siteapi.SiteRuleActionResult{
+	return lo.Map(results, func(r rules.Result, _ int) siteapi.RuleActionResult {
+		return siteapi.RuleActionResult{
 			Type:   c.RuleActionTypeToResource(r.Type),
 			Status: c.RuleActionStatusToResource(r.Status),
 			Detail: optNonEmpty(r.Detail),
@@ -1286,8 +1286,8 @@ func optNilHoldReason(c Converter, v *holdreason.Reason) siteapi.OptNilHoldReaso
 
 // customFieldRuleOperators is the operators a rule leaf may test on a Custom field of the type: the
 // Condition's table, listed so a client offers what the server takes.
-func customFieldRuleOperators(t customfield.Type) []siteapi.SiteConditionOperator {
-	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.SiteConditionOperator { return siteapi.SiteConditionOperator(op) })
+func customFieldRuleOperators(t customfield.Type) []siteapi.ConditionOperator {
+	return lo.Map(condition.RuleOperators(t), func(op string, _ int) siteapi.ConditionOperator { return siteapi.ConditionOperator(op) })
 }
 
 // optAttentionSubject is the object an attention item is about, absent for the Workspace's own.
@@ -1301,8 +1301,8 @@ func optAbuseWarning(c Converter, v *abusewarning.Warning) siteapi.OptNilAbuseWa
 }
 
 // optMessageRevenue is the revenue of a message, present wherever the module read it.
-func optMessageRevenue(c Converter, r orders.Revenue) siteapi.OptSiteMessageRevenue {
-	return siteapi.NewOptSiteMessageRevenue(c.MessageRevenueToResource(r))
+func optMessageRevenue(c Converter, r orders.Revenue) siteapi.OptMessageRevenue {
+	return siteapi.NewOptMessageRevenue(c.MessageRevenueToResource(r))
 }
 
 func windowHours(d time.Duration) int32 { return narrow.Int32(d / time.Hour) }
@@ -1317,6 +1317,6 @@ func revision(v int64) siteapi.Revision {
 }
 
 // ownershipRecordType is the type of a Tracking domain's ownership record (ADR 0173).
-func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.SiteDnsRecordType {
-	return siteapi.SiteDnsRecordTypeTXT
+func ownershipRecordType(trackingdomains.OwnershipRecord) siteapi.DnsRecordType {
+	return siteapi.DnsRecordTypeTXT
 }

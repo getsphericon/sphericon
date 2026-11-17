@@ -11,7 +11,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { siteAutomationsGet } from '../../generated/site/sdk.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
-import { zSiteUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
+import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
 import { testId } from '../../test/payloads.ts'
@@ -116,7 +116,7 @@ function startRaces({ refuse }: { refuse: boolean }): RaceRig<OperationEvent> {
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(server)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = zSiteUpdateAutomationInput.parse(await request.json())
+      const body = zUpdateAutomationInput.parse(await request.json())
       await gate.hold()
       if (refuse) {
         return problem(422, 'Refused definition')
@@ -228,7 +228,7 @@ test('a Save over a change made elsewhere is refused and the canvas is kept', as
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(server)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = zSiteUpdateAutomationInput.parse(await request.json())
+      const body = zUpdateAutomationInput.parse(await request.json())
       sent.push(body.revision)
       if (body.revision !== server.revision) {
         return problem(409, { title: 'Changed', code: 'revision_changed' })

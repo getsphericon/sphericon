@@ -21,7 +21,7 @@ import {
   siteAutomationsListOptions,
   siteEventsActionsOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteCreateRuleInput } from '../../generated/site/types.gen.ts'
+import type { CreateRuleInput } from '../../generated/site/types.gen.ts'
 import { zSiteAutomationsListQuery } from '../../generated/site/zod.gen.ts'
 import { useEventActionFilter } from '../../hooks/useEventActionLabel.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
@@ -32,13 +32,11 @@ import { newAction, ruleActionKinds, takesAutomation, takesCall, takesTag } from
 import { HttpActionFields } from './HttpActionFields.tsx'
 
 // What the form submits: the create input, with the Condition and the Actions always given.
-export type RulePayload = Pick<SiteCreateRuleInput, 'name' | 'triggerEvents'> &
-  Required<Pick<SiteCreateRuleInput, 'condition' | 'actions'>>
+export type RulePayload = Pick<CreateRuleInput, 'name' | 'triggerEvents'> &
+  Required<Pick<CreateRuleInput, 'condition' | 'actions'>>
 
 // What the form holds: the create input, with the Condition as a draft the builder edits.
-export type RuleValues = Required<
-  Pick<SiteCreateRuleInput, 'name' | 'triggerEvents' | 'actions'>
-> & {
+export type RuleValues = Required<Pick<CreateRuleInput, 'name' | 'triggerEvents' | 'actions'>> & {
   condition: ConditionDraft
 }
 

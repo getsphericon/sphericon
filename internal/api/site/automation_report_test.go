@@ -15,7 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func automationResults(t *testing.T, c *siteapi.Client, params siteapi.SiteAutomationReportsGetParams) siteapi.SiteAutomationResults {
+func automationResults(t *testing.T, c *siteapi.Client, params siteapi.SiteAutomationReportsGetParams) siteapi.AutomationResults {
 	t.Helper()
 	res, err := c.SiteAutomationReportsGet(t.Context(), params)
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func TestTheAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *testin
 	require.True(t, exited)
 	after := automationResults(t, c, params)
 
-	assert.Equal(t, siteapi.SiteAutomationReportPeriod7d, after.Period)
+	assert.Equal(t, siteapi.AutomationReportPeriod7d, after.Period)
 	assert.Len(t, after.Series, 7)
 	assert.Equal(t, before.Current.Exited+1, after.Current.Exited)
 	assert.Equal(t, before.Previous, after.Previous)
@@ -75,6 +75,6 @@ func TestTheAutomationReportReadsThirtyDaysByDefault(t *testing.T) {
 		AutomationId: idStr(fixtures.AutomationWelcomeSeriesID),
 	})
 
-	assert.Equal(t, siteapi.SiteAutomationReportPeriod30d, results.Period)
+	assert.Equal(t, siteapi.AutomationReportPeriod30d, results.Period)
 	assert.Len(t, results.Series, 30)
 }

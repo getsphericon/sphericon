@@ -9,10 +9,7 @@ import {
   handleSiteEnrollmentsList,
   handleSiteIntegrationsGet,
 } from '../../generated/site/msw.gen.ts'
-import type {
-  SiteAutomationResource,
-  SiteAutomationResults,
-} from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationResults } from '../../generated/site/types.gen.ts'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { emailIntegration, page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -29,7 +26,7 @@ const MOUNT = routeMount(automationsDetailRoute, {
 const NO_REVENUE = { reportingCurrency: 'USD', orders: 0, amount: 0 }
 
 // A period in which nothing happened, nor in the one before.
-const NO_RESULTS: SiteAutomationResults = {
+const NO_RESULTS: AutomationResults = {
   period: '30d',
   current: {
     entered: 0,
@@ -482,7 +479,7 @@ test('a refused publish shows the reason', async () => {
 
 // The 30 days to 17 March against the 30 days before: what the report answers when the page names
 // no period, the contract's default.
-const MONTH: SiteAutomationResults = {
+const MONTH: AutomationResults = {
   period: '30d',
   current: {
     entered: 4,
@@ -510,7 +507,7 @@ const MONTH: SiteAutomationResults = {
 }
 
 // The 7 days to 17 March against the 7 days before.
-const WEEK: SiteAutomationResults = {
+const WEEK: AutomationResults = {
   period: '7d',
   current: { ...MONTH.current, entered: 9, from: '2026-03-11', to: '2026-03-17' },
   previous: { ...MONTH.previous, entered: 6, from: '2026-03-04', to: '2026-03-10' },
@@ -518,7 +515,7 @@ const WEEK: SiteAutomationResults = {
 }
 
 // The results the report answers for the period a request names (none: the default).
-const RESULTS_BY_PERIOD = new Map<string | null, SiteAutomationResults>([
+const RESULTS_BY_PERIOD = new Map<string | null, AutomationResults>([
   [null, MONTH],
   ['7d', WEEK],
 ])

@@ -539,7 +539,7 @@ func encodeSiteAuthVerifyEmailResponse(response *SiteVerifyEmailResultHeaders, w
 	return nil
 }
 
-func encodeSiteAutomationReportsGetResponse(response *SiteAutomationReport, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteAutomationReportsGetResponse(response *AutomationReport, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -591,7 +591,7 @@ func encodeSiteAutomationsDeactivateResponse(response *SiteAutomationResource, w
 	return nil
 }
 
-func encodeSiteAutomationsDryRunHttpStepResponse(response *SiteDryRunHttpStepResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteAutomationsDryRunHttpStepResponse(response *DryRunHttpStepResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -682,7 +682,7 @@ func encodeSiteAutomationsUpdateResponse(response *SiteAutomationResource, w htt
 	return nil
 }
 
-func encodeSiteBrandKitGetResponse(response *SiteBrandKitResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteBrandKitGetResponse(response *BrandKitResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -712,7 +712,7 @@ func encodeSiteBrandKitRecreateStarterTemplatesResponse(response []SiteEmailTemp
 	return nil
 }
 
-func encodeSiteBrandKitSaveResponse(response *SiteBrandKitResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteBrandKitSaveResponse(response *BrandKitResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -1125,7 +1125,7 @@ func encodeSiteDomainJoinSetResponse(response *SiteDomainJoinResource, w http.Re
 	return nil
 }
 
-func encodeSiteEnrollmentsGetResponse(response *SiteEnrollmentResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteEnrollmentsGetResponse(response *EnrollmentResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -1828,7 +1828,7 @@ func encodeSitePersonalTokensListResponse(response []SitePersonalTokenResource, 
 	return nil
 }
 
-func encodeSitePresetsListResponse(response []SitePresetResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSitePresetsListResponse(response []PresetResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -1921,7 +1921,7 @@ func encodeSiteRulesDeleteResponse(response *SiteRulesDeleteNoContent, w http.Re
 	return nil
 }
 
-func encodeSiteRulesDryRunResponse(response *SiteRuleDryRunResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteRulesDryRunResponse(response *RuleDryRunResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -2218,7 +2218,7 @@ func encodeSiteSegmentsUpdateResponse(response *SiteSegmentResource, w http.Resp
 	return nil
 }
 
-func encodeSiteSendingDomainsCreateResponse(response *SiteSendingDomainResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteSendingDomainsCreateResponse(response *SendingDomainResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(201)
 
@@ -2237,7 +2237,7 @@ func encodeSiteSendingDomainsDeleteResponse(response *SiteSendingDomainsDeleteNo
 	return nil
 }
 
-func encodeSiteSendingDomainsGetResponse(response *SiteSendingDomainResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteSendingDomainsGetResponse(response *SendingDomainResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -2263,7 +2263,7 @@ func encodeSiteSendingDomainsListResponse(response *SiteSendingDomainsListOK, w 
 	return nil
 }
 
-func encodeSiteSendingDomainsVerifyResponse(response *SiteSendingDomainResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteSendingDomainsVerifyResponse(response *SendingDomainResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -2554,7 +2554,7 @@ func encodeSiteTokensUpdateResponse(response *SiteApiTokenResource, w http.Respo
 	return nil
 }
 
-func encodeSiteTrackingDomainsListResponse(response []SiteTrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteTrackingDomainsListResponse(response []TrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -2577,7 +2577,7 @@ func encodeSiteTrackingDomainsRemoveResponse(response *SiteTrackingDomainsRemove
 	return nil
 }
 
-func encodeSiteTrackingDomainsSetResponse(response *SiteTrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteTrackingDomainsSetResponse(response *TrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -2590,7 +2590,7 @@ func encodeSiteTrackingDomainsSetResponse(response *SiteTrackingDomainResource, 
 	return nil
 }
 
-func encodeSiteTrackingDomainsVerifyResponse(response *SiteTrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteTrackingDomainsVerifyResponse(response *TrackingDomainResource, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 
@@ -2791,7 +2791,7 @@ func encodeSiteWebhooksRegenerateSecretResponse(response *SiteWebhookEndpointRes
 	return nil
 }
 
-func encodeSiteWebhooksTestResponse(response *SiteWebhookTestResult, w http.ResponseWriter, span trace.Span) error {
+func encodeSiteWebhooksTestResponse(response *WebhookTestResult, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 

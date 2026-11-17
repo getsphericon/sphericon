@@ -7,7 +7,7 @@ import { defineEditorSession } from '../../editing/editorSession.ts'
 import { handleSiteSegmentsGet, handleSiteSegmentsUpdate } from '../../generated/site/msw.gen.ts'
 import { siteSegmentsGet, siteSegmentsUpdate } from '../../generated/site/sdk.gen.ts'
 import type { SiteSegmentResource } from '../../generated/site/types.gen.ts'
-import { zSiteUpdateSegmentInput } from '../../generated/site/zod.gen.ts'
+import { zUpdateSegmentInput } from '../../generated/site/zod.gen.ts'
 import { resourceEditorAdapter, withRevision } from '../../resources/resourceEditor.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
@@ -58,7 +58,7 @@ function serve({ refuse }: { refuse: boolean }) {
   worker.use(
     handleSiteSegmentsGet(() => HttpResponse.json(server)),
     handleSiteSegmentsUpdate(async ({ request }) => {
-      const { revision, name, condition } = zSiteUpdateSegmentInput.parse(await request.json())
+      const { revision, name, condition } = zUpdateSegmentInput.parse(await request.json())
       sent.push(revision)
       await gate.hold()
       if (refuse) {

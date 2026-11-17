@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import type { SiteIntegrationChannel } from '../generated/site/types.gen.ts'
+import type { IntegrationChannel } from '../generated/site/types.gen.ts'
 
 // What the unsubscribe pages say, in the words of the Channel the link came on: a text's link
 // speaks of text messages and a Telegram message's of Telegram messages, any other of emails.
@@ -10,9 +10,9 @@ export interface UnsubscribeCopy {
   all: string
 }
 
-export function useUnsubscribeCopy(channel: SiteIntegrationChannel | undefined): UnsubscribeCopy {
+export function useUnsubscribeCopy(channel: IntegrationChannel | undefined): UnsubscribeCopy {
   const { t } = useTranslation()
-  const copy: Record<SiteIntegrationChannel, UnsubscribeCopy> = {
+  const copy: Record<IntegrationChannel, UnsubscribeCopy> = {
     email: {
       ask: t(($) => $.unsubscribe.body),
       done: t(($) => $.unsubscribed.body),

@@ -6,14 +6,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** A Custom field's value type */
-enum CustomFieldType {
-  string,
-  number,
-  bool,
-  datetime,
-}
-
 /** Custom field definition: a typed, named Contact attribute (ADR 0006) */
 model CustomFieldResource {
   /** Unique identifier */
@@ -41,93 +33,6 @@ model CustomFieldResource {
 
   /** Last update timestamp */
   updatedAt: Timestamp;
-}
-
-/** Request body for updating a custom field: its key never changes */
-model UpdateCustomFieldInput {
-  /** The custom field's `revision` the edit was made on (ADR 0119): the one it was read with */
-  revision: Revision;
-
-  /** Display name */
-  name?: Name;
-
-  /** Value type. Stored values are not rewritten: the leaves of the new type read them as they are */
-  type?: CustomFieldType;
-}
-
-/** Delivery channel an integration belongs to */
-enum IntegrationChannel {
-  email,
-  sms,
-
-  /** A Workspace's own Telegram bot */
-  telegram,
-}
-
-/** Concrete sending provider */
-enum IntegrationProvider {
-  smtp,
-  ses,
-
-  /** The Test inbox: sends nothing outside and keeps each message as a Captured message */
-  inbox,
-
-  /** A Telegram bot, through the Bot API */
-  telegram,
-
-  /** A Twilio account, on the `sms` channel */
-  twilio,
-}
-
-/** Where an effective Provider limit comes from */
-enum ProviderLimitSource {
-  /** Set by the user on the Integration */
-  manual,
-
-  /** Reported by the provider */
-  provider,
-}
-
-/** A reason to look at an Integration's Provider limit */
-enum ProviderLimitWarning {
-  /** No ceiling applies: sends are not paced and the provider may throttle or block them (never set on a Test inbox, which sends to no provider) */
-  unlimited,
-
-  /** The provider's send quota could not be read (no permission, or a compatible service without the call), so only the manual limit applies */
-  providerQuotaUnavailable,
-
-  /** The provider has stopped the account (SES enforcement SHUTDOWN): sends through the Integration are held until it sends again */
-  providerStopped,
-
-  /** The provider has put the account under review (SES enforcement PROBATION); it still sends */
-  providerProbation,
-
-  /** The account is in the provider's sandbox (SES without production access): it delivers only to verified addresses */
-  providerSandbox,
-}
-
-/** One effective ceiling: the lowest of the manual and provider values, manual on a tie */
-model ProviderLimitValue {
-  /** The ceiling in messages; null means this window is not limited */
-  limit: int32 | null;
-
-  /** Where the ceiling comes from; null when there is none */
-  source: ProviderLimitSource | null;
-}
-
-/** The Provider limit as enforced, with the last 24 hours of usage */
-model ProviderLimitStatus {
-  /** Most messages per second */
-  perSecond: ProviderLimitValue;
-
-  /** Most messages per rolling 24 hours */
-  perDay: ProviderLimitValue;
-
-  /** Messages the provider accepted from this Integration in the last 24 hours */
-  sentLast24h: int32;
-
-  /** Reasons to review the limit; empty when there is nothing to flag */
-  warnings: ProviderLimitWarning[];
 }
 
 /**

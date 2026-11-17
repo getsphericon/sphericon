@@ -19,7 +19,7 @@ import (
 // which is the orders module's, tested there; these tests read what the reports sum, over the
 // Orders of the revenue tenants (fixtures/orders.yml), one tenant per report.
 
-func broadcastRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteMessageRevenue {
+func broadcastRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.MessageRevenue {
 	t.Helper()
 	res, err := c.SiteBroadcastsGet(t.Context(), siteapi.SiteBroadcastsGetParams{WorkspaceId: ws, ID: idStr(id)})
 	require.NoError(t, err)
@@ -27,7 +27,7 @@ func broadcastRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, i
 	return b.Stats.Revenue
 }
 
-func broadcastListRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.SiteMessageRevenue {
+func broadcastListRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) siteapi.MessageRevenue {
 	t.Helper()
 	res, err := c.SiteBroadcastsList(t.Context(), siteapi.SiteBroadcastsListParams{WorkspaceId: ws, PageSize: siteapi.NewOptInt32(100)})
 	require.NoError(t, err)
@@ -38,10 +38,10 @@ func broadcastListRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceI
 		}
 	}
 	require.FailNow(t, "broadcast not listed")
-	return siteapi.SiteMessageRevenue{}
+	return siteapi.MessageRevenue{}
 }
 
-func automationRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) (report, listed, got siteapi.SiteMessageRevenue) {
+func automationRevenue(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, id int64) (report, listed, got siteapi.MessageRevenue) {
 	t.Helper()
 	rep, err := c.SiteAutomationReportsGet(t.Context(), siteapi.SiteAutomationReportsGetParams{WorkspaceId: ws, AutomationId: idStr(id)})
 	require.NoError(t, err)

@@ -5,16 +5,16 @@ import { toCondition, emptyGroup } from '../../components/conditions/condition.t
 import type { ConditionDraft } from '../../components/conditions/condition.ts'
 import { ConditionBuilder } from '../../components/conditions/ConditionBuilder.tsx'
 import { ButtonLink } from '../../components/RouterLink.tsx'
-import type { SiteCreateSegmentInput } from '../../generated/site/types.gen.ts'
+import type { CreateSegmentInput } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 import { Route as segmentsRoute } from '../../routes/workspaces/$workspaceId/segments/index.tsx'
 
 // What the form submits: the create input, which always carries a Condition (a Segment is one).
-export type SegmentPayload = Pick<SiteCreateSegmentInput, 'name' | 'condition'>
+export type SegmentPayload = Pick<CreateSegmentInput, 'name' | 'condition'>
 
 // What the form holds: the create input, with the Condition as a draft the builder edits.
-export type SegmentValues = Pick<SiteCreateSegmentInput, 'name'> & { condition: ConditionDraft }
+export type SegmentValues = Pick<CreateSegmentInput, 'name'> & { condition: ConditionDraft }
 
 export function SegmentForm({
   form,

@@ -17,7 +17,7 @@ model SiteJoinDomainResource {
   verified: boolean;
 
   /** The TXT record to publish to prove the domain */
-  record: SiteDnsRecord;
+  record: DnsRecord;
 
   /** When the TXT record was most recently checked (null = never) */
   lastCheckedAt?: Timestamp | null;

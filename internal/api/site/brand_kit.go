@@ -7,7 +7,7 @@ import (
 )
 
 // SiteBrandKitGet returns the Workspace's Brand kit; every member may read it.
-func (h *Handlers) SiteBrandKitGet(ctx context.Context, _ siteapi.SiteBrandKitGetParams) (*siteapi.SiteBrandKitResource, error) {
+func (h *Handlers) SiteBrandKitGet(ctx context.Context, _ siteapi.SiteBrandKitGetParams) (*siteapi.BrandKitResource, error) {
 	s := workspaceScope(ctx)
 	kit, err := h.brandKit.Get(ctx, s)
 	if err != nil {
@@ -19,7 +19,7 @@ func (h *Handlers) SiteBrandKitGet(ctx context.Context, _ siteapi.SiteBrandKitGe
 
 // SiteBrandKitSave saves the Brand kit: the first save also makes the starter Templates.
 // Permission brand_kit:manage.
-func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBrandKitInput, _ siteapi.SiteBrandKitSaveParams) (*siteapi.SiteBrandKitResource, error) {
+func (h *Handlers) SiteBrandKitSave(ctx context.Context, req *siteapi.SiteSaveBrandKitInput, _ siteapi.SiteBrandKitSaveParams) (*siteapi.BrandKitResource, error) {
 	s := workspaceScope(ctx)
 
 	kit, err := h.brandKit.Save(ctx, s, inputs.BrandKitSave(req))

@@ -33,7 +33,7 @@ func brandKitInput() *siteapi.SiteSaveBrandKitInput {
 }
 
 // saveBrandKit saves in on the revision the Brand kit has now, as a client that read it first.
-func saveBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, in *siteapi.SiteSaveBrandKitInput) *siteapi.SiteBrandKitResource {
+func saveBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId, in *siteapi.SiteSaveBrandKitInput) *siteapi.BrandKitResource {
 	t.Helper()
 	in.Revision = getBrandKit(t, c, workspaceID).Revision
 	res, err := c.SiteBrandKitSave(context.Background(), in, siteapi.SiteBrandKitSaveParams{WorkspaceId: workspaceID})
@@ -41,7 +41,7 @@ func saveBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.Workspace
 	return res
 }
 
-func getBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.SiteBrandKitResource {
+func getBrandKit(t *testing.T, c *siteapi.Client, workspaceID siteapi.WorkspaceId) *siteapi.BrandKitResource {
 	t.Helper()
 	res, err := c.SiteBrandKitGet(context.Background(), siteapi.SiteBrandKitGetParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)

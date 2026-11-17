@@ -34,7 +34,7 @@ func TestSiteContentChangesAreAudited(t *testing.T) {
 	err = c.SiteTemplatesDelete(ctx, siteapi.SiteTemplatesDeleteParams{WorkspaceId: fixtures.AcmePublicID, ID: tmplID})
 	require.NoError(t, err)
 
-	_, err = c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "Audited segment", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)},
+	_, err = c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Audited segment", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 

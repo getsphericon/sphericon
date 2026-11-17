@@ -2,13 +2,13 @@ import type { RuleGroupType } from 'react-querybuilder'
 import { expect, test } from 'vitest'
 
 import {
-  SiteConditionCombinator,
-  SiteConditionDateOperator,
-  SiteConditionEventOperator,
-  SiteConditionNumberOperator,
-  SiteConditionOperator,
+  ConditionCombinator,
+  ConditionDateOperator,
+  ConditionEventOperator,
+  ConditionNumberOperator,
+  ConditionOperator,
 } from '../../generated/site/types.gen.ts'
-import type { SiteConditionEventLeaf, SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import type { ConditionEventLeaf, ConditionGroup } from '../../generated/site/types.gen.ts'
 import {
   dateWithinOperator,
   emptyGroup,
@@ -19,17 +19,17 @@ import {
   toQuery,
 } from './condition.ts'
 
-const group: SiteConditionGroup = {
+const group: ConditionGroup = {
   kind: 'group',
-  combinator: SiteConditionCombinator.OR,
+  combinator: ConditionCombinator.OR,
   not: true,
   rules: [
-    { kind: 'rule', field: 'email', operator: SiteConditionOperator.CONTAINS, value: 'acme' },
-    { kind: 'rule', field: 'plan', operator: SiteConditionOperator.NULL },
+    { kind: 'rule', field: 'email', operator: ConditionOperator.CONTAINS, value: 'acme' },
+    { kind: 'rule', field: 'plan', operator: ConditionOperator.NULL },
     {
       kind: 'group',
-      combinator: SiteConditionCombinator.AND,
-      rules: [{ kind: 'rule', field: 'name', operator: SiteConditionOperator.EQ, value: 'Ada' }],
+      combinator: ConditionCombinator.AND,
+      rules: [{ kind: 'rule', field: 'name', operator: ConditionOperator.EQ, value: 'Ada' }],
     },
   ],
 }
@@ -42,7 +42,7 @@ test('a rule group survives the walk to the query builder and back', () => {
     ...group,
     rules: [
       group.rules[0],
-      { kind: 'rule', field: 'plan', operator: SiteConditionOperator.NULL, value: '' },
+      { kind: 'rule', field: 'plan', operator: ConditionOperator.NULL, value: '' },
       group.rules[2],
     ],
   })
@@ -51,7 +51,7 @@ test('a rule group survives the walk to the query builder and back', () => {
 test('the empty group becomes an empty query without a negation', () => {
   const query = toQuery(emptyGroup)
 
-  expect(query).toEqual({ combinator: SiteConditionCombinator.AND, rules: [] })
+  expect(query).toEqual({ combinator: ConditionCombinator.AND, rules: [] })
 })
 
 test('the query builder tree is cleaned: an unknown operator is dropped, a bad combinator falls back to and', () => {
@@ -59,7 +59,7 @@ test('the query builder tree is cleaned: an unknown operator is dropped, a bad c
     combinator: 'xor',
     rules: [
       { field: 'email', operator: 'regex', value: '.*' },
-      { field: 'email', operator: SiteConditionOperator.EQ, value: { a: 1 } },
+      { field: 'email', operator: ConditionOperator.EQ, value: { a: 1 } },
     ],
   }
 
@@ -67,30 +67,30 @@ test('the query builder tree is cleaned: an unknown operator is dropped, a bad c
 
   expect(cleaned).toEqual({
     kind: 'group',
-    combinator: SiteConditionCombinator.AND,
-    rules: [{ kind: 'rule', field: 'email', operator: SiteConditionOperator.EQ, value: '' }],
+    combinator: ConditionCombinator.AND,
+    rules: [{ kind: 'rule', field: 'email', operator: ConditionOperator.EQ, value: '' }],
   })
 })
 
 test("a number typed into a number field is the rule leaf's text", () => {
   const typed = toDraft({
-    combinator: SiteConditionCombinator.AND,
-    rules: [{ field: 'custom:seats', operator: SiteConditionOperator.EQ, value: 12 }],
+    combinator: ConditionCombinator.AND,
+    rules: [{ field: 'custom:seats', operator: ConditionOperator.EQ, value: 12 }],
   })
 
   expect(typed.rules).toEqual([
-    { kind: 'rule', field: 'custom:seats', operator: SiteConditionOperator.EQ, value: '12' },
+    { kind: 'rule', field: 'custom:seats', operator: ConditionOperator.EQ, value: '12' },
   ])
 })
 
-const one = (leaf: SiteConditionEventLeaf): SiteConditionGroup => ({
+const one = (leaf: ConditionEventLeaf): ConditionGroup => ({
   kind: 'group',
-  combinator: SiteConditionCombinator.AND,
+  combinator: ConditionCombinator.AND,
   rules: [leaf],
 })
 
 const ruleOf = (operator: string, value: unknown): RuleGroupType => ({
-  combinator: SiteConditionCombinator.AND,
+  combinator: ConditionCombinator.AND,
   rules: [{ field: 'event:purchase', operator, value }],
 })
 
@@ -98,7 +98,7 @@ test('an event count survives the walk to the query builder and back', () => {
   const counted = one({
     kind: 'event',
     action: 'purchase',
-    operator: SiteConditionEventOperator.AT_LEAST,
+    operator: ConditionEventOperator.AT_LEAST,
     times: 3,
     withinDays: 7,
   })
@@ -116,13 +116,13 @@ test('at least once and at most zero times show as the presets and come back as 
   const performed = one({
     kind: 'event',
     action: 'purchase',
-    operator: SiteConditionEventOperator.AT_LEAST,
+    operator: ConditionEventOperator.AT_LEAST,
     times: 1,
   })
   const notPerformed = one({
     kind: 'event',
     action: 'purchase',
-    operator: SiteConditionEventOperator.AT_MOST,
+    operator: ConditionEventOperator.AT_MOST,
     times: 0,
     withinDays: 30,
   })
@@ -141,9 +141,9 @@ test('at least once and at most zero times show as the presets and come back as 
 })
 
 test('a count operator picked without a count keeps it blank, and the draft is no Condition yet', () => {
-  const atLeast = toDraft(ruleOf(SiteConditionEventOperator.AT_LEAST, { withinDays: 7 }))
-  const atMost = toDraft(ruleOf(SiteConditionEventOperator.AT_MOST, ''))
-  const typed = toDraft(ruleOf(SiteConditionEventOperator.AT_LEAST, { times: 1 }))
+  const atLeast = toDraft(ruleOf(ConditionEventOperator.AT_LEAST, { withinDays: 7 }))
+  const atMost = toDraft(ruleOf(ConditionEventOperator.AT_MOST, ''))
+  const typed = toDraft(ruleOf(ConditionEventOperator.AT_LEAST, { times: 1 }))
 
   expect(atLeast.rules).toEqual([
     { kind: 'event', action: 'purchase', operator: 'atLeast', withinDays: 7 },
@@ -157,8 +157,8 @@ test('a count operator picked without a count keeps it blank, and the draft is n
 })
 
 test('an event rule with a text operator is dropped, and a value out of range is blank', () => {
-  const textOperator = toDraft(ruleOf(SiteConditionOperator.EQ, { times: 2 }))
-  const negative = toDraft(ruleOf(SiteConditionEventOperator.AT_MOST, { times: -1 }))
+  const textOperator = toDraft(ruleOf(ConditionOperator.EQ, { times: 2 }))
+  const negative = toDraft(ruleOf(ConditionEventOperator.AT_MOST, { times: -1 }))
 
   expect(textOperator.rules).toEqual([])
   expect(negative.rules).toEqual([{ kind: 'event', action: 'purchase', operator: 'atMost' }])
@@ -166,19 +166,19 @@ test('an event rule with a text operator is dropped, and a value out of range is
 })
 
 const compared = (operator: string, value: unknown): RuleGroupType => ({
-  combinator: SiteConditionCombinator.AND,
+  combinator: ConditionCombinator.AND,
   rules: [{ field: 'custom:seats', operator, value }],
 })
 
 test('a number comparison survives the walk to the query builder and back', () => {
-  const atLeastTen: SiteConditionGroup = {
+  const atLeastTen: ConditionGroup = {
     kind: 'group',
-    combinator: SiteConditionCombinator.AND,
+    combinator: ConditionCombinator.AND,
     rules: [
       {
         kind: 'number',
         field: 'custom:seats',
-        operator: SiteConditionNumberOperator.GTE,
+        operator: ConditionNumberOperator.GTE,
         value: 10,
       },
     ],
@@ -191,8 +191,8 @@ test('a number comparison survives the walk to the query builder and back', () =
 })
 
 test('a number typed as text counts, and a blank one keeps the draft from being a Condition', () => {
-  const typed = toDraft(compared(SiteConditionNumberOperator.LT, '2.5'))
-  const blank = toDraft(compared(SiteConditionNumberOperator.LT, ''))
+  const typed = toDraft(compared(ConditionNumberOperator.LT, '2.5'))
+  const blank = toDraft(compared(ConditionNumberOperator.LT, ''))
 
   expect(typed.rules).toEqual([
     { kind: 'number', field: 'custom:seats', operator: 'lt', value: 2.5 },
@@ -204,33 +204,31 @@ test('a number typed as text counts, and a blank one keeps the draft from being 
 // Paris is an hour ahead of UTC in March: a day there starts at 23:00 UTC the evening before.
 const paris = 'Europe/Paris'
 
-const dated = (operator: SiteConditionDateOperator, at: string): SiteConditionGroup => ({
+const dated = (operator: ConditionDateOperator, at: string): ConditionGroup => ({
   kind: 'group',
-  combinator: SiteConditionCombinator.AND,
+  combinator: ConditionCombinator.AND,
   rules: [{ kind: 'date', field: 'custom:renews_at', operator, at }],
 })
 
 const picked = (operator: string, day: string): RuleGroupType => ({
-  combinator: SiteConditionCombinator.AND,
+  combinator: ConditionCombinator.AND,
   rules: [{ field: 'custom:renews_at', operator, value: day }],
 })
 
 test('before a day is before its start and after a day is from the next day, in the User zone', () => {
-  const before = toDraft(picked(SiteConditionDateOperator.BEFORE, '2026-03-01'), paris)
-  const after = toDraft(picked(SiteConditionDateOperator.AFTER, '2026-03-01'), paris)
+  const before = toDraft(picked(ConditionDateOperator.BEFORE, '2026-03-01'), paris)
+  const after = toDraft(picked(ConditionDateOperator.AFTER, '2026-03-01'), paris)
 
   expect(toCondition(before)).toEqual(
-    dated(SiteConditionDateOperator.BEFORE, '2026-02-28T23:00:00.000Z'),
+    dated(ConditionDateOperator.BEFORE, '2026-02-28T23:00:00.000Z'),
   )
-  expect(toCondition(after)).toEqual(
-    dated(SiteConditionDateOperator.AFTER, '2026-03-01T23:00:00.000Z'),
-  )
+  expect(toCondition(after)).toEqual(dated(ConditionDateOperator.AFTER, '2026-03-01T23:00:00.000Z'))
 })
 
 test('a loaded before or after shows the day it bounds, in the User zone', () => {
-  const before = toQuery(dated(SiteConditionDateOperator.BEFORE, '2026-02-28T23:00:00Z'), paris)
-  const after = toQuery(dated(SiteConditionDateOperator.AFTER, '2026-03-01T23:00:00Z'), paris)
-  const afterInUtc = toQuery(dated(SiteConditionDateOperator.AFTER, '2026-03-01T23:00:00Z'), 'UTC')
+  const before = toQuery(dated(ConditionDateOperator.BEFORE, '2026-02-28T23:00:00Z'), paris)
+  const after = toQuery(dated(ConditionDateOperator.AFTER, '2026-03-01T23:00:00Z'), paris)
+  const afterInUtc = toQuery(dated(ConditionDateOperator.AFTER, '2026-03-01T23:00:00Z'), 'UTC')
 
   expect(before.rules).toEqual([
     { field: 'custom:renews_at', operator: 'before', value: '2026-03-01' },
@@ -245,7 +243,7 @@ test('a loaded before or after shows the day it bounds, in the User zone', () =>
 
 test('within takes a number of days, and a date without a day picked is blank', () => {
   const within = toDraft(compared(dateWithinOperator, 7))
-  const noDay = toDraft(compared(SiteConditionDateOperator.BEFORE, ''))
+  const noDay = toDraft(compared(ConditionDateOperator.BEFORE, ''))
 
   expect(within.rules).toEqual([{ kind: 'dateWithin', field: 'custom:seats', withinDays: 7 }])
   expect(
@@ -259,8 +257,8 @@ test('within takes a number of days, and a date without a day picked is blank', 
 })
 
 test('a value that is no finite number leaves a number comparison blank', () => {
-  const infinite = toDraft(compared(SiteConditionNumberOperator.LT, Number.POSITIVE_INFINITY))
-  const words = toDraft(compared(SiteConditionNumberOperator.LT, 'a few'))
+  const infinite = toDraft(compared(ConditionNumberOperator.LT, Number.POSITIVE_INFINITY))
+  const words = toDraft(compared(ConditionNumberOperator.LT, 'a few'))
 
   expect(infinite.rules).toEqual([{ kind: 'number', field: 'custom:seats', operator: 'lt' }])
   expect(words.rules).toEqual([{ kind: 'number', field: 'custom:seats', operator: 'lt' }])
@@ -275,15 +273,15 @@ test('within without a number of days is blank, and the draft is no Condition ye
 })
 
 test('a loaded moment that is no date shows no day', () => {
-  const query = toQuery(dated(SiteConditionDateOperator.BEFORE, 'not a moment'), paris)
+  const query = toQuery(dated(ConditionDateOperator.BEFORE, 'not a moment'), paris)
 
   expect(query.rules).toEqual([{ field: 'custom:renews_at', operator: 'before', value: '' }])
 })
 
 test('a combinator kept between the rules of the query builder is not a rule', () => {
-  const rule = { field: 'custom:seats', operator: SiteConditionNumberOperator.GTE, value: 1 }
+  const rule = { field: 'custom:seats', operator: ConditionNumberOperator.GTE, value: 1 }
   const independent: RuleGroupType = {
-    combinator: SiteConditionCombinator.AND,
+    combinator: ConditionCombinator.AND,
     rules: [rule],
   }
   // react-querybuilder's independent combinators keep the combinator between the rules as text.

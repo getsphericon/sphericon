@@ -23,7 +23,7 @@ func TestSiteAutomationExitAndGoalEventsWriteTheDraft(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: idStr(fixtures.AutomationPaymentRecoveryID)}
 
-	res, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))),
+	res, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))),
 		ExitEvents: []string{"card_removed"},
 		GoalEvent:  siteapi.NewOptNilString("invoice_paid"),
 	}, params)
@@ -36,12 +36,12 @@ func TestSiteAutomationExitAndGoalEventsWriteTheDraft(t *testing.T) {
 
 	noGoal := siteapi.OptNilString{}
 	noGoal.SetToNull()
-	res, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), GoalEvent: noGoal}, params)
+	res, err = c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), GoalEvent: noGoal}, params)
 	require.NoError(t, err)
 	cleared := res
 	assert.True(t, cleared.Draft.Value.GoalEvent.Null, "null removes the goal event")
 	assert.Equal(t, []string{"card_removed"}, cleared.Draft.Value.ExitEvents, "an omitted list is kept")
 
-	_, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), ExitEvents: []string{"payment_failed"}}, params)
+	_, err = c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), ExitEvents: []string{"payment_failed"}}, params)
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

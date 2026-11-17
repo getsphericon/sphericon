@@ -3,22 +3,22 @@ import type { GetInputPropsReturnType } from '@mantine/form'
 import { IconTrash } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 
-import type { SiteAutomationHttpHeader } from '../generated/site/types.gen.ts'
-import { zSiteRuleAction } from '../generated/site/zod.gen.ts'
+import type { AutomationHttpHeader } from '../generated/site/types.gen.ts'
+import { zRuleAction } from '../generated/site/zod.gen.ts'
 import { maxItemsOf } from '../utils/bounds.ts'
 import { PasswordField } from './PasswordField.tsx'
 
 // The most request headers an outgoing HTTP request carries, as the contract declares it: a
 // Rule's http Action and an Automation's HTTP step alike.
-const HTTP_HEADERS_LIMIT = maxItemsOf(zSiteRuleAction.shape.headers.unwrap())
+const HTTP_HEADERS_LIMIT = maxItemsOf(zRuleAction.shape.headers.unwrap())
 
 interface HttpHeaderRowsProps {
   // The headers as edited: the server returns only the name of a stored header, so a value left
   // empty keeps the stored one.
-  headers: SiteAutomationHttpHeader[]
+  headers: AutomationHttpHeader[]
   // Whether the headers were saved before: a header with no value then keeps its stored one.
   saved: boolean
-  onChange: (headers: SiteAutomationHttpHeader[]) => void
+  onChange: (headers: AutomationHttpHeader[]) => void
   // In a form: the form's props of a header's field (`0.name`, `0.value`), which bring its error
   // and its path, so a refusal shows under the field and a failed submit focuses it.
   inputProps?: (field: string) => GetInputPropsReturnType
@@ -28,7 +28,7 @@ interface HttpHeaderRowsProps {
 // and removed one by one. A value is a secret (an API key, a bearer token), so it is masked.
 export function HttpHeaderRows({ headers, saved, onChange, inputProps }: HttpHeaderRowsProps) {
   const { t } = useTranslation()
-  const change = (index: number, edit: Partial<SiteAutomationHttpHeader>) =>
+  const change = (index: number, edit: Partial<AutomationHttpHeader>) =>
     onChange(headers.map((header, at) => (at === index ? { ...header, ...edit } : header)))
 
   return (

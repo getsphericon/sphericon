@@ -74,11 +74,11 @@ func (h *Handlers) SiteIntegrationsRegenerateKey(ctx context.Context, params sit
 }
 
 // SitePresetsList returns the Presets the Instance offers with their params schemas.
-func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.SitePresetResource, error) {
+func (h *Handlers) SitePresetsList(_ context.Context) ([]siteapi.PresetResource, error) {
 	choosable := h.integrations.Choosable()
-	out := make([]siteapi.SitePresetResource, 0, len(choosable))
+	out := make([]siteapi.PresetResource, 0, len(choosable))
 	for _, p := range choosable {
-		out = append(out, siteapi.SitePresetResource{
+		out = append(out, siteapi.PresetResource{
 			Name: p.Name(), Description: p.Description(),
 			ParamsSchema: siteapi.JsonObject(integrations.RawOf(p.ParamsSchema())),
 		})
@@ -104,15 +104,15 @@ func integrationResource(v integrations.View) siteapi.SiteIntegrationResource {
 	cfg := v.Config
 	switch {
 	case cfg.SMTP != nil:
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSmtpConfigSiteIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
+		res.Config = siteapi.IntegrationConfig{OneOf: siteapi.NewSmtpConfigIntegrationConfigSum(mapper.SmtpConfigToResource(*cfg.SMTP))}
 	case cfg.SES != nil:
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteSesConfigSiteIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
+		res.Config = siteapi.IntegrationConfig{OneOf: siteapi.NewSesConfigIntegrationConfigSum(mapper.SesConfigToResource(*cfg.SES))}
 	case cfg.Inbox != nil:
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteInboxConfigSiteIntegrationConfigSum(siteapi.SiteInboxConfig{Kind: siteapi.SiteInboxConfigKindInbox})}
+		res.Config = siteapi.IntegrationConfig{OneOf: siteapi.NewInboxConfigIntegrationConfigSum(siteapi.InboxConfig{Kind: siteapi.InboxConfigKindInbox})}
 	case cfg.Telegram != nil:
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteTelegramConfigSiteIntegrationConfigSum(mapper.TelegramConfigToResource(*cfg.Telegram))}
+		res.Config = siteapi.IntegrationConfig{OneOf: siteapi.NewTelegramConfigIntegrationConfigSum(mapper.TelegramConfigToResource(*cfg.Telegram))}
 	case cfg.Twilio != nil:
-		res.Config = siteapi.SiteIntegrationConfig{OneOf: siteapi.NewSiteTwilioConfigSiteIntegrationConfigSum(mapper.TwilioConfigToResource(*cfg.Twilio))}
+		res.Config = siteapi.IntegrationConfig{OneOf: siteapi.NewTwilioConfigIntegrationConfigSum(mapper.TwilioConfigToResource(*cfg.Twilio))}
 	}
 	return res
 }

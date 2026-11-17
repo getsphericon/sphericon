@@ -1,6 +1,6 @@
 import type { EmailEditorProps } from '@react-email/editor'
 
-import type { SiteBrandKitResource } from '../generated/site/types.gen.ts'
+import type { BrandKitResource } from '../generated/site/types.gen.ts'
 
 export type EditorTheme = NonNullable<EmailEditorProps['theme']>
 
@@ -11,7 +11,7 @@ const BASIC_THEME: EditorTheme = 'basic'
 // editor's styles. The editor writes them into the document of a message when the message is first
 // authored, so what a message looks like is part of the message and a later change of the Brand kit
 // never reaches it. A Workspace with no saved kit gets the editor's own theme.
-export function brandTheme(kit: SiteBrandKitResource | undefined): EditorTheme {
+export function brandTheme(kit: BrandKitResource | undefined): EditorTheme {
   if (!kit?.saved) {
     return BASIC_THEME
   }

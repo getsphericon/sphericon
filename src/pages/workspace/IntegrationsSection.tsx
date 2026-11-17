@@ -43,12 +43,12 @@ import {
   siteIntegrationsUpdateMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  SiteIntegrationChannel,
-  SiteIntegrationProvider,
+  IntegrationChannel,
+  IntegrationProvider,
   SiteIntegrationResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
-import { zSiteIntegrationChannel, zSiteIntegrationProvider } from '../../generated/site/zod.gen.ts'
+import { zIntegrationChannel, zIntegrationProvider } from '../../generated/site/zod.gen.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { invalidateOwn, useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -71,10 +71,10 @@ import { ProviderLimitFields } from './ProviderLimitFields.tsx'
 import { ProviderLimitModal } from './ProviderLimitModal.tsx'
 import { ProviderLimitStatus } from './ProviderLimitStatus.tsx'
 
-type ProviderKind = SiteIntegrationProvider
+type ProviderKind = IntegrationProvider
 
 // What the first step offers: SES-compatible services speak the SES API at an endpoint of their own.
-type Tile = SiteIntegrationProvider | 'sesCompatible'
+type Tile = IntegrationProvider | 'sesCompatible'
 
 // The place of each tile in the first step: keyed by every tile, so a provider the contract adds
 // fails to compile until it has one.
@@ -88,7 +88,7 @@ const TILE_RANK: Record<Tile, number> = {
 }
 
 // The tiles in display order: every provider of the contract, and the SES-compatible one.
-const TILES: Tile[] = [...zSiteIntegrationProvider.options, 'sesCompatible' as const].toSorted(
+const TILES: Tile[] = [...zIntegrationProvider.options, 'sesCompatible' as const].toSorted(
   (a, b) => TILE_RANK[a] - TILE_RANK[b],
 )
 
@@ -99,7 +99,7 @@ function providerOf(tile: Tile): ProviderKind {
 
 // The Channel each provider sends on (an Integration serves one Channel, ADR 0074). The API reads
 // it back on each Integration as `channel`; a form for a provider not connected yet has none to read.
-const CHANNEL_OF: Record<ProviderKind, SiteIntegrationChannel> = {
+const CHANNEL_OF: Record<ProviderKind, IntegrationChannel> = {
   ses: 'email',
   smtp: 'email',
   inbox: 'email',
@@ -108,17 +108,15 @@ const CHANNEL_OF: Record<ProviderKind, SiteIntegrationChannel> = {
 }
 
 // The Channel a tile's provider sends on; email before a tile is picked.
-function channelOf(tile: Tile | null): SiteIntegrationChannel {
+function channelOf(tile: Tile | null): IntegrationChannel {
   return tile === null ? 'email' : CHANNEL_OF[providerOf(tile)]
 }
 
 // The place of each Channel in the list's groups: keyed by every Channel, as TILE_RANK is.
-const CHANNEL_RANK: Record<SiteIntegrationChannel, number> = { email: 0, telegram: 1, sms: 2 }
+const CHANNEL_RANK: Record<IntegrationChannel, number> = { email: 0, telegram: 1, sms: 2 }
 
 // The Channels of the contract in the order the list groups them.
-const CHANNELS = zSiteIntegrationChannel.options.toSorted(
-  (a, b) => CHANNEL_RANK[a] - CHANNEL_RANK[b],
-)
+const CHANNELS = zIntegrationChannel.options.toSorted((a, b) => CHANNEL_RANK[a] - CHANNEL_RANK[b])
 
 // A provider left unnamed is called after where it sends from.
 function defaultName(values: IntegrationFormValues): string {
@@ -162,7 +160,7 @@ function IntegrationsList({
   const records = useSuspenseQuery(integrationsOptions(workspaceId)).data
   const warnings = useProviderLimitWarnings()
   const historyOffered = useAuditLogOffered(workspaceId, records.length > 0)
-  const channelLabels: Record<SiteIntegrationChannel, string> = {
+  const channelLabels: Record<IntegrationChannel, string> = {
     email: t(($) => $.settings.integrations.channels.email),
     sms: t(($) => $.settings.integrations.channels.sms),
     telegram: t(($) => $.settings.integrations.channels.telegram),

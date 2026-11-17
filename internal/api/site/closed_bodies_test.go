@@ -85,7 +85,7 @@ func TestSiteSegmentRefusesAPropertyNestedInAConditionRule(t *testing.T) {
 	before, err := c.SiteSegmentsList(ctx, list)
 	require.NoError(t, err)
 
-	_, err = edited.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+	_, err = edited.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Pros",
 		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})

@@ -135,7 +135,7 @@ func TestSiteAnArchivedAutomationIsReadOnly(t *testing.T) {
 	before, err := c.SiteAutomationsGet(ctx, params)
 	require.NoError(t, err)
 
-	_, edited := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.EntityId(fixtures.AutomationArchivedID)))), Name: siteapi.NewOptName("Renamed")},
+	_, edited := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.EntityId(fixtures.AutomationArchivedID)))), Name: siteapi.NewOptName("Renamed")},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	_, published := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.EntityId(fixtures.AutomationArchivedID))))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})
 	_, reverted := c.SiteAutomationsRevert(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(siteapi.EntityId(fixtures.AutomationArchivedID))))}, siteapi.SiteAutomationsRevertParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.AutomationArchivedID)})

@@ -25,12 +25,12 @@ func TestSiteSegmentSaveOnAStaleRevisionIsRefused(t *testing.T) {
 	firstCondition := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"first"}]}`
 	secondCondition := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"has","value":"second"}]}`
 
-	first, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{
-		Revision: read.Revision, Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, firstCondition)),
+	first, err := c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
+		Revision: read.Revision, Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, firstCondition)),
 	}, params)
 	require.NoError(t, err)
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{
-		Revision: read.Revision, Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, secondCondition)),
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
+		Revision: read.Revision, Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, secondCondition)),
 	}, params)
 
 	refused := testhelper.SiteRefusal(t, err, http.StatusConflict)
@@ -49,7 +49,7 @@ func TestSiteSegmentUpdateWithoutARevisionIsRefused(t *testing.T) {
 	ctx := context.Background()
 	before := env.DB.Segment.GetX(ctx, fixtures.SegmentProPlanID)
 
-	_, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: siteapi.Revision(before.Revision), Name: siteapi.NewOptName("Blind")},
+	_, err := c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: siteapi.Revision(before.Revision), Name: siteapi.NewOptName("Blind")},
 		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentProPlanID)})
 
 	testhelper.SiteRefusal(t, err, http.StatusBadRequest)

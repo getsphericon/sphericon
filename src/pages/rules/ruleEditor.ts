@@ -2,7 +2,7 @@ import { emptyGroup } from '../../components/conditions/condition.ts'
 import { based, draftGuards } from '../../editing/editorSession.ts'
 import { siteRulesPublish, siteRulesRevert } from '../../generated/site/sdk.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
-import { zSiteCreateRuleInput } from '../../generated/site/zod.gen.ts'
+import { zCreateRuleInput } from '../../generated/site/zod.gen.ts'
 import type { ResourceEditOperation } from '../../resources/defineResource.tsx'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import type { RuleValues } from './RuleForm.tsx'
@@ -12,7 +12,7 @@ import type { RuleValues } from './RuleForm.tsx'
 const blankRule: RuleValues = { name: '', triggerEvents: [], condition: emptyGroup, actions: [] }
 
 export const ruleSchema = resourceFormSchema(
-  zSiteCreateRuleInput.required({ condition: true, actions: true }),
+  zCreateRuleInput.required({ condition: true, actions: true }),
   blankRule,
 )
 

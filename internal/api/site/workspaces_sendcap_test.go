@@ -30,7 +30,7 @@ func TestSiteWorkspaceCarriesItsSendCapAndTheLast24HourSends(t *testing.T) {
 
 	got := acmeWorkspace(t, env)
 
-	want := siteapi.NewOptNilSiteSendCap(siteapi.SiteSendCap{
+	want := siteapi.NewOptNilSendCap(siteapi.SendCap{
 		PerDay: 5000,
 		// Three sends inside the window: two through the default Integration and one through the
 		// SES one; the older ones are outside it.

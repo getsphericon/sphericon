@@ -23,12 +23,12 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	created, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	created, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name: "Call Slack", TriggerEvents: []string{"signup"},
-		Actions: []siteapi.SiteRuleActionInput{{
-			Type: siteapi.SiteRuleActionTypeHTTP, Body: siteapi.NewOptString(`{"text":"{{ first_name }}"}`),
+		Actions: []siteapi.RuleActionInput{{
+			Type: siteapi.RuleActionTypeHTTP, Body: siteapi.NewOptString(`{"text":"{{ first_name }}"}`),
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
-			Headers: []siteapi.SiteAutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
+			Headers: []siteapi.AutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
 			Secret:  siteapi.NewOptString("whsec_topsecret"),
 		}},
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: workspaceID})
@@ -46,7 +46,7 @@ func TestSiteRuleHTTPActionIsMaskedOnReadAndKeptOnEdit(t *testing.T) {
 
 	// Resending only the action id keeps the stored secrets.
 	action.Body = siteapi.NewOptString(`{"text":"edited"}`)
-	updated, err := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))), Actions: []siteapi.SiteRuleActionInput{testhelper.Resend[siteapi.SiteRuleActionInput](t, &action)}},
+	updated, err := c.SiteRulesUpdate(ctx, &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(res.ID))), Actions: []siteapi.RuleActionInput{testhelper.Resend[siteapi.RuleActionInput](t, &action)}},
 		siteapi.SiteRulesUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated
@@ -68,7 +68,7 @@ func TestSiteRuleHTTPActionRefusesASixthHeader(t *testing.T) {
 		return rawBody{inner: inner, body: body}
 	})
 
-	_, err := raw.SiteRulesCreate(context.Background(), &siteapi.SiteCreateRuleInput{},
+	_, err := raw.SiteRulesCreate(context.Background(), &siteapi.CreateRuleInput{},
 		siteapi.SiteRulesCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	bad := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)

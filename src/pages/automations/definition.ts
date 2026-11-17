@@ -2,13 +2,13 @@ import { NodeType } from '@workflowbuilder/sdk'
 import type { WBIcon, WorkflowBuilderEdge, WorkflowBuilderNode } from '@workflowbuilder/sdk'
 import * as z from 'zod'
 
-import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
+import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
-  SiteAutomationHttpHeader,
-  SiteAutomationStep,
-  SiteAutomationVersion,
+  AutomationHttpHeader,
+  AutomationStep,
+  AutomationVersion,
 } from '../../generated/site/types.gen.ts'
-import { zSiteAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
+import { zAutomationHttpHeader } from '../../generated/site/zod.gen.ts'
 import { jsonText } from '../../utils/jsonText.ts'
 import { docCodec } from '../../utils/messageDoc.ts'
 import { buttonsCodec } from '../../utils/telegramButtons.ts'
@@ -28,7 +28,7 @@ import {
 
 // A step is the generated contract type (typed in TypeSpec; no hand-rolled
 // parse/serialize — the API carries steps as structured data, not a JSON string).
-export type AutomationStep = SiteAutomationStep
+export type { AutomationStep }
 
 // --- graph ↔ steps (the visual builder uses an xyflow graph; we persist []step) ---
 
@@ -115,10 +115,7 @@ const TRIGGER_NODE_ID = 'trigger'
 
 // What the Trigger node holds: the event that enrolls a Contact, the events that end an
 // Enrollment early and the one that ends it as having reached its goal (#751).
-export type AutomationTrigger = Pick<
-  SiteAutomationVersion,
-  'triggerEvent' | 'exitEvents' | 'goalEvent'
->
+export type AutomationTrigger = Pick<AutomationVersion, 'triggerEvent' | 'exitEvents' | 'goalEvent'>
 
 // The canvas holds the exit events as one line each, the goal event as text ('' for none).
 function triggerProperties(trigger: AutomationTrigger): Record<string, unknown> {
@@ -196,22 +193,22 @@ function asText(value: unknown): string {
 }
 
 // An HTTP step's headers as the node holds them: JSON text (see jsonText).
-const headersCodec = jsonText.pipe(z.array(zSiteAutomationHttpHeader))
+const headersCodec = jsonText.pipe(z.array(zAutomationHttpHeader))
 
 // headersOf reads an HTTP step's headers off the node; a blank or unreadable text is none.
-export function headersOf(text: string): SiteAutomationHttpHeader[] {
+export function headersOf(text: string): AutomationHttpHeader[] {
   const parsed = headersCodec.safeParse(text)
   return parsed.success ? parsed.data : []
 }
 
 // headersText is the JSON text a node holds its headers in.
-export function headersText(headers: SiteAutomationHttpHeader[]): string {
+export function headersText(headers: AutomationHttpHeader[]): string {
   return z.encode(headersCodec, headers)
 }
 
 // stepHeaders are the headers a step saves: a row left wholly blank is dropped, and a header
 // whose value is empty keeps the stored value of the header with that name.
-function stepHeaders(text: string): SiteAutomationHttpHeader[] {
+function stepHeaders(text: string): AutomationHttpHeader[] {
   return headersOf(text)
     .map(({ name, value }) => ({ name: name.trim(), value: value ?? '' }))
     .filter(({ name, value }) => name !== '' || value !== '')
@@ -249,7 +246,7 @@ function smsStep(props: ReadProperties<'sms'>): AutomationStep {
 
 function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
   const props: Record<string, unknown> = node.data.properties
-  if (node.data.type === SiteAutomationStepType.HTTP) {
+  if (node.data.type === AutomationStepType.HTTP) {
     const http: ReadProperties<'http'> = props
     const id = asText(http.stepId)
     const url = asText(http.url).trim()
@@ -263,30 +260,30 @@ function nodeToStep(node: WorkflowBuilderNode): AutomationStep | null {
       ...(secret === '' ? {} : { secret }),
     }
   }
-  if (node.data.type === SiteAutomationStepType.WAIT) {
+  if (node.data.type === AutomationStepType.WAIT) {
     const wait: ReadProperties<'wait'> = props
     return { type: 'wait', seconds: Math.trunc(Number(wait.seconds)) || 0 }
   }
   if (
-    node.data.type === SiteAutomationStepType.APPLY_TAG ||
-    node.data.type === SiteAutomationStepType.REMOVE_TAG
+    node.data.type === AutomationStepType.APPLY_TAG ||
+    node.data.type === AutomationStepType.REMOVE_TAG
   ) {
     const tag: ReadProperties<'tag'> = props
     return {
       type:
-        node.data.type === SiteAutomationStepType.APPLY_TAG
-          ? SiteAutomationStepType.APPLY_TAG
-          : SiteAutomationStepType.REMOVE_TAG,
+        node.data.type === AutomationStepType.APPLY_TAG
+          ? AutomationStepType.APPLY_TAG
+          : AutomationStepType.REMOVE_TAG,
       tag: asText(tag.tag),
     }
   }
-  if (node.data.type === SiteAutomationStepType.TELEGRAM) {
+  if (node.data.type === AutomationStepType.TELEGRAM) {
     return telegramStep(props)
   }
-  if (node.data.type === SiteAutomationStepType.SMS) {
+  if (node.data.type === AutomationStepType.SMS) {
     return smsStep(props)
   }
-  if (node.data.type === SiteAutomationStepType.EMAIL) {
+  if (node.data.type === AutomationStepType.EMAIL) {
     // A message written in the editor is saved as its document alone (the server builds the
     // body; sending both is a 422), and one written as HTML as its body alone. A step that names
     // no Integration ('') leaves it out: it sends through the email default.

@@ -155,7 +155,7 @@ func newKindSurfaces(t *testing.T) kindSurfaces {
 func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 	const missing = 99999
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	untagged := []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag}}
+	untagged := []siteapi.RuleActionInput{{Type: siteapi.RuleActionTypeApplyTag}}
 	untaggedExt := []externalapi.RuleActionInput{{Type: externalapi.RuleActionTypeApplyTag}}
 
 	cases := []struct {
@@ -196,7 +196,7 @@ func TestAModuleRefusalAnswersByItsKindAlikeOnBothSurfaces(t *testing.T) {
 		{
 			name: "refused with a detail",
 			site: func(ctx context.Context, c *siteapi.Client) error {
-				_, err := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{Name: "x", TriggerEvents: []string{"a"}, Actions: untagged},
+				_, err := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{Name: "x", TriggerEvents: []string{"a"}, Actions: untagged},
 					siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 				return err
 			},

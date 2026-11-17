@@ -2930,8 +2930,10 @@ func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
 
-// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
-// message in these values. A Workspace that has not saved one has the defaults and `saved` false.
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
+// palette the editor offers and what an agent is told to use: write a message in these values. Its
+// values are written into a message when the message is authored, so saving it never changes a message
+// already written. A Workspace that has not saved one has the defaults and `saved` false.
 // Ref: #/components/schemas/BrandKitResource
 type BrandKitResource struct {
 	// False until the Brand kit is first saved; the values are then the defaults.
@@ -11519,7 +11521,7 @@ func (s *JsonObject) init() JsonObject {
 	return m
 }
 
-// How often one link of an automation's emails was clicked.
+// How often one link of a broadcast's or an automation's emails was clicked.
 // Ref: #/components/schemas/LinkClicks
 type LinkClicks struct {
 	// The link's destination URL.
@@ -11744,7 +11746,9 @@ type MaxPerDay int32
 
 type MaxPerSecond int32
 
-// Orders credited to a broadcast or an automation and their net revenue (ADR 0064).
+// The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
+// 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
+// on its own day. Orders in another currency are counted in neither field.
 // Ref: #/components/schemas/MessageRevenue
 type MessageRevenue struct {
 	// The Reporting currency, null until the first order or an owner or admin sets it; every figure is
@@ -18613,7 +18617,8 @@ func (s *SuppressionChannel) UnmarshalText(data []byte) error {
 	}
 }
 
-// Why a destination is on the suppression (do-not-send) list.
+// Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a suppression: it
+// is a separate, per-source opt-out.
 // Ref: #/components/schemas/SuppressionReason
 type SuppressionReason string
 

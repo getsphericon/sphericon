@@ -7,8 +7,8 @@ import {
   handleSiteEventsActions,
   handleSiteSegmentsPreview,
 } from '../../generated/site/msw.gen.ts'
-import { SiteConditionOperator } from '../../generated/site/types.gen.ts'
-import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import { ConditionOperator } from '../../generated/site/types.gen.ts'
+import type { ConditionGroup } from '../../generated/site/types.gen.ts'
 import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
@@ -27,10 +27,10 @@ function serve(previewBodies: unknown[] = []) {
           name: 'Plan',
           type: 'string',
           ruleOperators: [
-            SiteConditionOperator.EQ,
-            SiteConditionOperator.NEQ,
-            SiteConditionOperator.CONTAINS,
-            SiteConditionOperator.NOT_NULL,
+            ConditionOperator.EQ,
+            ConditionOperator.NEQ,
+            ConditionOperator.CONTAINS,
+            ConditionOperator.NOT_NULL,
           ],
           revision: 1,
           ...TIMESTAMPS,
@@ -40,11 +40,7 @@ function serve(previewBodies: unknown[] = []) {
           key: 'age',
           name: 'Age',
           type: 'number',
-          ruleOperators: [
-            SiteConditionOperator.EQ,
-            SiteConditionOperator.NEQ,
-            SiteConditionOperator.NOT_NULL,
-          ],
+          ruleOperators: [ConditionOperator.EQ, ConditionOperator.NEQ, ConditionOperator.NOT_NULL],
           revision: 1,
           ...TIMESTAMPS,
         },
@@ -60,7 +56,7 @@ function serve(previewBodies: unknown[] = []) {
 test('sends the current rule to the segment preview', async () => {
   const previews: unknown[] = []
   serve(previews)
-  const value: SiteConditionGroup = {
+  const value: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
@@ -78,7 +74,7 @@ test('sends the current rule to the segment preview', async () => {
 
 test('a rule edits an Event property and has no segment preview', async () => {
   serve()
-  const value: SiteConditionGroup = {
+  const value: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'rule', field: 'trigger:url', operator: 'contains', value: 'pricing' }],
@@ -100,7 +96,7 @@ test('a rule edits an Event property and has no segment preview', async () => {
 
 test('a segment offers no Event property', async () => {
   serve()
-  const value: SiteConditionGroup = {
+  const value: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
@@ -130,7 +126,7 @@ test('adding a rule emits the typed rule group', async () => {
   })
 })
 
-const counted: SiteConditionGroup = {
+const counted: ConditionGroup = {
   kind: 'group',
   combinator: 'and',
   rules: [{ kind: 'event', action: 'purchase', operator: 'atLeast', times: 2, withinDays: 7 }],
@@ -196,7 +192,7 @@ test('a count is typed digit by digit and can be emptied', async () => {
 
 test('a loaded count of at least once shows as the performed preset, with only its window', async () => {
   serve()
-  const value: SiteConditionGroup = {
+  const value: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'event', action: 'purchase', operator: 'atLeast', times: 1 }],
@@ -214,7 +210,7 @@ test('a loaded count of at least once shows as the performed preset, with only i
 // number: the loaded comparison shows its operator and its number.
 test('a number custom field shows a comparison with its number', async () => {
   serve()
-  const value: SiteConditionGroup = {
+  const value: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'number', field: 'custom:age', operator: 'gte', value: 30 }],
@@ -230,7 +226,7 @@ test('a number custom field shows a comparison with its number', async () => {
 test('the Telegram field offers has and does not have, and round-trips with no value', async () => {
   serve()
   const onChange = vi.fn<(draft: ConditionDraft) => void>()
-  const value: SiteConditionGroup = {
+  const value: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'rule', field: 'telegram', operator: 'has', value: '' }],

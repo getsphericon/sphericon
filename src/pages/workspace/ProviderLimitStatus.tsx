@@ -2,13 +2,13 @@ import { Badge, Group, Progress, Stack, Text } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
 import type {
-  SiteProviderLimitStatus,
-  SiteProviderLimitValue,
+  ProviderLimitStatus as ProviderLimitStatusValue,
+  ProviderLimitValue,
 } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useProviderLimitWarnings } from './providerLimit.ts'
 
-function LimitLine({ label, value }: { label: string; value: SiteProviderLimitValue }) {
+function LimitLine({ label, value }: { label: string; value: ProviderLimitValue }) {
   const { t } = useTranslation()
   const { formatNumber } = useFormat()
   return (
@@ -37,7 +37,7 @@ export function ProviderLimitStatus({
   status,
   withWarnings = false,
 }: {
-  status: SiteProviderLimitStatus
+  status: ProviderLimitStatusValue
   withWarnings?: boolean
 }) {
   const { t } = useTranslation()

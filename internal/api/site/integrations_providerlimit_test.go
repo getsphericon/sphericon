@@ -99,7 +99,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	assert.True(t, status.PerSecond.Limit.Null)
 	assert.True(t, status.PerSecond.Source.Null)
 	assert.True(t, status.PerDay.Limit.Null)
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningUnlimited}, status.Warnings)
+	assert.Equal(t, []siteapi.ProviderLimitWarning{siteapi.ProviderLimitWarningUnlimited}, status.Warnings)
 	assert.Equal(t, int32(2), status.SentLast24h)
 
 	// A manual limit is the effective one, sourced "manual", and the warning goes.
@@ -109,7 +109,7 @@ func TestSiteIntegrationsReportEffectiveLimitAndUsage(t *testing.T) {
 	require.NoError(t, err)
 	status = upd.ProviderLimit
 	assert.Equal(t, int32(14), status.PerSecond.Limit.Or(0))
-	assert.Equal(t, siteapi.SiteProviderLimitSourceManual, status.PerSecond.Source.Or(""))
+	assert.Equal(t, siteapi.ProviderLimitSourceManual, status.PerSecond.Source.Or(""))
 	assert.True(t, status.PerDay.Limit.Null, "an unset window stays unlimited")
 	assert.Empty(t, status.Warnings, "one ceiling is enough: nothing to warn about")
 

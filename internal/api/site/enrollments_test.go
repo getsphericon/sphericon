@@ -22,16 +22,16 @@ func TestSiteEnrollmentsShowWhyAnEnrollmentFailed(t *testing.T) {
 	listed, err := c.SiteEnrollmentsList(ctx, siteapi.SiteEnrollmentsListParams{
 		WorkspaceId:  fixtures.AcmePublicID,
 		AutomationId: siteapi.EntityId(fixtures.AutomationNotifySlackID),
-		Status:       siteapi.NewOptSiteEnrollmentStatus(siteapi.SiteEnrollmentStatusFailed),
+		Status:       siteapi.NewOptEnrollmentStatus(siteapi.EnrollmentStatusFailed),
 	})
 	require.NoError(t, err)
-	failedRun, found := lo.Find(listed.Items, func(e siteapi.SiteEnrollmentResource) bool {
+	failedRun, found := lo.Find(listed.Items, func(e siteapi.EnrollmentResource) bool {
 		return e.ID == siteapi.EntityId(fixtures.AutomationRunHTTPFailedID)
 	})
 	require.True(t, found)
 	f, ok := failedRun.Failure.Get()
 	require.True(t, ok)
-	assert.Equal(t, siteapi.SiteEnrollmentFailureKindHTTPStatus, f.Kind)
+	assert.Equal(t, siteapi.EnrollmentFailureKindHTTPStatus, f.Kind)
 	assert.EqualValues(t, 503, f.Status.Or(0))
 	assert.Equal(t, "upstream unavailable, try again later", f.Excerpt.Or(""))
 

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type {
   IntegrationConfigInput,
-  SiteIntegrationProvider,
+  IntegrationProvider,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
 import { zEmailAddress } from '../../generated/site/zod.gen.ts'
@@ -19,7 +19,7 @@ type TwilioCredential = 'apiKey' | 'authToken'
 // from whichever fields the selected provider uses.
 export interface IntegrationFormValues extends ProviderLimitValues {
   name: string
-  provider: SiteIntegrationProvider
+  provider: IntegrationProvider
   isDefault: boolean
   host: string
   port: number
@@ -163,7 +163,7 @@ export interface CredentialsBody {
 // CredentialsVariant is what the credentials form of an Integration depends on: its kind, and
 // whether an SES one is an SES-compatible service with its own endpoint.
 export interface CredentialsVariant {
-  kind: SiteIntegrationProvider
+  kind: IntegrationProvider
   compatible: boolean
 }
 

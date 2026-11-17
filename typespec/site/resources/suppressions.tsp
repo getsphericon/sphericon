@@ -5,21 +5,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** Why a destination is on the suppression (do-not-send) list. Unsubscribe is
- * not a suppression — it is a separate, per-source opt-out. */
-enum SiteSuppressionReason {
-  bounce,
-  complaint,
-  manual,
-}
-
-/** The channel a suppression applies to */
-enum SiteSuppressionChannel {
-  email,
-  telegram,
-  sms,
-}
-
 /** A suppressed destination: the send path skips it on every surface */
 @resource("suppressions")
 @segment("suppressions")
@@ -30,13 +15,13 @@ model SiteSuppressionResource {
   id: EntityId;
 
   /** The channel this suppression applies to */
-  channel: SiteSuppressionChannel;
+  channel: SuppressionChannel;
 
   /** Normalized (lower-cased) channel-specific destination address */
   destination: string;
 
   /** Why the destination is suppressed */
-  reason: SiteSuppressionReason;
+  reason: SuppressionReason;
 
   /** When the suppression was lifted; null while it is active. A lifted one no longer blocks sends. */
   liftedAt?: Timestamp | null;
@@ -51,7 +36,7 @@ model SiteSuppressionResource {
 /** Site request body for manually suppressing a destination */
 model SiteCreateSuppressionInput {
   /** Channel (defaults to email when omitted) */
-  channel?: SiteSuppressionChannel;
+  channel?: SuppressionChannel;
 
   /** The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`, a phone number with its country code on `sms` (stored in E.164) */
   destination: string;

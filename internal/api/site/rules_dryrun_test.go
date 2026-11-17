@@ -21,11 +21,11 @@ func TestSiteRulesDryRunShowsTheActionsAndWritesNothing(t *testing.T) {
 	tags := env.DB.ContactTag.Query().CountX(ctx)
 	params := siteapi.SiteRulesDryRunParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: fixtures.RuleTagClickedID}
 
-	out, err := c.SiteRulesDryRun(ctx, &siteapi.SiteDryRunRuleInput{EventId: fixtures.EventRuleClickLiamID}, params)
+	out, err := c.SiteRulesDryRun(ctx, &siteapi.DryRunRuleInput{EventId: fixtures.EventRuleClickLiamID}, params)
 
 	require.NoError(t, err)
 	res := out
-	assert.Equal(t, siteapi.SiteRuleDryRunOutcomeWouldFire, res.Outcome)
+	assert.Equal(t, siteapi.RuleDryRunOutcomeWouldFire, res.Outcome)
 	require.Len(t, res.Actions, 1)
 	assert.Equal(t, "apply_tag", res.Actions[0].Type)
 	assert.Contains(t, res.Actions[0].Summary, "rule-clicked")
@@ -39,11 +39,11 @@ func TestSiteRulesDryRunSaysWhyItWouldNotFire(t *testing.T) {
 	ctx := context.Background()
 	params := siteapi.SiteRulesDryRunParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: fixtures.RuleVipOnlyID}
 
-	out, err := c.SiteRulesDryRun(ctx, &siteapi.SiteDryRunRuleInput{EventId: fixtures.EventRuleVipLiamID}, params)
+	out, err := c.SiteRulesDryRun(ctx, &siteapi.DryRunRuleInput{EventId: fixtures.EventRuleVipLiamID}, params)
 
 	require.NoError(t, err)
 	res := out
-	assert.Equal(t, siteapi.SiteRuleDryRunOutcomeConditionNotMet, res.Outcome)
+	assert.Equal(t, siteapi.RuleDryRunOutcomeConditionNotMet, res.Outcome)
 	assert.Empty(t, res.Actions)
 }
 
@@ -52,7 +52,7 @@ func TestSiteRulesDryRunRefusesAnotherWorkspacesEvent(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	params := siteapi.SiteRulesDryRunParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: fixtures.RuleTagClickedID}
 
-	_, err := c.SiteRulesDryRun(context.Background(), &siteapi.SiteDryRunRuleInput{EventId: fixtures.EventGlobexID}, params)
+	_, err := c.SiteRulesDryRun(context.Background(), &siteapi.DryRunRuleInput{EventId: fixtures.EventGlobexID}, params)
 
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 }

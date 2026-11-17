@@ -21,6 +21,13 @@ status: accepted
 > with the Workspace summary as the caller sees it. `workspacecreation` goes into it, and so does
 > restoring a deleted Workspace, which leaves the deletion cycle (`workspacedeletion`, ADR 0110):
 > it still needs a Membership that holds the delete Permission, now asked of `memberships`.
+>
+> **Amended by declaring the shared contract models once:** `/site` and `/api` keep their own
+> documents and operations, while a model both show or take the same way is declared once in
+> `typespec/common` and named without a surface prefix: the Segment condition tree, the Rule and
+> Automation models and write bodies, an Integration's config, the Tracking and Sending domain, the
+> Webhook failure. A model whose fields differ between the two (an `@untrusted` mark, a field only
+> one shows) stays each surface's own.
 
 ## Context
 

@@ -76,7 +76,7 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 	res := created
 
 	// The endpoint is not a secret, so it round-trips on read.
-	sesOut, ok := res.Config.OneOf.GetSiteSesConfig()
+	sesOut, ok := res.Config.OneOf.GetSesConfig()
 	require.Truef(t, ok, "config is ses")
 	assert.Equal(t, "https://postbox.cloud.yandex.net", sesOut.Endpoint.Or(""))
 
@@ -87,7 +87,7 @@ func TestSiteIntegrationsSesEndpointRoundTrips(t *testing.T) {
 		Config: sesInput("eu-west-1", "AKIA5678", "secret"),
 	}, params)
 	require.NoError(t, err)
-	plainSes, ok := plain.Config.OneOf.GetSiteSesConfig()
+	plainSes, ok := plain.Config.OneOf.GetSesConfig()
 	require.Truef(t, ok, "config is ses")
 	assert.Empty(t, plainSes.Endpoint.Or(""))
 }
@@ -104,13 +104,13 @@ func TestSiteIntegrationsCRUD(t *testing.T) {
 	}, params)
 	require.NoError(t, err)
 	res := created
-	assert.Equal(t, siteapi.SiteIntegrationProviderSMTP, res.Provider)
-	assert.Equal(t, siteapi.SiteIntegrationChannelEmail, res.Channel)
+	assert.Equal(t, siteapi.IntegrationProviderSMTP, res.Provider)
+	assert.Equal(t, siteapi.IntegrationChannelEmail, res.Channel)
 	assert.True(t, res.Enabled)
 
 	// The returned config is the redacted SMTP variant: host is present, and the
 	// type itself has no password field, so the secret cannot leak.
-	smtpOut, ok := res.Config.OneOf.GetSiteSmtpConfig()
+	smtpOut, ok := res.Config.OneOf.GetSmtpConfig()
 	require.Truef(t, ok, "config is smtp")
 	assert.Equal(t, "smtp.example.com", smtpOut.Host)
 	assert.Equal(t, "mailer", smtpOut.Username.Or(""))

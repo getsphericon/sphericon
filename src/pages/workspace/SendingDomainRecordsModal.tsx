@@ -13,7 +13,7 @@ import {
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import type { SendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
 import { SendingDomainStatus } from './SendingDomainStatus.tsx'
 
@@ -102,7 +102,7 @@ function DnsRecord({
 // BulkReady says whether the last DMARC lookup found the domain's record (ADR 0012), for a verified
 // domain a lookup answered for: the rule of the overview's notice. An unverified domain does not
 // send, and one no lookup answered for is not known, so it says nothing of those.
-function BulkReady({ record }: { record: SiteSendingDomainResource }) {
+function BulkReady({ record }: { record: SendingDomainResource }) {
   const { t } = useTranslation()
   if (!record.verified || !record.dmarcCheckedAt) {
     return null
@@ -118,7 +118,7 @@ function BulkReady({ record }: { record: SiteSendingDomainResource }) {
   )
 }
 
-function SendingDomainRecords({ record }: { record: SiteSendingDomainResource }) {
+function SendingDomainRecords({ record }: { record: SendingDomainResource }) {
   const { t } = useTranslation()
   return (
     <Stack p="md" gap="md">
@@ -146,7 +146,7 @@ function SendingDomainRecords({ record }: { record: SiteSendingDomainResource })
 // agentPrompt is the text a person pastes into an agent connected to this workspace: the domain,
 // the records to publish and the order of the steps. The record values are repeated so an agent
 // without an API token that may write Sending domains can still publish them.
-function agentPrompt(record: SiteSendingDomainResource): string {
+function agentPrompt(record: SendingDomainResource): string {
   const records = [record.dkimRecord, record.spfRecord, record.dmarcRecord]
   const lines = records.map((r) => `- ${r.type} ${r.host} -> ${r.value}`)
   return [
@@ -169,7 +169,7 @@ export function SendingDomainRecordsModal({
   canVerify,
 }: {
   workspaceId: string
-  record: SiteSendingDomainResource | undefined
+  record: SendingDomainResource | undefined
   onClose: () => void
   canVerify: boolean
 }) {

@@ -1,13 +1,13 @@
 import { Badge, Box, Group, Progress, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { SiteSendCap } from '../../generated/site/types.gen.ts'
+import type { SendCap } from '../../generated/site/types.gen.ts'
 
 // The Workspace's Send cap (ADR 0067): the platform's limit on its sends per rolling 24 hours across
 // every provider, which the Workspace only reads, and how much of it the last 24 hours used. It is
 // its own section, apart from each provider's Provider limit, the limit the Workspace sets. Nothing
 // renders when no Send cap applies.
-export function SendCapSection({ sendCap }: { sendCap: SiteSendCap | null | undefined }) {
+export function SendCapSection({ sendCap }: { sendCap: SendCap | null | undefined }) {
   const { t } = useTranslation()
   if (!sendCap) {
     return null

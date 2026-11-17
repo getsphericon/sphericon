@@ -10,10 +10,7 @@ import {
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
-import type {
-  SiteAutomationResource,
-  SiteAutomationVersion,
-} from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -23,14 +20,14 @@ import { worker } from '../../test/worker.ts'
 import { AutomationEditPage } from './edit.tsx'
 
 const EDIT_ROUTE = routeMount(Route, { workspaceId: 'TestWs01', automationId: testId(5) })
-const LIVE: SiteAutomationVersion = {
+const LIVE: AutomationVersion = {
   number: 1,
   triggerEvent: 'email.clicked',
   exitEvents: [],
   goalEvent: null,
   steps: [],
 }
-const DRAFT: SiteAutomationVersion = { ...LIVE, number: 2 }
+const DRAFT: AutomationVersion = { ...LIVE, number: 2 }
 const STORED: SiteAutomationResource = {
   revision: 1,
   id: testId(5),

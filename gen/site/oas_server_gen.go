@@ -259,7 +259,7 @@ type Handler interface {
 	// read from its enrollments for the chosen period and the one before it.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/report
-	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*SiteAutomationReport, error)
+	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*AutomationReport, error)
 	// SiteAutomationsArchive implements SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
@@ -273,7 +273,7 @@ type Handler interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/automations
-	SiteAutomationsCreate(ctx context.Context, req *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error)
+	SiteAutomationsCreate(ctx context.Context, req *CreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error)
 	// SiteAutomationsDeactivate implements SiteAutomations_deactivate operation.
 	//
 	// Deactivate an automation (stops new enrollments). 409 when it is archived.
@@ -285,7 +285,7 @@ type Handler interface {
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
 	//
 	// POST /workspaces/{workspaceId}/automations/dry-run-http-step
-	SiteAutomationsDryRunHttpStep(ctx context.Context, req *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*SiteDryRunHttpStepResult, error)
+	SiteAutomationsDryRunHttpStep(ctx context.Context, req *DryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*DryRunHttpStepResult, error)
 	// SiteAutomationsGet implements SiteAutomations_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -329,13 +329,13 @@ type Handler interface {
 	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsUpdate(ctx context.Context, req *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error)
+	SiteAutomationsUpdate(ctx context.Context, req *UpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error)
 	// SiteBrandKitGet implements SiteBrandKit_get operation.
 	//
 	// Read the Brand kit. Every member may read it.
 	//
 	// GET /workspaces/{workspaceId}/brand-kit
-	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*SiteBrandKitResource, error)
+	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*BrandKitResource, error)
 	// SiteBrandKitRecreateStarterTemplates implements SiteBrandKit_recreateStarterTemplates operation.
 	//
 	// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
@@ -351,7 +351,7 @@ type Handler interface {
 	// changes no message already written. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
-	SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*SiteBrandKitResource, error)
+	SiteBrandKitSave(ctx context.Context, req *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*BrandKitResource, error)
 	// SiteBroadcastLinksList implements SiteBroadcastLinks_list operation.
 	//
 	// The links of a broadcast that were clicked, with a count each, most clicked first. The counts come
@@ -540,7 +540,7 @@ type Handler interface {
 	// and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/custom-fields/{id}
-	SiteCustomFieldsUpdate(ctx context.Context, req *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error)
+	SiteCustomFieldsUpdate(ctx context.Context, req *UpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error)
 	// SiteDomainJoinGet implements SiteDomainJoin_get operation.
 	//
 	// Read the domain join switch (owner and admin only).
@@ -559,7 +559,7 @@ type Handler interface {
 	// Get one Enrollment of an Automation.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}
-	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*SiteEnrollmentResource, error)
+	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*EnrollmentResource, error)
 	// SiteEnrollmentsList implements SiteEnrollments_list operation.
 	//
 	// List an Automation's Enrollments, newest first.
@@ -895,7 +895,7 @@ type Handler interface {
 	// List the Presets the Instance offers, with the params schema of each.
 	//
 	// GET /presets
-	SitePresetsList(ctx context.Context) ([]SitePresetResource, error)
+	SitePresetsList(ctx context.Context) ([]PresetResource, error)
 	// SitePublicConfirmationsPerform implements SitePublicConfirmations_perform operation.
 	//
 	// Perform a double opt-in confirmation (ADR 0013). The deliberate human act behind the confirmation
@@ -936,7 +936,7 @@ type Handler interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/rules
-	SiteRulesCreate(ctx context.Context, req *SiteCreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error)
+	SiteRulesCreate(ctx context.Context, req *CreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error)
 	// SiteRulesDeactivate implements SiteRules_deactivate operation.
 	//
 	// Deactivate a Rule: it stops firing.
@@ -955,7 +955,7 @@ type Handler interface {
 	// nothing.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/dry-run
-	SiteRulesDryRun(ctx context.Context, req *SiteDryRunRuleInput, params SiteRulesDryRunParams) (*SiteRuleDryRunResource, error)
+	SiteRulesDryRun(ctx context.Context, req *DryRunRuleInput, params SiteRulesDryRunParams) (*RuleDryRunResource, error)
 	// SiteRulesGet implements SiteRules_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -987,7 +987,7 @@ type Handler interface {
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/rules/{id}
-	SiteRulesUpdate(ctx context.Context, req *SiteUpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error)
+	SiteRulesUpdate(ctx context.Context, req *UpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error)
 	// SiteSchemaApplyMigrations implements SiteSchema_applyMigrations operation.
 	//
 	// Run the migrations the database has not run, the button of the error page. Only a development build
@@ -1059,7 +1059,7 @@ type Handler interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/segments
-	SiteSegmentsCreate(ctx context.Context, req *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error)
+	SiteSegmentsCreate(ctx context.Context, req *CreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error)
 	// SiteSegmentsGet implements SiteSegments_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -1089,13 +1089,13 @@ type Handler interface {
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/segments/{id}
-	SiteSegmentsUpdate(ctx context.Context, req *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error)
+	SiteSegmentsUpdate(ctx context.Context, req *UpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error)
 	// SiteSendingDomainsCreate implements SiteSendingDomains_create operation.
 	//
 	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
-	SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SiteSendingDomainResource, error)
+	SiteSendingDomainsCreate(ctx context.Context, req *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SendingDomainResource, error)
 	// SiteSendingDomainsDelete implements SiteSendingDomains_delete operation.
 	//
 	// Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its
@@ -1109,7 +1109,7 @@ type Handler interface {
 	// Get a sending domain by ID for the site UI, deleted or not.
 	//
 	// GET /workspaces/{workspaceId}/sending-domains/{id}
-	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SiteSendingDomainResource, error)
+	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SendingDomainResource, error)
 	// SiteSendingDomainsList implements SiteSendingDomains_list operation.
 	//
 	// List sending domains for the site UI.
@@ -1123,7 +1123,7 @@ type Handler interface {
 	// only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
-	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SiteSendingDomainResource, error)
+	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SendingDomainResource, error)
 	// SiteSetupChecklistGet implements SiteSetupChecklist_get operation.
 	//
 	// The Workspace's Setup checklist.
@@ -1283,7 +1283,7 @@ type Handler interface {
 	// Empty while the Instance offers none.
 	//
 	// GET /workspaces/{workspaceId}/tracking-domains
-	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]SiteTrackingDomainResource, error)
+	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]TrackingDomainResource, error)
 	// SiteTrackingDomainsRemove implements SiteTrackingDomains_remove operation.
 	//
 	// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
@@ -1302,14 +1302,14 @@ type Handler interface {
 	// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
 	//
 	// POST /workspaces/{workspaceId}/tracking-domains
-	SiteTrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*SiteTrackingDomainResource, error)
+	SiteTrackingDomainsSet(ctx context.Context, req *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*TrackingDomainResource, error)
 	// SiteTrackingDomainsVerify implements SiteTrackingDomains_verify operation.
 	//
 	// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
 	// it left it. A replacement that reaches `serving` becomes current.
 	//
 	// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
-	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*SiteTrackingDomainResource, error)
+	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*TrackingDomainResource, error)
 	// SiteTransactionalEmailsList implements SiteTransactionalEmails_list operation.
 	//
 	// List transactional sends, most recent first.
@@ -1416,7 +1416,7 @@ type Handler interface {
 	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/test
-	SiteWebhooksTest(ctx context.Context, req *TestWebhookInput, params SiteWebhooksTestParams) (*SiteWebhookTestResult, error)
+	SiteWebhooksTest(ctx context.Context, req *TestWebhookInput, params SiteWebhooksTestParams) (*WebhookTestResult, error)
 	// SiteWebhooksUpdate implements SiteWebhooks_update operation.
 	//
 	// Update a webhook endpoint. Owners and admins only.

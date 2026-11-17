@@ -19,7 +19,7 @@ import (
 // Automation emails are tracked like a Broadcast's: the token names the Outbound message and the
 // Event carries the Automation (ADR 0053).
 
-func automationReport(t *testing.T, env *testhelper.TestEnv, automationID int64) *siteapi.SiteAutomationReport {
+func automationReport(t *testing.T, env *testhelper.TestEnv, automationID int64) *siteapi.AutomationReport {
 	t.Helper()
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	res, err := c.SiteAutomationReportsGet(t.Context(), siteapi.SiteAutomationReportsGetParams{

@@ -907,7 +907,7 @@ func (s *Server) decodeSiteAuthVerifyEmailRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteAutomationsCreateRequest(r *http.Request) (
-	req *SiteCreateAutomationInput,
+	req *CreateAutomationInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -954,7 +954,7 @@ func (s *Server) decodeSiteAutomationsCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateAutomationInput
+		var request CreateAutomationInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -986,7 +986,7 @@ func (s *Server) decodeSiteAutomationsCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteAutomationsDryRunHttpStepRequest(r *http.Request) (
-	req *SiteDryRunHttpStepInput,
+	req *DryRunHttpStepInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1033,7 +1033,7 @@ func (s *Server) decodeSiteAutomationsDryRunHttpStepRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteDryRunHttpStepInput
+		var request DryRunHttpStepInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1215,7 +1215,7 @@ func (s *Server) decodeSiteAutomationsRevertRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteAutomationsUpdateRequest(r *http.Request) (
-	req *SiteUpdateAutomationInput,
+	req *UpdateAutomationInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1262,7 +1262,7 @@ func (s *Server) decodeSiteAutomationsUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateAutomationInput
+		var request UpdateAutomationInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -1926,7 +1926,7 @@ func (s *Server) decodeSiteContactsUpdateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteCustomFieldsUpdateRequest(r *http.Request) (
-	req *SiteUpdateCustomFieldInput,
+	req *UpdateCustomFieldInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -1973,7 +1973,7 @@ func (s *Server) decodeSiteCustomFieldsUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateCustomFieldInput
+		var request UpdateCustomFieldInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3158,7 +3158,7 @@ func (s *Server) decodeSitePublicInvitationsAcceptRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteRulesCreateRequest(r *http.Request) (
-	req *SiteCreateRuleInput,
+	req *CreateRuleInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3205,7 +3205,7 @@ func (s *Server) decodeSiteRulesCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateRuleInput
+		var request CreateRuleInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3237,7 +3237,7 @@ func (s *Server) decodeSiteRulesCreateRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteRulesDryRunRequest(r *http.Request) (
-	req *SiteDryRunRuleInput,
+	req *DryRunRuleInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3284,7 +3284,7 @@ func (s *Server) decodeSiteRulesDryRunRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteDryRunRuleInput
+		var request DryRunRuleInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3466,7 +3466,7 @@ func (s *Server) decodeSiteRulesRevertRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteRulesUpdateRequest(r *http.Request) (
-	req *SiteUpdateRuleInput,
+	req *UpdateRuleInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3513,7 +3513,7 @@ func (s *Server) decodeSiteRulesUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateRuleInput
+		var request UpdateRuleInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3829,7 +3829,7 @@ func (s *Server) decodeSiteSecondFactorStartEnrollmentRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteSegmentsCreateRequest(r *http.Request) (
-	req *SiteCreateSegmentInput,
+	req *CreateSegmentInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -3876,7 +3876,7 @@ func (s *Server) decodeSiteSegmentsCreateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteCreateSegmentInput
+		var request CreateSegmentInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -3987,7 +3987,7 @@ func (s *Server) decodeSiteSegmentsPreviewRequest(r *http.Request) (
 }
 
 func (s *Server) decodeSiteSegmentsUpdateRequest(r *http.Request) (
-	req *SiteUpdateSegmentInput,
+	req *UpdateSegmentInput,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -4034,7 +4034,7 @@ func (s *Server) decodeSiteSegmentsUpdateRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request SiteUpdateSegmentInput
+		var request UpdateSegmentInput
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
