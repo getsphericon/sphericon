@@ -8,6 +8,10 @@ status: accepted
 > not `marketing.confirmed`, which stays email's (ADR 0077): the welcome Automation after opt-in and
 > the form's disclosure below are on `sms.confirmed`.
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> a Start token on SMS or WhatsApp follows the rule for a Visitor's Binding: what a token issued to
+> a Visitor starts reaches a Contact only when a proven Identify hands the Visitor's Bindings over.
+
 An On-site form (ADR 0085) posts through the tracker's public collect key, so a submit proves only
 that some browser typed an address or a number. In the US the
 seller carries the whole burden of proving consent, and consent typed by someone else is none; in

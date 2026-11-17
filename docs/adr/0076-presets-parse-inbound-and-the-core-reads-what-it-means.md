@@ -17,6 +17,10 @@ status: accepted
 > as well as JSON, and its request carries the full URL it was posted to, which the `twilio`
 > verification signs.
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> a Visitor's Binding no longer follows it through every Identify: only a proven Identify hands it
+> to the Contact it proves; a claim hands over nothing.
+
 ADR 0037 made a provider's callbacks a Preset whose transform returns Delivery notices only. The new
 Channels (ADR 0074) send more back: a person's message (an SMS reply, a Telegram `/start`, a
 WhatsApp button), and a provider's own word that someone is out of reach (a blocked bot, WhatsApp's

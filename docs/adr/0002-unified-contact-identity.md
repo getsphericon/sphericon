@@ -15,6 +15,10 @@ status: accepted
 > `phone`, leaves the key another holds unfilled and records a Duplicate candidate; two Contacts of
 > one person are joined by a deliberate Merge.
 
+> **Amended by [[0171-an-identify-through-the-collect-key-is-a-claim-until-the-customers-server-proves-it]]:**
+> an Identify without an Identity token is a claim: it binds only an anonymous Visitor or one
+> already its Contact's, and only a proven Identify moves a Visitor that belongs to another Contact.
+
 There is a single person record per workspace — the **Contact** — covering both the
 behavioral/CDP identity and the marketing audience member. The separate tracking profile is
 absorbed into it. A Contact is anchored by a stable internal id, with `subject_id`
