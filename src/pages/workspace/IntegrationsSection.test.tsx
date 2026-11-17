@@ -177,6 +177,7 @@ test('connects an Amazon SES provider', async () => {
           accessKeyId: 'AKIA',
           secretAccessKey: 'shh',
           endpoint: null,
+          configurationSet: null,
           from: 'hi@acme.com',
           fromName: 'Acme',
         },
@@ -520,6 +521,7 @@ test('an SES-compatible service keeps both values: a blank is not saved', async 
       region: 'ru-central1',
       from: 'hi@acme.com',
       endpoint: 'https://postbox.cloud.yandex.net',
+      configurationSetMissing: false,
     },
   }
   const bodies: unknown[] = []
@@ -582,7 +584,14 @@ test('an SES account is saved again only with its access key ID typed in full', 
   const ses: SiteIntegrationResource = {
     ...smtp,
     provider: 'ses',
-    config: { kind: 'ses', region: 'eu-west-1', from: 'hi@acme.com', accessKeyIdLast4: 'WXYZ' },
+    config: {
+      kind: 'ses',
+      region: 'eu-west-1',
+      from: 'hi@acme.com',
+      accessKeyIdLast4: 'WXYZ',
+      configurationSet: 'marketing',
+      configurationSetMissing: false,
+    },
   }
   worker.use(...list([ses]), update(bodies))
   const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
@@ -611,6 +620,7 @@ test('an SES account is saved again only with its access key ID typed in full', 
           accessKeyId: 'AKIAWXYZ',
           secretAccessKey: '',
           endpoint: null,
+          configurationSet: 'marketing',
           from: 'hi@acme.com',
           fromName: null,
         },

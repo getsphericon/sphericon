@@ -186,6 +186,7 @@ var (
 	ErrorsIntegrationProviderLimitRequired                = ID{key: "errors.integration_provider_limit_required"}
 	ErrorsIntegrationRevisionChanged                      = ID{key: "errors.integration_revision_changed"}
 	ErrorsIntegrationSecretRequired                       = ID{key: "errors.integration_secret_required"}
+	ErrorsIntegrationSesConfigurationSet                  = ID{key: "errors.integration_ses_configuration_set"}
 	ErrorsIntegrationTelegramOtherBot                     = ID{key: "errors.integration_telegram_other_bot"}
 	ErrorsIntegrationTelegramPresetFixed                  = ID{key: "errors.integration_telegram_preset_fixed"}
 	ErrorsIntegrationTelegramRefused                      = ID{key: "errors.integration_telegram_refused"}

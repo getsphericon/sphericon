@@ -216,6 +216,23 @@ function IntegrationsList({
         ) : null,
       )}
 
+      {records.map((record) =>
+        record.config.kind === 'ses' && record.config.configurationSetMissing ? (
+          <Alert
+            key={`configuration-set-${record.id}`}
+            color="yellow"
+            variant="light"
+            title={t(($) => $.settings.integrations.configurationSetMissing.title, {
+              name: record.name,
+              set: record.config.configurationSet ?? '',
+            })}
+            mb="sm"
+          >
+            {t(($) => $.settings.integrations.configurationSetMissing.body)}
+          </Alert>
+        ) : null,
+      )}
+
       {groups.map(({ channel, rows }) => (
         <Stack key={channel} gap="xs" mb="md">
           {groups.length > 1 || channel !== 'email' ? (

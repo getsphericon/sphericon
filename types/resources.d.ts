@@ -1836,6 +1836,10 @@ export default interface Resources {
           "sms": "SMS",
           "telegram": "Telegram"
         },
+        "configurationSetMissing": {
+          "body": "SES refuses every message this provider sends until the set exists, and a refused message is not sent again. Create the set in SES, or correct its name in the provider’s credentials and save them again.",
+          "title": "SES has no configuration set “{{set}}” for {{name}}"
+        },
         "create": "Connect provider",
         "createError": "Failed to save provider",
         "credentials": {
@@ -1864,6 +1868,8 @@ export default interface Resources {
           "authToken": "Auth Token",
           "authTokenHint": "Twilio signs its callbacks with it, even when messages are sent with an API key.",
           "authTokenSendsHint": "Messages are sent with it, and Twilio signs its callbacks with it.",
+          "configurationSet": "Configuration set",
+          "configurationSetHint": "Optional: up to 64 letters, digits, hyphens and underscores. The SES configuration set every message names, to send through your dedicated IP pool; empty sends through the account’s default pool.",
           "endpoint": "Custom endpoint",
           "endpointHint": "The provider’s SES API address.",
           "from": "From address",

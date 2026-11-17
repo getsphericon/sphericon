@@ -1179,7 +1179,9 @@ export const zSesConfig = z.object({
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
   endpoint: z.exactOptional(z.string().nullable()),
-  accessKeyIdLast4: z.exactOptional(z.string().nullable())
+  accessKeyIdLast4: z.exactOptional(z.string().nullable()),
+  configurationSet: z.exactOptional(z.string().nullable()),
+  configurationSetMissing: z.boolean()
 });
 
 /**
@@ -1192,7 +1194,8 @@ export const zSesConfigInput = z.strictObject({
   secretAccessKey: z.string(),
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable())
+  endpoint: z.exactOptional(z.string().nullable()),
+  configurationSet: z.exactOptional(z.string().nullable())
 });
 
 /**

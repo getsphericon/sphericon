@@ -233,3 +233,29 @@ func TestExternalIntegrationsSESNamesItsSNSTopicInTheParams(t *testing.T) {
 	assert.Equal(t, "ses", created.Preset.Or(""))
 	assert.JSONEq(t, strconv.Quote(topic), string(created.Params["topic_arn"]))
 }
+
+// An SES Integration names a configuration set through /api, and one SES does not have saves
+// with a warning on the answer and on later reads.
+func TestExternalIntegrationsSESConfigurationSet(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	c := env.ExternalScoped(t, apitokens.ScopeIntegrationsRead, apitokens.ScopeIntegrationsWrite)
+	env.SES.SetConfigurationSetMissing(true)
+
+	created, err := c.IntegrationsCreate(ctx, &externalapi.CreateIntegrationInput{
+		Name: externalapi.Name("SES marketing"),
+		Config: externalapi.IntegrationConfigInput{OneOf: externalapi.NewSesConfigInputIntegrationConfigInputSum(externalapi.SesConfigInput{
+			Kind: externalapi.SesConfigInputKindSes, Region: "eu-west-1", AccessKeyId: "AKIAXXXX", SecretAccessKey: "s", From: "a@acme.test",
+			ConfigurationSet: externalapi.NewOptNilString("marketing"),
+		})},
+		Params: externalapi.NewOptJsonObject(externalapi.JsonObject{"topic_arn": jx.Raw(`"arn:aws:sns:eu-west-1:123456789012:ses-events"`)}),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "marketing", created.Config.OneOf.SesConfig.ConfigurationSet.Or(""))
+	assert.True(t, created.Config.OneOf.SesConfig.ConfigurationSetMissing)
+
+	got, err := c.IntegrationsGet(ctx, externalapi.IntegrationsGetParams{ID: created.ID})
+	require.NoError(t, err)
+	assert.Equal(t, "marketing", got.Config.OneOf.SesConfig.ConfigurationSet.Or(""))
+	assert.True(t, got.Config.OneOf.SesConfig.ConfigurationSetMissing)
+}
