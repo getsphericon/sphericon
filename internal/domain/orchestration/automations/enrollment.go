@@ -316,30 +316,23 @@ func (m *Module) Exit(ctx context.Context, s *ent.Scoped, automationID, contactI
 	if err != nil {
 		return false, err
 	}
-	err = exitRun(ctx, s, publisherIn{bus: m.bus, s: s}, runID, m.now())
+	err = exitRun(ctx, m.bus, s, runID, m.now())
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return false, nil // another writer moved it out of active first
 	}
 	return err == nil, err
 }
 
-// publisherIn publishes through the bus in the transaction s is bound to (events.Bus.PublishIn),
-// for the moves of an Enrollment, which take a publisher.
-type publisherIn struct {
-	bus *events.Bus
-	s   *ent.Scoped
-}
-
-func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
-	return p.bus.PublishIn(ctx, p.s, ev)
-}
-
 // exitRun ends one Enrollment by run id at now, the caller's clock, for the step executor that
 // already holds the run (a send step Skipped because the Contact unsubscribed from this Automation
-// exits it).
+// exits it), and publishes its end with bus in the transaction s is bound to (Bus.PublishIn).
 // lifecycle.ErrInvalidTransition when it is no longer active.
-func exitRun(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, now time.Time) error {
-	return move(ctx, s, pub, runID, triggerExit, now, nil)
+func exitRun(ctx context.Context, bus *events.Bus, s *ent.Scoped, runID int64, now time.Time) error {
+	ev, err := moved(ctx, s, runID, triggerExit, now, nil)
+	if err != nil || ev == nil {
+		return err
+	}
+	return bus.PublishIn(ctx, s, ev)
 }
 
 // endOnEvent ends the Contact's active Enrollments that an Event with the action ends (#751): one

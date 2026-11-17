@@ -241,7 +241,9 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   `Bus.PublishIn(ctx, s, ev)` and `Bus.EnqueueIn(ctx, s, args, opts)` do that with the publisher of
   the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
   to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
-  operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument.
+  operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument, and
+  one that records an explicit Audit entry calls `Bus.RecordAuditIn(ctx, s, entry)`, which is
+  `events.RecordAudit` with that transaction's publisher.
   An Erasure's step takes no `events.QueuePurger` either: `Bus.PurgeJobsIn(ctx, s, key, ids)`
   purges the scope's Workspace's jobs in the Erasure's transaction `s` is bound to, and refuses
   any other (`events.ErrNotPurging`).

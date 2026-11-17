@@ -100,30 +100,45 @@ var endingEvents = map[trigger]string{
 // goal Event), else the caller's clock. The end is recorded as its System event through pub, in
 // the transaction of the move, so it is published iff this writer made the move.
 func move(ctx context.Context, s *ent.Scoped, pub events.Publisher, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) error {
-	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
+	ev, err := moved(ctx, s, runID, t, endedAt, extra)
+	if err != nil || ev == nil {
 		return err
+	}
+	return pub.Publish(ctx, ev)
+}
+
+// moved fires t on one Enrollment as move does, and returns the System event that records the
+// end, nil for a move that records none: the caller publishes it in the transaction of the move.
+func moved(ctx context.Context, s *ent.Scoped, runID int64, t trigger, endedAt time.Time, extra func(*ent.AutomationRunScopedUpdate)) (*events.EnrollmentChange, error) {
+	if err := machine(s, runID, endedAt, extra).FireCtx(ctx, t); err != nil {
+		return nil, err
 	}
 	action, recorded := endingEvents[t]
 	if !recorded {
-		return nil
+		return nil, nil
 	}
 	run, err := s.AutomationRun().Query().Where(automationrun.ID(runID)).WithContact().Only(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return publishEnrollment(ctx, s, pub, action, run)
+	return enrollmentChange(s, action, run), nil
 }
 
 // publishEnrollment records the System event action of the Enrollment run, whose Contact edge is
 // loaded.
 func publishEnrollment(ctx context.Context, s *ent.Scoped, pub events.Publisher, action string, run *ent.AutomationRun) error {
+	return pub.Publish(ctx, enrollmentChange(s, action, run))
+}
+
+// enrollmentChange is the System event action of the Enrollment run, whose Contact edge is loaded.
+func enrollmentChange(s *ent.Scoped, action string, run *ent.AutomationRun) *events.EnrollmentChange {
 	var email string
 	if c := run.Edges.Contact; c != nil {
 		email = lo.FromPtr(c.Email)
 	}
-	return pub.Publish(ctx, &events.EnrollmentChange{
+	return &events.EnrollmentChange{
 		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: run.ContactID, Email: email, AutomationID: run.AutomationID,
-	})
+	}
 }
 
 // isActive reports, from a fresh read through the lifecycle table, whether the Enrollment

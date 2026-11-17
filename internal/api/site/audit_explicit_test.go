@@ -212,8 +212,9 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 // Every explicit path is driven here and the actions that reached the log are compared
 // with events.ExplicitAuditActions, so a new explicit path cannot be forgotten: either
 // it is added to the list (and driven below) or this test fails. An explicit entry is
-// recorded one way, events.RecordAudit in the transaction of the change, and the call-site
-// scan catches such a call in a file this list does not know about.
+// recorded one way, events.RecordAudit in the transaction of the change (or Bus.RecordAuditIn,
+// which records it through that transaction's publisher), and the call-site scan catches such a
+// call in a file this list does not know about.
 func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	env, fake := signinEnv(t)
 	ctx := context.Background()
@@ -329,8 +330,12 @@ func recordAuditCallSites(t *testing.T) []string {
 			}
 			rel = filepath.ToSlash(rel)
 			// Package events calls RecordAudit unqualified only on the automatic path (the
-			// generated scoped-client wrappers publish through it), never an explicit entry.
-			if strings.Contains(string(src), "events.RecordAudit(") {
+			// generated scoped-client wrappers publish through it), never an explicit entry, and
+			// declares Bus.RecordAuditIn.
+			if strings.HasPrefix(rel, "internal/infra/events/") {
+				return nil
+			}
+			if strings.Contains(string(src), "events.RecordAudit(") || strings.Contains(string(src), ".RecordAuditIn(") {
 				sites = append(sites, rel)
 			}
 			return nil

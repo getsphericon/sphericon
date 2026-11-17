@@ -56,7 +56,7 @@ func (ms *Module) CreateWorkspaceIn(ctx context.Context, tx *ent.Client, creator
 		return nil, err
 	}
 	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(creator.ID), Name: creator.Name}
-	if err := events.RecordAudit(ctx, ms.pub(tx), events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil)); err != nil {
+	if err := ms.bus.RecordAuditIn(ctx, tx, events.WorkspaceAudit(ws, actor, events.ActionWorkspaceCreate, nil)); err != nil {
 		return nil, err
 	}
 	return ws, nil
