@@ -102,7 +102,7 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    client and scopes it to the envelope's Workspace to build the Orders, handing the scope to
    `orders.Module.Record`), and
    `secondfactors.Module.RemindDeadlines` (the deadline reminder job: it lists the Memberships of every
-   Workspace with the raw client and scopes each claim, `memberships.ClaimSecondFactorReminder`,
+   Workspace with the raw client and scopes each claim, `memberships.Module.ClaimSecondFactorReminder`,
    to the Workspace of the Membership it loaded), and `workspacedeletion.UseCase.EraseDue` (`internal/usecase/workspacedeletion`), which has the due Workspaces listed by their owner (`workspaces.Module.DueForErase`) and
    scopes each erase step's transaction (`tx.Scoped(id)`) to the Workspace it is erasing;
 5. transactions: `events.Bus.WithinScopedTx` (and its variants: `WithinScopedEnqueueTx`, and
@@ -117,14 +117,14 @@ They take a `*ent.Scoped` (modules: an explicit `s *ent.Scoped` parameter) and n
    (acting as the system), after `joindomains` has read that Workspace off the holder's row;
    the domain-join step of the verification transaction (`applyDomainJoin` in
    `internal/domain/identity/users/join.go`, ADR 0051), which builds `tx.Scoped(...)` for the Workspace a
-   verified Join domain names, right after `joindomains.HolderIn` has loaded that row, to add
+   verified Join domain names, right after `joindomains.Module.HolderIn` has loaded that row, to add
    the joining User's Membership (every step that proves an address calls it explicitly); and
    `userdeletion.UseCase.Delete` (User deletion, ADR 0050, `internal/usecase/userdeletion`) scopes its one transaction in turn to each
    Workspace the User belongs to (`tx.Scoped(m.WorkspaceID)`, from the User's own Memberships),
    to lock the Owner rows and remove the Membership; and the first proof of an address
    (`internal/domain/identity/signup`, its `afterProofIn`, ADR 0170) scopes the
    transaction of the provider link or the reset link in turn to each Workspace the User belongs to
-   (from `memberships.OfUserIn`), to revoke the User's Personal tokens and Connections there
+   (from `memberships.Module.OfUserIn`), to revoke the User's Personal tokens and Connections there
    (`apitokens.Module.RevokeOfUser`);
 6. the Workspace comes from a secret rather than a login: the ingest hook
    `POST /hooks/{key}` (driver `internal/api/hooks`, ADR 0037), where the key belongs to one
@@ -192,14 +192,14 @@ the domain events, ADR 0105: an event of a User's account belongs to no Workspac
 Workspace's Owners and Members are read by the id an event names),
 `internal/domain/identity/signup` (the Sign-up, a module without a table, with every step that makes a User
 Verified with its first Workspace, ADR 0030, ADR 0043: neither exists yet, so it opens the raw transaction
-that the users module's steps and `memberships.CreateWorkspaceIn` write on; and the provider link and the
+that the users module's steps and `memberships.Module.CreateWorkspaceIn` write on; and the provider link and the
 reset link of a Verified User, whose raw transaction also drops, at the address's first proof, what was
 set up before it, ADR 0170),
 the unchecked operations of the identity modules that join their use case's raw transaction
 (ADR 0110: `workspacesunchecked`, `membershipsunchecked` and `usersunchecked`, in the component
 `domain-identity-unchecked`, which only a use case imports), the use cases
 `internal/usecase/workspaceview` (a Workspace created with its Owner Membership, ADR 0043: no Workspace
-exists yet, so it opens the raw transaction `memberships.CreateWorkspaceIn` writes on; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/userdeletion` (User deletion,
+exists yet, so it opens the raw transaction `memberships.Module.CreateWorkspaceIn` writes on; and a deleted one restored, which has no scope its Owner can reach yet), `internal/usecase/userdeletion` (User deletion,
 ADR 0050: the User belongs to no Workspace, and its one transaction is scoped in turn to each
 Workspace the User leaves) and `internal/usecase/workspacedeletion` (the Workspace deletion cycle, ADR 0043: it lists the
 Owners' deleted Workspaces, which have no scope yet, and, for each one past its window
