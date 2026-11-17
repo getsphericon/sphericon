@@ -56,6 +56,10 @@ var Bounds = []Bound{
 		Spec: site, Schema: "MaxPerSecond", Owners: []string{"Integration"},
 	},
 	{
+		Name: "SesConfigurationSet", Doc: "is the name of the SES configuration set an SES Integration's sends name.",
+		Spec: site, Schema: "SesConfigurationSetName", Owners: []string{"internal/domain/sending/integrations"},
+	},
+	{
 		Name: "AttributionWindowDays", Doc: "is how many days a Workspace's Attribution window lasts.",
 		Spec: site, Schema: "AttributionWindowDays", Owners: []string{"Workspace"},
 	},

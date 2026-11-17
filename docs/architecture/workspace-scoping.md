@@ -243,17 +243,14 @@ a Workspace the next feed position when it is created or an owner is added, remo
 transferred or changes email or verification: it must reach the Workspace a User or
 Membership change belongs to; `ee/domain/insights/workspaceoversight` serves the feed in `Module.WorkspaceFeed`), `internal/domain/identity/usertombstones` (the same pair of hooks for the service feed of Users, ADR 0062, installed on every client: it gives a User the next feed position when they are created, renamed, change email or verification, make a new decision on the Sign-up item that stands for consent to the operator's mailings or that item's mark is set or cleared, and leaves a tombstone when a User is deleted; it reads Consent records, Legal document versions and Sign-up items to find the Users a change belongs to, and refuses every Consent record written outside a transaction; `ee/domain/insights/workspaceoversight` serves the feed in `Module.UserFeed`, reading the consents through `consentrecords.Module.Mailings`), `internal/domain/sending/trackinghostchanges` (the same pair of hooks for the Tracking host change log, ADR 0038, ADR 0071: it reads the Tracking domains a change touches, across Workspaces for a bulk write, to log the hosts it adds or removes; `ee/domain/insights/workspaceoversight` serves it in `Module.TrackingHostFeed`), `internal/infra/db` (the guard's read of the schema state row, on a client of its own before the application's exists), `internal/infra/throttle` (the Login throttle and the mail budgets of an address, ADR 0025: an AuthAttempt belongs to an address, not a Workspace, and the purge river job only calls it) and the composition roots
 (`internal/app`, whose `internal/app/entclient` builds every client with the hooks above and the Enterprise Edition's Usage hook (each with its guard on a client outside a transaction) and hands the bus its transaction client, `internal/testhelper`, and `ee.Edition`, which only hands the client to the `ee/*` packages listed above). Needing raw access anywhere else
-means a new small package in this list, not a field on `Handlers`. easement holds the core
-domain modules of the list as the raw-client components of their contexts in `easement.yml` (the
-identity modules of the list as `domain-identity-base` and
-`domain-identity-raw`, the sending modules as `domain-sending-raw`, the orchestration modules as
-`domain-orchestration-raw`, the instance modules as `domain-instance-raw`, see [Domain contexts](modules.md#domain-contexts)); the job runners as their own `runner` and `ee-runner` components, which do not forbid
-the client either, the raw use cases as the `usecase-raw` component, and the bus, the database package and the Login throttle,
-`internal/infra/events`, `internal/infra/db` and `internal/infra/throttle`, as the `infra-raw` component, and the
-Enterprise packages of the list as `ee-domain-identity-raw`, `ee-domain-insights-raw` and
-`ee-usecase-raw`. It fails a use of
-`ent.Client` anywhere else in `internal/` and `ee/` (and in a surface package), so a new package goes into
-both lists.
+means a new small package in this list, not a field on `Handlers`. easement holds the list as the
+`ent.Client` item of the top-level `forbid_symbol` in `easement.yml`: the domain modules of the
+list, the raw use cases, the bus, the database package, the Login throttle and the Enterprise
+packages one package each in its `allow_in` (a package's own files, `<package>/*.go`, so its
+unchecked and reader subpackages stay without the client), and the composition roots, the security
+handlers, the job runner `internal/jobs`, the Workspaces and Memberships (`domain-identity-base`) and the unchecked
+operations of identity by component in its `allow`. It fails a use of `ent.Client` anywhere else
+in `internal/` and `ee/` (and in a surface package), so a new package goes into both lists.
 `internal/domain/contacts/eligibility` holds no raw client: it takes a `*ent.Scoped` and passes
 `s.WorkspaceID()` as a bound SQL argument inside one raw expression (the correlated
 contact check reads the outer row's `workspace_id` column), not as a hand-written

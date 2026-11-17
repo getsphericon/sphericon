@@ -56,12 +56,12 @@ Identity: `servicecredentials` (the Service credentials, with their scope vocabu
 from the service contract). Insights: `auditentries` (the Audit entries), `erasures` (the Erasures
 rows), `usages` (the Usage rows) and `abusedetector` (the Abuse detector: its limits, its reading
 of a Workspace's standing and its hourly pass, which warns and freezes through `workspaces`,
-`memberships` and `suspension` across every Workspace, ADR 0112), which hold the raw client
-(`ee-domain-insights-raw`), and the Workspace oversight (`workspaceoversight`, `ee-domain-insights-raw`:
-the Staff console's Enterprise sections and the service endpoints over suspension, holds, the
-Audit log, Usage, the Abuse detector and the service feeds; a module of the top of insights, since
-each of its operations calls one module and what it owns is the rules of looking across
-Workspaces). The use case (`ee-usecase-raw`, an isolated instance holding the raw client):
+`memberships` and `suspension` across every Workspace, ADR 0112), which hold the raw client, and
+the Workspace oversight (`workspaceoversight`, which holds it too: the Staff console's Enterprise
+sections and the service endpoints over suspension, holds, the Audit log, Usage, the Abuse
+detector and the service feeds; a module of the top of insights, since each of its operations
+calls one module and what it owns is the rules of looking across Workspaces). The use case (an
+isolated instance of `ee-usecase`, holding the raw client):
 `auditlogretention` (the advanced-retention prune over `workspaces` and the Audit log). The `export` license gate is the Edition's own (`ee.ExportStreams`).
 An Enterprise domain module imports the core's modules of its context and the contexts below
 and the Enterprise modules of those contexts, never a module above nor a use case; an Enterprise

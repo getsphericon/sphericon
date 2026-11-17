@@ -43,8 +43,8 @@ packages that import none of ours, such as the vocabulary every tier shares (`ch
 (`i18n`, `validation`, `pagination`, `patch`, `secrets`, `credentials`, the renderers `emaildoc`,
 `emailrender`, `smsrender` and `telegramrender`). Every component may import it, and easement fails
 its import of any package of ours outside `internal/kernel`, the generated `ent` and `gen` trees
-included; a package that needs one is not kernel. The infrastructure (`internal/infra`, components
-`infra` and `infra-raw`, ADR 0102) sits above it: the bus (`events`), the database connection and
+included; a package that needs one is not kernel. The infrastructure (`internal/infra`, component
+`infra`, ADR 0102) sits above it: the bus (`events`), the database connection and
 migrations (`db`, `devdb`, `postgres`), the message providers (`messaging` and its providers, with
 `dkimstate`, the one definition of a verified Sending domain that the DKIM signer reads), the
 outbound HTTP calls (`httpcall`, `webhook`), the request throttle (`ratelimit`), the Login throttle (`throttle`), `logging`,
@@ -65,17 +65,10 @@ service contract into the module that owns them (`ee/domain/identity/servicecred
 the API token scopes are into `apitokens`.
 The check is strict: a new Go package under `internal/kernel/` is covered by the `kernel`
 component, one under `internal/infra/` by `infra`, one under `internal/usecase/` by `usecase`,
-one under `internal/domain/identity/` by `domain-identity` (the raw-client holders by name in
-`domain-identity-raw`, see [Domain contexts](#domain-contexts)), one under `internal/domain/contacts/` by
-`domain-contacts`, one under `internal/domain/content/` by `domain-content`, one under
-`internal/domain/sending/` by `domain-sending` (the raw-client holders by name in
-`domain-sending-raw`), and likewise under `internal/domain/orchestration/`,
-`internal/domain/insights/` and `internal/domain/instance/` by `domain-orchestration`,
-`domain-insights` and `domain-instance` (with `domain-orchestration-raw` and
-`domain-instance-raw`), one under `ee/api/` by `ee-api`, one under `ee/usecase/` by `ee-usecase`,
-one under `ee/domain/identity/` or `ee/domain/insights/` by `ee-domain-identity` or
-`ee-domain-insights` (the raw-client holders by name in their `-raw` components), and one
-anywhere else under `ee/` by none: it fails the check until it is placed. There
+one under `internal/domain/<context>/` by `domain-<context>` (see [Domain contexts](#domain-contexts)),
+one under `ee/api/` by `ee-api`, one under `ee/usecase/` by `ee-usecase`, one under
+`ee/domain/identity/` or `ee/domain/insights/` by `ee-domain-identity` or `ee-domain-insights`,
+and one anywhere else under `ee/` by none: it fails the check until it is placed. There
 is no catch-all for the rest of `internal/`: a new package elsewhere there fails the check until
 it is put in a tier, a context or a component of its own (the drivers, the wiring, `tools` for
 the packages of the repository's commands under `cmd/`, `testsupport` for what the tests share
@@ -84,8 +77,9 @@ repository's own (`commands`: the generators, the CI checks, the development dat
 seeding), and a new top-level tree must be assigned a component or listed as `unowned`
 in `easement.yml`. Generated Go (`*_gen.go`) is `target_only`: a handler may import
 its ogen package, whose own imports are not checked. The same file also holds the raw
-`*ent.Client` list (the contexts' `domain-<context>-raw`, `infra-raw` and `usecase-raw`,
-see [Workspace scoping](workspace-scoping.md)) and the `samber/do` ban. Its `examples` pin the
+`*ent.Client` list (the `allow` and `allow_in` of `ent.Client` in the top-level `forbid_symbol`,
+see [Workspace scoping](workspace-scoping.md)) and the bans every file shares (the top-level
+`forbid_external` of `samber/do` and `dayjs`, and the global i18next instance). Its `examples` pin the
 boundaries above as decisions on dependencies no code writes yet (a surface importing another, a
 driver or a domain module importing an unchecked operation, the core importing `ee/`, a route file
 importing a page): a change to the rules that lets one through fails `check:arch` as `example`,
@@ -98,24 +92,22 @@ though no import breaks. Before writing an import across components, `easement p
 the contexts are ordered from the bottom: identity → contacts → content → sending → orchestration →
 insights → instance. A module imports the kernel, the infrastructure, ent, the modules of its own
 context and those of the contexts below, never one above and never a use case; an operation that
-needs a module above is a use case. easement holds a context as a few components named
-`domain-<context>[-<part>]`, one per privilege: `domain-<context>` is the glob of the context's
-directory (the modules that hold no raw client), `domain-<context>-raw` is the closed list of its
-raw-client holders (with the other holders, the `allow` of `ent.Client` in the top-level
-`forbid_symbol`), and a part a rule binds alone gets a component of its own. `layers` in
+needs a module above is a use case. easement holds a context as the glob of its directory,
+`domain-<context>`, and a part a rule binds alone as a component of its own,
+`domain-<context>-<part>` (the bottom of identity, the unchecked operations, the Removal check and
+its readers). Its raw-client holders are named package by package in the `allow_in` of
+`ent.Client` in the top-level `forbid_symbol`, with the other holders of the list. `layers` in
 `easement.yml` states the order once, from the drivers through the use cases and the contexts
 down to the infrastructure and the kernel (ADR 0111): a component imports those below it and
 none above, so an import against the order fails `check:arch` with the
-context's reason. Within
-a context the raw-client holders sit above the rest; where the rest imports them (identity,
-sending), that edge is the one a rule's `may_depend_on` names. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
+context's reason. Every module of the core is in its context. Identity, the bottom context: the Workspaces and the
 Memberships (`domain-identity-base`, which imports no other domain module: every module may read a
 Workspace, ask a Permission or tell the Owners something), the raw-client holders `apitokens`, `consentrecords`,
 `invitations`, `joindomains`, `noticedelivery` (Notice delivery, which has no table: the Notices
 a domain event calls for, worded from what the event carries), `oauthclients`, `passkeys`, `secondfactors`, `signup` (the Sign-up,
 which has no table: every step that makes a User Verified with its first Workspace), `signupitems`,
-`signupsurveyresponses`, `staffmembers`, `suspension`, `users`, `usertombstones` and `workspacefeed`
-(`domain-identity-raw`), and `login`, `userlogin`, `admission`, `signinprovider` and `accountlink` (`domain-identity`).
+`signupsurveyresponses`, `staffmembers`, `suspension`, `users`, `usertombstones` and `workspacefeed`,
+and `login`, `userlogin`, `admission`, `signinprovider` and `accountlink` (all `domain-identity`).
 An identity module imports no module of another context: not `providerlimit`, not `contacts`.
 Contacts, above it, is one component (`domain-contacts`, the glob of
 `internal/domain/contacts`): `contacts`, `segments`, `tags`, `condition`, `confirmations`,
@@ -124,7 +116,7 @@ Contacts, above it, is one component (`domain-contacts`, the glob of
 row lock (`contactlock`) and the order of Consent observations (`consentstamps`, ADR 0154), which
 `unsubscribes` and `confirmations` ask before they change a consent state; the Email case of every stored address is the kernel's
 (`internal/kernel/emailcase`), which each owner of an address applies. None of them holds the raw
-client, so the context has no `domain-contacts-raw`. A contacts module imports no module of a
+client. A contacts module imports no module of a
 context above: not `broadcasts`, `automations` or `rules`, not `integrations`, `bindings` or
 `emailtemplates`, and no use case.
 Content, above contacts, is one component too (`domain-content`, the glob of
@@ -135,9 +127,9 @@ definition shares. Sending, above content, is `outboundmessages`, `holds`, `prov
 placed by the same rule: `preset`, the engine that reads an Integration's callbacks
 (`integrations` uses it), and `callbackinterpretation` (the Callback interpretation, which has no
 table: what the facts a Preset parsed mean, ADR 0112). The DKIM and DMARC primitives of a Sending
-domain are `sendingdomains`' own. Its raw-client holders `bindings`, `callbackinterpretation`, `capturedmessages`,
-`integrations`, `privaterelayranges`, `sendingdomains`, `trackingdomains` and `trackinghostchanges` are
-`domain-sending-raw`, the rest `domain-sending`. A content module imports no Integration,
+domain are `sendingdomains`' own. Its raw-client holders are `bindings`, `callbackinterpretation`, `capturedmessages`,
+`integrations`, `privaterelayranges`, `sendingdomains`, `trackingdomains` and `trackinghostchanges`,
+and the context is `domain-sending`. A content module imports no Integration,
 Outbound send or other sending module, and neither context imports `broadcasts`,
 `automations`, `rules`, `webhookendpoints` or a use case.
 Orchestration, above sending, is `broadcasts`, `automations`, `automationstep`, `rules` and
@@ -147,13 +139,13 @@ refused removal (ADR 0049), a leaf below `broadcasts` and `automations`, which r
 the Broadcasts, Automations and Rules beside it through their `<module>use` readers and is a
 component of its own (`domain-orchestration-removalcheck`, imported only by the use cases and the
 wiring). The ent aggregate functions of the Broadcast and Automation reports
-hold no domain rule, so they are infrastructure (`internal/infra/aggregates`). Its raw-client holders `automations`, `rules` and `webhookendpoints` are
-`domain-orchestration-raw`, the rest `domain-orchestration`. Insights, above orchestration, is
+hold no domain rule, so they are infrastructure (`internal/infra/aggregates`). Its raw-client holders are `automations`, `rules` and `webhookendpoints`, and the
+rest of the context but the Removal check and its readers is `domain-orchestration`. Insights, above orchestration, is
 one component (`domain-insights`): the read packages `setupchecklist`, `auditlog`,
 `abusewarning` and `exportstream` (the spec's list), with `dataexport`, the Data export of one
 Contact, which reads Outbound messages and Broadcast recipients and so sits above orchestration.
-Instance, the top context, is `instancestates` and `instanceauditentries` (`domain-instance-raw`, both
-hold the raw client), `upgrade` and `upgradenote` (`domain-instance`). The Release check and the
+Instance, the top context (`domain-instance`), is `instancestates` and `instanceauditentries`,
+which hold the raw client, `upgrade` and `upgradenote`. The Release check and the
 Telemetry report are `instancestates`' own operations (ADR 0112). An
 orchestration module imports no insights or instance package, and an insights package no
 instance module.
@@ -168,8 +160,8 @@ To move a module into its context: `git mv` its directory, rewrite the import pa
 (`github.com/getsphericon/sphericon/internal/<module>` to
 `.../internal/domain/<context>/<module>`) and the module-relative paths that name it (the
 `forbid_symbol` names in `easement.yml`, the ownership map of `entrywrite`, `.golangci.yml`,
-the ast-grep rules, scopegen's outputs, the docs), put it in the context's component (by name in
-`domain-<context>-raw` if it holds the raw client), regenerate (`mise run generate:scopes`, goverter, `generate:mocks`).
+the ast-grep rules, scopegen's outputs, the docs), put it in the context's component (and in the
+`allow_in` of `ent.Client` if it holds the raw client), regenerate (`mise run generate:scopes`, goverter, `generate:mocks`).
 
 ## Table ownership
 

@@ -1171,6 +1171,11 @@ export const zSendScope = z.enum([
 ]);
 
 /**
+ * The name of an SES configuration set, as SES names one: letters, digits, hyphens and underscores
+ */
+export const zSesConfigurationSetName = z.string().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/);
+
+/**
  * SES config without the secret access key
  */
 export const zSesConfig = z.object({
@@ -1180,7 +1185,7 @@ export const zSesConfig = z.object({
   fromName: z.exactOptional(z.string().nullable()),
   endpoint: z.exactOptional(z.string().nullable()),
   accessKeyIdLast4: z.exactOptional(z.string().nullable()),
-  configurationSet: z.exactOptional(z.string().nullable()),
+  configurationSet: z.exactOptional(zSesConfigurationSetName.nullable()),
   configurationSetMissing: z.boolean()
 });
 
@@ -1195,7 +1200,7 @@ export const zSesConfigInput = z.strictObject({
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
   endpoint: z.exactOptional(z.string().nullable()),
-  configurationSet: z.exactOptional(z.string().nullable())
+  configurationSet: z.exactOptional(zSesConfigurationSetName.nullable())
 });
 
 /**

@@ -185,6 +185,36 @@ test('connects an Amazon SES provider', async () => {
     ])
 })
 
+// A configuration set is named as SES names one: a name it would not take is flagged when the field
+// loses focus, and nothing is sent until it is fixed.
+test('checks an SES configuration set name when its field loses focus', async () => {
+  const bodies: unknown[] = []
+  worker.use(...list([]), create(bodies))
+  const { screen } = await renderWithRouter(<IntegrationsSection workspace={manager} />)
+
+  await screen.getByRole('button', { name: 'Connect provider' }).click()
+  const dialog = screen.getByRole('dialog')
+  await dialog.getByRole('button', { name: 'Amazon SES' }).click()
+  await dialog.getByLabelText(/^AWS region/).fill('eu-west-1')
+  await dialog.getByLabelText(/^Access key ID/).fill('AKIA')
+  await dialog.getByLabelText(/^Secret access key/).fill('shh')
+  await dialog.getByLabelText(/^From address/).fill('hi@acme.com')
+  const set = dialog.getByLabelText(/^Configuration set/)
+  await set.fill('my set')
+  await dialog.getByLabelText(/^From address/).click()
+
+  await expect.element(set).toBeInvalid()
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+  expect(bodies).toEqual([])
+
+  await set.fill('marketing')
+  await dialog.getByRole('button', { name: 'Connect provider' }).click()
+
+  await expect
+    .poll(() => bodies)
+    .toMatchObject([{ config: { kind: 'ses', configurationSet: 'marketing' } }])
+})
+
 test('connects an SES-compatible service at its own endpoint, with its Provider limit', async () => {
   const bodies: unknown[] = []
   worker.use(...list([]), create(bodies))

@@ -8,6 +8,12 @@ namespace Sphericon;
 @maxValue(10000)
 scalar MaxPerSecond extends int32;
 
+/** The name of an SES configuration set, as SES names one: letters, digits, hyphens and underscores */
+@minLength(1)
+@maxLength(64)
+@pattern("^[A-Za-z0-9_-]+$")
+scalar SesConfigurationSetName extends string;
+
 /** SMTP credentials */
 model SmtpConfigInput {
   kind: "smtp";
@@ -31,8 +37,8 @@ model SesConfigInput {
   /** Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS */
   endpoint?: string | null;
 
-  /** The SES configuration set every send through the Integration names, to route it to a dedicated IP pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused */
-  configurationSet?: string | null;
+  /** The SES configuration set every send through the Integration names, to route it to a dedicated IP pool. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused */
+  configurationSet?: SesConfigurationSetName | null;
 }
 
 /** The Test inbox takes no credentials: a Workspace has at most one */
@@ -234,7 +240,7 @@ model SesConfig {
   accessKeyIdLast4?: string | null;
 
   /** The SES configuration set every send names; empty when sends go through the account's default pool */
-  configurationSet?: string | null;
+  configurationSet?: SesConfigurationSetName | null;
 
   /** True when SES said, at the last save, that it has no configuration set of that name: SES refuses every message that names it, and a refused message is not sent again, until the set exists. False when no set is named or SES did not answer */
   configurationSetMissing: boolean;

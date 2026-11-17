@@ -59,7 +59,13 @@ import { HistoryMenuItem } from './AuditLogSection.tsx'
 import { CredentialsModal } from './CredentialsModal.tsx'
 import { InboundModal } from './InboundModal.tsx'
 import { EmailFields, TelegramFields, TwilioFields } from './integrationFields.tsx'
-import { buildConfig, hasCredentials, INITIAL_VALUES, paramsOf } from './integrationForm.ts'
+import {
+  buildConfig,
+  configurationSetError,
+  hasCredentials,
+  INITIAL_VALUES,
+  paramsOf,
+} from './integrationForm.ts'
 import type { IntegrationFormValues } from './integrationForm.ts'
 import {
   requiresProviderLimit,
@@ -360,7 +366,13 @@ export function IntegrationsSection({
   )
   const form = useForm<IntegrationFormValues>({
     initialValues: INITIAL_VALUES,
-    validate: validateLimits,
+    // A field is checked when it loses focus (docs/standards/ui.md, Validation).
+    validateInputOnBlur: true,
+    validate: {
+      ...validateLimits,
+      configurationSet: (value, values) =>
+        values.provider === 'ses' ? configurationSetError(value) : null,
+    },
   })
   const [editing, setEditing] = useState<SiteIntegrationResource | null>(null)
   const [inbound, setInbound] = useState<SiteIntegrationResource | null>(null)

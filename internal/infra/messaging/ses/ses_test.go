@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -283,11 +282,6 @@ func TestDescriptorValidate(t *testing.T) {
 		"http endpoint":  {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"http://attacker.example"}`, "endpoint must be an https URL"},
 		"no host":        {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"https://"}`, "endpoint must be an https URL"},
 		"bare host":      {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"attacker.example"}`, "endpoint must be an https URL"},
-		"set":            {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"marketing_2-eu"}`, ""},
-		"longest set":    {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"` + strings.Repeat("s", 64) + `"}`, ""},
-		"set too long":   {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"` + strings.Repeat("s", 65) + `"}`, "configurationSet"},
-		"set with space": {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"my set"}`, "configurationSet"},
-		"set with dot":   {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"my.set"}`, "configurationSet"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {

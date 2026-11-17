@@ -706,10 +706,13 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 	case in.SES != nil:
 		c := in.SES
 		provider = providers.SES
+		set := strings.TrimSpace(c.ConfigurationSet)
+		if err := validConfigurationSet(set); err != nil {
+			return "", "", nil, err
+		}
 		plaintext, err = json.Marshal(ses.Config{
 			Region: c.Region, AccessKeyID: c.AccessKeyID, SecretAccessKey: c.SecretAccessKey,
-			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint,
-			ConfigurationSet: strings.TrimSpace(c.ConfigurationSet),
+			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, ConfigurationSet: set,
 		})
 	case in.Inbox != nil:
 		provider = providers.Inbox
@@ -746,9 +749,6 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 		return "", "", nil, configError(errUnknownProvider)
 	}
 	if err := m.catalog.Validate(provider, plaintext); err != nil {
-		if errors.Is(err, ses.ErrConfigurationSet) {
-			return "", "", nil, refuse(fieldConfig+".configurationSet", i18n.ErrorsIntegrationSesConfigurationSet, nil)
-		}
 		return "", "", nil, configError(err)
 	}
 	return provider, provider.Channel(), plaintext, nil

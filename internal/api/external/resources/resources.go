@@ -122,6 +122,7 @@ func optEditorDocument(doc json.RawMessage) externalapi.OptEditorDocument {
 // goverter:extend maxPerDay
 // goverter:extend workspaceTimezone
 // goverter:extend omitEmpty
+// goverter:extend omitEmptyConfigurationSet
 // goverter:extend providerLimitSource
 // goverter:extend optTimestamp
 // goverter:extend optInt32
@@ -783,6 +784,11 @@ func optWebhookDisabledReason(c Converter, v *webhookendpoint.DisabledReason) ex
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
 func omitEmpty(s string) externalapi.OptNilString {
 	return convert.OptNonZero[externalapi.OptNilString](s)
+}
+
+// omitEmptyConfigurationSet is an SES Integration's configuration set, absent when it names none.
+func omitEmptyConfigurationSet(s string) externalapi.OptNilSesConfigurationSetName {
+	return convert.OptNonZero[externalapi.OptNilSesConfigurationSetName](externalapi.SesConfigurationSetName(s))
 }
 
 func smtpConfigKind(integrations.RedactedSMTP) externalapi.SmtpConfigKind {

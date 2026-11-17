@@ -58,8 +58,9 @@ the domain module that owns it), lets only the drivers and the wiring import one
 and forbids it the raw client. The exception is a use case whose rows belong to no Workspace
 when it starts, so there is no `*ent.Scoped` to take. Such a use case holds the
 raw client, opens the raw transaction its modules' `...In(ctx, tx, ...)` functions join and is
-in the closed list of [Workspace scoping](workspace-scoping.md); easement holds it as the `usecase-raw` component,
-one pattern per use case (`internal/usecase/workspacedeletion*`), isolated like the others.
+in the closed list of [Workspace scoping](workspace-scoping.md); easement names it in the `allow_in`
+of `ent.Client` (`internal/usecase/workspacedeletion/*.go`), and it stays an isolated `usecase`
+like the others.
 Such use cases are the deletion cycle of a Workspace
 (`internal/usecase/workspacedeletion`), which lists the Workspaces that have no scope yet, erases one
 table at a time, each batch of listed ids deleted by itself through `*ent.Scoped`, the Enterprise Edition's tables included (ADR 0110: the one writer of a Workspace-owned table besides its owner,
@@ -97,7 +98,7 @@ does not import; the owner exports for it only what writes nothing (a state tabl
 entry, a read under a lock), and the write itself is the subpackage's, which `entrywrite` takes as
 its owner's. easement holds the subpackages of each context in a component of its own,
 `domain-<context>-unchecked` (`internal/domain/<context>/**/*unchecked`, and `infra-unchecked` for
-the bus's), each with `allow_importers: [usecase, usecase-raw]`, so only a use case imports one: no
+the bus's), each with `allow_importers: [usecase]`, so only a use case imports one: no
 handler, job, MCP tool, command, other domain module, Enterprise package nor the owner bypasses the
 check. Each sits in `layers` right above its context, so a subpackage reaches its owner and what
 its owner's context may, never a context above. The Enterprise Edition's are

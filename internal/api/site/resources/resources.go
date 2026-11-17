@@ -98,6 +98,7 @@ import (
 // goverter:extend optNilOptOutVia
 // goverter:extend optNilHoldReason
 // goverter:extend omitEmpty
+// goverter:extend omitEmptyConfigurationSet
 // goverter:extend optNilEmailAddress
 // goverter:extend optNilEntityID
 // goverter:extend optNilTimeZone
@@ -1180,6 +1181,11 @@ func optWebhookDisabledReason(c Converter, v *webhookendpoint.DisabledReason) si
 // omitEmpty is unset for an empty value, so redacted optional fields are omitted.
 func omitEmpty(s string) siteapi.OptNilString {
 	return convert.OptNonZero[siteapi.OptNilString](s)
+}
+
+// omitEmptyConfigurationSet is an SES Integration's configuration set, absent when it names none.
+func omitEmptyConfigurationSet(s string) siteapi.OptNilSesConfigurationSetName {
+	return convert.OptNonZero[siteapi.OptNilSesConfigurationSetName](siteapi.SesConfigurationSetName(s))
 }
 
 func smtpConfigKind(integrations.RedactedSMTP) siteapi.SmtpConfigKind {
