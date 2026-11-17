@@ -43,22 +43,6 @@ func New(client *ent.Client, bus *events.Bus, creation *workspaces.Creation, sta
 	return &Module{client: client, bus: bus, creation: creation, startingCap: startingCap, now: now}
 }
 
-// publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):
-// the publisher an operation given a transaction's client hands to events.RecordAudit.
-type publisherIn struct {
-	bus *events.Bus
-	in  events.InTx
-}
-
-func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
-	return p.bus.PublishIn(ctx, p.in, ev)
-}
-
-// pub is the publisher of the bus transaction in is bound to.
-func (ms *Module) pub(in events.InTx) events.Publisher {
-	return publisherIn{bus: ms.bus, in: in}
-}
-
 // MemberScope is a User's Membership of a Workspace and the scoped client of that Workspace,
 // acting as the User.
 type MemberScope struct {

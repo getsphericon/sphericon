@@ -48,11 +48,12 @@ exec "$@"
 	return state
 }
 
-func (s setup) restartOpts(version string) upgrade.Options {
-	o := s.opts(version)
+// restarter is the Upgrader of `upgrade --restart`: it migrates and restarts through systemd.
+func (s setup) restarter() *upgrade.Upgrader {
+	seams := s.seams()
 	sd := upgrade.NewSystemd("sphericon")
-	o.Run, o.PostSwap = sd.Run, sd.PostSwap
-	return o
+	seams.Run, seams.PostSwap = sd.Run, sd.PostSwap
+	return with(seams)
 }
 
 func readFile(t *testing.T, path string) string {
@@ -67,7 +68,7 @@ func TestRestartMigratesInATransientUnitWithTheServicesUserAndEnvironmentThenRes
 	state := fakeSystemd(t, "active", s.target)
 	release(t, s.dir, "0.2.0", "", false)
 
-	got, err := drain(upgrader.Step(t.Context(), s.restartOpts("")))
+	got, err := drain(s.restarter().Step(t.Context(), s.opts("")))
 
 	require.NoError(t, err)
 	assert.Equal(t, "ran\n", s.read(t, "migrated"))
@@ -85,7 +86,7 @@ func TestRestartFailedMigrationLeavesTheOldBinaryServingAndNothingRestarted(t *t
 	state := fakeSystemd(t, "active", s.target)
 	release(t, s.dir, "0.2.0", "", true)
 
-	_, err := drain(upgrader.Step(t.Context(), s.restartOpts("")))
+	_, err := drain(s.restarter().Step(t.Context(), s.opts("")))
 
 	require.Error(t, err)
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -97,7 +98,7 @@ func TestRestartFailsWhenTheServiceDoesNotBecomeActive(t *testing.T) {
 	fakeSystemd(t, "failed", s.target)
 	release(t, s.dir, "0.2.0", "", false)
 
-	_, err := drain(upgrader.Step(t.Context(), s.restartOpts("")))
+	_, err := drain(s.restarter().Step(t.Context(), s.opts("")))
 
 	require.ErrorContains(t, err, "sphericon is failed")
 	assert.FileExists(t, filepath.Join(s.install, "sphericon.old"))

@@ -38,7 +38,7 @@ func moduleThrough(env *testhelper.TestEnv, sender messaging.EmailSender) *outbo
 		env.Bus,
 		testhelper.Module[*holds.Holds](env),
 		senders{sender: sender},
-		messagetoken.New("test-secret", "http://local", time.Now),
+		messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now),
 		outboundmessages.Deps{},
 		outboundmessages.Config{},
 		time.Now,

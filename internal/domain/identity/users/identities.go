@@ -206,7 +206,7 @@ func (a *Module) LinkIdentity(ctx context.Context, in LinkIdentityInput) (Identi
 	userID, provider, subject := in.UserID, in.Provider, in.Subject
 	var saved *ent.User
 	added := false
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
@@ -220,7 +220,7 @@ func (a *Module) LinkIdentity(ctx context.Context, in LinkIdentityInput) (Identi
 		if err != nil || !added {
 			return identityHeldBy(ctx, tx, provider, subject, userID, err)
 		}
-		return recordUserAction(ctx, tx, pub, UserAction{User: saved, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": provider}})
+		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": provider}})
 	})
 	if err != nil {
 		return IdentityLink{}, err
@@ -253,7 +253,7 @@ func identityHeldBy(ctx context.Context, tx *ent.Client, provider, subject strin
 // of two unlinks racing for the last two identities one is refused.
 func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (*ent.User, error) {
 	var saved *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
@@ -276,7 +276,7 @@ func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (
 		if err != nil {
 			return err
 		}
-		return recordUserAction(ctx, tx, pub, UserAction{User: saved, Action: events.ActionUserIdentityUnlink, Diff: map[string]any{"provider": own[i].Provider}})
+		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityUnlink, Diff: map[string]any{"provider": own[i].Provider}})
 	})
 	return saved, err
 }
@@ -296,15 +296,15 @@ type HolderLink struct {
 // and the identities linked before, in the same transaction. FirstProof reports that case: the
 // caller drops the rest of what was set up before the proof (ADR 0170).
 func (a *Module) LinkToHolderIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (HolderLink, error) {
-	linked, identityID, firstProof, err := a.linkToHolderIn(ctx, tx, a.pub(tx), holderID, in, a.now())
+	linked, identityID, firstProof, err := a.linkToHolderIn(ctx, tx, holderID, in, a.now())
 	if err != nil {
 		return HolderLink{}, err
 	}
 	return HolderLink{User: linked, IdentityID: identityID, FirstProof: firstProof}, nil
 }
 
-// linkToHolderIn is LinkToHolderIn on the publisher pub of tx's transaction, at now.
-func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
+// linkToHolderIn is LinkToHolderIn at now, publishing in the bus transaction tx is bound to.
+func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
 	// Every link ends the other sessions (ADR 0048); the caller starts the new one from
 	// the User returned here, so it holds the new epoch.
 	// The provider's proof stamps the address only from empty, and the rows-changed count
@@ -326,7 +326,7 @@ func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, pub events.
 		return nil, 0, false, err
 	}
 	if stamped {
-		if _, err := a.applyDomainJoinIn(ctx, tx, pub, linked); err != nil {
+		if _, err := a.applyDomainJoinIn(ctx, tx, linked); err != nil {
 			return nil, 0, false, err
 		}
 	}
@@ -339,11 +339,11 @@ func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, pub events.
 	}); err != nil {
 		return nil, 0, false, err
 	}
-	if err := recordUserAction(ctx, tx, pub, UserAction{User: linked, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": in.Provider}}); err != nil {
+	if err := a.RecordUserAction(ctx, tx, UserAction{User: linked, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": in.Provider}}); err != nil {
 		return nil, 0, false, err
 	}
 	// The User did not take this step: the owner is told, with the link that undoes it (ADR 0048).
-	err = pub.Publish(ctx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
+	err = a.bus.PublishIn(ctx, tx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
 	return linked, identityID, stamped, err
 }
 
@@ -402,7 +402,7 @@ func takeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in Provider
 // nothing, when the identity is already gone (a link followed twice).
 func (a *Module) UndoLink(ctx context.Context, userID, identityID int64) (bool, error) {
 	removed := false
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		identity, err := tx.UserIdentity.Query().Where(useridentity.ID(identityID), useridentity.UserID(userID)).Only(ctx)
 		if ent.IsNotFound(err) {
 			return nil
@@ -418,7 +418,7 @@ func (a *Module) UndoLink(ctx context.Context, userID, identityID int64) (bool, 
 		if err != nil {
 			return err
 		}
-		return recordUserAction(ctx, tx, pub, UserAction{User: saved, Action: events.ActionUserIdentityUnlink, Diff: map[string]any{"provider": identity.Provider}})
+		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityUnlink, Diff: map[string]any{"provider": identity.Provider}})
 	})
 	return removed, err
 }

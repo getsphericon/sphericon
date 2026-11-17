@@ -36,7 +36,7 @@ func pinewoodInboxModule(t *testing.T, env *testhelper.TestEnv, c *testhelper.Cl
 		env.Bus,
 		testhelper.Module[*holds.Holds](env),
 		senders{sender: sender},
-		messagetoken.New("test-secret", "http://local", time.Now),
+		messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, c.Now),
 		outboundmessages.Deps{},
 		cfg,
 		c.Now,

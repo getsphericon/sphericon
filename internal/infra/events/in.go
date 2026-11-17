@@ -10,7 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
-// ErrNotInBusTx is returned by PublishIn and EnqueueIn for a client that is not bound to a
+// ErrNotInBusTx is returned by PublishIn, EnqueueIn and RecordAuditIn for a client that is not bound to a
 // transaction the bus opened: one on the pool, in ent's own Tx, or in another bus's transaction.
 // The bus never opens a transaction for it.
 var ErrNotInBusTx = errors.New("events: the client is not bound to a transaction of this bus")
@@ -35,6 +35,17 @@ func (b *Bus) PublishIn(ctx context.Context, in InTx, ev DomainEvent) error {
 		return err
 	}
 	return pub.Publish(ctx, ev)
+}
+
+// RecordAuditIn records the explicit Audit entry in the transaction in is bound to: RecordAudit
+// through that transaction's own publisher (PublishIn). It is how a domain type that took the bus
+// in its constructor records an entry in the transaction of the scope its operation is given.
+func (b *Bus) RecordAuditIn(ctx context.Context, in InTx, entry *AuditEntry) error {
+	pub, err := b.publisherOf(in)
+	if err != nil {
+		return err
+	}
+	return RecordAudit(ctx, pub, entry)
 }
 
 // EnqueueIn queues a job in the transaction in is bound to (PublishIn, Enqueuer).

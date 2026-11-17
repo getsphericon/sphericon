@@ -576,7 +576,10 @@ run = "pnpm run i18n:types"
 description = "OpenAPI/ent -> Go (ent, ogen, goverter)"
 # ogen v1.24 loads an `x-ogen-type` (EntityId's publicid.ID) by looking up encoding/json's Marshaler
 # as a named type, which Go 1.27's json v2 experiment makes an alias, and it panics: ogen loads the
-# types with that experiment off. The generated code is the same either way.
+# types with that experiment off. goverter needs it off too: with it on, json.RawMessage is an alias
+# of jsontext.Value and goverter writes `jsontext.Value` where the committed converters (and CI's
+# generate:check) have `json.RawMessage`. A goverter run of its own sets it as well:
+# `GOEXPERIMENT=nojsonv2 go run ./cmd/goverter gen <package>`.
 env = { GOEXPERIMENT = "nojsonv2" }
 run = [
   "cd ent && heavy -- go run -mod=mod entc.go",

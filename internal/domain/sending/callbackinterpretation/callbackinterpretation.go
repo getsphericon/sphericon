@@ -109,12 +109,12 @@ type Module struct {
 
 // New builds the module on the raw client an ingest key is resolved with, the bus the facts'
 // System events are published through, the Integrations module, Outbound send, whose messages
-// the facts land on, the certificates an `sns` Preset checks a signature against
-// (preset.SNSCertificates) and the Instance clock the hook reads.
-func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, out *outboundmessages.Module, certs preset.Certificates, now func() time.Time) *Module {
+// the facts land on, the Preset engine a request runs through, the chats of the Telegram bots
+// and the Instance clock the hook reads.
+func New(client *ent.Client, bus *events.Bus, integ *integrations.Module, out *outboundmessages.Module, engine *preset.Engine, chats *bindings.Chats, now func() time.Time) *Module {
 	return &Module{
 		client: client, bus: bus, integ: integ, out: out,
-		engine: preset.New(certs, now), chats: bindings.NewChats(bus, now), now: now,
+		engine: engine, chats: chats, now: now,
 	}
 }
 

@@ -26,6 +26,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -78,6 +79,8 @@ import (
 // goverter:extend stringIn
 // goverter:extend emailIn
 // goverter:extend stringPtrIn
+// goverter:extend emailPtrIn
+// goverter:extend entityIDPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
@@ -189,6 +192,8 @@ type Inputs interface {
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
 	// goverter:map AutomationId AutomationID
 	EnrollmentsFilter(source siteapi.SiteEnrollmentsListParams) automations.EnrollmentsFilter
+	// The Contact a Data export names by its id or its email.
+	ContactExport(source siteapi.SiteContactsExportParams) dataexport.OpenInput
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -339,6 +344,8 @@ func listPatch(list []string) patch.Field[[]string]                   { return c
 func stringIn(o siteapi.OptString) string                             { return o.Or("") }
 func emailIn(o siteapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o siteapi.OptString) *string                         { return convert.Ptr(o) }
+func emailPtrIn(o siteapi.OptEmailAddress) *string                    { return convert.StringPtr(o) }
+func entityIDPtrIn(o siteapi.OptEntityId) *int64                      { return convert.Int64Ptr(o) }
 func nilStringPtrIn(o siteapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o siteapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }

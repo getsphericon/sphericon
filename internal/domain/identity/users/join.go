@@ -24,11 +24,11 @@ import (
 // with the system as the actor and the joiner as target, in the bus transaction tx is bound to.
 // It returns the joined Workspace, nil when nothing was joined. Nothing is mailed.
 func (a *Module) ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, u *ent.User) (*ent.Workspace, error) {
-	return a.applyDomainJoinIn(ctx, tx, a.pub(tx), u)
+	return a.applyDomainJoinIn(ctx, tx, u)
 }
 
-// applyDomainJoinIn is ApplyDomainJoinIn on the publisher pub of tx's transaction.
-func (a *Module) applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
+// applyDomainJoinIn is ApplyDomainJoinIn, recording in the bus transaction tx is bound to.
+func (a *Module) applyDomainJoinIn(ctx context.Context, tx *ent.Client, u *ent.User) (*ent.Workspace, error) {
 	_, host, ok := strings.Cut(u.Email, "@")
 	if !ok {
 		return nil, nil
@@ -81,7 +81,7 @@ func (a *Module) applyDomainJoinIn(ctx context.Context, tx *ent.Client, pub even
 		membership.FieldRole:   events.Became(string(joined.Role)),
 	}
 	system := events.Actor{Kind: events.ActorSystem}
-	if err := recordActionOnUserIn(ctx, pub, ActionOnUser{Actor: system, User: u, Action: events.ActionMembershipDomainJoin, Diff: diff}, ws.ID); err != nil {
+	if err := a.recordActionOnUserIn(ctx, tx, ActionOnUser{Actor: system, User: u, Action: events.ActionMembershipDomainJoin, Diff: diff}, ws.ID); err != nil {
 		return nil, err
 	}
 	return ws, nil

@@ -63,7 +63,8 @@ type Config struct {
 	// warning (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// HoldMaxExpiry is how far ahead a Staff hold's expiry may be set
-	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is holds.DefaultMaxExpiry.
+	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is holds.DefaultMaxExpiry. The Edition builds its
+	// Holds with it, which this module sets, clears and lists the holds through.
 	HoldMaxExpiry time.Duration
 	// SendCaps is whether the Instance has Send caps (ADR 0067). Without them the console shows
 	// no Send cap and its endpoints are not found, whatever the License.
@@ -92,14 +93,16 @@ type Module struct {
 
 // New builds the module over the raw client, the Audit log and the Usage it shows, the Workspaces
 // it finds by their id; owners names the Owners of the feed's Workspaces and consents the feed's
-// Users' consent to the operator's mailings.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, ws *workspaces.Module, rates *reputation.Module, owners *memberships.Module, consents *consentrecords.Module, cfg Config) *Module {
+// Users' consent to the operator's mailings. hs is the Edition's Holds, the one the send path
+// reads: it honours Staff holds under the `staff` license, which every call here checks first, so
+// the console lists the holds a send is Held by. limits reads a Workspace's 24-hour sends.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, ws *workspaces.Module, rates *reputation.Module, owners *memberships.Module, consents *consentrecords.Module, hs *holds.Holds, limits *providerlimit.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
 		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
 	}
 	return &Module{
-		ent: client, bus: bus, suspend: suspender, ws: ws, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holds: holds.New(func() bool { return true }, cfg.HoldMaxExpiry, now), limits: providerlimit.New(now), survey: signupsurveyresponses.NewReader(client),
+		ent: client, bus: bus, suspend: suspender, ws: ws, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holds: hs, limits: limits, survey: signupsurveyresponses.NewReader(client),
 		sendCaps: cfg.SendCaps, owners: owners, consents: consents,
 	}
 }

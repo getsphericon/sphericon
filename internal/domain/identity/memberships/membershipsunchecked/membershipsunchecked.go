@@ -21,20 +21,9 @@ type Module struct {
 
 // New builds the unchecked operation over the memberships module it reads the leaving Membership
 // through, and the bus it publishes the Audit entry on, in the transaction of the scope it is
-// given (events.Bus.PublishIn).
+// given (events.Bus.RecordAuditIn).
 func New(ms *memberships.Module, bus *events.Bus) *Module {
 	return &Module{memberships: ms, bus: bus}
-}
-
-// publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):
-// the publisher the leave hands to events.RecordAudit.
-type publisherIn struct {
-	bus *events.Bus
-	in  events.InTx
-}
-
-func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
-	return p.bus.PublishIn(ctx, p.in, ev)
 }
 
 // LeaveDoomedWorkspaceIn removes User userID's own Membership like memberships.Module.LeaveIn but
@@ -49,6 +38,5 @@ func (m *Module) LeaveDoomedWorkspaceIn(ctx context.Context, ts *ent.Scoped, use
 	if err := ts.Membership().DeleteOneID(self.Membership.ID).Exec(ctx); err != nil {
 		return err
 	}
-	pub := publisherIn{bus: m.bus, in: ts}
-	return events.RecordAudit(ctx, pub, memberships.RemovalAudit(ts.WorkspaceID(), self.Actor, self.Membership))
+	return m.bus.RecordAuditIn(ctx, ts, memberships.RemovalAudit(ts.WorkspaceID(), self.Actor, self.Membership))
 }

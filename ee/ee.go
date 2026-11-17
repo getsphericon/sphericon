@@ -34,6 +34,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -108,6 +109,9 @@ type Deps struct {
 	Memberships *memberships.Module
 	// ConsentRecords is the Users' consent to the operator's mailings in the service feed.
 	ConsentRecords *consentrecords.Module
+	// ProviderLimits reads a Workspace's 24-hour sends, which the console shows against its Send
+	// cap.
+	ProviderLimits *providerlimit.Module
 }
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
@@ -130,11 +134,13 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 		Erasures:   erasures.New(deps.Client, lic, deps.Cipher, now),
 		Usage:      usage,
 		Export:     &ExportStreams{lic: lic},
-		Staff:      workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Workspaces, deps.Reputation, deps.Memberships, deps.ConsentRecords, staffCfg),
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, now),
 	}
+	// One Holds for the send path and the console's Enterprise sections: Staff holds count under
+	// the `staff` license, which the console checks before every call.
 	e.holds = holds.New(e.HoldsHonoured, staffCfg.HoldMaxExpiry, now)
+	e.Staff = workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Workspaces, deps.Reputation, deps.Memberships, deps.ConsentRecords, e.holds, deps.ProviderLimits, staffCfg)
 	if lic.Has(licensekey.FeatureStaff) {
 		if staffSessions == nil {
 			return nil, errors.New("SPHERICON_STAFF_JWT_SECRET is required with the staff license: the console's Enterprise sections need the Staff member's sign-in")

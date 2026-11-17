@@ -139,3 +139,28 @@ func TestPublishInRefusesAClientOutsideABusTransaction(t *testing.T) {
 	assert.Zero(t, publishedTo(t, env, "in-refused@example.com"))
 	assert.Zero(t, queuedSends(t, env, 921))
 }
+
+// RecordAuditIn is RecordAudit in the transaction in is bound to: the entry commits and rolls back
+// with it, the ingest actor is still skipped, and a client bound to no transaction of the bus is
+// refused.
+func TestRecordAuditInRecordsInTheTransactionOfItsClient(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	scope := env.DB.Scoped(fixtures.AcmeID)
+	boom := errors.New("mutation failed")
+
+	err := env.Bus.WithinScopedTx(ctx, scope, func(ts *ent.Scoped, _ events.Publisher) error {
+		require.NoError(t, env.Bus.RecordAuditIn(ctx, ts, auditEntry(events.ActorUser)))
+		return boom
+	})
+	require.ErrorIs(t, err, boom)
+	assert.Empty(t, env.QueuedEnvelopes(t, events.NameAuditEntry), "the entry rolls back with the transaction")
+
+	require.ErrorIs(t, env.Bus.RecordAuditIn(ctx, scope, auditEntry(events.ActorUser)), events.ErrNotInBusTx)
+
+	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		require.NoError(t, env.Bus.RecordAuditIn(ctx, tx, auditEntry(events.ActorIngest)))
+		return env.Bus.RecordAuditIn(ctx, tx, auditEntry(events.ActorUser))
+	}))
+	assert.Len(t, env.QueuedEnvelopes(t, events.NameAuditEntry), 1, "the entry commits with it, and the ingest actor's is skipped")
+}

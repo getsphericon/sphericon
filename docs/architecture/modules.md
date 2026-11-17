@@ -225,7 +225,9 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   its importers (`<module>unchecked`, `<module>use`, ADR 0110): each importer builds its own in its
   constructor from what the wiring gave it, so the fence stays as it is. `tagdeletion.New` takes the
   `*tags.Module` and builds `tagsunchecked.New(catalogue)`; `removalcheck.New` builds
-  `segmentsuse.New()`.
+  `segmentsuse.New()`. A type with no dependencies, no field at all, is built where it is used
+  (`eligibility.New()`, `contactlock.New()`, `users.NewFeed()`): two of them have nothing to
+  disagree on.
 - **A `<module>unchecked` subpackage** exports one type, `Module`, built by `New`, and each of its
   unchecked operations is a method of it (`tagsunchecked.Module`).
 - **A plan, then its apply** (ADR 0145). Opening is a method `<Plan>In` of that `Module`
@@ -239,7 +241,9 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   `Bus.PublishIn(ctx, s, ev)` and `Bus.EnqueueIn(ctx, s, args, opts)` do that with the publisher of
   the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
   to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
-  operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument.
+  operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument, and
+  one that records an explicit Audit entry calls `Bus.RecordAuditIn(ctx, s, entry)`, which is
+  `events.RecordAudit` with that transaction's publisher.
   An Erasure's step takes no `events.QueuePurger` either: `Bus.PurgeJobsIn(ctx, s, key, ids)`
   purges the scope's Workspace's jobs in the Erasure's transaction `s` is bound to, and refuses
   any other (`events.ErrNotPurging`).

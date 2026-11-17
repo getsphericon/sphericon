@@ -56,7 +56,7 @@ func configured(env *testhelper.TestEnv, now func() time.Time, cfg outboundmessa
 		env.Bus,
 		testhelper.Module[*holds.Holds](env),
 		senders{sender: env.CustomerMail},
-		messagetoken.New("test-secret", "http://local", time.Now),
+		messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, now),
 		outboundmessages.Deps{},
 		cfg,
 		now,
@@ -236,7 +236,7 @@ func TestMarketingCarriesFooterAndOneClickHeader(t *testing.T) {
 
 func TestMarketingWithoutTrackerFailsClosed(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, nil, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, nil, env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), marketing(t, env, "bc:notracker", fixtures.ContactAliceID))
 	require.ErrorIs(t, err, outboundmessages.ErrNoTracker)
@@ -341,7 +341,7 @@ func TestDomainLosingVerificationAtSignTimeIsHeldAndFreesTheClaim(t *testing.T) 
 
 func TestNoIntegrationIsHeld(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider}, messagetoken.New("s", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	res, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:noint", "a@example.com"))
 	require.NoError(t, err)
@@ -530,7 +530,7 @@ func TestSlowAttemptCannotRecordOverATakeover(t *testing.T) {
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 		second, secondErr = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	}
-	m = outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: s}, messagetoken.New("s", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	m = outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: s}, messagetoken.New("s", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:fence", "a@example.com"))
 	require.ErrorIs(t, err, outboundmessages.ErrInProgress, "the slow attempt lost its claim and must not record")

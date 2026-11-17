@@ -43,11 +43,8 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -267,8 +264,8 @@ type Module struct {
 	startLinks StartLinks
 	// now is the clock the Provider limit and the claim lease are read at.
 	now func() time.Time
-	// eligibility decides whether a target may be sent to; contacts resolves the Contact of a
-	// Transactional send's address. New builds both: what they read comes with each call's scope.
+	// eligibility decides whether a target may be sent to (stateless, built by New); contacts
+	// resolves the Contact of a Transactional send's address.
 	eligibility *eligibility.Module
 	contacts    *contacts.Module
 }
@@ -277,6 +274,20 @@ type Module struct {
 // while it serves, "" otherwise (ADR 0071).
 type TrackingHosts interface {
 	ServingHost(ctx context.Context, s *ent.Scoped) (string, error)
+}
+
+// Modules are the modules every send reads or writes through, each the one the wiring built for
+// the rest of the Instance; none may be nil. A test builds them over its own bus and clock when it
+// has its own (the chats publish in the send's transaction, so their bus is the module's).
+type Modules struct {
+	// Contacts resolves the Contact of a Transactional send's address.
+	Contacts *contacts.Module
+	// Chats unbinds a chat Telegram no longer reaches.
+	Chats *bindings.Chats
+	// Limits reads the Provider limit's 24-hour usage and the Send cap's drain.
+	Limits *providerlimit.Module
+	// Standing records the provider's refusal of an Integration's credentials.
+	Standing *integrations.Standing
 }
 
 // Deps are the collaborators of the module's optional parts, each passed by the wiring; a nil one
@@ -326,19 +337,20 @@ func (m *Module) AsSystem(s *ent.Scoped) *ent.Scoped {
 	return m.bus.Act(s, events.Actor{Kind: events.ActorSystem})
 }
 
-// New builds the module. tracker may be nil only if no marketing Request is sent; deps are the
-// collaborators of its optional parts and cfg its settings. now is the Instance clock (app.Clock)
+// New builds the module. tracker may be nil only if no marketing Request is sent; mods are the
+// modules every send goes through, deps the collaborators of its optional parts and cfg its
+// settings. now is the Instance clock (app.Clock)
 // the module reads for the Provider limit's token buckets, the claim lease and the moment a
 // message is recorded sent; tests move it instead of waiting.
-func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, deps Deps, cfg Config, now func() time.Time) *Module {
+func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoken.Tracker, mods Modules, deps Deps, cfg Config, now func() time.Time) *Module {
 	m := &Module{
 		bus: bus, holds: hs, senders: senders, tracker: tracker,
 		bots: deps.Bots, sms: deps.SMS, hooks: deps.Hooks, trackingHosts: deps.TrackingHosts,
 		system: deps.System, testBudget: deps.TestBudget, users: deps.Users, startLinks: deps.StartLinks,
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
-		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: providerlimit.New(now),
-		standing: integrations.NewStanding(now), chats: bindings.NewChats(bus, now),
-		eligibility: eligibility.New(), contacts: contacts.New(bus, tags.New(), confirmations.New(bus, unsubscribes.New(), now), nil),
+		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: mods.Limits,
+		standing: mods.Standing, chats: mods.Chats,
+		eligibility: eligibility.New(), contacts: mods.Contacts,
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m

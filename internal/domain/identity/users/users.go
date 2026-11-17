@@ -90,22 +90,6 @@ func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, con
 	return &Module{ent: client, bus: bus, passwords: passwords, consents: consents, prover: prover, mods: mods, now: now}
 }
 
-// publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):
-// the publisher an operation given a transaction's client hands to events.RecordAudit.
-type publisherIn struct {
-	bus *events.Bus
-	in  events.InTx
-}
-
-func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
-	return p.bus.PublishIn(ctx, p.in, ev)
-}
-
-// pub is the publisher of the bus transaction in is bound to.
-func (a *Module) pub(in events.InTx) events.Publisher {
-	return publisherIn{bus: a.bus, in: in}
-}
-
 // ErrMalformedRegionalFormat refuses a Regional format that is not a well-formed BCP 47 tag.
 var ErrMalformedRegionalFormat = validation.RefuseField(fieldname.RegionalFormat, "users: malformed regional format", i18n.ErrorsRegionalFormatMalformed)
 
@@ -428,9 +412,9 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 		w.Name = &name
 	}
 	var saved *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		saved, _, err = a.updateProfileIn(ctx, tx, pub, id, w, proven, a.now())
+		saved, _, err = a.updateProfileIn(ctx, tx, id, w, proven, a.now())
 		return err
 	})
 	return saved, err
@@ -439,7 +423,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 // updateProfileIn is updateProfile's write on the transaction tx, the name already checked.
 // firstProof reports that proven stamped the address from empty: the identities linked before it
 // go then too, and the caller drops the rest of what was set up before the proof (ADR 0170).
-func (a *Module) updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, w profileWrite, proven bool, now time.Time) (saved *ent.User, firstProof bool, err error) {
+func (a *Module) updateProfileIn(ctx context.Context, tx *ent.Client, id int64, w profileWrite, proven bool, now time.Time) (saved *ent.User, firstProof bool, err error) {
 	// The mailed link proves the address; only a stamp from empty is a domain-join step,
 	// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
 	if proven {
@@ -467,14 +451,14 @@ func (a *Module) updateProfileIn(ctx context.Context, tx *ent.Client, pub events
 		return nil, false, err
 	}
 	if firstProof {
-		if _, err := a.applyDomainJoinIn(ctx, tx, pub, saved); err != nil {
+		if _, err := a.applyDomainJoinIn(ctx, tx, saved); err != nil {
 			return nil, false, err
 		}
 	}
 	if w.PasswordHash == nil {
 		return saved, firstProof, nil
 	}
-	return saved, firstProof, recordUserAction(ctx, tx, pub, UserAction{User: saved, Action: events.ActionUserPasswordChange, Diff: map[string]any{"password": "changed"}})
+	return saved, firstProof, a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserPasswordChange, Diff: map[string]any{"password": "changed"}})
 }
 
 // Reset is a Verified User's password set from a reset link: the User as it stands afterwards, and
@@ -491,7 +475,7 @@ type Reset struct {
 // It runs on the transaction tx and publishes in it; FirstProof reports that the link was the
 // address's first proof, so the caller drops what was set up before it (ADR 0170).
 func (a *Module) ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, id int64, passwordHash string) (Reset, error) {
-	saved, firstProof, err := a.updateProfileIn(ctx, tx, a.pub(tx), id, profileWrite{PasswordHash: &passwordHash}, true, a.now())
+	saved, firstProof, err := a.updateProfileIn(ctx, tx, id, profileWrite{PasswordHash: &passwordHash}, true, a.now())
 	if err != nil {
 		return Reset{}, err
 	}
@@ -502,12 +486,12 @@ func (a *Module) ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, id
 // it on every device (ADR 0020, "sign out everywhere"), and records
 // `user.sign_out_everywhere` in the same transaction.
 func (a *Module) EndSessions(ctx context.Context, id int64) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.UpdateOneID(id).AddSessionEpoch(1).Save(ctx)
 		if err != nil {
 			return err
 		}
-		return recordUserAction(ctx, tx, pub, UserAction{User: u, Action: events.ActionUserSignOutEverywhere})
+		return a.RecordUserAction(ctx, tx, UserAction{User: u, Action: events.ActionUserSignOutEverywhere})
 	})
 }
 
@@ -552,8 +536,8 @@ const LoginPasskey = "passkey"
 // Workspace, so there is no account-level log). The entry names the method: LoginPassword
 // or the registry name of the Sign-in provider (ADR 0048).
 func (a *Module) RecordLogin(ctx context.Context, u *ent.User, method string) error {
-	return a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		return recordUserAction(ctx, tx, pub, UserAction{User: u, Action: events.ActionUserLogin, Diff: map[string]any{"method": method}})
+	return a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return a.RecordUserAction(ctx, tx, UserAction{User: u, Action: events.ActionUserLogin, Diff: map[string]any{"method": method}})
 	})
 }
 
@@ -577,44 +561,35 @@ type ActionOnUser struct {
 // RecordUserAction publishes, in the bus transaction tx is bound to, one Audit entry per Workspace
 // the User holds a Membership in, and none anywhere else. The User is the actor and the target.
 func (a *Module) RecordUserAction(ctx context.Context, tx *ent.Client, in UserAction) error {
-	return recordUserAction(ctx, tx, a.pub(tx), in)
+	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(in.User.ID), Name: in.User.Name}
+	return a.RecordActionOnUser(ctx, tx, ActionOnUser{Actor: actor, User: in.User, Action: in.Action, Diff: in.Diff})
 }
 
 // RecordActionOnUser publishes, in the bus transaction tx is bound to, in.Action by in.Actor on
 // in.User into the log of every Workspace that User holds a Membership in (a staff member acting
 // on a User), and none anywhere else.
 func (a *Module) RecordActionOnUser(ctx context.Context, tx *ent.Client, in ActionOnUser) error {
-	return recordActionOnUser(ctx, tx, a.pub(tx), in)
+	held, err := tx.Membership.Query().Where(membership.UserID(in.User.ID)).All(ctx)
+	if err != nil {
+		return err
+	}
+	ids := lo.Map(held, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID })
+	return a.recordActionOnUserIn(ctx, tx, in, ids...)
 }
 
 // RecordActionOnUserIn publishes in.Action by in.Actor on in.User into the log of the Workspace of
 // the scope ts only, in the bus transaction ts is bound to: an Owner or Admin acting on a member is
 // recorded where they hold that authority, not in the member's other Workspaces.
 func (a *Module) RecordActionOnUserIn(ctx context.Context, ts *ent.Scoped, in ActionOnUser) error {
-	return recordActionOnUserIn(ctx, a.pub(ts), in, ts.WorkspaceID())
+	return a.recordActionOnUserIn(ctx, ts, in, ts.WorkspaceID())
 }
 
-// recordUserAction is RecordUserAction on the publisher pub of tx's transaction.
-func recordUserAction(ctx context.Context, tx *ent.Client, pub events.Publisher, in UserAction) error {
-	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(in.User.ID), Name: in.User.Name}
-	return recordActionOnUser(ctx, tx, pub, ActionOnUser{Actor: actor, User: in.User, Action: in.Action, Diff: in.Diff})
-}
-
-// recordActionOnUser is RecordActionOnUser on the publisher pub of tx's transaction.
-func recordActionOnUser(ctx context.Context, tx *ent.Client, pub events.Publisher, in ActionOnUser) error {
-	held, err := tx.Membership.Query().Where(membership.UserID(in.User.ID)).All(ctx)
-	if err != nil {
-		return err
-	}
-	ids := lo.Map(held, func(m *ent.Membership, _ int) int64 { return m.WorkspaceID })
-	return recordActionOnUserIn(ctx, pub, in, ids...)
-}
-
-// recordActionOnUserIn publishes in on pub into the logs of the given Workspaces only.
-func recordActionOnUserIn(ctx context.Context, pub events.Publisher, in ActionOnUser, workspaceIDs ...int64) error {
+// recordActionOnUserIn publishes in into the logs of the given Workspaces only, in the bus
+// transaction tx is bound to.
+func (a *Module) recordActionOnUserIn(ctx context.Context, tx events.InTx, in ActionOnUser, workspaceIDs ...int64) error {
 	id := publicid.Encode(in.User.ID)
 	for _, ws := range workspaceIDs {
-		if err := events.RecordAudit(ctx, pub, &events.AuditEntry{
+		if err := a.bus.RecordAuditIn(ctx, tx, &events.AuditEntry{
 			WorkspaceID: ws,
 			Actor:       in.Actor,
 			Action:      in.Action,
@@ -640,7 +615,7 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*e
 		return nil, err
 	}
 	var u *ent.User
-	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		now := a.now()
 		err := constraints.Write(ctx, tx, func() error {
 			return tx.User.UpdateOneID(id).SetEmail(newEmail).AddSessionEpoch(1).Exec(ctx)
@@ -663,7 +638,7 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*e
 		if u, err = tx.User.Get(ctx, id); err != nil {
 			return err
 		}
-		_, err = a.applyDomainJoinIn(ctx, tx, pub, u)
+		_, err = a.applyDomainJoinIn(ctx, tx, u)
 		return err
 	})
 	if err != nil {

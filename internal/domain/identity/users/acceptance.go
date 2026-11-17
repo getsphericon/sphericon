@@ -101,8 +101,8 @@ func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in I
 		return err
 	}
 	account := newAccount{name: in.Name, password: in.Password, consents: consents, refused: refused}
-	err = a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		return a.acceptInvitationIn(ctx, tx, pub, inv, account, in.SessionEmail)
+	err = a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		return a.acceptInvitationIn(ctx, tx, inv, account, in.SessionEmail)
 	})
 	if errors.Is(err, ErrAlreadyVerified) {
 		return fmt.Errorf("%w: %w", ErrSignInRequired, err)
@@ -110,10 +110,10 @@ func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in I
 	return err
 }
 
-// acceptInvitationIn is AcceptInvitation in the caller's transaction tx, publishing on pub. account
+// acceptInvitationIn is AcceptInvitation in the caller's bus transaction tx, publishing there. account
 // sets up the account of an address no Verified User holds; a caller that accepts for a Verified
 // User by its proof of the address (sessionEmail) passes none.
-func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub events.Publisher, inv *ent.Invitation, account newAccount, sessionEmail string) error {
+func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, inv *ent.Invitation, account newAccount, sessionEmail string) error {
 	at := a.now()
 	role := membership.Role(inv.Role)
 	u, byInvitation, err := a.invitee(ctx, tx, inv, account, sessionEmail, at)
@@ -129,7 +129,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 	}
 	if existing != nil && memberships.IsMember(existing.Role) && memberships.IsAdmin(role) {
 		// An explicit Invitation raises a member to admin; it never lowers a Role.
-		if err := a.raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
+		if err := a.raiseToAdmin(ctx, ts, inv, actor, u, existing); err != nil {
 			return err
 		}
 	}
@@ -138,11 +138,11 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		return err
 	}
 	if byInvitation {
-		if err := recordActionOnUserIn(ctx, pub, ActionOnUser{Actor: actor, User: u, Action: events.ActionUserEmailVerify}, inv.WorkspaceID); err != nil {
+		if err := a.recordActionOnUserIn(ctx, tx, ActionOnUser{Actor: actor, User: u, Action: events.ActionUserEmailVerify}, inv.WorkspaceID); err != nil {
 			return err
 		}
 	}
-	return events.RecordAudit(ctx, pub, &events.AuditEntry{
+	return a.bus.RecordAuditIn(ctx, ts, &events.AuditEntry{
 		WorkspaceID: inv.WorkspaceID,
 		Actor:       actor,
 		Action:      events.ActionInvitationAccept,
@@ -256,11 +256,11 @@ func (a *Module) ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.Us
 }
 
 // raiseToAdmin makes a member an admin and audits the change.
-func (a *Module) raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv *ent.Invitation, actor events.Actor, u *ent.User, existing *ent.Membership) error {
+func (a *Module) raiseToAdmin(ctx context.Context, ts *ent.Scoped, inv *ent.Invitation, actor events.Actor, u *ent.User, existing *ent.Membership) error {
 	if err := a.mods.Memberships.SetRoleIn(ctx, ts, existing.ID, membership.RoleAdmin); err != nil {
 		return err
 	}
-	return events.RecordAudit(ctx, pub, &events.AuditEntry{
+	return a.bus.RecordAuditIn(ctx, ts, &events.AuditEntry{
 		WorkspaceID: inv.WorkspaceID,
 		Actor:       actor,
 		Action:      events.ActionMembershipUpdate,

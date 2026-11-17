@@ -269,7 +269,7 @@ func (m *Module) setDefaultSendCapIn(ctx context.Context, tx *ent.Client, by *en
 		return false, err
 	}
 	diff := map[string]any{diffDefaultSendCap: change.Diff}
-	return true, m.audit.Record(ctx, tx, &ent.InstanceAuditEntry{
+	return true, m.audit.Record(ctx, tx, instanceauditentries.RecordInput{
 		StaffMemberID: by.ID, Action: instanceauditentries.ActionDefaultSendCapChange, Diff: diff,
 	})
 }

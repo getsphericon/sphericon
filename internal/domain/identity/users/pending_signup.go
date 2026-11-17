@@ -156,7 +156,7 @@ func (a *Module) completePendingSignupIn(ctx context.Context, tx *ent.Client, in
 	if inv != nil {
 		// The provider's proof of the address is the session proof the acceptance asks of a
 		// Verified User, as on a provider sign-up without items.
-		if err := a.acceptInvitationIn(ctx, tx, a.pub(tx), inv, newAccount{}, u.Email); err != nil {
+		if err := a.acceptInvitationIn(ctx, tx, inv, newAccount{}, u.Email); err != nil {
 			return nil, nil, err
 		}
 	}

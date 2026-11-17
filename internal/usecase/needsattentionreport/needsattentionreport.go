@@ -156,10 +156,10 @@ type UseCase struct {
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
 // run, out is the send path, whose Preflight says whether an Automation's email step could send
 // now and whose SendCapStatus says which Send cap applies (ADR 0067), catalogue counts what the
-// Broadcasts draw from the Send cap, senders reads the active Automations that send, and now is
-// the Instance clock.
-func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, senders *automations.Module, now func() time.Time) *UseCase {
-	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue, automations: senders, limits: providerlimit.New(now)}
+// Broadcasts draw from the Send cap, senders reads the active Automations that send, limits reads
+// the Provider limit's 24-hour usage, and now is the Instance clock.
+func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, senders *automations.Module, limits *providerlimit.Module, now func() time.Time) *UseCase {
+	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue, automations: senders, limits: limits}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a

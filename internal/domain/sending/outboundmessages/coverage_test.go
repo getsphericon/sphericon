@@ -102,7 +102,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 
 	t.Run("sender cannot be resolved", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: errors.New("vault down")}, nil, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: errors.New("vault down")}, nil, env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
 		require.ErrorContains(t, err, "resolve sender")
 		assert.ErrorContains(t, err, "vault down")
@@ -112,7 +112,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:domaindb", "a@example.com"))
 		assert.ErrorContains(t, err, "check sending domain")
 	})
@@ -185,7 +185,7 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 		env.Bus,
 		env.CoreHolds(),
 		senders{sender: env.CustomerMail},
-		messagetoken.New("test-secret", "http://local", time.Now),
+		messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now),
 		outboundmessages.Deps{},
 		outboundmessages.Config{},
 		time.Now,
@@ -627,7 +627,7 @@ func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 	}}
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: slow}, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: slow}, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 

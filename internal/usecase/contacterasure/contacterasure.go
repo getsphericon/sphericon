@@ -192,9 +192,9 @@ type UseCase struct {
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
 // the Broadcasts whose pending work it cancels, the contacts module whose unchecked removal of the
-// Contact row it builds and the opt-outs whose standing stops it keeps; now is the Instance clock
-// the Broadcasts' unchecked operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, now func() time.Time) *UseCase {
+// Contact row it builds, the opt-outs whose standing stops it keeps and the chats whose Bindings
+// to the Contact it reads; now is the Instance clock the Broadcasts' unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, chats *bindings.Chats, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
@@ -207,7 +207,7 @@ func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module,
 		optOuts:       unsubscribesunchecked.New(),
 		suppressions:  suppressionsunchecked.New(),
 		confirmations: confirmationsunchecked.New(),
-		chats:         bindings.NewChats(bus, now),
+		chats:         chats,
 	}
 }
 

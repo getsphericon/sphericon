@@ -310,8 +310,8 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 		if res.Reason == eligibility.ReasonUnsubscribedSource {
 			// The Contact unsubscribed from this Automation: that exits the Enrollment, from
 			// whichever Channel it came (ADR 0081).
-			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-				return exitRun(ctx, ts, pub, run.ID, m.now())
+			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+				return exitRun(ctx, m.bus, ts, run.ID, m.now())
 			}))
 		}
 		// No Destination on the step's Channel, an opt-out from the Channel or a Suppression: the

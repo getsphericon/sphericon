@@ -12,6 +12,7 @@ import (
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -272,6 +273,12 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 		// contactsCreateInput.Tags: ignore
 	}
 	return contactsCreateInput
+}
+func (c *InputsImpl) ContactExport(source external.ContactsExportParams) dataexport.OpenInput {
+	var dataexportOpenInput dataexport.OpenInput
+	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
+	dataexportOpenInput.Email = emailPtrIn(source.Email)
+	return dataexportOpenInput
 }
 func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contacts.IntakeInput {
 	var contactsIntakeInput contacts.IntakeInput

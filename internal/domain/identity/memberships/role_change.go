@@ -89,12 +89,12 @@ func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, caller Caller, 
 // owner rules and locking as ChangeRole, and records `membership.delete` with the caller's actor as
 // an Audit entry in the same transaction. A target outside the Workspace is ErrMemberNotFound.
 func (ms *Module) Remove(ctx context.Context, s *ent.Scoped, caller Caller, targetID int64) error {
-	return ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	return ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
 			return memberTarget(err)
 		}
-		return removeLocked(ctx, ts, pub, caller.Actor, caller.Role, target, owners)
+		return ms.removeLocked(ctx, ts, caller.Actor, caller.Role, target, owners)
 	})
 }
 
@@ -128,7 +128,7 @@ func (ms *Module) LeaveIn(ctx context.Context, ts *ent.Scoped, userID int64) err
 		return err
 	}
 	// The caller is the member themself: their own Role is the caller's Role.
-	return removeLocked(ctx, ts, ms.pub(ts), self.Actor, self.Membership.Role, self.Membership, self.Owners)
+	return ms.removeLocked(ctx, ts, self.Actor, self.Membership.Role, self.Membership, self.Owners)
 }
 
 // Self is a User's own Membership read under the lock of its Workspace's Owner rows: the
@@ -152,21 +152,22 @@ func (ms *Module) LockSelfIn(ctx context.Context, ts *ent.Scoped, userID int64) 
 }
 
 // removeLocked applies the Owner invariants to removing target (whose Workspace's owner
-// rows the caller holds locked), deletes it and records the Audit entry.
-func removeLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, actor events.Actor, callerRole membership.Role, target *ent.Membership, owners int) error {
+// rows the caller holds locked), deletes it and records the Audit entry in the bus transaction ts
+// is bound to.
+func (ms *Module) removeLocked(ctx context.Context, ts *ent.Scoped, actor events.Actor, callerRole membership.Role, target *ent.Membership, owners int) error {
 	// Removal is a demotion to no Role at all: it is never the owner Role.
 	if err := checkOwnerChange(callerRole, target, owners, ""); err != nil {
 		return err
 	}
-	return deleteLocked(ctx, ts, pub, actor, target)
+	return ms.deleteLocked(ctx, ts, actor, target)
 }
 
 // deleteLocked deletes target and records the Audit entry, with no invariant checked.
-func deleteLocked(ctx context.Context, ts *ent.Scoped, pub events.Publisher, actor events.Actor, target *ent.Membership) error {
+func (ms *Module) deleteLocked(ctx context.Context, ts *ent.Scoped, actor events.Actor, target *ent.Membership) error {
 	if err := ts.Membership().DeleteOneID(target.ID).Exec(ctx); err != nil {
 		return err
 	}
-	return events.RecordAudit(ctx, pub, RemovalAudit(ts.WorkspaceID(), actor, target))
+	return ms.bus.RecordAuditIn(ctx, ts, RemovalAudit(ts.WorkspaceID(), actor, target))
 }
 
 // RemovalAudit is the `membership.delete` Audit entry of removing target, a Membership of the

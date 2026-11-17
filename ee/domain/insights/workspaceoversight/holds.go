@@ -72,8 +72,8 @@ func (m *Module) ActiveHolds(ctx context.Context, workspaceID string) ([]*ent.Ho
 	return m.holdsOf(ctx, s)
 }
 
-// holdsOf lists the holds of the Workspace of s that are active now, by key: the module's holds
-// honour Staff holds whatever the license, since every read is licensed first.
+// holdsOf lists the holds of the Workspace of s that are active now, by key. The module's holds are
+// the Edition's, which honour Staff holds under the `staff` license: every caller has checked it.
 func (m *Module) holdsOf(ctx context.Context, s *ent.Scoped) ([]*ent.Hold, error) {
 	st, err := m.holds.Standing(ctx, s)
 	if err != nil {
