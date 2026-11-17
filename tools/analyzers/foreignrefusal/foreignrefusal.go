@@ -8,21 +8,20 @@
 package foreignrefusal
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
-// validationPath is the import path the refusal type lives under; a suffix, so the analyzer's
-// testdata declares its own.
-const validationPath = "internal/kernel/validation"
+// validationPath is the package of the refusal type.
+const validationPath = tier.Module + "internal/kernel/validation"
 
 // Analyzer reports a use of another package's refusal sentinel that is not an argument of errors.Is.
 var Analyzer = &analysis.Analyzer{
@@ -33,28 +32,28 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
 	insp.WithStack([]ast.Node{(*ast.SelectorExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
 			return true
 		}
 		sel, isSel := n.(*ast.SelectorExpr)
-		if !isSel || isTest(pass, sel) {
+		if !isSel {
 			return true
 		}
 		v, isVar := pass.TypesInfo.Uses[sel.Sel].(*types.Var)
 		if !isVar || v.Pkg() == nil || ownedBy(pass.Pkg, v.Pkg()) || v.Parent() != v.Pkg().Scope() || !isRefusal(v.Type()) {
 			return true
 		}
-		if insideErrorsIs(pass, stack) {
+		if analysisx.InTestFile(pass, sel.Pos()) || insideErrorsIs(pass, stack) {
 			return true
 		}
-		pass.Reportf(sel.Pos(), "%s", rule.Message(5,
+		rule.Report(pass, sel.Pos(), 5,
 			v.Pkg().Name()+"."+v.Name()+" is "+v.Pkg().Name()+"'s refusal, used here outside errors.Is",
-			"call the owner's function that refuses, or match its answer with errors.Is"))
+			"call the owner's function that refuses, or match its answer with errors.Is")
 		return true
 	})
 	return nil, nil
@@ -69,15 +68,7 @@ func ownedBy(pkg, owner *types.Package) bool {
 // isRefusal reports whether t is *validation.RefusalError.
 func isRefusal(t types.Type) bool {
 	ptr, ok := t.(*types.Pointer)
-	if !ok {
-		return false
-	}
-	named, ok := ptr.Elem().(*types.Named)
-	if !ok || named.Obj().Name() != "RefusalError" || named.Obj().Pkg() == nil {
-		return false
-	}
-	path := named.Obj().Pkg().Path()
-	return path == validationPath || strings.HasSuffix(path, "/"+validationPath)
+	return ok && analysisx.IsNamed(ptr.Elem(), validationPath, "RefusalError")
 }
 
 // insideErrorsIs reports whether the innermost call around the selector (the last in stack) is a
@@ -88,17 +79,7 @@ func insideErrorsIs(pass *analysis.Pass, stack []ast.Node) bool {
 		if !ok {
 			continue
 		}
-		fun, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok {
-			return false
-		}
-		f, ok := pass.TypesInfo.Uses[fun.Sel].(*types.Func)
-		return ok && f.Pkg() != nil && f.Pkg().Path() == "errors" && f.Name() == "Is"
+		return analysisx.Calls(pass.TypesInfo, call, "errors", "Is")
 	}
 	return false
-}
-
-// isTest reports whether n is in a test file.
-func isTest(pass *analysis.Pass, n ast.Node) bool {
-	return strings.HasSuffix(pass.Fset.Position(n.Pos()).Filename, "_test.go")
 }

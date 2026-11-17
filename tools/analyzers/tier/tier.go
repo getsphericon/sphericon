@@ -9,9 +9,15 @@
 // command line. The wiring builds the program and handles no input: the composition root, the
 // router with its middleware (internal/server) and the Enterprise Edition (ee/ee.go), which easement
 // lists beside the drivers only to fence what it imports.
+//
+// It also names the packages of the module that hold no code an analyzer checks as the product's:
+// the generated ent package and the test code outside `_test.go` files.
 package tier
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Module is the import path of the repository's Go module, with its trailing slash.
 const Module = "github.com/getsphericon/sphericon/"
@@ -73,6 +79,10 @@ var useCases = []string{"internal/usecase", "ee/usecase"}
 
 var domain = []string{"internal/domain", "ee/domain"}
 
+// testOrGenerated are the generated ent package, the test harness (which only tests import) and the
+// end-to-end suite behind its build tag.
+var testOrGenerated = []string{"ent", "internal/testhelper", "e2e"}
+
 // Of is the tier of the package at the import path.
 func Of(path string) Tier {
 	rel, ok := strings.CutPrefix(path, Module)
@@ -120,14 +130,27 @@ func Roots(t Tier) []string {
 	case Wiring:
 		return append([]string{edition}, wiring...)
 	case Driver:
-		return append([]string(nil), drivers...)
+		return slices.Clone(drivers)
 	case UseCase:
-		return append([]string(nil), useCases...)
+		return slices.Clone(useCases)
 	case Domain:
-		return append([]string(nil), domain...)
+		return slices.Clone(domain)
 	case None:
 	}
 	return nil
+}
+
+// IsTestOrGenerated holds for the generated ent package and for a package of test code outside
+// `_test.go` files: the test harness and the end-to-end suite.
+func IsTestOrGenerated(path string) bool {
+	rel, ok := strings.CutPrefix(path, Module)
+	return ok && under(rel, testOrGenerated)
+}
+
+// In holds for the package at path when it is the module's package rel or a package below it.
+func In(path, rel string) bool {
+	r, ok := strings.CutPrefix(path, Module)
+	return ok && (r == rel || strings.HasPrefix(r, rel+"/"))
 }
 
 // under holds for rel or a package below it in one of roots.

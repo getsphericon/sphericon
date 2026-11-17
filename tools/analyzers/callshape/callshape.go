@@ -14,6 +14,7 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
@@ -81,7 +82,7 @@ func run(pass *analysis.Pass, exempt map[string]bool) (any, error) {
 		return nil, nil
 	}
 	for _, file := range pass.Files {
-		if c.inTestFile(file.Pos()) {
+		if analysisx.InTestFile(c.pass, file.Pos()) {
 			continue
 		}
 		for _, decl := range file.Decls {
@@ -112,12 +113,12 @@ func run(pass *analysis.Pass, exempt map[string]bool) (any, error) {
 // package clause, so that the list holds only the packages still to move.
 func (c *checker) reportStale(path string) {
 	for _, file := range c.pass.Files {
-		if c.inTestFile(file.Pos()) {
+		if analysisx.InTestFile(c.pass, file.Pos()) {
 			continue
 		}
-		c.pass.Reportf(file.Name.Pos(), "%s", rule.Message(5,
+		rule.Report(c.pass, file.Name.Pos(), 5,
 			strings.TrimPrefix(path, tier.Module)+" is on the exemption list but keeps the call contract",
-			"remove it from tools/analyzers/callshape/exempt.txt (ADR 0167)"))
+			"remove it from tools/analyzers/callshape/exempt.txt (ADR 0167)")
 		return
 	}
 }
@@ -145,10 +146,7 @@ func (c *checker) checkFunc(fn *ast.FuncDecl) {
 	if !ok {
 		return
 	}
-	sig, ok := obj.Type().(*types.Signature)
-	if !ok {
-		return
-	}
+	sig := obj.Signature()
 	name := fn.Name.Name
 	if sig.Recv() == nil {
 		c.checkPackageFunc(fn, sig)
@@ -159,7 +157,7 @@ func (c *checker) checkFunc(fn *ast.FuncDecl) {
 		return
 	}
 	if !c.useCase {
-		if takesContext(sig) {
+		if analysisx.TakesContext(sig) {
 			c.checkResults(fn, sig)
 			c.checkParams(fn, sig)
 		}
@@ -167,13 +165,13 @@ func (c *checker) checkFunc(fn *ast.FuncDecl) {
 	}
 	c.checkResults(fn, sig)
 	if recv != "UseCase" {
-		if takesContext(sig) {
+		if analysisx.TakesContext(sig) {
 			c.report(fn, name+" is a method of "+recv+", an exported type other than UseCase",
 				"make the operation a method of UseCase")
 		}
 		return
 	}
-	if sig.Results().Len() > 0 && isUseCasePtr(sig.Results().At(0).Type()) {
+	if sig.Results().Len() > 0 && c.isUseCasePtr(sig.Results().At(0).Type()) {
 		c.report(fn, name+" returns *UseCase, a builder",
 			"make what it sets a parameter of New")
 		return
@@ -190,7 +188,7 @@ func (c *checker) checkPackageFunc(fn *ast.FuncDecl, sig *types.Signature) {
 			"make each dependency a parameter of "+name+"; the wiring passes every one, a test passes its fake")
 	}
 	if !c.useCase {
-		if !isConstructor(name) && takesContext(sig) {
+		if !isConstructor(name) && analysisx.TakesContext(sig) {
 			c.report(fn, name+" is an exported function that takes a context",
 				"make the operation a method of a type its constructor New… builds from the dependencies")
 		}
@@ -201,7 +199,7 @@ func (c *checker) checkPackageFunc(fn *ast.FuncDecl, sig *types.Signature) {
 			"make the operation a method of UseCase, a dependency a parameter of New, and move a helper to the domain module or the driver that needs it")
 		return
 	}
-	if sig.Results().Len() != 1 || !isUseCasePtr(sig.Results().At(0).Type()) {
+	if sig.Results().Len() != 1 || !c.isUseCasePtr(sig.Results().At(0).Type()) {
 		c.report(fn, "New returns something other than *UseCase",
 			"return the use case alone; the wiring builds and checks a dependency that can fail and hands it in")
 	}
@@ -216,7 +214,7 @@ func (c *checker) checkParams(fn *ast.FuncDecl, sig *types.Signature) {
 	for i := range params.Len() {
 		p := params.At(i)
 		switch {
-		case i == 0 && isNamed(p.Type(), "context", "Context"):
+		case i == 0 && analysisx.IsNamed(p.Type(), "context", "Context"):
 			continue
 		case i <= 1 && isScope(p.Type()):
 			continue
@@ -226,7 +224,7 @@ func (c *checker) checkParams(fn *ast.FuncDecl, sig *types.Signature) {
 		case isClient(p.Type()):
 			c.report(fn, name+" takes a client ("+types.TypeString(p.Type(), byName)+")",
 				"take the client as a parameter of the constructor, which the wiring feeds")
-		case p.Name() == "now" && isNamed(p.Type(), "time", "Time"):
+		case p.Name() == "now" && analysisx.IsNamed(p.Type(), "time", "Time"):
 			c.report(fn, name+" takes now",
 				"read the clock the wiring gives to New (app.Clock)")
 		case isClock(p.Type()):
@@ -248,7 +246,7 @@ func (c *checker) checkConstructors() {
 	scope := c.pass.Pkg.Scope()
 	for _, name := range scope.Names() {
 		tn, ok := scope.Lookup(name).(*types.TypeName)
-		if !ok || !tn.Exported() || tn.IsAlias() || c.inTestFile(tn.Pos()) || !hasOperations(tn.Type()) {
+		if !ok || !tn.Exported() || tn.IsAlias() || analysisx.InTestFile(c.pass, tn.Pos()) || !hasOperations(tn.Type()) {
 			continue
 		}
 		var returnsMore *types.Func
@@ -258,11 +256,7 @@ func (c *checker) checkConstructors() {
 			if !ok {
 				continue
 			}
-			sig, isSig := f.Type().(*types.Signature)
-			if !isSig {
-				continue
-			}
-			res := sig.Results()
+			res := f.Signature().Results()
 			switch {
 			case res.Len() == 1 && isPtrTo(res.At(0).Type(), tn):
 				returnsAlone = true
@@ -283,18 +277,11 @@ func (c *checker) checkConstructors() {
 }
 
 // hasOperations holds for a type whose pointer has an exported method that takes a context.
-func hasOperations(t types.Type) bool {
-	for m := range types.NewMethodSet(types.NewPointer(t)).Methods() {
-		if m.Obj().Exported() && methodTakesContext(m) {
-			return true
-		}
-	}
-	return false
-}
+func hasOperations(t types.Type) bool { return hasContextMethod(types.NewPointer(t), true) }
 
 func methodTakesContext(m *types.Selection) bool {
 	sig, ok := m.Type().(*types.Signature)
-	return ok && takesContext(sig)
+	return ok && analysisx.TakesContext(sig)
 }
 
 // isPtrTo holds for *T, T being the named type tn.
@@ -305,10 +292,6 @@ func isPtrTo(t types.Type, tn *types.TypeName) bool {
 	}
 	named, ok := ptr.Elem().(*types.Named)
 	return ok && named.Obj() == tn
-}
-
-func (c *checker) inTestFile(pos token.Pos) bool {
-	return strings.HasSuffix(c.pass.Fset.Position(pos).Filename, "_test.go")
 }
 
 // takesOptions holds for a variadic last parameter of a function type: functional options.
@@ -337,8 +320,8 @@ func isScope(t types.Type) bool {
 	if !ok {
 		return false
 	}
-	return isNamed(ptr.Elem(), entx.Path, "Scoped") || isNamed(ptr.Elem(), entx.Path, "WorkspaceLocked") ||
-		isNamed(ptr.Elem(), entx.Path, "Client")
+	return analysisx.IsNamed(ptr.Elem(), entx.Path, "Scoped") || analysisx.IsNamed(ptr.Elem(), entx.Path, "WorkspaceLocked") ||
+		analysisx.IsNamed(ptr.Elem(), entx.Path, "Client")
 }
 
 // isClient holds for a dependency that does I/O: a type with a method that takes a context, an
@@ -351,22 +334,23 @@ func isClient(t types.Type) bool {
 	if ptr, ok := t.(*types.Pointer); ok {
 		elem = ptr.Elem()
 	}
-	if isNamed(elem, "net/http", "Client") || isNamed(elem, entx.Path, "Client") {
+	if analysisx.IsNamed(elem, "net/http", "Client") || analysisx.IsNamed(elem, entx.Path, "Client") {
 		return true
 	}
-	if named, ok := elem.(*types.Named); ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == entx.Path {
+	if _, ok := entx.Named(elem); ok {
 		return false
 	}
-	if hasContextMethod(t) {
+	if hasContextMethod(t, false) {
 		return true
 	}
 	_, isPtr := t.(*types.Pointer)
-	return !isPtr && !types.IsInterface(t) && hasContextMethod(types.NewPointer(t))
+	return !isPtr && !types.IsInterface(t) && hasContextMethod(types.NewPointer(t), false)
 }
 
-func hasContextMethod(t types.Type) bool {
+// hasContextMethod holds for a type with a method that takes a context, an exported one if exported.
+func hasContextMethod(t types.Type, exported bool) bool {
 	for m := range types.NewMethodSet(t).Methods() {
-		if methodTakesContext(m) {
+		if (!exported || m.Obj().Exported()) && methodTakesContext(m) {
 			return true
 		}
 	}
@@ -379,7 +363,7 @@ func byName(p *types.Package) string { return p.Name() }
 // isClock holds for func() time.Time.
 func isClock(t types.Type) bool {
 	sig, ok := t.Underlying().(*types.Signature)
-	return ok && sig.Params().Len() == 0 && sig.Results().Len() == 1 && isNamed(sig.Results().At(0).Type(), "time", "Time")
+	return ok && sig.Params().Len() == 0 && sig.Results().Len() == 1 && analysisx.IsNamed(sig.Results().At(0).Type(), "time", "Time")
 }
 
 // checkResults refuses a tuple, a second result other than error, named results and a []error.
@@ -416,13 +400,13 @@ func (c *checker) add(pos token.Pos, what, fix string) {
 }
 
 // isUseCasePtr holds for *UseCase of the package under analysis.
-func isUseCasePtr(t types.Type) bool {
+func (c *checker) isUseCasePtr(t types.Type) bool {
 	ptr, ok := t.(*types.Pointer)
 	if !ok {
 		return false
 	}
 	named, ok := ptr.Elem().(*types.Named)
-	return ok && named.Obj().Name() == "UseCase"
+	return ok && named.Obj().Pkg() == c.pass.Pkg && named.Obj().Name() == "UseCase"
 }
 
 func receiverName(t types.Type) string {
@@ -433,19 +417,4 @@ func receiverName(t types.Type) string {
 		return named.Obj().Name()
 	}
 	return ""
-}
-
-func takesContext(sig *types.Signature) bool {
-	for p := range sig.Params().Variables() {
-		if isNamed(p.Type(), "context", "Context") {
-			return true
-		}
-	}
-	return false
-}
-
-// isNamed holds for the named type pkg.name (pkg is the import path).
-func isNamed(t types.Type, pkg, name string) bool {
-	named, ok := t.(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == pkg && named.Obj().Name() == name
 }

@@ -8,7 +8,6 @@
 package entityupdate
 
 import (
-	"fmt"
 	"go/ast"
 	"strings"
 
@@ -16,6 +15,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
@@ -34,19 +34,19 @@ func run(pass *analysis.Pass) (any, error) {
 	if !strings.HasPrefix(path, tier.Module) || path == entx.Path {
 		return nil, nil
 	}
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
 	for sel := range inspector.All[*ast.SelectorExpr](insp) {
 		_, named, ok := entx.Method(pass.TypesInfo, sel)
-		if !ok || entx.KindOf(named) != entx.Entity || entx.RoleOf(named, sel.Sel.Name) != entx.Start {
+		if !ok || entx.RoleOf(named, sel.Sel.Name) != entx.Start || entx.KindOf(named) != entx.Entity {
 			continue
 		}
 		entity := named.Obj().Name()
-		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(18,
+		rule.Report(pass, sel.Sel.Pos(), 18,
 			sel.Sel.Name+" on a loaded "+entity+" writes through the raw client it carries, past the Workspace scope (ADR 0017)",
-			"update it by id through the scoped client: s."+entity+"().UpdateOneID(id)"))
+			"update it by id through the scoped client: s."+entity+"().UpdateOneID(id)")
 	}
 	return nil, nil
 }

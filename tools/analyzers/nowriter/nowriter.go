@@ -7,10 +7,10 @@ package nowriter
 import (
 	"go/ast"
 	"go/types"
-	"strings"
 
 	"golang.org/x/tools/go/analysis"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
@@ -29,7 +29,7 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, nil
 	}
 	for _, file := range pass.Files {
-		if strings.HasSuffix(pass.Fset.Position(file.Pos()).Filename, "_test.go") {
+		if analysisx.InTestFile(pass, file.Pos()) {
 			continue
 		}
 		// owned are the signatures of declared functions and literals, reported by their owner.
@@ -62,7 +62,7 @@ func checkParams(pass *analysis.Pass, ft *ast.FuncType, what string) {
 	}
 	for _, field := range ft.Params.List {
 		if isWriter(pass.TypesInfo.TypeOf(field.Type)) {
-			pass.Reportf(ft.Pos(), "%s", rule.Message(5, what, fix))
+			rule.Report(pass, ft.Pos(), 5, what, fix)
 			return
 		}
 	}
@@ -77,12 +77,9 @@ func checkFields(pass *analysis.Pass, st *ast.StructType) {
 		if len(field.Names) > 0 {
 			name = field.Names[0].Name
 		}
-		pass.Reportf(field.Pos(), "%s", rule.Message(5, "the field "+name+" holds an io.Writer", fix))
+		rule.Report(pass, field.Pos(), 5, "the field "+name+" holds an io.Writer", fix)
 	}
 }
 
 // isWriter holds for io.Writer, under any alias.
-func isWriter(t types.Type) bool {
-	named, ok := types.Unalias(t).(*types.Named)
-	return ok && named.Obj().Pkg() != nil && named.Obj().Pkg().Path() == "io" && named.Obj().Name() == "Writer"
-}
+func isWriter(t types.Type) bool { return analysisx.IsNamed(t, "io", "Writer") }

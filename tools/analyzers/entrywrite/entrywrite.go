@@ -30,13 +30,13 @@
 // point. The HTTP handlers (tier.IsHandler) do not read through ent either: a call of a method whose
 // role starts a read (Get, a Query method, the scoped client's Workspace) is a finding there, and the
 // read goes into the module that owns the entity. The other entry points may
-// read. Nor does such a handler open a transaction (a Within… method of the events bus): the module
-// does. The wiring (the router in internal/server included) is no entry point: a write there is any
+// read. Nor does such a handler open a transaction (a method of the events bus that hands a callback
+// the transaction's client or a scope on it, the Within… methods): the module does. The wiring (the router in internal/server included) is no entry point: a write there is any
 // other package's, refused unless the package owns the table.
 package entrywrite
 
 import (
-	"fmt"
+	"cmp"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -48,12 +48,13 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
-// eventsPath is the package of the events bus, whose Within… methods open a transaction.
+// eventsPath is the package of the events bus, whose Within… methods open a transaction (opensTx).
 const eventsPath = tier.Module + "internal/infra/events"
 
 // owners names, for each ent entity, the package that owns its table: the only one that writes it
@@ -147,25 +148,12 @@ func Owners() map[string]string { return maps.Clone(owners) }
 // eraser is the Workspace erase, which removes a Workspace-owned table's rows whoever owns it (ADR 0110).
 const eraser = "internal/usecase/workspacedeletion"
 
-// unread are the packages of the module the analyzer does not read: the generated ent package, and
-// the test code outside `_test.go` files: the test harness, which only tests import, and the
-// end-to-end suite behind its build tag.
-var unread = []string{"ent", "internal/testhelper", "e2e"}
-
 // Analyzer reports ent writes outside the owner of the table and in entry-point packages.
 var Analyzer = &analysis.Analyzer{
 	Name:     "entrywrite",
 	Doc:      "refuses a write to an ent entity outside the package that owns its table, and any write through ent in handlers, MCP tools, jobs and event subscribers",
 	Requires: []*analysis.Analyzer{inspect.Analyzer},
 	Run:      run,
-}
-
-func isIn(path, pkg string) bool {
-	return path == tier.Module+pkg || strings.HasPrefix(path, tier.Module+pkg+"/")
-}
-
-func isRead(path string) bool {
-	return strings.HasPrefix(path, tier.Module) && !slices.ContainsFunc(unread, func(p string) bool { return isIn(path, p) })
 }
 
 // checker holds what a package's findings depend on: its path, whether it is an entry point and
@@ -180,25 +168,22 @@ type checker struct {
 
 func run(pass *analysis.Pass) (any, error) {
 	path := pass.Pkg.Path()
-	if !isRead(path) {
+	if !strings.HasPrefix(path, tier.Module) || tier.IsTestOrGenerated(path) {
 		return nil, nil
 	}
-	c := checker{pass: pass, path: path, entry: tier.IsDriver(path), reads: tier.IsHandler(path), erase: isIn(path, eraser)}
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	c := checker{pass: pass, path: path, entry: tier.IsDriver(path), reads: tier.IsHandler(path), erase: tier.In(path, eraser)}
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
-	insp.Preorder([]ast.Node{(*ast.CallExpr)(nil), (*ast.Ident)(nil)}, func(n ast.Node) {
-		if strings.HasSuffix(pass.Fset.Position(n.Pos()).Filename, "_test.go") {
-			return
-		}
-		switch n := n.(type) {
-		case *ast.CallExpr:
-			c.call(n)
-		case *ast.Ident:
-			c.instance(n)
-		}
-	})
+	for call := range inspector.All[*ast.CallExpr](insp) {
+		c.call(call)
+	}
+	// The instantiations are few, and the type checker lists them: no walk visits every identifier.
+	instances := slices.SortedFunc(maps.Keys(pass.TypesInfo.Instances), func(a, b *ast.Ident) int { return cmp.Compare(a.Pos(), b.Pos()) })
+	for _, id := range instances {
+		c.instance(id, pass.TypesInfo.Instances[id])
+	}
 	return nil, nil
 }
 
@@ -208,9 +193,9 @@ func (c checker) call(call *ast.CallExpr) {
 		return
 	}
 	if c.reads && opensTx(c.pass.TypesInfo, sel) {
-		c.pass.Reportf(call.Pos(), "%s", rule.Message(5,
+		c.report(call.Pos(),
 			"a handler opens a transaction ("+sel.Sel.Name+" on the events bus) and holds logic a domain module owns",
-			"move the transaction and what runs in it into the domain module and call that module from here"))
+			"move the transaction and what runs in it into the domain module and call that module from here")
 		return
 	}
 	fn, named, ok := entx.Method(c.pass.TypesInfo, sel)
@@ -218,15 +203,14 @@ func (c checker) call(call *ast.CallExpr) {
 		return
 	}
 	role := entx.RoleOf(named, sel.Sel.Name)
-	entity := entx.EntityOf(named)
 	if c.reads && role == entx.Read {
-		what := entity
+		what := entx.EntityOf(named)
 		if what == "" {
 			what = named.Obj().Name()
 		}
-		c.pass.Reportf(call.Pos(), "%s", rule.Message(5,
+		c.report(call.Pos(),
 			"a handler reads through ent ("+sel.Sel.Name+" on "+what+") instead of asking a domain module",
-			"give the domain module that owns the read a function for it (a Get or the operation's own read) and call that from here"))
+			"give the domain module that owns the read a function for it (a Get or the operation's own read) and call that from here")
 		return
 	}
 	if role != entx.Start || chainStartsWrite(c.pass.TypesInfo, sel.X) {
@@ -235,22 +219,23 @@ func (c checker) call(call *ast.CallExpr) {
 	if c.erase && entx.KindOf(named) == entx.Wrapper && removes(fn) {
 		return
 	}
+	entity := entx.EntityOf(named)
 	c.write(call.Pos(), sel.Sel.Name+" on "+entity, entity)
 }
 
 // instance reads an instantiation of a generic function or type: a type argument that is an ent
 // write builder makes it a write of that builder's entity.
-func (c checker) instance(id *ast.Ident) {
-	inst, ok := c.pass.TypesInfo.Instances[id]
-	if !ok {
-		return
-	}
+func (c checker) instance(id *ast.Ident, inst types.Instance) {
 	for t := range inst.TypeArgs.Types() {
 		named, ok := entx.Named(t)
-		if !ok || !entx.KindOf(named).Builds() {
+		if !ok {
 			continue
 		}
-		if c.erase && entx.KindOf(named) == entx.ScopedDelete {
+		kind := entx.KindOf(named)
+		if !kind.Builds() {
+			continue
+		}
+		if c.erase && kind == entx.ScopedDelete {
 			return
 		}
 		c.write(id.Pos(), id.Name+" with "+named.Obj().Name(), entx.EntityOf(named))
@@ -261,34 +246,56 @@ func (c checker) instance(id *ast.Ident) {
 // write reports a write to entity, worded by what is: how it writes, made by the package checked.
 func (c checker) write(pos token.Pos, what, entity string) {
 	if c.entry {
-		c.pass.Reportf(pos, "%s", rule.Message(5,
+		c.report(pos,
 			"an entry point writes through ent ("+what+") and holds logic a domain module owns",
-			"move the write into the domain module that owns "+entity+" and call that module from here"))
+			"move the write into the domain module that owns "+entity+" and call that module from here")
 		return
 	}
 	owner, ok := owners[entity]
 	if !ok {
-		c.pass.Reportf(pos, "%s", rule.Message(5,
+		c.report(pos,
 			"a write to "+entity+" ("+what+"), an entity the ownership map names no owner of",
-			"add "+entity+" to owners in tools/analyzers/entrywrite with the domain module that owns its table"))
+			"add "+entity+" to owners in tools/analyzers/entrywrite with the domain module that owns its table")
 		return
 	}
-	if isIn(c.path, owner) {
+	if tier.In(c.path, owner) {
 		return
 	}
 	pkg := strings.TrimPrefix(c.path, tier.Module)
-	c.pass.Reportf(pos, "%s", rule.Message(5,
+	c.report(pos,
 		pkg+" writes "+entity+" ("+what+"), a table "+owner+" owns",
-		"give "+owner+" a function that makes the write and call it from here (ADR 0102: only the owner writes a table)"))
+		"give "+owner+" a function that makes the write and call it from here (ADR 0102: only the owner writes a table)")
 }
 
-// opensTx reports whether the selector names a method of the events bus that opens a transaction.
+// report reports a finding of rule 5, unless it stands in a test file, which the analyzer does not
+// read. The file is asked last, of a finding only: most nodes are dismissed by their types first.
+func (c checker) report(pos token.Pos, what, fix string) {
+	if analysisx.InTestFile(c.pass, pos) {
+		return
+	}
+	rule.Report(c.pass, pos, 5, what, fix)
+}
+
+// opensTx reports whether the selector names a method of the events bus that opens a transaction:
+// one that takes a callback handed a type of the ent package (the transaction's client, a scope on
+// it or the Workspace lock's scope), whatever the method is called.
 func opensTx(info *types.Info, sel *ast.SelectorExpr) bool {
 	fn, ok := info.Uses[sel.Sel].(*types.Func)
 	if !ok || fn.Signature().Recv() == nil || fn.Pkg() == nil || fn.Pkg().Path() != eventsPath {
 		return false
 	}
-	return strings.HasPrefix(fn.Name(), "Within")
+	for p := range fn.Signature().Params().Variables() {
+		callback, ok := p.Type().Underlying().(*types.Signature)
+		if !ok {
+			continue
+		}
+		for q := range callback.Params().Variables() {
+			if _, ok := entx.Named(q.Type()); ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // removes reports whether a method returns a scoped delete builder: the Delete or Purge of a wrapper.
