@@ -12,10 +12,17 @@ import (
 // The rules of a delivery are the endpoint's (ADR 0107): which endpoints an event goes to, and
 // whether a queued delivery still goes out and with which secret. The delivery job only sends.
 
+// Subscriptions reads which endpoints receive an event, for the dispatcher that queues their
+// deliveries. It needs nothing but the scope it is given.
+type Subscriptions struct{}
+
+// NewSubscriptions builds the reader of the endpoints' subscriptions.
+func NewSubscriptions() *Subscriptions { return &Subscriptions{} }
+
 // Subscribed returns the Workspace's enabled endpoints that receive the event named eventName: an
 // endpoint with no filter receives every customer-facing Event, and an event that is not Projected
 // (an Audit entry, ADR 0022) only when its filter names it.
-func Subscribed(ctx context.Context, s *ent.Scoped, eventName string) ([]*ent.WebhookEndpoint, error) {
+func (*Subscriptions) Subscribed(ctx context.Context, s *ent.Scoped, eventName string) ([]*ent.WebhookEndpoint, error) {
 	endpoints, err := s.WebhookEndpoint().Query().Where(webhookendpoint.DisabledAtIsNil()).All(ctx)
 	if err != nil {
 		return nil, err

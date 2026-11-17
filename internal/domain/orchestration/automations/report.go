@@ -174,5 +174,5 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64) ([]StepFigures,
 // The unique constraint of an Automation's pruned figures (ADR 0106): no client can break it.
 var _ = db.Declare(
 	db.Fault("automation_figures_workspace_id_automation_id_step",
-		"automationsunchecked.AddPruned upserts ON CONFLICT on the step, adding a batch's counts to the row"),
+		"automationsunchecked.Module.AddPruned upserts ON CONFLICT on the step, adding a batch's counts to the row"),
 )

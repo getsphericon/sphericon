@@ -297,10 +297,12 @@ func byHuman(action string) predicate.Event {
 	return event.Action(action)
 }
 
-// Exit ends the Contact's active Enrollment in the Automation at now, the caller's clock (status
-// exited, no pending resume). It reports whether an active Enrollment was ended; a finished or
-// absent one is left alone, and so is one another writer moved first.
-func Exit(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID, contactID int64, now time.Time) (bool, error) {
+// Exit ends the Contact's active Enrollment in the Automation at the Instance clock's now (status
+// exited, no pending resume), and records the end as its System event in the bus transaction s is
+// bound to (events.ErrNotInBusTx for a scope bound to none). It reports whether an active
+// Enrollment was ended; a finished or absent one is left alone, and so is one another writer moved
+// first.
+func (m *Module) Exit(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (bool, error) {
 	runID, err := s.AutomationRun().Query().
 		Where(
 			automationrun.AutomationID(automationID),
@@ -314,11 +316,22 @@ func Exit(ctx context.Context, s *ent.Scoped, pub events.Publisher, automationID
 	if err != nil {
 		return false, err
 	}
-	err = exitRun(ctx, s, pub, runID, now)
+	err = exitRun(ctx, s, publisherIn{bus: m.bus, s: s}, runID, m.now())
 	if errors.Is(err, lifecycle.ErrInvalidTransition) {
 		return false, nil // another writer moved it out of active first
 	}
 	return err == nil, err
+}
+
+// publisherIn publishes through the bus in the transaction s is bound to (events.Bus.PublishIn),
+// for the moves of an Enrollment, which take a publisher.
+type publisherIn struct {
+	bus *events.Bus
+	s   *ent.Scoped
+}
+
+func (p publisherIn) Publish(ctx context.Context, ev events.DomainEvent) error {
+	return p.bus.PublishIn(ctx, p.s, ev)
 }
 
 // exitRun ends one Enrollment by run id at now, the caller's clock, for the step executor that

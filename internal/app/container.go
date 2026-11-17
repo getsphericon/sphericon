@@ -887,7 +887,7 @@ var contentPackage = do.Package(
 			do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
-		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
+		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*automations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Callback interpretation behind the Ingest hook, a sending module (ADR 0112): it resolves
 	// an ingest key to its Integration and Workspace before any scope exists, so it holds the raw
@@ -910,7 +910,7 @@ var contentPackage = do.Package(
 	}),
 	// Publish asks the Send route of Outbound send whether the email steps can send.
 	do.Lazy(func(i do.Injector) (*automations.Module, error) {
-		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*linkclick.Module](i), do.MustInvoke[Clock](i)), nil
+		return automations.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*emaildoc.Renderer](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*linkclick.Module](i), do.MustInvoke[*rules.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*rules.Module, error) {
 		client := webhook.NewClientAllowing(webhook.DeliveryTimeout, do.MustInvoke[*config.Config](i).OutboundAllow)
@@ -938,7 +938,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*needsattentionreport.UseCase, error) {
 		watch := do.MustInvoke[*ee.Edition](i).AbuseWatch()
-		return needsattentionreport.New(watch, do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[Clock](i)), nil
+		return needsattentionreport.New(watch, do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[*automations.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The Workspace view: the Workspace summary and the operations of a member that answer with it
 	// (a use case, ADR 0111), creating a Verified User's Workspace among them: on an Instance that

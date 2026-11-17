@@ -2,7 +2,8 @@
 // Automation's live version or draft that applies or removes a Tag, and the Live use of the
 // versions that will still send (ADR 0099). It is a reader of the Removal check
 // (internal/domain/orchestration/removalcheck), the one package easement lets import it, so every
-// removal that checks a row reads every holder. The automations module does not import it.
+// removal that checks a row reads every holder, and which builds its Module. The automations
+// module does not import it.
 package automationsuse
 
 import (
@@ -23,10 +24,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 )
 
+// Module is the automations module's reader of the use of a row (docs/architecture/modules.md).
+type Module struct{}
+
+// New builds the reader. It needs nothing: every question reads in the scope it is given.
+func New() *Module { return &Module{} }
+
 // UsingTag returns the Workspace's kept Automations whose live version or draft applies or
 // removes the Tag by its name, in id order (spec #767, "In use"). An archived Automation takes no
 // part in new work.
-func UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
+func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name string) ([]*ent.Automation, error) {
 	all, err := l.Automation().Query().WithLiveVersion().WithDraftVersion().Order(ent.Asc(automation.FieldID)).All(ctx)
 	if err != nil {
 		return nil, err
@@ -70,7 +77,7 @@ func namesTag(v *ent.AutomationVersion, name string) (bool, error) {
 // Automation with several send steps gives one Send per step; liveuse.SendUsers dedupes them for a
 // refusal. A step carries no From of its own. A damaged stored definition is an error, so a
 // removal never takes an unreadable definition for an unused one.
-func LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
+func (m *Module) LiveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
 	autos, err := sendingVersions(ctx, l)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -28,7 +29,7 @@ func TestErasingAContactKeepsOnlyTheTimeOfTheStopsThatStand(t *testing.T) {
 	require.NoError(t, confirmations.RecordConfirmation(ctx, env.Bus, s, linktarget.Confirmation{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Destination: address,
 	}, "", time.Now()))
-	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), time.Now).Unsubscribe(ctx, s, address, eligibility.SourceBroadcasts)
+	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), time.Now).Unsubscribe(ctx, s, address, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 
 	eraseContact(t, env, fixtures.ContactAliceID)

@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/ent/eventreceipt"
 	"github.com/getsphericon/sphericon/ent/rulefiring"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -41,7 +42,7 @@ var (
 
 func pruneEvents(t *testing.T, env *testhelper.TestEnv, retention time.Duration) {
 	t.Helper()
-	w := jobs.NewPruneEventsWorker(env.DB, retention, time.Now)
+	w := jobs.NewPruneEventsWorker(env.DB, rules.New(env.Cipher, env.Bus, nil, time.Now), retention, time.Now)
 	require.NoError(t, w.Work(context.Background(), job(jobs.PruneEventsArgs{})))
 }
 

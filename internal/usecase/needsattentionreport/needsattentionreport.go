@@ -145,18 +145,20 @@ type Item struct {
 
 // UseCase reads the items.
 type UseCase struct {
-	now        func() time.Time
-	watch      abusewarning.Watch
-	out        *outboundmessages.Module
-	broadcasts *broadcasts.Module
+	now         func() time.Time
+	watch       abusewarning.Watch
+	out         *outboundmessages.Module
+	broadcasts  *broadcasts.Module
+	automations *automations.Module
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
 // run, out is the send path, whose Preflight says whether an Automation's email step could send
 // now and whose SendCapStatus says which Send cap applies (ADR 0067), catalogue counts what the
-// Broadcasts draw from the Send cap, and now is the Instance clock.
-func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
-	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue}
+// Broadcasts draw from the Send cap, senders reads the active Automations that send, and now is
+// the Instance clock.
+func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, senders *automations.Module, now func() time.Time) *UseCase {
+	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue, automations: senders}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a
@@ -298,7 +300,7 @@ var sourceHolds = holdreason.Source()
 // default), and the send path is asked once per such pair, not once per step. Nothing stores when
 // a route began to hold, so the item has no since.
 func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
-	senders, err := automations.Senders(ctx, s)
+	senders, err := m.automations.Senders(ctx, s)
 	if err != nil {
 		return nil, err
 	}

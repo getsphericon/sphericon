@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -35,7 +36,7 @@ func TestAcceptedAttributionSurvivesErasureInEitherHandlingOrder(t *testing.T) {
 			at := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 			env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 			s := env.DB.Scoped(fixtures.InitechID)
-			u := unsubscriberecording.New(env.Bus, env.OutboundModule(), func() time.Time { return at })
+			u := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), func() time.Time { return at })
 			target := linktarget.Unsubscribe{
 				Channel: channels.Email, Source: eligibility.SourceEverything,
 				Destination: fixtures.ContactErasableEmail, WorkspaceID: fixtures.InitechID,
@@ -77,7 +78,7 @@ func TestSMSLinkPropagatesMandatorySubscriberConstraintFailures(t *testing.T) {
 			return failure
 		},
 	})
-	u := unsubscriberecording.New(env.Bus, env.OutboundModule(), time.Now)
+	u := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), time.Now)
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	err := u.RecordLink(t.Context(), scope, linktarget.Unsubscribe{Channel: channels.SMS, Source: eligibility.SourceEverything, WorkspaceID: fixtures.AcmeID, Destination: fixtures.ContactTexterPhone})
 	require.ErrorIs(t, err, failure)

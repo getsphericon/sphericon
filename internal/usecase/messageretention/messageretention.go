@@ -46,9 +46,10 @@ type UseCase struct {
 	retention time.Duration
 	batch     int
 	now       func() time.Time
-	// messages deletes the Outbound messages, which New builds (ADR 0110: only a use case imports
-	// it).
-	messages *outboundmessagesunchecked.Module
+	// messages deletes the Outbound messages and automations counts an Automation's into its
+	// figures, which New builds (ADR 0110: only a use case imports them).
+	messages    *outboundmessagesunchecked.Module
+	automations *automationsunchecked.Module
 }
 
 // New returns the use case deleting messages older than retention (0 disables it), batch rows to a
@@ -56,7 +57,7 @@ type UseCase struct {
 // Broadcast of catalogue is frozen and pruned by its unchecked steps.
 func New(client *ent.Client, bus *events.Bus, catalogue *broadcasts.Module, retention time.Duration, batch int, now func() time.Time) *UseCase {
 	return &UseCase{client: client, bus: bus, unchecked: broadcastsunchecked.New(catalogue, bus, now), retention: retention, batch: batch, now: now,
-		messages: outboundmessagesunchecked.New()}
+		messages: outboundmessagesunchecked.New(), automations: automationsunchecked.New(bus)}
 }
 
 // Pruned is how many Outbound messages a run deleted, by kind, and whether its budget ran out
@@ -125,7 +126,7 @@ func (u *UseCase) Prune(ctx context.Context, workspaceID int64, budget int) (Pru
 	if p.Broadcast, err = r.broadcasts(ctx); err != nil {
 		return p, fmt.Errorf("prune finished broadcasts: %w", err)
 	}
-	if p.Automation, err = r.kind(ctx, outboundmessage.KindAutomation, automationsunchecked.AddPruned); err != nil {
+	if p.Automation, err = r.kind(ctx, outboundmessage.KindAutomation, u.automations.AddPruned); err != nil {
 		return p, fmt.Errorf("prune automation messages: %w", err)
 	}
 	if p.Transactional, err = r.kind(ctx, outboundmessage.KindTransactional, nil); err != nil {

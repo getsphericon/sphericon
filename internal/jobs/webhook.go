@@ -82,16 +82,18 @@ func (w *DeliverWebhookWorker) Work(ctx context.Context, job *river.Job[DeliverW
 // NewWebhookDispatcher is the dispatcher that queues the deliveries of an event through the river
 // client of the job it runs in.
 func NewWebhookDispatcher() events.WebhookDispatcher {
-	return webhookDispatcher{}
+	return webhookDispatcher{subscriptions: webhookendpoints.NewSubscriptions()}
 }
 
-type webhookDispatcher struct{}
+type webhookDispatcher struct {
+	subscriptions *webhookendpoints.Subscriptions
+}
 
 // Dispatch fans a domain event out to every endpoint of the workspace that receives it
-// (webhookendpoints.Subscribed), enqueuing one delivery job each, all in one insert. The scope
+// (webhookendpoints.Subscriptions), enqueuing one delivery job each, all in one insert. The scope
 // comes from the caller (the webhooks consumer, which scopes to the event's Workspace).
 func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, delivery events.WebhookDelivery) error {
-	endpoints, err := webhookendpoints.Subscribed(ctx, s, delivery.Name)
+	endpoints, err := d.subscriptions.Subscribed(ctx, s, delivery.Name)
 	if err != nil || len(endpoints) == 0 {
 		return err
 	}

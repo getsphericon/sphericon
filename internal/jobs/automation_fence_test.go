@@ -166,9 +166,8 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
 
 	exited := make(chan exitResult, 1)
-	pub := testhelper.PublisherOn(e.bus(t))
 	go func() {
-		ended, err := automations.Exit(ctx, e.scoped, pub, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
+		ended, err := e.env.ExitEnrollment(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 		exited <- exitResult{err: err, afterTheSend: settled(bs.done), ended: ended}
 	}()
 	bs.release()
@@ -226,9 +225,8 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight call holds the Enrollment")
 
 	exited := make(chan error, 1)
-	pub := testhelper.PublisherOn(e.bus(t))
 	go func() {
-		_, err := automations.Exit(ctx, e.scoped, pub, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID, time.Now())
+		_, err := e.env.ExitEnrollment(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 		exited <- err
 	}()
 	release()

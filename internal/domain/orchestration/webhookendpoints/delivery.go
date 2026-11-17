@@ -38,7 +38,7 @@ func (m *Module) Deliver(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpo
 		return httpcall.Execution{}, err
 	}
 	sendErr := webhook.Send(ctx, m.client, to.URL, to.Secret, in.EventName, in.DeliveryID, in.Body, m.now())
-	if err := m.RecordDelivery(ctx, s, e, sendErr, m.now()); err != nil {
+	if err := m.RecordDelivery(ctx, s, e, sendErr); err != nil {
 		return httpcall.Execution{}, err
 	}
 	if sendErr == nil {
@@ -54,14 +54,15 @@ func (m *Module) Deliver(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpo
 	return httpcall.Execution{Retry: sendErr}, nil
 }
 
-// RecordDelivery applies an outcome to the current failure run, in commit order. e is the
+// RecordDelivery applies an outcome to the current failure run, in commit order, at the Instance
+// clock's now. e is the
 // snapshot loaded before the HTTP request: only its id and reset generation are authoritative
 // here. Results from before a manual enable, or for a disabled/deleted endpoint, are stale. The
 // failure run is written beside the endpoint (ADR 0168), so a delivery leaves the endpoint's row,
 // and its revision, as they were; automatic disabling writes the row. Health writes, automatic
 // disabling, its audit and notification event commit together.
-func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, sendErr error, now time.Time) error {
-	change := HealthChange{Trigger: Succeed, At: now}
+func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, sendErr error) error {
+	change := HealthChange{Trigger: Succeed, At: m.now()}
 	if sendErr != nil {
 		if !errors.As(sendErr, &change.Failure) {
 			return nil // not a delivery outcome (for example, an unusable secret)

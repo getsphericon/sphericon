@@ -76,7 +76,7 @@ func TestUpdatingAnActiveRuleWritesADraftAndLeavesTheLiveVersion(t *testing.T) {
 	require.Len(t, fired, 1)
 	firing := env.DB.RuleFiring.GetX(ctx, fired[0])
 	assert.EqualValues(t, fixtures.RuleVipOnlyID, firing.VersionID, "the Firing stands on the live version")
-	runs, err := rules.FiringActions(ctx, acme(env), firing)
+	runs, err := m.FiringActions(ctx, acme(env), firing)
 	require.NoError(t, err)
 	assert.Equal(t, "rule-vip-seen", runs[0].Tag)
 	bob, err := m.Evaluate(ctx, acme(env), rules.Event{ContactID: fixtures.ContactBobID, Action: "rule_vip", SourceID: "evt-748-bob", RecordedAt: time.Now()})
@@ -159,11 +159,11 @@ func TestADraftThatNamesATagUsesIt(t *testing.T) {
 	ctx := context.Background()
 
 	neverPublished, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
-		return rulesuse.UsingTag(ctx, l, "rule-inactive")
+		return rulesuse.New().UsingTag(ctx, l, "rule-inactive")
 	})
 	require.NoError(t, err)
 	draftOfActive, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
-		return rulesuse.UsingTag(ctx, l, "rule-clicked-v2")
+		return rulesuse.New().UsingTag(ctx, l, "rule-clicked-v2")
 	})
 	require.NoError(t, err)
 
@@ -185,7 +185,7 @@ func TestOnlyTheLiveVersionOfAnActiveRuleEnrollsInAnAutomation(t *testing.T) {
 	require.NoError(t, err)
 
 	using, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
-		return rules.ActiveEnrollingInto(ctx, l, fixtures.AutomationJobsWaitFirstID)
+		return m.ActiveEnrollingInto(ctx, l, fixtures.AutomationJobsWaitFirstID)
 	})
 
 	require.NoError(t, err)

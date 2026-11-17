@@ -8,16 +8,22 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
+// EnrollmentsFilter names the Automation whose Enrollments are listed and, optionally, the one
+// status they are in (empty for all).
+type EnrollmentsFilter struct {
+	AutomationID int64
+	Status       string
+}
+
 // Enrollments returns one page of an Automation's Enrollments, newest first, optionally
-// only those in one status (an empty status means all). ErrNotFound when the Workspace has
-// no such Automation.
-func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, automationID int64, status string, p pagination.Params) (pagination.Page[*ent.AutomationRun], error) {
-	if _, err := s.Automation().Get(ctx, automationID); err != nil {
+// only those in one status. ErrNotFound when the Workspace has no such Automation.
+func (m *Module) Enrollments(ctx context.Context, s *ent.Scoped, p pagination.Params, f EnrollmentsFilter) (pagination.Page[*ent.AutomationRun], error) {
+	if _, err := s.Automation().Get(ctx, f.AutomationID); err != nil {
 		return pagination.Page[*ent.AutomationRun]{}, notFound(err)
 	}
-	q := s.AutomationRun().Query().Where(automationrun.AutomationID(automationID))
-	if status != "" {
-		q = q.Where(automationrun.StatusEQ(automationrun.Status(status)))
+	q := s.AutomationRun().Query().Where(automationrun.AutomationID(f.AutomationID))
+	if f.Status != "" {
+		q = q.Where(automationrun.StatusEQ(automationrun.Status(f.Status)))
 	}
 	return pagination.List(ctx, p, q.Order(ent.Desc(automationrun.FieldID)))
 }

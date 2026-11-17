@@ -163,8 +163,10 @@ type step func(ctx context.Context, s *ent.Scoped, t *Target, pub events.Purging
 // UseCase erases data subjects. Every call receives the Workspace-scoped client (ADR 0017) built by
 // the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus        *events.Bus
-	broadcasts *broadcastsunchecked.Module
+	bus         *events.Bus
+	broadcasts  *broadcastsunchecked.Module
+	automations *automationsunchecked.Module
+	rules       *rulesunchecked.Module
 	// outbound and captured are the Erasure steps of the Outbound messages and the Captured
 	// messages, which New builds (ADR 0110: only a use case imports them).
 	outbound *outboundmessagesunchecked.Module
@@ -177,6 +179,7 @@ type UseCase struct {
 func New(bus *events.Bus, catalogue *broadcasts.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now),
+		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
 		outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New(),
 	}
 }
@@ -226,12 +229,12 @@ func (u *UseCase) steps() []step {
 		// The Automation module cancels the queued step calls and trigger evaluations that name the
 		// Contact or its runs; it reads the run ids before the Contact row goes, which deletes the
 		// runs (a failure's response excerpt sits on one) by their cascading foreign key.
-		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return automationsunchecked.CancelPending(ctx, s, t.ContactID, pub)
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return u.automations.CancelPending(ctx, s, t.ContactID)
 		},
 		// The Rule module cancels the queued evaluations that name the Contact.
-		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
-			return rulesunchecked.CancelPending(ctx, s, t.ContactID, pub)
+		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+			return u.rules.CancelPending(ctx, s, t.ContactID)
 		},
 		// The queued event consumer jobs whose envelope names the subject: the bus inserted them,
 		// and the purge shares Erasure's transaction.

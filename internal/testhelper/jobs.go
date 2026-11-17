@@ -249,6 +249,19 @@ func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(
 	})
 }
 
+// ExitEnrollment ends the Contact's active Enrollment in the Automation through the automations
+// module, in a transaction of the env's bus on the Workspace of s, as an unsubscribe from the
+// Automation does, and reports whether one was ended.
+func (env *TestEnv) ExitEnrollment(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (bool, error) {
+	var exited bool
+	err := env.Bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		var err error
+		exited, err = Module[*automations.Module](env).Exit(ctx, ts, automationID, contactID)
+		return err
+	})
+	return exited, err
+}
+
 // RunNextStep takes the oldest waiting step job of an Enrollment from the queue, executes its
 // step through mod as the worker would and deletes the job, the way a finished job leaves the
 // queue. It reports whether there was a job. The job is run whatever its schedule says: a step

@@ -29,15 +29,17 @@ import (
 // UseCase records Unsubscribes. Every call receives the Workspace-scoped client (ADR 0017) built
 // by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus *events.Bus
-	out *outboundmessages.Module
-	now func() time.Time
+	bus         *events.Bus
+	out         *outboundmessages.Module
+	automations *automations.Module
+	now         func() time.Time
 }
 
 // New builds the unsubscribe use case over the bus, Outbound send, which reads the Broadcast or
-// Automation a text came from, and the Instance clock.
-func New(bus *events.Bus, out *outboundmessages.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, out: out, now: now}
+// Automation a text came from, the Automations, whose Enrollment an unsubscribe from one exits,
+// and the Instance clock.
+func New(bus *events.Bus, out *outboundmessages.Module, enrollments *automations.Module, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, out: out, automations: enrollments, now: now}
 }
 
 // RecordLink writes a per-(channel, destination, sending source) opt-out
@@ -101,7 +103,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// Automation: unsubscribing from an automation also exits its active
 		// enrollment (ADR: two effects from one action).
 		if isAutomation && target.ContactID != 0 {
-			if _, err := automations.Exit(ctx, sc, pub, automationID, target.ContactID, at); err != nil {
+			if _, err := u.automations.Exit(ctx, sc, automationID, target.ContactID); err != nil {
 				return err
 			}
 		}

@@ -78,7 +78,7 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	require.NoError(t, err)
 	runID := runOf(t, env, fixtures.AutomationWelcomeSeriesID, c.ID)
 
-	exited, err := automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
+	exited, err := env.ExitEnrollment(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 	assert.True(t, exited)
 	run, err := s.AutomationRun().Get(ctx, runID)
@@ -86,7 +86,7 @@ func TestExitEndsOnlyAnActiveEnrollmentAndEnrollmentStaysOnceEver(t *testing.T) 
 	assert.Equal(t, automationrun.StatusExited, run.Status)
 	assert.Nil(t, run.ResumeAt)
 
-	again, err := automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, c.ID, time.Now())
+	again, err := env.ExitEnrollment(ctx, s, fixtures.AutomationWelcomeSeriesID, c.ID)
 	require.NoError(t, err)
 	assert.False(t, again, "nothing active is left to exit")
 
@@ -102,7 +102,7 @@ func TestExitEndsOneEnrollmentOfTheAutomation(t *testing.T) {
 	waiting, err := s.AutomationRun().Get(ctx, fixtures.AutomationRunWelcomeWaitingID)
 	require.NoError(t, err)
 
-	exited, err := automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, waiting.ContactID, time.Now())
+	exited, err := env.ExitEnrollment(ctx, s, fixtures.AutomationWelcomeSeriesID, waiting.ContactID)
 	require.NoError(t, err)
 
 	assert.True(t, exited)
@@ -123,7 +123,7 @@ func TestAStepOfAnExitedEnrollmentLeavesItExited(t *testing.T) {
 	runID := int64(fixtures.AutomationRunWelcomeWaitingLaterID)
 	waiting, err := s.AutomationRun().Get(ctx, runID)
 	require.NoError(t, err)
-	_, err = automations.Exit(ctx, s, env.Publisher(), fixtures.AutomationWelcomeSeriesID, waiting.ContactID, time.Now())
+	_, err = env.ExitEnrollment(ctx, s, fixtures.AutomationWelcomeSeriesID, waiting.ContactID)
 	require.NoError(t, err)
 
 	require.NoError(t, testhelper.Module[*automations.StepExecution](env).Step(ctx, s, runID, waiting.CurrentStep))

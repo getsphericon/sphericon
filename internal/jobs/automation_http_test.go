@@ -373,7 +373,7 @@ func TestHTTPStepRunsOnAQueueOfItsOwn(t *testing.T) {
 func TestHTTPStepOnAnExitedRunCallsNothingAndQueuesNothing(t *testing.T) {
 	h := newHTTPStepHarness(t)
 	runID := int64(fixtures.AutomationRunQuahogHookID)
-	exited, err := automations.Exit(context.Background(), h.DB.Scoped(fixtures.QuahogID), h.Publisher(), fixtures.AutomationQuahogHookID, fixtures.ContactQuahogQuinnID, time.Now())
+	exited, err := h.ExitEnrollment(context.Background(), h.DB.Scoped(fixtures.QuahogID), fixtures.AutomationQuahogHookID, fixtures.ContactQuahogQuinnID)
 	require.NoError(t, err)
 	require.True(t, exited)
 

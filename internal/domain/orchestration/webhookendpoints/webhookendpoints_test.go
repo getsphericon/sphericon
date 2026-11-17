@@ -61,18 +61,18 @@ func TestCreateReturnsTheEndpointWithItsDecryptedStandardWebhooksSecret(t *testi
 		URL: "https://example.com/hook", EventTypes: []string{systemevent.ContactCreated},
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "https://example.com/hook", got.URL)
-	assert.Nil(t, got.DisabledAt)
+	assert.Equal(t, "https://example.com/hook", got.WebhookEndpoint.URL)
+	assert.Nil(t, got.WebhookEndpoint.DisabledAt)
 	require.True(t, strings.HasPrefix(got.Secret, "whsec_"))
 	raw, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(got.Secret, "whsec_"))
 	require.NoError(t, err)
 	assert.Len(t, raw, 24)
 
-	stored, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(got.ID)).WithHealth().Only(ctx)
+	stored, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(got.WebhookEndpoint.ID)).WithHealth().Only(ctx)
 	require.NoError(t, err)
 	assert.NotContains(t, stored.SecretEncrypted, got.Secret, "stored sealed")
 
-	again, err := module(env, license(true)).Get(ctx, acme, got.ID)
+	again, err := module(env, license(true)).Get(ctx, acme, got.WebhookEndpoint.ID)
 	require.NoError(t, err)
 	assert.Equal(t, got.Secret, again.Secret)
 }
@@ -83,9 +83,9 @@ func TestCreateHonoursEnabledFalse(t *testing.T) {
 	got, err := module(env, nil).Create(context.Background(), env.DB.Scoped(fixtures.AcmeID),
 		webhookendpoints.CreateInput{URL: "https://example.com/off", Enabled: &off})
 	require.NoError(t, err)
-	assert.NotNil(t, got.DisabledAt)
-	require.NotNil(t, got.DisabledReason)
-	assert.Equal(t, webhookendpoint.DisabledReasonOwner, *got.DisabledReason)
+	assert.NotNil(t, got.WebhookEndpoint.DisabledAt)
+	require.NotNil(t, got.WebhookEndpoint.DisabledReason)
+	assert.Equal(t, webhookendpoint.DisabledReasonOwner, *got.WebhookEndpoint.DisabledReason)
 }
 
 func TestDisablingAnEndpointThatIsOffKeepsItsMomentAndReason(t *testing.T) {
@@ -99,8 +99,8 @@ func TestDisablingAnEndpointThatIsOffKeepsItsMomentAndReason(t *testing.T) {
 	got, err := m.Update(context.Background(), acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(context.Background(), t, acme, fixtures.WebhookCodebasicsGoneID), Enabled: patch.Set(off)})
 
 	require.NoError(t, err)
-	assert.Equal(t, before.DisabledAt, got.DisabledAt)
-	assert.Equal(t, before.DisabledReason, got.DisabledReason)
+	assert.Equal(t, before.WebhookEndpoint.DisabledAt, got.WebhookEndpoint.DisabledAt)
+	assert.Equal(t, before.WebhookEndpoint.DisabledReason, got.WebhookEndpoint.DisabledReason)
 }
 
 func TestInvalidURLIsRefusedOnCreateAndUpdate(t *testing.T) {
@@ -120,7 +120,7 @@ func TestInvalidURLIsRefusedOnCreateAndUpdate(t *testing.T) {
 	ok := "http://example.com:8080/x"
 	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), URL: patch.Set(ok)})
 	require.NoError(t, err)
-	assert.Equal(t, ok, got.URL)
+	assert.Equal(t, ok, got.WebhookEndpoint.URL)
 }
 
 func TestUpdateChangesOnlyTheGivenFieldsAndKeepsTheSecret(t *testing.T) {
@@ -136,14 +136,14 @@ func TestUpdateChangesOnlyTheGivenFieldsAndKeepsTheSecret(t *testing.T) {
 	off := false
 	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), Enabled: patch.Set(off)})
 	require.NoError(t, err)
-	assert.NotNil(t, got.DisabledAt)
-	assert.Equal(t, before.URL, got.URL)
-	assert.Equal(t, before.EventTypes, got.EventTypes, "nil event types leave the filter alone")
+	assert.NotNil(t, got.WebhookEndpoint.DisabledAt)
+	assert.Equal(t, before.WebhookEndpoint.URL, got.WebhookEndpoint.URL)
+	assert.Equal(t, before.WebhookEndpoint.EventTypes, got.WebhookEndpoint.EventTypes, "nil event types leave the filter alone")
 	assert.Equal(t, before.Secret, got.Secret)
 
 	got, err = m.Update(ctx, acme, fixtures.WebhookCodebasicsID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsID), EventTypes: patch.Set([]string{systemevent.EmailOpened})})
 	require.NoError(t, err)
-	assert.Equal(t, []string{systemevent.EmailOpened}, got.EventTypes)
+	assert.Equal(t, []string{systemevent.EmailOpened}, got.WebhookEndpoint.EventTypes)
 }
 
 func TestAuditEntryNeedsALicenseOnCreateAndUpdate(t *testing.T) {
@@ -179,13 +179,13 @@ func TestListPagesTheWorkspaceAscendingByID(t *testing.T) {
 	assert.Equal(t, total, page.TotalItems)
 	assert.Equal(t, total, page.TotalPages)
 	require.Len(t, page.Items, 1)
-	assert.Equal(t, int64(fixtures.WebhookCodebasicsID), page.Items[0].ID)
+	assert.Equal(t, int64(fixtures.WebhookCodebasicsID), page.Items[0].WebhookEndpoint.ID)
 	assert.Equal(t, "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", page.Items[0].Secret)
 
 	second, err := m.List(ctx, env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 2, PageSize: 1})
 	require.NoError(t, err)
 	require.Len(t, second.Items, 1)
-	assert.Equal(t, int64(fixtures.WebhookCodebasicsDisabledID), second.Items[0].ID)
+	assert.Equal(t, int64(fixtures.WebhookCodebasicsDisabledID), second.Items[0].WebhookEndpoint.ID)
 }
 
 func TestDeleteAndWorkspaceIsolation(t *testing.T) {
@@ -393,13 +393,13 @@ func TestEnablingClearsTheFailureStateAndTheDisabledReason(t *testing.T) {
 
 	got, err := m.Update(ctx, acme, fixtures.WebhookCodebasicsGoneID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(ctx, t, acme, fixtures.WebhookCodebasicsGoneID), Enabled: patch.Set(on)})
 	require.NoError(t, err)
-	assert.Nil(t, got.DisabledAt)
-	assert.Nil(t, got.DisabledReason)
-	assert.Nil(t, got.Edges.Health.ConsecutiveFailures)
-	assert.Nil(t, got.Edges.Health.FailingSince)
-	assert.Nil(t, got.Edges.Health.LastErrorKind)
-	assert.Nil(t, got.Edges.Health.LastErrorStatus)
-	assert.Nil(t, got.Edges.Health.LastFailureAt)
+	assert.Nil(t, got.WebhookEndpoint.DisabledAt)
+	assert.Nil(t, got.WebhookEndpoint.DisabledReason)
+	assert.Nil(t, got.WebhookEndpoint.Edges.Health.ConsecutiveFailures)
+	assert.Nil(t, got.WebhookEndpoint.Edges.Health.FailingSince)
+	assert.Nil(t, got.WebhookEndpoint.Edges.Health.LastErrorKind)
+	assert.Nil(t, got.WebhookEndpoint.Edges.Health.LastErrorStatus)
+	assert.Nil(t, got.WebhookEndpoint.Edges.Health.LastFailureAt)
 }
 
 // recording is the module with the clock the test injects.
@@ -413,11 +413,9 @@ type recording struct {
 func newRecording(t *testing.T) *recording {
 	t.Helper()
 	env := testhelper.Setup(t)
-	return &recording{
-		t: t, env: env,
-		mod: webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), time.Now),
-		now: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC),
-	}
+	r := &recording{t: t, env: env, now: time.Date(2026, 10, 18, 9, 0, 0, 0, time.UTC)}
+	r.mod = webhookendpoints.New(env.Bus, env.Cipher, nil, webhook.NewClient(2*time.Second), func() time.Time { return r.now })
+	return r
 }
 
 // disabled are the endpoints the delivery turned off, as it published them: what the owners are
@@ -447,7 +445,7 @@ func (r *recording) midRun(failures int, failingFor time.Duration) {
 // record reports one delivery outcome for the endpoint as it is stored now.
 func (r *recording) record(sendErr error) {
 	r.t.Helper()
-	require.NoError(r.t, r.mod.RecordDelivery(context.Background(), r.scope(), r.endpoint(), sendErr, r.now))
+	require.NoError(r.t, r.mod.RecordDelivery(context.Background(), r.scope(), r.endpoint(), sendErr))
 }
 
 func status(code int) error {
@@ -583,7 +581,7 @@ func TestRecordDeliveryDisablesWithoutASystemSender(t *testing.T) {
 	e, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(context.Background())
 	require.NoError(t, err)
 
-	err = mod.RecordDelivery(context.Background(), acme, e, status(http.StatusGone), time.Now())
+	err = mod.RecordDelivery(context.Background(), acme, e, status(http.StatusGone))
 	require.NoError(t, err)
 
 	after, err := acme.WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(context.Background())

@@ -236,7 +236,7 @@ func TestHTTPExecutionIgnoresAnExitedEnrollment(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	pending, err := s.AutomationRun().Get(t.Context(), runID)
 	require.NoError(t, err)
-	_, err = automations.Exit(t.Context(), s, env.Publisher(), pending.AutomationID, pending.ContactID, time.Now())
+	_, err = env.ExitEnrollment(t.Context(), s, pending.AutomationID, pending.ContactID)
 	require.NoError(t, err)
 
 	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), noFence, env.Cipher, httpResponse{status: http.StatusNotFound}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})

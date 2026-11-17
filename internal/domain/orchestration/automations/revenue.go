@@ -11,11 +11,12 @@ import (
 )
 
 // WithRevenue is an Automation and what it earned: the Orders credited to it and their net
-// revenue in the Reporting currency (ADR 0064), read through the orders module.
+// revenue in the Reporting currency (ADR 0064), read through the orders module. The Automation is
+// a field, not embedded: an embedded entity would promote its client's operations onto this
+// value.
 type WithRevenue struct {
-	*ent.Automation
-
-	Revenue orders.Revenue
+	Automation *ent.Automation
+	Revenue    orders.Revenue
 }
 
 // ListWithRevenue is List with the revenue of each Automation of the page, read in one grouped
