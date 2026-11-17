@@ -1,5 +1,0 @@
-# The domain packages exempt from the call contract while they move to it (ADR 0167): one path
-# relative to the repository per line. The list only shrinks: `mise run check:callshape-exempt` fails
-# when it gains an entry, the analyzer reports an entry that keeps the contract, and its test an entry
-# that names no package of the domain tier. A migration removes its packages; the last one deletes
-# the list, its embed and its check.
