@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
@@ -232,6 +233,12 @@ type Inputs interface {
 	// The inviting User is the session's, not the request's: the handler sets it.
 	// goverter:ignore InvitedBy
 	InvitationCreate(source *siteapi.SiteCreateInvitationInput) invitations.InviteInput
+	// The Membership changed is the path's, not the request's: the handler sets it.
+	// goverter:ignore ID
+	MembershipRoleChange(source *siteapi.SiteUpdateMembershipInput) memberships.ChangeRoleInput
+	// The optional consent changed is the path's key, not the request's: the handler sets it.
+	// goverter:ignore Key
+	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput
 
 	// Every answer was checked against the contract's enums when the request was decoded.
 	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurveyresponses.Answers

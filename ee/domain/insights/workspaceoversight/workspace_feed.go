@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -64,7 +63,7 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (p
 	for i, s := range page.Items {
 		ids[i] = s.WorkspaceID
 	}
-	owners, err := memberships.OwnersOf(ctx, m.ent, ids...)
+	owners, err := m.owners.OwnersOf(ctx, ids...)
 	if err != nil {
 		return pagination.CursorPage[FeedEntry]{}, err
 	}

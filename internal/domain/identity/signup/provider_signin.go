@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentrecord"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -303,7 +302,7 @@ func (m *Module) afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, 
 	if !firstProof {
 		return u, nil
 	}
-	held, err := memberships.OfUserIn(ctx, tx, u.ID)
+	held, err := m.memberships.OfUserIn(ctx, tx, u.ID)
 	if err != nil {
 		return nil, err
 	}

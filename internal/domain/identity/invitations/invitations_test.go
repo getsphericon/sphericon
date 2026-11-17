@@ -21,9 +21,10 @@ func TestAcceptanceCannotReplaceAnEarlierAcceptance(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	at := time.Now()
-	require.NoError(t, invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at))
+	require.NoError(t, invitations.New(env.DB, env.Bus, func() time.Time { return at }).MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID))
+	later := invitations.New(env.DB, env.Bus, func() time.Time { return at.Add(time.Hour) })
 
-	err := invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at.Add(time.Hour))
+	err := later.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID)
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 	stored, err := s.Invitation().Get(t.Context(), fixtures.InvitationAcmePendingID)
@@ -36,14 +37,15 @@ func TestReinvitingAnAcceptedAddressPreservesItsAcceptance(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	at := time.Now()
-	require.NoError(t, invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at))
 	invites := invitations.New(env.DB, env.Bus, func() time.Time { return at })
+	require.NoError(t, invites.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID))
 
-	issued, token, err := invites.Invite(t.Context(), s, events.Actor{Kind: events.ActorUser}, invitations.InviteInput{
+	reissued, err := invites.Invite(t.Context(), s, events.Actor{Kind: events.ActorUser}, invitations.InviteInput{
 		Email: fixtures.InvitationAcmePendingEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID,
 	})
 
 	require.NoError(t, err)
+	issued, token := reissued.Invitation, reissued.Token
 	assert.NotEqual(t, int64(fixtures.InvitationAcmePendingID), issued.ID)
 	assert.Nil(t, issued.AcceptedAt)
 	accepted, err := s.Invitation().Get(t.Context(), fixtures.InvitationAcmePendingID)
@@ -59,8 +61,8 @@ func TestAnAcceptedInvitationCannotBeRevoked(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	at := time.Now()
-	require.NoError(t, invitations.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID, at))
 	invites := invitations.New(env.DB, env.Bus, func() time.Time { return at })
+	require.NoError(t, invites.MarkAcceptedIn(t.Context(), s, fixtures.InvitationAcmePendingID))
 
 	err := invites.RevokeInvitation(t.Context(), s, events.Actor{Kind: events.ActorUser}, fixtures.InvitationAcmePendingID)
 
@@ -81,8 +83,9 @@ func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 
 	t.Run("issues a random token stored only as its hash with a 7-day expiry", func(t *testing.T) {
 		before := time.Now()
-		inv, token, err := invites.Invite(ctx, s, actor, in)
+		issued, err := invites.Invite(ctx, s, actor, in)
 		require.NoError(t, err)
+		inv, token := issued.Invitation, issued.Token
 
 		assert.Regexp(t, `^[A-Za-z0-9_-]+$`, token, "it travels in a link as it is")
 		assert.Equal(t, credentials.HashSecret(token), inv.TokenHash)
@@ -97,33 +100,33 @@ func TestInviteOwnsTokenHashAndExpiry(t *testing.T) {
 	})
 
 	t.Run("reissuing rotates the token and invalidates the old link", func(t *testing.T) {
-		first, oldToken, err := invites.Invite(ctx, s, actor, in)
+		first, err := invites.Invite(ctx, s, actor, in)
 		require.NoError(t, err)
-		second, newToken, err := invites.Invite(ctx, s, actor, in)
+		second, err := invites.Invite(ctx, s, actor, in)
 		require.NoError(t, err)
 
-		assert.Equal(t, first.ID, second.ID)
-		assert.NotEqual(t, oldToken, newToken)
-		_, err = invites.PendingInvitation(ctx, oldToken)
+		assert.Equal(t, first.Invitation.ID, second.Invitation.ID)
+		assert.NotEqual(t, first.Token, second.Token)
+		_, err = invites.PendingInvitation(ctx, first.Token)
 		assert.Error(t, err)
 	})
 
 	t.Run("reissues a fixture invitation without touching its neighbours", func(t *testing.T) {
-		_, token, err := invites.Invite(ctx, s, actor, invitations.InviteInput{Email: "invited@acme.test", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
+		issued, err := invites.Invite(ctx, s, actor, invitations.InviteInput{Email: "invited@acme.test", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 		require.NoError(t, err)
 		_, err = invites.PendingInvitation(ctx, "inv_fixture_token_acme")
 		require.Error(t, err, "the fixture token was rotated away")
-		_, err = invites.PendingInvitation(ctx, token)
+		_, err = invites.PendingInvitation(ctx, issued.Token)
 		assert.NoError(t, err)
 	})
 
 	t.Run("an existing member is refused", func(t *testing.T) {
-		_, _, err := invites.Invite(ctx, s, actor, invitations.InviteInput{Email: "  " + fixtures.OwnerJohnEmail + " ", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
+		_, err := invites.Invite(ctx, s, actor, invitations.InviteInput{Email: "  " + fixtures.OwnerJohnEmail + " ", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 		require.ErrorIs(t, err, invitations.ErrAlreadyMember)
 	})
 
 	t.Run("a blank email is refused", func(t *testing.T) {
-		_, _, err := invites.Invite(ctx, s, actor, invitations.InviteInput{Email: "   ", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
+		_, err := invites.Invite(ctx, s, actor, invitations.InviteInput{Email: "   ", Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 		require.ErrorIs(t, err, invitations.ErrEmailEmpty)
 	})
 }

@@ -36,24 +36,37 @@ func memberTarget(err error) error {
 	return err
 }
 
-// ChangeRole sets the Role of the Membership targetID in the Workspace s on
-// behalf of a caller holding callerRole, and records `membership.update` with the role
+// Caller is the member who changes or removes a Membership: the actor of the Audit entry, and the
+// Role whose Permissions the Owner rules ask.
+type Caller struct {
+	Actor events.Actor
+	Role  membership.Role
+}
+
+// ChangeRoleInput is a Role change: the Membership changed and the Role it gets.
+type ChangeRoleInput struct {
+	ID   int64
+	Role membership.Role
+}
+
+// ChangeRole sets the Role of the Membership in.ID in the Workspace s to in.Role on
+// behalf of caller, and records `membership.update` with the role
 // change as an Audit entry in the same transaction (ADR 0022): a rolled-back change
 // leaves no entry, a committed one cannot lose it. The Owner invariants are checked in
 // that transaction while the Workspace's owner rows are locked, so two concurrent
 // changes cannot leave the Workspace ownerless. The returned Membership carries its User.
 // A target outside the Workspace is ErrMemberNotFound.
-func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64, desired membership.Role) (*ent.Membership, error) {
+func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, caller Caller, in ChangeRoleInput) (*ent.Membership, error) {
 	var updated *ent.Membership
 	err := ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
+		target, owners, err := lockedTarget(ctx, ts, membership.ID(in.ID))
 		if err != nil {
 			return memberTarget(err)
 		}
-		if err := checkOwnerChange(callerRole, target, owners, desired); err != nil {
+		if err := checkOwnerChange(caller.Role, target, owners, in.Role); err != nil {
 			return err
 		}
-		m, err := ts.Membership().UpdateOneID(target.ID).SetRole(desired).Save(ctx)
+		m, err := ts.Membership().UpdateOneID(target.ID).SetRole(in.Role).Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -61,28 +74,27 @@ func (ms *Module) ChangeRole(ctx context.Context, s *ent.Scoped, actor events.Ac
 		updated = m
 		return events.RecordAudit(ctx, pub, &events.AuditEntry{
 			WorkspaceID: s.WorkspaceID(),
-			Actor:       actor,
+			Actor:       caller.Actor,
 			Action:      events.ActionMembershipUpdate,
 			TargetType:  membership.Label,
 			TargetID:    publicid.Encode(target.ID),
 			TargetName:  target.Edges.User.Name,
-			Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), string(desired))},
+			Diff:        map[string]any{membership.FieldRole: events.Change(string(target.Role), string(in.Role))},
 		})
 	})
 	return updated, err
 }
 
-// Remove removes the Membership targetID from the Workspace s on behalf of a
-// caller holding callerRole, under the same owner rules and locking as
-// ChangeRole, and records `membership.delete` with actor as an Audit entry in the
-// same transaction. A target outside the Workspace is ErrMemberNotFound.
-func (ms *Module) Remove(ctx context.Context, s *ent.Scoped, actor events.Actor, callerRole membership.Role, targetID int64) error {
+// Remove removes the Membership targetID from the Workspace s on behalf of caller, under the same
+// owner rules and locking as ChangeRole, and records `membership.delete` with the caller's actor as
+// an Audit entry in the same transaction. A target outside the Workspace is ErrMemberNotFound.
+func (ms *Module) Remove(ctx context.Context, s *ent.Scoped, caller Caller, targetID int64) error {
 	return ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		target, owners, err := lockedTarget(ctx, ts, membership.ID(targetID))
 		if err != nil {
 			return memberTarget(err)
 		}
-		return removeLocked(ctx, ts, pub, actor, callerRole, target, owners)
+		return removeLocked(ctx, ts, pub, caller.Actor, caller.Role, target, owners)
 	})
 }
 
@@ -94,8 +106,8 @@ var ErrOnlyOwnerLeaves = validation.ConflictField(FieldWorkspace, "memberships: 
 // transaction of its own. See LeaveIn for the rules; the only Owner is refused with
 // ErrOnlyOwnerLeaves.
 func (ms *Module) Leave(ctx context.Context, s *ent.Scoped, userID int64) error {
-	err := ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return LeaveIn(ctx, ts, pub, userID)
+	err := ms.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		return ms.LeaveIn(ctx, ts, userID)
 	})
 	if errors.Is(err, ErrRemoveLastOwner) {
 		return ErrOnlyOwnerLeaves
@@ -103,32 +115,40 @@ func (ms *Module) Leave(ctx context.Context, s *ent.Scoped, userID int64) error 
 	return err
 }
 
-// LeaveIn removes User userID's own Membership through the scope ts, inside the transaction
-// ts is bound to (ts comes from Bus.WithinScopedTx, or from tx.Scoped in a caller's own
-// transaction, with pub that transaction's publisher). The User is the actor of the
+// LeaveIn removes User userID's own Membership through the scope ts, inside the bus transaction
+// ts is bound to (ts comes from Bus.WithinScopedTx, or from tx.Scoped in a caller's own bus
+// transaction), and publishes there. The User is the actor of the
 // `membership.delete` Audit entry, named by the User row. It locks the Workspace's Owner
 // rows first, like every Owner change, and refuses the only Owner with ErrRemoveLastOwner.
 // A User with no Membership in the Workspace is an ent NotFound error. User deletion
 // (ADR 0050) calls it once per Workspace in its own transaction.
-func LeaveIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
-	target, owners, actor, err := LockSelfIn(ctx, ts, userID)
+func (ms *Module) LeaveIn(ctx context.Context, ts *ent.Scoped, userID int64) error {
+	self, err := ms.LockSelfIn(ctx, ts, userID)
 	if err != nil {
 		return err
 	}
 	// The caller is the member themself: their own Role is the caller's Role.
-	return removeLocked(ctx, ts, pub, actor, target.Role, target, owners)
+	return removeLocked(ctx, ts, ms.pub(ts), self.Actor, self.Membership.Role, self.Membership, self.Owners)
+}
+
+// Self is a User's own Membership read under the lock of its Workspace's Owner rows: the
+// Membership with its User, the count of Owners, and the User as the actor of an Audit entry.
+type Self struct {
+	Membership *ent.Membership
+	Owners     int
+	Actor      events.Actor
 }
 
 // LockSelfIn locks the Workspace's Owner rows, then loads User userID's own Membership with its
 // User, the count of Owners, and the User as the actor of the Audit entry, inside the transaction
 // ts is bound to. It writes nothing: the leaves of a Membership read their target through it.
-func LockSelfIn(ctx context.Context, ts *ent.Scoped, userID int64) (target *ent.Membership, owners int, actor events.Actor, err error) {
-	target, owners, err = lockedTarget(ctx, ts, membership.UserID(userID))
+func (ms *Module) LockSelfIn(ctx context.Context, ts *ent.Scoped, userID int64) (Self, error) {
+	target, owners, err := lockedTarget(ctx, ts, membership.UserID(userID))
 	if err != nil {
-		return nil, 0, events.Actor{}, err
+		return Self{}, err
 	}
-	actor = events.Actor{Kind: events.ActorUser, ID: publicid.Encode(userID), Name: target.Edges.User.Name}
-	return target, owners, actor, nil
+	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(userID), Name: target.Edges.User.Name}
+	return Self{Membership: target, Owners: owners, Actor: actor}, nil
 }
 
 // removeLocked applies the Owner invariants to removing target (whose Workspace's owner
@@ -168,7 +188,7 @@ func RemovalAudit(workspaceID int64, actor events.Actor, target *ent.Membership)
 // target with its User and returns the count of owners. Locking first serializes
 // concurrent Owner changes: the second waits, then reads the committed outcome of the first.
 func lockedTarget(ctx context.Context, ts *ent.Scoped, target predicate.Membership) (*ent.Membership, int, error) {
-	ownerIDs, err := LockOwners(ctx, ts)
+	ownerIDs, err := lockOwners(ctx, ts)
 	if err != nil {
 		return nil, 0, err
 	}

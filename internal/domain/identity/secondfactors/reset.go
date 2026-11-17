@@ -30,14 +30,16 @@ type Caller struct {
 // codes and Passkeys of the member whose Membership is membershipID in the Workspace behind s, so
 // they can enroll again after losing both their authenticator and their codes, and bumps their
 // session epoch, ending every session of theirs. The caller may reset them as
-// memberships.SecondFactorResetTarget decides (owners:manage for an Owner's, never their own), read
+// memberships.Module.SecondFactorResetTarget decides (owners:manage for an Owner's, never their own), read
 // in the reset's transaction. It records `user.second_factor_reset` by the caller's actor in that
 // Workspace only. ErrNothingToReset without an active or pending factor or a Passkey (nothing
 // changes).
 func (m *Module) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, caller Caller) error {
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		ts := tx.Scoped(s.WorkspaceID())
-		target, err := memberships.SecondFactorResetTarget(ctx, ts, caller.UserID, caller.Role, membershipID)
+		target, err := m.members.SecondFactorResetTarget(ctx, ts, memberships.SecondFactorResetTargetInput{
+			CallerID: caller.UserID, CallerRole: caller.Role, TargetID: membershipID,
+		})
 		if err != nil {
 			return err
 		}

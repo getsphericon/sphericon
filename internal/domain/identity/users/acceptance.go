@@ -15,11 +15,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
-	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/credentials"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -63,7 +61,7 @@ type InvitationAcceptance struct {
 // invitations.ErrInvitationLinkNotFound, before anything else is checked, when it names none. The
 // token is the authorization, so no Workspace is known up front.
 func (a *Module) AcceptInvitationLink(ctx context.Context, token string, in InvitationAcceptance) error {
-	inv, err := invitations.PendingByToken(ctx, a.ent, token, a.now())
+	inv, err := a.mods.Invitations.PendingInvitation(ctx, token)
 	if err != nil {
 		return err
 	}
@@ -118,25 +116,25 @@ func (a *Module) AcceptInvitation(ctx context.Context, inv *ent.Invitation, in I
 func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub events.Publisher, inv *ent.Invitation, account newAccount, sessionEmail string) error {
 	at := a.now()
 	role := membership.Role(inv.Role)
-	u, byInvitation, err := invitee(ctx, tx, a.passwords, inv, account, sessionEmail, at)
+	u, byInvitation, err := a.invitee(ctx, tx, inv, account, sessionEmail, at)
 	if err != nil {
 		return err
 	}
 
 	ts := tx.Scoped(inv.WorkspaceID)
 	actor := events.Actor{Kind: events.ActorUser, ID: publicid.Encode(u.ID), Name: u.Name}
-	existing, err := ensureMembership(ctx, ts, u, role)
+	existing, err := a.ensureMembership(ctx, ts, u, role)
 	if err != nil {
 		return err
 	}
 	if existing != nil && memberships.IsMember(existing.Role) && memberships.IsAdmin(role) {
 		// An explicit Invitation raises a member to admin; it never lowers a Role.
-		if err := raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
+		if err := a.raiseToAdmin(ctx, ts, pub, inv, actor, u, existing); err != nil {
 			return err
 		}
 	}
 
-	if err := invitations.MarkAcceptedIn(ctx, ts, inv.ID, at); err != nil {
+	if err := a.mods.Invitations.MarkAcceptedIn(ctx, ts, inv.ID); err != nil {
 		return err
 	}
 	if byInvitation {
@@ -168,7 +166,7 @@ type newAccount struct {
 // any other address by the account the link's holder sets up (ADR 0030), with the Consent
 // records of its answers (ADR 0062). byInvitation is true when the User was created or completed
 // from the link, which Verifies the address but proves it not (ADR 0158).
-func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (u *ent.User, byInvitation bool, err error) {
+func (a *Module) invitee(ctx context.Context, tx *ent.Client, inv *ent.Invitation, account newAccount, sessionEmail string, at time.Time) (u *ent.User, byInvitation bool, err error) {
 	// Only a pending Invitation has an address: an accepted one is past accepting.
 	if inv.Email == nil {
 		return nil, false, lifecycle.ErrInvalidTransition
@@ -192,7 +190,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 	if nerr != nil {
 		return nil, false, nerr
 	}
-	hash, herr := passwords.Hash(account.password)
+	hash, herr := a.passwords.Hash(account.password)
 	if herr != nil {
 		return nil, false, herr
 	}
@@ -217,7 +215,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 	if err != nil {
 		return nil, false, err
 	}
-	if err := consentrecords.Write(ctx, tx, u.ID, account.consents); err != nil {
+	if err := a.consents.Write(ctx, tx, u.ID, account.consents); err != nil {
 		return nil, false, err
 	}
 	return u, true, nil
@@ -237,7 +235,7 @@ func ownSession(invitedEmail, sessionEmail string) error {
 
 // ensureMembership returns the User's Membership in the scoped Workspace, creating it with role
 // when there is none.
-func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role membership.Role) (*ent.Membership, error) {
+func (a *Module) ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role membership.Role) (*ent.Membership, error) {
 	existing, err := ts.Membership().Query().Where(membership.UserID(u.ID)).Only(ctx)
 	if !ent.IsNotFound(err) {
 		return existing, err
@@ -245,7 +243,7 @@ func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role mem
 	// DO NOTHING rather than catching a unique violation, which would abort the
 	// transaction. A concurrent accept that inserted first leaves nothing to write
 	// (db.Inserted); its Membership is read back, so the rules below still apply.
-	err = memberships.AddInvitedIn(ctx, ts, u.ID, role)
+	err = a.mods.Memberships.AddInvitedIn(ctx, ts, u.ID, role)
 	inserted, err := db.Inserted(err)
 	switch {
 	case err != nil:
@@ -258,8 +256,8 @@ func ensureMembership(ctx context.Context, ts *ent.Scoped, u *ent.User, role mem
 }
 
 // raiseToAdmin makes a member an admin and audits the change.
-func raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv *ent.Invitation, actor events.Actor, u *ent.User, existing *ent.Membership) error {
-	if err := memberships.SetRoleIn(ctx, ts, existing.ID, membership.RoleAdmin); err != nil {
+func (a *Module) raiseToAdmin(ctx context.Context, ts *ent.Scoped, pub events.Publisher, inv *ent.Invitation, actor events.Actor, u *ent.User, existing *ent.Membership) error {
+	if err := a.mods.Memberships.SetRoleIn(ctx, ts, existing.ID, membership.RoleAdmin); err != nil {
 		return err
 	}
 	return events.RecordAudit(ctx, pub, &events.AuditEntry{

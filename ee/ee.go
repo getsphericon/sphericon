@@ -27,6 +27,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
@@ -96,6 +98,10 @@ type Deps struct {
 	Reputation *reputation.Module
 	// Cipher seals the hashes the Erasures stream stores (ADR 0045).
 	Cipher *secrets.Cipher
+	// Memberships names the Owners of the Workspaces of the service feed.
+	Memberships *memberships.Module
+	// ConsentRecords is the Users' consent to the operator's mailings in the service feed.
+	ConsentRecords *consentrecords.Module
 }
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
@@ -117,7 +123,7 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 		Erasures: erasures.New(deps.Client, lic, deps.Cipher, now),
 		Usage:    usage,
 		Export:   &ExportStreams{lic: lic},
-		Staff:    workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Reputation, staffCfg),
+		Staff:    workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Reputation, deps.Memberships, deps.ConsentRecords, staffCfg),
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, now),
 	}

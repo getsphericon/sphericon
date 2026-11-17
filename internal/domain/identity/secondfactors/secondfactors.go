@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -95,14 +96,16 @@ type Module struct {
 	cipher   *secrets.Cipher
 	users    Users
 	passkeys *passkeys.Module
+	members  *memberships.Module
 	now      func() time.Time
 }
 
 // New builds the module. u proves the identity of the User's own steps; keys are the Passkeys a
-// Second factor reset removes; now is the Instance clock TOTP codes, the Two-factor grace and its
-// reminders are checked against.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, keys *passkeys.Module, now func() time.Time) *Module {
-	return &Module{ent: client, bus: bus, cipher: cipher, users: u, passkeys: keys, now: now}
+// Second factor reset removes; members decides whom a reset may reach and records a reminder on
+// the Membership; now is the Instance clock TOTP codes, the Two-factor grace and its reminders are
+// checked against.
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, keys *passkeys.Module, members *memberships.Module, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, cipher: cipher, users: u, passkeys: keys, members: members, now: now}
 }
 
 // factorOf reads the User's factor row on client, nil when the User never enrolled.

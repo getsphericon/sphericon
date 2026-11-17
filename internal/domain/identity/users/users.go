@@ -32,6 +32,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -51,6 +54,7 @@ type Module struct {
 	passwords *credentials.Hasher
 	consents  Consents
 	prover    Prover
+	mods      Modules
 	// now is the Instance clock an address is verified and proven by, and a Sign-up ages by.
 	now func() time.Time
 }
@@ -58,25 +62,36 @@ type Module struct {
 // Consents answers a form's answers against the Sign-up items in effect: the Consent records they
 // make, or the *validation.FieldsError that refuses them (consentrecords.Module.Check), and says
 // whether a User has a required acceptance pending (consentrecords.Module.Gated) and which
-// (consentrecords.Module.Pending).
+// (consentrecords.Module.Pending), and writes the records of a User's answers in the transaction
+// that writes the User (consentrecords.Module.Write).
 type Consents interface {
 	Check(ctx context.Context, answers []consentrecords.Answer, source consentrecord.Source) (consentrecords.Consents, error)
 	Gated(ctx context.Context, userID int64) (bool, error)
 	Pending(ctx context.Context, userID int64) ([]signupitems.Document, error)
+	Write(ctx context.Context, tx *ent.Client, userID int64, consents consentrecords.Consents) error
+}
+
+// Modules are the modules a User's own steps write the rows of other modules through: the
+// Memberships an accepted Invitation and a domain join make, the Invitation an acceptance marks
+// accepted, and the verified Join domain a domain join reads.
+type Modules struct {
+	Memberships *memberships.Module
+	Invitations *invitations.Module
+	JoinDomains *joindomains.Module
 }
 
 // New builds Module over the ent client; the bus opens the transactions that span several writes
 // and publishes in the transaction of a client an operation is given (events.Bus.PublishIn),
 // passwords hashes the passwords a User sets, consents answers the Sign-up items an account set up
 // from an Invitation is asked (ADR 0062), and prover proves a User's current password the way a
-// login does (Prover). now is the Instance clock.
-func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, prover Prover, now func() time.Time) *Module {
-	return &Module{ent: client, bus: bus, passwords: passwords, consents: consents, prover: prover, now: now}
+// login does (Prover). mods are the modules it writes Memberships and Invitations through
+// (Modules). now is the Instance clock.
+func New(client *ent.Client, bus *events.Bus, passwords *credentials.Hasher, consents Consents, prover Prover, mods Modules, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, passwords: passwords, consents: consents, prover: prover, mods: mods, now: now}
 }
 
 // publisherIn publishes through the bus in the transaction in is bound to (events.Bus.PublishIn):
-// the publisher an operation given a transaction's client hands to events.RecordAudit and to the
-// steps of the modules it calls that still take one.
+// the publisher an operation given a transaction's client hands to events.RecordAudit.
 type publisherIn struct {
 	bus *events.Bus
 	in  events.InTx
@@ -218,7 +233,7 @@ func (a *Module) CreateUnverified(ctx context.Context, n NewUser) (*ent.User, er
 		if err != nil {
 			return err
 		}
-		return consentrecords.Write(ctx, tx, created.ID, n.Consents)
+		return a.consents.Write(ctx, tx, created.ID, n.Consents)
 	})
 	return created, err
 }
@@ -238,7 +253,7 @@ func (a *Module) ReplaceUnverifiedPassword(ctx context.Context, in ReplaceUnveri
 		if err != nil || n == 0 {
 			return err
 		}
-		return consentrecords.Write(ctx, tx, in.UserID, in.Consents)
+		return a.consents.Write(ctx, tx, in.UserID, in.Consents)
 	})
 	if err != nil {
 		return nil, err
@@ -389,7 +404,7 @@ func (a *Module) CreateVerifiedIn(ctx context.Context, tx *ent.Client, n NewUser
 	if err != nil {
 		return nil, err
 	}
-	return u, consentrecords.Write(ctx, tx, u.ID, n.Consents)
+	return u, a.consents.Write(ctx, tx, u.ID, n.Consents)
 }
 
 // profileWrite is what updateProfile writes: a nil Name, PasswordHash, Timezone or RegionalFormat
@@ -415,7 +430,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 	var saved *ent.User
 	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		var err error
-		saved, _, err = updateProfileIn(ctx, tx, pub, id, w, proven, a.now())
+		saved, _, err = a.updateProfileIn(ctx, tx, pub, id, w, proven, a.now())
 		return err
 	})
 	return saved, err
@@ -424,7 +439,7 @@ func (a *Module) updateProfile(ctx context.Context, id int64, w profileWrite, pr
 // updateProfileIn is updateProfile's write on the transaction tx, the name already checked.
 // firstProof reports that proven stamped the address from empty: the identities linked before it
 // go then too, and the caller drops the rest of what was set up before the proof (ADR 0170).
-func updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, w profileWrite, proven bool, now time.Time) (saved *ent.User, firstProof bool, err error) {
+func (a *Module) updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, id int64, w profileWrite, proven bool, now time.Time) (saved *ent.User, firstProof bool, err error) {
 	// The mailed link proves the address; only a stamp from empty is a domain-join step,
 	// so the write is guarded and its rows-changed count says whether it stamped (ADR 0051).
 	if proven {
@@ -452,7 +467,7 @@ func updateProfileIn(ctx context.Context, tx *ent.Client, pub events.Publisher, 
 		return nil, false, err
 	}
 	if firstProof {
-		if _, err := applyDomainJoinIn(ctx, tx, pub, saved); err != nil {
+		if _, err := a.applyDomainJoinIn(ctx, tx, pub, saved); err != nil {
 			return nil, false, err
 		}
 	}
@@ -476,7 +491,7 @@ type Reset struct {
 // It runs on the transaction tx and publishes in it; FirstProof reports that the link was the
 // address's first proof, so the caller drops what was set up before it (ADR 0170).
 func (a *Module) ResetVerifiedPasswordIn(ctx context.Context, tx *ent.Client, id int64, passwordHash string) (Reset, error) {
-	saved, firstProof, err := updateProfileIn(ctx, tx, a.pub(tx), id, profileWrite{PasswordHash: &passwordHash}, true, a.now())
+	saved, firstProof, err := a.updateProfileIn(ctx, tx, a.pub(tx), id, profileWrite{PasswordHash: &passwordHash}, true, a.now())
 	if err != nil {
 		return Reset{}, err
 	}
@@ -648,7 +663,7 @@ func (a *Module) ChangeEmail(ctx context.Context, id int64, newEmail string) (*e
 		if u, err = tx.User.Get(ctx, id); err != nil {
 			return err
 		}
-		_, err = applyDomainJoinIn(ctx, tx, pub, u)
+		_, err = a.applyDomainJoinIn(ctx, tx, pub, u)
 		return err
 	})
 	if err != nil {

@@ -6,7 +6,7 @@
 // of which owns the Sign-up: each step writes the User's part through the users module's ...In
 // functions, which hold the rules of the User's rows, and, on the same transaction, creates the
 // User's first Workspace with its Owner Membership, the Send cap it starts with (ADR 0067) and its
-// `workspace.create` Audit entry (memberships.CreateWorkspaceIn). A Verified User's later
+// `workspace.create` Audit entry (memberships.Module.CreateWorkspaceIn). A Verified User's later
 // Workspaces are internal/usecase/workspaceview's.
 //
 // The sign-in through a Sign-in provider is here whole (ADR 0111): the provider's answer, the
@@ -24,8 +24,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
-	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/credentials"
@@ -38,8 +38,9 @@ type Module struct {
 	consents  *consentrecords.Module
 	links     *users.Links
 	passwords *credentials.Hasher
-	// defaultSendCap gives the Send cap a first Workspace starts with.
-	defaultSendCap *suspension.DefaultSendCap
+	// memberships creates the User's first Workspace with its Owner, and lists the Workspaces of a
+	// User whose first proof drops their credentials.
+	memberships *memberships.Module
 	// tokens revokes the User's Personal tokens and Connections, and factors clears their Second
 	// factor and Passkeys, when the first proof of an address drops them (ADR 0170); factors also
 	// says whether a User signing in through a provider has a Second factor due (ADR 0020).
@@ -60,18 +61,18 @@ type Module struct {
 // New builds the module: the bus opens its transactions, the users module writes the User's part
 // of each step, consents checks the answers to the Sign-up items and makes their Consent records
 // (consentrecords.Module.Check), links reads the verification and reset links, passwords hashes
-// the password of an Owner made from a shell, defaultSendCap says the Send cap a Workspace starts
-// with (suspension.DefaultSendCap.StartingIn, ADR 0067, ADR 0146), tokens and factors drop the
+// the password of an Owner made from a shell, members creates the first Workspace with its Owner
+// (memberships.Module.CreateWorkspaceIn) and lists a User's Workspaces, tokens and factors drop the
 // credentials set up before the first proof of an address (ADR 0170), cfg is what a Sign-up needs
 // (ADR 0030, ADR 0031), signIn what a sign-in through a Sign-in provider needs (ADR 0048) and now
 // is the Instance clock.
 func New(bus *events.Bus, usersModule *users.Module, consents *consentrecords.Module, links *users.Links,
-	passwords *credentials.Hasher, defaultSendCap *suspension.DefaultSendCap, tokens *apitokens.Module,
+	passwords *credentials.Hasher, members *memberships.Module, tokens *apitokens.Module,
 	factors *secondfactors.Module, cfg SignUpConfig, signIn SignInConfig, now func() time.Time,
 ) *Module {
 	m := &Module{
 		bus: bus, users: usersModule, consents: consents, links: links, passwords: passwords,
-		defaultSendCap: defaultSendCap, tokens: tokens, factors: factors, signUp: cfg, providers: signIn, now: now,
+		memberships: members, tokens: tokens, factors: factors, signUp: cfg, providers: signIn, now: now,
 	}
 	m.lookup = m.lookupUser
 	return m

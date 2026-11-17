@@ -70,11 +70,11 @@ type Admitted struct {
 func (m *Module) Admit(ctx context.Context, r Request) (Admitted, error) {
 	var admitted Admitted
 	if r.Workspace != "" {
-		s, ms, err := m.memberships.Scope(ctx, r.UserID, r.Workspace)
+		member, err := m.memberships.Scope(ctx, r.UserID, r.Workspace)
 		if err != nil {
 			return Admitted{}, err
 		}
-		admitted = Admitted{Scoped: s, Membership: ms}
+		admitted = Admitted{Scoped: member.Scope, Membership: member.Membership}
 	}
 	if err := m.admit(ctx, r, admitted.Membership); err != nil {
 		return Admitted{}, err

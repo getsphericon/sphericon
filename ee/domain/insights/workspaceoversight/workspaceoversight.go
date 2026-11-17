@@ -35,6 +35,8 @@ import (
 	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -81,10 +83,14 @@ type Module struct {
 	holdMax  time.Duration
 	survey   *signupsurveyresponses.Reader
 	sendCaps providerlimit.SendCaps
+	owners   *memberships.Module
+	consents *consentrecords.Module
 }
 
-// New builds the module over the raw client, the Audit log and the Usage it shows.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
+// New builds the module over the raw client, the Audit log and the Usage it shows; owners names
+// the Owners of the feed's Workspaces and consents the feed's Users' consent to the operator's
+// mailings.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, rates *reputation.Module, owners *memberships.Module, consents *consentrecords.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
 		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
@@ -95,7 +101,7 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog 
 	}
 	return &Module{
 		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
-		sendCaps: cfg.SendCaps,
+		sendCaps: cfg.SendCaps, owners: owners, consents: consents,
 	}
 }
 

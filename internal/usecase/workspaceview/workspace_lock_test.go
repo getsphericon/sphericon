@@ -60,8 +60,9 @@ func newPostalAddressRace(t *testing.T) postalAddressRace {
 	t.Helper()
 	ctx := context.Background()
 	env := testhelper.Setup(t, testhelper.Committed())
-	s, m, err := testhelper.Module[*memberships.Module](env).Scope(ctx, fixtures.OwnerJaneID, fixtures.GlobexPublicID)
+	member, err := testhelper.Module[*memberships.Module](env).Scope(ctx, fixtures.OwnerJaneID, fixtures.GlobexPublicID)
 	require.NoError(t, err)
+	s, m := member.Scope, member.Membership
 	sends := testhelper.Module[*broadcasts.Module](env)
 	view := testhelper.Module[*workspaceview.UseCase](env)
 	_, err = sends.Update(ctx, s, fixtures.BroadcastGlobexID, broadcasts.UpdateInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastGlobexID), IntegrationID: patch.Set[int64](fixtures.IntegrationGlobexID)})

@@ -2,6 +2,7 @@ package memberships_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -28,11 +29,12 @@ func TestAWorkspaceIsCreatedWithItsOwnerItsStartingSendCapAndItsAuditEntry(t *te
 		return err
 	}))
 	creator := env.DB.User.GetX(ctx, fixtures.UmbrellaOwnerRitaID)
+	ms := memberships.New(env.DB, env.Bus, startingCap, time.Now)
 
 	var ws *ent.Workspace
-	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	require.NoError(t, env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		ws, err = memberships.CreateWorkspaceIn(ctx, tx, pub, startingCap, creator, "  Second Brand  ")
+		ws, err = ms.CreateWorkspaceIn(ctx, tx, creator, "  Second Brand  ")
 		return err
 	}))
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
@@ -62,8 +64,10 @@ func TestAnUnverifiedUserCreatesNoWorkspace(t *testing.T) {
 	creator := env.DB.User.GetX(ctx, fixtures.FreshUnverifiedUserID)
 	before := env.DB.Workspace.Query().CountX(ctx)
 
-	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		_, err := memberships.CreateWorkspaceIn(ctx, tx, pub, testhelper.Module[*suspension.DefaultSendCap](env), creator, "Fresh")
+	ms := testhelper.Module[*memberships.Module](env)
+
+	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		_, err := ms.CreateWorkspaceIn(ctx, tx, creator, "Fresh")
 		return err
 	})
 

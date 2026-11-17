@@ -13,6 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
@@ -296,3 +299,13 @@ func NewProvenUsers(env *TestEnv) ProvenUsers {
 
 // ProveIdentity holds for every User.
 func (ProvenUsers) ProveIdentity(context.Context, *ent.User, users.IdentityProof) error { return nil }
+
+// UsersModules are env's modules the users module writes Memberships and Invitations through, for a
+// test that builds its own users module (users.Modules).
+func UsersModules(env *TestEnv) users.Modules {
+	return users.Modules{
+		Memberships: Module[*memberships.Module](env),
+		Invitations: Module[*invitations.Module](env),
+		JoinDomains: Module[*joindomains.Module](env),
+	}
+}

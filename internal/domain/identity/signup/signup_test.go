@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/user"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
@@ -108,7 +109,7 @@ func build(t *testing.T, env *testhelper.TestEnv, budget int, opts ...option) ri
 	t.Helper()
 	client, bus := env.DB, env.Bus
 	consents := testhelper.ConsentRecords(client, bus)
-	acc := users.New(client, bus, testhelper.Passwords(), consents, nil, time.Now)
+	acc := users.New(client, bus, testhelper.Passwords(), consents, nil, testhelper.UsersModules(env), time.Now)
 	attempts := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := requests{env: env}
 	cfg := signup.SignUpConfig{
@@ -118,7 +119,7 @@ func build(t *testing.T, env *testhelper.TestEnv, budget int, opts ...option) ri
 		o(&cfg)
 	}
 	links := users.NewLinks(acc, authtoken.New("secret", time.Now))
-	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), suspension.NewDefaultSendCap(client, false),
+	module := signup.New(bus, acc, consents, links, testhelper.Passwords(), memberships.New(client, bus, suspension.NewDefaultSendCap(client, false), time.Now),
 		testhelper.Module[*apitokens.Module](env), testhelper.Module[*secondfactors.Module](env), cfg, signup.SignInConfig{}, time.Now)
 	return rig{env: env, db: client, queue: q, module: module, users: acc, consents: consents, links: links}
 }

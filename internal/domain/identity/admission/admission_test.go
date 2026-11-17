@@ -101,8 +101,9 @@ func TestTheTwoFactorRequirementLetsThroughWhatTheRequestAllows(t *testing.T) {
 func TestATokenIsAdmittedToItsMembershipAsTheSessionWouldBe(t *testing.T) {
 	env := testhelper.Setup(t)
 	module := testhelper.Module[*admission.Module](env)
-	_, rita, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
+	member, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
 	require.NoError(t, err)
+	rita := member.Membership
 
 	withheld := module.AdmitMembership(t.Context(), rita, afterRitasGrace)
 	env.PutSignupItemsInEffect(t.Context(), fixtures.ServiceTermsID)

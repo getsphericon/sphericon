@@ -25,8 +25,9 @@ var (
 // Workspace publicID names, as the admission does before it asks the requirement.
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*secondfactors.Module, *ent.Membership) {
 	t.Helper()
-	_, m, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
+	member, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
+	m := member.Membership
 	return testhelper.Module[*secondfactors.Module](env), m
 }
 

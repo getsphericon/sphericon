@@ -26,9 +26,10 @@ import (
 func TestAcceptInvitationOfAVerifiedUserNeedsTheirSession(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	inv, _, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	issued, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
+	inv := issued.Invitation
 
 	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, users.InvitationAcceptance{}), users.ErrSignInRequired)
 	require.ErrorIs(t, acc.AcceptInvitation(t.Context(), inv, users.InvitationAcceptance{SessionEmail: fixtures.OwnerJaneEmail}), users.ErrWrongAccount)
@@ -68,9 +69,10 @@ func firstInsertMember(next ent.Mutator) ent.Mutator {
 func TestAcceptInvitationToleratesAMembershipInsertedFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	inv, _, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	issued, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleAdmin, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
+	inv := issued.Invitation
 	env.Bus.Use(hook.On(firstInsertMember, ent.OpCreate))
 
 	err = acc.AcceptInvitation(t.Context(), inv, users.InvitationAcceptance{SessionEmail: fixtures.OutsiderOscarEmail})
@@ -107,9 +109,10 @@ func TestAnInvitationLinkIsAcceptedByItsToken(t *testing.T) {
 func TestAnAcceptedInvitationKeepsNoAddress(t *testing.T) {
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	inv, _, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
+	issued, err := testhelper.Module[*invitations.Module](env).Invite(t.Context(), env.DB.Scoped(fixtures.AcmeID), events.Actor{Kind: events.ActorUser},
 		invitations.InviteInput{Email: fixtures.OutsiderOscarEmail, Role: invitation.RoleMember, InvitedBy: fixtures.OwnerJohnID})
 	require.NoError(t, err)
+	inv := issued.Invitation
 
 	require.NoError(t, acc.AcceptInvitation(t.Context(), inv, users.InvitationAcceptance{SessionEmail: fixtures.OutsiderOscarEmail}))
 

@@ -6,7 +6,6 @@ import (
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 )
 
@@ -14,7 +13,7 @@ import (
 func (h *Handlers) SiteInvitationsList(ctx context.Context, _ siteapi.SiteInvitationsListParams) ([]siteapi.SiteInvitationResource, error) {
 	s := workspaceScope(ctx)
 
-	invites, err := invitations.PendingInvitations(ctx, s)
+	invites, err := h.invitations.PendingInvitations(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -33,14 +32,15 @@ func (h *Handlers) SiteInvitationsCreate(ctx context.Context, req *siteapi.SiteC
 	in.InvitedBy = a.User.ID
 	// Token, hash, expiry and the upsert are the accounts operation's; the site only
 	// maps its refusals.
-	inv, token, err := h.invitations.Invite(ctx, s, h.actor(ctx), in)
+	issued, err := h.invitations.Invite(ctx, s, h.actor(ctx), in)
 	if err != nil {
 		return nil, err
 	}
+	inv := issued.Invitation
 
 	// The copy-link is the invite's own delivery, so an Instance without outbound mail still
 	// invites; the Invitation's event mails the link too.
-	inviteURL := strings.TrimRight(h.appURL, "/") + "/invitations/" + token
+	inviteURL := strings.TrimRight(h.appURL, "/") + "/invitations/" + issued.Token
 
 	inv.Edges.Inviter = a.User
 	return &siteapi.SiteCreateInvitationResponse{

@@ -27,7 +27,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
-	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
@@ -117,14 +116,11 @@ type UseCase struct {
 	holds           *holds.Holds
 	outbound        *outboundmessages.Module
 	trackingDomains *trackingdomains.Module
-	defaultSendCap  *suspension.DefaultSendCap
 	removalCheck    *removalcheck.Module
 	now             func() time.Time
 }
 
-// Modules are the modules the use case reads and changes the Workspace through. DefaultSendCap
-// gives the Send cap a new Workspace starts with (suspension.DefaultSendCap.StartingIn, ADR 0067,
-// ADR 0146). RemovalCheck finds the marketing email still to send that holds the postal address
+// Modules are the modules the use case reads and changes the Workspace through. RemovalCheck finds the marketing email still to send that holds the postal address
 // (ADR 0156).
 type Modules struct {
 	Users           *users.Module
@@ -134,7 +130,6 @@ type Modules struct {
 	Holds           *holds.Holds
 	Outbound        *outboundmessages.Module
 	TrackingDomains *trackingdomains.Module
-	DefaultSendCap  *suspension.DefaultSendCap
 	RemovalCheck    *removalcheck.Module
 }
 
@@ -144,7 +139,7 @@ type Modules struct {
 func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, users: mods.Users, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
-		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, defaultSendCap: mods.DefaultSendCap,
+		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains,
 		removalCheck: mods.RemovalCheck, now: now,
 	}
 }

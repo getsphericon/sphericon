@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -21,7 +22,7 @@ func TestErasureJobTriggersTheModuleAtItsClock(t *testing.T) {
 	now := time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
 	env.DeleteWorkspace(t, fixtures.UmbrellaID, now.Add(-testhelper.DeletionWindow-time.Hour))
 	clock := func() time.Time { return now }
-	w := jobs.NewEraseWorkspacesWorker(workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock))
+	w := jobs.NewEraseWorkspacesWorker(workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), testhelper.Module[*memberships.Module](env), clock))
 
 	require.NoError(t, w.Work(context.Background(), job(jobs.EraseWorkspacesArgs{})))
 
