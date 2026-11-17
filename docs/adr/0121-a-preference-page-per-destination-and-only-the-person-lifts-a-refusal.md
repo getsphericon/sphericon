@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # A Preference page per Destination, and only the person lifts a refusal

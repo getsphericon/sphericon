@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # A Score is computed from Events and attributes, never kept as a counter

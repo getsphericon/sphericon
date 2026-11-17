@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # A Broadcast may be scheduled for a local time in each Recipient's zone
