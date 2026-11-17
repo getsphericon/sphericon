@@ -129,14 +129,14 @@ jobs:
           key: easement-${{ runner.os }}-${{ github.sha }}
           restore-keys: easement-${{ runner.os }}-
 
-      # An indexer needs its toolchain set up only when it runs: `--cache-only` runs none and
-      # exits 3 when an index is not cached. Any other answer (a pass, a violation, an error) is
-      # left to the check below.
+      # An indexer needs its toolchain set up only when it runs: `doctor --cache` reads no index,
+      # runs no indexer and exits 3 when an index is not cached. Any other answer (an error in the
+      # policy) is left to the check below.
       - name: Look for every index in the cache
         id: indexes
         run: |
           status=0
-          easement check --cache-only > /dev/null 2>&1 || status=$?
+          easement doctor --cache || status=$?
           if [ "$status" -eq 3 ]; then
             echo "cached=false" >> "$GITHUB_OUTPUT"
           else
