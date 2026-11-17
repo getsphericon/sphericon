@@ -98,7 +98,7 @@ func (h *Handlers) StaffWorkspacesGet(ctx context.Context, params staffeeapi.Sta
 	res.Holds = staffMapper.HoldsToResources(d.Holds)
 	res.Abuse = staffMapper.AbuseToResource(w)
 	if d.Breach.Tier != abusedetector.TierNone {
-		res.Abuse.Warning = staffeeapi.NewOptNilStaffAbuseWarning(staffMapper.BreachToWarning(d.Breach))
+		res.Abuse.Warning = staffeeapi.NewOptNilAbuseWarning(staffMapper.BreachToWarning(d.Breach))
 	}
 	res.Deliverability = staffMapper.DeliverabilityToResource(d.Deliverability)
 	if d.SentLast24h != nil {
@@ -134,13 +134,13 @@ func sendCap(w *ent.Workspace, sent int) staffeeapi.StaffSendCap {
 	return res
 }
 
-func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.StaffSuspensionChange {
-	return &staffeeapi.StaffSuspensionChange{Changed: changed, Workspace: w}
+func change(w staffeeapi.StaffWorkspaceResource, changed bool) *staffeeapi.StaffWorkspaceChange {
+	return &staffeeapi.StaffWorkspaceChange{Changed: changed, Workspace: w}
 }
 
 // StaffWorkspacesSuspend freezes a Workspace's outbound sending as the signed-in
 // Staff member, whose id the audit trail keeps while customers see "Sphericon staff".
-func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
+func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.StaffSuspendInput, params staffeeapi.StaffWorkspacesSuspendParams) (*staffeeapi.StaffWorkspaceChange, error) {
 	done, err := h.module.SuspendWorkspace(ctx, string(params.WorkspaceId), workspaceoversight.SuspendWorkspaceInput{By: auth.StaffMember(ctx), Reason: req.Reason})
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func (h *Handlers) StaffWorkspacesSuspend(ctx context.Context, req *staffeeapi.S
 }
 
 // StaffWorkspacesUnsuspend lifts a Workspace's suspension as the signed-in Staff member.
-func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (*staffeeapi.StaffSuspensionChange, error) {
+func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeeapi.StaffWorkspacesUnsuspendParams) (*staffeeapi.StaffWorkspaceChange, error) {
 	done, err := h.module.UnsuspendWorkspace(ctx, string(params.WorkspaceId), auth.StaffMember(ctx))
 	if err != nil {
 		return nil, err
@@ -159,20 +159,20 @@ func (h *Handlers) StaffWorkspacesUnsuspend(ctx context.Context, params staffeea
 
 // StaffWorkspacesExempt exempts a Workspace from the abuse detector as the signed-in
 // Staff member.
-func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.StaffWorkspacesExemptParams) (*staffeeapi.StaffExemptionChange, error) {
+func (h *Handlers) StaffWorkspacesExempt(ctx context.Context, params staffeeapi.StaffWorkspacesExemptParams) (*staffeeapi.StaffWorkspaceChange, error) {
 	return h.setExempt(ctx, params.WorkspaceId, true)
 }
 
 // StaffWorkspacesUnexempt puts a Workspace back under the abuse detector.
-func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeapi.StaffWorkspacesUnexemptParams) (*staffeeapi.StaffExemptionChange, error) {
+func (h *Handlers) StaffWorkspacesUnexempt(ctx context.Context, params staffeeapi.StaffWorkspacesUnexemptParams) (*staffeeapi.StaffWorkspaceChange, error) {
 	return h.setExempt(ctx, params.WorkspaceId, false)
 }
 
 // setExempt is the change both exemption operations make.
-func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffExemptionChange, error) {
+func (h *Handlers) setExempt(ctx context.Context, wsID staffeeapi.WorkspaceId, exempt bool) (*staffeeapi.StaffWorkspaceChange, error) {
 	done, err := h.module.SetAbuseExempt(ctx, string(wsID), workspaceoversight.SetAbuseExemptInput{By: auth.StaffMember(ctx), Exempt: exempt})
 	if err != nil {
 		return nil, err
 	}
-	return &staffeeapi.StaffExemptionChange{Changed: done.Changed, Workspace: staffMapper.WorkspaceToResource(done.Workspace)}, nil
+	return &staffeeapi.StaffWorkspaceChange{Changed: done.Changed, Workspace: staffMapper.WorkspaceToResource(done.Workspace)}, nil
 }

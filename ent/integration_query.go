@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/starttoken"
@@ -31,6 +32,7 @@ type IntegrationQuery struct {
 	predicates           []predicate.Integration
 	withWorkspace        *WorkspaceQuery
 	withProviderLimiter  *ProviderLimiterQuery
+	withProviderState    *IntegrationProviderStateQuery
 	withCapturedMessages *CapturedMessageQuery
 	withBindings         *BindingQuery
 	withStartTokens      *StartTokenQuery
@@ -108,6 +110,28 @@ func (_q *IntegrationQuery) QueryProviderLimiter() *ProviderLimiterQuery {
 			sqlgraph.From(integration.Table, integration.FieldID, selector),
 			sqlgraph.To(providerlimiter.Table, providerlimiter.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, integration.ProviderLimiterTable, integration.ProviderLimiterColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProviderState chains the current query on the "provider_state" edge.
+func (_q *IntegrationQuery) QueryProviderState() *IntegrationProviderStateQuery {
+	query := (&IntegrationProviderStateClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, selector),
+			sqlgraph.To(integrationproviderstate.Table, integrationproviderstate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, integration.ProviderStateTable, integration.ProviderStateColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -375,6 +399,7 @@ func (_q *IntegrationQuery) Clone() *IntegrationQuery {
 		predicates:           append([]predicate.Integration{}, _q.predicates...),
 		withWorkspace:        _q.withWorkspace.Clone(),
 		withProviderLimiter:  _q.withProviderLimiter.Clone(),
+		withProviderState:    _q.withProviderState.Clone(),
 		withCapturedMessages: _q.withCapturedMessages.Clone(),
 		withBindings:         _q.withBindings.Clone(),
 		withStartTokens:      _q.withStartTokens.Clone(),
@@ -404,6 +429,17 @@ func (_q *IntegrationQuery) WithProviderLimiter(opts ...func(*ProviderLimiterQue
 		opt(query)
 	}
 	_q.withProviderLimiter = query
+	return _q
+}
+
+// WithProviderState tells the query-builder to eager-load the nodes that are connected to
+// the "provider_state" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *IntegrationQuery) WithProviderState(opts ...func(*IntegrationProviderStateQuery)) *IntegrationQuery {
+	query := (&IntegrationProviderStateClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProviderState = query
 	return _q
 }
 
@@ -518,9 +554,10 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	var (
 		nodes       = []*Integration{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withWorkspace != nil,
 			_q.withProviderLimiter != nil,
+			_q.withProviderState != nil,
 			_q.withCapturedMessages != nil,
 			_q.withBindings != nil,
 			_q.withStartTokens != nil,
@@ -556,6 +593,12 @@ func (_q *IntegrationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if query := _q.withProviderLimiter; query != nil {
 		if err := _q.loadProviderLimiter(ctx, query, nodes, nil,
 			func(n *Integration, e *ProviderLimiter) { n.Edges.ProviderLimiter = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProviderState; query != nil {
+		if err := _q.loadProviderState(ctx, query, nodes, nil,
+			func(n *Integration, e *IntegrationProviderState) { n.Edges.ProviderState = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -626,6 +669,33 @@ func (_q *IntegrationQuery) loadProviderLimiter(ctx context.Context, query *Prov
 	}
 	query.Where(predicate.ProviderLimiter(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(integration.ProviderLimiterColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IntegrationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "integration_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *IntegrationQuery) loadProviderState(ctx context.Context, query *IntegrationProviderStateQuery, nodes []*Integration, init func(*Integration), assign func(*Integration, *IntegrationProviderState)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Integration)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(integrationproviderstate.FieldIntegrationID)
+	}
+	query.Where(predicate.IntegrationProviderState(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(integration.ProviderStateColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

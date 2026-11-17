@@ -44,7 +44,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 		require.NoError(t, worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
 	}
 	effective := func() providerlimit.Effective {
-		row, err := s.Integration().Get(ctx, fixtures.IntegrationAcmeSesID)
+		row, err := s.Integration().QueryWithDiscarded().Where(integration.ID(fixtures.IntegrationAcmeSesID)).WithProviderState().Only(ctx)
 		require.NoError(t, err)
 		return providerlimit.EffectiveOf(row)
 	}
@@ -85,8 +85,8 @@ func TestRefreshIntegrationQuotaOfAnIntegrationDeletedAfterItWasQueuedChangesNot
 	err := worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
 
 	require.NoError(t, err)
-	row, err := env.DB.Integration.Get(ctx, fixtures.IntegrationAcmeSesID)
+	row, err := env.DB.Integration.Query().Where(integration.ID(fixtures.IntegrationAcmeSesID)).WithProviderState().Only(ctx)
 	require.NoError(t, err)
-	assert.Nil(t, row.ProviderQuotaCheckedAt)
-	assert.Nil(t, row.ProviderMaxPerSecond)
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaCheckedAt)
+	assert.Nil(t, row.Edges.ProviderState.ProviderMaxPerSecond)
 }

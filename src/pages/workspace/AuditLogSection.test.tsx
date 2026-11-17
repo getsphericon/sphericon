@@ -9,7 +9,7 @@ import {
   handleSiteAuditList,
   handleSiteAuditSetRetention,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAuditEntryResource } from '../../generated/site/types.gen.ts'
+import type { AuditEntryResource } from '../../generated/site/types.gen.ts'
 import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -19,7 +19,7 @@ import { AuditExportButton, AuditLogSection } from './AuditLogSection.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
 
-function entry(over: Partial<SiteAuditEntryResource> = {}): SiteAuditEntryResource {
+function entry(over: Partial<AuditEntryResource> = {}): AuditEntryResource {
   return {
     id: testId(2),
     occurredAt: '2026-01-02T03:04:05Z',

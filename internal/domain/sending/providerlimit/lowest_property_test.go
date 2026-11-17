@@ -38,7 +38,7 @@ func TestEffectiveOfIsTheLowerCeilingAndNamesItsSource(t *testing.T) {
 		provider := optionalCeiling(t, "provider")
 		want := lowerCeiling(manual, provider)
 
-		got := providerlimit.EffectiveOf(&ent.Integration{MaxPerSecond: manual, ProviderMaxPerSecond: provider}).PerSecond
+		got := providerlimit.EffectiveOf(integ(ent.Integration{MaxPerSecond: manual}, ent.IntegrationProviderState{ProviderMaxPerSecond: provider})).PerSecond
 
 		assert.Equalf(t, want, got, "manual %v, provider %v", manual, provider)
 	})

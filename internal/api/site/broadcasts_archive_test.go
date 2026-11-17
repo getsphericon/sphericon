@@ -110,7 +110,7 @@ func TestSiteADraftBroadcastIsArchivedAndUnarchived(t *testing.T) {
 	require.NoError(t, err)
 	restored := back
 	assert.False(t, restored.ArchivedAt.IsSet())
-	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, restored.Status)
+	assert.Equal(t, siteapi.BroadcastStatusDraft, restored.Status)
 	assert.Contains(t, broadcastIDs(listBroadcasts(t, c, false)), id)
 }
 
@@ -139,7 +139,7 @@ func TestSiteAnArchivedDraftBroadcastIsReadOnly(t *testing.T) {
 	require.NoError(t, err)
 	kept := got
 	assert.Equal(t, fixtures.BroadcastDraftName, kept.Name)
-	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, kept.Status)
+	assert.Equal(t, siteapi.BroadcastStatusDraft, kept.Status)
 }
 
 // The dashboard counts an archived broadcast: archiving moves no figure.

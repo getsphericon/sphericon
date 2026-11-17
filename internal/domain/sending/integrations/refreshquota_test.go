@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -26,7 +27,7 @@ func quotaModule(cipher *secrets.Cipher, catalog *messaging.Catalog) *integratio
 
 func reload(t *testing.T, s *ent.Scoped, id int64) *ent.Integration {
 	t.Helper()
-	row, err := s.Integration().Get(t.Context(), id)
+	row, err := s.Integration().QueryWithDiscarded().Where(integration.ID(id)).WithProviderState().Only(t.Context())
 	require.NoError(t, err)
 	return row
 }
@@ -40,10 +41,10 @@ func TestRefreshQuotaStoresTheProviderValuesAndFeedsTheCeiling(t *testing.T) {
 	require.NoError(t, quotaModule(env.Cipher, ses.Catalog()).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.Equal(t, new(14), row.ProviderMaxPerSecond)
-	assert.Equal(t, new(50000), row.ProviderMaxPerDay)
-	assert.Nil(t, row.ProviderQuotaFailedAt)
-	assert.NotNil(t, row.ProviderQuotaCheckedAt)
+	assert.Equal(t, new(14), row.Edges.ProviderState.ProviderMaxPerSecond)
+	assert.Equal(t, new(50000), row.Edges.ProviderState.ProviderMaxPerDay)
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaFailedAt)
+	assert.NotNil(t, row.Edges.ProviderState.ProviderQuotaCheckedAt)
 	eff := providerlimit.EffectiveOf(row)
 	assert.Equal(t, providerlimit.Value{Limit: new(14), Source: providerlimit.SourceProvider}, eff.PerSecond)
 
@@ -68,8 +69,8 @@ func TestRefreshQuotaFailureKeepsManualOrUnlimitedAndRecordsAWarning(t *testing.
 	assert.Contains(t, logged, "AccessDenied: ses:GetSendQuota")
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.NotNil(t, row.ProviderQuotaFailedAt)
-	assert.NotNil(t, row.ProviderQuotaCheckedAt, "a failed lookup still counts as a check")
+	assert.NotNil(t, row.Edges.ProviderState.ProviderQuotaFailedAt)
+	assert.NotNil(t, row.Edges.ProviderState.ProviderQuotaCheckedAt, "a failed lookup still counts as a check")
 	eff := providerlimit.EffectiveOf(row)
 	assert.True(t, eff.ProviderQuotaUnavailable)
 	assert.Equal(t, providerlimit.Value{Limit: new(1000), Source: providerlimit.SourceManual}, eff.PerDay)
@@ -88,8 +89,8 @@ func TestRefreshQuotaKeepsTheMomentOfTheFirstFailure(t *testing.T) {
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, first))
 
 	second := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.Equal(t, first.ProviderQuotaFailedAt, second.ProviderQuotaFailedAt, "a further failure keeps the first moment")
-	assert.True(t, second.ProviderQuotaCheckedAt.After(*first.ProviderQuotaCheckedAt), "the last check still moves")
+	assert.Equal(t, first.Edges.ProviderState.ProviderQuotaFailedAt, second.Edges.ProviderState.ProviderQuotaFailedAt, "a further failure keeps the first moment")
+	assert.True(t, second.Edges.ProviderState.ProviderQuotaCheckedAt.After(*first.Edges.ProviderState.ProviderQuotaCheckedAt), "the last check still moves")
 }
 
 func TestRefreshQuotaSuccessAfterFailureClearsTheWarning(t *testing.T) {
@@ -100,15 +101,15 @@ func TestRefreshQuotaSuccessAfterFailureClearsTheWarning(t *testing.T) {
 	cipher, catalog := env.Cipher, ses.Catalog()
 
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
-	require.NotNil(t, reload(t, s, fixtures.IntegrationAcmeSesID).ProviderQuotaFailedAt)
+	require.NotNil(t, reload(t, s, fixtures.IntegrationAcmeSesID).Edges.ProviderState.ProviderQuotaFailedAt)
 
 	ses.SetQuota(messaging.Quota{PerSecond: new(1)})
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.Nil(t, row.ProviderQuotaFailedAt)
-	assert.Equal(t, new(1), row.ProviderMaxPerSecond)
-	assert.Nil(t, row.ProviderMaxPerDay)
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaFailedAt)
+	assert.Equal(t, new(1), row.Edges.ProviderState.ProviderMaxPerSecond)
+	assert.Nil(t, row.Edges.ProviderState.ProviderMaxPerDay)
 }
 
 func TestRefreshQuotaFailureKeepsTheLastKnownProviderValues(t *testing.T) {
@@ -123,8 +124,8 @@ func TestRefreshQuotaFailureKeepsTheLastKnownProviderValues(t *testing.T) {
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.NotNil(t, row.ProviderQuotaFailedAt)
-	assert.Equal(t, new(14), row.ProviderMaxPerSecond, "a transient blip must not lift a ceiling that was known")
+	assert.NotNil(t, row.Edges.ProviderState.ProviderQuotaFailedAt)
+	assert.Equal(t, new(14), row.Edges.ProviderState.ProviderMaxPerSecond, "a transient blip must not lift a ceiling that was known")
 }
 
 func TestRefreshQuotaIgnoresProvidersThatCannotReportOne(t *testing.T) {
@@ -135,8 +136,8 @@ func TestRefreshQuotaIgnoresProvidersThatCannotReportOne(t *testing.T) {
 	require.NoError(t, quotaModule(env.Cipher, ses.Catalog()).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeDefaultID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeDefaultID)
-	assert.Nil(t, row.ProviderQuotaFailedAt, "SMTP has no quota to fail")
-	assert.Nil(t, row.ProviderQuotaCheckedAt)
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaFailedAt, "SMTP has no quota to fail")
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaCheckedAt)
 }
 
 func TestRefreshQuotaClearsAProviderValueTheProviderStoppedReporting(t *testing.T) {
@@ -155,10 +156,10 @@ func TestRefreshQuotaClearsAProviderValueTheProviderStoppedReporting(t *testing.
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 	withoutSecond := reload(t, s, fixtures.IntegrationAcmeSesID)
 
-	assert.Nil(t, withoutDay.ProviderMaxPerDay, "a daily ceiling the provider no longer reports is lifted, not kept")
-	assert.Equal(t, new(14), withoutDay.ProviderMaxPerSecond)
-	assert.Nil(t, withoutSecond.ProviderMaxPerSecond, "so is a per-second one")
-	assert.Equal(t, new(50000), withoutSecond.ProviderMaxPerDay)
+	assert.Nil(t, withoutDay.Edges.ProviderState.ProviderMaxPerDay, "a daily ceiling the provider no longer reports is lifted, not kept")
+	assert.Equal(t, new(14), withoutDay.Edges.ProviderState.ProviderMaxPerSecond)
+	assert.Nil(t, withoutSecond.Edges.ProviderState.ProviderMaxPerSecond, "so is a per-second one")
+	assert.Equal(t, new(50000), withoutSecond.Edges.ProviderState.ProviderMaxPerDay)
 }
 
 func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T) {
@@ -174,8 +175,8 @@ func TestRefreshQuotaReturnsAnErrorWhenTheStoredConfigCannotBeRead(t *testing.T)
 	require.ErrorContains(t, err, "decrypt integration")
 	require.ErrorIs(t, err, secrets.ErrCiphertext)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.Nil(t, row.ProviderMaxPerSecond, "no provider value is stored from a config that could not be read")
-	assert.Nil(t, row.ProviderQuotaCheckedAt)
+	assert.Nil(t, row.Edges.ProviderState.ProviderMaxPerSecond, "no provider value is stored from a config that could not be read")
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaCheckedAt)
 }
 
 func TestRefreshQuotaStoresTheAccountStanding(t *testing.T) {
@@ -188,9 +189,9 @@ func TestRefreshQuotaStoresTheAccountStanding(t *testing.T) {
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	require.NotNil(t, row.ProviderEnforcement)
-	assert.Equal(t, providers.EnforcementProbation, *row.ProviderEnforcement)
-	assert.True(t, row.ProviderSandbox)
+	require.NotNil(t, row.Edges.ProviderState.ProviderEnforcement)
+	assert.Equal(t, providers.EnforcementProbation, *row.Edges.ProviderState.ProviderEnforcement)
+	assert.True(t, row.Edges.ProviderState.ProviderSandbox)
 	assert.Equal(t, []providerlimit.Warning{
 		providerlimit.WarningUnlimited, providerlimit.WarningProviderProbation, providerlimit.WarningProviderSandbox,
 	}, providerlimit.EffectiveOf(row).Warnings())
@@ -208,8 +209,8 @@ func TestRefreshQuotaClearsTheStandingWhenTheAccountRecovers(t *testing.T) {
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.Nil(t, row.ProviderEnforcement)
-	assert.False(t, row.ProviderSandbox)
+	assert.Nil(t, row.Edges.ProviderState.ProviderEnforcement)
+	assert.False(t, row.Edges.ProviderState.ProviderSandbox)
 }
 
 func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
@@ -224,16 +225,17 @@ func TestRefreshQuotaFailureKeepsTheLastKnownStanding(t *testing.T) {
 	require.NoError(t, quotaModule(cipher, catalog).RefreshQuota(t.Context(), s, reload(t, s, fixtures.IntegrationAcmeSesID)))
 
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	require.NotNil(t, row.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
-	assert.Equal(t, providers.EnforcementShutdown, *row.ProviderEnforcement)
-	assert.True(t, row.ProviderSandbox)
+	require.NotNil(t, row.Edges.ProviderState.ProviderEnforcement, "a failed read says nothing about the account, so the last answer stands")
+	assert.Equal(t, providers.EnforcementShutdown, *row.Edges.ProviderState.ProviderEnforcement)
+	assert.True(t, row.Edges.ProviderState.ProviderSandbox)
 }
 
-// failIntegrationWrites makes every write of op to an Integration fail with err.
-func failIntegrationWrites(env *testhelper.TestEnv, op ent.Op, err error) {
-	env.DB.Integration.Use(func(next ent.Mutator) ent.Mutator {
+// failStateWrites makes every write to an Integration's provider state that which picks fail with
+// err.
+func failStateWrites(env *testhelper.TestEnv, which func(*ent.IntegrationProviderStateMutation) bool, err error) {
+	env.DB.IntegrationProviderState.Use(func(next ent.Mutator) ent.Mutator {
 		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-			if m.Op().Is(op) {
+			if state, ok := m.(*ent.IntegrationProviderStateMutation); ok && which(state) {
 				return nil, err
 			}
 			return next.Mutate(ctx, m)
@@ -241,18 +243,23 @@ func failIntegrationWrites(env *testhelper.TestEnv, op ent.Op, err error) {
 	})
 }
 
-// A write RefreshQuota cannot make is returned, whichever it is: the stored answer of a lookup
-// (UpdateOne), or the mark or the clearing of a failure (an Update guarded by its state).
+// A write RefreshQuota cannot make is returned, whichever it is: the stored answer of a lookup or
+// of its failure, or the mark or the clearing of a failure (each guarded by its state).
 func TestRefreshQuotaReturnsAWriteItCannotMake(t *testing.T) {
 	injected := errors.New("injected failure")
+	checked := func(m *ent.IntegrationProviderStateMutation) bool { _, ok := m.ProviderQuotaCheckedAt(); return ok }
 	for name, tc := range map[string]struct {
-		op        ent.Op
+		which     func(*ent.IntegrationProviderStateMutation) bool
 		lookupErr error
 	}{
-		"the provider values":          {ent.OpUpdateOne, nil},
-		"the check of a failed lookup": {ent.OpUpdateOne, errors.New("timeout")},
-		"the clearing of a failure":    {ent.OpUpdate, nil},
-		"the mark of a failure":        {ent.OpUpdate, errors.New("timeout")},
+		"the provider values":          {checked, nil},
+		"the check of a failed lookup": {checked, errors.New("timeout")},
+		"the clearing of a failure": {
+			func(m *ent.IntegrationProviderStateMutation) bool { return m.ProviderQuotaFailedAtCleared() }, nil,
+		},
+		"the mark of a failure": {
+			func(m *ent.IntegrationProviderStateMutation) bool { _, ok := m.ProviderQuotaFailedAt(); return ok }, errors.New("timeout"),
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			env := testhelper.Setup(t)
@@ -261,7 +268,7 @@ func TestRefreshQuotaReturnsAWriteItCannotMake(t *testing.T) {
 			ses.SetQuota(messaging.Quota{PerSecond: new(14)})
 			ses.SetQuotaErr(tc.lookupErr)
 			integ := reload(t, s, fixtures.IntegrationAcmeSesID)
-			failIntegrationWrites(env, tc.op, injected)
+			failStateWrites(env, tc.which, injected)
 
 			err := quotaModule(env.Cipher, ses.Catalog()).RefreshQuota(t.Context(), s, integ)
 
@@ -285,5 +292,5 @@ func TestRefreshQuotaReturnsAConfigTheProviderCannotBuildFrom(t *testing.T) {
 
 	require.ErrorIs(t, err, unbuildable)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
-	assert.Nil(t, row.ProviderQuotaCheckedAt)
+	assert.Nil(t, row.Edges.ProviderState.ProviderQuotaCheckedAt)
 }

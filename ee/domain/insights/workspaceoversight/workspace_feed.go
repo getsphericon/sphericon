@@ -8,8 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	"entgo.io/ent/dialect/sql"
+
 	"github.com/getsphericon/sphericon/ent"
-	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -41,22 +44,25 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (p
 	if err != nil {
 		return pagination.CursorPage[FeedEntry]{}, err
 	}
-	rows, err := m.ent.Workspace.Query().
-		Where(entworkspace.Or(
-			entworkspace.FeedPositionGT(position),
-			entworkspace.And(entworkspace.FeedPositionEQ(position), entworkspace.IDGT(id)),
+	// The position is the Workspace's standing (ADR 0168): the feed pages the standings and reads
+	// each one's Workspace with it.
+	rows, err := m.ent.WorkspaceStanding.Query().
+		Where(workspacestanding.Or(
+			workspacestanding.FeedPositionGT(position),
+			workspacestanding.And(workspacestanding.FeedPositionEQ(position), predicate.WorkspaceStanding(sql.FieldGT(workspacestanding.FieldWorkspaceID, id))),
 		)).
-		Order(ent.Asc(entworkspace.FieldFeedPosition), ent.Asc(entworkspace.FieldID)).
+		Order(ent.Asc(workspacestanding.FieldFeedPosition), ent.Asc(workspacestanding.FieldWorkspaceID)).
+		WithWorkspace().
 		Limit(limit + 1).
 		All(ctx)
 	if err != nil {
 		return pagination.CursorPage[FeedEntry]{}, err
 	}
-	page := pagination.Cursor(rows, limit, cursor, func(w *ent.Workspace) string { return feedCursor(w.FeedPosition, w.ID) })
+	page := pagination.Cursor(rows, limit, cursor, func(s *ent.WorkspaceStanding) string { return feedCursor(s.FeedPosition, s.WorkspaceID) })
 
 	ids := make([]int64, len(page.Items))
-	for i, w := range page.Items {
-		ids[i] = w.ID
+	for i, s := range page.Items {
+		ids[i] = s.WorkspaceID
 	}
 	owners, err := memberships.OwnersOf(ctx, m.ent, ids...)
 	if err != nil {
@@ -66,7 +72,9 @@ func (m *Module) WorkspaceFeed(ctx context.Context, cursor string, limit int) (p
 	for _, o := range owners {
 		byWorkspace[o.WorkspaceID] = append(byWorkspace[o.WorkspaceID], o.Edges.User)
 	}
-	return page.Map(func(w *ent.Workspace) FeedEntry {
+	return page.Map(func(s *ent.WorkspaceStanding) FeedEntry {
+		w := s.Edges.Workspace
+		w.Edges.Standing = s
 		return FeedEntry{Workspace: w, Owners: slices.Clip(byWorkspace[w.ID])}
 	}), nil
 }

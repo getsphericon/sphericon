@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/legaldocumentdraft"
@@ -89,7 +90,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 
 	stdsql "database/sql"
 )
@@ -161,6 +164,8 @@ type Client struct {
 	InstanceState *InstanceStateClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
+	// IntegrationProviderState is the client for interacting with the IntegrationProviderState builders.
+	IntegrationProviderState *IntegrationProviderStateClient
 	// Invitation is the client for interacting with the Invitation builders.
 	Invitation *InvitationClient
 	// JoinDomain is the client for interacting with the JoinDomain builders.
@@ -247,8 +252,12 @@ type Client struct {
 	Visitor *VisitorClient
 	// WebhookEndpoint is the client for interacting with the WebhookEndpoint builders.
 	WebhookEndpoint *WebhookEndpointClient
+	// WebhookEndpointHealth is the client for interacting with the WebhookEndpointHealth builders.
+	WebhookEndpointHealth *WebhookEndpointHealthClient
 	// Workspace is the client for interacting with the Workspace builders.
 	Workspace *WorkspaceClient
+	// WorkspaceStanding is the client for interacting with the WorkspaceStanding builders.
+	WorkspaceStanding *WorkspaceStandingClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -291,6 +300,7 @@ func (c *Client) init() {
 	c.InstanceAuditEntry = NewInstanceAuditEntryClient(c.config)
 	c.InstanceState = NewInstanceStateClient(c.config)
 	c.Integration = NewIntegrationClient(c.config)
+	c.IntegrationProviderState = NewIntegrationProviderStateClient(c.config)
 	c.Invitation = NewInvitationClient(c.config)
 	c.JoinDomain = NewJoinDomainClient(c.config)
 	c.LegalDocumentDraft = NewLegalDocumentDraftClient(c.config)
@@ -334,7 +344,9 @@ func (c *Client) init() {
 	c.UserTombstone = NewUserTombstoneClient(c.config)
 	c.Visitor = NewVisitorClient(c.config)
 	c.WebhookEndpoint = NewWebhookEndpointClient(c.config)
+	c.WebhookEndpointHealth = NewWebhookEndpointHealthClient(c.config)
 	c.Workspace = NewWorkspaceClient(c.config)
+	c.WorkspaceStanding = NewWorkspaceStandingClient(c.config)
 }
 
 type (
@@ -425,83 +437,86 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                  ctx,
-		config:               cfg,
-		ApiToken:             NewApiTokenClient(cfg),
-		AuditEntry:           NewAuditEntryClient(cfg),
-		AuthAttempt:          NewAuthAttemptClient(cfg),
-		Automation:           NewAutomationClient(cfg),
-		AutomationFigure:     NewAutomationFigureClient(cfg),
-		AutomationRun:        NewAutomationRunClient(cfg),
-		AutomationVersion:    NewAutomationVersionClient(cfg),
-		Binding:              NewBindingClient(cfg),
-		BrandKit:             NewBrandKitClient(cfg),
-		Broadcast:            NewBroadcastClient(cfg),
-		BroadcastFigure:      NewBroadcastFigureClient(cfg),
-		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
-		CapturedMessage:      NewCapturedMessageClient(cfg),
-		Confirmation:         NewConfirmationClient(cfg),
-		ConsentRecord:        NewConsentRecordClient(cfg),
-		ConsentStamp:         NewConsentStampClient(cfg),
-		Contact:              NewContactClient(cfg),
-		ContactTag:           NewContactTagClient(cfg),
-		CustomField:          NewCustomFieldClient(cfg),
-		DefaultSendCap:       NewDefaultSendCapClient(cfg),
-		EmailTemplate:        NewEmailTemplateClient(cfg),
-		Erasure:              NewErasureClient(cfg),
-		Event:                NewEventClient(cfg),
-		EventJournalEntry:    NewEventJournalEntryClient(cfg),
-		EventReceipt:         NewEventReceiptClient(cfg),
-		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
-		Hold:                 NewHoldClient(cfg),
-		IdentitySecret:       NewIdentitySecretClient(cfg),
-		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
-		InstanceState:        NewInstanceStateClient(cfg),
-		Integration:          NewIntegrationClient(cfg),
-		Invitation:           NewInvitationClient(cfg),
-		JoinDomain:           NewJoinDomainClient(cfg),
-		LegalDocumentDraft:   NewLegalDocumentDraftClient(cfg),
-		LegalDocumentVersion: NewLegalDocumentVersionClient(cfg),
-		Membership:           NewMembershipClient(cfg),
-		OAuthClient:          NewOAuthClientClient(cfg),
-		OAuthCode:            NewOAuthCodeClient(cfg),
-		OAuthRefreshToken:    NewOAuthRefreshTokenClient(cfg),
-		Order:                NewOrderClient(cfg),
-		OrderMovement:        NewOrderMovementClient(cfg),
-		OutboundMessage:      NewOutboundMessageClient(cfg),
-		Passkey:              NewPasskeyClient(cfg),
-		PasskeyChallenge:     NewPasskeyChallengeClient(cfg),
-		PendingSignup:        NewPendingSignupClient(cfg),
-		PrivateRelayRange:    NewPrivateRelayRangeClient(cfg),
-		ProviderLimiter:      NewProviderLimiterClient(cfg),
-		RecoveryCode:         NewRecoveryCodeClient(cfg),
-		Rule:                 NewRuleClient(cfg),
-		RuleFiring:           NewRuleFiringClient(cfg),
-		RuleVersion:          NewRuleVersionClient(cfg),
-		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
-		SchemaState:          NewSchemaStateClient(cfg),
-		SecondFactor:         NewSecondFactorClient(cfg),
-		Segment:              NewSegmentClient(cfg),
-		SendCapLimiter:       NewSendCapLimiterClient(cfg),
-		SendingDomain:        NewSendingDomainClient(cfg),
-		ServiceCredential:    NewServiceCredentialClient(cfg),
-		SignupItem:           NewSignupItemClient(cfg),
-		SignupSurveyResponse: NewSignupSurveyResponseClient(cfg),
-		StaffMember:          NewStaffMemberClient(cfg),
-		StartToken:           NewStartTokenClient(cfg),
-		Suppression:          NewSuppressionClient(cfg),
-		Tag:                  NewTagClient(cfg),
-		TrackedLink:          NewTrackedLinkClient(cfg),
-		TrackingDomain:       NewTrackingDomainClient(cfg),
-		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
-		Unsubscribe:          NewUnsubscribeClient(cfg),
-		Usage:                NewUsageClient(cfg),
-		User:                 NewUserClient(cfg),
-		UserIdentity:         NewUserIdentityClient(cfg),
-		UserTombstone:        NewUserTombstoneClient(cfg),
-		Visitor:              NewVisitorClient(cfg),
-		WebhookEndpoint:      NewWebhookEndpointClient(cfg),
-		Workspace:            NewWorkspaceClient(cfg),
+		ctx:                      ctx,
+		config:                   cfg,
+		ApiToken:                 NewApiTokenClient(cfg),
+		AuditEntry:               NewAuditEntryClient(cfg),
+		AuthAttempt:              NewAuthAttemptClient(cfg),
+		Automation:               NewAutomationClient(cfg),
+		AutomationFigure:         NewAutomationFigureClient(cfg),
+		AutomationRun:            NewAutomationRunClient(cfg),
+		AutomationVersion:        NewAutomationVersionClient(cfg),
+		Binding:                  NewBindingClient(cfg),
+		BrandKit:                 NewBrandKitClient(cfg),
+		Broadcast:                NewBroadcastClient(cfg),
+		BroadcastFigure:          NewBroadcastFigureClient(cfg),
+		BroadcastRecipient:       NewBroadcastRecipientClient(cfg),
+		CapturedMessage:          NewCapturedMessageClient(cfg),
+		Confirmation:             NewConfirmationClient(cfg),
+		ConsentRecord:            NewConsentRecordClient(cfg),
+		ConsentStamp:             NewConsentStampClient(cfg),
+		Contact:                  NewContactClient(cfg),
+		ContactTag:               NewContactTagClient(cfg),
+		CustomField:              NewCustomFieldClient(cfg),
+		DefaultSendCap:           NewDefaultSendCapClient(cfg),
+		EmailTemplate:            NewEmailTemplateClient(cfg),
+		Erasure:                  NewErasureClient(cfg),
+		Event:                    NewEventClient(cfg),
+		EventJournalEntry:        NewEventJournalEntryClient(cfg),
+		EventReceipt:             NewEventReceiptClient(cfg),
+		HeldOrderEvent:           NewHeldOrderEventClient(cfg),
+		Hold:                     NewHoldClient(cfg),
+		IdentitySecret:           NewIdentitySecretClient(cfg),
+		InstanceAuditEntry:       NewInstanceAuditEntryClient(cfg),
+		InstanceState:            NewInstanceStateClient(cfg),
+		Integration:              NewIntegrationClient(cfg),
+		IntegrationProviderState: NewIntegrationProviderStateClient(cfg),
+		Invitation:               NewInvitationClient(cfg),
+		JoinDomain:               NewJoinDomainClient(cfg),
+		LegalDocumentDraft:       NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion:     NewLegalDocumentVersionClient(cfg),
+		Membership:               NewMembershipClient(cfg),
+		OAuthClient:              NewOAuthClientClient(cfg),
+		OAuthCode:                NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:        NewOAuthRefreshTokenClient(cfg),
+		Order:                    NewOrderClient(cfg),
+		OrderMovement:            NewOrderMovementClient(cfg),
+		OutboundMessage:          NewOutboundMessageClient(cfg),
+		Passkey:                  NewPasskeyClient(cfg),
+		PasskeyChallenge:         NewPasskeyChallengeClient(cfg),
+		PendingSignup:            NewPendingSignupClient(cfg),
+		PrivateRelayRange:        NewPrivateRelayRangeClient(cfg),
+		ProviderLimiter:          NewProviderLimiterClient(cfg),
+		RecoveryCode:             NewRecoveryCodeClient(cfg),
+		Rule:                     NewRuleClient(cfg),
+		RuleFiring:               NewRuleFiringClient(cfg),
+		RuleVersion:              NewRuleVersionClient(cfg),
+		RuleVersionTrigger:       NewRuleVersionTriggerClient(cfg),
+		SchemaState:              NewSchemaStateClient(cfg),
+		SecondFactor:             NewSecondFactorClient(cfg),
+		Segment:                  NewSegmentClient(cfg),
+		SendCapLimiter:           NewSendCapLimiterClient(cfg),
+		SendingDomain:            NewSendingDomainClient(cfg),
+		ServiceCredential:        NewServiceCredentialClient(cfg),
+		SignupItem:               NewSignupItemClient(cfg),
+		SignupSurveyResponse:     NewSignupSurveyResponseClient(cfg),
+		StaffMember:              NewStaffMemberClient(cfg),
+		StartToken:               NewStartTokenClient(cfg),
+		Suppression:              NewSuppressionClient(cfg),
+		Tag:                      NewTagClient(cfg),
+		TrackedLink:              NewTrackedLinkClient(cfg),
+		TrackingDomain:           NewTrackingDomainClient(cfg),
+		TrackingHostChange:       NewTrackingHostChangeClient(cfg),
+		Unsubscribe:              NewUnsubscribeClient(cfg),
+		Usage:                    NewUsageClient(cfg),
+		User:                     NewUserClient(cfg),
+		UserIdentity:             NewUserIdentityClient(cfg),
+		UserTombstone:            NewUserTombstoneClient(cfg),
+		Visitor:                  NewVisitorClient(cfg),
+		WebhookEndpoint:          NewWebhookEndpointClient(cfg),
+		WebhookEndpointHealth:    NewWebhookEndpointHealthClient(cfg),
+		Workspace:                NewWorkspaceClient(cfg),
+		WorkspaceStanding:        NewWorkspaceStandingClient(cfg),
 	}, nil
 }
 
@@ -519,83 +534,86 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                  ctx,
-		config:               cfg,
-		ApiToken:             NewApiTokenClient(cfg),
-		AuditEntry:           NewAuditEntryClient(cfg),
-		AuthAttempt:          NewAuthAttemptClient(cfg),
-		Automation:           NewAutomationClient(cfg),
-		AutomationFigure:     NewAutomationFigureClient(cfg),
-		AutomationRun:        NewAutomationRunClient(cfg),
-		AutomationVersion:    NewAutomationVersionClient(cfg),
-		Binding:              NewBindingClient(cfg),
-		BrandKit:             NewBrandKitClient(cfg),
-		Broadcast:            NewBroadcastClient(cfg),
-		BroadcastFigure:      NewBroadcastFigureClient(cfg),
-		BroadcastRecipient:   NewBroadcastRecipientClient(cfg),
-		CapturedMessage:      NewCapturedMessageClient(cfg),
-		Confirmation:         NewConfirmationClient(cfg),
-		ConsentRecord:        NewConsentRecordClient(cfg),
-		ConsentStamp:         NewConsentStampClient(cfg),
-		Contact:              NewContactClient(cfg),
-		ContactTag:           NewContactTagClient(cfg),
-		CustomField:          NewCustomFieldClient(cfg),
-		DefaultSendCap:       NewDefaultSendCapClient(cfg),
-		EmailTemplate:        NewEmailTemplateClient(cfg),
-		Erasure:              NewErasureClient(cfg),
-		Event:                NewEventClient(cfg),
-		EventJournalEntry:    NewEventJournalEntryClient(cfg),
-		EventReceipt:         NewEventReceiptClient(cfg),
-		HeldOrderEvent:       NewHeldOrderEventClient(cfg),
-		Hold:                 NewHoldClient(cfg),
-		IdentitySecret:       NewIdentitySecretClient(cfg),
-		InstanceAuditEntry:   NewInstanceAuditEntryClient(cfg),
-		InstanceState:        NewInstanceStateClient(cfg),
-		Integration:          NewIntegrationClient(cfg),
-		Invitation:           NewInvitationClient(cfg),
-		JoinDomain:           NewJoinDomainClient(cfg),
-		LegalDocumentDraft:   NewLegalDocumentDraftClient(cfg),
-		LegalDocumentVersion: NewLegalDocumentVersionClient(cfg),
-		Membership:           NewMembershipClient(cfg),
-		OAuthClient:          NewOAuthClientClient(cfg),
-		OAuthCode:            NewOAuthCodeClient(cfg),
-		OAuthRefreshToken:    NewOAuthRefreshTokenClient(cfg),
-		Order:                NewOrderClient(cfg),
-		OrderMovement:        NewOrderMovementClient(cfg),
-		OutboundMessage:      NewOutboundMessageClient(cfg),
-		Passkey:              NewPasskeyClient(cfg),
-		PasskeyChallenge:     NewPasskeyChallengeClient(cfg),
-		PendingSignup:        NewPendingSignupClient(cfg),
-		PrivateRelayRange:    NewPrivateRelayRangeClient(cfg),
-		ProviderLimiter:      NewProviderLimiterClient(cfg),
-		RecoveryCode:         NewRecoveryCodeClient(cfg),
-		Rule:                 NewRuleClient(cfg),
-		RuleFiring:           NewRuleFiringClient(cfg),
-		RuleVersion:          NewRuleVersionClient(cfg),
-		RuleVersionTrigger:   NewRuleVersionTriggerClient(cfg),
-		SchemaState:          NewSchemaStateClient(cfg),
-		SecondFactor:         NewSecondFactorClient(cfg),
-		Segment:              NewSegmentClient(cfg),
-		SendCapLimiter:       NewSendCapLimiterClient(cfg),
-		SendingDomain:        NewSendingDomainClient(cfg),
-		ServiceCredential:    NewServiceCredentialClient(cfg),
-		SignupItem:           NewSignupItemClient(cfg),
-		SignupSurveyResponse: NewSignupSurveyResponseClient(cfg),
-		StaffMember:          NewStaffMemberClient(cfg),
-		StartToken:           NewStartTokenClient(cfg),
-		Suppression:          NewSuppressionClient(cfg),
-		Tag:                  NewTagClient(cfg),
-		TrackedLink:          NewTrackedLinkClient(cfg),
-		TrackingDomain:       NewTrackingDomainClient(cfg),
-		TrackingHostChange:   NewTrackingHostChangeClient(cfg),
-		Unsubscribe:          NewUnsubscribeClient(cfg),
-		Usage:                NewUsageClient(cfg),
-		User:                 NewUserClient(cfg),
-		UserIdentity:         NewUserIdentityClient(cfg),
-		UserTombstone:        NewUserTombstoneClient(cfg),
-		Visitor:              NewVisitorClient(cfg),
-		WebhookEndpoint:      NewWebhookEndpointClient(cfg),
-		Workspace:            NewWorkspaceClient(cfg),
+		ctx:                      ctx,
+		config:                   cfg,
+		ApiToken:                 NewApiTokenClient(cfg),
+		AuditEntry:               NewAuditEntryClient(cfg),
+		AuthAttempt:              NewAuthAttemptClient(cfg),
+		Automation:               NewAutomationClient(cfg),
+		AutomationFigure:         NewAutomationFigureClient(cfg),
+		AutomationRun:            NewAutomationRunClient(cfg),
+		AutomationVersion:        NewAutomationVersionClient(cfg),
+		Binding:                  NewBindingClient(cfg),
+		BrandKit:                 NewBrandKitClient(cfg),
+		Broadcast:                NewBroadcastClient(cfg),
+		BroadcastFigure:          NewBroadcastFigureClient(cfg),
+		BroadcastRecipient:       NewBroadcastRecipientClient(cfg),
+		CapturedMessage:          NewCapturedMessageClient(cfg),
+		Confirmation:             NewConfirmationClient(cfg),
+		ConsentRecord:            NewConsentRecordClient(cfg),
+		ConsentStamp:             NewConsentStampClient(cfg),
+		Contact:                  NewContactClient(cfg),
+		ContactTag:               NewContactTagClient(cfg),
+		CustomField:              NewCustomFieldClient(cfg),
+		DefaultSendCap:           NewDefaultSendCapClient(cfg),
+		EmailTemplate:            NewEmailTemplateClient(cfg),
+		Erasure:                  NewErasureClient(cfg),
+		Event:                    NewEventClient(cfg),
+		EventJournalEntry:        NewEventJournalEntryClient(cfg),
+		EventReceipt:             NewEventReceiptClient(cfg),
+		HeldOrderEvent:           NewHeldOrderEventClient(cfg),
+		Hold:                     NewHoldClient(cfg),
+		IdentitySecret:           NewIdentitySecretClient(cfg),
+		InstanceAuditEntry:       NewInstanceAuditEntryClient(cfg),
+		InstanceState:            NewInstanceStateClient(cfg),
+		Integration:              NewIntegrationClient(cfg),
+		IntegrationProviderState: NewIntegrationProviderStateClient(cfg),
+		Invitation:               NewInvitationClient(cfg),
+		JoinDomain:               NewJoinDomainClient(cfg),
+		LegalDocumentDraft:       NewLegalDocumentDraftClient(cfg),
+		LegalDocumentVersion:     NewLegalDocumentVersionClient(cfg),
+		Membership:               NewMembershipClient(cfg),
+		OAuthClient:              NewOAuthClientClient(cfg),
+		OAuthCode:                NewOAuthCodeClient(cfg),
+		OAuthRefreshToken:        NewOAuthRefreshTokenClient(cfg),
+		Order:                    NewOrderClient(cfg),
+		OrderMovement:            NewOrderMovementClient(cfg),
+		OutboundMessage:          NewOutboundMessageClient(cfg),
+		Passkey:                  NewPasskeyClient(cfg),
+		PasskeyChallenge:         NewPasskeyChallengeClient(cfg),
+		PendingSignup:            NewPendingSignupClient(cfg),
+		PrivateRelayRange:        NewPrivateRelayRangeClient(cfg),
+		ProviderLimiter:          NewProviderLimiterClient(cfg),
+		RecoveryCode:             NewRecoveryCodeClient(cfg),
+		Rule:                     NewRuleClient(cfg),
+		RuleFiring:               NewRuleFiringClient(cfg),
+		RuleVersion:              NewRuleVersionClient(cfg),
+		RuleVersionTrigger:       NewRuleVersionTriggerClient(cfg),
+		SchemaState:              NewSchemaStateClient(cfg),
+		SecondFactor:             NewSecondFactorClient(cfg),
+		Segment:                  NewSegmentClient(cfg),
+		SendCapLimiter:           NewSendCapLimiterClient(cfg),
+		SendingDomain:            NewSendingDomainClient(cfg),
+		ServiceCredential:        NewServiceCredentialClient(cfg),
+		SignupItem:               NewSignupItemClient(cfg),
+		SignupSurveyResponse:     NewSignupSurveyResponseClient(cfg),
+		StaffMember:              NewStaffMemberClient(cfg),
+		StartToken:               NewStartTokenClient(cfg),
+		Suppression:              NewSuppressionClient(cfg),
+		Tag:                      NewTagClient(cfg),
+		TrackedLink:              NewTrackedLinkClient(cfg),
+		TrackingDomain:           NewTrackingDomainClient(cfg),
+		TrackingHostChange:       NewTrackingHostChangeClient(cfg),
+		Unsubscribe:              NewUnsubscribeClient(cfg),
+		Usage:                    NewUsageClient(cfg),
+		User:                     NewUserClient(cfg),
+		UserIdentity:             NewUserIdentityClient(cfg),
+		UserTombstone:            NewUserTombstoneClient(cfg),
+		Visitor:                  NewVisitorClient(cfg),
+		WebhookEndpoint:          NewWebhookEndpointClient(cfg),
+		WebhookEndpointHealth:    NewWebhookEndpointHealthClient(cfg),
+		Workspace:                NewWorkspaceClient(cfg),
+		WorkspaceStanding:        NewWorkspaceStandingClient(cfg),
 	}, nil
 }
 
@@ -631,17 +649,18 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
 		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
 		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
+		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
+		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
+		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
+		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
+		c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Use(hooks...)
 	}
@@ -657,17 +676,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ConsentRecord, c.ConsentStamp, c.Contact, c.ContactTag, c.CustomField,
 		c.DefaultSendCap, c.EmailTemplate, c.Erasure, c.Event, c.EventJournalEntry,
 		c.EventReceipt, c.HeldOrderEvent, c.Hold, c.IdentitySecret,
-		c.InstanceAuditEntry, c.InstanceState, c.Integration, c.Invitation,
-		c.JoinDomain, c.LegalDocumentDraft, c.LegalDocumentVersion, c.Membership,
-		c.OAuthClient, c.OAuthCode, c.OAuthRefreshToken, c.Order, c.OrderMovement,
-		c.OutboundMessage, c.Passkey, c.PasskeyChallenge, c.PendingSignup,
-		c.PrivateRelayRange, c.ProviderLimiter, c.RecoveryCode, c.Rule, c.RuleFiring,
-		c.RuleVersion, c.RuleVersionTrigger, c.SchemaState, c.SecondFactor, c.Segment,
-		c.SendCapLimiter, c.SendingDomain, c.ServiceCredential, c.SignupItem,
-		c.SignupSurveyResponse, c.StaffMember, c.StartToken, c.Suppression, c.Tag,
-		c.TrackedLink, c.TrackingDomain, c.TrackingHostChange, c.Unsubscribe, c.Usage,
-		c.User, c.UserIdentity, c.UserTombstone, c.Visitor, c.WebhookEndpoint,
-		c.Workspace,
+		c.InstanceAuditEntry, c.InstanceState, c.Integration,
+		c.IntegrationProviderState, c.Invitation, c.JoinDomain, c.LegalDocumentDraft,
+		c.LegalDocumentVersion, c.Membership, c.OAuthClient, c.OAuthCode,
+		c.OAuthRefreshToken, c.Order, c.OrderMovement, c.OutboundMessage, c.Passkey,
+		c.PasskeyChallenge, c.PendingSignup, c.PrivateRelayRange, c.ProviderLimiter,
+		c.RecoveryCode, c.Rule, c.RuleFiring, c.RuleVersion, c.RuleVersionTrigger,
+		c.SchemaState, c.SecondFactor, c.Segment, c.SendCapLimiter, c.SendingDomain,
+		c.ServiceCredential, c.SignupItem, c.SignupSurveyResponse, c.StaffMember,
+		c.StartToken, c.Suppression, c.Tag, c.TrackedLink, c.TrackingDomain,
+		c.TrackingHostChange, c.Unsubscribe, c.Usage, c.User, c.UserIdentity,
+		c.UserTombstone, c.Visitor, c.WebhookEndpoint, c.WebhookEndpointHealth,
+		c.Workspace, c.WorkspaceStanding,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -738,6 +758,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.InstanceState.mutate(ctx, m)
 	case *IntegrationMutation:
 		return c.Integration.mutate(ctx, m)
+	case *IntegrationProviderStateMutation:
+		return c.IntegrationProviderState.mutate(ctx, m)
 	case *InvitationMutation:
 		return c.Invitation.mutate(ctx, m)
 	case *JoinDomainMutation:
@@ -824,8 +846,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Visitor.mutate(ctx, m)
 	case *WebhookEndpointMutation:
 		return c.WebhookEndpoint.mutate(ctx, m)
+	case *WebhookEndpointHealthMutation:
+		return c.WebhookEndpointHealth.mutate(ctx, m)
 	case *WorkspaceMutation:
 		return c.Workspace.mutate(ctx, m)
+	case *WorkspaceStandingMutation:
+		return c.WorkspaceStanding.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -5927,6 +5953,22 @@ func (c *IntegrationClient) QueryProviderLimiter(_m *Integration) *ProviderLimit
 	return query
 }
 
+// QueryProviderState queries the provider_state edge of a Integration.
+func (c *IntegrationClient) QueryProviderState(_m *Integration) *IntegrationProviderStateQuery {
+	query := (&IntegrationProviderStateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integration.Table, integration.FieldID, id),
+			sqlgraph.To(integrationproviderstate.Table, integrationproviderstate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, integration.ProviderStateTable, integration.ProviderStateColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryCapturedMessages queries the captured_messages edge of a Integration.
 func (c *IntegrationClient) QueryCapturedMessages(_m *Integration) *CapturedMessageQuery {
 	query := (&CapturedMessageClient{config: c.config}).Query()
@@ -5997,6 +6039,171 @@ func (c *IntegrationClient) mutate(ctx context.Context, m *IntegrationMutation) 
 		return (&IntegrationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Integration mutation op: %q", m.Op())
+	}
+}
+
+// IntegrationProviderStateClient is a client for the IntegrationProviderState schema.
+type IntegrationProviderStateClient struct {
+	config
+}
+
+// NewIntegrationProviderStateClient returns a client for the IntegrationProviderState from the given config.
+func NewIntegrationProviderStateClient(c config) *IntegrationProviderStateClient {
+	return &IntegrationProviderStateClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `integrationproviderstate.Hooks(f(g(h())))`.
+func (c *IntegrationProviderStateClient) Use(hooks ...Hook) {
+	c.hooks.IntegrationProviderState = append(c.hooks.IntegrationProviderState, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `integrationproviderstate.Intercept(f(g(h())))`.
+func (c *IntegrationProviderStateClient) Intercept(interceptors ...Interceptor) {
+	c.inters.IntegrationProviderState = append(c.inters.IntegrationProviderState, interceptors...)
+}
+
+// Create returns a builder for creating a IntegrationProviderState entity.
+func (c *IntegrationProviderStateClient) Create() *IntegrationProviderStateCreate {
+	mutation := newIntegrationProviderStateMutation(c.config, OpCreate)
+	return &IntegrationProviderStateCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of IntegrationProviderState entities.
+func (c *IntegrationProviderStateClient) CreateBulk(builders ...*IntegrationProviderStateCreate) *IntegrationProviderStateCreateBulk {
+	return &IntegrationProviderStateCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *IntegrationProviderStateClient) MapCreateBulk(slice any, setFunc func(*IntegrationProviderStateCreate, int)) *IntegrationProviderStateCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &IntegrationProviderStateCreateBulk{err: fmt.Errorf("calling to IntegrationProviderStateClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*IntegrationProviderStateCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &IntegrationProviderStateCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for IntegrationProviderState.
+func (c *IntegrationProviderStateClient) Update() *IntegrationProviderStateUpdate {
+	mutation := newIntegrationProviderStateMutation(c.config, OpUpdate)
+	return &IntegrationProviderStateUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *IntegrationProviderStateClient) UpdateOne(_m *IntegrationProviderState) *IntegrationProviderStateUpdateOne {
+	mutation := newIntegrationProviderStateMutation(c.config, OpUpdateOne, withIntegrationProviderState(_m))
+	return &IntegrationProviderStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *IntegrationProviderStateClient) UpdateOneID(id int64) *IntegrationProviderStateUpdateOne {
+	mutation := newIntegrationProviderStateMutation(c.config, OpUpdateOne, withIntegrationProviderStateID(id))
+	return &IntegrationProviderStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for IntegrationProviderState.
+func (c *IntegrationProviderStateClient) Delete() *IntegrationProviderStateDelete {
+	mutation := newIntegrationProviderStateMutation(c.config, OpDelete)
+	return &IntegrationProviderStateDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *IntegrationProviderStateClient) DeleteOne(_m *IntegrationProviderState) *IntegrationProviderStateDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *IntegrationProviderStateClient) DeleteOneID(id int64) *IntegrationProviderStateDeleteOne {
+	builder := c.Delete().Where(integrationproviderstate.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &IntegrationProviderStateDeleteOne{builder}
+}
+
+// Query returns a query builder for IntegrationProviderState.
+func (c *IntegrationProviderStateClient) Query() *IntegrationProviderStateQuery {
+	return &IntegrationProviderStateQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeIntegrationProviderState},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a IntegrationProviderState entity by its id.
+func (c *IntegrationProviderStateClient) Get(ctx context.Context, id int64) (*IntegrationProviderState, error) {
+	return c.Query().Where(integrationproviderstate.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *IntegrationProviderStateClient) GetX(ctx context.Context, id int64) *IntegrationProviderState {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a IntegrationProviderState.
+func (c *IntegrationProviderStateClient) QueryWorkspace(_m *IntegrationProviderState) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integrationproviderstate.Table, integrationproviderstate.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, integrationproviderstate.WorkspaceTable, integrationproviderstate.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIntegration queries the integration edge of a IntegrationProviderState.
+func (c *IntegrationProviderStateClient) QueryIntegration(_m *IntegrationProviderState) *IntegrationQuery {
+	query := (&IntegrationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(integrationproviderstate.Table, integrationproviderstate.FieldID, id),
+			sqlgraph.To(integration.Table, integration.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, integrationproviderstate.IntegrationTable, integrationproviderstate.IntegrationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *IntegrationProviderStateClient) Hooks() []Hook {
+	return c.hooks.IntegrationProviderState
+}
+
+// Interceptors returns the client interceptors.
+func (c *IntegrationProviderStateClient) Interceptors() []Interceptor {
+	return c.inters.IntegrationProviderState
+}
+
+func (c *IntegrationProviderStateClient) mutate(ctx context.Context, m *IntegrationProviderStateMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&IntegrationProviderStateCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&IntegrationProviderStateUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&IntegrationProviderStateUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&IntegrationProviderStateDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown IntegrationProviderState mutation op: %q", m.Op())
 	}
 }
 
@@ -13166,6 +13373,22 @@ func (c *WebhookEndpointClient) QueryWorkspace(_m *WebhookEndpoint) *WorkspaceQu
 	return query
 }
 
+// QueryHealth queries the health edge of a WebhookEndpoint.
+func (c *WebhookEndpointClient) QueryHealth(_m *WebhookEndpoint) *WebhookEndpointHealthQuery {
+	query := (&WebhookEndpointHealthClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(webhookendpoint.Table, webhookendpoint.FieldID, id),
+			sqlgraph.To(webhookendpointhealth.Table, webhookendpointhealth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, webhookendpoint.HealthTable, webhookendpoint.HealthColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *WebhookEndpointClient) Hooks() []Hook {
 	return c.hooks.WebhookEndpoint
@@ -13188,6 +13411,171 @@ func (c *WebhookEndpointClient) mutate(ctx context.Context, m *WebhookEndpointMu
 		return (&WebhookEndpointDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown WebhookEndpoint mutation op: %q", m.Op())
+	}
+}
+
+// WebhookEndpointHealthClient is a client for the WebhookEndpointHealth schema.
+type WebhookEndpointHealthClient struct {
+	config
+}
+
+// NewWebhookEndpointHealthClient returns a client for the WebhookEndpointHealth from the given config.
+func NewWebhookEndpointHealthClient(c config) *WebhookEndpointHealthClient {
+	return &WebhookEndpointHealthClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `webhookendpointhealth.Hooks(f(g(h())))`.
+func (c *WebhookEndpointHealthClient) Use(hooks ...Hook) {
+	c.hooks.WebhookEndpointHealth = append(c.hooks.WebhookEndpointHealth, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `webhookendpointhealth.Intercept(f(g(h())))`.
+func (c *WebhookEndpointHealthClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WebhookEndpointHealth = append(c.inters.WebhookEndpointHealth, interceptors...)
+}
+
+// Create returns a builder for creating a WebhookEndpointHealth entity.
+func (c *WebhookEndpointHealthClient) Create() *WebhookEndpointHealthCreate {
+	mutation := newWebhookEndpointHealthMutation(c.config, OpCreate)
+	return &WebhookEndpointHealthCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WebhookEndpointHealth entities.
+func (c *WebhookEndpointHealthClient) CreateBulk(builders ...*WebhookEndpointHealthCreate) *WebhookEndpointHealthCreateBulk {
+	return &WebhookEndpointHealthCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WebhookEndpointHealthClient) MapCreateBulk(slice any, setFunc func(*WebhookEndpointHealthCreate, int)) *WebhookEndpointHealthCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WebhookEndpointHealthCreateBulk{err: fmt.Errorf("calling to WebhookEndpointHealthClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WebhookEndpointHealthCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WebhookEndpointHealthCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WebhookEndpointHealth.
+func (c *WebhookEndpointHealthClient) Update() *WebhookEndpointHealthUpdate {
+	mutation := newWebhookEndpointHealthMutation(c.config, OpUpdate)
+	return &WebhookEndpointHealthUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WebhookEndpointHealthClient) UpdateOne(_m *WebhookEndpointHealth) *WebhookEndpointHealthUpdateOne {
+	mutation := newWebhookEndpointHealthMutation(c.config, OpUpdateOne, withWebhookEndpointHealth(_m))
+	return &WebhookEndpointHealthUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WebhookEndpointHealthClient) UpdateOneID(id int64) *WebhookEndpointHealthUpdateOne {
+	mutation := newWebhookEndpointHealthMutation(c.config, OpUpdateOne, withWebhookEndpointHealthID(id))
+	return &WebhookEndpointHealthUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WebhookEndpointHealth.
+func (c *WebhookEndpointHealthClient) Delete() *WebhookEndpointHealthDelete {
+	mutation := newWebhookEndpointHealthMutation(c.config, OpDelete)
+	return &WebhookEndpointHealthDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WebhookEndpointHealthClient) DeleteOne(_m *WebhookEndpointHealth) *WebhookEndpointHealthDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WebhookEndpointHealthClient) DeleteOneID(id int64) *WebhookEndpointHealthDeleteOne {
+	builder := c.Delete().Where(webhookendpointhealth.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WebhookEndpointHealthDeleteOne{builder}
+}
+
+// Query returns a query builder for WebhookEndpointHealth.
+func (c *WebhookEndpointHealthClient) Query() *WebhookEndpointHealthQuery {
+	return &WebhookEndpointHealthQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWebhookEndpointHealth},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WebhookEndpointHealth entity by its id.
+func (c *WebhookEndpointHealthClient) Get(ctx context.Context, id int64) (*WebhookEndpointHealth, error) {
+	return c.Query().Where(webhookendpointhealth.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WebhookEndpointHealthClient) GetX(ctx context.Context, id int64) *WebhookEndpointHealth {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a WebhookEndpointHealth.
+func (c *WebhookEndpointHealthClient) QueryWorkspace(_m *WebhookEndpointHealth) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(webhookendpointhealth.Table, webhookendpointhealth.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, webhookendpointhealth.WorkspaceTable, webhookendpointhealth.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryWebhookEndpoint queries the webhook_endpoint edge of a WebhookEndpointHealth.
+func (c *WebhookEndpointHealthClient) QueryWebhookEndpoint(_m *WebhookEndpointHealth) *WebhookEndpointQuery {
+	query := (&WebhookEndpointClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(webhookendpointhealth.Table, webhookendpointhealth.FieldID, id),
+			sqlgraph.To(webhookendpoint.Table, webhookendpoint.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, webhookendpointhealth.WebhookEndpointTable, webhookendpointhealth.WebhookEndpointColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *WebhookEndpointHealthClient) Hooks() []Hook {
+	return c.hooks.WebhookEndpointHealth
+}
+
+// Interceptors returns the client interceptors.
+func (c *WebhookEndpointHealthClient) Interceptors() []Interceptor {
+	return c.inters.WebhookEndpointHealth
+}
+
+func (c *WebhookEndpointHealthClient) mutate(ctx context.Context, m *WebhookEndpointHealthMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WebhookEndpointHealthCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WebhookEndpointHealthUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WebhookEndpointHealthUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WebhookEndpointHealthDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WebhookEndpointHealth mutation op: %q", m.Op())
 	}
 }
 
@@ -14083,6 +14471,54 @@ func (c *WorkspaceClient) QueryUsages(_m *Workspace) *UsageQuery {
 	return query
 }
 
+// QueryIntegrationProviderStates queries the integration_provider_states edge of a Workspace.
+func (c *WorkspaceClient) QueryIntegrationProviderStates(_m *Workspace) *IntegrationProviderStateQuery {
+	query := (&IntegrationProviderStateClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(integrationproviderstate.Table, integrationproviderstate.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.IntegrationProviderStatesTable, workspace.IntegrationProviderStatesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryWebhookEndpointHealths queries the webhook_endpoint_healths edge of a Workspace.
+func (c *WorkspaceClient) QueryWebhookEndpointHealths(_m *Workspace) *WebhookEndpointHealthQuery {
+	query := (&WebhookEndpointHealthClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(webhookendpointhealth.Table, webhookendpointhealth.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, workspace.WebhookEndpointHealthsTable, workspace.WebhookEndpointHealthsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStanding queries the standing edge of a Workspace.
+func (c *WorkspaceClient) QueryStanding(_m *Workspace) *WorkspaceStandingQuery {
+	query := (&WorkspaceStandingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspace.Table, workspace.FieldID, id),
+			sqlgraph.To(workspacestanding.Table, workspacestanding.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, workspace.StandingTable, workspace.StandingColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *WorkspaceClient) Hooks() []Hook {
 	return c.hooks.Workspace
@@ -14108,6 +14544,155 @@ func (c *WorkspaceClient) mutate(ctx context.Context, m *WorkspaceMutation) (Val
 	}
 }
 
+// WorkspaceStandingClient is a client for the WorkspaceStanding schema.
+type WorkspaceStandingClient struct {
+	config
+}
+
+// NewWorkspaceStandingClient returns a client for the WorkspaceStanding from the given config.
+func NewWorkspaceStandingClient(c config) *WorkspaceStandingClient {
+	return &WorkspaceStandingClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `workspacestanding.Hooks(f(g(h())))`.
+func (c *WorkspaceStandingClient) Use(hooks ...Hook) {
+	c.hooks.WorkspaceStanding = append(c.hooks.WorkspaceStanding, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `workspacestanding.Intercept(f(g(h())))`.
+func (c *WorkspaceStandingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WorkspaceStanding = append(c.inters.WorkspaceStanding, interceptors...)
+}
+
+// Create returns a builder for creating a WorkspaceStanding entity.
+func (c *WorkspaceStandingClient) Create() *WorkspaceStandingCreate {
+	mutation := newWorkspaceStandingMutation(c.config, OpCreate)
+	return &WorkspaceStandingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WorkspaceStanding entities.
+func (c *WorkspaceStandingClient) CreateBulk(builders ...*WorkspaceStandingCreate) *WorkspaceStandingCreateBulk {
+	return &WorkspaceStandingCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *WorkspaceStandingClient) MapCreateBulk(slice any, setFunc func(*WorkspaceStandingCreate, int)) *WorkspaceStandingCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &WorkspaceStandingCreateBulk{err: fmt.Errorf("calling to WorkspaceStandingClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*WorkspaceStandingCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &WorkspaceStandingCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WorkspaceStanding.
+func (c *WorkspaceStandingClient) Update() *WorkspaceStandingUpdate {
+	mutation := newWorkspaceStandingMutation(c.config, OpUpdate)
+	return &WorkspaceStandingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WorkspaceStandingClient) UpdateOne(_m *WorkspaceStanding) *WorkspaceStandingUpdateOne {
+	mutation := newWorkspaceStandingMutation(c.config, OpUpdateOne, withWorkspaceStanding(_m))
+	return &WorkspaceStandingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WorkspaceStandingClient) UpdateOneID(id int64) *WorkspaceStandingUpdateOne {
+	mutation := newWorkspaceStandingMutation(c.config, OpUpdateOne, withWorkspaceStandingID(id))
+	return &WorkspaceStandingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WorkspaceStanding.
+func (c *WorkspaceStandingClient) Delete() *WorkspaceStandingDelete {
+	mutation := newWorkspaceStandingMutation(c.config, OpDelete)
+	return &WorkspaceStandingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WorkspaceStandingClient) DeleteOne(_m *WorkspaceStanding) *WorkspaceStandingDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WorkspaceStandingClient) DeleteOneID(id int64) *WorkspaceStandingDeleteOne {
+	builder := c.Delete().Where(workspacestanding.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WorkspaceStandingDeleteOne{builder}
+}
+
+// Query returns a query builder for WorkspaceStanding.
+func (c *WorkspaceStandingClient) Query() *WorkspaceStandingQuery {
+	return &WorkspaceStandingQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWorkspaceStanding},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WorkspaceStanding entity by its id.
+func (c *WorkspaceStandingClient) Get(ctx context.Context, id int64) (*WorkspaceStanding, error) {
+	return c.Query().Where(workspacestanding.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WorkspaceStandingClient) GetX(ctx context.Context, id int64) *WorkspaceStanding {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryWorkspace queries the workspace edge of a WorkspaceStanding.
+func (c *WorkspaceStandingClient) QueryWorkspace(_m *WorkspaceStanding) *WorkspaceQuery {
+	query := (&WorkspaceClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(workspacestanding.Table, workspacestanding.FieldID, id),
+			sqlgraph.To(workspace.Table, workspace.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, workspacestanding.WorkspaceTable, workspacestanding.WorkspaceColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *WorkspaceStandingClient) Hooks() []Hook {
+	return c.hooks.WorkspaceStanding
+}
+
+// Interceptors returns the client interceptors.
+func (c *WorkspaceStandingClient) Interceptors() []Interceptor {
+	return c.inters.WorkspaceStanding
+}
+
+func (c *WorkspaceStandingClient) mutate(ctx context.Context, m *WorkspaceStandingMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WorkspaceStandingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WorkspaceStandingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WorkspaceStandingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WorkspaceStandingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WorkspaceStanding mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
@@ -14116,15 +14701,17 @@ type (
 		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
 		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
 		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
-		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint, Workspace []ent.Hook
+		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
+		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		WorkspaceStanding []ent.Hook
 	}
 	inters struct {
 		ApiToken, AuditEntry, AuthAttempt, Automation, AutomationFigure, AutomationRun,
@@ -14132,16 +14719,17 @@ type (
 		BroadcastRecipient, CapturedMessage, Confirmation, ConsentRecord, ConsentStamp,
 		Contact, ContactTag, CustomField, DefaultSendCap, EmailTemplate, Erasure,
 		Event, EventJournalEntry, EventReceipt, HeldOrderEvent, Hold, IdentitySecret,
-		InstanceAuditEntry, InstanceState, Integration, Invitation, JoinDomain,
-		LegalDocumentDraft, LegalDocumentVersion, Membership, OAuthClient, OAuthCode,
-		OAuthRefreshToken, Order, OrderMovement, OutboundMessage, Passkey,
-		PasskeyChallenge, PendingSignup, PrivateRelayRange, ProviderLimiter,
-		RecoveryCode, Rule, RuleFiring, RuleVersion, RuleVersionTrigger, SchemaState,
-		SecondFactor, Segment, SendCapLimiter, SendingDomain, ServiceCredential,
-		SignupItem, SignupSurveyResponse, StaffMember, StartToken, Suppression, Tag,
-		TrackedLink, TrackingDomain, TrackingHostChange, Unsubscribe, Usage, User,
-		UserIdentity, UserTombstone, Visitor, WebhookEndpoint,
-		Workspace []ent.Interceptor
+		InstanceAuditEntry, InstanceState, Integration, IntegrationProviderState,
+		Invitation, JoinDomain, LegalDocumentDraft, LegalDocumentVersion, Membership,
+		OAuthClient, OAuthCode, OAuthRefreshToken, Order, OrderMovement,
+		OutboundMessage, Passkey, PasskeyChallenge, PendingSignup, PrivateRelayRange,
+		ProviderLimiter, RecoveryCode, Rule, RuleFiring, RuleVersion,
+		RuleVersionTrigger, SchemaState, SecondFactor, Segment, SendCapLimiter,
+		SendingDomain, ServiceCredential, SignupItem, SignupSurveyResponse,
+		StaffMember, StartToken, Suppression, Tag, TrackedLink, TrackingDomain,
+		TrackingHostChange, Unsubscribe, Usage, User, UserIdentity, UserTombstone,
+		Visitor, WebhookEndpoint, WebhookEndpointHealth, Workspace,
+		WorkspaceStanding []ent.Interceptor
 	}
 )
 

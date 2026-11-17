@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/config"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -56,8 +57,9 @@ func TestProgressETAFallsBackToTheEffectiveRate(t *testing.T) {
 			env := setupAt(t, now)
 			ctx := context.Background()
 			f := sendingWithPending(t, env, 3)
-			upd := env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID)
-			upd.SetNillableMaxPerSecond(c.manual).SetNillableProviderMaxPerSecond(c.prov).ExecX(ctx)
+			env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetNillableMaxPerSecond(c.manual).ExecX(ctx)
+			env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
+				SetNillableProviderMaxPerSecond(c.prov).ExecX(ctx)
 			b := env.DB.Broadcast.GetX(ctx, f.id)
 
 			detail, err := testhelper.Module[*broadcasts.Module](env).Detail(ctx, env.DB.Scoped(fixtures.AcmeID), b)

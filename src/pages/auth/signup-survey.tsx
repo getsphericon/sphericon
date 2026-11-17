@@ -11,10 +11,10 @@ import {
   siteUserGetMeQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import {
-  SiteSignupCompanySize,
-  SiteSignupGoal,
-  SiteSignupRole,
-  SiteSignupSource,
+  SignupCompanySize,
+  SignupGoal,
+  SignupRole,
+  SignupSource,
 } from '../../generated/site/types.gen.ts'
 import { zSiteSignupSurveyInput } from '../../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
@@ -55,7 +55,7 @@ export function SignupSurveyPage() {
       question: 'role',
       required: true,
       title: t(($) => $.signupSurvey.role.title),
-      options: choices(SiteSignupRole, {
+      options: choices(SignupRole, {
         founder: t(($) => $.signupSurvey.role.founder),
         marketer: t(($) => $.signupSurvey.role.marketer),
         developer: t(($) => $.signupSurvey.role.developer),
@@ -67,7 +67,7 @@ export function SignupSurveyPage() {
       question: 'companySize',
       required: true,
       title: t(($) => $.signupSurvey.companySize.title),
-      options: choices(SiteSignupCompanySize, {
+      options: choices(SignupCompanySize, {
         '1': t(($) => $.signupSurvey.companySize.size1),
         '2_10': t(($) => $.signupSurvey.companySize.size2to10),
         '11_50': t(($) => $.signupSurvey.companySize.size11to50),
@@ -81,7 +81,7 @@ export function SignupSurveyPage() {
       question: 'mainGoal',
       required: true,
       title: t(($) => $.signupSurvey.mainGoal.title),
-      options: choices(SiteSignupGoal, {
+      options: choices(SignupGoal, {
         broadcasts: t(($) => $.signupSurvey.mainGoal.broadcasts),
         automations: t(($) => $.signupSurvey.mainGoal.automations),
         tracking: t(($) => $.signupSurvey.mainGoal.tracking),
@@ -93,7 +93,7 @@ export function SignupSurveyPage() {
       question: 'heardFrom',
       required: false,
       title: t(($) => $.signupSurvey.heardFrom.title),
-      options: choices(SiteSignupSource, {
+      options: choices(SignupSource, {
         search: t(($) => $.signupSurvey.heardFrom.search),
         github: t(($) => $.signupSurvey.heardFrom.github),
         social: t(($) => $.signupSurvey.heardFrom.social),

@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 )
 
 // Workspace is the model entity for the Workspace schema.
@@ -39,8 +40,6 @@ type Workspace struct {
 	RetentionDays *int `json:"retention_days,omitempty"`
 	// Timezone holds the value of the "timezone" field.
 	Timezone *string `json:"timezone,omitempty"`
-	// SetupCompletedAt holds the value of the "setup_completed_at" field.
-	SetupCompletedAt *time.Time `json:"setup_completed_at,omitempty"`
 	// ReportingCurrency holds the value of the "reporting_currency" field.
 	ReportingCurrency *string `json:"reporting_currency,omitempty"`
 	// AttributionWindowDays holds the value of the "attribution_window_days" field.
@@ -51,8 +50,6 @@ type Workspace struct {
 	DomainJoinEnabled bool `json:"domain_join_enabled,omitempty"`
 	// SecondFactorRequiredAt holds the value of the "second_factor_required_at" field.
 	SecondFactorRequiredAt *time.Time `json:"second_factor_required_at,omitempty"`
-	// FeedPosition holds the value of the "feed_position" field.
-	FeedPosition int64 `json:"feed_position,omitempty"`
 	// ErasedAt holds the value of the "erased_at" field.
 	ErasedAt *time.Time `json:"erased_at,omitempty"`
 	// SuspendedAt holds the value of the "suspended_at" field.
@@ -67,10 +64,6 @@ type Workspace struct {
 	ClearedAt *time.Time `json:"cleared_at,omitempty"`
 	// AbuseExempt holds the value of the "abuse_exempt" field.
 	AbuseExempt bool `json:"abuse_exempt,omitempty"`
-	// AbuseWarningNotifiedAt holds the value of the "abuse_warning_notified_at" field.
-	AbuseWarningNotifiedAt *time.Time `json:"abuse_warning_notified_at,omitempty"`
-	// AbuseFreezeNotifiedAt holds the value of the "abuse_freeze_notified_at" field.
-	AbuseFreezeNotifiedAt *time.Time `json:"abuse_freeze_notified_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WorkspaceQuery when eager-loading is set.
 	Edges        WorkspaceEdges `json:"edges"`
@@ -177,9 +170,15 @@ type WorkspaceEdges struct {
 	Erasures []*Erasure `json:"erasures,omitempty"`
 	// Usages holds the value of the usages edge.
 	Usages []*Usage `json:"usages,omitempty"`
+	// IntegrationProviderStates holds the value of the integration_provider_states edge.
+	IntegrationProviderStates []*IntegrationProviderState `json:"integration_provider_states,omitempty"`
+	// WebhookEndpointHealths holds the value of the webhook_endpoint_healths edge.
+	WebhookEndpointHealths []*WebhookEndpointHealth `json:"webhook_endpoint_healths,omitempty"`
+	// Standing holds the value of the standing edge.
+	Standing *WorkspaceStanding `json:"standing,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [49]bool
+	loadedTypes [52]bool
 }
 
 // ContactsOrErr returns the Contacts value or an error if the edge
@@ -623,6 +622,35 @@ func (e WorkspaceEdges) UsagesOrErr() ([]*Usage, error) {
 	return nil, &NotLoadedError{edge: "usages"}
 }
 
+// IntegrationProviderStatesOrErr returns the IntegrationProviderStates value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) IntegrationProviderStatesOrErr() ([]*IntegrationProviderState, error) {
+	if e.loadedTypes[49] {
+		return e.IntegrationProviderStates, nil
+	}
+	return nil, &NotLoadedError{edge: "integration_provider_states"}
+}
+
+// WebhookEndpointHealthsOrErr returns the WebhookEndpointHealths value or an error if the edge
+// was not loaded in eager-loading.
+func (e WorkspaceEdges) WebhookEndpointHealthsOrErr() ([]*WebhookEndpointHealth, error) {
+	if e.loadedTypes[50] {
+		return e.WebhookEndpointHealths, nil
+	}
+	return nil, &NotLoadedError{edge: "webhook_endpoint_healths"}
+}
+
+// StandingOrErr returns the Standing value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e WorkspaceEdges) StandingOrErr() (*WorkspaceStanding, error) {
+	if e.Standing != nil {
+		return e.Standing, nil
+	} else if e.loadedTypes[51] {
+		return nil, &NotFoundError{label: workspacestanding.Label}
+	}
+	return nil, &NotLoadedError{edge: "standing"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Workspace) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -630,11 +658,11 @@ func (*Workspace) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case workspace.FieldRequireConfirmedOptIn, workspace.FieldDomainJoinEnabled, workspace.FieldAbuseExempt:
 			values[i] = new(sql.NullBool)
-		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap, workspace.FieldFeedPosition:
+		case workspace.FieldID, workspace.FieldRevision, workspace.FieldRetentionDays, workspace.FieldAttributionWindowDays, workspace.FieldSendCap:
 			values[i] = new(sql.NullInt64)
 		case workspace.FieldName, workspace.FieldPublicID, workspace.FieldCollectKey, workspace.FieldPostalAddress, workspace.FieldTimezone, workspace.FieldReportingCurrency, workspace.FieldSuspendedByKind, workspace.FieldSuspendedByID, workspace.FieldSuspensionReason:
 			values[i] = new(sql.NullString)
-		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSetupCompletedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt, workspace.FieldAbuseWarningNotifiedAt, workspace.FieldAbuseFreezeNotifiedAt:
+		case workspace.FieldCreatedAt, workspace.FieldUpdatedAt, workspace.FieldDiscardedAt, workspace.FieldSecondFactorRequiredAt, workspace.FieldErasedAt, workspace.FieldSuspendedAt, workspace.FieldClearedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -726,13 +754,6 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				_m.Timezone = new(string)
 				*_m.Timezone = value.String
 			}
-		case workspace.FieldSetupCompletedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field setup_completed_at", values[i])
-			} else if value.Valid {
-				_m.SetupCompletedAt = new(time.Time)
-				*_m.SetupCompletedAt = value.Time
-			}
 		case workspace.FieldReportingCurrency:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field reporting_currency", values[i])
@@ -765,12 +786,6 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SecondFactorRequiredAt = new(time.Time)
 				*_m.SecondFactorRequiredAt = value.Time
-			}
-		case workspace.FieldFeedPosition:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field feed_position", values[i])
-			} else if value.Valid {
-				_m.FeedPosition = value.Int64
 			}
 		case workspace.FieldErasedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -819,20 +834,6 @@ func (_m *Workspace) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field abuse_exempt", values[i])
 			} else if value.Valid {
 				_m.AbuseExempt = value.Bool
-			}
-		case workspace.FieldAbuseWarningNotifiedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field abuse_warning_notified_at", values[i])
-			} else if value.Valid {
-				_m.AbuseWarningNotifiedAt = new(time.Time)
-				*_m.AbuseWarningNotifiedAt = value.Time
-			}
-		case workspace.FieldAbuseFreezeNotifiedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field abuse_freeze_notified_at", values[i])
-			} else if value.Valid {
-				_m.AbuseFreezeNotifiedAt = new(time.Time)
-				*_m.AbuseFreezeNotifiedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -1092,6 +1093,21 @@ func (_m *Workspace) QueryUsages() *UsageQuery {
 	return NewWorkspaceClient(_m.config).QueryUsages(_m)
 }
 
+// QueryIntegrationProviderStates queries the "integration_provider_states" edge of the Workspace entity.
+func (_m *Workspace) QueryIntegrationProviderStates() *IntegrationProviderStateQuery {
+	return NewWorkspaceClient(_m.config).QueryIntegrationProviderStates(_m)
+}
+
+// QueryWebhookEndpointHealths queries the "webhook_endpoint_healths" edge of the Workspace entity.
+func (_m *Workspace) QueryWebhookEndpointHealths() *WebhookEndpointHealthQuery {
+	return NewWorkspaceClient(_m.config).QueryWebhookEndpointHealths(_m)
+}
+
+// QueryStanding queries the "standing" edge of the Workspace entity.
+func (_m *Workspace) QueryStanding() *WorkspaceStandingQuery {
+	return NewWorkspaceClient(_m.config).QueryStanding(_m)
+}
+
 // Update returns a builder for updating this Workspace.
 // Note that you need to call Workspace.Unwrap() before calling this method if this Workspace
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -1153,11 +1169,6 @@ func (_m *Workspace) String() string {
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
-	if v := _m.SetupCompletedAt; v != nil {
-		builder.WriteString("setup_completed_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
 	if v := _m.ReportingCurrency; v != nil {
 		builder.WriteString("reporting_currency=")
 		builder.WriteString(*v)
@@ -1178,9 +1189,6 @@ func (_m *Workspace) String() string {
 		builder.WriteString("second_factor_required_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
-	builder.WriteString(", ")
-	builder.WriteString("feed_position=")
-	builder.WriteString(fmt.Sprintf("%v", _m.FeedPosition))
 	builder.WriteString(", ")
 	if v := _m.ErasedAt; v != nil {
 		builder.WriteString("erased_at=")
@@ -1214,16 +1222,6 @@ func (_m *Workspace) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("abuse_exempt=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AbuseExempt))
-	builder.WriteString(", ")
-	if v := _m.AbuseWarningNotifiedAt; v != nil {
-		builder.WriteString("abuse_warning_notified_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	if v := _m.AbuseFreezeNotifiedAt; v != nil {
-		builder.WriteString("abuse_freeze_notified_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -46,7 +46,7 @@ func TestSiteSchedulingAnEmailBroadcastNeedsAPostalAddress(t *testing.T) {
 	refused := testhelper.SiteRefusal(t, refusedErr, http.StatusConflict)
 	assert.Equal(t, siteapi.ProblemCodePostalAddressRequired, refused.Code.Value)
 	require.NoError(t, err)
-	assert.Equal(t, siteapi.SiteBroadcastStatusScheduled, scheduled.Status)
+	assert.Equal(t, siteapi.BroadcastStatusScheduled, scheduled.Status)
 	stored := env.DB.Workspace.GetX(t.Context(), fixtures.AcmeID).PostalAddress
 	assert.Equal(t, "1 Infinite Loop\nCupertino", stored, "the address is kept trimmed, its lines as written")
 }

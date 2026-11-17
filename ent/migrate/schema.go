@@ -1398,13 +1398,6 @@ var (
 		{Name: "is_default", Type: field.TypeBool, Default: false},
 		{Name: "max_per_second", Type: field.TypeInt, Nullable: true},
 		{Name: "max_per_day", Type: field.TypeInt, Nullable: true},
-		{Name: "provider_max_per_second", Type: field.TypeInt, Nullable: true},
-		{Name: "provider_max_per_day", Type: field.TypeInt, Nullable: true},
-		{Name: "provider_enforcement", Type: field.TypeEnum, Nullable: true, Enums: []string{"probation", "shutdown"}},
-		{Name: "provider_sandbox", Type: field.TypeBool, Default: false},
-		{Name: "provider_refused_at", Type: field.TypeTime, Nullable: true},
-		{Name: "provider_quota_checked_at", Type: field.TypeTime, Nullable: true},
-		{Name: "provider_quota_failed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// IntegrationsTable holds the schema information for the "integrations" table.
@@ -1415,7 +1408,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "integrations_workspaces_integrations",
-				Columns:    []*schema.Column{IntegrationsColumns[23]},
+				Columns:    []*schema.Column{IntegrationsColumns[16]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1424,7 +1417,7 @@ var (
 			{
 				Name:    "integration_workspace_id_channel",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[23], IntegrationsColumns[6]},
+				Columns: []*schema.Column{IntegrationsColumns[16], IntegrationsColumns[6]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "is_default AND discarded_at IS NULL",
 				},
@@ -1432,10 +1425,52 @@ var (
 			{
 				Name:    "integrations_one_inbox_per_workspace",
 				Unique:  true,
-				Columns: []*schema.Column{IntegrationsColumns[23], IntegrationsColumns[7]},
+				Columns: []*schema.Column{IntegrationsColumns[16], IntegrationsColumns[7]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "provider = 'inbox' AND discarded_at IS NULL",
 				},
+			},
+		},
+	}
+	// IntegrationProviderStateColumns holds the columns for the "integration_provider_state" table.
+	IntegrationProviderStateColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "provider_max_per_second", Type: field.TypeInt, Nullable: true},
+		{Name: "provider_max_per_day", Type: field.TypeInt, Nullable: true},
+		{Name: "provider_enforcement", Type: field.TypeEnum, Nullable: true, Enums: []string{"probation", "shutdown"}},
+		{Name: "provider_sandbox", Type: field.TypeBool, Default: false},
+		{Name: "provider_refused_at", Type: field.TypeTime, Nullable: true},
+		{Name: "provider_quota_checked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "provider_quota_failed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "integration_id", Type: field.TypeInt64, Unique: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// IntegrationProviderStateTable holds the schema information for the "integration_provider_state" table.
+	IntegrationProviderStateTable = &schema.Table{
+		Name:       "integration_provider_state",
+		Columns:    IntegrationProviderStateColumns,
+		PrimaryKey: []*schema.Column{IntegrationProviderStateColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "integration_provider_state_integrations_provider_state",
+				Columns:    []*schema.Column{IntegrationProviderStateColumns[10]},
+				RefColumns: []*schema.Column{IntegrationsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "integration_provider_state_workspaces_integration_provider_states",
+				Columns:    []*schema.Column{IntegrationProviderStateColumns[11]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "integrationproviderstate_workspace_id_integration_id",
+				Unique:  false,
+				Columns: []*schema.Column{IntegrationProviderStateColumns[11], IntegrationProviderStateColumns[10]},
 			},
 		},
 	}
@@ -3162,11 +3197,6 @@ var (
 		{Name: "event_types", Type: field.TypeJSON, Nullable: true},
 		{Name: "disabled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "health_generation", Type: field.TypeInt64, Nullable: true},
-		{Name: "consecutive_failures", Type: field.TypeInt, Nullable: true},
-		{Name: "failing_since", Type: field.TypeTime, Nullable: true},
-		{Name: "last_error_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"timeout", "blocked_address", "http_status", "network"}},
-		{Name: "last_error_status", Type: field.TypeInt, Nullable: true},
-		{Name: "last_failure_at", Type: field.TypeTime, Nullable: true},
 		{Name: "disabled_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"owner", "gone", "persistent_failure"}},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -3178,7 +3208,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "webhook_endpoints_workspaces_webhook_endpoints",
-				Columns:    []*schema.Column{WebhookEndpointsColumns[15]},
+				Columns:    []*schema.Column{WebhookEndpointsColumns[10]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -3187,7 +3217,47 @@ var (
 			{
 				Name:    "webhookendpoint_workspace_id_disabled_at",
 				Unique:  false,
-				Columns: []*schema.Column{WebhookEndpointsColumns[15], WebhookEndpointsColumns[7]},
+				Columns: []*schema.Column{WebhookEndpointsColumns[10], WebhookEndpointsColumns[7]},
+			},
+		},
+	}
+	// WebhookEndpointHealthColumns holds the columns for the "webhook_endpoint_health" table.
+	WebhookEndpointHealthColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "consecutive_failures", Type: field.TypeInt, Nullable: true},
+		{Name: "failing_since", Type: field.TypeTime, Nullable: true},
+		{Name: "last_error_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"timeout", "blocked_address", "http_status", "network"}},
+		{Name: "last_error_status", Type: field.TypeInt, Nullable: true},
+		{Name: "last_failure_at", Type: field.TypeTime, Nullable: true},
+		{Name: "webhook_endpoint_id", Type: field.TypeInt64, Unique: true},
+		{Name: "workspace_id", Type: field.TypeInt64},
+	}
+	// WebhookEndpointHealthTable holds the schema information for the "webhook_endpoint_health" table.
+	WebhookEndpointHealthTable = &schema.Table{
+		Name:       "webhook_endpoint_health",
+		Columns:    WebhookEndpointHealthColumns,
+		PrimaryKey: []*schema.Column{WebhookEndpointHealthColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "webhook_endpoint_health_webhook_endpoints_health",
+				Columns:    []*schema.Column{WebhookEndpointHealthColumns[8]},
+				RefColumns: []*schema.Column{WebhookEndpointsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "webhook_endpoint_health_workspaces_webhook_endpoint_healths",
+				Columns:    []*schema.Column{WebhookEndpointHealthColumns[9]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "webhookendpointhealth_workspace_id_webhook_endpoint_id",
+				Unique:  false,
+				Columns: []*schema.Column{WebhookEndpointHealthColumns[9], WebhookEndpointHealthColumns[8]},
 			},
 		},
 	}
@@ -3205,13 +3275,11 @@ var (
 		{Name: "postal_address", Type: field.TypeString, Nullable: true, Default: ""},
 		{Name: "retention_days", Type: field.TypeInt, Nullable: true},
 		{Name: "timezone", Type: field.TypeString, Nullable: true},
-		{Name: "setup_completed_at", Type: field.TypeTime, Nullable: true},
 		{Name: "reporting_currency", Type: field.TypeString, Nullable: true},
 		{Name: "attribution_window_days", Type: field.TypeInt, Default: 5},
 		{Name: "send_cap", Type: field.TypeInt, Nullable: true},
 		{Name: "domain_join_enabled", Type: field.TypeBool, Default: false},
 		{Name: "second_factor_required_at", Type: field.TypeTime, Nullable: true},
-		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
 		{Name: "erased_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "suspended_by_kind", Type: field.TypeEnum, Nullable: true, Enums: []string{"system", "cli", "staff"}},
@@ -3219,19 +3287,42 @@ var (
 		{Name: "suspension_reason", Type: field.TypeString, Nullable: true},
 		{Name: "cleared_at", Type: field.TypeTime, Nullable: true},
 		{Name: "abuse_exempt", Type: field.TypeBool, Default: false},
-		{Name: "abuse_warning_notified_at", Type: field.TypeTime, Nullable: true},
-		{Name: "abuse_freeze_notified_at", Type: field.TypeTime, Nullable: true},
 	}
 	// WorkspacesTable holds the schema information for the "workspaces" table.
 	WorkspacesTable = &schema.Table{
 		Name:       "workspaces",
 		Columns:    WorkspacesColumns,
 		PrimaryKey: []*schema.Column{WorkspacesColumns[0]},
+	}
+	// WorkspaceStandingColumns holds the columns for the "workspace_standing" table.
+	WorkspaceStandingColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
+		{Name: "feed_position", Type: field.TypeInt64, Default: 0},
+		{Name: "setup_completed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "abuse_warning_notified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "abuse_freeze_notified_at", Type: field.TypeTime, Nullable: true},
+		{Name: "workspace_id", Type: field.TypeInt64, Unique: true},
+	}
+	// WorkspaceStandingTable holds the schema information for the "workspace_standing" table.
+	WorkspaceStandingTable = &schema.Table{
+		Name:       "workspace_standing",
+		Columns:    WorkspaceStandingColumns,
+		PrimaryKey: []*schema.Column{WorkspaceStandingColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "workspace_standing_workspaces_standing",
+				Columns:    []*schema.Column{WorkspaceStandingColumns[7]},
+				RefColumns: []*schema.Column{WorkspacesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "workspace_feed_position_id",
+				Name:    "workspacestanding_feed_position_workspace_id",
 				Unique:  false,
-				Columns: []*schema.Column{WorkspacesColumns[18], WorkspacesColumns[0]},
+				Columns: []*schema.Column{WorkspaceStandingColumns[3], WorkspaceStandingColumns[7]},
 			},
 		},
 	}
@@ -3268,6 +3359,7 @@ var (
 		InstanceAuditEntriesTable,
 		InstanceStateTable,
 		IntegrationsTable,
+		IntegrationProviderStateTable,
 		InvitationsTable,
 		JoinDomainsTable,
 		LegalDocumentDraftsTable,
@@ -3311,7 +3403,9 @@ var (
 		UserTombstonesTable,
 		VisitorsTable,
 		WebhookEndpointsTable,
+		WebhookEndpointHealthTable,
 		WorkspacesTable,
+		WorkspaceStandingTable,
 	}
 )
 
@@ -3532,10 +3626,17 @@ func init() {
 		Table: "integrations",
 	}
 	IntegrationsTable.Annotation.Checks = map[string]string{
-		"integrations_channel_check":              "channel IN ('email', 'telegram', 'sms')",
-		"integrations_provider_channel_check":     "(channel = 'email' AND provider IN ('smtp', 'ses', 'inbox')) OR (channel = 'telegram' AND provider IN ('telegram')) OR (channel = 'sms' AND provider IN ('twilio'))",
-		"integrations_provider_check":             "provider IN ('smtp', 'ses', 'inbox', 'telegram', 'twilio')",
-		"integrations_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
+		"integrations_channel_check":          "channel IN ('email', 'telegram', 'sms')",
+		"integrations_provider_channel_check": "(channel = 'email' AND provider IN ('smtp', 'ses', 'inbox')) OR (channel = 'telegram' AND provider IN ('telegram')) OR (channel = 'sms' AND provider IN ('twilio'))",
+		"integrations_provider_check":         "provider IN ('smtp', 'ses', 'inbox', 'telegram', 'twilio')",
+	}
+	IntegrationProviderStateTable.ForeignKeys[0].RefTable = IntegrationsTable
+	IntegrationProviderStateTable.ForeignKeys[1].RefTable = WorkspacesTable
+	IntegrationProviderStateTable.Annotation = &entsql.Annotation{
+		Table: "integration_provider_state",
+	}
+	IntegrationProviderStateTable.Annotation.Checks = map[string]string{
+		"integration_provider_state_provider_enforcement_check": "provider_enforcement IN ('probation', 'shutdown')",
 	}
 	InvitationsTable.ForeignKeys[0].RefTable = UsersTable
 	InvitationsTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -3814,7 +3915,14 @@ func init() {
 	WebhookEndpointsTable.Annotation.Checks = map[string]string{
 		"webhook_endpoints_disabled_check":        "(disabled_at IS NULL) = (disabled_reason IS NULL)",
 		"webhook_endpoints_disabled_reason_check": "disabled_reason IN ('owner', 'gone', 'persistent_failure')",
-		"webhook_endpoints_last_error_kind_check": "last_error_kind IN ('timeout', 'blocked_address', 'http_status', 'network')",
+	}
+	WebhookEndpointHealthTable.ForeignKeys[0].RefTable = WebhookEndpointsTable
+	WebhookEndpointHealthTable.ForeignKeys[1].RefTable = WorkspacesTable
+	WebhookEndpointHealthTable.Annotation = &entsql.Annotation{
+		Table: "webhook_endpoint_health",
+	}
+	WebhookEndpointHealthTable.Annotation.Checks = map[string]string{
+		"webhook_endpoint_health_last_error_kind_check": "last_error_kind IN ('timeout', 'blocked_address', 'http_status', 'network')",
 	}
 	WorkspacesTable.Annotation = &entsql.Annotation{
 		Table: "workspaces",
@@ -3825,5 +3933,9 @@ func init() {
 		"workspaces_reporting_currency_format":  "reporting_currency ~ '^[A-Z]{3}$'",
 		"workspaces_suspended_by_kind_check":    "suspended_by_kind IN ('system', 'cli', 'staff')",
 		"workspaces_suspension_check":           "(suspended_at IS NULL) = (suspended_by_kind IS NULL) AND (suspended_at IS NULL) = (suspension_reason IS NULL) AND COALESCE(suspended_by_kind = 'staff', false) = (suspended_by_id IS NOT NULL)",
+	}
+	WorkspaceStandingTable.ForeignKeys[0].RefTable = WorkspacesTable
+	WorkspaceStandingTable.Annotation = &entsql.Annotation{
+		Table: "workspace_standing",
 	}
 }

@@ -381,6 +381,18 @@ func (f IntegrationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntegrationMutation", m)
 }
 
+// The IntegrationProviderStateFunc type is an adapter to allow the use of ordinary
+// function as IntegrationProviderState mutator.
+type IntegrationProviderStateFunc func(context.Context, *ent.IntegrationProviderStateMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f IntegrationProviderStateFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.IntegrationProviderStateMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.IntegrationProviderStateMutation", m)
+}
+
 // The InvitationFunc type is an adapter to allow the use of ordinary
 // function as Invitation mutator.
 type InvitationFunc func(context.Context, *ent.InvitationMutation) (ent.Value, error)
@@ -897,6 +909,18 @@ func (f WebhookEndpointFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WebhookEndpointMutation", m)
 }
 
+// The WebhookEndpointHealthFunc type is an adapter to allow the use of ordinary
+// function as WebhookEndpointHealth mutator.
+type WebhookEndpointHealthFunc func(context.Context, *ent.WebhookEndpointHealthMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f WebhookEndpointHealthFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.WebhookEndpointHealthMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WebhookEndpointHealthMutation", m)
+}
+
 // The WorkspaceFunc type is an adapter to allow the use of ordinary
 // function as Workspace mutator.
 type WorkspaceFunc func(context.Context, *ent.WorkspaceMutation) (ent.Value, error)
@@ -907,6 +931,18 @@ func (f WorkspaceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WorkspaceMutation", m)
+}
+
+// The WorkspaceStandingFunc type is an adapter to allow the use of ordinary
+// function as WorkspaceStanding mutator.
+type WorkspaceStandingFunc func(context.Context, *ent.WorkspaceStandingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f WorkspaceStandingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.WorkspaceStandingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WorkspaceStandingMutation", m)
 }
 
 // Condition is a hook condition function.

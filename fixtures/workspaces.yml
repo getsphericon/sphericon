@@ -1,3 +1,5 @@
+# Each Workspace has its standing in workspace_standing.yml (ADR 0168): a new one here takes a row
+# there.
 # Every Workspace has a postal address, so its marketing email can be armed (ADR 0156); a test of
 # the gate clears it first.
 - id: 1 # fixture: Acme

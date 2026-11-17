@@ -387,7 +387,7 @@ model AutomationStepFigures {
  */
 @tag("Automations")
 interface Automations
-  extends ExternalCrudKept<
+  extends ExternalCrudArchivable<
       AutomationResource,
       CreateAutomationInput,
       UpdateAutomationInput,
@@ -395,22 +395,6 @@ interface Automations
       ApiTokenScope.automationsWrite,
       AutomationsListFilter
     > {
-  /** Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them). */
-  @action("archive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.automationsWrite])
-  archive(...ResourceParameters<AutomationResource>):
-    | AutomationResource
-    | Problem;
-
-  /** Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again */
-  @action("unarchive")
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.automationsWrite])
-  unarchive(...ResourceParameters<AutomationResource>):
-    | AutomationResource
-    | Problem;
-
   /** Publish an automation: the draft becomes live and the automation active, enrolling contacts; with no draft, the live version is resumed. 422 with neither. 409 when any send step of the version going live sends through an integration that cannot send (disabled, archived, of another channel, or no default for the step's channel): a draft may name such an integration, only publishing it is refused. 409 for an archived automation too, and 409 postal_address_required when the version has an email send step and the Workspace has no postal address (`postalAddress` of `GET /workspace`, set only in the console, ADR 0156). Needs the automations:publish scope. */
   @action("publish")
   @autoRoute
@@ -460,6 +444,16 @@ interface Automations
     @body body: DryRunHttpStepInput,
   ): DryRunHttpStepResult | Problem;
 }
+
+@@doc(
+  Automations.archive,
+  "Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps its enrollments. It can be unarchived, inactive. Refused with 409 while it has active enrollments or an active rule enrolls contacts in it (`usedBy` names them)."
+);
+
+@@doc(
+  Automations.unarchive,
+  "Unarchive an archived automation: it is back in the list, inactive, and only publish makes it enroll again"
+);
 
 @@doc(
   Automations.update,

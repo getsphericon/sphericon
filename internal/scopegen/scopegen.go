@@ -3,9 +3,11 @@
 // the contract's access vocabularies (Permission, API token scope, the scopes a User may give, the
 // Service credential scope) in the packages that read them, with the other contract vocabulary the
 // core shares (the System event actions). A Table is one generated Go file; Tables lists every file `cmd/scopegen` writes. Every
-// operation of a table's document must carry the declaration the table reads, and a missing or
-// misplaced one fails generation, so an operation is never open by omission: a surface refuses an
-// operation its table has no entry for.
+// operation of a table's document must carry the declaration the table reads, and a missing one,
+// or one its row would not enforce, fails generation, so an operation is never open by omission: a
+// surface refuses an operation its table has no entry for. `tsp compile` refuses the same
+// declarations first (`@everyOperationDeclares`, typespec/lib); these checks are the last guard on
+// the document, kept because a row written without them would open the operation.
 package scopegen
 
 import (

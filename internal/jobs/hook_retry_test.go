@@ -19,6 +19,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -115,7 +116,7 @@ func (h *hookRetryHarness) work(maxAttempts int) (*rivertest.WorkResult, error) 
 }
 
 func (h *hookRetryHarness) endpoint() *ent.WebhookEndpoint {
-	return h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).OnlyX(context.Background())
+	return h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().OnlyX(context.Background())
 }
 
 func TestDeliverWebhookRetriesOnTheHookPolicy(t *testing.T) {
@@ -128,7 +129,7 @@ func TestDeliverWebhookRetriesOnTheHookPolicy(t *testing.T) {
 	assert.Equal(t, 1, res.Job.Attempt)
 	want := h.now.Add(27 * time.Second) // 30 s less 10%
 	assert.WithinDuration(t, want, res.Job.ScheduledAt, time.Second)
-	assert.Equal(t, 1, *h.endpoint().ConsecutiveFailures)
+	assert.Equal(t, 1, *h.endpoint().Edges.Health.ConsecutiveFailures)
 }
 
 func TestDeliverWebhookFinalFailureEndsTheJob(t *testing.T) {
@@ -150,15 +151,15 @@ func TestDeliverWebhookRateLimitSnoozesWithoutSpendingAnAttempt(t *testing.T) {
 	assert.Zero(t, res.Job.Attempt, "a snooze gives the attempt back")
 	assert.WithinDuration(t, h.now.Add(120*time.Second), res.Job.ScheduledAt, time.Second)
 	e := h.endpoint()
-	assert.Nil(t, e.ConsecutiveFailures, "a 429 is not a failure")
-	assert.Nil(t, e.LastErrorKind)
+	assert.Nil(t, e.Edges.Health.ConsecutiveFailures, "a 429 is not a failure")
+	assert.Nil(t, e.Edges.Health.LastErrorKind)
 	assert.Nil(t, e.DisabledAt)
 }
 
 func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	h := newHookRetryHarnessAt(t, http.StatusTooManyRequests, httpDate(now.Add(10*time.Minute)), now)
-	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpoint().UpdateOneID(fixtures.WebhookCodebasicsID).
+	_, err := h.env.DB.Scoped(fixtures.AcmeID).WebhookEndpointHealth().Update().Where(webhookendpointhealth.WebhookEndpointID(fixtures.WebhookCodebasicsID)).
 		SetConsecutiveFailures(3).SetFailingSince(h.now.Add(-time.Hour)).Save(context.Background())
 	require.NoError(t, err)
 
@@ -167,7 +168,7 @@ func TestDeliverWebhookRateLimitLeavesAFailingRunAsItWas(t *testing.T) {
 
 	assert.Equal(t, rivertype.JobStateScheduled, res.Job.State)
 	assert.WithinDuration(t, h.now.Add(10*time.Minute), res.Job.ScheduledAt, 2*time.Second, "an HTTP-date Retry-After")
-	assert.Equal(t, 3, *h.endpoint().ConsecutiveFailures)
+	assert.Equal(t, 3, *h.endpoint().Edges.Health.ConsecutiveFailures)
 }
 
 func TestDeliverWebhookRateLimitEndsTheJobPastTheHorizon(t *testing.T) {
@@ -179,7 +180,7 @@ func TestDeliverWebhookRateLimitEndsTheJobPastTheHorizon(t *testing.T) {
 
 	assert.Equal(t, rivertype.JobStateCancelled, res.Job.State)
 	e := h.endpoint()
-	assert.Nil(t, e.ConsecutiveFailures, "giving up on a rate limited delivery is not a failure of the endpoint")
+	assert.Nil(t, e.Edges.Health.ConsecutiveFailures, "giving up on a rate limited delivery is not a failure of the endpoint")
 	assert.Nil(t, e.DisabledAt)
 }
 

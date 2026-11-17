@@ -13,7 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func actions(items []siteapi.SiteAuditEntryResource) []string {
+func actions(items []siteapi.AuditEntryResource) []string {
 	out := make([]string, len(items))
 	for i := range items {
 		out[i] = string(items[i].Action)
@@ -38,7 +38,7 @@ func TestAuditFiltersNarrowListAndExportAlike(t *testing.T) {
 		return siteapi.NewOptTimestamp(siteapi.Timestamp(time.Date(2026, m, 1, 0, 0, 0, 0, time.UTC)))
 	}
 	str := siteapi.NewOptString
-	system := siteapi.NewOptSiteAuditActorKind(siteapi.SiteAuditActorKindSystem)
+	system := siteapi.NewOptAuditActorKind(siteapi.AuditActorKindSystem)
 
 	cases := []struct {
 		name   string

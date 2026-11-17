@@ -11,7 +11,10 @@ import (
 	sphericon "github.com/getsphericon/sphericon"
 )
 
-// reportSchema is the TelemetryReport component of the embedded OpenAPI file.
+// reportSchema is the TelemetryReport component of the embedded OpenAPI file, closed: the
+// published schema leaves a property it does not declare to the receiver, which skips the fields
+// a newer Instance adds (ADR 0148), while the report this Instance builds carries only the fields
+// the schema documents (ADR 0032).
 var reportSchema = mustLoadReportSchema()
 
 func mustLoadReportSchema() *openapi3.Schema {
@@ -23,6 +26,8 @@ func mustLoadReportSchema() *openapi3.Schema {
 	if !ok {
 		panic("telemetryschema: openapi/telemetry.openapi.json has no TelemetryReport schema")
 	}
+	closed := false
+	ref.Value.AdditionalProperties = openapi3.AdditionalProperties{Has: &closed}
 	return ref.Value
 }
 

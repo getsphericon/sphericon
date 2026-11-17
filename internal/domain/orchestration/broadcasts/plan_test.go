@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -287,7 +288,8 @@ func TestPlanIsHeldWhenTheBroadcastsIntegrationIsDisabled(t *testing.T) {
 // effective rate is the lower of the two (ADR 0023).
 func TestPaceByTheProviderDiscoveredRate(t *testing.T) {
 	d := newDelivery(t, time.Now)
-	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetProviderMaxPerSecond(4).SetMaxPerSecond(100).ExecX(d.t.Context())
+	d.env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(100).ExecX(d.t.Context())
+	d.env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).SetProviderMaxPerSecond(4).ExecX(d.t.Context())
 
 	sched, err := d.run(fixtures.BroadcastDraftID)
 	require.NoError(t, err)

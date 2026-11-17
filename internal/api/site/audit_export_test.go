@@ -121,7 +121,7 @@ func TestAuditExportIsItselfAudited(t *testing.T) {
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionAuditLogExport)
 	require.Len(t, got, 1)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 	assert.Equal(t, "John", got[0].Actor.Name.Value)
 	assert.Equal(t, "audit_log", got[0].Target.Type)
 	diff, err := json.Marshal(got[0].Diff.Value)

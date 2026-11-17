@@ -12,16 +12,17 @@ import (
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 
 	"github.com/getsphericon/sphericon/ent/auditentry"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) setExempt(t *testing.T, c *staffeeapi.Client, id string, exempt bool) *staffeeapi.StaffExemptionChange {
+func (h *harness) setExempt(t *testing.T, c *staffeeapi.Client, id string, exempt bool) *staffeeapi.StaffWorkspaceChange {
 	t.Helper()
 	wid := staffeeapi.WorkspaceId(id)
-	var change *staffeeapi.StaffExemptionChange
+	var change *staffeeapi.StaffWorkspaceChange
 	var err error
 	if exempt {
 		change, err = c.StaffWorkspacesExempt(t.Context(), staffeeapi.StaffWorkspacesExemptParams{WorkspaceId: wid})
@@ -91,7 +92,7 @@ func TestUnsuspendingFromTheConsoleRecordsTheClearance(t *testing.T) {
 func TestTheListSurfacesWarnedAndSystemFrozenWorkspaces(t *testing.T) {
 	h := newHarness(t)
 	c, _ := h.staffSession(t)
-	h.env.DB.Workspace.UpdateOneID(fixtures.GlobexID).SetAbuseWarningNotifiedAt(time.Now()).ExecX(t.Context())
+	h.env.DB.WorkspaceStanding.Update().Where(workspacestanding.WorkspaceID(fixtures.GlobexID)).SetAbuseWarningNotifiedAt(time.Now()).ExecX(t.Context())
 
 	frozen := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewSystemFrozen)})
 	warned := h.listWorkspaces(t, c, staffeeapi.StaffWorkspacesListParams{Review: staffeeapi.NewOptStaffWorkspaceReview(staffeeapi.StaffWorkspaceReviewWarned)})
@@ -105,7 +106,7 @@ func TestTheDetailShowsTheDetectorsStandingAndLastNotices(t *testing.T) {
 	h := newHarness(t, testhelper.WithStaffVolumeFloor(8)) // Soylent: 8 sent, 1 hard bounce, 1 complaint
 	c, _ := h.staffSession(t)
 	notified := time.Now().Add(-time.Hour)
-	h.env.DB.Workspace.UpdateOneID(fixtures.SoylentID).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
+	h.env.DB.WorkspaceStanding.Update().Where(workspacestanding.WorkspaceID(fixtures.SoylentID)).SetAbuseWarningNotifiedAt(notified).ExecX(t.Context())
 
 	detail := h.workspaceDetail(t, c, fixtures.SoylentPublicID)
 

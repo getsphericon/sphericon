@@ -19,20 +19,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func (h *harness) trySuspend(t *testing.T, c *staffeeapi.Client, id, reason string) (*staffeeapi.StaffSuspensionChange, error) {
+func (h *harness) trySuspend(t *testing.T, c *staffeeapi.Client, id, reason string) (*staffeeapi.StaffWorkspaceChange, error) {
 	t.Helper()
 	return c.StaffWorkspacesSuspend(t.Context(), &staffeeapi.StaffSuspendInput{Reason: reason},
 		staffeeapi.StaffWorkspacesSuspendParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 }
 
-func (h *harness) tryUnsuspend(t *testing.T, c *staffeeapi.Client, id string) (*staffeeapi.StaffSuspensionChange, error) {
+func (h *harness) tryUnsuspend(t *testing.T, c *staffeeapi.Client, id string) (*staffeeapi.StaffWorkspaceChange, error) {
 	t.Helper()
 	return c.StaffWorkspacesUnsuspend(t.Context(),
 		staffeeapi.StaffWorkspacesUnsuspendParams{WorkspaceId: staffeeapi.WorkspaceId(id)})
 }
 
 // suspend is trySuspend for a call that is expected to succeed.
-func (h *harness) suspend(t *testing.T, c *staffeeapi.Client, id, reason string) *staffeeapi.StaffSuspensionChange {
+func (h *harness) suspend(t *testing.T, c *staffeeapi.Client, id, reason string) *staffeeapi.StaffWorkspaceChange {
 	t.Helper()
 	res, err := h.trySuspend(t, c, id, reason)
 	require.NoError(t, err)
@@ -40,7 +40,7 @@ func (h *harness) suspend(t *testing.T, c *staffeeapi.Client, id, reason string)
 }
 
 // unsuspend is tryUnsuspend for a call that is expected to succeed.
-func (h *harness) unsuspend(t *testing.T, c *staffeeapi.Client, id string) *staffeeapi.StaffSuspensionChange {
+func (h *harness) unsuspend(t *testing.T, c *staffeeapi.Client, id string) *staffeeapi.StaffWorkspaceChange {
 	t.Helper()
 	res, err := h.tryUnsuspend(t, c, id)
 	require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestTheAuditEntryShowsSphericonStaffAndNeverTheStaffMember(t *testing.T) {
 
 	page, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	got := lo.Filter(page.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool { return e.Action == events.ActionWorkspaceSuspend })
+	got := lo.Filter(page.Items, func(e siteapi.AuditEntryResource, _ int) bool { return e.Action == events.ActionWorkspaceSuspend })
 	require.Len(t, got, 1)
 	assert.Equal(t, "Sphericon staff", got[0].Actor.Name.Value)
 	assert.False(t, got[0].Actor.ID.IsSet() && got[0].Actor.ID.Value != "")

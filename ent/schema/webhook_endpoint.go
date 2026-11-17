@@ -4,10 +4,9 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
-
-	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // WebhookEndpoint is a workspace-scoped HTTP destination that receives domain
@@ -61,38 +60,21 @@ func (WebhookEndpoint) Fields() []ent.Field {
 			NonNegative().
 			// Moved by the enable it follows from, which the entry records.
 			Annotations(Derived{}),
-		// Failure state (ADR 0039), written by the delivery worker with no actor so it
-		// is not audited. All nil while the endpoint is healthy; a 2xx clears them.
-		// Failed deliveries in a row.
-		field.Int("consecutive_failures").
-			Annotations(Bookkeeping{}).
-			Optional().
-			Nillable(),
-		// When the current run of failures began.
-		field.Time("failing_since").
-			Annotations(Bookkeeping{}).
-			Optional().
-			Nillable(),
-		// Closed kind of the latest failure; http_status carries last_error_status.
-		field.Enum("last_error_kind").
-			Annotations(Bookkeeping{}).
-			GoType(webhook.ErrorKind("")).
-			Optional().
-			Nillable(),
-		field.Int("last_error_status").
-			Annotations(Bookkeeping{}).
-			Optional().
-			Nillable(),
-		field.Time("last_failure_at").
-			Annotations(Bookkeeping{}, Attribute(reasonLatest)).
-			Optional().
-			Nillable(),
 		// Why the endpoint is off (ADR 0039): an owner turned it off, the receiver answered 410,
 		// or deliveries failed for longer than the window. Set exactly when disabled_at is.
 		field.Enum("disabled_reason").
 			Values("owner", "gone", "persistent_failure").
 			Optional().
 			Nillable(),
+	}
+}
+
+func (WebhookEndpoint) Edges() []ent.Edge {
+	return []ent.Edge{
+		// Its failure run (ADR 0168) dies with it.
+		edge.To("health", WebhookEndpointHealth.Type).
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

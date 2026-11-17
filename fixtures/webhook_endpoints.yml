@@ -1,3 +1,5 @@
+# Each endpoint has its health in webhook_endpoint_health.yml (ADR 0168): a new one here takes a row
+# there.
 # Workspace acme (id 1). Secrets are valid Standard Webhooks secrets (whsec_ + base64). secret_encrypted is sealed at load time via the encrypt
 # template func (per-env valid). event_types is a JSON array; empty/absent = all events.
 - id: 100 # fixture: WebhookCodebasics
@@ -23,11 +25,6 @@
   url: https://failing.codebasics.dev/hook
   secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
   event_types: '["contact.tagged","contact.untagged"]'
-  consecutive_failures: 7
-  failing_since: '{{hoursAgo 26}}'
-  last_error_kind: http_status
-  last_error_status: 503
-  last_failure_at: '{{hoursAgo 2}}'
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
   updated_at: '{{hoursAgo 2}}'
@@ -37,11 +34,6 @@
   url: https://gone.codebasics.dev/hook
   secret_encrypted: '{{ encrypt "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw" }}'
   disabled_at: '{{hoursAgo 5}}'
-  consecutive_failures: 1
-  failing_since: '{{hoursAgo 5}}'
-  last_error_kind: http_status
-  last_error_status: 410
-  last_failure_at: '{{hoursAgo 5}}'
   disabled_reason: gone
   workspace_id: 1
   created_at: '{{daysAgo 40}}'
@@ -88,11 +80,6 @@
   url: https://crm.brightpath.example/hooks/contacts
   secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
   event_types: '["contact.created","contact.field_changed"]'
-  consecutive_failures: 5
-  failing_since: '{{hoursAgo 30}}'
-  last_error_kind: http_status
-  last_error_status: 502
-  last_failure_at: '{{hoursAgo 3}}'
   workspace_id: 20
   created_at: '{{daysAgo 60}}'
   updated_at: '{{daysAgo 60}}'
@@ -110,10 +97,6 @@
   revision: 1
   url: https://slow.brightpath.example/hooks/events
   secret_encrypted: '{{ encrypt "whsec_QnJpZ2h0cGF0aF9kZW1vX3NlY3JldF8wMDAwMDAwMDA=" }}'
-  consecutive_failures: 12
-  failing_since: '{{daysAgo 6}}'
-  last_error_kind: timeout
-  last_failure_at: '{{daysAgo 4}}'
   disabled_at: '{{daysAgo 4}}'
   disabled_reason: persistent_failure
   workspace_id: 20

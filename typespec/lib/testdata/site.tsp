@@ -42,6 +42,14 @@ op account(): void;
 @allowedWhileWithheld
 op session(): void;
 
+// expect-next-line: sphericon/outside-workspace
+// expect-next-line: sphericon/outside-workspace
+@route("/password")
+@put
+@requiresPermissions(#[])
+@allowedWhileWithheld
+op password(): void;
+
 @route("/auth/login")
 @post
 @rateLimited("login")
