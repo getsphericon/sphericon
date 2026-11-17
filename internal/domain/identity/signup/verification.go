@@ -44,7 +44,7 @@ func (m *Module) verified(ctx context.Context, proven bool, write func(tx *ent.C
 		}
 		var joined *ent.Workspace
 		if proven {
-			if joined, err = users.ApplyDomainJoinIn(ctx, tx, pub, usr); err != nil {
+			if joined, err = m.users.ApplyDomainJoinIn(ctx, tx, usr); err != nil {
 				return err
 			}
 		}
@@ -56,7 +56,7 @@ func (m *Module) verified(ctx context.Context, proven bool, write func(tx *ent.C
 		if joined != nil {
 			landing = joined
 		}
-		return users.RecordUserAction(ctx, tx, pub, usr, events.ActionUserEmailVerify, nil)
+		return m.users.RecordUserAction(ctx, tx, users.UserAction{User: usr, Action: events.ActionUserEmailVerify})
 	})
 	return verified, landing, err
 }
@@ -102,7 +102,7 @@ type PasswordReset struct {
 // users.ErrAlreadyVerified when the User is no longer Unverified (a used link).
 func (m *Module) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verified, error) {
 	verified, landing, err := m.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, err := users.MarkVerifiedIn(ctx, tx, in.UserID, "", in.PasswordHash, m.now(), true)
+		usr, err := m.users.MarkVerifiedIn(ctx, tx, users.MarkVerifiedInput{UserID: in.UserID, PasswordHash: in.PasswordHash, Proven: true})
 		if err != nil {
 			return nil, err
 		}
@@ -118,11 +118,11 @@ func (m *Module) VerifyEmail(ctx context.Context, in VerifyEmailInput) (*Verifie
 // (users.Links.Verification, with its refusals), then VerifyEmail, whose User and landing it
 // returns. A link that loses the race to another one is users.ErrVerifyLinkUsed.
 func (m *Module) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) (*Verified, error) {
-	uid, hash, err := m.links.Verification(ctx, in.Token, in.Browser, in.Password)
+	read, err := m.links.Verification(ctx, users.VerificationInput{Token: in.Token, Browser: in.Browser, Password: in.Password})
 	if err != nil {
 		return nil, err
 	}
-	verified, err := m.VerifyEmail(ctx, VerifyEmailInput{UserID: uid, PasswordHash: hash})
+	verified, err := m.VerifyEmail(ctx, VerifyEmailInput{UserID: read.UserID, PasswordHash: read.PasswordHash})
 	return verified, users.LinkUsed(err)
 }
 
@@ -134,10 +134,11 @@ func (m *Module) VerifyEmailLink(ctx context.Context, in VerifyEmailLinkInput) (
 // Verified User it is only a password change, recorded like
 // users.Module.ChangeProfile. Either way every earlier session ends.
 func (m *Module) ResetPasswordLink(ctx context.Context, token, password string) (*PasswordReset, error) {
-	id, passwordHash, err := m.links.PasswordReset(ctx, token, password)
+	link, err := m.links.PasswordReset(ctx, token, password)
 	if err != nil {
 		return nil, err
 	}
+	id, passwordHash := link.UserID, link.PasswordHash
 	stored, err := m.users.User(ctx, id)
 	if err != nil {
 		return nil, err
@@ -153,13 +154,12 @@ func (m *Module) ResetPasswordLink(ctx context.Context, token, password string) 
 		// A concurrent link verified the User first: this is now a plain password change.
 	}
 	var reset *ent.User
-	err = m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		now := m.now()
-		u, firstProof, err := users.ResetVerifiedPasswordIn(ctx, tx, pub, id, passwordHash, now)
+	err = m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		done, err := m.users.ResetVerifiedPasswordIn(ctx, tx, id, passwordHash)
 		if err != nil {
 			return err
 		}
-		reset, err = m.afterProofIn(ctx, tx, u, firstProof)
+		reset, err = m.afterProofIn(ctx, tx, done.User, done.FirstProof)
 		return err
 	})
 	if err != nil {
@@ -181,7 +181,7 @@ func (m *Module) SignUpVerified(ctx context.Context, n users.NewUser) (*ent.User
 // which publishes events.UserSignedUp) or was made by the operator (madeByOperator).
 func (m *Module) createVerified(ctx context.Context, n users.NewUser, welcome bool) (*ent.User, error) {
 	created, _, err := m.verified(ctx, noJoin, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, err := users.CreateVerifiedIn(ctx, tx, n, m.now())
+		usr, err := m.users.CreateVerifiedIn(ctx, tx, n)
 		if err != nil || !welcome {
 			return usr, err
 		}
@@ -198,7 +198,7 @@ func signUpCompleted(usr *ent.User) *events.UserSignedUp {
 // CreateOwner is the Instance operator's way to make an Owner from a shell (ADR 0042): a
 // Verified User with a generated password and its first Workspace, named
 // users.FirstWorkspaceName, exactly as SignUpVerified makes them. The password is returned once.
-// The name and the address are checked by the rules of a User's (users.CreateVerifiedIn), and a
+// The name and the address are checked by the rules of a User's (users.Module.CreateVerifiedIn), and a
 // taken address is users.ErrEmailTaken.
 func (m *Module) CreateOwner(ctx context.Context, email, name string) (string, error) {
 	password := rand.Text()

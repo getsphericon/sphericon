@@ -44,6 +44,7 @@ type Request struct {
 type UseCase struct {
 	bus     *events.Bus
 	users   *users.Module
+	removal *usersunchecked.Module
 	links   *users.Links
 	factors *secondfactors.Module
 	login   *login.Module[*ent.User]
@@ -55,7 +56,7 @@ type UseCase struct {
 // module's one prove path over them.
 func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors *secondfactors.Module, budget login.Throttle, passwords *credentials.Hasher) *UseCase {
 	return &UseCase{
-		bus: bus, users: usersModule, links: links, factors: factors,
+		bus: bus, users: usersModule, removal: usersunchecked.New(usersModule, bus), links: links, factors: factors,
 		login: login.New(login.Config[*ent.User]{Throttle: budget, Passwords: passwords}),
 	}
 }
@@ -72,7 +73,7 @@ func New(bus *events.Bus, usersModule *users.Module, links *users.Links, factors
 //     so only if it commits; a wrong one is secondfactors.ErrDeletionCodeInvalid, counted like a
 //     wrong password.
 //
-// The transaction opens the User's deletion on its locked row (usersunchecked.DeletionIn), which
+// The transaction opens the User's deletion on its locked row (usersunchecked.Module.DeletionIn), which
 // re-checks the proof there: a password set or removed since it was read is users.ErrProofStale.
 // It then locks the Owner rows of every Workspace the User belongs to, in ascending Workspace id
 // order, so two co-Owners deleting at once serialize on the Workspace and cannot deadlock: the
@@ -116,7 +117,7 @@ func (uc *UseCase) Delete(ctx context.Context, req Request) error {
 // deleteIn is the deletion's transaction tx, for the User proven as read for the proof.
 func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publisher, proven *ent.User, code string) error {
 	userID := proven.ID
-	deletion, err := usersunchecked.DeletionIn(ctx, tx, proven)
+	deletion, err := uc.removal.DeletionIn(ctx, tx, proven)
 	if err != nil {
 		return err
 	}
@@ -146,5 +147,5 @@ func (uc *UseCase) deleteIn(ctx context.Context, tx *ent.Client, pub events.Publ
 			return err
 		}
 	}
-	return deletion.Apply(ctx, pub)
+	return uc.removal.ApplyDeletion(ctx, tx, deletion)
 }

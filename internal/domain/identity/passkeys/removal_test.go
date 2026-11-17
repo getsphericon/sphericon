@@ -95,8 +95,8 @@ func newRace(t *testing.T) race {
 	env := testhelper.Setup(t, testhelper.Committed())
 	party, err := passkeys.NewRelyingParty("https://app.example", "passkeys-test-ceremony-secret")
 	require.NoError(t, err)
-	keys := passkeys.New(env.DB, env.Bus, testhelper.ProvenUsers{}, party, time.Now)
-	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.ProvenUsers{}, keys, time.Now)
+	keys := passkeys.New(env.DB, env.Bus, testhelper.NewProvenUsers(env), party, time.Now)
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), keys, time.Now)
 	return race{env: env, db: env.SQLDB, client: env.DB, bus: env.Bus, keys: keys, factors: factors}
 }
 

@@ -2,7 +2,6 @@ package jobs_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,9 +13,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func prunePendingSignups(t *testing.T, env *testhelper.TestEnv, now time.Time) {
+func prunePendingSignups(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
-	w := jobs.NewPrunePendingSignupsWorker(testhelper.Module[*users.Module](env), func() time.Time { return now })
+	w := jobs.NewPrunePendingSignupsWorker(testhelper.Module[*users.Module](env))
 	require.NoError(t, w.Work(t.Context(), job(jobs.PrunePendingSignupsArgs{})))
 }
 
@@ -31,7 +30,7 @@ func pendingSignupKept(t *testing.T, env *testhelper.TestEnv, id int64) bool {
 func TestPruneDeletesExpiredPendingSignups(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	prunePendingSignups(t, env, time.Now())
+	prunePendingSignups(t, env)
 
 	assert.False(t, pendingSignupKept(t, env, fixtures.PendingSignupExpiredID))
 }
@@ -39,7 +38,7 @@ func TestPruneDeletesExpiredPendingSignups(t *testing.T) {
 func TestPruneKeepsPendingSignupsStillOpen(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	prunePendingSignups(t, env, time.Now())
+	prunePendingSignups(t, env)
 
 	assert.True(t, pendingSignupKept(t, env, fixtures.PendingSignupOpenID), "a person may still answer it")
 }

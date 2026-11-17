@@ -16,7 +16,7 @@ import (
 func TestCreatingAUserWithATakenAddressIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, err := testhelper.Module[*users.Module](env).CreateUser(t.Context(), "Mallory", fixtures.OwnerJohnEmail, "hash")
+	_, err := testhelper.Module[*users.Module](env).CreateUser(t.Context(), users.CreateUserInput{Name: "Mallory", Email: fixtures.OwnerJohnEmail, PasswordHash: "hash"})
 
 	require.ErrorIs(t, err, users.ErrEmailTaken)
 }
@@ -39,10 +39,10 @@ func TestChangingTheEmailToATakenAddressIsRefused(t *testing.T) {
 func TestLinkingAProviderAccountOfAnotherUserIsRefused(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, added, err := testhelper.Module[*users.Module](env).LinkIdentity(t.Context(), fixtures.OwnerJohnID, fixtures.MaryGoogleIdentityProvider, fixtures.MaryGoogleIdentitySubject)
+	link, err := testhelper.Module[*users.Module](env).LinkIdentity(t.Context(), users.LinkIdentityInput{UserID: fixtures.OwnerJohnID, Provider: fixtures.MaryGoogleIdentityProvider, Subject: fixtures.MaryGoogleIdentitySubject})
 
 	require.ErrorIs(t, err, users.ErrIdentityInUse)
-	assert.False(t, added)
+	assert.False(t, link.Added)
 	n, err := env.DB.UserIdentity.Query().Where(useridentity.UserID(fixtures.OwnerJohnID)).Count(t.Context())
 	require.NoError(t, err)
 	assert.Zero(t, n)
@@ -52,8 +52,8 @@ func TestLinkingAProviderAccountOfAnotherUserIsRefused(t *testing.T) {
 func TestLinkingAProviderAccountTheUserHoldsChangesNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 
-	_, added, err := testhelper.Module[*users.Module](env).LinkIdentity(t.Context(), fixtures.MemberMaryID, fixtures.MaryGoogleIdentityProvider, fixtures.MaryGoogleIdentitySubject)
+	link, err := testhelper.Module[*users.Module](env).LinkIdentity(t.Context(), users.LinkIdentityInput{UserID: fixtures.MemberMaryID, Provider: fixtures.MaryGoogleIdentityProvider, Subject: fixtures.MaryGoogleIdentitySubject})
 
 	require.NoError(t, err)
-	assert.False(t, added)
+	assert.False(t, link.Added)
 }

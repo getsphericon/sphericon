@@ -140,7 +140,7 @@ func (a *Module) acceptInvitationIn(ctx context.Context, tx *ent.Client, pub eve
 		return err
 	}
 	if byInvitation {
-		if err := RecordActionOnUserIn(ctx, pub, actor, u, events.ActionUserEmailVerify, nil, inv.WorkspaceID); err != nil {
+		if err := recordActionOnUserIn(ctx, pub, ActionOnUser{Actor: actor, User: u, Action: events.ActionUserEmailVerify}, inv.WorkspaceID); err != nil {
 			return err
 		}
 	}
@@ -208,7 +208,7 @@ func invitee(ctx context.Context, tx *ent.Client, passwords *credentials.Hasher,
 			return cerr
 		})
 	} else {
-		u, err = MarkVerifiedIn(ctx, tx, u.ID, name, &hash, at, false)
+		u, err = markVerifiedIn(ctx, tx, MarkVerifiedInput{UserID: u.ID, Name: name, PasswordHash: &hash}, at)
 		if err == nil {
 			// The person who signed up is an invitee now, not a public Sign-up.
 			err = clearSurveyDue(ctx, tx, u.ID)

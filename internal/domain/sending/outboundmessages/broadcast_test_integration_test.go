@@ -52,7 +52,7 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 		testhelper.Module[*holds.Holds](env),
 		via,
 		messagetoken.New("test-secret", "http://local", time.Now),
-		outboundmessages.Deps{System: env.SystemMail, Users: users.New(env.DB, env.Bus, nil, nil, time.Now)},
+		outboundmessages.Deps{System: env.SystemMail, Users: users.New(env.DB, env.Bus, nil, nil, nil, time.Now)},
 		outboundmessages.Config{},
 		time.Now,
 	)
