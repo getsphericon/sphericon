@@ -225,7 +225,7 @@ var ErrNoAudience = errors.New("broadcasts: the audience of the broadcast cannot
 // A Contact without a Destination (on Telegram, an eligible Binding on the routed Integration) is left out, so no row is created that could never send and
 // would block finalization forever.
 func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (*ent.ContactQuery, error) {
-	reached, err := eligibility.BroadcastAudience(ctx, s, b.Channel, b.IntegrationID)
+	reached, err := eligibility.New().BroadcastAudience(ctx, s, b.Channel, b.IntegrationID)
 	if err != nil {
 		return nil, fmt.Errorf("broadcasts: broadcast %d: %w", b.ID, err)
 	}
@@ -236,7 +236,7 @@ func audienceOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.T
 	if b.Condition == nil {
 		return nil, fmt.Errorf("%w: broadcast %d: the condition of segment %d was not copied", ErrNoAudience, b.ID, *b.SegmentID)
 	}
-	pred, err := condition.ContactPredicate(ctx, s, *b.Condition, now)
+	pred, err := condition.New(func() time.Time { return now }).ContactPredicate(ctx, s, *b.Condition)
 	if err != nil {
 		return nil, fmt.Errorf("%w: broadcast %d condition: %w", ErrNoAudience, b.ID, err)
 	}

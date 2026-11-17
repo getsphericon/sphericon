@@ -65,11 +65,18 @@ var _ = db.Declare(
 	db.Fault("consent_stamps_ws_channel_dest_source", "Hold inserts ON CONFLICT (workspace_id, channel, destination, sending_source) DO NOTHING"),
 )
 
+// Module orders the Consent observations. It holds nothing: every call takes the scope whose
+// transaction it runs in.
+type Module struct{}
+
+// New builds the module.
+func New() *Module { return &Module{} }
+
 // Hold locks the stamp row of k to the end of the transaction, making it if there is none, and
 // returns it: the observations of one key are handled one at a time, so a comparison and the write
 // it allows are one step. An owner holds it before it reads the state it decides on, and before
 // the Contact's lock (contactlock), which its write may take.
-func Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentStamp, error) {
+func (m *Module) Hold(ctx context.Context, s *ent.Scoped, k Key) (*ent.ConsentStamp, error) {
 	k = Stored(k)
 	err := s.ConsentStamp().Create().
 		SetChannel(k.Channel).
@@ -100,19 +107,30 @@ func Stored(k Key) Key {
 	return k
 }
 
-// Admit reports whether an observation that occurred at o may set fact of k, and stamps it when it
-// may: when nothing has set the state yet, or o occurred later than what did. Within one bot the
-// later is the higher number; otherwise the later time, and of two of the same moment the refusal
-// wins (refusal: o stops or withdraws consent), so a tie leaves an opt-out standing. A state
-// already as o would set it is stamped too: the person said it again, later. An observation not
-// admitted changes nothing. The stamp is Hold's, stored by Stored's key.
-func Admit(ctx context.Context, s *ent.Scoped, k Key, fact Fact, o Occurrence, refusal bool) (bool, error) {
+// Observation is a Consent observation of a key: the state it sets, when it occurred, and whether
+// it stops or withdraws consent (a refusal) rather than giving it.
+type Observation struct {
+	Key      Key
+	Fact     Fact
+	Occurred Occurrence
+	// Refusal is true for an observation that stops or withdraws consent.
+	Refusal bool
+}
+
+// Admit reports whether the observation in may set its Fact of its Key, and stamps it when it may:
+// when nothing has set the state yet, or it occurred later than what did. Within one bot the later
+// is the higher number; otherwise the later time, and of two of the same moment the refusal wins,
+// so a tie leaves an opt-out standing. A state already as the observation would set it is stamped
+// too: the person said it again, later. An observation not admitted changes nothing. The stamp is
+// Hold's, stored by Stored's key.
+func (m *Module) Admit(ctx context.Context, s *ent.Scoped, in Observation) (bool, error) {
+	k, fact, o, refusal := in.Key, in.Fact, in.Occurred, in.Refusal
 	if o.At.IsZero() {
 		return false, ErrNoOccurrence
 	}
 	// The database keeps microseconds: an observation is compared as it would be read back.
 	o.At = o.At.UTC().Truncate(time.Microsecond)
-	row, err := Hold(ctx, s, k)
+	row, err := m.Hold(ctx, s, k)
 	if err != nil {
 		return false, err
 	}
@@ -158,7 +176,7 @@ func stampOf(row *ent.ConsentStamp, fact Fact) *Occurrence {
 	return nil
 }
 
-// later reports whether o may replace the state standing set: see Admit.
+// later reports whether o may replace the state standing set: see Module.Admit.
 func later(o Occurrence, standing *Occurrence, refusal bool) bool {
 	switch {
 	case standing == nil:

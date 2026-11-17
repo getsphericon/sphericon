@@ -24,11 +24,13 @@ import (
 type UseCase struct {
 	bus   *events.Bus
 	check *removalcheck.Module
+	edits *contactsunchecked.Module
 }
 
-// New builds the Custom field retyping use case over the Removal check.
-func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
-	return &UseCase{bus: bus, check: check}
+// New builds the Custom field retyping use case over the Removal check and the contacts module
+// whose unchecked edit of a Custom field it builds.
+func New(bus *events.Bus, check *removalcheck.Module, contacts *contacts.Module) *UseCase {
+	return &UseCase{bus: bus, check: check, edits: contactsunchecked.New(contacts)}
 }
 
 // Update renames a Custom field or changes its type, an audited change (ADR 0022). A type change
@@ -46,7 +48,7 @@ func New(bus *events.Bus, check *removalcheck.Module) *UseCase {
 func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contacts.CustomFieldUpdateInput) (*ent.CustomField, error) {
 	var updated *ent.CustomField
 	err := u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		edit, err := contactsunchecked.CustomFieldUpdateIn(ctx, wl, id, in)
+		edit, err := u.edits.CustomFieldUpdateIn(ctx, wl, id, in)
 		if err != nil {
 			return err
 		}
@@ -55,7 +57,7 @@ func (u *UseCase) Update(ctx context.Context, s *ent.Scoped, id int64, in contac
 				return err
 			}
 		}
-		updated, err = edit.Apply(ctx)
+		updated, err = u.edits.ApplyCustomFieldUpdate(ctx, wl, edit)
 		return err
 	})
 	if err != nil {

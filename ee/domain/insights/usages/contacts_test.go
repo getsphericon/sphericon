@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
@@ -99,7 +100,7 @@ func TestContactsDoesNotCountAnAnonymousContact(t *testing.T) {
 func TestContactsDoesNotCountAnErasedContact(t *testing.T) {
 	now := at(2027, time.February, 10, 12)
 	env, _, base := contactsEnv(t, now)
-	require.NoError(t, contacterasure.New(env.Bus, time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*contacts.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{ContactID: fixtures.ContactAliceID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken, ID: 1}))
 	addContact(t, env, "after-erasure@example.com")
 

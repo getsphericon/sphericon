@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/collect"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -137,7 +138,7 @@ func TestCollectEventsCarryOccurredAtPropertiesAndTheKeysWorkspace(t *testing.T)
 // acknowledged ingest.
 func TestCollectEventsStorageFailureIsNotAcknowledged(t *testing.T) {
 	sqlDB := testhelper.ClosedDB(t)
-	h := collect.NewHandlers(events.New(sqlDB, entclient.Core.NewTx, time.Now), nil, time.Now)
+	h := collect.NewHandlers(visitors.New(events.New(sqlDB, entclient.Core.NewTx, time.Now), time.Now), nil)
 
 	err := h.CollectEventsCreate(
 		auth.WithCollectAuth(context.Background(), &auth.CollectAuth{WorkspaceID: fixtures.AcmeID, Scoped: entclient.Core.New(sqlDB).Scoped(fixtures.AcmeID)}),

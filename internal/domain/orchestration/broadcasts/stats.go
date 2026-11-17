@@ -206,7 +206,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 			Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
 		}
 	}
-	revenue, err := orders.CreditedToBroadcasts(ctx, s, ids...)
+	revenue, err := orders.NewRevenues().CreditedToBroadcasts(ctx, s, ids...)
 	if err != nil {
 		return nil, err
 	}

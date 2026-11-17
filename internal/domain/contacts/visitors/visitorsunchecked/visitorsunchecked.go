@@ -12,11 +12,18 @@ import (
 	"github.com/getsphericon/sphericon/ent/visitor"
 )
 
+// Module holds the Visitor step of a Contact's Erasure. It holds nothing: every call takes the
+// scope of the Erasure's transaction.
+type Module struct{}
+
+// New builds the module.
+func New() *Module { return &Module{} }
+
 // EraseSubject is the Visitor part of a Contact's Erasure (ADR 0021): it deletes the Visitors bound
 // to the Contact and those of the subject's visitor ids, and their Telegram Bindings and Start
 // tokens go with them by their cascading foreign keys. contactID is 0 for an anonymous Visitor
 // without a Contact. Run it inside the Erasure's transaction, after the Visitors' Events are gone.
-func EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, visitorIDs []string) error {
+func (m *Module) EraseSubject(ctx context.Context, s *ent.Scoped, contactID int64, visitorIDs []string) error {
 	match := visitor.VisitorIDIn(visitorIDs...)
 	if contactID != 0 {
 		match = visitor.Or(visitor.ContactID(contactID), match)

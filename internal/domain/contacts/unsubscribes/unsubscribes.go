@@ -126,7 +126,7 @@ func Add(ctx context.Context, s *ent.Scoped, o OptOut) (Change, error) {
 	}
 	o.Destination = dest
 	k := consentstamps.Key{Channel: o.Channel, Destination: dest, Source: o.Source}
-	admitted, err := consentstamps.Admit(ctx, s, k, consentstamps.OptOut, o.At, true)
+	admitted, err := consentstamps.New().Admit(ctx, s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: o.At, Refusal: true})
 	if err != nil || !admitted {
 		return Change{Superseded: err == nil}, err
 	}
@@ -134,7 +134,7 @@ func Add(ctx context.Context, s *ent.Scoped, o OptOut) (Change, error) {
 		SetChannel(o.Channel).
 		SetDestination(o.Destination).
 		SetSendingSource(o.Source)
-	contactID, err := contactlock.Referenced(ctx, s, o.ContactID)
+	contactID, err := contactlock.New().Referenced(ctx, s, o.ContactID)
 	if err != nil {
 		return Change{}, fmt.Errorf("lock the opt-out's contact: %w", err)
 	}
@@ -181,7 +181,7 @@ func Get(ctx context.Context, s *ent.Scoped, channel channels.Channel, destinati
 // which the Contact card shows, and at when: a stop older than the number's opt-out state is
 // superseded, as Add's.
 func AddSMS(ctx context.Context, s *ent.Scoped, number string, via unsubscribe.Via, at consentstamps.Occurrence) (Change, error) {
-	admitted, err := consentstamps.Admit(ctx, s, smsKey(number), consentstamps.OptOut, at, true)
+	admitted, err := consentstamps.New().Admit(ctx, s, consentstamps.Observation{Key: smsKey(number), Fact: consentstamps.OptOut, Occurred: at, Refusal: true})
 	if err != nil || !admitted {
 		return Change{Superseded: err == nil}, err
 	}
@@ -224,7 +224,7 @@ func smsKey(number string) consentstamps.Key {
 // It reports false and lifts nothing for a START older than the number's opt-out state: the
 // person stopped after it (ADR 0154).
 func LiftSMS(ctx context.Context, s *ent.Scoped, number string, at consentstamps.Occurrence) (bool, error) {
-	admitted, err := consentstamps.Admit(ctx, s, smsKey(number), consentstamps.OptOut, at, false)
+	admitted, err := consentstamps.New().Admit(ctx, s, consentstamps.Observation{Key: smsKey(number), Fact: consentstamps.OptOut, Occurred: at})
 	if err != nil || !admitted {
 		return false, err
 	}
@@ -277,7 +277,7 @@ func smsEverything(number string) []predicate.Unsubscribe {
 // reports false and lifts nothing for a return older than the user's opt-out state (ADR 0154).
 func LiftTelegram(ctx context.Context, s *ent.Scoped, destination string, at consentstamps.Occurrence) (bool, error) {
 	k := consentstamps.Key{Channel: channels.Telegram, Destination: destination, Source: eligibility.SourceEverything}
-	admitted, err := consentstamps.Admit(ctx, s, k, consentstamps.OptOut, at, false)
+	admitted, err := consentstamps.New().Admit(ctx, s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: at})
 	if err != nil || !admitted {
 		return false, err
 	}

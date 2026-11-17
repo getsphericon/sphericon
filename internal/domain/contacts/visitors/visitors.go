@@ -20,6 +20,17 @@ import (
 	"github.com/samber/lo"
 )
 
+// Module resolves Visitors and collects their Events. The bus opens the transaction each collected
+// Event is published in; now is the Instance clock a Visitor is marked seen by.
+type Module struct {
+	bus *events.Bus
+	now func() time.Time
+}
+
+// New builds the module.
+func New(bus *events.Bus, now func() time.Time) *Module { return &Module{bus: bus, now: now} }
+
+// CollectEventInput is one Event a tracker sent.
 type CollectEventInput struct {
 	VisitorID  string
 	Action     string
@@ -32,19 +43,19 @@ type CollectEventInput struct {
 
 // SeeIn returns the Visitor visitorID, marked seen now, and creates it when it has not been seen,
 // inside the transaction s is bound to: the device Identify resolves.
-func SeeIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
-	return findOrCreateVisitor(ctx, s, visitorID, now)
+func (m *Module) SeeIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
+	return findOrCreateVisitor(ctx, s, visitorID, m.now())
 }
 
 // EnsureIn returns the Visitor visitorID, creating it when it has not been seen; a Visitor that
 // exists is left as it is. A chat started on its behalf binds to it
 // (internal/domain/sending/bindings).
-func EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string, now time.Time) (*ent.Visitor, error) {
+func (m *Module) EnsureIn(ctx context.Context, s *ent.Scoped, visitorID string) (*ent.Visitor, error) {
 	if err := checkVisitorID(visitorID); err != nil {
 		return nil, err
 	}
 	// A Visitor already there is left as it is, and read below like a new one.
-	err := s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(now).
+	err := s.Visitor().Create().SetVisitorID(visitorID).SetLastSeenAt(m.now()).
 		OnConflictColumns(visitor.FieldWorkspaceID, visitor.FieldVisitorID).
 		DoNothing().
 		Exec(ctx)
@@ -63,17 +74,19 @@ var _ = db.Declare(
 
 // BindIn binds the Visitor id to the Contact contactID and marks it seen now, inside the
 // transaction s is bound to: the device Identify resolved.
-func BindIn(ctx context.Context, s *ent.Scoped, id, contactID int64, now time.Time) error {
+func (m *Module) BindIn(ctx context.Context, s *ent.Scoped, id, contactID int64) error {
 	return s.Visitor().UpdateOneID(id).
 		SetContactID(contactID).
-		SetLastSeenAt(now).
+		SetLastSeenAt(m.now()).
 		Exec(ctx)
 }
 
 // Collect refuses the whole batch when an event is outside the contract's bounds (its visitor id,
 // action or client event id), and with events.ErrRejected when one claims a reserved action:
-// delivery, consent and Contact lifecycle facts are the system's alone.
-func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []CollectEventInput, now time.Time) error {
+// delivery, consent and Contact lifecycle facts are the system's alone. Every Visitor of the batch
+// is marked seen at the one time the batch arrived.
+func (m *Module) Collect(ctx context.Context, s *ent.Scoped, evts []CollectEventInput) error {
+	now := m.now()
 	for _, evt := range evts {
 		if err := checkEvent(evt); err != nil {
 			return err
@@ -107,7 +120,7 @@ func Collect(ctx context.Context, bus *events.Bus, s *ent.Scoped, evts []Collect
 		// Resolve identity and publish in one transaction: the visitor upsert and the
 		// event commit together. The collected event is the customer's own — its
 		// action and properties are stored as-is.
-		if err := bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+		if err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 			res, err := resolveIdentity(ctx, ts, visitorID, now)
 			if err != nil {
 				return err

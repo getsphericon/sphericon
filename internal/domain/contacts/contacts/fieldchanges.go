@@ -17,7 +17,7 @@ import (
 // given the value it held records nothing; a field that has a value where it had none, or none
 // where it had one, counts, and a cleared one is recorded without a value. Keys are recorded in
 // order, so a write of several fields publishes them alike every time.
-func publishFieldChanges(ctx context.Context, pub events.Publisher, workspaceID int64, c *ent.Contact, before map[string]any) error {
+func (m *Module) publishFieldChanges(ctx context.Context, s *ent.Scoped, c *ent.Contact, before map[string]any) error {
 	after := c.CustomFields
 	keys := lo.Uniq(append(lo.Keys(before), lo.Keys(after)...))
 	slices.Sort(keys)
@@ -26,8 +26,8 @@ func publishFieldChanges(ctx context.Context, pub events.Publisher, workspaceID 
 		if reflect.DeepEqual(was, now) {
 			continue
 		}
-		if err := pub.Publish(ctx, &events.ContactFieldChanged{
-			WorkspaceID: workspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email), Key: key, Value: now,
+		if err := m.bus.PublishIn(ctx, s, &events.ContactFieldChanged{
+			WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email), Key: key, Value: now,
 		}); err != nil {
 			return err
 		}

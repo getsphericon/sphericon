@@ -37,10 +37,10 @@ func TestCollectCarriesTheIdentityTheDeviceResolvesTo(t *testing.T) {
 		VisitorID: "dev-id", Email: lo.ToPtr(fixtures.ContactAliceEmail), SubjectID: new("alice-1"),
 	}))
 
-	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{
+	require.NoError(t, testhelper.Module[*visitors.Module](env).Collect(ctx, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{
 		{VisitorID: " dev-id ", Action: "signup", Properties: map[string]any{"plan": "pro"}, OccurredAt: &at},
 		{VisitorID: "dev-anon", Action: "page_view"},
-	}, time.Now()))
+	}))
 
 	got := queuedCollected(t, env)
 	require.Len(t, got, 2)
@@ -69,7 +69,7 @@ func TestCollectTreatsTheDeviceOfADeletedContactAsAnonymous(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	require.NoError(t, visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.StarkID), []visitors.CollectEventInput{{VisitorID: fixtures.VisitorStarkVanishedVisitorID, Action: "login"}}, time.Now()))
+	require.NoError(t, testhelper.Module[*visitors.Module](env).Collect(ctx, env.DB.Scoped(fixtures.StarkID), []visitors.CollectEventInput{{VisitorID: fixtures.VisitorStarkVanishedVisitorID, Action: "login"}}))
 	got := queuedCollected(t, env)
 	require.Len(t, got, 1)
 	assert.Zero(t, got[0].ContactID)
@@ -89,7 +89,7 @@ func TestCollectRefusesABatchWithAnEventOutsideTheContractsBounds(t *testing.T) 
 		"an action too long":         {VisitorID: "dev-bounded", Action: strings.Repeat("a", 256)},
 		"a client event id too long": {VisitorID: "dev-bounded", Action: "login", ClientEventID: strings.Repeat("c", 256)},
 	} {
-		err := visitors.Collect(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{ok, bad}, time.Now())
+		err := testhelper.Module[*visitors.Module](env).Collect(ctx, env.DB.Scoped(fixtures.AcmeID), []visitors.CollectEventInput{ok, bad})
 
 		refusal, isRefusal := errors.AsType[*validation.RefusalError](err)
 		require.True(t, isRefusal, "%s: %v", name, err)

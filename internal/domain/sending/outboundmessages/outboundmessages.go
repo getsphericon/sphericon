@@ -550,7 +550,7 @@ func renderedSubject(rendered any) string {
 func (m *Module) eligibleTargets(ctx context.Context, s *ent.Scoped, req Request, targets []target) (eligible []target, skip string, err error) {
 	onChannel := req.Channel()
 	for _, t := range targets {
-		dec, err := eligibility.Check(ctx, s, onChannel, t.dest, req.Source)
+		dec, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: onChannel, Destination: t.dest, Source: req.Source})
 		if err != nil {
 			return nil, "", err
 		}

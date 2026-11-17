@@ -33,6 +33,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
@@ -168,28 +169,20 @@ type Result struct {
 
 // Module is the contacts module.
 type Module struct {
-	bus  *events.Bus
-	mail addresscheck.Resolver
-	now  func() time.Time
+	bus   *events.Bus
+	tags  *tags.Module
+	locks *contactlock.Module
+	mail  addresscheck.Resolver
+	now   func() time.Time
 }
 
-// Option configures the module.
-type Option func(*Module)
-
-// WithMailResolver is the DNS the Contact intake reads an address's domain from (ADR 0117).
-// Without it every domain is Unknown, so the intake refuses no address for its domain.
-func WithMailResolver(r addresscheck.Resolver) Option {
-	return func(m *Module) { m.mail = r }
-}
-
-// New builds the module. now is the Instance clock the intake dates the SMS consent a row carries
-// by: when it reached the Workspace (ADR 0154).
-func New(bus *events.Bus, now func() time.Time, opts ...Option) *Module {
-	m := &Module{bus: bus, now: now}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
+// New builds the module. The bus opens the transaction of a change and publishes its System events
+// in the transaction its scope is bound to; catalogue is the Tags a Contact is given from; mail is
+// the DNS the Contact intake reads an address's domain from (ADR 0117), nil when there is none, so
+// every domain is Unknown and the intake refuses no address for its domain; now is the Instance
+// clock the intake dates the SMS consent a row carries by: when it reached the Workspace (ADR 0154).
+func New(bus *events.Bus, catalogue *tags.Module, mail addresscheck.Resolver, now func() time.Time) *Module {
+	return &Module{bus: bus, tags: catalogue, locks: contactlock.New(), mail: mail, now: now}
 }
 
 // Create makes a Contact from the given door (its Contact source, kept for good), gives it its
@@ -205,8 +198,8 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		return nil, err
 	}
 	var c *ent.Contact
-	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		typed, err := EnsureCustomFields(ctx, ts, attrs.CustomFields)
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		typed, err := m.EnsureCustomFields(ctx, ts, attrs.CustomFields)
 		if err != nil {
 			return err
 		}
@@ -229,16 +222,16 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, src contact.Source, 
 		if err := constraints.Write(ctx, ts, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 			return err
 		}
-		if err := publishCreated(ctx, pub, ts.WorkspaceID(), c); err != nil {
+		if err := m.publishCreated(ctx, ts, c); err != nil {
 			return err
 		}
-		if err := publishFieldChanges(ctx, pub, ts.WorkspaceID(), c, nil); err != nil {
+		if err := m.publishFieldChanges(ctx, ts, c, nil); err != nil {
 			return err
 		}
 		if len(in.Tags) == 0 {
 			return nil
 		}
-		return SetTagsIn(ctx, ts, pub, c.ID, in.Tags)
+		return m.SetTagsIn(ctx, ts, c.ID, in.Tags)
 	})
 	if err != nil {
 		return nil, domainError(err)
@@ -256,9 +249,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 	if _, err := checked(in.Email.Ptr(), in.City.Ptr(), in.Country.Ptr(), in.Locale.Ptr(), in.Avatar.Ptr()); err != nil {
 		return nil, err
 	}
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		// Read under the update's lock, so the Custom fields compared are the ones it replaces.
-		locked, err := contactlock.Lock(ctx, ts, id)
+		locked, err := m.locks.Lock(ctx, ts, id)
 		if err != nil {
 			return err
 		}
@@ -276,7 +269,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		phone.Apply(q.SetPhone, q.ClearPhone)
 		applyCore(q, in.Core)
 		if fields, ok := in.CustomFields.Get(); ok {
-			typed, err := EnsureCustomFields(ctx, ts, fields)
+			typed, err := m.EnsureCustomFields(ctx, ts, fields)
 			if err != nil {
 				return err
 			}
@@ -290,14 +283,14 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if err != nil {
 			return err
 		}
-		if err := publishFieldChanges(ctx, pub, ts.WorkspaceID(), after, before.CustomFields); err != nil {
+		if err := m.publishFieldChanges(ctx, ts, after, before.CustomFields); err != nil {
 			return err
 		}
 		names, ok := in.Tags.Get()
 		if !ok {
 			return nil
 		}
-		return SetTagsIn(ctx, ts, pub, id, names)
+		return m.SetTagsIn(ctx, ts, id, names)
 	})
 	if err != nil {
 		return nil, domainError(err)
@@ -312,9 +305,9 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 // of a Contact this call creates. ErrIdentityRequired when no alias key is given.
 func (m *Module) Upsert(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
 	var res Result
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		var err error
-		res, err = upsertIn(ctx, ts, pub, src, in, recordChanges)
+		res, err = m.upsertIn(ctx, ts, src, in, recordChanges)
 		return err
 	})
 	if err != nil {
@@ -370,27 +363,27 @@ func fillMissing(have, given *string, set func(*string) *ent.ContactScopedUpdate
 	}
 }
 
-// UpsertIn is Upsert inside a transaction the caller already owns (tx and pub come
-// from events.Bus.WithinScopedTx), for flows that bind more rows to the Contact atomically
-// — the tracker's Identify. It publishes contact.created when it creates, and
-// contact.field_changed for each Custom field whose value it changes.
-func UpsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
-	return upsertIn(ctx, s, pub, src, in, recordChanges)
+// UpsertIn is Upsert inside a transaction the caller already owns (s is bound to a transaction
+// the module's bus opened), for flows that bind more rows to the Contact atomically — the
+// tracker's Identify. It publishes contact.created when it creates, and contact.field_changed for
+// each Custom field whose value it changes, in that transaction.
+func (m *Module) UpsertIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
+	return m.upsertIn(ctx, s, src, in, recordChanges)
 }
 
 // importIn is UpsertIn for one row of an import (ADR 0022), inside the row's transaction of the
 // Contact intake (UpsertBatch): it brings earlier state rather than something happening now, so it records no
 // contact.field_changed (#897). Its refusals are the domain errors Upsert returns (ErrEmailTaken
 // and its kin, ErrNotFound).
-func importIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput) (Result, error) {
-	res, err := upsertIn(ctx, s, pub, src, in, importChanges)
+func (m *Module) importIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput) (Result, error) {
+	res, err := m.upsertIn(ctx, s, src, in, importChanges)
 	if err != nil {
 		return Result{}, domainError(err)
 	}
 	return res, nil
 }
 
-func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src contact.Source, in UpsertInput, ch changes) (Result, error) {
+func (m *Module) upsertIn(ctx context.Context, s *ent.Scoped, src contact.Source, in UpsertInput, ch changes) (Result, error) {
 	in = in.normalized()
 	if lo.FromPtr(in.SubjectID) == "" && in.Email == nil && in.Phone == nil {
 		return Result{}, ErrIdentityRequired
@@ -405,17 +398,17 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 		return Result{}, err
 	}
 	in.Phone = phone
-	typed, err := EnsureCustomFields(ctx, s, in.CustomFields)
+	typed, err := m.EnsureCustomFields(ctx, s, in.CustomFields)
 	if err != nil {
 		return Result{}, err
 	}
 
-	existing, err := Resolve(ctx, s, in.SubjectID, in.Email, in.Phone)
+	existing, err := resolve(ctx, s, AliasKeys{SubjectID: in.SubjectID, Email: in.Email, Phone: in.Phone})
 	if err != nil {
 		return Result{}, err
 	}
 	if existing != nil {
-		c, err := enrich(ctx, s, pub, existing.ID, in, typed, ch)
+		c, err := m.enrich(ctx, s, existing.ID, in, typed, ch)
 		if err != nil {
 			return Result{}, err
 		}
@@ -435,11 +428,11 @@ func upsertIn(ctx context.Context, s *ent.Scoped, pub events.Publisher, src cont
 	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil {
 		return Result{}, err
 	}
-	if err := publishCreated(ctx, pub, s.WorkspaceID(), c); err != nil {
+	if err := m.publishCreated(ctx, s, c); err != nil {
 		return Result{}, err
 	}
 	if ch == recordChanges {
-		if err := publishFieldChanges(ctx, pub, s.WorkspaceID(), c, nil); err != nil {
+		if err := m.publishFieldChanges(ctx, s, c, nil); err != nil {
 			return Result{}, err
 		}
 	}
@@ -490,8 +483,8 @@ func createCore(q *ent.ContactScopedCreate, c Core) {
 // Contact merge, and record, one after the other. An enrichment that changes nothing writes
 // nothing: the Contact keeps its revision and updated_at, so an editor open on it can still save
 // (ADR 0119), and a tracker that identifies on every page view does not rewrite the row.
-func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, in UpsertInput, typed map[string]any, ch changes) (*ent.Contact, error) {
-	locked, err := contactlock.Lock(ctx, s, id)
+func (m *Module) enrich(ctx context.Context, s *ent.Scoped, id int64, in UpsertInput, typed map[string]any, ch changes) (*ent.Contact, error) {
+	locked, err := m.locks.Lock(ctx, s, id)
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +508,7 @@ func enrich(ctx context.Context, s *ent.Scoped, pub events.Publisher, id int64, 
 	if err := constraints.Write(ctx, s, func() (err error) { c, err = q.Save(ctx); return err }); err != nil || ch != recordChanges {
 		return c, err
 	}
-	return c, publishFieldChanges(ctx, pub, s.WorkspaceID(), c, existing.CustomFields)
+	return c, m.publishFieldChanges(ctx, s, c, existing.CustomFields)
 }
 
 // claimedOver is a claimed assertion as it may touch existing (ADR 0171): no alias key, since one
@@ -582,12 +575,21 @@ func differs[T any](f patch.Field[T], have *T, eq func(a, b T) bool) bool {
 	return !eq(*after, *have)
 }
 
+// AliasKeys are the alias keys a Contact is resolved by; a nil key is not asserted.
+type AliasKeys struct {
+	SubjectID, Email, Phone *string
+}
+
 // Resolve finds an existing Contact by any present alias key (subject_id → email →
 // phone), or returns nil. It never creates. Keys are matched as normalized by
 // Attributes, so callers may pass raw values: a phone is read as an international number, and one
 // that is none (a local number, garbage) resolves nothing.
-func Resolve(ctx context.Context, s *ent.Scoped, subjectID, email, phone *string) (*ent.Contact, error) {
-	a := Attributes{SubjectID: subjectID, Email: email, Phone: phone}.normalized()
+func (m *Module) Resolve(ctx context.Context, s *ent.Scoped, keys AliasKeys) (*ent.Contact, error) {
+	return resolve(ctx, s, keys)
+}
+
+func resolve(ctx context.Context, s *ent.Scoped, by AliasKeys) (*ent.Contact, error) {
+	a := Attributes{SubjectID: by.SubjectID, Email: by.Email, Phone: by.Phone}.normalized()
 	if a.Phone != nil {
 		if p, err := e164(a.Phone, nil); err == nil {
 			a.Phone = p
@@ -631,16 +633,16 @@ func Resolve(ctx context.Context, s *ent.Scoped, subjectID, email, phone *string
 // → email → phone) and returns its id, or 0 if none matches. It never creates a
 // Contact — used by event ingest to attach an event to a Contact by stable identity
 // when one already exists, leaving it anonymous (0) otherwise.
-func ResolveID(ctx context.Context, s *ent.Scoped, subjectID string, email, phone *string) (int64, error) {
-	c, err := Resolve(ctx, s, &subjectID, email, phone)
+func (m *Module) ResolveID(ctx context.Context, s *ent.Scoped, keys AliasKeys) (int64, error) {
+	c, err := resolve(ctx, s, keys)
 	if err != nil || c == nil {
 		return 0, err
 	}
 	return c.ID, nil
 }
 
-func publishCreated(ctx context.Context, pub events.Publisher, workspaceID int64, c *ent.Contact) error {
-	return pub.Publish(ctx, &events.ContactCreated{WorkspaceID: workspaceID, ContactID: c.ID, Email: lo.FromPtr(c.Email)})
+func (m *Module) publishCreated(ctx context.Context, s *ent.Scoped, c *ent.Contact) error {
+	return m.bus.PublishIn(ctx, s, &events.ContactCreated{WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email)})
 }
 
 // normalized trims alias keys, lower-cases the email and drops blank ones, so
