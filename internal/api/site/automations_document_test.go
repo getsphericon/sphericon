@@ -107,3 +107,23 @@ func TestSiteAutomationInvalidDocumentRefusesTheWholeSaveNamingTheStep(t *testin
 	require.NoError(t, err)
 	assert.Equal(t, listed+1, env.DB.Automation.Query().CountX(ctx), "the refused saves stored nothing")
 }
+
+// A document saved again is the one the step holds, though jsonb keeps its keys in another order
+// (ADR 0169): the save changes nothing and the Automation's revision stays.
+func TestSiteAutomationDocumentSavedAgainIsNoChange(t *testing.T) {
+	env := testhelper.Setup(t)
+	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
+	ctx := context.Background()
+	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
+	step := docStep("Hi", paragraphDoc("Hello {{ first_name }}"))
+	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
+		Name: "Saved twice", TriggerEvent: "saved.twice", Steps: []siteapi.AutomationStepInput{step},
+	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
+	require.NoError(t, err)
+
+	saved, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: created.Revision, Steps: []siteapi.AutomationStepInput{step}},
+		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: created.ID})
+
+	require.NoError(t, err)
+	assert.Equal(t, created.Revision, saved.Revision)
+}
