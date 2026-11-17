@@ -72,9 +72,9 @@ func githubFake(t *testing.T, dir string, releases ...fakeRelease) *upgrade.GitH
 	})
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
-	gh, err := upgrade.NewGitHubAt(srv.URL)
+	endpoint, err := upgrade.NewGitHubEndpoint(srv.URL)
 	require.NoError(t, err)
-	return gh
+	return upgrade.NewGitHub(endpoint)
 }
 
 // assetID derives a stable id from a file name.
@@ -119,10 +119,10 @@ func TestUpgradeDownloadsTheLatestRelease(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.2.0", "", false)
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.2.0"})
-	o := s.opts("")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	got, err := drain(upgrade.Step(t.Context(), o))
+	got, err := drain(with(seams).Step(t.Context(), s.opts("")))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](got)))
@@ -135,10 +135,10 @@ func TestUpgradeDownloadsThePinnedRelease(t *testing.T) {
 	release(t, s.dir, "0.2.0", "", false)
 	release(t, s.dir, "0.3.0", "", false)
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.3.0"}, fakeRelease{Tag: "v0.2.0"})
-	o := s.opts("v0.2.0")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	got, err := drain(upgrade.Step(t.Context(), o))
+	got, err := drain(with(seams).Step(t.Context(), s.opts("v0.2.0")))
 
 	require.NoError(t, err)
 	assert.Equal(t, []string{"0.2.0"}, versions(of[upgrade.Installed](got)))
@@ -148,10 +148,10 @@ func TestUpgradeRefusesADowngradeFromGitHub(t *testing.T) {
 	s := newSetup(t)
 	release(t, s.dir, "0.0.9", "", false)
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.0.9"})
-	o := s.opts("v0.0.9")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	_, err := drain(upgrade.Step(t.Context(), o))
+	_, err := drain(with(seams).Step(t.Context(), s.opts("v0.0.9")))
 
 	assert.ErrorIs(t, err, upgrade.ErrDowngrade)
 }
@@ -161,10 +161,10 @@ func TestUpgradeRejectsATamperedDownload(t *testing.T) {
 	release(t, s.dir, "0.2.0", "", false)
 	require.NoError(t, os.WriteFile(filepath.Join(s.dir, "sphericon_0.2.0_linux_arm64.tar.gz"), []byte("tampered"), 0o644))
 	gh := githubFake(t, s.dir, fakeRelease{Tag: "v0.2.0"})
-	o := s.opts("")
-	o.Source = gh
+	seams := s.seams()
+	seams.Source = gh
 
-	_, err := drain(upgrade.Step(t.Context(), o))
+	_, err := drain(with(seams).Step(t.Context(), s.opts("")))
 
 	require.ErrorContains(t, err, "checksum mismatch")
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -181,8 +181,9 @@ func TestGitHubHonoursTheProxyVariables(t *testing.T) {
 	t.Setenv("NO_PROXY", "")
 	t.Setenv("no_proxy", "")
 	// httptest listens on loopback, which ProxyFromEnvironment never proxies; a named host does.
-	remote, err := upgrade.NewGitHubAt("http://github.test")
+	endpoint, err := upgrade.NewGitHubEndpoint("http://github.test")
 	require.NoError(t, err)
+	remote := upgrade.NewGitHub(endpoint)
 
 	v, err := remote.LatestRelease(t.Context())
 

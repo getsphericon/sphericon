@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/cleanup"
@@ -93,13 +94,13 @@ func runJob(t *testing.T, env *testhelper.TestEnv, cfg *config.Config, srvAddr, 
 	pool, err := db.OpenRiverDB(cfg.DatabaseURL, cfg.DBPool)
 	require.NoError(t, err)
 	t.Cleanup(func() { cleanup.Close(pool, "pool") })
-	mod := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), nil, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+	mod := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), nil, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 	// The runtime's own mail: env.SystemMail works the test's queued Notices before a read, and
 	// this queue is the process's committed one.
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.New(pool), jobs.Deps{
 		Ent: env.DB, Bus: env.Bus, Outbound: mod, Cipher: env.Cipher, SystemSender: mail,
-		OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
+		OutboundAllow: cfg.OutboundAllow, Clock: time.Now, Workspaces: testhelper.Module[*workspaces.Module](env),
 		Retention: jobs.Retention{Events: cfg.EventsRetention, UnverifiedUsers: cfg.UnverifiedUserRetention},
 	})
 	require.NoError(t, err)

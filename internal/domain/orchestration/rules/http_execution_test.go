@@ -46,7 +46,7 @@ func TestHTTPExecutionRecordsSuccessOnItsFiring(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -62,7 +62,7 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	require.Error(t, decision.Retry)
@@ -75,7 +75,7 @@ func TestHTTPExecutionLeavesTemporaryFailuresPendingUntilRecovery(t *testing.T) 
 
 	attempt := executionAttempt()
 	attempt.Number = 2
-	decision, err = rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), s, f.ID, 0, attempt)
+	decision, err = rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), s, rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: attempt})
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
 	stored = env.DB.RuleFiring.GetX(context.Background(), f.ID)
@@ -89,7 +89,7 @@ func TestHTTPExecutionRecordsAGivenUpCallAsFailed(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusNotFound, body: "gone"}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusNotFound, body: "gone"}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -112,7 +112,7 @@ func TestHTTPExecutionRejectsAnInvalidRenderedBody(t *testing.T) {
 	err = env.DB.RuleVersion.UpdateOneID(version.ID).SetActions(string(storedActions)).Exec(t.Context())
 	require.NoError(t, err)
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -128,10 +128,10 @@ func TestHTTPExecutionDoesNotRepeatADecidedAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	s := env.DB.Scoped(fixtures.AcmeID)
-	_, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), s, f.ID, 0, executionAttempt())
+	_, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), s, rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 	require.NoError(t, err)
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -148,7 +148,7 @@ func TestHTTPExecutionOfAnErasedFiringDoesNothing(t *testing.T) {
 	// The Contact's Erasure deletes its Firings by their cascading foreign key.
 	env.DB.RuleFiring.DeleteOneID(f.ID).ExecX(t.Context())
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusServiceUnavailable}, executionNow).ExecuteHTTP(context.Background(), s, rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -163,7 +163,7 @@ func TestHTTPExecutionRecordsAMissingContactAsFailed(t *testing.T) {
 		})
 	}))
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -178,7 +178,7 @@ func TestHTTPExecutionDecidesOnlyTheSelectedPendingAction(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringTwoHTTPPendingID)
 
-	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), f.ID, 1, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 1, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{}, decision)
@@ -202,7 +202,7 @@ func TestHTTPExecutionWaitsUntilRetryAfterFromTheResponseTime(t *testing.T) {
 		returned:   func() { now = now.Add(30 * time.Second) },
 	}
 
-	decision, err := rules.New(env.Cipher, env.Bus, response, func() time.Time { return now }).ExecuteHTTP(t.Context(), s, fixtures.RuleFiringHTTPPendingID, 0, executionAttempt())
+	decision, err := rules.New(env.Cipher, env.Bus, response, func() time.Time { return now }).ExecuteHTTP(t.Context(), s, rules.ExecuteHTTPInput{FiringID: fixtures.RuleFiringHTTPPendingID, Index: 0, Attempt: executionAttempt()})
 
 	require.NoError(t, err)
 	assert.Equal(t, httpcall.Execution{Wait: 90 * time.Second}, decision)

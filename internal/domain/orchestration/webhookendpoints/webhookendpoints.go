@@ -56,11 +56,11 @@ var (
 // means unlicensed.
 type Licensing interface{ Licensed() bool }
 
-// Endpoint is a Webhook endpoint with its signing secret decrypted.
+// Endpoint is a Webhook endpoint with its signing secret decrypted. The endpoint is a field, not
+// embedded: an embedded entity would promote its client's operations onto this value.
 type Endpoint struct {
-	*ent.WebhookEndpoint
-
-	Secret string
+	WebhookEndpoint *ent.WebhookEndpoint
+	Secret          string
 }
 
 // CreateInput is a new endpoint. A nil Enabled keeps the default (enabled).
@@ -151,7 +151,7 @@ func (m *Module) TestSend(ctx context.Context, s *ent.Scoped, id int64, eventTyp
 		return TestResult{}, err
 	}
 	rec := &statusRecorder{Doer: m.client}
-	sendErr := webhook.Send(ctx, rec, e.URL, e.Secret, eventType, deliveryID, body, m.now())
+	sendErr := webhook.Send(ctx, rec, e.WebhookEndpoint.URL, e.Secret, eventType, deliveryID, body, m.now())
 	var res TestResult
 	var delivery *webhook.DeliveryError
 	switch {
@@ -185,8 +185,8 @@ func (m *Module) recordTest(ctx context.Context, s *ent.Scoped, e Endpoint, even
 			Actor:       s.Actor(),
 			Action:      events.ActionWebhookEndpointTest,
 			TargetType:  webhookendpoint.Label,
-			TargetID:    publicid.Encode(e.ID),
-			TargetName:  urlName(e.URL),
+			TargetID:    publicid.Encode(e.WebhookEndpoint.ID),
+			TargetName:  urlName(e.WebhookEndpoint.URL),
 			Diff:        diff,
 		})
 	})

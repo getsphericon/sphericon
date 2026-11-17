@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -47,7 +48,7 @@ func stepperWith(env *testhelper.TestEnv, mod *outboundmessages.Module) *automat
 
 // stepperAt is the Step execution over mod, on the clock now.
 func stepperAt(env *testhelper.TestEnv, mod *outboundmessages.Module, now func() time.Time) *automations.StepExecution {
-	return automations.NewStepExecution(env.Bus, mod, noFence, env.Cipher, nil, now)
+	return automations.NewStepExecution(env.Bus, mod, testhelper.Module[*contacts.Module](env), noFence, env.Cipher, nil, now)
 }
 
 // queueStep queues the step job of an Enrollment standing on a fixture, as the enroll or the
@@ -172,7 +173,7 @@ func TestAutomationSendIncludesUnsubscribeFooter(t *testing.T) {
 	queueStep(t, env, fixtures.AutomationRunJobsSingleEmailLiamID)
 
 	fs := &fakeSender{}
-	mod := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolvingTo(fs), messagetoken.New("secret", "https://app.test", time.Now), time.Now)
+	mod := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolvingTo(fs), messagetoken.New("secret", "https://app.test", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 	env.RunQueuedSteps(t, stepperWith(env, mod))
 
 	require.Len(t, fs.sent, 1)
@@ -349,7 +350,7 @@ func TestAutomationExitedMidStepStaysExitedAndTheLateStepFinishesQuietly(t *test
 	// The Contact unsubscribes while the step is already running: the provider lookup
 	// is inside the step, after the run was read.
 	resolver := &SendersMock{EmailSenderFunc: func(ctx context.Context, sc *ent.Scoped, _ *ent.Integration) (messaging.EmailSender, error) {
-		_, err := automations.Exit(ctx, sc, env.Publisher(), run.AutomationID, run.ContactID, time.Now())
+		_, err := env.ExitEnrollment(ctx, sc, run.AutomationID, run.ContactID)
 		require.NoError(t, err)
 		return &fakeSender{}, nil
 	}}

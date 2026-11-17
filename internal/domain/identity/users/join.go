@@ -7,8 +7,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/domainname"
@@ -23,9 +21,14 @@ import (
 // record was lost has already been un-verified by the periodic re-check), builds the scope
 // of the Workspace that row names, decides on the facts with DecideJoin and, on a join,
 // creates a `member` Membership with source `domain` and records `membership.domain_join`
-// with the system as the actor and the joiner as target. It returns the joined Workspace,
-// nil when nothing was joined. Nothing is mailed.
-func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher, u *ent.User) (*ent.Workspace, error) {
+// with the system as the actor and the joiner as target, in the bus transaction tx is bound to.
+// It returns the joined Workspace, nil when nothing was joined. Nothing is mailed.
+func (a *Module) ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, u *ent.User) (*ent.Workspace, error) {
+	return a.applyDomainJoinIn(ctx, tx, u)
+}
+
+// applyDomainJoinIn is ApplyDomainJoinIn, recording in the bus transaction tx is bound to.
+func (a *Module) applyDomainJoinIn(ctx context.Context, tx *ent.Client, u *ent.User) (*ent.Workspace, error) {
 	_, host, ok := strings.Cut(u.Email, "@")
 	if !ok {
 		return nil, nil
@@ -34,7 +37,7 @@ func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 	if !ok {
 		return nil, nil
 	}
-	holder, err := joindomains.HolderIn(ctx, tx, domain)
+	holder, err := a.mods.JoinDomains.HolderIn(ctx, tx, domain)
 	if err != nil || holder == nil {
 		return nil, err
 	}
@@ -64,7 +67,7 @@ func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 		return nil, nil
 	}
 
-	joined, err := memberships.AddByDomainIn(ctx, ts, u.ID)
+	joined, err := a.mods.Memberships.AddByDomainIn(ctx, ts, u.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +81,7 @@ func ApplyDomainJoinIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 		membership.FieldRole:   events.Became(string(joined.Role)),
 	}
 	system := events.Actor{Kind: events.ActorSystem}
-	if err := RecordActionOnUserIn(ctx, pub, system, u, events.ActionMembershipDomainJoin, diff, ws.ID); err != nil {
+	if err := a.recordActionOnUserIn(ctx, tx, ActionOnUser{Actor: system, User: u, Action: events.ActionMembershipDomainJoin, Diff: diff}, ws.ID); err != nil {
 		return nil, err
 	}
 	return ws, nil

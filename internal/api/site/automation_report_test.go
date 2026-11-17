@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -35,7 +34,7 @@ func TestTheAutomationReportCountsAnEnrollmentThatEndsTodayInThePeriod(t *testin
 	}
 	before := automationResults(t, c, params)
 
-	exited, err := automations.Exit(context.Background(), env.DB.Scoped(fixtures.AcmeID), env.Publisher(), fixtures.AutomationTagOnEngagementID, fixtures.ContactAliceID, time.Now())
+	exited, err := env.ExitEnrollment(context.Background(), env.DB.Scoped(fixtures.AcmeID), fixtures.AutomationTagOnEngagementID, fixtures.ContactAliceID)
 	require.NoError(t, err)
 	require.True(t, exited)
 	after := automationResults(t, c, params)

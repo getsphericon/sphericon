@@ -24,7 +24,7 @@ func TestRefreshSendQuotasWorkerFansOutOneJobPerSESIntegration(t *testing.T) {
 	require.NoError(t, err)
 	require.Positive(t, ses)
 
-	require.NoError(t, jobs.NewRefreshSendQuotasWorker(e.DB).Work(e.workCtx(), job(jobs.RefreshSendQuotasArgs{})))
+	require.NoError(t, jobs.NewRefreshSendQuotasWorker(e.DB, testhelper.Module[*integrations.Module](e.TestEnv)).Work(e.workCtx(), job(jobs.RefreshSendQuotasArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, ses, "SMTP Integrations report no quota and are not queued")
@@ -39,7 +39,7 @@ func TestRefreshIntegrationQuotaFollowsAccountGrowthAndRecovers(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	fake := &testhelper.FakeSES{}
 	fake.SetQuotaErr(errors.New("AccessDenied: ses:GetSendQuota"))
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, integrations.New(nil, env.Cipher, fake.Catalog(), nil, "", time.Now))
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, integrations.New(nil, env.Cipher, fake.Catalog(), nil, "", nil, providerlimit.New(time.Now), time.Now))
 	run := func() {
 		require.NoError(t, worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID})))
 	}
@@ -80,7 +80,7 @@ func TestRefreshIntegrationQuotaOfAnIntegrationDeletedAfterItWasQueuedChangesNot
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(ctx)
 	fake := &testhelper.FakeSES{}
 	fake.SetQuota(messaging.Quota{PerSecond: new(14), PerDay: new(50000)})
-	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, integrations.New(nil, env.Cipher, fake.Catalog(), nil, "", time.Now))
+	worker := jobs.NewRefreshIntegrationQuotaWorker(env.DB, integrations.New(nil, env.Cipher, fake.Catalog(), nil, "", nil, providerlimit.New(time.Now), time.Now))
 
 	err := worker.Work(ctx, job(integrations.RefreshQuotaArgs{IntegrationID: fixtures.IntegrationAcmeSesID}))
 

@@ -24,12 +24,12 @@ func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Rout
 		res.IntegrationID, res.Limits = r.Integration.ID, r.Limits
 	}
 	if req.Kind() == outboundmessage.KindTransactional {
-		if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
+		if err := m.buckets.Spend(ctx, s, res); err != nil {
 			return providerlimit.Shortfall{}, fmt.Errorf("outbound: spend send capacity: %w", err)
 		}
 		return providerlimit.Shortfall{}, nil
 	}
-	short, err := providerlimit.Reserve(ctx, s, m.bus.WithinAuditTx, res, m.now())
+	short, err := m.buckets.Reserve(ctx, s, res)
 	if err != nil {
 		return providerlimit.Shortfall{}, fmt.Errorf("outbound: reserve send capacity: %w", err)
 	}
@@ -47,7 +47,7 @@ func (m *Module) spendCall(ctx context.Context, s *ent.Scoped, r Route, messageI
 		return
 	}
 	res := providerlimit.Reservation{IntegrationID: r.Integration.ID, Limits: r.Limits}
-	if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
+	if err := m.buckets.Spend(ctx, s, res); err != nil {
 		slog.WarnContext(ctx, "outbound: spend of the provider limit failed", "message_id", messageID, "err", err)
 	}
 }
@@ -61,28 +61,38 @@ func (m *Module) SendCapStatus(ctx context.Context, s *ent.Scoped, ws *ent.Works
 	if perDay == nil {
 		return nil, nil
 	}
-	sent, err := providerlimit.SentLast24h(ctx, s, m.now())
+	sent, err := m.limits.SentLast24h(ctx, s)
 	if err != nil {
 		return nil, fmt.Errorf("outbound: count the sends of the last 24 hours: %w", err)
 	}
 	return &providerlimit.SendCapStatus{PerDay: *perDay, Sent24h: sent}, nil
 }
 
-// SendCapDrain is how long the Workspace's Send cap (ADR 0067) takes, from now, to let n more
-// messages out: zero when its bucket holds them all. ok is false when no Send cap applies (none is
-// set, or the Instance has none), so nothing but the Provider limit paces the Workspace's sends.
-func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, n int, now time.Time) (wait time.Duration, ok bool, err error) {
+// SendCapWait is how long the Workspace's Send cap holds back the messages SendCapDrain was asked
+// about.
+type SendCapWait struct {
+	// Wait is how long the bucket takes, from the module's now, to let them out: zero when it
+	// holds them all.
+	Wait time.Duration
+	// Capped is false when no Send cap applies (none is set, or the Instance has none), so nothing
+	// but the Provider limit paces the Workspace's sends.
+	Capped bool
+}
+
+// SendCapDrain is how long the Workspace's Send cap (ADR 0067) takes, from the module's clock, to
+// let n more messages out.
+func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, n int) (SendCapWait, error) {
 	ws, err := m.workspace(ctx, s)
 	if err != nil {
-		return 0, false, err
+		return SendCapWait{}, err
 	}
 	sendCap := m.sendCaps.Of(ws)
 	if sendCap == nil {
-		return 0, false, nil
+		return SendCapWait{}, nil
 	}
-	wait, err = providerlimit.SendCapDrain(ctx, s, *sendCap, n, now)
+	wait, err := m.limits.SendCapDrain(ctx, s, providerlimit.DrainInput{SendCap: *sendCap, N: n, At: m.now()})
 	if err != nil {
-		return 0, false, fmt.Errorf("outbound: read the send cap bucket: %w", err)
+		return SendCapWait{}, fmt.Errorf("outbound: read the send cap bucket: %w", err)
 	}
-	return wait, true, nil
+	return SendCapWait{Wait: wait, Capped: true}, nil
 }

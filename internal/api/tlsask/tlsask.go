@@ -13,12 +13,12 @@ import (
 // New is the handler of the question.
 func New(domains *trackingdomains.Module) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, found, err := domains.HostWorkspace(r.Context(), r.URL.Query().Get("domain"))
+		ws, err := domains.HostWorkspace(r.Context(), r.URL.Query().Get("domain"))
 		if err != nil {
 			http.Error(w, "lookup failed", http.StatusServiceUnavailable)
 			return
 		}
-		if !found {
+		if ws == 0 {
 			http.NotFound(w, r)
 			return
 		}

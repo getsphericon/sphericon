@@ -48,9 +48,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `rule <n>: <what is wrong>; fix: <what to do instead>`. Build it with `rule.Message(n, what, fix)`
   (`tools/analyzers/rule`), never by hand.
 - **A check is on at once.** Run it over the repository and fix every finding in the same change; there
-  is no baseline of known violations and no ignore list. The one exception is the domain tier's call
-  contract (ADR 0167): `callshape` ratchets in over `tools/analyzers/callshape/exempt.txt`, a list that
-  may only shrink and goes when it is empty (Rule 5 below).
+  is no baseline of known violations and no ignore list.
 - **Rule 1, `handmapper`.** A function that takes an ent entity and returns a type of a `gen/*` package
   must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in
@@ -108,7 +106,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   or a bound the contract gains, adds its line to one of the lists.
 - **Rule 6, `one-way-to-record-audit` (ast-grep).** An explicit Audit entry (one no audited write of the
   scoped client produces) is recorded only by `events.RecordAudit(ctx, pub, entry)` in the transaction of
-  the change: a call of `RecordAudit` on any other receiver is a finding. Package `events` calls it
+  the change, or by `Bus.RecordAuditIn(ctx, in, entry)`, which calls it with the publisher of the bus
+  transaction `in` is bound to (a domain operation that took the bus in its constructor): a call of
+  `RecordAudit` on any other receiver is a finding. Package `events` calls it
   unqualified for the generated wrappers; `ent/` and `gen/` are not read.
 - **Rule 7, a state is moved by a conditional write.** Each state-shaped field in `ent/schema` carries `schema.Machine()`, `schema.Latch()` or `schema.Attribute(reason)`, a `schema.State` (`ent/schema/state.go`, ADR 0109); the generation (`internal/entgen`) fails on a `_at` field, a `status` or `state` enum or a bool without one. It generates the machine and latch fields into `ent/stateform.go`, with the methods of the update and upsert builders that set or clear each (`SetsState_<Type>_<Method>`, `ClearsState_<Type>_<Method>`, the manifest of roles), and the analyzer `statemoment` reads them, never a method's name: a machine field is set or cleared only inside the `Write` of a `lifecycle.Storage{...}` literal, with a `.Where(...)` on the state it leaves (a machine constructor takes the `lifecycle.Storage` from its caller, as `newMachine` of `secondfactors` does), and a latch only inside the closure passed to `lifecycle.Latch`, conditioned on `<Field>IsNil()`, and never cleared. A lost race is `lifecycle.ErrInvalidTransition`, which the caller handles. Creation, the generated `ent` package and test code (the harness included) are not checked.
 - **Rule 10, `testwrites`.** A call that starts a create through ent (`Create`, `CreateBulk`, `MapCreateBulk` of the
@@ -168,11 +168,9 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   have several such types. The fix is the shape the ADRs state: a dependency, a client or the clock is
   a parameter of the constructor, a third or an optional argument goes into a typed `XInput`, two
   values into a named result struct, and what became of a batch's items into `batch.Result`
-  (`internal/kernel/batch`). A domain package that does not keep the contract yet is listed in
-  `tools/analyzers/callshape/exempt.txt`, which may only shrink: the analyzer reports nothing in a
-  listed package until it keeps the contract and then reports the entry, its test refuses an entry
-  that names no package of the domain tier, and `mise run check:callshape-exempt` (part of
-  `check:lint`) refuses an entry the merge base with `origin/main` lacks. An `io.Writer` is `nowriter`'s.
+  (`internal/kernel/batch`); an unchecked subpackage, a plan and its apply, and a `<module>use`
+  reader take the shapes of docs/architecture/modules.md (Shapes under the call contract). An
+  `io.Writer` is `nowriter`'s.
 - **Rule 5, `nowriter`.** The domain and the use case tiers write to no `io.Writer` (ADR 0104, ADR 0111).
   In a package under `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` (test files are
   not read) the analyzer refuses an `io.Writer` parameter of a function, a method, a function literal or

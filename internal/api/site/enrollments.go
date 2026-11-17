@@ -9,11 +9,7 @@ import (
 
 func (h *Handlers) SiteEnrollmentsList(ctx context.Context, params siteapi.SiteEnrollmentsListParams) (*siteapi.SiteEnrollmentsListOK, error) {
 	ws := workspaceScope(ctx)
-	status := ""
-	if v, ok := params.Status.Get(); ok {
-		status = string(v)
-	}
-	page, err := h.automations.Enrollments(ctx, ws, int64(params.AutomationId), status, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.automations.Enrollments(ctx, ws, pagination.ParamsOf(params.Page, params.PageSize), inputs.EnrollmentsFilter(params))
 	if err != nil {
 		return nil, err
 	}

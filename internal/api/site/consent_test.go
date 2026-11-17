@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -170,7 +171,7 @@ func TestSitePublicConsentOfAnErasedWorkspaceRecordsNothing(t *testing.T) {
 	var erased bool
 	err := env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		erased, err = workspacesunchecked.TombstoneIn(ctx, tx, fixtures.BluthID, eraseAt)
+		erased, err = workspacesunchecked.New(func() time.Time { return eraseAt }).TombstoneIn(ctx, tx, fixtures.BluthID)
 		return err
 	})
 	require.NoError(t, err)

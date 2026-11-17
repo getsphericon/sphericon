@@ -7,11 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps/consentstampsunchecked"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
-	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -21,11 +17,11 @@ import (
 // when the Contact row goes. A lifted Suppression honors nothing, so it goes with the Contact. On
 // sms the rows keep refusing the number by its hash, never by the number itself (ADR 0021): the
 // phone leaves only its hash.
-func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := unsubscribesunchecked.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
+func (u *UseCase) detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	if err := u.optOuts.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	return suppressionsunchecked.EraseContact(ctx, s, t.ContactID, t.Phone)
+	return u.suppressions.EraseContact(ctx, s, t.ContactID, t.Phone)
 }
 
 // eraseConsentStamps leaves of the times the subject's consent observations occurred only the time
@@ -35,25 +31,25 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // deletions: an observation in flight holds its stamp first and the Contact after, so the Erasure,
 // which holds the Contact, waits for it here rather than in the middle of rows that observation
 // writes next.
-func eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 	for _, address := range t.Destinations {
-		if err := eraseStampsOf(ctx, s, channels.Email, address); err != nil {
+		if err := u.eraseStampsOf(ctx, s, channels.Email, address); err != nil {
 			return err
 		}
 	}
 	if t.ContactID != 0 {
-		users, err := bindings.DestinationsOf(ctx, s, t.ContactID)
+		users, err := u.chats.DestinationsOf(ctx, s, t.ContactID)
 		if err != nil {
 			return err
 		}
 		for _, user := range users {
-			if err := eraseStampsOf(ctx, s, channels.Telegram, user); err != nil {
+			if err := u.eraseStampsOf(ctx, s, channels.Telegram, user); err != nil {
 				return err
 			}
 		}
 	}
 	// The Contact's phone, and the numbers it had before whose opt-outs still name it.
-	numbers, err := unsubscribes.SMSNumbersOf(ctx, s, t.ContactID)
+	numbers, err := u.unsubs.SMSNumbersOf(ctx, s, t.ContactID)
 	if err != nil {
 		return err
 	}
@@ -62,10 +58,10 @@ func eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.
 	}
 	for _, number := range lo.Uniq(numbers) {
 		standing := func(ctx context.Context, _ string) (bool, error) {
-			optOut, err := unsubscribes.SMSOptOut(ctx, s, number)
+			optOut, err := u.unsubs.SMSOptOut(ctx, s, number)
 			return optOut != nil, err
 		}
-		if err := consentstampsunchecked.Erase(ctx, s, channels.SMS, number, standing); err != nil {
+		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channels.SMS, Destination: number, Standing: standing}); err != nil {
 			return err
 		}
 	}
@@ -74,15 +70,15 @@ func eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.
 
 // eraseStampsOf erases the stamps of destination on channel but the time of a stop whose opt-out,
 // kept by the Destination, still stands.
-func eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
+func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
 	standing := func(ctx context.Context, source string) (bool, error) {
-		_, err := unsubscribes.Get(ctx, s, channel, destination, source)
+		_, err := u.unsubs.Get(ctx, s, unsubscribes.Key{Channel: channel, Destination: destination, Source: source})
 		if ent.IsNotFound(err) {
 			return false, nil
 		}
 		return err == nil, err
 	}
-	return consentstampsunchecked.Erase(ctx, s, channel, destination, standing)
+	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channel, Destination: destination, Standing: standing})
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep
@@ -90,11 +86,11 @@ func eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel,
 // Contact's Outbound messages go first, then the messages to its addresses and number, which a
 // transactional send may have made without a Contact. Its Broadcast recipients name it only by
 // the Contact reference, which their foreign key sets null when the Contact row goes.
-func anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := outboundmessagesunchecked.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
+func (u *UseCase) anonymizeDelivery(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	if err := u.outbound.AnonymizeContact(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	return outboundmessagesunchecked.AnonymizeDestinations(ctx, s, t.destinations())
+	return u.outbound.AnonymizeDestinations(ctx, s, t.destinations())
 }
 
 // publishErased emits the PII-free contact.erased Event in the erasure's transaction,

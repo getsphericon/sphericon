@@ -2,7 +2,6 @@ package broadcasts
 
 import (
 	"context"
-	"time"
 
 	"github.com/samber/lo"
 
@@ -21,8 +20,7 @@ import (
 // advice for the author that never blocks the save. The view Schedule returns adds the Recipients
 // the Broadcast would take at that moment (ADR 0149).
 type View struct {
-	*ent.Broadcast
-
+	Broadcast  *ent.Broadcast
 	Stats      Stats
 	Progress   *Progress
 	Warnings   []emailrender.Finding
@@ -50,14 +48,14 @@ func (v *Views) Get(ctx context.Context, s *ent.Scoped, id int64) (View, error) 
 	return v.detailed(ctx, s, b)
 }
 
-// List returns one page of the Workspace's Broadcasts that f lets through, in order, with their
+// List returns one page of the Workspace's Broadcasts that f lets through, in its order, with their
 // figures: two grouped queries for the whole page, and no Progress.
-func (v *Views) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter, order Order) (pagination.Page[View], error) {
-	page, err := v.m.List(ctx, s, p, f, order)
+func (v *Views) List(ctx context.Context, s *ent.Scoped, p pagination.Params, f ListFilter) (pagination.Page[View], error) {
+	page, err := v.m.List(ctx, s, p, f)
 	if err != nil {
 		return pagination.Page[View]{}, err
 	}
-	figures, err := StatsFor(ctx, s, page.Items...)
+	figures, err := v.m.StatsFor(ctx, s, page.Items...)
 	if err != nil {
 		return pagination.Page[View]{}, err
 	}
@@ -96,10 +94,10 @@ func (v *Views) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (Vi
 	return v.detailed(ctx, s, b)
 }
 
-// Schedule schedules a draft or scheduled Broadcast at when (Module.Schedule) and returns its view,
-// with the Recipients it would take at that moment.
-func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id, revision int64, when time.Time) (View, error) {
-	scheduled, err := v.m.Schedule(ctx, s, id, revision, when)
+// Schedule schedules a draft or scheduled Broadcast at its time (Module.Schedule) and returns its
+// view, with the Recipients it would take at that moment.
+func (v *Views) Schedule(ctx context.Context, s *ent.Scoped, id int64, in ScheduleInput) (View, error) {
+	scheduled, err := v.m.Schedule(ctx, s, id, in)
 	if err != nil {
 		return View{}, err
 	}
@@ -132,7 +130,7 @@ func (v *Views) Unarchive(ctx context.Context, s *ent.Scoped, id int64) (View, e
 
 // figured builds the view of b with its figures.
 func (v *Views) figured(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
-	figures, err := StatsFor(ctx, s, b)
+	figures, err := v.m.StatsFor(ctx, s, b)
 	if err != nil {
 		return View{}, err
 	}
@@ -142,7 +140,7 @@ func (v *Views) figured(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (V
 // detailed builds the view of the one Broadcast b with its figures and, while it is sending, its
 // Progress at the Instance's now.
 func (v *Views) detailed(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (View, error) {
-	d, err := v.m.Detail(ctx, s, b, v.m.out.Now())
+	d, err := v.m.Detail(ctx, s, b)
 	if err != nil {
 		return View{}, err
 	}
@@ -157,7 +155,7 @@ func (v *Views) saved(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (Vie
 	if err != nil || b.Channel != channels.Email {
 		return view, err
 	}
-	brand, err := brandkits.Brands{}.Brand(ctx, s)
+	brand, err := brandkits.NewBrands().Brand(ctx, s)
 	if err != nil {
 		return View{}, err
 	}

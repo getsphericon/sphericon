@@ -331,8 +331,8 @@ func TestSendBroadcastHoldsWithoutProvider(t *testing.T) {
 
 // newMod builds the Outbound send module over a test resolver, with a real tracker
 // so marketing sends carry their unsubscribe footer and header.
-func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func() time.Time, opts ...outboundmessages.Option) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolver, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+func newMod(env *testhelper.TestEnv, resolver outboundmessages.Senders, now func() time.Time) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), resolver, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
 }
 
 // A Send delivered by the real workers runs the production sequence: the module plans, paces and settles
@@ -388,7 +388,7 @@ func figuresOf(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadca
 	t.Helper()
 	ctx := context.Background()
 	b := env.DB.Broadcast.GetX(ctx, broadcastID)
-	got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), broadcastID)
+	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]
 }

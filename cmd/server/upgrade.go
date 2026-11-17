@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/urfave/cli/v3"
@@ -33,13 +34,30 @@ func upgradeCommand() *cli.Command {
 			if cmd.Args().Present() {
 				return fmt.Errorf("unexpected argument %q (%s)", cmd.Args().First(), upgrade.Usage)
 			}
-			progress := upgrade.Run(ctx, upgrade.Request{
-				From:    cmd.String(flagFrom),
+			from, restart, service := cmd.String(flagFrom), cmd.Bool(flagRestart), cmd.String(flagService)
+			// A check changes nothing, so it takes no option that chooses how an install runs.
+			if cmd.Bool(flagCheck) && (from != "" || restart) {
+				return errors.New(upgrade.Usage)
+			}
+			endpoint, err := upgrade.NewGitHubEndpoint("")
+			if err != nil {
+				return err
+			}
+			// The seams of this Upgrade: the release comes from GitHub or, with --from, from a
+			// directory; --restart migrates in a transient unit and restarts the systemd service.
+			var seams upgrade.Seams
+			if from != "" {
+				seams.Source = upgrade.DirSource(from)
+			}
+			if restart {
+				sd := upgrade.NewSystemd(service)
+				seams.Run, seams.PostSwap = sd.Run, sd.PostSwap
+			}
+			progress := upgrade.New(upgrade.NewGitHub(endpoint), seams).Run(ctx, upgrade.Request{
 				Version: cmd.String(flagVersion),
 				Yes:     cmd.Bool(flagYes),
 				Check:   cmd.Bool(flagCheck),
-				Restart: cmd.Bool(flagRestart),
-				Service: cmd.String(flagService),
+				Service: service,
 			})
 			return commandline.WriteUpgrade(out(cmd), progress)
 		},

@@ -32,7 +32,7 @@ func TestAMemberRecordsSMSConsentAndAnOptOutForAContactsPhone(t *testing.T) {
 		Wording: "Text me about orders and offers", Source: "phone call", Brand: "Acme",
 	}, siteapi.SiteSmsConsentsConfirmParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
 	require.NoError(t, err)
-	eligible, err := eligibility.Check(ctx, env.DB.Scoped(fixtures.AcmeID), channels.SMS, fixtures.ContactTexterPhone, eligibility.SourceBroadcasts)
+	eligible, err := eligibility.New().Check(ctx, env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.SMS, Destination: fixtures.ContactTexterPhone, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	stopped, err := member.SiteSmsConsentsOptOut(ctx, siteapi.SiteSmsConsentsOptOutParams{WorkspaceId: fixtures.AcmePublicID, ContactId: siteapi.EntityId(fixtures.ContactTexterID)})
 	require.NoError(t, err)

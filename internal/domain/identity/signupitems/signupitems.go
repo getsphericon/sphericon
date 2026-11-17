@@ -131,9 +131,17 @@ type Module struct {
 }
 
 // AuditRecorder writes one entry of the Instance audit log (ADR 0070) on tx, the transaction of the
-// change: the Staff member staffID made the change action, with diff its fields' old and new values.
-// The log is a module of the Instance context, above this one, so the wiring hands its Record in.
-type AuditRecorder func(ctx context.Context, tx *ent.Client, staffID int64, action string, diff map[string]any) error
+// change. The log is a module of the Instance context, above this one, so the wiring hands in its
+// RecordSignupItem.
+type AuditRecorder func(ctx context.Context, tx *ent.Client, entry AuditEntry) error
+
+// AuditEntry is one entry of the Instance audit log: the Staff member StaffMemberID made the change
+// Action, with Diff its fields' old and new values.
+type AuditEntry struct {
+	StaffMemberID int64
+	Action        string
+	Diff          map[string]any
+}
 
 // The changes of the Sign-up items the Instance audit log records (ADR 0062, ADR 0070). Each diff
 // names the item by its key: {to: key} for an added item, {from: key} for a deleted one, and
@@ -170,6 +178,12 @@ func New(client *ent.Client, bus *events.Bus, now func() time.Time, record Audit
 		panic("signupitems: the module needs the Instance clock and the Instance audit log")
 	}
 	return &Module{ent: client, bus: bus, now: now, record: record}
+}
+
+// audit records the change action the Staff member staffID made on tx, with diff its fields' old
+// and new values, in the Instance audit log.
+func (m *Module) audit(ctx context.Context, tx *ent.Client, staffID int64, action string, diff map[string]any) error {
+	return m.record(ctx, tx, AuditEntry{StaffMemberID: staffID, Action: action, Diff: diff})
 }
 
 // List is every Sign-up item that is not deleted, in the order of the sign-up form.
@@ -265,7 +279,7 @@ func (m *Module) Add(ctx context.Context, staffID int64, in Input) (Item, error)
 		if err != nil {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionAdd, map[string]any{
+		return m.audit(ctx, tx, staffID, ActionAdd, map[string]any{
 			signupitem.FieldKey:             events.Became(row.Key),
 			signupitem.FieldTitle:           events.Became(row.Title),
 			signupitem.FieldKind:            events.Became(string(row.Kind)),
@@ -389,8 +403,9 @@ func (m *Module) Get(ctx context.Context, id int64) (Item, error) {
 	return item(row, current[row.ID]), nil
 }
 
-// UpdateInput is a change to a Sign-up item; a nil field is left as it is.
+// UpdateInput is a change to the Sign-up item ID; a nil field is left as it is.
 type UpdateInput struct {
+	ID int64
 	// Title is a new title: what the form shows at once, not a new version of the document.
 	Title           *string
 	MailingsConsent *bool
@@ -399,7 +414,8 @@ type UpdateInput struct {
 // Update changes a Sign-up item, recorded in the Instance audit log as the Staff member staffID's
 // unless it changes nothing. ErrNotFound for an unknown or a deleted id, ErrTitleBlank for a blank
 // title, ErrMailingsKind and ErrMailingsTaken for a mailings consent the item cannot hold.
-func (m *Module) Update(ctx context.Context, staffID, id int64, u UpdateInput) (Item, error) {
+func (m *Module) Update(ctx context.Context, staffID int64, u UpdateInput) (Item, error) {
+	id := u.ID
 	row, err := m.inUse(ctx, id)
 	if err != nil {
 		return Item{}, err
@@ -449,7 +465,7 @@ func (m *Module) Update(ctx context.Context, staffID, id int64, u UpdateInput) (
 			return nil
 		}
 		diff[signupitem.FieldKey] = events.Change(was.Key, was.Key)
-		return m.record(ctx, tx, staffID, ActionChange, diff)
+		return m.audit(ctx, tx, staffID, ActionChange, diff)
 	})
 	if err != nil {
 		return Item{}, err
@@ -488,7 +504,7 @@ func (m *Module) Delete(ctx context.Context, staffID, id int64) error {
 		}); err != nil {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionDelete,
+		return m.audit(ctx, tx, staffID, ActionDelete,
 			map[string]any{signupitem.FieldKey: map[string]any{events.DiffFrom: row.Key}})
 	})
 	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
@@ -531,7 +547,7 @@ func (m *Module) Reorder(ctx context.Context, staffID int64, ids []int64) ([]Ite
 		if err != nil || slices.Equal(before, after) {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionReorder,
+		return m.audit(ctx, tx, staffID, ActionReorder,
 			map[string]any{DiffOrder: events.Change(before, after)})
 	})
 	if err != nil {
@@ -622,11 +638,18 @@ func (m *Module) SaveDraft(ctx context.Context, id int64, markdown string) (Item
 	return m.Get(ctx, id)
 }
 
-// Publish makes the item's draft a new version under label, published by the Staff member
+// PublishInput is the item whose draft is published and the label of the new version.
+type PublishInput struct {
+	ID    int64
+	Label string
+}
+
+// Publish makes the item's draft a new version under its label, published by the Staff member
 // staffID now: it takes effect at once and is never changed afterwards. ErrNotFound for an
 // unknown or a deleted id, ErrNoDraft for an item without a draft, ErrLabelTaken for a label the
 // item has. It is recorded in the Instance audit log too, beside the version's own publisher.
-func (m *Module) Publish(ctx context.Context, id int64, label string, staffID int64) (Item, error) {
+func (m *Module) Publish(ctx context.Context, staffID int64, in PublishInput) (Item, error) {
+	id, label := in.ID, in.Label
 	if err := validation.Length(fieldname.Label, label, bounds.LegalDocumentLabelMinLength, bounds.LegalDocumentLabelMaxLength); err != nil {
 		return Item{}, err
 	}
@@ -653,7 +676,7 @@ func (m *Module) Publish(ctx context.Context, id int64, label string, staffID in
 		if err != nil {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionPublish, map[string]any{
+		return m.audit(ctx, tx, staffID, ActionPublish, map[string]any{
 			signupitem.FieldKey: events.Change(row.Key, row.Key),
 			DiffVersion:         events.Became(label),
 		})

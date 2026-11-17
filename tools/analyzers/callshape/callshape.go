@@ -5,7 +5,6 @@
 package callshape
 
 import (
-	_ "embed"
 	"fmt"
 	"go/ast"
 	"go/token"
@@ -20,57 +19,21 @@ import (
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
-// exemptList is the list of domain packages exempt while they move to the contract (ADR 0167): one
-// path relative to the repository per line, # for a comment. It may only shrink: mise run
-// check:callshape-exempt fails when it gains an entry, and ExemptPackages' test when an entry names
-// no package of the domain tier.
-//
-//go:embed exempt.txt
-var exemptList string
-
 // Analyzer reports a use case or domain package that breaks the call contract.
-var Analyzer = New(ExemptPackages())
-
-// ExemptPackages is the exemption list, in its order.
-func ExemptPackages() []string {
-	var paths []string
-	for line := range strings.Lines(exemptList) {
-		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "#") {
-			paths = append(paths, line)
-		}
-	}
-	return paths
+var Analyzer = &analysis.Analyzer{
+	Name: "callshape",
+	Doc:  "checks the call contract of a use case or domain package (ADR 0104, ADR 0167)",
+	Run:  run,
 }
 
-// New builds the analyzer with an exemption list (paths relative to the repository); Analyzer is the
-// one built with the list of exempt.txt.
-func New(exempt []string) *analysis.Analyzer {
-	set := make(map[string]bool, len(exempt))
-	for _, p := range exempt {
-		set[tier.Module+p] = true
-	}
-	return &analysis.Analyzer{
-		Name: "callshape",
-		Doc:  "checks the call contract of a use case or domain package (ADR 0104, ADR 0167)",
-		Run:  func(pass *analysis.Pass) (any, error) { return run(pass, set) },
-	}
-}
-
-// checker holds what one package's run found; the findings are reported at the end.
+// checker checks one package of the use case tier or the domain tier, whose ADR its findings name.
 type checker struct {
-	pass     *analysis.Pass
-	useCase  bool
-	adr      string
-	findings []finding
+	pass    *analysis.Pass
+	useCase bool
+	adr     string
 }
 
-type finding struct {
-	pos token.Pos
-	msg string
-}
-
-func run(pass *analysis.Pass, exempt map[string]bool) (any, error) {
+func run(pass *analysis.Pass) (any, error) {
 	c := &checker{pass: pass}
 	path := pass.Pkg.Path()
 	switch {
@@ -97,30 +60,7 @@ func run(pass *analysis.Pass, exempt map[string]bool) (any, error) {
 	if !c.useCase {
 		c.checkConstructors()
 	}
-	if exempt[path] {
-		if len(c.findings) == 0 {
-			c.reportStale(path)
-		}
-		return nil, nil
-	}
-	for _, f := range c.findings {
-		pass.Reportf(f.pos, "%s", f.msg)
-	}
 	return nil, nil
-}
-
-// reportStale reports an exempt package that keeps the contract, at its first non-test file's
-// package clause, so that the list holds only the packages still to move.
-func (c *checker) reportStale(path string) {
-	for _, file := range c.pass.Files {
-		if analysisx.InTestFile(c.pass, file.Pos()) {
-			continue
-		}
-		rule.Report(c.pass, file.Name.Pos(), 5,
-			strings.TrimPrefix(path, tier.Module)+" is on the exemption list but keeps the call contract",
-			"remove it from tools/analyzers/callshape/exempt.txt (ADR 0167)")
-		return
-	}
 }
 
 // checkNow refuses a read of time.Now in a use case.
@@ -396,7 +336,7 @@ func (c *checker) report(fn *ast.FuncDecl, what, fix string) {
 }
 
 func (c *checker) add(pos token.Pos, what, fix string) {
-	c.findings = append(c.findings, finding{pos, rule.Message(5, what, fix+" ("+c.adr+")")})
+	rule.Report(c.pass, pos, 5, what, fix+" ("+c.adr+")")
 }
 
 // isUseCasePtr holds for *UseCase of the package under analysis.

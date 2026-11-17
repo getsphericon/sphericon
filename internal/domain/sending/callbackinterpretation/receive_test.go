@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
@@ -27,7 +28,8 @@ var receiveClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 var secretGenericA = "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-secret-A0123456789"))
 
 func receiver(env *testhelper.TestEnv) *callbackinterpretation.Module {
-	return callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), func() time.Time { return receiveClock })
+	clock := func() time.Time { return receiveClock }
+	return callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), preset.New(preset.NewTestCertificates(), clock), bindings.NewChats(env.Bus, clock), clock)
 }
 
 // bounce is a callback of the generic Preset reporting a hard bounce of dest, signed with secret.

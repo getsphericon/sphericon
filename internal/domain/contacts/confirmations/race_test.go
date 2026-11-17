@@ -3,7 +3,6 @@ package confirmations_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,11 +29,12 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	ctx := context.Background()
 	const number = "+14155550199"
+	confs := testhelper.Module[*confirmations.Module](env)
 
 	var first *ent.Confirmation
-	release := env.HoldOpen(t, scope, func(ts *ent.Scoped, pub events.Publisher) error {
+	release := env.HoldOpen(t, scope, func(ts *ent.Scoped, _ events.Publisher) error {
 		var err error
-		first, err = confirmations.ConfirmSMSIn(ctx, ts, pub, number, evidence, time.Now())
+		first, err = confs.ConfirmSMSIn(ctx, ts, number, evidence)
 		return err
 	})
 
@@ -42,7 +42,7 @@ func TestAConfirmationThatLosesTheRaceAnswersWithTheOneThatStands(t *testing.T) 
 	errs := env.QueueBehind(t, release,
 		testhelper.Writer{Name: "second request", Run: func() error {
 			var err error
-			second, err = confirmations.Confirm(ctx, env.Bus, scope, channels.SMS, number, evidence, time.Now())
+			second, err = confs.Confirm(ctx, scope, confirmations.ConfirmInput{Channel: channels.SMS, Destination: number, Evidence: evidence})
 			return err
 		}})
 
@@ -63,9 +63,9 @@ func TestAConfirmationOfAnErasedContactIsRecordedUnlinked(t *testing.T) {
 	ctx := context.Background()
 	const address = "gone@example.com"
 
-	err := confirmations.RecordConfirmation(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{
+	err := testhelper.Module[*confirmations.Module](env).RecordConfirmation(ctx, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{
 		WorkspaceID: fixtures.AcmeID, ContactID: 999999, Destination: address,
-	}, "", time.Now())
+	}, "")
 
 	require.NoError(t, err)
 	got, err := env.DB.Scoped(fixtures.AcmeID).Confirmation().Query().

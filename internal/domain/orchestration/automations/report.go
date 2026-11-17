@@ -59,7 +59,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if err != nil {
 		return Report{}, err
 	}
-	links, err := linkclick.ByLink(ctx, s, linkclick.Between{}, event.AutomationID(id))
+	links, err := m.clicks.ByLink(ctx, s, linkclick.Between{}, event.AutomationID(id))
 	if err != nil {
 		return Report{}, err
 	}
@@ -81,7 +81,7 @@ func (m *Module) ReportOf(ctx context.Context, s *ent.Scoped, id int64, p Report
 	if err != nil {
 		return Report{}, err
 	}
-	revenue, err := orders.CreditedToAutomations(ctx, s, id)
+	revenue, err := m.revenues.CreditedToAutomations(ctx, s, id)
 	if err != nil {
 		return Report{}, err
 	}
@@ -174,5 +174,5 @@ func stepFiguresOf(ctx context.Context, s *ent.Scoped, id int64) ([]StepFigures,
 // The unique constraint of an Automation's pruned figures (ADR 0106): no client can break it.
 var _ = db.Declare(
 	db.Fault("automation_figures_workspace_id_automation_id_step",
-		"automationsunchecked.AddPruned upserts ON CONFLICT on the step, adding a batch's counts to the row"),
+		"automationsunchecked.Module.AddPruned upserts ON CONFLICT on the step, adding a batch's counts to the row"),
 )

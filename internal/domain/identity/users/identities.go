@@ -38,9 +38,6 @@ type ProviderLogin struct {
 	// SignupItemsInEffect: the Instance asks Sign-up items, so a sign-in that would create a User
 	// keeps a pending sign-up instead (ADR 0062).
 	SignupItemsInEffect bool
-	// Now is the time of the sign-in by the caller's clock; a pending sign-up is open until
-	// PendingSignupTTL after it.
-	Now time.Time
 }
 
 // SigninRefusedError is a sign-in the decision refused; Reason is what the person is told.
@@ -67,16 +64,25 @@ type ProviderSignin struct {
 	LinkedIdentityID int64
 }
 
+// DecidedSignin is the one decision on a provider's answer and the Users it rests on.
+type DecidedSignin struct {
+	Decision SigninDecision
+	// Known is the User of the Linked identity, nil for none.
+	Known *ent.User
+	// Holder is the User that holds the provider's trusted email, nil for none.
+	Holder *ent.User
+}
+
 // DecideSigninFor reads the facts of the provider's answer in and takes the one decision
-// (DecideSignin): the User of the Linked identity (known) and the User that holds the
-// provider's trusted email (holder), with the decision on them. The provider sign-in
+// (DecideSignin): the User of the Linked identity (Known) and the User that holds the
+// provider's trusted email (Holder), with the decision on them. The provider sign-in
 // (signup.Module.SignInWithProvider) applies it.
-func (a *Module) DecideSigninFor(ctx context.Context, in ProviderLogin) (decision SigninDecision, known, holder *ent.User, err error) {
-	known, holder, err = signinFacts(ctx, a.ent, in)
+func (a *Module) DecideSigninFor(ctx context.Context, in ProviderLogin) (DecidedSignin, error) {
+	known, holder, err := signinFacts(ctx, a.ent, in)
 	if err != nil {
-		return SigninDecision{}, nil, nil, err
+		return DecidedSignin{}, err
 	}
-	return DecideSignin(factsOf(known, holder, in)), known, holder, nil
+	return DecidedSignin{Decision: DecideSignin(factsOf(known, holder, in)), Known: known, Holder: holder}, nil
 }
 
 // signinFacts loads, through c, the User whose Linked identity is the provider's subject, and the
@@ -125,9 +131,14 @@ func providerName(in ProviderLogin) string {
 
 // CreateProviderUserIn writes the Verified User of a trusted provider email and its Linked
 // identity in tx: the provider's name, or the address's local part when it gave none, and no
-// password. Its email is proven now; the caller creates its first Workspace and records
-// `user.email_verify` on the same transaction (internal/domain/identity/signup).
-func CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
+// password. Its email is proven now, by the module's clock; the caller creates its first Workspace
+// and records `user.email_verify` on the same transaction (internal/domain/identity/signup).
+func (a *Module) CreateProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin) (*ent.User, error) {
+	return createProviderUserIn(ctx, tx, in, a.now())
+}
+
+// createProviderUserIn is CreateProviderUserIn at now.
+func createProviderUserIn(ctx context.Context, tx *ent.Client, in ProviderLogin, now time.Time) (*ent.User, error) {
 	email := emailcase.Of(in.Email)
 	name := providerName(in)
 	if name == "" {
@@ -171,15 +182,31 @@ func (a *Module) Identities(ctx context.Context, userID int64) ([]*ent.UserIdent
 		All(ctx)
 }
 
+// LinkIdentityInput is a provider account to attach to the User UserID: the registry name of the
+// provider and its immutable id of the account.
+type LinkIdentityInput struct {
+	UserID   int64
+	Provider string
+	Subject  string
+}
+
+// IdentityLink is the User a provider account was linked to, as it stands afterwards, and whether
+// the link added the Linked identity (false when the User already had it).
+type IdentityLink struct {
+	User  *ent.User
+	Added bool
+}
+
 // LinkIdentity attaches a provider account to the User, whatever email the provider
 // reports (the subject is the key, ADR 0048). The session epoch stays: a new way to sign in
 // takes nothing from the sessions already open. A subject that already belongs to
 // another User is ErrIdentityInUse; one that already belongs to this User changes nothing
-// (added is false).
-func (a *Module) LinkIdentity(ctx context.Context, userID int64, provider, subject string) (*ent.User, bool, error) {
+// (Added is false).
+func (a *Module) LinkIdentity(ctx context.Context, in LinkIdentityInput) (IdentityLink, error) {
+	userID, provider, subject := in.UserID, in.Provider, in.Subject
 	var saved *ent.User
 	added := false
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
@@ -193,12 +220,12 @@ func (a *Module) LinkIdentity(ctx context.Context, userID int64, provider, subje
 		if err != nil || !added {
 			return identityHeldBy(ctx, tx, provider, subject, userID, err)
 		}
-		return RecordUserAction(ctx, tx, pub, saved, events.ActionUserIdentityLink, map[string]any{"provider": provider})
+		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": provider}})
 	})
 	if err != nil {
-		return nil, false, err
+		return IdentityLink{}, err
 	}
-	return saved, added, nil
+	return IdentityLink{User: saved, Added: added}, nil
 }
 
 // identityHeldBy is the answer to linking a provider account that inserted nothing: err when the
@@ -226,7 +253,7 @@ func identityHeldBy(ctx context.Context, tx *ent.Client, provider, subject strin
 // of two unlinks racing for the last two identities one is refused.
 func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (*ent.User, error) {
 	var saved *ent.User
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := tx.User.Query().Where(user.ID(userID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
@@ -249,18 +276,35 @@ func (a *Module) UnlinkIdentity(ctx context.Context, userID, identityID int64) (
 		if err != nil {
 			return err
 		}
-		return RecordUserAction(ctx, tx, pub, saved, events.ActionUserIdentityUnlink, map[string]any{"provider": own[i].Provider})
+		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityUnlink, Diff: map[string]any{"provider": own[i].Provider}})
 	})
 	return saved, err
 }
 
+// HolderLink is a provider account linked to the Verified User holding its email: the User as it
+// stands afterwards, the new identity's id, and whether the provider's proof was the address's
+// first (ADR 0170).
+type HolderLink struct {
+	User       *ent.User
+	IdentityID int64
+	FirstProof bool
+}
+
 // LinkToHolderIn attaches the identity to the Verified User holding the provider's email, on the
-// transaction tx. The provider's proof makes the address proven; every link ends the User's other
-// sessions, and a User whose address was not proven before also loses its password and the
-// identities linked before, in the same transaction. firstProof reports that case: the caller drops
-// the rest of what was set up before the proof (ADR 0170). It returns the User as it stands
-// afterwards and the new identity's id.
-func LinkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
+// transaction tx, publishing in it. The provider's proof makes the address proven; every link ends
+// the User's other sessions, and a User whose address was not proven before also loses its password
+// and the identities linked before, in the same transaction. FirstProof reports that case: the
+// caller drops the rest of what was set up before the proof (ADR 0170).
+func (a *Module) LinkToHolderIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (HolderLink, error) {
+	linked, identityID, firstProof, err := a.linkToHolderIn(ctx, tx, holderID, in, a.now())
+	if err != nil {
+		return HolderLink{}, err
+	}
+	return HolderLink{User: linked, IdentityID: identityID, FirstProof: firstProof}, nil
+}
+
+// linkToHolderIn is LinkToHolderIn at now, publishing in the bus transaction tx is bound to.
+func (a *Module) linkToHolderIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (linked *ent.User, identityID int64, firstProof bool, err error) {
 	// Every link ends the other sessions (ADR 0048); the caller starts the new one from
 	// the User returned here, so it holds the new epoch.
 	// The provider's proof stamps the address only from empty, and the rows-changed count
@@ -282,7 +326,7 @@ func LinkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, h
 		return nil, 0, false, err
 	}
 	if stamped {
-		if _, err := ApplyDomainJoinIn(ctx, tx, pub, linked); err != nil {
+		if _, err := a.applyDomainJoinIn(ctx, tx, linked); err != nil {
 			return nil, 0, false, err
 		}
 	}
@@ -295,11 +339,11 @@ func LinkToHolderIn(ctx context.Context, tx *ent.Client, pub events.Publisher, h
 	}); err != nil {
 		return nil, 0, false, err
 	}
-	if err := RecordUserAction(ctx, tx, pub, linked, events.ActionUserIdentityLink, map[string]any{"provider": in.Provider}); err != nil {
+	if err := a.RecordUserAction(ctx, tx, UserAction{User: linked, Action: events.ActionUserIdentityLink, Diff: map[string]any{"provider": in.Provider}}); err != nil {
 		return nil, 0, false, err
 	}
 	// The User did not take this step: the owner is told, with the link that undoes it (ADR 0048).
-	err = pub.Publish(ctx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
+	err = a.bus.PublishIn(ctx, tx, &events.IdentityLinked{UserID: linked.ID, Email: linked.Email, Provider: in.Provider, IdentityID: identityID})
 	return linked, identityID, stamped, err
 }
 
@@ -314,8 +358,14 @@ func dropIdentitiesIn(ctx context.Context, tx *ent.Client, userID int64) error {
 // winning over a Sign-up nobody proved: Verified with the provider's name, no password, earlier
 // sessions ended, and the Linked identity; a pending Invitation to the address is not touched.
 // The caller gives it its first Workspace on the same transaction, as a verify link would
-// (internal/domain/identity/signup). ErrAlreadyVerified when the User is no longer Unverified.
-func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (*ent.User, error) {
+// (internal/domain/identity/signup). It is Verified and proven by the module's clock.
+// ErrAlreadyVerified when the User is no longer Unverified.
+func (a *Module) TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin) (*ent.User, error) {
+	return takeOverIn(ctx, tx, holderID, in, a.now())
+}
+
+// takeOverIn is TakeOverIn at now.
+func takeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in ProviderLogin, now time.Time) (*ent.User, error) {
 	err := lifecycle.Latch(ctx, func(ctx context.Context) (bool, error) {
 		upd := tx.User.Update().
 			Where(user.ID(holderID), user.EmailVerifiedAtIsNil()).
@@ -352,7 +402,7 @@ func TakeOverIn(ctx context.Context, tx *ent.Client, holderID int64, in Provider
 // nothing, when the identity is already gone (a link followed twice).
 func (a *Module) UndoLink(ctx context.Context, userID, identityID int64) (bool, error) {
 	removed := false
-	err := a.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := a.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		identity, err := tx.UserIdentity.Query().Where(useridentity.ID(identityID), useridentity.UserID(userID)).Only(ctx)
 		if ent.IsNotFound(err) {
 			return nil
@@ -368,7 +418,7 @@ func (a *Module) UndoLink(ctx context.Context, userID, identityID int64) (bool, 
 		if err != nil {
 			return err
 		}
-		return RecordUserAction(ctx, tx, pub, saved, events.ActionUserIdentityUnlink, map[string]any{"provider": identity.Provider})
+		return a.RecordUserAction(ctx, tx, UserAction{User: saved, Action: events.ActionUserIdentityUnlink, Diff: map[string]any{"provider": identity.Provider}})
 	})
 	return removed, err
 }

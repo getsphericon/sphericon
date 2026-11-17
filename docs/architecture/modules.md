@@ -170,7 +170,7 @@ package that owns its table in the ownership map (`owners` in `tools/analyzers/e
 test holds to `ent/schema` and to the directories of the repository), and a write to it from any
 other package fails the lint. The owner is the domain module of the entity (a module that owns
 several is named after the one the others belong to: `contacts` owns the Contact, its Custom fields
-and its join rows with Tags, so a Contact's Tags are applied there, `contacts.ApplyTagIn`, over the
+and its join rows with Tags, so a Contact's Tags are applied there, `contacts.Module.ApplyTagIn`, over the
 `tags` catalogue's `EnsureIn`); the infrastructure owns the tables of no domain (the bus the Events and external-fact receipts,
 `internal/infra/events`, which stores, prunes, stitches (`StitchVisitor`) and erases them and lists
 the Event log (`ListLog`, `DistinctActions`); the Login
@@ -183,11 +183,11 @@ Workspace-owned table is the Workspace erase (`internal/usecase/workspacedeletio
 deletes the rows of a Workspace past its deletion window itself, through the scoped client, since no
 rule of an owner governs them any more; it only deletes, and only through the scoped wrappers. Any other package, a use case
 included, reads the table and changes it only through a function of its owner: the Workspace's
-standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
+standing (`workspaces.Module.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position of `workspaces.Feed`)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
-(`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
-Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
-`users`; a provider's refusal of an Integration (`integrations.RecordRefused`) for
+(`users.Module.ClearSurveyDueIn`, `users.Feed.SetPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
+Invitation or a Join domain admits (`memberships.Module.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
+`users`; a provider's refusal of an Integration (`integrations.Standing.RecordRefused`) for
 `outboundmessages`. A write through a generic helper counts where
 the helper is instantiated with an ent write builder. The owner also declares each unique
 constraint of its tables beside those writes (ADR 0106): `var constraints = db.Declare(...)`, each
@@ -199,3 +199,46 @@ with `errors.Is`; it never reads the violation itself. `TestEveryUniqueConstrain
 the table's owner in this map, and a refusal no test of its owner asserts with `ErrorIs`. A refusal
 that never leaves its owner, which records it as the row's state (`trackingdomains`' host held by
 another Workspace), is unexported and caught there with `errors.Is` instead.
+
+## Shapes under the call contract
+
+A domain operation keeps the call contract (ADR 0167, analyzer `callshape`). What follows says
+where its dependencies come from and the shapes that recur under it; the Tags path is their example.
+
+- **Constructor or argument.** A constructor `New…` takes what lives as long as its type: the bus
+  (`*events.Bus`), the clock, the modules it reads through, the adapter of a seam. An operation takes
+  the context, the scope and values. A client that exists for one transaction or one job is no
+  argument either: the type takes the long-lived client it comes from in its constructor, and what
+  belongs to the call reaches that client through the call. A delivery that hands its sends to a
+  scheduler takes the scheduler in its constructor, and what the adapter knew of one job (its
+  Workspace, the queue's client of the job) reaches it through the arguments and the context of
+  its method.
+- **Who builds it.** The wiring (`internal/app/container.go`), except a package easement fences to
+  its importers (`<module>unchecked`, `<module>use`, ADR 0110): each importer builds its own in its
+  constructor from what the wiring gave it, so the fence stays as it is. `tagdeletion.New` takes the
+  `*tags.Module` and builds `tagsunchecked.New(catalogue)`; `removalcheck.New` builds
+  `segmentsuse.New()`. A type with no dependencies, no field at all, is built where it is used
+  (`eligibility.New()`, `contactlock.New()`, `users.NewFeed()`): two of them have nothing to
+  disagree on.
+- **A `<module>unchecked` subpackage** exports one type, `Module`, built by `New`, and each of its
+  unchecked operations is a method of it (`tagsunchecked.Module`).
+- **A plan, then its apply** (ADR 0145). Opening is a method `<Plan>In` of that `Module`
+  (`DeletionIn(ctx, l, id)`): it reads the row in the scope it is given and refuses what the row's
+  own rules refuse. It returns the plan (`*Deletion`), a value whose unexported fields hold what was
+  read and whose methods take no context (`Name`, `Done`): what the use case's check reads. Having
+  no operation, the plan needs no constructor. Applying is a method `Apply<Plan>` of the same
+  `Module`, which takes the scope of the transaction the plan was opened in and the plan
+  (`ApplyDeletion(ctx, l, d)`). What applying needs besides comes from `New`: the clock for a time it
+  writes, and the bus to publish an event or queue a job in the transaction its scope is bound to.
+  `Bus.PublishIn(ctx, s, ev)` and `Bus.EnqueueIn(ctx, s, args, opts)` do that with the publisher of
+  the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
+  to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
+  operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument, and
+  one that records an explicit Audit entry calls `Bus.RecordAuditIn(ctx, s, entry)`, which is
+  `events.RecordAudit` with that transaction's publisher.
+  An Erasure's step takes no `events.QueuePurger` either: `Bus.PurgeJobsIn(ctx, s, key, ids)`
+  purges the scope's Workspace's jobs in the Erasure's transaction `s` is bound to, and refuses
+  any other (`events.ErrNotPurging`).
+- **A `<module>use` reader** exports one type, `Module`, built by `New`, whose methods are the
+  questions another module asks of the owner's rows (`segmentsuse.Module.UsingTag` and
+  `UnfitForCustomFieldType`). The module that asks holds it as a field its own constructor builds.

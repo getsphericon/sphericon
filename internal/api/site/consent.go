@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/getsphericon/sphericon/internal/api/problem"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -24,7 +23,7 @@ func (h *Handlers) SitePublicConfirmationsPerform(ctx context.Context, params si
 	if err != nil {
 		return err
 	}
-	if err := confirmations.RecordConfirmation(ctx, h.bus, h.workspaces.LinkScope(target.WorkspaceID), target, clientip.FromContext(ctx), h.now()); err != nil {
+	if err := h.confirmations.RecordConfirmation(ctx, h.workspaces.LinkScope(target.WorkspaceID), target, clientip.FromContext(ctx)); err != nil {
 		return fmt.Errorf("record confirmation: %w", err)
 	}
 	return nil

@@ -83,7 +83,7 @@ func TestRunStepOutcomes(t *testing.T) {
 		env := testhelper.Setup(t)
 		id := int64(fixtures.AutomationRunJobsPendingID)
 		queueStep(t, env, id)
-		_, err := suspension.SuspendWorkspace(t.Context(), env.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
+		_, err := testhelper.Module[*suspension.Suspender](env).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 		require.NoError(t, err)
 		fs := &fakeSender{}
 		require.True(t, env.RunNextStep(t, stepperOf(env, resolvingTo(fs))))
@@ -120,7 +120,7 @@ func TestOwnerNoticeIsRetriedWhenTheSystemSenderFails(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "complaints", time.Now())
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaints"})
 	require.NoError(t, err)
 	assert.Empty(t, env.SystemMail.Messages(), "the send failed")
 
@@ -137,7 +137,7 @@ func TestSendingDomainVerifyNotifiesOnFlip(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	gone := dnstest.Resolver(t, nil).LookupTXT
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.Bus, nil, gone, time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, time.Now))
 
 	require.NoError(t, testhelper.Work(ctx, t, w, jobs.VerifySendingDomainArgs{WorkspaceID: fixtures.AcmeID, SendingDomainID: fixtures.SendingDomainVerifiedID}))
 	require.Len(t, env.SystemMail.Messages(), 1)

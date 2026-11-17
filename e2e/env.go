@@ -24,6 +24,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/app"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -43,6 +44,7 @@ type Env struct {
 	users       *users.Module
 	creation    *workspaceview.UseCase
 	memberships *memberships.Module
+	tokens      *apitokens.Module
 	bus         *events.Bus
 	// brandKit is the product's own module, for the arrange step the public API leaves to a
 	// person: saving the Brand kit, which makes the starter Templates.
@@ -175,6 +177,12 @@ func Boot() (*Env, func(), error) {
 		stopMailpit()
 		return nil, nil, fmt.Errorf("resolve bus: %w", err)
 	}
+	tokens, err := a.APITokens()
+	if err != nil {
+		cleanup.Report("close the application", a.Close(ctx))
+		stopMailpit()
+		return nil, nil, fmt.Errorf("resolve api tokens: %w", err)
+	}
 	// The same start/stop ordering as the binary; Start unwinds itself on failure.
 	if err := a.Start(ctx); err != nil {
 		stopMailpit()
@@ -194,9 +202,10 @@ func Boot() (*Env, func(), error) {
 		users:       acc,
 		creation:    creation,
 		memberships: ms,
+		tokens:      tokens,
 		bus:         bus,
 
-		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New(), brandkits.Brands{})),
+		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New(), brandkits.NewBrands())),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), time.Now, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

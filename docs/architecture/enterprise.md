@@ -16,12 +16,13 @@ an event that is not Projected (`events.Projected`): it has no Event row, automa
 and a Webhook endpoint receives it only when it names `audit.entry`.
 The Audit table's rows are removed only through `ee/domain/insights/auditentries`, by `ee/usecase/auditlogretention`'s prune (the
 `retention` license feature, a Workspace `retention_days` window, one hourly river job
-of the Enterprise job runner `ee/jobs`, which calls `auditentries.PruneBefore`), and by the Workspace erase
+of the Enterprise job runner `ee/jobs`, which calls `auditentries.Log.PruneBefore`), and by the Workspace erase
 (`internal/usecase/workspacedeletion`), which deletes a deleted Workspace's entries directly (ADR 0110).
 An explicit entry, one no audited write produces (a Workspace setting, a login, a membership
 change, the Audit log export `auditentries.Log.Export`), is recorded one way: `events.RecordAudit`
 inside the transaction of the change (`bus.WithinTx`, or `bus.WithinScopedTx` with the scope's
-`Actor()` when there is a scope); `events.ExplicitAuditActions` lists its actions. Many of them
+`Actor()` when there is a scope), which a domain operation given that transaction's client reaches
+through `Bus.RecordAuditIn`; `events.ExplicitAuditActions` lists its actions. Many of them
 have no scope to take the actor from (a User's action goes to each of their Workspaces, a
 suspension names its Staff actor), so the scoped client has no recorder of its own. `ee.New`
 takes the bus for the export: the bus is built first, with the Edition's hooks from `ee.Hooks`.

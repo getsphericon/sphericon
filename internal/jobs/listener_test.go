@@ -11,6 +11,7 @@ import (
 
 	"github.com/getsphericon/sphericon/config"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	appdb "github.com/getsphericon/sphericon/internal/infra/db"
@@ -39,8 +40,9 @@ func TestAListeningClientWorksAJobInsertedElsewhereAtOnce(t *testing.T) {
 	bus := events.New(pool, entclient.Core.NewTx, time.Now)
 	mail := &testhelper.CapturingSender{}
 	client, err := jobs.NewClient(riverdatabasesql.NewWithPgxListener(pool, listener), jobs.Deps{
-		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local", time.Now), time.Now),
+		Ent: entClient, Bus: bus, Outbound: outboundmessages.New(bus, nil, nil, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Modules{}, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now),
 		Cipher: cipher, SystemSender: mail, OutboundAllow: cfg.OutboundAllow, Clock: time.Now,
+		Workspaces: workspaces.New(entClient, bus, time.Now),
 	})
 	require.NoError(t, err)
 	require.NoError(t, client.Start(ctx))

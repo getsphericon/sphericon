@@ -56,10 +56,6 @@ type TelegramBots interface {
 	TelegramBot(ctx context.Context, s *ent.Scoped, integ *ent.Integration) (messaging.TelegramBot, error)
 }
 
-// WithTelegramBots gives the module the bots Telegram messages are sent through. Without it the
-// Telegram Channel has no Integration that can send.
-func WithTelegramBots(b TelegramBots) Option { return func(m *Module) { m.bots = b } }
-
 // telegramChannel is Telegram's part of the Outbound send: the renderer of the text and the adapter
 // over the Integration's bot. The Contact's Bindings on the routed Integration are its Destinations.
 type telegramChannel struct{ m *Module }
@@ -266,8 +262,9 @@ func classifyTelegram(err error) error {
 
 // unreachable removes the Binding of a chat Telegram no longer reaches, and records telegram.unbound:
 // the chat is no Destination any more.
-func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, pub events.Publisher, integ *ent.Integration, _ Request, to target, messageID int64) (string, error) {
-	if err := bindings.Remove(ctx, s, pub, integ, to.dest, fmt.Sprintf("%s:gone:%d:%s", systemevent.TelegramUnbound, messageID, to.dest)); err != nil {
+func (c telegramChannel) unreachable(ctx context.Context, s *ent.Scoped, _ events.Publisher, integ *ent.Integration, _ Request, to target, messageID int64) (string, error) {
+	gone := bindings.Removal{Destination: to.dest, DedupKey: fmt.Sprintf("%s:gone:%d:%s", systemevent.TelegramUnbound, messageID, to.dest)}
+	if err := c.m.chats.Remove(ctx, s, integ, gone); err != nil {
 		return "", err
 	}
 	return eligibility.ReasonNoDestination, nil

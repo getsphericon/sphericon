@@ -5,7 +5,7 @@
 ## Owners and suspension
 
 **Owners and suspension are defined once.** `internal/domain/identity/memberships` owns "Owner of a
-Workspace": `Owners`, `OwnersOf`, `LockOwners`, `IsOwner`, `OwnerRole`;
+Workspace": `Module.Owners`, `Module.OwnersOf`, the lock of the Owner rows, `IsOwner`, `OwnerRole`;
 `internal/domain/identity/suspension` owns "suspended" (`Is`, `Suspended`, `NotSuspended`,
 `BySystem`). A Workspace is suspended through the container's one `suspension.Suspender` (the
 command line, the Staff console and the abuse detector), whose event tells its Owners (see
@@ -28,10 +28,10 @@ its unchecked removal, between opening it on the row and applying it (`tagdeleti
 `sendingdomainsunchecked.Deletion`; ADR 0145, see [Use cases](use-cases.md)). It is the one list of the
 readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
 0110's fence by place), which may import its owner and which the owner does not import: Definition
-use is `segmentsuse.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
-`rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.UsingTag` and
-`UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.LiveSends` and
-`automationsuse.LiveSends`, which return each send as a `liveuse.Send` (who sends, on which
+use is `segmentsuse.Module.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.Module.UsingTag`,
+`rulesuse.Module.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.Module.UsingTag` and
+`UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.Module.LiveSends` and
+`automationsuse.Module.LiveSends`, which return each send as a `liveuse.Send` (who sends, on which
 Channel, through which Integration by `messaging.Through`, from which From), so the Removal check
 and the send path agree on where work sends; a Sending domain's check reads the From an
 Integration sends with from the resolver a send builds its sender with
@@ -65,11 +65,11 @@ its callback `*ent.WorkspaceLocked` (`ent/template/scoped_lock.tmpl`) and is the
 the lock does not compile:
 
 - the readers of Live use and Definition use: the Removal check's methods, the `<module>use`
-  readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.ActiveEnrollingInto`,
+  readers (`UsingTag`, `UnfitForCustomFieldType`, `LiveSends`) and `rules.Module.ActiveEnrollingInto`,
   which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
-- the unchecked removals behind their check, opened on their row: `tagsunchecked.DeletionIn`,
-  `contactsunchecked.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
-  `sendingdomainsunchecked.DeletionIn`. An Integration's deletion gives up its default in the
+- the unchecked removals behind their check, opened on their row: `tagsunchecked.Module.DeletionIn`,
+  `contactsunchecked.Module.CustomFieldUpdateIn`, `integrationsunchecked.Module.DeletionIn` and
+  `sendingdomainsunchecked.Module.DeletionIn`. An Integration's deletion gives up its default in the
   statement that discards it (`schema.GivenUpOnDiscard`) and queues the release of a Telegram bot's
   webhook in the same transaction;
 - the writes that move a use: a version of a Versioned definition (`Definition.Write`, on Create

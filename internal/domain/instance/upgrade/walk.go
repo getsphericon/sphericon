@@ -43,8 +43,8 @@ type MajorFloor struct {
 //
 // With a directory Source every archive of the walk is checked before the first step, and
 // a missing one refuses the whole Upgrade. It yields its Progress as it goes.
-func Walk(ctx context.Context, o Options) iter.Seq2[Progress, error] {
-	return progressOf(func(emit emitter) error { return walk(ctx, o, emit) })
+func (u *Upgrader) Walk(ctx context.Context, o Options) iter.Seq2[Progress, error] {
+	return progressOf(func(emit emitter) error { return walk(ctx, u.bind(o), emit) })
 }
 
 func walk(ctx context.Context, o Options, emit emitter) error {
@@ -119,7 +119,7 @@ func planWalk(b Boundaries, current, target string) []string {
 
 // requireArchives refuses, naming every release, when the Source lacks one the walk needs.
 func requireArchives(ctx context.Context, o Options, plan []string) error {
-	have, err := o.Source.Versions(ctx, o.Platform)
+	have, err := o.seams.Source.Versions(ctx, o.Platform)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func requireArchives(ctx context.Context, o Options, plan []string) error {
 
 // readBoundaries asks the staged target which Majors lie between.
 func readBoundaries(ctx context.Context, o Options, staged, target string) (Boundaries, error) {
-	out, err := o.Run(ctx, staged, []string{"migrate", "--status", "--json"})
+	out, err := o.seams.Run(ctx, staged, []string{"migrate", "--status", "--json"})
 	if err != nil {
 		return Boundaries{}, fmt.Errorf("ask %s which Majors lie between (nothing was changed): %w", target, err)
 	}

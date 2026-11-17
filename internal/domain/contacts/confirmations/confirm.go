@@ -23,8 +23,9 @@ import (
 // click. A repeated POST (mailbox retry, double click) is a complete no-op: the
 // confirmation stands and no second Event is logged. s is the scope of the token's Workspace,
 // which the entry point builds from it; the writes go through it as the ingest actor (never
-// audited), since no membership or API token stands behind them. at is when the link was followed.
-func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, target linktarget.Confirmation, ip string, at time.Time) error {
+// audited), since no membership or API token stands behind them. The link is followed now, by the
+// module's clock.
+func (m *Module) RecordConfirmation(ctx context.Context, s *ent.Scoped, target linktarget.Confirmation, ip string) error {
 	dest := emailcase.Of(target.Destination)
 	if dest == "" || target.WorkspaceID == 0 {
 		return nil
@@ -32,20 +33,21 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, tar
 
 	// The Workspace comes from the signed confirmation token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
-	return bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
+	at := m.now()
+	return m.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, _ events.Publisher) error {
 		// A link of an erased Workspace has nothing left to record into.
-		erased, err := workspaces.ErasedIn(ctx, sc)
-		if err != nil || erased {
+		ws, err := sc.Workspace(ctx)
+		if err != nil || workspaces.DeletionStateOf(ws) == workspaces.StateErased {
 			return err
 		}
-		_, err = recordIn(ctx, sc, pub, grant{
+		_, err = m.recordIn(ctx, sc, grant{
 			channel: channels.Email, destination: dest, provenance: confirmation.ProvenanceDoubleOptIn,
 			contactID: target.ContactID, ip: ip, at: consentstamps.At(at),
 		})
 		if errors.Is(err, ErrSuperseded) {
 			// The address left after the link was followed: the click changed nothing, and is in the
 			// Contact's history as such (ADR 0154).
-			return publishSuperseded(ctx, sc, pub, target.ContactID, dest, at)
+			return m.publishSuperseded(ctx, sc, target.ContactID, dest, at)
 		}
 		return err
 	})
@@ -54,7 +56,7 @@ func RecordConfirmation(ctx context.Context, bus *events.Bus, s *ent.Scoped, tar
 // publishSuperseded records a double opt-in click older than the address's withdrawal as
 // contact.consent_superseded for the Contact the link was issued to; one gone by now has nobody to
 // name.
-func publishSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher, contactID int64, address string, at time.Time) error {
+func (m *Module) publishSuperseded(ctx context.Context, s *ent.Scoped, contactID int64, address string, at time.Time) error {
 	if contactID == 0 {
 		return nil
 	}
@@ -62,7 +64,7 @@ func publishSuperseded(ctx context.Context, s *ent.Scoped, pub events.Publisher,
 	if err != nil || !exists {
 		return err
 	}
-	return pub.Publish(ctx, &events.ConsentSuperseded{
+	return m.bus.PublishIn(ctx, s, &events.ConsentSuperseded{
 		WorkspaceID: s.WorkspaceID(), ContactID: contactID, Email: address,
 		Channel: string(channels.Email), Observation: events.ObservationStart, ObservedAt: at,
 	})

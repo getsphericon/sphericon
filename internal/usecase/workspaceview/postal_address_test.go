@@ -17,8 +17,9 @@ import (
 // on the revision the Workspace reads now.
 func updateAs(t *testing.T, env *testhelper.TestEnv, userID int64, publicID, address string) (*ent.Workspace, error) {
 	t.Helper()
-	s, m, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
+	member, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
+	s, m := member.Scope, member.Membership
 	ws := env.DB.Workspace.GetX(t.Context(), m.WorkspaceID)
 	v, err := testhelper.Module[*workspaceview.UseCase](env).Update(t.Context(), s, workspaceview.Caller{Membership: m},
 		workspaceview.UpdateInput{Revision: ws.Revision, Name: ws.Name, PostalAddress: &address})

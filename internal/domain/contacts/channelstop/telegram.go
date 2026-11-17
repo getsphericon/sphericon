@@ -38,8 +38,8 @@ type TelegramStop struct {
 	ContactID         int64
 	BroadcastID       int64
 	AutomationID      int64
-	// Now is when the stop occurred.
-	Now time.Time
+	// At is when the stop occurred.
+	At time.Time
 	// DedupKey is the key of the fact the stop came from: the events derive theirs from it.
 	DedupKey string
 }
@@ -50,8 +50,8 @@ type TelegramStop struct {
 // opt-out, and nothing else. It is idempotent: a user already opted out changes nothing and
 // records no second event. A stop older than the user's opt-out state (a return of theirs
 // occurred later) changes nothing and is recorded as contact.consent_superseded (ADR 0154). Run it
-// inside the transaction s and pub are bound to.
-func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st TelegramStop) error {
+// inside the bus transaction s is bound to.
+func (m *Module) StopTelegram(ctx context.Context, s *ent.Scoped, st TelegramStop) error {
 	contactIDs, err := contactsOf(ctx, s, st.Destination)
 	if err != nil {
 		return err
@@ -63,19 +63,19 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 		Channel: channels.Telegram, Destination: st.Destination, Source: eligibility.SourceEverything,
 		// The ways of stopping (events.UnsubscribedBy*) are the row's own values.
 		Via: unsubscribe.Via(st.Via),
-		At:  consentstamps.Occurrence{At: st.Now, IntegrationID: st.IntegrationID, Sequence: st.Sequence},
+		At:  consentstamps.Occurrence{At: st.At, IntegrationID: st.IntegrationID, Sequence: st.Sequence},
 	}
 	if len(contactIDs) > 0 {
 		o.ContactID = contactIDs[0]
 	}
-	change, err := unsubscribes.Add(ctx, s, o)
+	change, err := m.unsubs.Add(ctx, s, o)
 	if err != nil {
 		return err
 	}
 	if change.Superseded {
-		return publishSuperseded(ctx, s, pub, contactIDs, &events.ConsentSuperseded{
+		return m.publishSuperseded(ctx, s, contactIDs, &events.ConsentSuperseded{
 			Channel: string(channels.Telegram), Observation: events.ObservationStop, Via: st.Via,
-			IntegrationID: st.IntegrationID, DedupID: st.DedupKey, ObservedAt: st.Now,
+			IntegrationID: st.IntegrationID, DedupID: st.DedupKey, ObservedAt: st.At,
 		})
 	}
 	if change.ID == 0 {
@@ -97,14 +97,14 @@ func StopTelegram(ctx context.Context, s *ent.Scoped, pub events.Publisher, st T
 			// The public Contact event names the source; anonymous attribution is published below.
 			e.BroadcastID, e.AutomationID = st.BroadcastID, st.AutomationID
 		}
-		if err := pub.Publish(ctx, e); err != nil {
+		if err := m.bus.PublishIn(ctx, s, e); err != nil {
 			return err
 		}
 	}
 	// Only an action on a received message attributes the stop; a provider refusing a new send
 	// reports an existing refusal, not a reaction to that new Broadcast.
 	if st.Via == events.UnsubscribedByButton && st.OutboundMessageID != 0 {
-		return pub.Publish(ctx, &events.MessageUnsubscribed{WorkspaceID: s.WorkspaceID(), OutboundMessageID: st.OutboundMessageID, ObservedAt: st.Now})
+		return m.bus.PublishIn(ctx, s, &events.MessageUnsubscribed{WorkspaceID: s.WorkspaceID(), OutboundMessageID: st.OutboundMessageID, ObservedAt: st.At})
 	}
 
 	return nil
@@ -142,8 +142,8 @@ var ErrTelegramSource = validation.RefuseField(fieldname.SendingSource, "consent
 // the user stopping in Telegram (StopTelegram): the row and telegram.unsubscribed for every
 // Contact the id is Bound to. A manual opt-out is Channel-wide: only the `everything` source is
 // accepted here; a source-scoped one comes from the link in a message (the unsubscribe use case).
-// Idempotent.
-func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, destination, source string, now time.Time) (*ent.Unsubscribe, error) {
+// The stop occurs now, by the module's clock. Idempotent.
+func (m *Module) TelegramUnsubscribe(ctx context.Context, s *ent.Scoped, destination, source string) (*ent.Unsubscribe, error) {
 	dest, err := unsubscribes.Destination(channels.Telegram, destination)
 	if err != nil {
 		return nil, err
@@ -151,14 +151,15 @@ func TelegramUnsubscribe(ctx context.Context, bus *events.Bus, s *ent.Scoped, de
 	if source != eligibility.SourceEverything {
 		return nil, ErrTelegramSource
 	}
-	err = bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return StopTelegram(ctx, ts, pub, TelegramStop{
-			Destination: dest, Via: events.UnsubscribedByManual, Now: now,
+	now := m.now()
+	err = m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		return m.StopTelegram(ctx, ts, TelegramStop{
+			Destination: dest, Via: events.UnsubscribedByManual, At: now,
 			DedupKey: "manual:" + dest + ":" + strconv.FormatInt(now.UnixNano(), 10),
 		})
 	})
 	if err != nil {
 		return nil, err
 	}
-	return unsubscribes.Get(ctx, s, channels.Telegram, dest, source)
+	return m.unsubs.Get(ctx, s, unsubscribes.Key{Channel: channels.Telegram, Destination: dest, Source: source})
 }

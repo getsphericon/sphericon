@@ -12,8 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -37,7 +39,7 @@ func lateNotices(t *testing.T, env *testhelper.TestEnv) []callbackinterpretation
 // workLate reads the deferred notice again, as its job does.
 func workLate(t *testing.T, env *testhelper.TestEnv, args callbackinterpretation.LateNoticeArgs) {
 	t.Helper()
-	w := jobs.NewLateNoticeWorker(env.DB, callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), time.Now))
+	w := jobs.NewLateNoticeWorker(env.DB, callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), preset.New(preset.NewTestCertificates(), time.Now), bindings.NewChats(env.Bus, time.Now), time.Now))
 	require.NoError(t, w.Work(t.Context(), &river.Job[callbackinterpretation.LateNoticeArgs]{Args: args}))
 }
 

@@ -145,16 +145,21 @@ type Item struct {
 
 // UseCase reads the items.
 type UseCase struct {
-	now   func() time.Time
-	watch abusewarning.Watch
-	out   *outboundmessages.Module
+	now         func() time.Time
+	watch       abusewarning.Watch
+	out         *outboundmessages.Module
+	broadcasts  *broadcasts.Module
+	automations *automations.Module
+	limits      *providerlimit.Module
 }
 
 // New is the use case: watch is the abuse detector's warning tier, nil where the detector does not
 // run, out is the send path, whose Preflight says whether an Automation's email step could send
-// now and whose SendCapStatus says which Send cap applies (ADR 0067), and now is the Instance clock.
-func New(watch abusewarning.Watch, out *outboundmessages.Module, now func() time.Time) *UseCase {
-	return &UseCase{now: now, watch: watch, out: out}
+// now and whose SendCapStatus says which Send cap applies (ADR 0067), catalogue counts what the
+// Broadcasts draw from the Send cap, senders reads the active Automations that send, limits reads
+// the Provider limit's 24-hour usage, and now is the Instance clock.
+func New(watch abusewarning.Watch, out *outboundmessages.Module, catalogue *broadcasts.Module, senders *automations.Module, limits *providerlimit.Module, now func() time.Time) *UseCase {
+	return &UseCase{now: now, watch: watch, out: out, broadcasts: catalogue, automations: senders, limits: limits}
 }
 
 // Items is what needs attention in the Workspace behind s, most urgent first and, within a
@@ -226,12 +231,12 @@ func domainsLost(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error
 
 // integrations reads the standing of every enabled Integration as the provider last reported
 // it, and whether it sent its Provider limit over the last 24 hours.
-func (m *UseCase) integrations(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
+func (m *UseCase) integrations(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
 	integs, err := s.Integration().Query().Where(integration.Enabled(true)).WithProviderState().All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	usage, err := providerlimit.Usage(ctx, s, now)
+	usage, err := m.limits.Usage(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +301,7 @@ var sourceHolds = holdreason.Source()
 // default), and the send path is asked once per such pair, not once per step. Nothing stores when
 // a route began to hold, so the item has no since.
 func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
-	senders, err := automations.Senders(ctx, s)
+	senders, err := m.automations.Senders(ctx, s)
 	if err != nil {
 		return nil, err
 	}
@@ -339,11 +344,13 @@ func (m *UseCase) automationsCannotSend(ctx context.Context, s *ent.Scoped, _ ti
 	return items, nil
 }
 
-func (m *UseCase) deliverability(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
+// deliverability is the Workspace's abuse warning, which the watch judges at the Instance clock it
+// reads itself.
+func (m *UseCase) deliverability(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error) {
 	if m.watch == nil {
 		return nil, nil
 	}
-	w, err := m.watch.Warning(ctx, s, now)
+	w, err := m.watch.Warning(ctx, s)
 	if err != nil || w == nil {
 		return nil, err
 	}
@@ -366,7 +373,7 @@ func (m *UseCase) sendCap(ctx context.Context, s *ent.Scoped, now time.Time) ([]
 	if st.Sent24h >= st.PerDay {
 		items = append(items, Item{Kind: KindSendCapSpent, Count: 1})
 	}
-	over, err := scheduledOverSendCap(ctx, s, st.PerDay, now)
+	over, err := m.scheduledOverSendCap(ctx, s, st.PerDay, now)
 	if err != nil {
 		return nil, err
 	}
@@ -406,7 +413,7 @@ const overCapWindow = 24 * time.Hour
 // item when there is a wait, finishing at its start plus the wait. Taking the earlier audiences at
 // its start leaves out what the bucket refills between their starts, so the read errs towards an
 // item. perDay is the Send cap that applies.
-func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now time.Time) ([]Item, error) {
+func (m *UseCase) scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now time.Time) ([]Item, error) {
 	scheduled, err := s.Broadcast().Query().
 		Where(
 			broadcast.StatusEQ(broadcast.StatusScheduled),
@@ -419,13 +426,13 @@ func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now ti
 		return nil, err
 	}
 	// What the sending Broadcasts still have to send goes out of the bucket before any of these.
-	accumulated, err := broadcasts.PendingOfSending(ctx, s)
+	accumulated, err := m.broadcasts.PendingOfSending(ctx, s)
 	if err != nil {
 		return nil, err
 	}
 	var items []Item
 	for _, b := range scheduled {
-		audience, err := broadcasts.AudienceSize(ctx, s, b, now)
+		audience, err := m.broadcasts.AudienceSize(ctx, s, b)
 		if errors.Is(err, broadcasts.ErrNoAudience) {
 			// Its plan fails it instead, a failure of its own: it draws nothing from the bucket.
 			continue
@@ -438,7 +445,7 @@ func scheduledOverSendCap(ctx context.Context, s *ent.Scoped, perDay int, now ti
 		if start.Before(now) {
 			start = now
 		}
-		wait, err := providerlimit.SendCapDrain(ctx, s, perDay, accumulated, start)
+		wait, err := m.limits.SendCapDrain(ctx, s, providerlimit.DrainInput{SendCap: perDay, N: accumulated, At: start})
 		if err != nil {
 			return nil, err
 		}

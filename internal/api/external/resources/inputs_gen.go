@@ -12,6 +12,7 @@ import (
 	segments "github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	emailtemplates "github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -180,6 +181,22 @@ func (c *InputsImpl) BroadcastCreate(source *external.CreateBroadcastInput) (bro
 	}
 	return broadcastsCreateInput, nil
 }
+func (c *InputsImpl) BroadcastSchedule(source *external.ScheduleBroadcastInput) broadcasts.ScheduleInput {
+	var broadcastsScheduleInput broadcasts.ScheduleInput
+	if source != nil {
+		broadcastsScheduleInput.Revision = revisionIn((*source).Revision)
+		broadcastsScheduleInput.ScheduledAt = timeIn((*source).ScheduledAt)
+	}
+	return broadcastsScheduleInput
+}
+func (c *InputsImpl) BroadcastSetSegment(source *external.SetBroadcastSegmentInput) broadcasts.SetSegmentInput {
+	var broadcastsSetSegmentInput broadcasts.SetSegmentInput
+	if source != nil {
+		broadcastsSetSegmentInput.Revision = revisionIn((*source).Revision)
+		broadcastsSetSegmentInput.SegmentID = requiredNilEntityIDPtrIn((*source).SegmentId)
+	}
+	return broadcastsSetSegmentInput
+}
 func (c *InputsImpl) BroadcastUpdate(source *external.UpdateBroadcastInput) (broadcasts.UpdateInput, error) {
 	var broadcastsUpdateInput broadcasts.UpdateInput
 	if source != nil {
@@ -200,16 +217,17 @@ func (c *InputsImpl) BroadcastsListFilter(source external.BroadcastsListParams) 
 	broadcastsListFilter.Archived = boolIn(source.Archived)
 	// broadcastsListFilter.Statuses: ignore
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	// broadcastsListFilter.Order: ignore
 	return broadcastsListFilter
 }
-func (c *InputsImpl) ConfirmationEvidence(source *external.CreateConfirmationInput) confirmations.Evidence {
-	var confirmationsEvidence confirmations.Evidence
+func (c *InputsImpl) Confirmation(source *external.CreateConfirmationInput) confirmations.ConfirmInput {
+	var confirmationsConfirmInput confirmations.ConfirmInput
 	if source != nil {
-		confirmationsEvidence.Wording = (*source).Wording
-		confirmationsEvidence.Source = (*source).Source
-		confirmationsEvidence.Brand = (*source).Brand
+		confirmationsConfirmInput.Channel = c.ConsentChannel((*source).Channel)
+		confirmationsConfirmInput.Destination = (*source).Destination
+		confirmationsConfirmInput.Evidence = c.externalapiCreateConfirmationInputToConfirmationsEvidence((*source))
 	}
-	return confirmationsEvidence
+	return confirmationsConfirmInput
 }
 func (c *InputsImpl) ConsentChannel(source external.ConsentChannel) channels.Channel {
 	var channelsChannel channels.Channel
@@ -255,6 +273,12 @@ func (c *InputsImpl) ContactCreate(source *external.CreateContactInput) contacts
 		// contactsCreateInput.Tags: ignore
 	}
 	return contactsCreateInput
+}
+func (c *InputsImpl) ContactExport(source external.ContactsExportParams) dataexport.OpenInput {
+	var dataexportOpenInput dataexport.OpenInput
+	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
+	dataexportOpenInput.Email = emailPtrIn(source.Email)
+	return dataexportOpenInput
 }
 func (c *InputsImpl) ContactIntake(source external.UpsertContactInput) contacts.IntakeInput {
 	var contactsIntakeInput contacts.IntakeInput
@@ -323,6 +347,21 @@ func (c *InputsImpl) EmailBroadcastContentPatch(source external.EmailBroadcastCo
 	broadcastsEmailContentPatch.Body = stringPatch(source.Body)
 	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
 	return broadcastsEmailContentPatch
+}
+func (c *InputsImpl) EmailLint(source *external.LintEmailInput) emailtemplates.LintInput {
+	var emailtemplatesLintInput emailtemplates.LintInput
+	if source != nil {
+		emailtemplatesLintInput.Subject = stringIn((*source).Subject)
+		emailtemplatesLintInput.Body = stringPtrIn((*source).Body)
+		emailtemplatesLintInput.Doc = documentIn((*source).Doc)
+	}
+	return emailtemplatesLintInput
+}
+func (c *InputsImpl) EnrollmentsFilter(source external.EnrollmentsListParams) automations.EnrollmentsFilter {
+	var automationsEnrollmentsFilter automations.EnrollmentsFilter
+	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)
+	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
+	return automationsEnrollmentsFilter
 }
 func (c *InputsImpl) Event(source external.EventInput, context bool) (eventrecording.Input, error) {
 	var eventrecordingInput eventrecording.Input
@@ -623,6 +662,13 @@ func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpcallHeader(source
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
+}
+func (c *InputsImpl) externalapiCreateConfirmationInputToConfirmationsEvidence(source external.CreateConfirmationInput) confirmations.Evidence {
+	var confirmationsEvidence confirmations.Evidence
+	confirmationsEvidence.Wording = source.Wording
+	confirmationsEvidence.Source = source.Source
+	confirmationsEvidence.Brand = source.Brand
+	return confirmationsEvidence
 }
 func (c *InputsImpl) externalapiRuleActionInputToRulesAction(source external.RuleActionInput) rules.Action {
 	var rulesAction rules.Action

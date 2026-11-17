@@ -20,6 +20,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
 
+// Module holds the Outbound message module's unchecked operations: the parts of a Contact's Erasure
+// and the deletes of message retention. Each use case that runs them builds its own in its
+// constructor (docs/architecture/modules.md, the unchecked operations).
+type Module struct{}
+
+// New builds the unchecked operations; they need nothing but the scope each call is given.
+func New() *Module { return &Module{} }
+
 // The Outbound message parts of a Contact's Erasure (ADR 0021). Each runs inside the Erasure's
 // transaction (s comes from it); contactID is 0 for a subject without a Contact.
 
@@ -28,7 +36,7 @@ import (
 // The messages themselves stay as anonymous rows (AnonymizeContact), which clears the contact_id
 // the links are found by, so this runs before it. A Test send's links name no message and carry
 // only sample data: they are not the person's.
-func EraseShortLinks(ctx context.Context, s *ent.Scoped, contactID int64) error {
+func (m *Module) EraseShortLinks(ctx context.Context, s *ent.Scoped, contactID int64) error {
 	if contactID == 0 {
 		return nil
 	}
@@ -41,7 +49,7 @@ func EraseShortLinks(ctx context.Context, s *ent.Scoped, contactID int64) error 
 // status and timing, so reports keep their totals, but no longer name anyone. Its SMS messages
 // first forget what they hold besides their destination (forgetTexts); phone is the Contact's
 // number, "" when it has none.
-func AnonymizeContact(ctx context.Context, s *ent.Scoped, contactID int64, phone string) error {
+func (m *Module) AnonymizeContact(ctx context.Context, s *ent.Scoped, contactID int64, phone string) error {
 	if err := forgetTexts(ctx, s, contactID, phone); err != nil {
 		return err
 	}
@@ -53,7 +61,7 @@ func AnonymizeContact(ctx context.Context, s *ent.Scoped, contactID int64, phone
 // AnonymizeDestinations turns the delivery records to the subject's addresses and phone number
 // into anonymous rows like AnonymizeContact: a transactional send to the address may never have
 // had a Contact, so it is found by destination.
-func AnonymizeDestinations(ctx context.Context, s *ent.Scoped, destinations []string) error {
+func (m *Module) AnonymizeDestinations(ctx context.Context, s *ent.Scoped, destinations []string) error {
 	if len(destinations) == 0 {
 		return nil
 	}

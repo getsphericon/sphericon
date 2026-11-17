@@ -32,7 +32,7 @@ client, since an account's event belongs to no Workspace) answers the Notices a 
 for through identity's modules alone, wording what happened in another context from the facts its
 event carries; the Sign-up (`internal/domain/identity/signup`, which holds the raw client, since
 neither the User nor its first Workspace exists when a step starts) creates the User's first
-Workspace through `memberships.CreateWorkspaceIn` in every step that makes a User Verified, each on its own transaction: the verification and reset
+Workspace through `memberships.Module.CreateWorkspaceIn` in every step that makes a User Verified, each on its own transaction: the verification and reset
 links, a Sign-up and an Owner made where verification is off, the provider sign-in and the
 completion of a pending sign-up, calling the `users` functions for the User's part
 (`MarkVerifiedIn`, `CreateVerifiedIn`, `CreateProviderUserIn`, `TakeOverIn`,
@@ -49,7 +49,7 @@ included: the Workspace erase job calls `workspacedeletion`). It takes the
 `*ent.Scoped` its driver built, opens the transaction the domain modules it calls join (taking the
 Workspace lock where ADR 0099 requires it, so a removal that runs the Removal check opens it with
 `WithinWorkspaceLockTx`, as `tagdeletion` and `customfieldretyping` do; `contacterasure` opens `WithinScopedPurgeTx`, takes no Workspace lock and locks the Contact through `contactlock`; `unsubscriberecording` opens one `WithinScopedTx` for the opt-out, the Enrollment's exit and anonymous attribution work), reads them, and changes their rows only through their functions
-(Erasure calls an erase function of each owner, from its `<module>unchecked` subpackage: `eventsunchecked.EraseSubject`, `visitorsunchecked.EraseSubject`, `outboundmessagesunchecked.AnonymizeContact`, `confirmationsunchecked.EraseNumber`, `unsubscribesunchecked.EraseSMS` and the rest, then `contactsunchecked.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Withdraw`, calls `automations.Exit` and publishes anonymous attribution for the Broadcast consumer).
+(Erasure calls an erase function of each owner, from its `<module>unchecked` subpackage: `eventsunchecked.EraseSubject`, `visitorsunchecked.Module.EraseSubject`, `outboundmessagesunchecked.Module.AnonymizeContact`, `confirmationsunchecked.Module.EraseNumber`, `unsubscribesunchecked.Module.EraseSMS` and the rest, then `contactsunchecked.Module.DeleteIn`, whose foreign keys delete or detach the Contact's other rows; an unsubscribe writes the opt-out through `unsubscribes`, drops the Confirmation an opt-out of everything ends through `confirmations.Module.Withdraw`, calls `automations.Module.Exit` and publishes anonymous attribution for the Broadcast consumer).
 Work that starts before any scope exists, such as a job given only a row's id, has its driver read
 the row's Workspace and build the scope the use case takes (a signed unsubscribe link's comes from
 `workspaces.Module.LinkScope`). easement
@@ -70,28 +70,29 @@ Workspace row on through
 ADR 0110; the table of the cycle's moves is `workspaces.DeletionCycle`), with every
 job of the Workspace left in the queue by the bus (`events.Bus.WithinWorkspacePurgeTx`, [Async jobs](events-and-jobs.md#async-jobs)) in the tombstone's transaction; the
 Workspace view (`internal/usecase/workspaceview`), the operations of the Workspace screens, each answering with the Workspace summary as the caller sees it (ADR 0111, amended by #1218): it creates a Workspace for a Verified User
-through `memberships.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
+through `memberships.Module.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
 starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146) and its `workspace.create`
 Audit entry, moves a deleted one back through
-`workspacesunchecked.RestoreIn`, and renames one or changes its postal address through
-`workspacesunchecked.EditIn`, which it applies after the Removal check under the Workspace lock when
+`workspacesunchecked.Module.RestoreIn`, and renames one or changes its postal address through
+`workspacesunchecked.Module.EditIn`, which it applies (`ApplyEdit`) after the Removal check under the Workspace lock when
 the edit takes away an address that marketing email still to send needs (ADR 0156); and User deletion
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
 `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
-opens the deletion on the locked User row (`usersunchecked.DeletionIn`, which refuses a proof made
+opens the deletion on the locked User row (`usersunchecked.Module.DeletionIn`, which refuses a proof made
 before a password was set or removed), locks the Owner rows of its Workspaces
-(`memberships.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace
-(`memberships.LeaveIn`, or `membershipsunchecked.LeaveDoomedWorkspaceIn` for one in its deletion
-window) and applies the deletion last, which deletes the row and publishes `UserDeleted`.
+(`memberships.Module.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace
+(`memberships.Module.LeaveIn`, or `membershipsunchecked.Module.LeaveDoomedWorkspaceIn` for one in its deletion
+window) and applies the deletion last (`ApplyDeletion`), which deletes the row and publishes `UserDeleted`.
 What stays unchecked lives in `<module>unchecked` (ADR 0110). A write is left unchecked only
 when its check needs a module its owner may not call: one in a higher context, or several at
 once; otherwise the check moves into the owner. It still checks its own input (ADR 0107); what it
 leaves to the use case is the rule across modules, and it keeps every rule of its owner's rows
 (ADR 0145): where the use case's rule reads the row, the write is an operation opened on the row,
-checked, then applied, otherwise a package-level function. Either lives in a subpackage of its
-owner named `<module>unchecked`
-(`internal/domain/contacts/tags/tagsunchecked`), which may import its owner and which the owner
+checked, then applied, otherwise a single call. Either is a method of the `Module` of a subpackage
+of its owner named `<module>unchecked`
+(`internal/domain/contacts/tags/tagsunchecked`, built by the use case in its `New`, see
+[Shapes under the call contract](modules.md#shapes-under-the-call-contract)), which may import its owner and which the owner
 does not import; the owner exports for it only what writes nothing (a state table such as
 `workspaces.DeletionCycle`, a compare-and-swap condition, an Audit
 entry, a read under a lock), and the write itself is the subpackage's, which `entrywrite` takes as
@@ -109,14 +110,14 @@ use writes behind the Removal check (`tagsunchecked.Deletion`, the edit
 `contactsunchecked.CustomFieldUpdate`, `integrationsunchecked.Deletion` and
 `sendingdomainsunchecked.Deletion`, each opened on its row, then checked by the use case and
 applied, ADR 0145), User deletion's removals
-(`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
+(`membershipsunchecked.Module.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
 deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
 Removal writes), the restore and the tombstone of a Workspace's deletion cycle
-(`workspacesunchecked.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
-0110, so no owner's removal of them has a name) and each owner's step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
-the bus, `suppressionsunchecked.EraseContact` and the others
+(`workspacesunchecked.Module.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
+0110, so no owner's removal of them has a name) and each owner's step of a Contact's Erasure (`visitorsunchecked.Module.EraseSubject`, `eventsunchecked.EraseSubject` of
+the bus, `suppressionsunchecked.Module.EraseContact` and the others
 `internal/usecase/contacterasure`
-sequences, with the Contact row last, `contactsunchecked.DeleteIn`; the purge of its queued jobs is a method of the bus's publisher). A new fence for any other caller has the same form: a
+sequences, with the Contact row last, `contactsunchecked.Module.DeleteIn`; the purge of its queued jobs runs in the Erasure's transaction: an owner's step purges through `Bus.PurgeJobsIn`, and the use case purges the Events' and Webhooks' jobs through the `events.PurgingPublisher` that `WithinScopedPurgeTx` hands it). A new fence for any other caller has the same form: a
 subpackage and one component whose `allow_importers` names who may import it, as the readers of
 the Removal check are (`<module>use`). The tests of the operation live in the use case's own `_test` package
 (`internal/usecase/tagdeletion`, `internal/usecase/customfieldretyping`, `internal/usecase/unsubscriberecording`; a retype's refusal is also tested through the API's Custom field update, an Erasure through the APIs' Contact deletion and Privacy request), through its exports; the domain module keeps the tests of its own
@@ -152,7 +153,7 @@ Enrollment, in the opt-out's transaction. No opt-out writes a Broadcast row: the
 Channel or a Telegram button, publishes the internal `message.unsubscribed` in its transaction
 (`unsubscriberecording`, or `channelstop` for an SMS link and a Telegram button), and the broadcasts
 consumer (`event_broadcast_unsubscribe`, a job per ADR 0101) is the one caller of
-`broadcasts.RecordUnsubscribe`, after the opt-out commits (ADR 0115). The public
+`broadcasts.Module.RecordUnsubscribe`, after the opt-out commits (ADR 0115). The public
 `email.unsubscribed`, `telegram.unsubscribed` and `sms.unsubscribed` name the Broadcast on the
 Contact's Event only and count nothing. Nothing is lost: the job is inserted in the opt-out's
 transaction, and the count is set once.

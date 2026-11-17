@@ -175,7 +175,7 @@ func TestLifecycleResetNeverReusesAnEnrollmentIdentity(t *testing.T) {
 	code, err := totp.GenerateCode(second.Secret, c.Now())
 	require.NoError(t, err)
 
-	_, err = testhelper.Module[*secondfactors.Module](env).ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+	_, err = testhelper.Module[*secondfactors.Module](env).ConfirmEnrollment(t.Context(), env.DB.User.GetX(t.Context(), fixtures.OwnerJohnID), secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code, Proof: users.IdentityProof{Password: fixtures.OwnerJohnPassword}})
 
 	require.ErrorIs(t, err, lifecycle.ErrInvalidTransition)
 }
@@ -189,7 +189,7 @@ func TestLifecycleConfirmationCannotUndoAReset(t *testing.T) {
 	require.NoError(t, err)
 	result := make(chan error, 1)
 	go func() {
-		_, err := r.factors.ConfirmEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), users.IdentityProof{Password: fixtures.OwnerJohnPassword}, secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code})
+		_, err := r.factors.ConfirmEnrollment(t.Context(), r.client.User.GetX(t.Context(), fixtures.OwnerJohnID), secondfactors.ConfirmInput{EnrollmentID: first.ID, Code: code, Proof: users.IdentityProof{Password: fixtures.OwnerJohnPassword}})
 		result <- err
 	}()
 	testhelper.Receive(t, ready, "confirmation checked the secret before reset")
@@ -267,7 +267,7 @@ func TestClearFactorAndPasskeysInDropsWhateverTheUserHolds(t *testing.T) {
 			env, _ := setup(t)
 			ctx := t.Context()
 
-			_, err := secondfactors.ClearFactorAndPasskeysIn(ctx, env.DB, userID)
+			_, err := testhelper.Module[*secondfactors.Module](env).ClearFactorAndPasskeysIn(ctx, env.DB, userID)
 
 			require.NoError(t, err)
 			st, err := testhelper.Module[*secondfactors.Module](env).Status(ctx, userID)

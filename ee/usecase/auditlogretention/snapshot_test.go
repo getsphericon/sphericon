@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ee/licensekey"
-	"github.com/getsphericon/sphericon/ee/usecase/auditlogretention"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -21,7 +20,7 @@ func TestPruneNeverRemovesAClosedUsageSnapshot(t *testing.T) {
 	require.Positive(t, before, "the fixture snapshot of December 2025 is closed")
 	env.DB.Workspace.Update().SetRetentionDays(1).ExecX(t.Context())
 
-	n, err := auditlogretention.New(env.DB, testhelper.License(t, licensekey.FeatureRetention), func() time.Time { return febFirst.AddDate(5, 0, 0) }).Prune(t.Context())
+	n, err := retention(env, testhelper.License(t, licensekey.FeatureRetention), func() time.Time { return febFirst.AddDate(5, 0, 0) }).Prune(t.Context())
 
 	require.NoError(t, err)
 	assert.Positive(t, n, "the prune ran and removed the old Audit entries")

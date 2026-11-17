@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -91,7 +90,7 @@ func TestSiteWorkspaceStandingLeavesTheWorkspace(t *testing.T) {
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeAdminMembershipID)})
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	require.NoError(t, workspaces.MarkAbuseWarned(ctx, env.DB, fixtures.AcmeID, time.Now()))
+	require.NoError(t, testhelper.Module[*workspaces.Module](env).MarkAbuseWarned(ctx, env.DB, fixtures.AcmeID))
 
 	after := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
 	moved := env.DB.Workspace.QueryStanding(after).OnlyX(ctx)

@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/suppression"
 	"github.com/getsphericon/sphericon/ent/trackinghostchange"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -40,7 +41,7 @@ func deleteUmbrella(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 func runErase(t *testing.T, env *testhelper.TestEnv) {
 	t.Helper()
 	clock := func() time.Time { return now }
-	m := workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock)
+	m := workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), testhelper.Module[*memberships.Module](env), clock)
 	_, err := m.EraseDue(context.Background())
 	require.NoError(t, err)
 }

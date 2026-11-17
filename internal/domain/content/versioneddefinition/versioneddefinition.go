@@ -154,14 +154,23 @@ func (l *Lifecycle[O, V, E, B]) Create(ctx context.Context, s *ent.Scoped, owner
 	return l.Get(ctx, s, id)
 }
 
+// EditInput is an edit of an object's definition: the revision it was made on, the new name (nil
+// keeps it) and the edit of the definition, which Definition.Merge applies to the draft's base.
+type EditInput[E any] struct {
+	Revision int64
+	Name     *string
+	Edit     E
+}
+
 // Edit writes the edit to the object's draft (ADR 0065): the fields it leaves out keep the
 // draft's, or the live version's when there is no draft. The live version is never rewritten: the
 // first edit above it makes the draft, the version above the newest, and the next ones rewrite the
 // draft in place. A definition equal to the one it starts from stores nothing. The status is
-// untouched. revision is the one the edit was made on (ADR 0119): an object that moved past it is
-// RevisionChanged and nothing is written. name, when given and different, renames the object in
-// the same write as the move, so one save moves the revision once.
-func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id, revision int64, name *string, edit E) (*O, error) {
+// untouched. The input's revision is the one the edit was made on (ADR 0119): an object that moved
+// past it is RevisionChanged and nothing is written. Its name, when given and different, renames
+// the object in the same write as the move, so one save moves the revision once.
+func (l *Lifecycle[O, V, E, B]) Edit(ctx context.Context, s *ent.Scoped, id int64, in EditInput[E]) (*O, error) {
+	revision, name, edit := in.Revision, in.Name, in.Edit
 	err := l.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
 		ts := wl.Scope()
 		store := l.def.Store(ts)

@@ -43,14 +43,13 @@ func sendFrom(t *testing.T, env *testhelper.TestEnv, m *outboundmessages.Module,
 	return msgs[len(msgs)-1]
 }
 
-func tracked(env *testhelper.TestEnv, opts ...outboundmessages.Option) *outboundmessages.Module {
-	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local", time.Now), time.Now, opts...)
+func tracked(env *testhelper.TestEnv, deps outboundmessages.Deps) *outboundmessages.Module {
+	return outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: env.CustomerMail}, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), deps, outboundmessages.Config{}, time.Now)
 }
 
-// trackingDomains is the option the composition root passes while the Instance offers Tracking
-// domains.
-func trackingDomains(env *testhelper.TestEnv) outboundmessages.Option {
-	return outboundmessages.WithTrackingDomains(trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{Now: time.Now}))
+// trackingDomains is what the composition root passes while the Instance offers Tracking domains.
+func trackingDomains(env *testhelper.TestEnv) outboundmessages.Deps {
+	return outboundmessages.Deps{TrackingHosts: trackingdomains.New(env.DB, env.Bus, trackingdomains.Config{Now: time.Now})}
 }
 
 // Every link of a Workspace whose current Tracking domain serves is on it, whatever the
@@ -72,15 +71,15 @@ func TestNonServingOrDisabledTrackingUsesInstanceHost(t *testing.T) {
 	cases := []struct {
 		name string
 		ws   int64
-		opts []outboundmessages.Option
+		deps outboundmessages.Deps
 	}{
-		{"dns verified", fixtures.InitechID, []outboundmessages.Option{trackingDomains(env)}},
-		{"feature off", fixtures.UmbrellaID, nil},
+		{"dns verified", fixtures.InitechID, trackingDomains(env)},
+		{"feature off", fixtures.UmbrellaID, outboundmessages.Deps{}},
 	}
 	for _, c := range cases {
 		domain, err := env.DB.SendingDomain.Query().Where(sendingdomain.WorkspaceID(c.ws), dkimstate.Verified()).First(t.Context())
 		require.NoError(t, err, c.name)
-		msg := sendFrom(t, env, tracked(env, c.opts...), c.ws, "th:"+c.name, domain.Domain)
+		msg := sendFrom(t, env, tracked(env, c.deps), c.ws, "th:"+c.name, domain.Domain)
 		assert.Contains(t, msg.HTML, "http://local/e/c/", c.name)
 		assert.Contains(t, msg.HTML, "http://local/e/o/", c.name)
 		assert.Contains(t, msg.HTML, "http://local/e/u/", c.name)

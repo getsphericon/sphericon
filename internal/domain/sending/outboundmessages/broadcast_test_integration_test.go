@@ -51,10 +51,10 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 		env.Bus,
 		testhelper.Module[*holds.Holds](env),
 		via,
-		messagetoken.New("test-secret", "http://local", time.Now),
+		messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now),
+		outboundmessages.Deps{System: env.SystemMail, Users: users.New(env.DB, env.Bus, nil, nil, nil, users.Modules{}, time.Now)},
+		outboundmessages.Config{},
 		time.Now,
-		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
 	)
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Channel: channels.Email, Subject: new("Launch"), Body: new(htmlBody), FromEmail: &from, IntegrationID: integrationID}
 	return m.SendBroadcastTest(context.Background(), asJane(env, workspaceID), b, outboundmessages.TestAddress{Email: to})

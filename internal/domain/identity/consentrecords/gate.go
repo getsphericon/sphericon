@@ -110,6 +110,6 @@ func (m *Module) acceptPending(ctx context.Context, userID int64, accepted []ReA
 	}
 	consents := Consents{Source: consentrecord.SourceReAcceptance, Entries: entries}
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		return Write(ctx, tx, userID, consents)
+		return m.Write(ctx, tx, userID, consents)
 	})
 }

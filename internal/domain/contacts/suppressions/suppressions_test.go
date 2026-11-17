@@ -21,17 +21,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// registry is the Suppressions module the tests write through, on the wall clock.
+var registry = suppressions.New(time.Now)
+
 func TestAddNormalizesAndSuppressesInEligibility(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppressions.AddManual(ctx, s, channels.Email, "  Blocked@Example.COM ")
+	got, err := registry.AddManual(ctx, s, channels.Email, "  Blocked@Example.COM ")
 	require.NoError(t, err)
 	assert.Equal(t, "blocked@example.com", got.Destination)
 	assert.Equal(t, entsuppression.ReasonManual, got.Reason)
 
-	verdict, err := eligibility.Check(ctx, s, channels.Email, "BLOCKED@example.com", eligibility.SourceBroadcasts)
+	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: "BLOCKED@example.com", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
 	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
@@ -42,7 +45,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppressions.AddManual(ctx, s, channels.Email, fixtures.SuppressionGhostBounceDestination)
+	got, err := registry.AddManual(ctx, s, channels.Email, fixtures.SuppressionGhostBounceDestination)
 	require.NoError(t, err)
 	assert.Equal(t, entsuppression.ReasonBounce, got.Reason)
 	assert.Equal(t, int64(fixtures.SuppressionGhostBounceID), got.ID)
@@ -50,7 +53,7 @@ func TestAddIsIdempotentAndKeepsTheFirstReason(t *testing.T) {
 
 func TestAddRefusesABlankDestination(t *testing.T) {
 	env := testhelper.Setup(t)
-	err := suppressions.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppressions.Entry{Destination: "   ", Reason: entsuppression.ReasonManual})
+	err := registry.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppressions.Entry{Destination: "   ", Reason: entsuppression.ReasonManual})
 	assert.ErrorIs(t, err, suppressions.ErrDestinationEmpty)
 }
 
@@ -60,7 +63,7 @@ func TestAddRefusesADestinationLongerThanTheContract(t *testing.T) {
 	env := testhelper.Setup(t)
 	long := strings.Repeat("a", 321)
 
-	err := suppressions.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppressions.Entry{
+	err := registry.Add(t.Context(), env.DB.Scoped(fixtures.AcmeID), suppressions.Entry{
 		Channel: channels.Telegram, Destination: long, Reason: entsuppression.ReasonManual,
 	})
 
@@ -71,7 +74,7 @@ func TestAddIsWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	got, err := suppressions.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), channels.Email, fixtures.ContactAliceEmail)
+	got, err := registry.AddManual(ctx, env.DB.Scoped(fixtures.GlobexID), channels.Email, fixtures.ContactAliceEmail)
 	require.NoError(t, err)
 	assert.Equal(t, int64(fixtures.GlobexID), got.WorkspaceID)
 
@@ -86,9 +89,9 @@ func TestListPagesNewestFirst(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	all, err := suppressions.List(ctx, s, pagination.Params{Page: 1, PageSize: 100}, false)
+	all, err := registry.List(ctx, s, pagination.Params{Page: 1, PageSize: 100}, false)
 	require.NoError(t, err)
-	first, err := suppressions.List(ctx, s, pagination.Params{Page: 1, PageSize: 2}, false)
+	first, err := registry.List(ctx, s, pagination.Params{Page: 1, PageSize: 2}, false)
 	require.NoError(t, err)
 	assert.Len(t, first.Items, 2)
 	assert.Equal(t, all.TotalItems, first.TotalItems)
@@ -101,13 +104,13 @@ func TestRemoveLiftsAndReportsAMissingOrLiftedRow(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	added, err := suppressions.AddManual(ctx, s, channels.Email, "gone@example.com")
+	added, err := registry.AddManual(ctx, s, channels.Email, "gone@example.com")
 	require.NoError(t, err)
-	require.NoError(t, suppressions.Remove(ctx, s, added.ID, time.Now()))
+	require.NoError(t, registry.Remove(ctx, s, added.ID))
 
-	err = suppressions.Remove(ctx, s, added.ID, time.Now())
+	err = registry.Remove(ctx, s, added.ID)
 	require.ErrorIs(t, err, suppressions.ErrNotFound, "a lifted row cannot be lifted again")
-	require.ErrorIs(t, suppressions.Remove(ctx, s, 987654321, time.Now()), suppressions.ErrNotFound)
+	require.ErrorIs(t, registry.Remove(ctx, s, 987654321), suppressions.ErrNotFound)
 
 	kept, err := s.Suppression().Get(ctx, added.ID)
 	require.NoError(t, err)
@@ -150,17 +153,17 @@ func TestAManualSMSSuppressionStoresTheNumberInE164(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	got, err := suppressions.AddManual(ctx, s, channels.SMS, " +1 (415) 555-0132 ")
+	got, err := registry.AddManual(ctx, s, channels.SMS, " +1 (415) 555-0132 ")
 	require.NoError(t, err)
 	assert.Equal(t, "+14155550132", got.Destination)
 	assert.Equal(t, channels.SMS, got.Channel)
 
-	verdict, err := eligibility.Check(ctx, s, channels.SMS, "+14155550132", eligibility.SourceBroadcasts)
+	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: "+14155550132", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, verdict.Reason)
 
 	for _, typed := range []string{"4155550132", "not a number", "+1"} {
-		_, err := suppressions.AddManual(ctx, s, channels.SMS, typed)
+		_, err := registry.AddManual(ctx, s, channels.SMS, typed)
 		assert.ErrorIs(t, err, suppressions.ErrDestinationInvalid, typed)
 	}
 }

@@ -27,7 +27,7 @@ func WritePresetTests(w io.Writer, name string, results []preset.CaseResult) err
 }
 
 // WritePresetSample reports `sphericon preset test --payload`: the facts a verified sample made
-// (preset.Preset.Handle), one line each, or the reason it was refused, which it returns.
+// (preset.Engine.Handle), one line each, or the reason it was refused, which it returns.
 func WritePresetSample(w io.Writer, res preset.Result, err error) error {
 	if err != nil {
 		_, _ = fmt.Fprintf(w, "refused: %v\n", err)

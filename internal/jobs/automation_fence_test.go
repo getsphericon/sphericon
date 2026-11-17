@@ -15,6 +15,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -102,8 +103,8 @@ func (e *realEnv) queueThrough(t *testing.T, wrap func(events.JobQueue) events.J
 func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *automations.StepExecution {
 	t.Helper()
 	bus := e.bus(t)
-	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
-	return automations.NewStepExecution(bus, mod, e.fence, nil, nil, time.Now)
+	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, 0, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local", time.Now), e.env.OutboundModules(bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
+	return automations.NewStepExecution(bus, mod, testhelper.Module[*contacts.Module](e.env), e.fence, nil, nil, time.Now)
 }
 
 // enrollments is the env's Step execution, for a race that hands it an Event: it ends and makes
@@ -166,9 +167,8 @@ func TestExitDuringAnEmailStepWaitsForTheSendAndNothingFollows(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight send holds the Enrollment")
 
 	exited := make(chan exitResult, 1)
-	pub := testhelper.PublisherOn(e.bus(t))
 	go func() {
-		ended, err := automations.Exit(ctx, e.scoped, pub, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID, time.Now())
+		ended, err := e.env.ExitEnrollment(ctx, e.scoped, fixtures.AutomationWelcomeSeriesID, fixtures.ContactAliceID)
 		exited <- exitResult{err: err, afterTheSend: settled(bs.done), ended: ended}
 	}()
 	bs.release()
@@ -213,7 +213,7 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	_, err = mod.Publish(ctx, e.scoped, fixtures.AutomationNotifySlackID, testhelper.AutomationRevisionIn(ctx, t, e.scoped, fixtures.AutomationNotifySlackID))
 	require.NoError(t, err)
 	runID := e.enrolledNow(t, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
-	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), lowestDraw)
+	w := jobs.NewRunHTTPStepWorker(e.client, automations.NewStepExecution(bus, nil, testhelper.Module[*contacts.Module](e.env), e.fence, cipher, webhook.NewClientAllowing(2*time.Second, rcv.allow), time.Now), lowestDraw)
 
 	workDone := make(chan error, 1)
 	go func() {
@@ -226,9 +226,8 @@ func TestExitDuringAnHTTPStepWaitsForTheCall(t *testing.T) {
 	require.True(t, e.runRowIsLocked(t, runID), "an in-flight call holds the Enrollment")
 
 	exited := make(chan error, 1)
-	pub := testhelper.PublisherOn(e.bus(t))
 	go func() {
-		_, err := automations.Exit(ctx, e.scoped, pub, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID, time.Now())
+		_, err := e.env.ExitEnrollment(ctx, e.scoped, fixtures.AutomationNotifySlackID, fixtures.ContactAliceID)
 		exited <- err
 	}()
 	release()

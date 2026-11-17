@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	entworkspace "github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
@@ -37,12 +36,18 @@ func (m *Module) changeOf(ctx context.Context, id int64, changed bool) (*Workspa
 	return &WorkspaceChange{Workspace: ws, Changed: changed}, nil
 }
 
-// SuspendWorkspace freezes the Workspace's outbound sending as the Staff member, through
+// SuspendWorkspaceInput is who suspends a Workspace and why.
+type SuspendWorkspaceInput struct {
+	By     *ent.StaffMember
+	Reason string
+}
+
+// SuspendWorkspace freezes the Workspace's outbound sending as the Staff member in.By, through
 // the same Suspender the command line uses (ADR 0007), which tells its owners via the
 // system sender. It reports whether anything changed: an already-suspended
 // Workspace is left as it was and its owners are not told twice. A failed notice does
 // not undo the suspension; it is logged. A blank reason is suspension.ErrReasonRequired.
-func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.StaffMember, reason string) (*WorkspaceChange, error) {
+func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, in SuspendWorkspaceInput) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
@@ -51,7 +56,7 @@ func (m *Module) SuspendWorkspace(ctx context.Context, publicID string, by *ent.
 		return nil, err
 	}
 	id := w.ID
-	changed, err := m.suspend.Suspend(ctx, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), reason)
+	changed, err := m.suspend.Suspend(ctx, id, suspension.SuspendInput{By: suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), Reason: in.Reason})
 	if err != nil {
 		return nil, err
 	}
@@ -69,18 +74,18 @@ func (m *Module) UnsuspendWorkspace(ctx context.Context, publicID string, by *en
 		return nil, err
 	}
 	id := w.ID
-	changed, err := suspension.UnsuspendWorkspace(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), m.now())
+	changed, err := m.suspend.Unsuspend(ctx, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)))
 	if err != nil {
 		return nil, err
 	}
 	return m.changeOf(ctx, id, changed)
 }
 
-// workspace loads a Workspace row by its id (ADR 0043, workspaces.ByPublicIDIn), the only address
+// workspace loads a Workspace row by its id (ADR 0043, workspaces.Module.ByPublicIDIn), the only address
 // the console and the service endpoints take. ErrWorkspaceNotFound for an unknown id; the id is
 // case-sensitive.
 func (m *Module) workspace(ctx context.Context, publicID string) (*ent.Workspace, error) {
-	w, err := workspaces.ByPublicIDIn(ctx, m.ent, publicID)
+	w, err := m.ws.ByPublicIDIn(ctx, m.ent, publicID)
 	if ent.IsNotFound(err) {
 		return nil, ErrWorkspaceNotFound
 	}
@@ -113,20 +118,27 @@ func (m *Module) scopeOver(ctx context.Context, publicID string) (*ent.Scoped, e
 	return m.ent.Scoped(w.ID), nil
 }
 
+// ListWorkspacesInput narrows the console's Workspace list: to a review state, and to the
+// Workspaces whose id or name contains Search. Its zero value lists every live Workspace.
+type ListWorkspacesInput struct {
+	Review abusedetector.Review
+	Search string
+}
+
 // ListWorkspaces is one page of every Workspace, newest first, optionally only those
-// in a review state and those whose id or name contains search: the name matches
+// in a review state and those whose id or name contains the search: the name matches
 // case-insensitively, the id as a case-sensitive substring (base62 is case-sensitive). It reads the Workspace rows themselves
 // through the raw client: the Staff console shows tenant metadata only, never a
 // Workspace's Contacts, content or Events, so no Workspace-scoped query is made.
-func (m *Module) ListWorkspaces(ctx context.Context, review abusedetector.Review, search string, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
+func (m *Module) ListWorkspaces(ctx context.Context, in ListWorkspacesInput, p pagination.Params) (pagination.Page[*ent.Workspace], error) {
 	if err := m.licensed(); err != nil {
 		return pagination.Page[*ent.Workspace]{}, err
 	}
 	q := m.ent.Workspace.Query().WithStanding()
-	if search != "" {
-		q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(search), entworkspace.NameContainsFold(search)))
+	if in.Search != "" {
+		q = q.Where(entworkspace.Or(entworkspace.PublicIDContains(in.Search), entworkspace.NameContainsFold(in.Search)))
 	}
-	return pagination.List(ctx, p, q.Where(review.Predicate()).Order(ent.Desc(entworkspace.FieldID)))
+	return pagination.List(ctx, p, q.Where(in.Review.Predicate()).Order(ent.Desc(entworkspace.FieldID)))
 }
 
 // WorkspaceDetail is what the Staff console shows of one Workspace.
@@ -162,7 +174,7 @@ func (m *Module) GetWorkspace(ctx context.Context, publicID string) (WorkspaceDe
 	if d.Holds, err = m.holdsOf(ctx, m.ent.Scoped(w.ID)); err != nil {
 		return WorkspaceDetail{}, err
 	}
-	if d.Breach, err = m.watch.Warning(ctx, m.ent.Scoped(w.ID), w, m.now()); err != nil {
+	if d.Breach, err = m.watch.Warning(ctx, m.ent.Scoped(w.ID), w); err != nil {
 		return WorkspaceDetail{}, err
 	}
 	if m.sendCaps {
@@ -204,11 +216,18 @@ func (m *Module) deliverability(ctx context.Context, w *ent.Workspace) (abusedet
 	return out, nil
 }
 
-// SetAbuseExempt exempts the Workspace from the abuse detector, or polices it again, as
-// the Staff member (ADR 0026), through the same core mechanism, audited. It reports whether
+// SetAbuseExemptInput is who changes a Workspace's exemption from the abuse detector, and whether
+// it is exempt after the change.
+type SetAbuseExemptInput struct {
+	By     *ent.StaffMember
+	Exempt bool
+}
+
+// SetAbuseExempt exempts the Workspace from the abuse detector (in.Exempt), or polices it again,
+// as the Staff member in.By (ADR 0026), through the same core mechanism, audited. It reports whether
 // the flag changed. The Workspace stays listed with its rates and can still be suspended
 // by hand.
-func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, by *ent.StaffMember, exempt bool) (*WorkspaceChange, error) {
+func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, in SetAbuseExemptInput) (*WorkspaceChange, error) {
 	if err := m.licensed(); err != nil {
 		return nil, err
 	}
@@ -217,7 +236,7 @@ func (m *Module) SetAbuseExempt(ctx context.Context, publicID string, by *ent.St
 		return nil, err
 	}
 	id := w.ID
-	changed, err := suspension.SetAbuseExempt(ctx, m.bus, id, suspension.StaffMember(strconv.FormatInt(by.ID, 10)), exempt)
+	changed, err := m.suspend.SetAbuseExempt(ctx, id, suspension.SetAbuseExemptInput{By: suspension.StaffMember(strconv.FormatInt(in.By.ID, 10)), Exempt: in.Exempt})
 	if err != nil {
 		return nil, err
 	}

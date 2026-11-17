@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/usecase/workspaceview"
 )
@@ -98,14 +99,15 @@ func (e *Env) NewWorkspace(tb testing.TB) *Workspace {
 	ctx := tb.Context()
 	id := uniq()
 
-	user, err := e.users.CreateUser(ctx, "E2E "+id, "owner-"+id+"@e2e.test", "!")
+	user, err := e.users.CreateUser(ctx, users.CreateUserInput{Name: "E2E " + id, Email: "owner-" + id + "@e2e.test", PasswordHash: "!"})
 	require.NoError(tb, err)
 	created, err := e.creation.Create(ctx, workspaceview.CreateInput{UserID: user.ID, Name: "e2e " + id})
 	require.NoError(tb, err)
 	ws := created.Summary.Workspace
-	scoped, _, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
+	member, err := e.memberships.Scope(ctx, user.ID, ws.PublicID)
 	require.NoError(tb, err)
-	minted, err := apitokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
+	scoped := member.Scope
+	minted, err := e.tokens.Mint(ctx, scoped, apitokens.Input{Name: "e2e", Scopes: tokenScopes})
 	require.NoError(tb, err)
 
 	api, err := externalapi.NewClient(e.BaseURL+"/api", bearer(minted.Value))
@@ -183,7 +185,7 @@ func (w *Workspace) AddOwner() []int64 {
 	w.t.Helper()
 	ctx := w.t.Context()
 	id := uniq()
-	user, err := w.env.users.CreateUser(ctx, "E2E co-owner "+id, "co-owner-"+id+"@e2e.test", "!")
+	user, err := w.env.users.CreateUser(ctx, users.CreateUserInput{Name: "E2E co-owner " + id, Email: "co-owner-" + id + "@e2e.test", PasswordHash: "!"})
 	require.NoError(w.t, err)
 	// An owner change takes its Workspace feed position inside a transaction.
 	err = w.env.bus.WithinScopedTx(ctx, w.scoped, func(ts *ent.Scoped, _ events.Publisher) error {
@@ -205,13 +207,17 @@ func (w *Workspace) OwnerMembershipIDs() []int64 {
 	return ids
 }
 
+// systemOwner changes Memberships as an owner would, with the system as the actor of its Audit
+// entries.
+var systemOwner = memberships.Caller{Actor: events.Actor{Kind: events.ActorSystem}, Role: membership.RoleOwner}
+
 // DemoteConcurrently demotes each Membership to member, all at once, as an owner would,
 // and returns the error of each attempt.
 func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
-			membership.RoleOwner, ids[i], membership.RoleMember)
+		_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, systemOwner,
+			memberships.ChangeRoleInput{ID: ids[i], Role: membership.RoleMember})
 		return err
 	})
 }
@@ -221,7 +227,7 @@ func (w *Workspace) DemoteConcurrently(ids ...int64) []error {
 func (w *Workspace) RemoveConcurrently(ids ...int64) []error {
 	w.t.Helper()
 	return w.concurrently(len(ids), func(i int) error {
-		return w.env.memberships.Remove(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, ids[i])
+		return w.env.memberships.Remove(w.t.Context(), w.scoped, systemOwner, ids[i])
 	})
 }
 
@@ -231,11 +237,11 @@ func (w *Workspace) DemoteAndRemoveConcurrently(demote, remove int64) []error {
 	w.t.Helper()
 	return w.concurrently(2, func(i int) error {
 		if i == 0 {
-			_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem},
-				membership.RoleOwner, demote, membership.RoleMember)
+			_, err := w.env.memberships.ChangeRole(w.t.Context(), w.scoped, systemOwner,
+				memberships.ChangeRoleInput{ID: demote, Role: membership.RoleMember})
 			return err
 		}
-		return w.env.memberships.Remove(w.t.Context(), w.scoped, events.Actor{Kind: events.ActorSystem}, membership.RoleOwner, remove)
+		return w.env.memberships.Remove(w.t.Context(), w.scoped, systemOwner, remove)
 	})
 }
 

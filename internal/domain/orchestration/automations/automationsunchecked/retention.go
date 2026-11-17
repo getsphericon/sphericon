@@ -13,7 +13,7 @@ import (
 // case internal/usecase/messageretention runs it. It counts as the report does, sent and skipped by
 // step and the delivery stamps whatever the status, so the report reads the same figures after the
 // prune as before. Run alone, it would count messages twice.
-func AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
+func (m *Module) AddPruned(ctx context.Context, s *ent.Scoped, msgs []*ent.OutboundMessage) error {
 	type key struct {
 		automation int64
 		step       int

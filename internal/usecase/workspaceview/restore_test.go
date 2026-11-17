@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hook"
 	"github.com/getsphericon/sphericon/ent/membership"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -79,7 +80,7 @@ func TestRestoreAfterTheWindowIsRefused(t *testing.T) {
 func TestRestoreAfterErasureFindsNoOwner(t *testing.T) {
 	env := restoreEnv(t)
 	deletedAgo(t, env, testhelper.DeletionWindow+time.Hour)
-	_, err := workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), clock).EraseDue(t.Context())
+	_, err := workspacedeletion.New(env.DB, env.Bus, workspaces.New(env.DB, env.Bus, clock), testhelper.Module[*memberships.Module](env), clock).EraseDue(t.Context())
 	require.NoError(t, err)
 
 	_, err = restore(t, env)

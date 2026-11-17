@@ -31,8 +31,9 @@ func newRig(t *testing.T) rig {
 	t.Helper()
 	env := testhelper.Setup(t)
 	acc := testhelper.Module[*users.Module](env)
-	keys, err := passkeys.New(env.DB, env.Bus, acc, "https://app.example", "secret", time.Now)
+	party, err := passkeys.NewRelyingParty("https://app.example", "secret")
 	require.NoError(t, err)
+	keys := passkeys.New(env.DB, env.Bus, acc, party, time.Now)
 	module := userlogin.New(userlogin.Config{
 		Users:               acc,
 		SecondFactors:       testhelper.Module[*secondfactors.Module](env),

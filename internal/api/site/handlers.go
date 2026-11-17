@@ -6,20 +6,25 @@ import (
 	"context"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
 	"github.com/getsphericon/sphericon/internal/api/auth"
 	"github.com/getsphericon/sphericon/internal/api/problem"
 	"github.com/getsphericon/sphericon/internal/api/site/resources"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
 	"github.com/getsphericon/sphericon/internal/domain/identity/admission"
+	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
@@ -109,6 +114,7 @@ type Handlers struct {
 	automations           *automations.Module
 	rules                 *rules.Module
 	oauth                 *oauthclients.Module
+	apiTokens             *apitokens.Module
 	audit                 *auditlog.Log
 	attention             *needsattentionreport.UseCase
 	setupChecklist        *setupchecklist.Module
@@ -138,7 +144,11 @@ type Handlers struct {
 	// signin is the Sign-in providers of the Instance (ADR 0048).
 	signin *signinprovider.Providers
 	// unsubscribe records an opt-out (a use case, ADR 0102).
-	unsubscribe *unsubscriberecording.UseCase
+	unsubscribe   *unsubscriberecording.UseCase
+	suppressions  *suppressions.Module
+	confirmations *confirmations.Module
+	channelStops  *channelstop.Module
+	exports       *dataexport.Exporter
 }
 
 // Origins are the public origins besides the app's own that a Workspace resource names: where an
@@ -168,8 +178,11 @@ type Deps struct {
 	// Attempts counts the password-reset mails per account (ADR 0025).
 	Attempts *throttle.Attempts
 	OAuth    *oauthclients.Module
-	Bus      *events.Bus
-	Webhooks *webhookendpoints.Module
+	// APITokens mints, lists and revokes the Workspace's API tokens, its Connections and the
+	// Personal tokens of its members (ADR 0061).
+	APITokens *apitokens.Module
+	Bus       *events.Bus
+	Webhooks  *webhookendpoints.Module
 	// IdentityTokens keeps the Identity secret (ADR 0171).
 	IdentityTokens *identitytokens.Module
 	Outbound       *outboundmessages.Module
@@ -252,6 +265,15 @@ type Deps struct {
 	Migrations Migrations
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
+	// Suppressions adds, lists and lifts the Workspace's Suppressions.
+	Suppressions *suppressions.Module
+	// Confirmations performs a double opt-in and records and reads a Contact's SMS consent.
+	Confirmations *confirmations.Module
+	// ChannelStops records an SMS opt-out of a Contact's phone by hand.
+	ChannelStops *channelstop.Module
+	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
+	// (resources.ExportMapper).
+	Exports *dataexport.Exporter
 }
 
 // Migrations is the seam of the error page's button: it runs the migrations the database has
@@ -270,7 +292,8 @@ func NewHandlers(d *Deps) *Handlers {
 		segments: d.Segments, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, unsubscribe: d.Unsubscribe, bindings: d.Bindings, templates: d.Templates, templateViews: d.TemplateViews, brandKit: d.BrandKit,
 		automations: d.Automations, rules: d.Rules, broadcasts: d.Broadcasts, broadcastViews: d.BroadcastViews,
 		sendingDomains: d.SendingDomains, trackingDomains: d.TrackingDomains, joinDomains: d.JoinDomains, integrations: d.Integrations, integrationDeletion: d.IntegrationDeletion, sendingDomainDeletion: d.SendingDomainDeletion, captured: d.CapturedMessages, links: users.NewLinks(d.Users, d.Tokens), requests: users.NewRequests(d.Users, d.Attempts), tracker: d.Tracker, appURL: d.AppURL,
-		oauth: d.OAuth, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		oauth: d.OAuth, apiTokens: d.APITokens, audit: d.Audit, attention: d.Attention, setupChecklist: d.SetupChecklist, supportEmail: d.SupportEmail, origins: d.Origins, analytics: d.Analytics, sessions: d.Sessions, secondFactor: d.SecondFactor, admission: d.Admission, signUp: d.SignUp, userDeletion: d.UserDeletion, passkeys: d.Passkeys, now: now, instance: d.Instance, accountLink: d.AccountLink, workspaceView: d.WorkspaceView, signupSurvey: d.SignupSurvey, signupItems: d.SignupItems, consentRecords: d.ConsentRecords,
+		suppressions: d.Suppressions, confirmations: d.Confirmations, channelStops: d.ChannelStops, exports: d.Exports,
 		signin:     d.Signin,
 		migrations: d.Migrations,
 		login:      d.UserLogin,

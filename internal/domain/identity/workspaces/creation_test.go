@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -17,16 +18,16 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// A Workspace id another Workspace has inserts nothing: CreateIn draws again, and a generator that
+// A Workspace id another Workspace has inserts nothing: Creation.CreateIn draws again, and a generator that
 // only draws taken ids is a fault after a few draws, the transaction it ran in still usable.
-func TestCreateInGivesUpOnAGeneratorThatOnlyDrawsTakenIDs(t *testing.T) {
+func TestCreationGivesUpOnAGeneratorThatOnlyDrawsTakenIDs(t *testing.T) {
 	env := testhelper.Setup(t)
 	draws := 0
 	taken := func() string { draws++; return fixtures.AcmePublicID }
 	var err error
 
 	txErr := env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		_, err = workspaces.CreateIn(t.Context(), tx, "Fresh", taken, nil)
+		_, err = workspaces.NewCreation(taken).CreateIn(t.Context(), tx, "Fresh", nil)
 		return nil
 	})
 
@@ -35,7 +36,7 @@ func TestCreateInGivesUpOnAGeneratorThatOnlyDrawsTakenIDs(t *testing.T) {
 	assert.Equal(t, 3, draws, "it draws a few ids, then gives up")
 }
 
-func TestCreateInKeepsTheFirstIDThatIsFree(t *testing.T) {
+func TestCreationKeepsTheFirstIDThatIsFree(t *testing.T) {
 	env := testhelper.Setup(t)
 	ids := []string{fixtures.AcmePublicID, "FreshId1"}
 	next := func() string {
@@ -47,7 +48,7 @@ func TestCreateInKeepsTheFirstIDThatIsFree(t *testing.T) {
 	var ws *ent.Workspace
 	err := env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		ws, err = workspaces.CreateIn(t.Context(), tx, "Fresh", next, nil)
+		ws, err = workspaces.NewCreation(next).CreateIn(t.Context(), tx, "Fresh", nil)
 		return err
 	})
 
@@ -57,20 +58,20 @@ func TestCreateInKeepsTheFirstIDThatIsFree(t *testing.T) {
 
 // A new Workspace takes the next service feed position as it is created (ADR 0062), held in its
 // standing beside it (ADR 0168), which the creation makes.
-func TestCreateInGivesTheWorkspaceItsStandingWithAFeedPosition(t *testing.T) {
+func TestCreationGivesTheWorkspaceItsStandingWithAFeedPosition(t *testing.T) {
 	env := testhelper.Setup(t)
-	top, err := workspaces.TopFeedPosition(t.Context(), env.DB)
+	top, err := workspaces.NewFeed().TopPosition(t.Context(), env.DB)
 	require.NoError(t, err)
 
 	var ws *ent.Workspace
 	err = env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
 		var err error
-		ws, err = workspaces.CreateIn(t.Context(), tx, "Fresh", func() string { return "FreshId1" }, nil)
+		ws, err = workspaces.NewCreation(func() string { return "FreshId1" }).CreateIn(t.Context(), tx, "Fresh", nil)
 		return err
 	})
 
 	require.NoError(t, err)
-	standing, err := workspaces.StandingIn(t.Context(), env.DB, ws.ID)
+	standing, err := env.DB.WorkspaceStanding.Query().Where(workspacestanding.WorkspaceID(ws.ID)).Only(t.Context())
 	require.NoError(t, err)
 	assert.Equal(t, top+1, standing.FeedPosition)
 	assert.Nil(t, standing.SetupCompletedAt)
@@ -85,7 +86,7 @@ func TestTheTopFeedPositionOfAnInstanceWithoutWorkspacesIsZero(t *testing.T) {
 	_, err = db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
 
-	top, err := workspaces.TopFeedPosition(t.Context(), entclient.Core.New(sqlDB))
+	top, err := workspaces.NewFeed().TopPosition(t.Context(), entclient.Core.New(sqlDB))
 
 	require.NoError(t, err)
 	assert.Zero(t, top)

@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
-	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 )
@@ -148,12 +147,12 @@ type outcome struct {
 // never acts on a newer factor or on a User whose password or sessions moved meanwhile. The User
 // row is written before the factor row, the order every change and the second step lock them in.
 // The caller writes Recovery codes and audit/outbox entries on tx after this move.
-func move(ctx context.Context, tx *ent.Client, before snapshot, c change) (outcome, error) {
+func (m *Module) move(ctx context.Context, tx *ent.Client, before snapshot, c change) (outcome, error) {
 	out := outcome(before)
 	machine := newMachine(before.Factor, c, lifecycle.Storage[state]{Write: func(ctx context.Context, _, _ state) (bool, error) {
 		if endsSessions(c.trigger) {
-			saved, bumped, err := users.BumpSessionEpochFromIn(ctx, tx, before.User)
-			if err != nil || !bumped {
+			saved, err := m.users.BumpSessionEpochFromIn(ctx, tx, before.User)
+			if err != nil || saved == nil {
 				return false, err
 			}
 			out.User = saved

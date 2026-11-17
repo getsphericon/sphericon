@@ -28,7 +28,8 @@ forbid_symbol:
     because: *river-scheduling-because
   # The raw ent client: its holders are the closed list of docs/architecture/workspace-scoping.md
   # (Workspace scoping), kept in step with it. `allow` names the components that hold it whole: the
-  # composition roots, the security handlers, the job runners, the Workspaces and Memberships at the
+  # composition roots, the security handlers, the job runner internal/jobs (the Enterprise one,
+  # ee/jobs, takes its modules from the wiring and holds none), the Workspaces and Memberships at the
   # bottom of identity, the unchecked operations of identity that join their use case's raw
   # transaction, ent and test support. `allow_in` names the other holders package by package: the
   # domain modules, the use cases whose rows belong to no Workspace when they start (so there is no
@@ -44,7 +45,6 @@ forbid_symbol:
         domain-identity-base,
         domain-identity-unchecked,
         ee-edition,
-        ee-runner,
         ent,
         runner,
         testsupport,
@@ -441,12 +441,13 @@ components:
   # Removal check, the steps of a Contact's Erasure, the deletion cycle and the creation of a
   # Workspace, User deletion's and the Second factor reset's removals). Only a use case of the core
   # imports one, after its check: no driver, no domain module, no Enterprise package. A new unchecked
-  # operation is a function of its owner's subpackage, which the component of its owner's context
-  # takes by its name: one per context, the infrastructure's included (the bus's Erasure step), each
-  # in `layers` right above its context, so that a subpackage reaches no more than its owner's context
-  # may. The contexts with none today have theirs too (optional), so a first one is fenced. Those of
-  # identity take a transaction's raw client (ent.Client's `allow`). The priority puts a subpackage
-  # here rather than in its owner's component.
+  # operation is a method of the Module of its owner's subpackage, which the use case builds and the
+  # component of its owner's context takes by its name: one per context, the infrastructure's
+  # included (the bus's Erasure step), each in `layers` right above its context, so that a
+  # subpackage reaches no more than its owner's context may. The contexts with none today have
+  # theirs too (optional), so a first one is fenced. Those of identity take a transaction's raw
+  # client (ent.Client's `allow`). The priority puts a subpackage here rather than in its owner's
+  # component.
   domain-identity-unchecked:
     in: ['internal/domain/identity/**/*unchecked']
     priority: 1

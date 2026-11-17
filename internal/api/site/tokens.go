@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 )
 
 // SiteTokensList returns the workspace's API tokens (Connections are listed apart, ADR 0061); a
@@ -12,7 +11,7 @@ import (
 func (h *Handlers) SiteTokensList(ctx context.Context, _ siteapi.SiteTokensListParams) ([]siteapi.SiteApiTokenResource, error) {
 	scoped := workspaceScope(ctx)
 
-	tokens, err := apitokens.List(ctx, scoped)
+	tokens, err := h.apiTokens.List(ctx, scoped)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +26,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 	scoped := workspaceScope(ctx)
 
 	// Owners and admins may grant any scope of the vocabulary.
-	minted, err := apitokens.Mint(ctx, scoped, inputs.TokenCreate(req))
+	minted, err := h.apiTokens.Mint(ctx, scoped, inputs.TokenCreate(req))
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +41,7 @@ func (h *Handlers) SiteTokensCreate(ctx context.Context, req *siteapi.SiteCreate
 func (h *Handlers) SiteTokensUpdate(ctx context.Context, req *siteapi.SiteUpdateTokenInput, params siteapi.SiteTokensUpdateParams) (*siteapi.SiteApiTokenResource, error) {
 	scoped := workspaceScope(ctx)
 
-	row, err := apitokens.Rename(ctx, scoped, int64(params.ID), string(req.Name))
+	row, err := h.apiTokens.Rename(ctx, scoped, int64(params.ID), string(req.Name))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +56,7 @@ func (h *Handlers) SiteTokensDelete(ctx context.Context, params siteapi.SiteToke
 	id := int64(params.ID)
 
 	// An unknown, foreign or already-revoked id is a 404.
-	err := apitokens.Revoke(ctx, scoped, id, h.now())
+	err := h.apiTokens.Revoke(ctx, scoped, id)
 	if err != nil {
 		return err
 	}

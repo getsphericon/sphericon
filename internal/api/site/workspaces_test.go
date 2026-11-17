@@ -85,7 +85,7 @@ func TestSiteWorkspacesListExposesSuspension(t *testing.T) {
 	_, suspended := list[0].SuspendedAt.Get()
 	assert.False(t, suspended, "a workspace that can send carries no suspension")
 
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, 1, suspension.System, "complaint rate above 0.3%", time.Now())
+	_, err = testhelper.Module[*suspension.Suspender](env).Suspend(ctx, 1, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate above 0.3%"})
 	require.NoError(t, err)
 
 	list, err = c.SiteWorkspacesList(ctx)

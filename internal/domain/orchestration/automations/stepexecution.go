@@ -10,6 +10,7 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
@@ -61,7 +62,7 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 // transaction, and the Enrollments an Event or a Rule starts are made with the job of their first
 // step. It is this module's, beside the Enrollment's lifecycle it moves, and composes only modules
 // below orchestration: a tag step's change of the Contact's Tags is the Contacts module's
-// (contacts.ApplyTagIn, RemoveTagIn) and a send step is one Outbound send. It holds no raw database
+// (contacts.Module.ApplyTagIn, RemoveTagIn) and a send step is one Outbound send. It holds no raw database
 // client: a job adapter loads the Enrollment's row, builds the Workspace scope from it (the job
 // entry point of ADR 0017) and passes the scope in.
 type StepExecution struct {
@@ -71,15 +72,22 @@ type StepExecution struct {
 	cipher *secrets.Cipher
 	client webhook.Doer
 	now    func() time.Time
+	// contacts changes a Contact's Tags for a tag step, in the transaction of the step's move.
+	contacts *contacts.Module
+	// locks takes the Contact's row lock that orders its Enrollments (lockContact).
+	locks *contactlock.Module
 }
 
 // NewStepExecution builds the Step execution. The bus runs a move and the job that follows it in
-// one transaction; out sends an email step and acts as the `system` actor for a tag step; fence
-// orders a send against an exit of the Enrollment; cipher opens an HTTP step's sealed secrets and
-// client makes its call; now is the Instance clock, read to honour an Enrollment's resume time and
-// to time a wait.
-func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
-	return &StepExecution{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now}
+// one transaction; out sends an email step and acts as the `system` actor for a tag step; people
+// is the contacts module, which changes a Contact's Tags for a tag step and publishes in the
+// transaction of the bus the move runs in, so it is built over the same bus; fence orders a send
+// against an exit of the Enrollment; cipher opens an HTTP step's sealed secrets and client makes
+// its call; now is the Instance clock, read to honour an Enrollment's resume time and to time a
+// wait.
+func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, people *contacts.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
+	return &StepExecution{bus: bus, out: out, contacts: people, fence: fence, cipher: cipher, client: client, now: now,
+		locks: contactlock.New()}
 }
 
 // OnEventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
@@ -114,7 +122,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 		ev.OccurredAt = m.now()
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
+		return m.endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
 	})
 	if err != nil {
 		return err
@@ -147,7 +155,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 // ended at once is made, with no step queued (enrollOnRule).
 func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return enrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID, m.now())
+		return m.enrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID, m.now())
 	})
 }
 
@@ -156,7 +164,7 @@ func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in Enro
 // Event's action in its live version (enrollOnTrigger).
 func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return enrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
+		return m.enrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
 	})
 }
 
@@ -235,13 +243,13 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		// the order an exit takes them (lockContact, #811). The move comes before
 		// the change, so a step that lost a race tags nothing, and the change commits with it.
 		// The change is the `system` actor's (ADR 0022): a Tag the step creates is audited.
-		return m.advance(ctx, s, run.ID, step, stepMove{contactID: run.ContactID, with: func(ts *ent.Scoped, pub events.Publisher) error {
+		return m.advance(ctx, s, run.ID, step, stepMove{contactID: run.ContactID, with: func(ts *ent.Scoped, _ events.Publisher) error {
 			sys := m.out.AsSystem(ts)
 			if st.Type == automationstep.ApplyTag {
-				_, err := contacts.ApplyTagIn(ctx, sys, pub, run.ContactID, st.Tag)
+				_, err := m.contacts.ApplyTagIn(ctx, sys, run.ContactID, st.Tag)
 				return err
 			}
-			return contacts.RemoveTagIn(ctx, sys, pub, run.ContactID, st.Tag)
+			return m.contacts.RemoveTagIn(ctx, sys, run.ContactID, st.Tag)
 		}})
 
 	case automationstep.HTTP:
@@ -302,8 +310,8 @@ func (m *StepExecution) send(ctx context.Context, s *ent.Scoped, a *ent.Automati
 		if res.Reason == eligibility.ReasonUnsubscribedSource {
 			// The Contact unsubscribed from this Automation: that exits the Enrollment, from
 			// whichever Channel it came (ADR 0081).
-			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-				return exitRun(ctx, ts, pub, run.ID, m.now())
+			return quiet(m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+				return exitRun(ctx, m.bus, ts, run.ID, m.now())
 			}))
 		}
 		// No Destination on the step's Channel, an opt-out from the Channel or a Suppression: the
@@ -335,7 +343,7 @@ type stepMove struct {
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv stepMove) error {
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {
-			_, locked, err := lockContact(ctx, ts, mv.contactID)
+			_, locked, err := m.lockContact(ctx, ts, mv.contactID)
 			if err != nil || !locked {
 				return err // an erased Contact's Enrollment is erased with it
 			}

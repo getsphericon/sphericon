@@ -18,9 +18,14 @@ import (
 	apitokens "github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	consentrecords "github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	invitations "github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	memberships "github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	passkeys "github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	secondfactors "github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	signup "github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	users "github.com/getsphericon/sphericon/internal/domain/identity/users"
+	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -257,6 +262,14 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadca
 	}
 	return broadcastsCreateInput, nil
 }
+func (c *InputsImpl) BroadcastSchedule(source *site.ScheduleBroadcastInput) broadcasts.ScheduleInput {
+	var broadcastsScheduleInput broadcasts.ScheduleInput
+	if source != nil {
+		broadcastsScheduleInput.Revision = revisionIn((*source).Revision)
+		broadcastsScheduleInput.ScheduledAt = timeIn((*source).ScheduledAt)
+	}
+	return broadcastsScheduleInput
+}
 func (c *InputsImpl) BroadcastStatus(source site.BroadcastStatus) broadcast.Status {
 	var broadcastStatus broadcast.Status
 	switch source {
@@ -305,6 +318,7 @@ func (c *InputsImpl) BroadcastsListFilter(source site.SiteBroadcastsListParams) 
 	broadcastsListFilter.Archived = boolIn(source.Archived)
 	broadcastsListFilter.Statuses = c.BroadcastStatuses(source.Status)
 	broadcastsListFilter.Channel = broadcastChannelPtrIn(c, source.Channel)
+	// broadcastsListFilter.Order: ignore
 	return broadcastsListFilter
 }
 func (c *InputsImpl) BroadcastsOrder(source site.SiteBroadcastsOrder) broadcasts.Order {
@@ -359,6 +373,12 @@ func (c *InputsImpl) ContactCreate(source *site.SiteCreateContactInput) contacts
 	}
 	return contactsCreateInput
 }
+func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexport.OpenInput {
+	var dataexportOpenInput dataexport.OpenInput
+	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
+	dataexportOpenInput.Email = emailPtrIn(source.Email)
+	return dataexportOpenInput
+}
 func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput
 	if source != nil {
@@ -398,6 +418,20 @@ func (c *InputsImpl) EmailBroadcastContentPatch(source site.EmailBroadcastConten
 	broadcastsEmailContentPatch.Body = stringPatch(source.Body)
 	broadcastsEmailContentPatch.Doc = documentPatch(source.Doc)
 	return broadcastsEmailContentPatch
+}
+func (c *InputsImpl) EmailChange(source *site.SiteEmailChangeInput) users.EmailChangeInput {
+	var usersEmailChangeInput users.EmailChangeInput
+	if source != nil {
+		usersEmailChangeInput.NewEmail = string((*source).NewEmail)
+		usersEmailChangeInput.CurrentPassword = (*source).CurrentPassword
+	}
+	return usersEmailChangeInput
+}
+func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) automations.EnrollmentsFilter {
+	var automationsEnrollmentsFilter automations.EnrollmentsFilter
+	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)
+	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
+	return automationsEnrollmentsFilter
 }
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
@@ -471,6 +505,37 @@ func (c *InputsImpl) MembershipRole(source site.SiteMembershipRole) membership.R
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return membershipRole
+}
+func (c *InputsImpl) MembershipRoleChange(source *site.SiteUpdateMembershipInput) memberships.ChangeRoleInput {
+	var membershipsChangeRoleInput memberships.ChangeRoleInput
+	if source != nil {
+		// membershipsChangeRoleInput.ID: ignore
+		membershipsChangeRoleInput.Role = c.MembershipRole((*source).Role)
+	}
+	return membershipsChangeRoleInput
+}
+func (c *InputsImpl) OptionalConsentChange(source *site.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput {
+	var consentrecordsSetOptionalConsentInput consentrecords.SetOptionalConsentInput
+	if source != nil {
+		// consentrecordsSetOptionalConsentInput.Key: ignore
+		consentrecordsSetOptionalConsentInput.Version = string((*source).Version)
+		consentrecordsSetOptionalConsentInput.Accepted = (*source).Accepted
+	}
+	return consentrecordsSetOptionalConsentInput
+}
+func (c *InputsImpl) PasskeyRemove(source site.SitePasskeysRemoveParams) passkeys.RemoveInput {
+	var passkeysRemoveInput passkeys.RemoveInput
+	passkeysRemoveInput.ID = int64(source.ID)
+	// passkeysRemoveInput.Proof: ignore
+	return passkeysRemoveInput
+}
+func (c *InputsImpl) PasskeyRename(source *site.SitePasskeyRenameInput) passkeys.RenameInput {
+	var passkeysRenameInput passkeys.RenameInput
+	if source != nil {
+		// passkeysRenameInput.ID: ignore
+		passkeysRenameInput.Name = nameIn((*source).Name)
+	}
+	return passkeysRenameInput
 }
 func (c *InputsImpl) PersonalScope(source site.PersonalScope) tokenscope.PersonalScope {
 	var tokenscopePersonalScope tokenscope.PersonalScope
@@ -566,6 +631,15 @@ func (c *InputsImpl) ReAcceptances(source []site.SiteAcceptance) []consentrecord
 	}
 	return consentrecordsReAcceptanceList
 }
+func (c *InputsImpl) RevenueSettingsSet(source *site.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput {
+	var workspacesSetRevenueSettingsInput workspaces.SetRevenueSettingsInput
+	if source != nil {
+		workspacesSetRevenueSettingsInput.Revision = revisionIn((*source).Revision)
+		workspacesSetRevenueSettingsInput.ReportingCurrency = currencyCodePtrIn((*source).ReportingCurrency)
+		workspacesSetRevenueSettingsInput.AttributionWindowDays = attributionWindowDaysPtrIn((*source).AttributionWindowDays)
+	}
+	return workspacesSetRevenueSettingsInput
+}
 func (c *InputsImpl) RuleActionType(source site.RuleActionType) rules.ActionType {
 	var rulesActionType rules.ActionType
 	switch source {
@@ -631,8 +705,17 @@ func (c *InputsImpl) SecondFactorConfirm(source *site.SiteSecondFactorConfirmInp
 	if source != nil {
 		secondfactorsConfirmInput.EnrollmentID = int64((*source).EnrollmentId)
 		secondfactorsConfirmInput.Code = (*source).Code
+		// secondfactorsConfirmInput.Proof: ignore
 	}
 	return secondfactorsConfirmInput
+}
+func (c *InputsImpl) SecondFactorDisable(source *site.SiteSecondFactorDisableInput) secondfactors.DisableInput {
+	var secondfactorsDisableInput secondfactors.DisableInput
+	if source != nil {
+		secondfactorsDisableInput.Code = (*source).Code
+		// secondfactorsDisableInput.Proof: ignore
+	}
+	return secondfactorsDisableInput
 }
 func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspaceview.SetSecondFactorRequirementInput {
 	var workspaceviewSetSecondFactorRequirementInput workspaceview.SetSecondFactorRequirementInput

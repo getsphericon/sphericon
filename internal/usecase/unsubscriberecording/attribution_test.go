@@ -35,7 +35,7 @@ func TestAcceptedAttributionSurvivesErasureInEitherHandlingOrder(t *testing.T) {
 			at := time.Date(2026, 11, 7, 12, 0, 0, 0, time.UTC)
 			env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
 			s := env.DB.Scoped(fixtures.InitechID)
-			u := unsubscriberecording.New(env.Bus, func() time.Time { return at })
+			u := testhelper.Module[*unsubscriberecording.UseCase](env)
 			target := linktarget.Unsubscribe{
 				Channel: channels.Email, Source: eligibility.SourceEverything,
 				Destination: fixtures.ContactErasableEmail, WorkspaceID: fixtures.InitechID,
@@ -77,11 +77,11 @@ func TestSMSLinkPropagatesMandatorySubscriberConstraintFailures(t *testing.T) {
 			return failure
 		},
 	})
-	u := unsubscriberecording.New(env.Bus, time.Now)
+	u := testhelper.Module[*unsubscriberecording.UseCase](env)
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	err := u.RecordLink(t.Context(), scope, linktarget.Unsubscribe{Channel: channels.SMS, Source: eligibility.SourceEverything, WorkspaceID: fixtures.AcmeID, Destination: fixtures.ContactTexterPhone})
 	require.ErrorIs(t, err, failure)
-	row, err := unsubscribes.SMSOptOut(t.Context(), scope, fixtures.ContactTexterPhone)
+	row, err := unsubscribes.New().SMSOptOut(t.Context(), scope, fixtures.ContactTexterPhone)
 	require.NoError(t, err)
 	assert.Nil(t, row)
 	assert.Empty(t, env.QueuedEvents(t, events.NameSmsOptOutRecorded))

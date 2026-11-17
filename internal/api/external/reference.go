@@ -6,14 +6,13 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
 // CustomFieldsList returns the whole (small, unpaginated) Custom field catalogue.
 func (h *Handlers) CustomFieldsList(ctx context.Context) (*externalapi.CustomFieldsListOK, error) {
-	items, err := contacts.CustomFields(ctx, auth.TokenScoped(ctx))
+	items, err := h.contacts.CustomFields(ctx, auth.TokenScoped(ctx))
 	if err != nil {
 		return nil, err
 	}

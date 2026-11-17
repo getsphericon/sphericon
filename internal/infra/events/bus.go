@@ -106,6 +106,7 @@ func (b *Bus) within(ctx context.Context, fn func(tx *ent.Client, pub *txPublish
 	txClient.Use(b.hooks...)
 
 	pub := &txPublisher{bus: b, tx: sqlTx, client: txClient}
+	drv.pub = pub
 	err = fn(txClient, pub)
 	if err == nil {
 		err = pub.failed
@@ -144,6 +145,9 @@ type txDriver struct {
 	// preCommit is the work registered by BeforeCommit, in order, and byKey the same work by key.
 	preCommit []ent.PreCommit
 	byKey     map[any]ent.PreCommit
+	// pub is the publisher of the transaction, which PublishIn and EnqueueIn recover from a client
+	// bound to it.
+	pub *txPublisher
 }
 
 // BeforeCommit registers what mk makes to run right before the transaction commits, unless work
@@ -224,6 +228,9 @@ type txPublisher struct {
 	failed error
 	// committed runs once tx has committed, in order.
 	committed []func()
+	// purging marks the transaction of an Erasure (WithinScopedPurgeTx), the one PurgeJobsIn
+	// purges in.
+	purging bool
 }
 
 // Publish claims an external identity, writes the optional Event row, runs mandatory reactions

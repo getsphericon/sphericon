@@ -18,6 +18,9 @@ import (
 // erasedAt is the moment the tombstone tests erase at.
 var erasedAt = time.Date(2026, time.October, 19, 12, 0, 0, 0, time.UTC)
 
+// unchecked runs the moves at erasedAt.
+var unchecked = workspacesunchecked.New(func() time.Time { return erasedAt })
+
 // deletedAgo puts Initech into deletion, deleted ago before erasedAt.
 func deletedAgo(t *testing.T, env *testhelper.TestEnv, ago time.Duration) {
 	t.Helper()
@@ -30,7 +33,7 @@ func tombstone(t *testing.T, env *testhelper.TestEnv) (bool, error) {
 	var erased bool
 	var err error
 	txErr := env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		erased, err = workspacesunchecked.TombstoneIn(t.Context(), tx, fixtures.InitechID, erasedAt)
+		erased, err = unchecked.TombstoneIn(t.Context(), tx, fixtures.InitechID)
 		return nil
 	})
 	require.NoError(t, txErr)
@@ -60,7 +63,7 @@ func TestTombstoneInFinishesAWorkspaceRestoredFirstAsANoOp(t *testing.T) {
 	env := testhelper.Setup(t)
 	deletedAgo(t, env, 24*time.Hour)
 	require.NoError(t, env.Bus.WithinTx(t.Context(), func(tx *ent.Client, _ events.Publisher) error {
-		_, err := workspacesunchecked.RestoreIn(t.Context(), tx, fixtures.InitechID, erasedAt)
+		_, err := unchecked.RestoreIn(t.Context(), tx, fixtures.InitechID)
 		return err
 	}))
 	before := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID)

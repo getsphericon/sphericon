@@ -41,7 +41,7 @@ func (m *UseCase) ClicksByLink(ctx context.Context, s *ent.Scoped, w Window) ([]
 	if err != nil {
 		return nil, err
 	}
-	rows, err := linkclick.ByOwner(ctx, s, linkclick.Between{Since: days.Since, Until: days.Until})
+	rows, err := m.clicks.ByOwner(ctx, s, linkclick.Between{Since: days.Since, Until: days.Until})
 	if err != nil {
 		return nil, err
 	}

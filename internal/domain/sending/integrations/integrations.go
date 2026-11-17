@@ -22,6 +22,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -104,8 +105,9 @@ type Module struct {
 	catalog *messaging.Catalog
 	presets *preset.Registry
 	appURL  string
+	confirm Confirmer
+	limits  *providerlimit.Module
 	now     func() time.Time
-	confirm func(ctx context.Context, url string) error
 }
 
 // missing turns the store's miss into ErrNotFound.
@@ -139,24 +141,15 @@ func (m *Module) editable(ctx context.Context, s *ent.Scoped, id int64) (*ent.In
 	return row, nil
 }
 
-// Option tunes the module.
-type Option func(*Module)
-
-// WithSubscriptionConfirmer replaces how a Preset's confirm action is performed: a GET
-// through the SSRF-guarded client by default.
-func WithSubscriptionConfirmer(f func(ctx context.Context, url string) error) Option {
-	return func(m *Module) { m.confirm = f }
-}
-
 // New builds the module. presets is the Instance's Preset registry, appURL the public origin the
-// hook URLs are built from and now the Instance clock a quota lookup and the 24-hour usage are
-// read against.
-func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, now func() time.Time, opts ...Option) *Module {
-	m := &Module{bus: bus, cipher: cipher, catalog: catalog, presets: presets, appURL: appURL, now: now, confirm: confirmByGet}
-	for _, opt := range opts {
-		opt(m)
+// hook URLs are built from, confirm performs a Preset's confirm action (WebConfirmer; a test's
+// stand-in records it), limits the Provider limit's reads the 24-hour usage comes from, and now
+// the Instance clock a quota lookup is read against.
+func New(bus *events.Bus, cipher *secrets.Cipher, catalog *messaging.Catalog, presets *preset.Registry, appURL string, confirm Confirmer, limits *providerlimit.Module, now func() time.Time) *Module {
+	return &Module{
+		bus: bus, cipher: cipher, catalog: catalog, presets: presets, appURL: appURL, confirm: confirm,
+		limits: limits, now: now,
 	}
-	return m
 }
 
 // SMTPConfig and SESConfig are the write-side provider settings, secrets included.

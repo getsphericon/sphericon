@@ -72,7 +72,7 @@ func TestSiteWebhookSaveSurvivesAFailureRecordButNotATurnOff(t *testing.T) {
 	before := env.DB.WebhookEndpoint.GetX(ctx, fixtures.WebhookCodebasicsID)
 
 	failure := &webhook.DeliveryError{Kind: webhook.KindHTTPStatus, Status: http.StatusServiceUnavailable}
-	require.NoError(t, testhelper.Module[*webhookendpoints.Module](env).RecordDelivery(ctx, env.DB.Scoped(fixtures.AcmeID), before, failure, time.Now()))
+	require.NoError(t, testhelper.Module[*webhookendpoints.Module](env).RecordDelivery(ctx, env.DB.Scoped(fixtures.AcmeID), before, failure))
 	failed, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams(params))
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), failed.Failure.Value.ConsecutiveFailures, "the Webhook shows the failure")

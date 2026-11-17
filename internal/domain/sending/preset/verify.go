@@ -50,10 +50,17 @@ type verifyConfig struct {
 // the body: the engine parses the body under its limit first and hands it over.
 type verifier interface {
 	overBody() bool
-	verify(ctx context.Context, req Request, body any, params Params, now time.Time) error
+	verify(ctx context.Context, req Request, body any, params Params, env verifyEnv) error
 }
 
-func newVerifier(c verifyConfig, o options) (verifier, error) {
+// verifyEnv is what a verification reads besides the request: the engine's clock, for a
+// timestamp's tolerance, and the certificates an `sns` signature is checked against.
+type verifyEnv struct {
+	now   time.Time
+	certs Certificates
+}
+
+func newVerifier(c verifyConfig) (verifier, error) {
 	var tolerance time.Duration
 	if c.Tolerance != "" {
 		d, err := time.ParseDuration(c.Tolerance)
@@ -74,7 +81,7 @@ func newVerifier(c verifyConfig, o options) (verifier, error) {
 	case "token":
 		return &tokenVerifier{c: c}, nil
 	case "sns":
-		return &snsVerifier{c: c, certs: o.certs}, nil
+		return &snsVerifier{c: c}, nil
 	case "hmac_body":
 		return &hmacBody{c: c, tolerance: tolerance}, nil
 	case "twilio":
@@ -186,7 +193,7 @@ type hmacHeader struct {
 
 func (*hmacHeader) overBody() bool { return false }
 
-func (h *hmacHeader) verify(_ context.Context, req Request, _ any, params Params, now time.Time) error {
+func (h *hmacHeader) verify(_ context.Context, req Request, _ any, params Params, env verifyEnv) error {
 	secrets := secretsOf(params, h.c.Secret)
 	if len(secrets) == 0 {
 		return errNoSecret
@@ -200,7 +207,7 @@ func (h *hmacHeader) verify(_ context.Context, req Request, _ any, params Params
 		return fmt.Errorf("header %s is not %s: %w", h.c.Header, h.c.Encoding, err)
 	}
 	if h.c.TimestampHeader != "" {
-		if err := withinTolerance(req.Header.Get(h.c.TimestampHeader), h.tolerance, now); err != nil {
+		if err := withinTolerance(req.Header.Get(h.c.TimestampHeader), h.tolerance, env.now); err != nil {
 			return err
 		}
 	}
@@ -230,14 +237,14 @@ func (*standardWebhooksVerifier) overBody() bool { return false }
 // standardWebhooksTolerance is the specification's.
 const standardWebhooksTolerance = 5 * time.Minute
 
-func (s *standardWebhooksVerifier) verify(_ context.Context, req Request, _ any, params Params, now time.Time) error {
+func (s *standardWebhooksVerifier) verify(_ context.Context, req Request, _ any, params Params, env verifyEnv) error {
 	secrets := secretsOf(params, s.secret)
 	if len(secrets) == 0 {
 		return errNoSecret
 	}
 	// The library reads the wall clock, so it verifies the signature only and the
 	// timestamp is checked here against the injected clock.
-	if err := withinTolerance(req.Header.Get(standardwebhooks.HeaderWebhookTimestamp), standardWebhooksTolerance, now); err != nil {
+	if err := withinTolerance(req.Header.Get(standardwebhooks.HeaderWebhookTimestamp), standardWebhooksTolerance, env.now); err != nil {
 		return err
 	}
 	var last error
@@ -260,7 +267,7 @@ type tokenVerifier struct{ c verifyConfig }
 
 func (*tokenVerifier) overBody() bool { return false }
 
-func (t *tokenVerifier) verify(_ context.Context, req Request, _ any, params Params, _ time.Time) error {
+func (t *tokenVerifier) verify(_ context.Context, req Request, _ any, params Params, _ verifyEnv) error {
 	secrets := secretsOf(params, t.c.Secret)
 	if len(secrets) == 0 {
 		return errNoSecret
@@ -310,7 +317,7 @@ type hmacBody struct {
 
 func (*hmacBody) overBody() bool { return true }
 
-func (h *hmacBody) verify(_ context.Context, _ Request, body any, params Params, now time.Time) error {
+func (h *hmacBody) verify(_ context.Context, _ Request, body any, params Params, env verifyEnv) error {
 	secrets := secretsOf(params, h.c.Secret)
 	if len(secrets) == 0 {
 		return errNoSecret
@@ -328,7 +335,7 @@ func (h *hmacBody) verify(_ context.Context, _ Request, body any, params Params,
 		if err != nil {
 			return err
 		}
-		if err := withinTolerance(ts, h.tolerance, now); err != nil {
+		if err := withinTolerance(ts, h.tolerance, env.now); err != nil {
 			return err
 		}
 	}
@@ -382,7 +389,7 @@ type twilioVerifier struct{ secret string }
 
 func (*twilioVerifier) overBody() bool { return true }
 
-func (t *twilioVerifier) verify(_ context.Context, req Request, _ any, params Params, _ time.Time) error {
+func (t *twilioVerifier) verify(_ context.Context, req Request, _ any, params Params, _ verifyEnv) error {
 	secrets := secretsOf(params, t.secret)
 	if len(secrets) == 0 {
 		return errNoSecret

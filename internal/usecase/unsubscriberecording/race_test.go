@@ -61,7 +61,7 @@ func TestAClickThatLosesTheRaceToTheOptOutRecordsNothingMore(t *testing.T) {
 // which fails when it was written already, since the race needs this click to write it.
 func firstOptOut(ctx context.Context, dest string) func(ts *ent.Scoped, _ events.Publisher) error {
 	return func(ts *ent.Scoped, _ events.Publisher) error {
-		added, err := unsubscribes.Add(ctx, ts, unsubscribes.OptOut{
+		added, err := unsubscribes.New().Add(ctx, ts, unsubscribes.OptOut{
 			Channel: channels.Email, Destination: dest, Source: eligibility.SourceEverything,
 			At: consentstamps.At(time.Now()),
 		})

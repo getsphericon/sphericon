@@ -14,7 +14,7 @@
 // resetting bump the User's session epoch inside the change's transaction, so the module sits
 // above internal/domain/identity/users: it reads the User's session epoch and password hash and
 // bumps the epoch through it. A Second factor reset also removes the User's Passkeys
-// (passkeys.RemoveAllIn): internal/domain/identity/passkeys sits beside this module in identity,
+// (passkeys.Module.RemoveAllIn): internal/domain/identity/passkeys sits beside this module in identity,
 // so the reset is this module's operation (ADR 0112), checked here and written by its lifecycle
 // like every other change of the factor.
 //
@@ -33,6 +33,8 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/secondfactor"
 	"github.com/getsphericon/sphericon/internal/domain/identity/login"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
@@ -74,24 +76,36 @@ const (
 	MethodRecoveryCode Method = "recovery_code"
 )
 
-// Users is what the module asks of the User: the proof of identity the User's own changes of their
-// factor take (users.Module.ProveIdentity).
+// Users is what the module asks of the User (users.Module): the proof of identity the User's own
+// changes of their factor take, the lock and the session epoch of the User's row a change moves,
+// and the Audit entries of the change, in the transaction of the change.
 type Users interface {
 	ProveIdentity(ctx context.Context, u *ent.User, proof users.IdentityProof) error
+	UserByEmailIn(ctx context.Context, tx *ent.Client, email string) (*ent.User, error)
+	LockIn(ctx context.Context, tx *ent.Client, userID int64) (*ent.User, error)
+	BumpSessionEpochFromIn(ctx context.Context, tx *ent.Client, before *ent.User) (*ent.User, error)
+	RecordUserAction(ctx context.Context, tx *ent.Client, in users.UserAction) error
+	RecordActionOnUser(ctx context.Context, tx *ent.Client, in users.ActionOnUser) error
+	RecordActionOnUserIn(ctx context.Context, ts *ent.Scoped, in users.ActionOnUser) error
 }
 
 // Module enrolls, verifies and removes Second factors, and reads them.
 type Module struct {
-	ent    *ent.Client
-	bus    *events.Bus
-	cipher *secrets.Cipher
-	users  Users
-	now    func() time.Time
+	ent      *ent.Client
+	bus      *events.Bus
+	cipher   *secrets.Cipher
+	users    Users
+	passkeys *passkeys.Module
+	members  *memberships.Module
+	now      func() time.Time
 }
 
-// New builds the module. u proves the identity of the User's own steps; now is the Instance clock TOTP codes and the Two-factor grace are checked against.
-func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, now func() time.Time) *Module {
-	return &Module{ent: client, bus: bus, cipher: cipher, users: u, now: now}
+// New builds the module. u proves the identity of the User's own steps; keys are the Passkeys a
+// Second factor reset removes; members decides whom a reset may reach and records a reminder on
+// the Membership; now is the Instance clock TOTP codes, the Two-factor grace and its reminders are
+// checked against.
+func New(client *ent.Client, bus *events.Bus, cipher *secrets.Cipher, u Users, keys *passkeys.Module, members *memberships.Module, now func() time.Time) *Module {
+	return &Module{ent: client, bus: bus, cipher: cipher, users: u, passkeys: keys, members: members, now: now}
 }
 
 // factorOf reads the User's factor row on client, nil when the User never enrolled.
@@ -183,7 +197,7 @@ func (m *Module) StartEnrollment(ctx context.Context, u *ent.User, proof users.I
 		if err != nil {
 			return err
 		}
-		moved, err := move(ctx, tx, before, change{trigger: factorStart, sealedSecret: sealed, at: m.now()})
+		moved, err := m.move(ctx, tx, before, change{trigger: factorStart, sealedSecret: sealed, at: m.now()})
 		if err != nil {
 			return err
 		}
@@ -193,24 +207,26 @@ func (m *Module) StartEnrollment(ctx context.Context, u *ent.User, proof users.I
 	return enrollment, err
 }
 
-// ConfirmInput binds the code to the enrollment whose secret the caller received.
+// ConfirmInput binds the code to the enrollment whose secret the caller received, with the proof
+// of identity the confirmation takes.
 type ConfirmInput struct {
 	EnrollmentID int64
 	Code         string
+	Proof        users.IdentityProof
 }
 
 // ConfirmEnrollment activates the pending secret of the User u, once they prove their identity
-// (users.Module.ProveIdentity), when code is a current code for it. It issues the Recovery codes (returned once), bumps the session epoch and
+// with in.Proof (users.Module.ProveIdentity), when in.Code is a current code for it. It issues the Recovery codes (returned once), bumps the session epoch and
 // records `user.second_factor_enroll`, all in one transaction, and returns the
 // stored User for reissuing the acting session with the codes. ErrNoPending without a pending
 // enrollment, ErrInvalidCode on a wrong code.
-func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, proof users.IdentityProof, in ConfirmInput) (*CodesIssued, error) {
-	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, in ConfirmInput) (*CodesIssued, error) {
+	if err := m.users.ProveIdentity(ctx, u, in.Proof); err != nil {
 		return nil, err
 	}
 	userID := u.ID
 	var issued *CodesIssued
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -229,7 +245,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, proof users
 		if err != nil {
 			return err
 		}
-		moved, err := move(ctx, tx, before, change{trigger: factorConfirm, step: step, at: m.now()})
+		moved, err := m.move(ctx, tx, before, change{trigger: factorConfirm, step: step, at: m.now()})
 		if err != nil {
 			return err
 		}
@@ -238,7 +254,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, proof users
 			return err
 		}
 		issued = &CodesIssued{User: moved.User, RecoveryCodes: codes}
-		return users.RecordUserAction(ctx, tx, pub, moved.User, events.ActionUserSecondFactorEnroll, nil)
+		return m.users.RecordUserAction(ctx, tx, users.UserAction{User: moved.User, Action: events.ActionUserSecondFactorEnroll})
 	})
 	return issued, err
 }
@@ -252,7 +268,7 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, u *ent.User, proof
 	}
 	userID := u.ID
 	var issued *CodesIssued
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -260,7 +276,7 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, u *ent.User, proof
 		if !active(before.Factor) {
 			return ErrNotActive
 		}
-		moved, err := move(ctx, tx, before, change{trigger: factorRegenerate, at: m.now()})
+		moved, err := m.move(ctx, tx, before, change{trigger: factorRegenerate, at: m.now()})
 		if err != nil {
 			return err
 		}
@@ -269,25 +285,32 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, u *ent.User, proof
 			return err
 		}
 		issued = &CodesIssued{User: moved.User, RecoveryCodes: codes}
-		return users.RecordUserAction(ctx, tx, pub, moved.User, events.ActionUserRecoveryCodesRegenerate, nil)
+		return m.users.RecordUserAction(ctx, tx, users.UserAction{User: moved.User, Action: events.ActionUserRecoveryCodesRegenerate})
 	})
 	return issued, err
 }
 
-// Disable removes the Second factor of the User u, once they prove their identity
-// (users.Module.ProveIdentity), when code is a current TOTP code or an unused Recovery code. It
+// DisableInput is the code that confirms disabling the Second factor, with the proof of identity it
+// takes.
+type DisableInput struct {
+	Code  string
+	Proof users.IdentityProof
+}
+
+// Disable removes the Second factor of the User u, once they prove their identity with in.Proof
+// (users.Module.ProveIdentity), when in.Code is a current TOTP code or an unused Recovery code. It
 // clears the factor
 // and its Recovery codes, bumps the session epoch and records
 // `user.second_factor_disable`. ErrNotActive without a Second factor,
 // ErrInvalidCode on a wrong code.
-func (m *Module) Disable(ctx context.Context, u *ent.User, proof users.IdentityProof, code string) (*ent.User, error) {
-	if err := m.users.ProveIdentity(ctx, u, proof); err != nil {
+func (m *Module) Disable(ctx context.Context, u *ent.User, in DisableInput) (*ent.User, error) {
+	if err := m.users.ProveIdentity(ctx, u, in.Proof); err != nil {
 		return nil, err
 	}
 	userID := u.ID
 	var saved *ent.User
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		locked, err := users.LockIn(ctx, tx, userID)
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		locked, err := m.users.LockIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
@@ -298,16 +321,16 @@ func (m *Module) Disable(ctx context.Context, u *ent.User, proof users.IdentityP
 		if !active(f) {
 			return ErrNotActive
 		}
-		_, verified, err := m.verify(ctx, tx, pub, snapshot{User: locked, Factor: f}, code)
+		_, verified, err := m.verify(ctx, tx, snapshot{User: locked, Factor: f}, in.Code)
 		if err != nil {
 			return err
 		}
-		removed, err := remove(ctx, tx, verified, factorDisable)
+		removed, err := m.remove(ctx, tx, verified, factorDisable)
 		if err != nil {
 			return err
 		}
 		saved = removed.User
-		return users.RecordUserAction(ctx, tx, pub, saved, events.ActionUserSecondFactorDisable, nil)
+		return m.users.RecordUserAction(ctx, tx, users.UserAction{User: saved, Action: events.ActionUserSecondFactorDisable})
 	})
 	return saved, err
 }
@@ -326,8 +349,8 @@ func (m *Module) Disable(ctx context.Context, u *ent.User, proof users.IdentityP
 func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], code string) (Method, error) {
 	binding := pending.Binding
 	var method Method
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		u, err := users.LockIn(ctx, tx, pending.Principal.ID)
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		u, err := m.users.LockIn(ctx, tx, pending.Principal.ID)
 		if err != nil {
 			return err
 		}
@@ -345,24 +368,24 @@ func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], c
 		if subtle.ConstantTimeCompare([]byte(current), []byte(binding)) != 1 {
 			return ErrBindingMoved
 		}
-		method, _, err = m.verify(ctx, tx, pub, snapshot{User: u, Factor: f}, code)
+		method, _, err = m.verify(ctx, tx, snapshot{User: u, Factor: f}, code)
 		return err
 	})
 	return method, err
 }
 
 // DeletionCode spends code on the transaction tx of User deletion (ADR 0050, the use case
-// internal/usecase/userdeletion), whose User row locked the caller has locked and freshly read:
-// with a Second factor the code must be a current TOTP code or an unused Recovery code
-// (ErrDeletionCodeInvalid otherwise), and it is spent only if the deletion commits; without one
-// it confirms nothing. It keeps the lock order of every change of the factor: the User row, the
-// factor row, then the codes.
-func (m *Module) DeletionCode(ctx context.Context, tx *ent.Client, pub events.Publisher, locked *ent.User, code string) error {
+// internal/usecase/userdeletion), a transaction of the module's bus whose User row locked the caller
+// has locked and freshly read: with a Second factor the code must be a current TOTP code or an
+// unused Recovery code (ErrDeletionCodeInvalid otherwise), and it is spent, its use recorded, only if
+// the deletion commits; without one it confirms nothing. It keeps the lock order of every change of
+// the factor: the User row, the factor row, then the codes.
+func (m *Module) DeletionCode(ctx context.Context, tx *ent.Client, locked *ent.User, code string) error {
 	f, err := factorOf(ctx, tx, locked.ID)
 	if err != nil || !active(f) {
 		return err
 	}
-	_, _, err = m.verify(ctx, tx, pub, snapshot{User: locked, Factor: f}, code)
+	_, _, err = m.verify(ctx, tx, snapshot{User: locked, Factor: f}, code)
 	if errors.Is(err, ErrInvalidCode) {
 		return ErrDeletionCodeInvalid
 	}
@@ -399,7 +422,7 @@ func challengeBinding(ctx context.Context, client *ent.Client, u *ent.User, f *e
 // verify fences the factor before touching Recovery codes, keeping the same lock order as
 // enrollment, regeneration, removal and the login challenge check: the User row, the factor row,
 // then the codes.
-func (m *Module) verify(ctx context.Context, tx *ent.Client, pub events.Publisher, before snapshot, code string) (Method, snapshot, error) {
+func (m *Module) verify(ctx context.Context, tx *ent.Client, before snapshot, code string) (Method, snapshot, error) {
 	step := int64(0)
 	if totp.IsCode(code) {
 		var err error
@@ -408,7 +431,7 @@ func (m *Module) verify(ctx context.Context, tx *ent.Client, pub events.Publishe
 			return "", snapshot{}, err
 		}
 	}
-	moved, err := move(ctx, tx, before, change{trigger: factorVerify, step: step, at: m.now()})
+	moved, err := m.move(ctx, tx, before, change{trigger: factorVerify, step: step, at: m.now()})
 	if err != nil {
 		return "", snapshot{}, err
 	}
@@ -423,7 +446,7 @@ func (m *Module) verify(ctx context.Context, tx *ent.Client, pub events.Publishe
 	if !spent {
 		return "", snapshot{}, ErrInvalidCode
 	}
-	err = users.RecordUserAction(ctx, tx, pub, verified.User, events.ActionUserRecoveryCodeUse, nil)
+	err = m.users.RecordUserAction(ctx, tx, users.UserAction{User: verified.User, Action: events.ActionUserRecoveryCodeUse})
 	return MethodRecoveryCode, verified, err
 }
 
@@ -446,8 +469,8 @@ func (m *Module) totpStep(f *ent.SecondFactor, code string) (int64, error) {
 
 // remove clears the factor by t (disabling it, or a Second factor reset) before its Recovery codes
 // go, and bumps the epoch in the same transaction.
-func remove(ctx context.Context, tx *ent.Client, before snapshot, t trigger) (outcome, error) {
-	moved, err := move(ctx, tx, before, change{trigger: t})
+func (m *Module) remove(ctx context.Context, tx *ent.Client, before snapshot, t trigger) (outcome, error) {
+	moved, err := m.move(ctx, tx, before, change{trigger: t})
 	if err != nil {
 		return outcome{}, err
 	}

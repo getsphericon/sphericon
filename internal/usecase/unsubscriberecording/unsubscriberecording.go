@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
@@ -29,12 +30,24 @@ import (
 // UseCase records Unsubscribes. Every call receives the Workspace-scoped client (ADR 0017) built
 // by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus *events.Bus
-	now func() time.Time
+	bus           *events.Bus
+	out           *outboundmessages.Module
+	automations   *automations.Module
+	unsubs        *unsubscribes.Module
+	confirmations *confirmations.Module
+	stops         *channelstop.Module
+	now           func() time.Time
 }
 
-// New builds the unsubscribe use case over the bus and the Instance clock.
-func New(bus *events.Bus, now func() time.Time) *UseCase { return &UseCase{bus: bus, now: now} }
+// New builds the unsubscribe use case over the bus, Outbound send, which reads the Broadcast or
+// Automation a text came from, the Automations, whose Enrollment an unsubscribe from one exits,
+// the owners of the rows an opt-out writes (the opt-outs, the Confirmations an opt-out of
+// everything withdraws and the Channel stops of telegram and sms) and the Instance clock.
+func New(bus *events.Bus, out *outboundmessages.Module, enrollments *automations.Module, unsubs *unsubscribes.Module,
+	confs *confirmations.Module, stops *channelstop.Module, now func() time.Time,
+) *UseCase {
+	return &UseCase{bus: bus, out: out, automations: enrollments, unsubs: unsubs, confirmations: confs, stops: stops, now: now}
+}
 
 // RecordLink writes a per-(channel, destination, sending source) opt-out
 // (ADR 0001) from a signed token — no contact-row lookup, so the opt-out records
@@ -57,12 +70,12 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 	// The Workspace comes from the signed unsubscribe token (no membership or api
 	// token here), so this is a scope source outside the site/external/job list.
 	return u.bus.WithinScopedTx(ctx, events.Ingest(s), func(sc *ent.Scoped, pub events.Publisher) error {
-		erased, err := workspaces.ErasedIn(ctx, sc)
-		if err != nil || erased {
+		ws, err := sc.Workspace(ctx)
+		if err != nil || workspaces.DeletionStateOf(ws) == workspaces.StateErased {
 			return err
 		}
 		if target.Channel == channels.SMS {
-			return publishSMSStop(ctx, sc, pub, target, dest, at)
+			return u.publishSMSStop(ctx, sc, pub, target, dest, at)
 		}
 		o := unsubscribes.OptOut{
 			Channel: target.Channel, Destination: dest, Source: target.Source, ContactID: target.ContactID,
@@ -72,7 +85,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
 		}
-		change, err := unsubscribes.Add(ctx, sc, o)
+		change, err := u.unsubs.Add(ctx, sc, o)
 		if err != nil {
 			return err
 		}
@@ -89,7 +102,8 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// marketing.confirmed Event is preserved as proof ("confirmed at T1, left at
 		// T2"). A narrower per-source opt-out does NOT touch confirmation.
 		if target.Source == eligibility.SourceEverything && target.Channel == channels.Email {
-			if err := confirmations.Withdraw(ctx, sc, channels.Email, dest, consentstamps.At(at)); err != nil {
+			withdrawal := confirmations.WithdrawInput{Channel: channels.Email, Destination: dest, At: consentstamps.At(at)}
+			if err := u.confirmations.Withdraw(ctx, sc, withdrawal); err != nil {
 				return err
 			}
 		}
@@ -97,7 +111,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// Automation: unsubscribing from an automation also exits its active
 		// enrollment (ADR: two effects from one action).
 		if isAutomation && target.ContactID != 0 {
-			if _, err := automations.Exit(ctx, sc, pub, automationID, target.ContactID, at); err != nil {
+			if _, err := u.automations.Exit(ctx, sc, automationID, target.ContactID); err != nil {
 				return err
 			}
 		}
@@ -167,13 +181,13 @@ func publishSuperseded(ctx context.Context, sc *ent.Scoped, pub events.Publisher
 // effects are its subscriber's (ADR 0114). The link names the Contact the text was sent to and the
 // text's Broadcast but not its Automation, since an SMS link is for everything, so the Broadcast and
 // the Automation are read from the text.
-func publishSMSStop(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string, at time.Time) error {
+func (u *UseCase) publishSMSStop(ctx context.Context, sc *ent.Scoped, pub events.Publisher, target linktarget.Unsubscribe, dest string, at time.Time) error {
 	stop := &events.SmsStopObserved{
 		WorkspaceID: target.WorkspaceID, Phone: dest, Via: events.UnsubscribedByLink,
 		OutboundMessageID: target.OutboundMessageID, ContactID: target.ContactID, ObservedAt: at,
 	}
 	if target.OutboundMessageID != 0 {
-		origin, err := outboundmessages.FindOrigin(ctx, sc, target.OutboundMessageID)
+		origin, err := u.out.FindOrigin(ctx, sc, target.OutboundMessageID)
 		if err != nil {
 			return err
 		}

@@ -155,9 +155,9 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report", time.Now())
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), time.Now())
+	_, err = testhelper.Module[*suspension.Suspender](env).Unsuspend(ctx, fixtures.AcmeID, suspension.StaffMember("op-42"))
 	require.NoError(t, err)
 
 	for _, action := range []string{events.ActionWorkspaceSuspend, events.ActionWorkspaceUnsuspend} {
@@ -177,7 +177,7 @@ func TestAuditStaffSuspensionShowsOnlySphericonStaff(t *testing.T) {
 
 func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.System, "complaint rate", time.Now())
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "complaint rate"})
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -187,7 +187,7 @@ func TestAuditAutomaticSuspensionIsAttributedToSystem(t *testing.T) {
 
 func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 	env := testhelper.Setup(t)
-	_, err := suspension.SuspendWorkspace(context.Background(), env.Bus, fixtures.AcmeID, suspension.CLI, "abuse", time.Now())
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(context.Background(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.CLI, Reason: "abuse"})
 	require.NoError(t, err)
 
 	got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, events.ActionWorkspaceSuspend)
@@ -200,9 +200,9 @@ func TestAuditCLISuspensionShowsSphericonStaff(t *testing.T) {
 func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.System, "first", time.Now())
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "first"})
 	require.NoError(t, err)
-	changed, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "second", time.Now())
+	changed, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "second"})
 	require.NoError(t, err)
 	require.False(t, changed)
 
@@ -212,8 +212,9 @@ func TestAuditSuspensionNoOpRecordsNothing(t *testing.T) {
 // Every explicit path is driven here and the actions that reached the log are compared
 // with events.ExplicitAuditActions, so a new explicit path cannot be forgotten: either
 // it is added to the list (and driven below) or this test fails. An explicit entry is
-// recorded one way, events.RecordAudit in the transaction of the change, and the call-site
-// scan catches such a call in a file this list does not know about.
+// recorded one way, events.RecordAudit in the transaction of the change (or Bus.RecordAuditIn,
+// which records it through that transaction's publisher), and the call-site scan catches such a
+// call in a file this list does not know about.
 func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	env, fake := signinEnv(t)
 	ctx := context.Background()
@@ -267,15 +268,15 @@ func TestExplicitAuditPathsAreAllListed(t *testing.T) {
 	require.NoError(t, err)
 	_, err = owner.SiteWorkspacesRestore(ctx, siteapi.SiteWorkspacesRestoreParams{ID: fixtures.AcmePublicID}) // workspace.restore
 	require.NoError(t, err)
-	_, err = suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse", time.Now()) // workspace.suspend
+	_, err = testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse"}) // workspace.suspend
 	require.NoError(t, err)
-	_, err = suspension.UnsuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), time.Now()) // workspace.unsuspend
+	_, err = testhelper.Module[*suspension.Suspender](env).Unsuspend(ctx, fixtures.AcmeID, suspension.StaffMember("op-42")) // workspace.unsuspend
 	require.NoError(t, err)
-	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), true) // workspace.abuse_exempt
+	_, err = testhelper.Module[*suspension.Suspender](env).SetAbuseExempt(ctx, fixtures.AcmeID, suspension.SetAbuseExemptInput{By: suspension.StaffMember("op-42"), Exempt: true}) // workspace.abuse_exempt
 	require.NoError(t, err)
-	_, err = suspension.SetAbuseExempt(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), false) // workspace.abuse_unexempt
+	_, err = testhelper.Module[*suspension.Suspender](env).SetAbuseExempt(ctx, fixtures.AcmeID, suspension.SetAbuseExemptInput{By: suspension.StaffMember("op-42"), Exempt: false}) // workspace.abuse_unexempt
 	require.NoError(t, err)
-	_, err = suspension.SetSendCap(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), new(500)) // workspace.send_cap_change
+	_, err = testhelper.Module[*suspension.Suspender](env).SetSendCap(ctx, fixtures.AcmeID, suspension.SetSendCapInput{By: suspension.StaffMember("op-42"), SendCap: new(500)}) // workspace.send_cap_change
 	require.NoError(t, err)
 
 	_, err = env.ExternalAnchor(t).ContactsBatchUpsert(ctx, &externalapi.UpsertContactsInput{ // contact.import
@@ -329,8 +330,12 @@ func recordAuditCallSites(t *testing.T) []string {
 			}
 			rel = filepath.ToSlash(rel)
 			// Package events calls RecordAudit unqualified only on the automatic path (the
-			// generated scoped-client wrappers publish through it), never an explicit entry.
-			if strings.Contains(string(src), "events.RecordAudit(") {
+			// generated scoped-client wrappers publish through it), never an explicit entry, and
+			// declares Bus.RecordAuditIn.
+			if strings.HasPrefix(rel, "internal/infra/events/") {
+				return nil
+			}
+			if strings.Contains(string(src), "events.RecordAudit(") || strings.Contains(string(src), ".RecordAuditIn(") {
 				sites = append(sites, rel)
 			}
 			return nil
@@ -345,7 +350,7 @@ func recordAuditCallSites(t *testing.T) []string {
 func TestAuditStaffIdCannotBeProbed(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
-	_, err := suspension.SuspendWorkspace(ctx, env.Bus, fixtures.AcmeID, suspension.StaffMember("op-42"), "abuse report", time.Now())
+	_, err := testhelper.Module[*suspension.Suspender](env).Suspend(ctx, fixtures.AcmeID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "abuse report"})
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)

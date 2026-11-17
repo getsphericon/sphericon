@@ -168,7 +168,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	TokensToResources(source []*ent.ApiToken) []siteapi.SiteApiTokenResource
 	// A Connection is an API token read with its Membership and that Membership's User loaded
-	// (apitokens.Connections); the User is who it belongs to.
+	// (apitokens.Module.Connections); the User is who it belongs to.
 	// goverter:map Edges.Membership.UserID UserId
 	// goverter:map Edges.Membership.Edges.User.Name UserName
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
@@ -176,7 +176,7 @@ type Converter interface {
 	// goverter:useEmptyOnNil:slice
 	ConnectionsToResources(source []*ent.ApiToken) []siteapi.SiteConnectionResource
 	// A Personal token is an API token read with its Membership and that Membership's User loaded
-	// (apitokens.PersonalTokens, MintPersonal); the User is who it belongs to.
+	// (apitokens.Module.PersonalTokens, MintPersonal); the User is who it belongs to.
 	// goverter:map Edges.Membership.UserID UserId
 	// goverter:map Edges.Membership.Edges.User.Name UserName
 	// goverter:map Edges.Membership.Edges.User.Email UserEmail
@@ -389,7 +389,7 @@ type Converter interface {
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
-	// the Provider limit from providerlimit.Statuses: the handler attaches them.
+	// the Provider limit from providerlimit.Module.Statuses: the handler attaches them.
 	// goverter:ignore Config
 	// goverter:ignore Params
 	// goverter:ignore SecretsRetiring

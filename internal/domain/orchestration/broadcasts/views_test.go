@@ -23,9 +23,9 @@ func TestViewsCarryTheFigures(t *testing.T) {
 	ctx := context.Background()
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	page, err := v.List(ctx, s, pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{}, broadcasts.OrderNewest)
+	page, err := v.List(ctx, s, pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{})
 	require.NoError(t, err)
-	sent, ok := lo.Find(page.Items, func(b broadcasts.View) bool { return b.ID == fixtures.BroadcastSentID })
+	sent, ok := lo.Find(page.Items, func(b broadcasts.View) bool { return b.Broadcast.ID == fixtures.BroadcastSentID })
 	require.True(t, ok)
 	assert.Equal(t, 11, sent.Stats.Sent)
 	assert.Nil(t, sent.Progress, "a list leaves the Progress out")
@@ -49,5 +49,5 @@ func TestViewsCreateReturnsTheWarningsOfTheBodyAsWritten(t *testing.T) {
 	require.NoError(t, err)
 	codes := lo.Map(got.Warnings, func(f emailrender.Finding, _ int) emailrender.Code { return f.Code })
 	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeMissingAlt}, codes)
-	assert.Equal(t, body, *got.Body, "stored as written")
+	assert.Equal(t, body, *got.Broadcast.Body, "stored as written")
 }

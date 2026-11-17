@@ -274,7 +274,7 @@ func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {
 	c := startClock()
 	m := newModule(env, c.Now)
 
-	before, err := providerlimit.Usage(context.Background(), acme(env), time.Now())
+	before, err := providerlimit.New(time.Now).Usage(context.Background(), acme(env))
 	require.NoError(t, err)
 
 	res := send(t, m, env, "bc:usage")
@@ -285,7 +285,7 @@ func TestSentMessageIsStampedWithItsIntegrationAndCountsAsUsage(t *testing.T) {
 	require.NotNil(t, msg.IntegrationID, "the message records the Integration it went through")
 	assert.Equal(t, int64(fixtures.IntegrationAcmeDefaultID), *msg.IntegrationID)
 
-	after, err := providerlimit.Usage(context.Background(), acme(env), time.Now())
+	after, err := providerlimit.New(time.Now).Usage(context.Background(), acme(env))
 	require.NoError(t, err)
 	assert.Equal(t, before[fixtures.IntegrationAcmeDefaultID]+1, after[fixtures.IntegrationAcmeDefaultID])
 }

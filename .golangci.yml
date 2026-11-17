@@ -160,6 +160,11 @@ linters:
         - pattern: ^ent\.Scoped\.LockWorkspace$
           pkg: '^github\.com/getsphericon/sphericon/ent$'
           msg: the Workspace lock is taken only by events.Bus.WithinWorkspaceLockTx (ADR 0108), first in its transaction; run the write there
+        # The driver of a client's transaction is unscoped: only the events bus reads it, through
+        # events.InTx, to publish and queue in that transaction.
+        - pattern: ^ent\.(Client|Scoped|WorkspaceLocked)\.TxDriver$
+          pkg: '^github\.com/getsphericon/sphericon/ent$'
+          msg: the driver of a transaction is the events bus's; publish or queue with events.Bus.PublishIn or EnqueueIn
         - pattern: ^time\.Sleep$
           msg: no sleeps; wait on the condition, take a clock, or call testhelper.Elapse inside a synctest bubble (CODING_STANDARDS.md)
         - pattern: ^time\.(Now|Since|Until)$

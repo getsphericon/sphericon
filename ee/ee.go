@@ -27,10 +27,14 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	serviceapi "github.com/getsphericon/sphericon/gen/service"
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
@@ -52,9 +56,16 @@ type Edition struct {
 	lic    *licensekey.License
 	client *ent.Client
 
-	// Audit is the read side of the Audit log (auditlog.Reader), which auditlog.Log serves the
-	// surfaces over; unlicensed, it reports so and the Log refuses as unlicensed (402).
+	// Audit is the Audit log: its consumer, which the Enterprise jobs run, and its read side
+	// (auditlog.Reader), which auditlog.Log serves the surfaces over; unlicensed, it reports so and
+	// the Log refuses as unlicensed (402).
 	Audit *auditentries.Log
+	// Erasures is the Erasures stream's store (ADR 0045), which the Enterprise jobs fill and prune;
+	// unlicensed, it stores and removes nothing.
+	Erasures *erasures.Module
+	// Usage is the Usage of every Workspace (ADR 0009), which the Enterprise jobs refresh and the
+	// Staff module reads; unlicensed, the refresh does nothing.
+	Usage *usages.Module
 	// Export is the seat of the Export streams (ADR 0045); unlicensed, every stream answers 404.
 	Export *ExportStreams
 	// Staff is the module of the console's Enterprise sections and of the service endpoints
@@ -67,7 +78,8 @@ type Edition struct {
 	staffSessions *staffmembers.Sessions
 	bus           *events.Bus
 	suspend       *suspension.Suspender
-	abuseLimits   abusedetector.Limits
+	workspaces    *workspaces.Module
+	holds         *holds.Holds
 	now           func() time.Time
 }
 
@@ -85,31 +97,50 @@ type Deps struct {
 	StaffSessions *staffmembers.Sessions
 	// Suspender suspends a Workspace (ADR 0007).
 	Suspender *suspension.Suspender
-	// Reputation computes a Workspace's rates, which the console shows.
+	// Workspaces reads a Workspace by its id and writes the abuse detector's markers on its
+	// standing (ADR 0168).
+	Workspaces *workspaces.Module
+	// Reputation computes a Workspace's rates, which the console shows and the abuse detector
+	// judges.
 	Reputation *reputation.Module
+	// Cipher seals the hashes the Erasures stream stores (ADR 0045).
+	Cipher *secrets.Cipher
+	// Memberships names the Owners of the Workspaces of the service feed.
+	Memberships *memberships.Module
+	// ConsentRecords is the Users' consent to the operator's mailings in the service feed.
+	ConsentRecords *consentrecords.Module
+	// ProviderLimits reads a Workspace's 24-hour sends, which the console shows against its Send
+	// cap.
+	ProviderLimits *providerlimit.Module
 }
 
 // New builds the Edition over deps. The Enterprise sections of the Staff console take the core
 // Staff member's sessions, so the `staff` feature refuses to start without them.
 func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
-	lic, staffSessions := deps.License, deps.StaffSessions
-	auditLog := auditentries.NewLog(lic, deps.Bus)
-	e := &Edition{
-		lic:     lic,
-		client:  deps.Client,
-		bus:     deps.Bus,
-		suspend: deps.Suspender,
-		Audit:   auditLog,
-		Export:  &ExportStreams{lic: lic},
-		Staff:   workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, deps.Suspender, deps.Reputation, staffCfg),
-
-		ServiceCredentials: servicecredentials.New(deps.Client, lic, staffCfg.Clock),
-	}
-	e.abuseLimits = staffCfg.Abuse
-	e.now = staffCfg.Clock
-	if e.now == nil {
+	lic, staffSessions, now := deps.License, deps.StaffSessions, staffCfg.Clock
+	if now == nil {
 		return nil, errors.New("ee: workspaceoversight.Config.Clock is required: the Edition reads the Instance clock")
 	}
+	auditLog := auditentries.NewLog(deps.Client, lic, deps.Bus)
+	usage := usages.New(deps.Client, lic, now)
+	e := &Edition{
+		lic:        lic,
+		client:     deps.Client,
+		bus:        deps.Bus,
+		suspend:    deps.Suspender,
+		workspaces: deps.Workspaces,
+		now:        now,
+		Audit:      auditLog,
+		Erasures:   erasures.New(deps.Client, lic, deps.Cipher, now),
+		Usage:      usage,
+		Export:     &ExportStreams{lic: lic},
+
+		ServiceCredentials: servicecredentials.New(deps.Client, lic, now),
+	}
+	// One Holds for the send path and the console's Enterprise sections: Staff holds count under
+	// the `staff` license, which the console checks before every call.
+	e.holds = holds.New(e.HoldsHonoured, staffCfg.HoldMaxExpiry, now)
+	e.Staff = workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Workspaces, deps.Reputation, deps.Memberships, deps.ConsentRecords, e.holds, deps.ProviderLimits, staffCfg)
 	if lic.Has(licensekey.FeatureStaff) {
 		if staffSessions == nil {
 			return nil, errors.New("SPHERICON_STAFF_JWT_SECRET is required with the staff license: the console's Enterprise sections need the Staff member's sign-in")
@@ -160,7 +191,7 @@ func (e *Edition) Service() interface {
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
 // It honours Staff holds only with the `staff` license, so an unlicensed instance never
 // freezes on a row it could not have written; deletion and suspension always count.
-func (e *Edition) Holds() *holds.Holds { return holds.New(e.HoldsHonoured, e.now) }
+func (e *Edition) Holds() *holds.Holds { return e.holds }
 
 // HoldsHonoured reports whether Staff holds are honoured at all (the `staff`
 // license): the send path and every read of a hold shown to a Workspace
@@ -178,7 +209,7 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
 func (e *Edition) Abuse() *abusedetector.Detector {
-	return abusedetector.NewDetector(e.client, e.bus, e.lic, e.suspend, e.abuseLimits, e.now)
+	return abusedetector.NewDetector(e.client, e.bus, e.Staff.Watch(), e.suspend, e.workspaces)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none
@@ -187,12 +218,12 @@ func (e *Edition) AbuseWatch() abusewarning.Watch { return abuseWatchAdapter{e.S
 
 type abuseWatchAdapter struct{ watch *abusedetector.Watch }
 
-func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped, now time.Time) (*abusewarning.Warning, error) {
+func (w abuseWatchAdapter) Warning(ctx context.Context, s *ent.Scoped) (*abusewarning.Warning, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return nil, err
 	}
-	b, err := w.watch.Warning(ctx, s, ws, now)
+	b, err := w.watch.Warning(ctx, s, ws)
 	if err != nil || b.Tier == abusedetector.TierNone {
 		return nil, err
 	}

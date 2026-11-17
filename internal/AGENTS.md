@@ -56,7 +56,7 @@ the fixtures are sealed with, and never loads the configuration for it.
 
 **A document is saved through a fake export.** A runtime of the editor's code takes seconds to
 start (more on a busy machine), so `testhelper.Renderer()`, the renderer of `Setup` and of a module a
-test builds itself (`emailtemplates.New(testhelper.Renderer(), brandkits.Brands{})`), runs our own
+test builds itself (`emailtemplates.New(testhelper.Renderer(), brandkits.NewBrands())`), runs our own
 checks and fakes the editor's schema check and export: the body is the document's text as
 paragraphs. A test of what the export makes of a document takes `testhelper.RealRenderer()`, and
 asserts the brand or the markup only there. The nightly run sets `SPHERICON_TEST_EMAIL_RENDERER=goja`, which makes `Renderer` the real one.
@@ -164,7 +164,7 @@ not exercised, and the server's own is `Module[*instancestates.Module](env)`. Th
 (`integrations.SecretSweeps(env.DB)`, …) with the cipher under test. A use case of rows no Workspace
 owns holds the raw client: the Workspace view's `Module[*workspaceview.UseCase](env)`
 (`internal/usecase/workspaceview`, which creates and restores a Workspace; the id retry of a
-creation is `workspaces.CreateIn`'s, tested with an id generator that collides), User deletion's `Module[*userdeletion.UseCase](env)`
+creation is `workspaces.Creation.CreateIn`'s, tested with an id generator that collides), User deletion's `Module[*userdeletion.UseCase](env)`
 (`internal/usecase/userdeletion`, with a proof that no longer fits the User and two co-Owners
 deleting themselves at once, raced on a committed env), the Workspace deletion cycle's
 restore and erase (`internal/usecase/workspacedeletion`) is built with `New(env.DB, env.Bus, clock)`. The exchange

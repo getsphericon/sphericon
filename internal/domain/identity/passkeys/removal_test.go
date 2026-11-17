@@ -13,6 +13,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/passkey"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -32,7 +33,7 @@ func TestARemovalAndAResetOfOneUserQueueOnTheUserRow(t *testing.T) {
 	removed := make(chan error, 1)
 	go func() {
 		pat := r.client.User.GetX(t.Context(), fixtures.PasskeyPatID)
-		_, err := r.keys.Remove(t.Context(), pat, users.IdentityProof{Password: fixtures.PasskeyPatPassword}, fixtures.PasskeyPatLaptopID)
+		_, err := r.keys.Remove(t.Context(), pat, passkeys.RemoveInput{ID: fixtures.PasskeyPatLaptopID, Proof: users.IdentityProof{Password: fixtures.PasskeyPatPassword}})
 		removed <- err
 	}()
 	testhelper.Receive(t, ready, "the removal reached the bump of Pat's session epoch")
@@ -61,7 +62,7 @@ func TestTwoRemovalsCannotTakeAPasswordlessUsersLastTwoPasskeys(t *testing.T) {
 	ready, release := pauseFirst(t, r.bus, deletesPasskey)
 	remove := func(id int64) error {
 		rue := r.client.User.GetX(t.Context(), fixtures.PasskeyPairRueID)
-		_, err := r.keys.Remove(t.Context(), rue, users.IdentityProof{}, id)
+		_, err := r.keys.Remove(t.Context(), rue, passkeys.RemoveInput{ID: id})
 		return err
 	}
 	first := make(chan error, 1)
@@ -93,9 +94,10 @@ type race struct {
 func newRace(t *testing.T) race {
 	t.Helper()
 	env := testhelper.Setup(t, testhelper.Committed())
-	keys, err := passkeys.New(env.DB, env.Bus, testhelper.ProvenUsers{}, "https://app.example", "passkeys-test-ceremony-secret", time.Now)
+	party, err := passkeys.NewRelyingParty("https://app.example", "passkeys-test-ceremony-secret")
 	require.NoError(t, err)
-	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.ProvenUsers{}, time.Now)
+	keys := passkeys.New(env.DB, env.Bus, testhelper.NewProvenUsers(env), party, time.Now)
+	factors := secondfactors.New(env.DB, env.Bus, env.Cipher, testhelper.NewProvenUsers(env), keys, testhelper.Module[*memberships.Module](env), time.Now)
 	return race{env: env, db: env.SQLDB, client: env.DB, bus: env.Bus, keys: keys, factors: factors}
 }
 

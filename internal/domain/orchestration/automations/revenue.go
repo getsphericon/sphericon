@@ -11,11 +11,12 @@ import (
 )
 
 // WithRevenue is an Automation and what it earned: the Orders credited to it and their net
-// revenue in the Reporting currency (ADR 0064), read through the orders module.
+// revenue in the Reporting currency (ADR 0064), read through the orders module. The Automation is
+// a field, not embedded: an embedded entity would promote its client's operations onto this
+// value.
 type WithRevenue struct {
-	*ent.Automation
-
-	Revenue orders.Revenue
+	Automation *ent.Automation
+	Revenue    orders.Revenue
 }
 
 // ListWithRevenue is List with the revenue of each Automation of the page, read in one grouped
@@ -25,7 +26,7 @@ func (m *Module) ListWithRevenue(ctx context.Context, s *ent.Scoped, p paginatio
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}
-	figures, err := orders.CreditedToAutomations(ctx, s, lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })...)
+	figures, err := m.revenues.CreditedToAutomations(ctx, s, lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })...)
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}
@@ -40,7 +41,7 @@ func (m *Module) GetWithRevenue(ctx context.Context, s *ent.Scoped, id int64) (W
 	if err != nil {
 		return WithRevenue{}, err
 	}
-	figures, err := orders.CreditedToAutomations(ctx, s, a.ID)
+	figures, err := m.revenues.CreditedToAutomations(ctx, s, a.ID)
 	if err != nil {
 		return WithRevenue{}, err
 	}

@@ -72,14 +72,17 @@ func PastDeletionWindow(now time.Time) predicate.Workspace {
 	return workspace.And(workspace.DiscardedAtLTE(now.Add(-deletionWindow)), workspace.ErasedAtIsNil())
 }
 
-// DueForErase lists the Workspaces past their deletion window at now, the ones the erase removes,
-// by id. The erase passes the instant it then tombstones them at (workspacesunchecked.TombstoneIn),
-// so a Workspace it lists is never refused by the window.
-func (m *Module) DueForErase(ctx context.Context, now time.Time) ([]int64, error) {
-	return m.client.Workspace.Query().Where(PastDeletionWindow(now)).Order(workspace.ByID()).IDs(ctx)
+// DueForErase lists the Workspaces past their deletion window now, the ones the erase removes, by
+// id. The erase tombstones them later on the same clock (workspacesunchecked.Module.TombstoneIn),
+// and a Workspace past its window stays past it, so a Workspace it lists is never refused by the
+// window.
+func (m *Module) DueForErase(ctx context.Context) ([]int64, error) {
+	return m.client.Workspace.Query().Where(PastDeletionWindow(m.now())).Order(workspace.ByID()).IDs(ctx)
 }
 
-// DeletionStateOf is the cycle state a Workspace row is in.
+// DeletionStateOf is the cycle state a Workspace row is in. A row in StateErased is a tombstone: a
+// write on its behalf that arrives late (a signed link clicked long after) has nothing to record
+// into, while one in its deletion window has (a restore brings it back with what was recorded).
 func DeletionStateOf(ws *ent.Workspace) DeletionState {
 	switch {
 	case ws.ErasedAt != nil:
@@ -179,8 +182,8 @@ func (m *Module) Delete(ctx context.Context, s *ent.Scoped, actor events.Actor, 
 
 // Erased reports whether the Workspace id is erased: its row is a tombstone, or there is none. A
 // job of such a Workspace has nothing left to work on and must write nothing into it.
-func Erased(ctx context.Context, client *ent.Client, id int64) (bool, error) {
-	live, err := client.Workspace.Query().Where(workspace.ID(id), workspace.ErasedAtIsNil()).Exist(ctx)
+func (m *Module) Erased(ctx context.Context, id int64) (bool, error) {
+	live, err := m.client.Workspace.Query().Where(workspace.ID(id), workspace.ErasedAtIsNil()).Exist(ctx)
 	if err != nil {
 		return false, err
 	}

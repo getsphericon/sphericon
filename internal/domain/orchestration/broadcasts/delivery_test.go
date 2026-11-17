@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/fixtures"
@@ -49,34 +50,43 @@ func (p *provider) EmailSender(context.Context, *ent.Scoped, *ent.Integration) (
 	return p.sender, p.err
 }
 
-// delivery is a sending Broadcast (the fixture, with no recipients yet) over a mailbox.
+// delivery is a sending Broadcast (the fixture, with no recipients yet) over a mailbox, its sends
+// handed to a scheduler that records them.
 type delivery struct {
-	t   *testing.T
-	env *testhelper.TestEnv
-	box *mailbox
-	res *provider
-	out *outboundmessages.Module
-	del *broadcasts.Delivery
-	s   *ent.Scoped
+	t     *testing.T
+	env   *testhelper.TestEnv
+	box   *mailbox
+	res   *provider
+	out   *outboundmessages.Module
+	sched *recordingScheduler
+	del   *broadcasts.Delivery
+	s     *ent.Scoped
 }
 
-// newDelivery builds the delivery over an Outbound send module with opts (a clock of the test's).
-func newDelivery(t *testing.T, now func() time.Time, opts ...outboundmessages.Option) *delivery {
+// newDelivery builds the delivery over an Outbound send module on a clock of the test's.
+func newDelivery(t *testing.T, now func() time.Time) *delivery {
 	t.Helper()
 	env := testhelper.Setup(t)
 	box := &mailbox{}
 	res := &provider{sender: box}
-	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), now, opts...)
+	out := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), res, messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, now), outboundmessages.Deps{}, outboundmessages.Config{}, now)
+	sched := &recordingScheduler{}
 	return &delivery{
 		t: t, env: env, box: box, res: res,
-		out: out, del: broadcasts.NewDelivery(out),
+		out: out, sched: sched, del: broadcasts.NewDelivery(out, sched),
 		s: env.DB.Scoped(fixtures.AcmeID),
 	}
 }
 
-// detail is the sending Broadcast's figures and progress at now, paced by the delivery's Outbound send.
-func (d *delivery) detail(now time.Time) (broadcasts.Detail, error) {
-	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out).Detail(d.t.Context(), d.s, d.broadcastRow(), now)
+// broadcasts is the Broadcasts module over the delivery's Outbound send, whose clock it reads.
+func (d *delivery) broadcasts() *broadcasts.Module {
+	return broadcasts.New(d.env.Bus, testhelper.Renderer(), d.out, linkclick.New())
+}
+
+// detail is the sending Broadcast's figures and progress at now on the clock of the delivery's
+// Outbound send, which paces it.
+func (d *delivery) detail() (broadcasts.Detail, error) {
+	return d.broadcasts().Detail(d.t.Context(), d.s, d.broadcastRow())
 }
 
 // recipient adds a pending recipient row for a Contact to the sending Broadcast.
@@ -94,7 +104,7 @@ func (d *delivery) broadcastRow() *ent.Broadcast {
 
 // stats is the sending Broadcast's delivery figures, read from its rows.
 func (d *delivery) stats() broadcasts.Stats {
-	figures, err := broadcasts.StatsOf(d.t.Context(), d.s, fixtures.BroadcastSendingID)
+	figures, err := d.broadcasts().StatsOf(d.t.Context(), d.s, fixtures.BroadcastSendingID)
 	require.NoError(d.t, err)
 	return figures[fixtures.BroadcastSendingID]
 }

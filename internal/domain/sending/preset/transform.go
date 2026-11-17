@@ -90,8 +90,8 @@ func forbiddenCall(v reflect.Value) (string, bool) {
 	return "", false
 }
 
-// run evaluates the transform under the timeout and validates what comes out.
-func (p *Preset) run(ctx context.Context, body any, header http.Header) (Result, error) {
+// run evaluates the transform of p under the timeout and validates what comes out.
+func run(ctx context.Context, p *Preset, body any, header http.Header) (Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, TransformTimeout)
 	defer cancel()
 

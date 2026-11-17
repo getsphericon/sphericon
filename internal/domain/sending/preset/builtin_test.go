@@ -2,6 +2,7 @@ package preset_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,4 +20,9 @@ func TestEveryNamedBuiltinIsLoaded(t *testing.T) {
 		_, ok := registry.Get(name)
 		assert.True(t, ok, "no built-in Preset %q", name)
 	}
+}
+
+// engineAt runs a Preset offline (the test certificate) at the moment at.
+func engineAt(at time.Time) *preset.Engine {
+	return preset.New(preset.NewTestCertificates(), func() time.Time { return at })
 }

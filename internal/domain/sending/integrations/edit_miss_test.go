@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -48,7 +49,7 @@ func TestAnEditWhoseQuotaLookupIsNotFoundIsNotAStaleRevision(t *testing.T) {
 	bus := events.New(env.SQLDB, entclient.Core.NewTx, time.Now)
 	bus.UseJobs(failingQueue{err: notFound})
 	ses := &testhelper.FakeSES{}
-	module := integrations.New(bus, env.Cipher, ses.Catalog(), nil, "", time.Now)
+	module := integrations.New(bus, env.Cipher, ses.Catalog(), nil, "", nil, providerlimit.New(time.Now), time.Now)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 
 	_, err := module.Update(ctx, s, row.ID, integrations.UpdateInput{

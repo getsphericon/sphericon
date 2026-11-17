@@ -9,11 +9,7 @@ import (
 )
 
 func (h *Handlers) EnrollmentsList(ctx context.Context, params externalapi.EnrollmentsListParams) (*externalapi.EnrollmentsListOK, error) {
-	status := ""
-	if v, ok := params.Status.Get(); ok {
-		status = string(v)
-	}
-	page, err := h.automations.Enrollments(ctx, auth.TokenScoped(ctx), int64(params.AutomationId), status, pagination.ParamsOf(params.Page, params.PageSize))
+	page, err := h.automations.Enrollments(ctx, auth.TokenScoped(ctx), pagination.ParamsOf(params.Page, params.PageSize), inputs.EnrollmentsFilter(params))
 	if err != nil {
 		return nil, err
 	}

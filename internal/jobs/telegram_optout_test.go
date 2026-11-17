@@ -17,9 +17,13 @@ import (
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
@@ -203,7 +207,7 @@ func TestUnblockingTheBotAndAnyLaterStartLiftTheOptOut(t *testing.T) {
 			lift(t, env, bot)
 
 			assert.False(t, optedOut(t, env, optOutUser))
-			d, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), channels.Telegram, strconv.Itoa(optOutUser), eligibility.SourceBroadcasts)
+			d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser), Source: eligibility.SourceBroadcasts})
 			require.NoError(t, err)
 			assert.True(t, d.Eligible)
 		})
@@ -220,7 +224,7 @@ func TestADeactivatedUserLosesTheBindingAndHasNoOptOut(t *testing.T) {
 		{ID: "1", Destination: strconv.Itoa(optOutUser), Reachable: false, Reason: preset.Deactivated},
 	}}
 
-	err := callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
+	err := callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), preset.New(preset.NewTestCertificates(), time.Now), bindings.NewChats(env.Bus, time.Now), time.Now).Interpret(t.Context(), events.Ingest(env.DB.Scoped(fixtures.AcmeID)), callbackinterpretation.InterpretInput{Integration: row, Preset: "telegram", Result: res})
 
 	require.NoError(t, err)
 	assert.Zero(t, env.DB.Binding.Query().Where(binding.Destination(strconv.Itoa(optOutUser))).CountX(t.Context()))
@@ -339,7 +343,7 @@ func TestAManualTelegramSuppressionStopsEverySendToTheUser(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, externalapi.SuppressionChannelTelegram, created.Channel)
-	d, err := eligibility.Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), channels.Telegram, strconv.Itoa(optOutUser), "")
+	d, err := eligibility.New().Check(t.Context(), env.DB.Scoped(fixtures.AcmeID), eligibility.CheckInput{Channel: channels.Telegram, Destination: strconv.Itoa(optOutUser)})
 	require.NoError(t, err)
 	assert.Equal(t, eligibility.ReasonSuppressed, d.Reason)
 }
@@ -357,7 +361,7 @@ func TestAManualTelegramDestinationThatIsNoUserIdIsRefused(t *testing.T) {
 }
 
 // stopFrom is Bob stopping in Telegram from a message of Acme that came from broadcastID or
-// automationID, through the button on a received message (channelstop.StopTelegram).
+// automationID, through the button on a received message (the Channel stops' StopTelegram).
 func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID int64) {
 	t.Helper()
 	msg := &ent.OutboundMessage{ContactID: lo.ToPtr(int64(fixtures.ContactBobID))}
@@ -370,11 +374,11 @@ func stopFrom(t *testing.T, env *testhelper.TestEnv, broadcastID, automationID i
 	if automationID != 0 {
 		msg.AutomationID = &automationID
 	}
-	err := env.Bus.WithinScopedTx(t.Context(), env.DB.Scoped(fixtures.AcmeID), func(ts *ent.Scoped, pub events.Publisher) error {
-		return channelstop.StopTelegram(t.Context(), ts, pub, channelstop.TelegramStop{
+	err := env.Bus.WithinScopedTx(t.Context(), env.DB.Scoped(fixtures.AcmeID), func(ts *ent.Scoped, _ events.Publisher) error {
+		return testhelper.Module[*channelstop.Module](env).StopTelegram(t.Context(), ts, channelstop.TelegramStop{
 			Destination: strconv.Itoa(optOutUser), Via: events.UnsubscribedByButton,
 			OutboundMessageID: msg.ID, ContactID: lo.FromPtr(msg.ContactID), BroadcastID: lo.FromPtr(msg.BroadcastID), AutomationID: lo.FromPtr(msg.AutomationID),
-			Now: time.Now(), DedupKey: "test:stop",
+			At: time.Now(), DedupKey: "test:stop",
 		})
 	})
 	require.NoError(t, err)
@@ -427,7 +431,8 @@ func TestATelegramLinkClickedAgainAfterAStartIsANewOptOut(t *testing.T) {
 		OutboundMessageID: fixtures.OutboundMessageParkedClaimID,
 	}
 	clock := testhelper.NewClock(time.Now())
-	u := unsubscriberecording.New(env.Bus, clock.Now)
+	u := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), testhelper.Module[*unsubscribes.Module](env),
+		testhelper.Module[*confirmations.Module](env), testhelper.Module[*channelstop.Module](env), clock.Now)
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, u.RecordLink(t.Context(), scope, link))
 	// The start is sent after the click (Telegram dates it, to the second), the second click after it.

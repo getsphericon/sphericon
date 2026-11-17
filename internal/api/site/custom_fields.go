@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 )
 
@@ -15,7 +14,7 @@ import (
 func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCustomFieldsListParams) (*siteapi.SiteCustomFieldsListOK, error) {
 	scoped := workspaceScope(ctx)
 
-	items, err := contacts.CustomFields(ctx, scoped)
+	items, err := h.contacts.CustomFields(ctx, scoped)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +24,7 @@ func (h *Handlers) SiteCustomFieldsList(ctx context.Context, _ siteapi.SiteCusto
 
 // SiteCustomFieldsGet returns one Custom field of the Workspace; an unknown id is a 404.
 func (h *Handlers) SiteCustomFieldsGet(ctx context.Context, params siteapi.SiteCustomFieldsGetParams) (*siteapi.SiteCustomFieldResource, error) {
-	field, err := contacts.CustomField(ctx, workspaceScope(ctx), int64(params.ID))
+	field, err := h.contacts.CustomField(ctx, workspaceScope(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err
 	}

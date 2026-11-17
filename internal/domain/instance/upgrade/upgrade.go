@@ -40,9 +40,9 @@ var (
 
 const maxBinary = 1 << 30
 
-// Options is one Upgrade step.
+// Options is one Upgrade step: what it installs over which binary. Where the releases come from
+// and how a binary runs are the Upgrader's (Seams).
 type Options struct {
-	Source   Source
 	Target   string   // path of the installed binary
 	Current  string   // running version, "v0.1.0" or "0.1.0"
 	Version  string   // pinned release; empty = the newest the Source has
@@ -51,17 +51,8 @@ type Options struct {
 	// Service is the systemd unit the restart hint names; "" = "sphericon".
 	Service string
 
-	// Container is where the Instance runs, which names the command to use instead inside a
-	// container or on Kubernetes; nil = detect from the environment.
-	Container func() Container
-	// Run executes a binary and returns its stdout; nil = os/exec with the process environment
-	// and stderr passed through.
-	Run func(ctx context.Context, bin string, args []string) ([]byte, error)
-	// PostSwap runs after the swap and says what was installed; nil = the Installed that leaves
-	// the restart of Service to the Self-hoster. `--restart` replaces it with one that restarts
-	// the systemd service (Systemd.PostSwap).
-	PostSwap func(ctx context.Context, r Result) (Installed, error)
-
+	// seams are the Upgrader's, which Step and Walk set.
+	seams Seams
 	// notesConfirmed: the Walk has shown the Upgrade notes of every release it installs and
 	// has the go-ahead, so a step neither prints nor asks again.
 	notesConfirmed bool
@@ -77,22 +68,33 @@ type Result struct {
 	Old     string // the previous binary, kept next to it
 }
 
+// Seams are where an Upgrader reaches outside the process: the wiring picks them once, in New.
+type Seams struct {
+	// Source is where the releases come from; nil = the Upgrader's GitHub. `--from <dir>` wires
+	// DirSource.
+	Source Source
+	// Container is where the Instance runs, which names the command to use instead inside a
+	// container or on Kubernetes; nil = detect from the environment.
+	Container func() Container
+	// Run executes a binary and returns its stdout; nil = os/exec with the process environment
+	// and stderr passed through.
+	Run func(ctx context.Context, bin string, args []string) ([]byte, error)
+	// PostSwap runs after the swap and says what was installed; nil = the Installed that leaves
+	// the restart of Options.Service to the Self-hoster. `--restart` wires one that restarts the
+	// systemd service (Systemd.PostSwap).
+	PostSwap func(ctx context.Context, r Result) (Installed, error)
+}
+
 // withDefaults fills what the caller left zero.
 func (o Options) withDefaults() Options {
 	if o.Platform == (Platform{}) {
 		o.Platform = Platform{OS: runtime.GOOS, Arch: runtime.GOARCH}
 	}
-	if o.Container == nil {
-		o.Container = DetectContainer
-	}
-	if o.Run == nil {
-		o.Run = execRun
-	}
 	if o.Service == "" {
 		o.Service = "sphericon"
 	}
-	if o.PostSwap == nil {
-		o.PostSwap = func(_ context.Context, r Result) (Installed, error) {
+	if o.seams.PostSwap == nil {
+		o.seams.PostSwap = func(_ context.Context, r Result) (Installed, error) {
 			return Installed{Result: r, Service: o.Service}, nil
 		}
 	}
@@ -103,7 +105,7 @@ func (o Options) withDefaults() Options {
 // ("v0.1.0"): what a Step and a Walk both start with.
 func begin(o Options) (Options, string, error) {
 	o = o.withDefaults()
-	if kind := o.Container(); kind != BareHost {
+	if kind := o.seams.Container(); kind != BareHost {
 		return o, "", containerRefusal(kind)
 	}
 	current := buildinfo.Semver(o.Current)
@@ -115,9 +117,9 @@ func begin(o Options) (Options, string, error) {
 
 // Step runs one Upgrade, yielding its Progress: to the pinned release, or to the newest the
 // Source has.
-func Step(ctx context.Context, o Options) iter.Seq2[Progress, error] {
+func (u *Upgrader) Step(ctx context.Context, o Options) iter.Seq2[Progress, error] {
 	return progressOf(func(emit emitter) error {
-		_, err := step(ctx, o, emit)
+		_, err := step(ctx, u.bind(o), emit)
 		return err
 	})
 }
@@ -151,7 +153,7 @@ func step(ctx context.Context, o Options, emit emitter) (string, error) {
 		cleanup.Remove(staged)
 		return "", err
 	}
-	installed, err := o.PostSwap(ctx, res)
+	installed, err := o.seams.PostSwap(ctx, res)
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +163,7 @@ func step(ctx context.Context, o Options, emit emitter) (string, error) {
 // stage fetches a release, checks its checksum and unpacks its binary to dst. It removes dst
 // again when any of that fails.
 func stage(ctx context.Context, o Options, version, dst string) (string, error) {
-	rel, err := o.Source.Fetch(ctx, version, o.Platform)
+	rel, err := o.seams.Source.Fetch(ctx, version, o.Platform)
 	if err != nil {
 		return "", err
 	}
@@ -184,7 +186,7 @@ func install(ctx context.Context, o Options, current, staged, version string, em
 			return Result{}, err
 		}
 	}
-	out, err := o.Run(ctx, staged, []string{"migrate"})
+	out, err := o.seams.Run(ctx, staged, []string{"migrate"})
 	if err != nil {
 		return Result{}, fmt.Errorf("migrate with %s (nothing was swapped): %w", version, err)
 	}
@@ -202,7 +204,7 @@ func install(ctx context.Context, o Options, current, staged, version string, em
 // version (the staged binary carries the changelog up to itself, so this works offline) and
 // refuses with ErrNeedsConfirmation when there are some and --yes was not given.
 func confirmNotes(ctx context.Context, o Options, staged, current, version string, emit emitter) error {
-	notes, err := o.Run(ctx, staged, []string{"upgrade-notes", "--since", current})
+	notes, err := o.seams.Run(ctx, staged, []string{"upgrade-notes", "--since", current})
 	if err != nil {
 		return fmt.Errorf("read the Upgrade notes of %s: %w", version, err)
 	}
@@ -241,7 +243,7 @@ func chooseVersion(ctx context.Context, o Options) (string, error) {
 		}
 		return buildinfo.Bare(o.Version), nil
 	}
-	versions, err := o.Source.Versions(ctx, o.Platform)
+	versions, err := o.seams.Source.Versions(ctx, o.Platform)
 	if err != nil {
 		return "", err
 	}

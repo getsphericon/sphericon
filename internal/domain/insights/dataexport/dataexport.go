@@ -44,15 +44,6 @@ var ErrNotFound = validation.NotFound("contactexport: contact not found", i18n.E
 // ErrIdentifier means the request named neither or both of id and email.
 var ErrIdentifier = validation.Refuse("contactexport: exactly one of id or email is required", i18n.ErrorsContactExportIdentifier)
 
-// Ref is the optional string of a query parameter read as "(value, present)": nil
-// when absent. It lets a handler pass its generated Opt parameters straight to Open.
-func Ref[T ~string](v T, ok bool) *string {
-	if !ok {
-		return nil
-	}
-	return new(string(v))
-}
-
 // Download is the Data export of one Contact: the name to save it under and its chunks.
 type Download struct {
 	Filename string
@@ -62,16 +53,31 @@ type Download struct {
 	Chunks iter.Seq2[[]byte, error]
 }
 
-// Open is the Data export of the Contact named by exactly one of its id or email, inside the
-// Workspace of s: another Workspace's Contact is not found. Its two refusals (ErrIdentifier,
+// Exporter makes the Data export of a Contact, each row projected by its Mapper: one per surface,
+// as each surface has the contract's members of its own.
+type Exporter struct {
+	mapper Mapper
+}
+
+// New builds the exporter over the surface's Mapper.
+func New(m Mapper) *Exporter { return &Exporter{mapper: m} }
+
+// OpenInput names the Contact to export by exactly one of its id or its email; the other is nil.
+type OpenInput struct {
+	ID    *int64
+	Email *string
+}
+
+// Open is the Data export of the Contact in.ID or in.Email names, inside the Workspace of s:
+// another Workspace's Contact is not found. Its two refusals (ErrIdentifier,
 // ErrNotFound) come before any chunk and answer alike on both surfaces. The Contact and every
 // member are read through s, so nothing outside the Workspace can appear.
-func Open(ctx context.Context, s *ent.Scoped, m Mapper, id *int64, email *string) (Download, error) {
-	c, err := find(ctx, s, id, email)
+func (e *Exporter) Open(ctx context.Context, s *ent.Scoped, in OpenInput) (Download, error) {
+	c, err := find(ctx, s, in.ID, in.Email)
 	if err != nil {
 		return Download{}, err
 	}
-	return Download{Filename: filename(c), Chunks: chunks(ctx, s, m, c)}, nil
+	return Download{Filename: filename(c), Chunks: chunks(ctx, s, e.mapper, c)}, nil
 }
 
 // find resolves the Contact to export.

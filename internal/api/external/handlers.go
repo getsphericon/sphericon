@@ -9,15 +9,18 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/auditlog"
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/insights/exportstream"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -77,12 +80,16 @@ type Handlers struct {
 	brandKit              *brandkits.Module
 	automations           *automations.Module
 	rules                 *rules.Module
-	// tokens mints the first token of the Instance by its bootstrap token.
+	// tokens mints, lists and revokes the Workspace's tokens, and the first token of the Instance by
+	// its bootstrap token.
 	tokens *apitokens.Module
 	audit  *auditlog.Log
 	export *exportstream.Streams
 	// unsubscribe records an opt-out (a use case, ADR 0102).
-	unsubscribe *unsubscriberecording.UseCase
+	unsubscribe   *unsubscriberecording.UseCase
+	suppressions  *suppressions.Module
+	confirmations *confirmations.Module
+	exports       *dataexport.Exporter
 }
 
 // Deps is everything the /api handlers are built from. The domain modules are
@@ -119,7 +126,8 @@ type Deps struct {
 	Rules                 *rules.Module
 	Broadcasts            *broadcasts.Module
 	Reputation            *reputation.Module
-	// Tokens mints the first token of the Instance by its bootstrap token (apitokens.Module).
+	// Tokens mints, lists and revokes the Workspace's tokens, and the first token of the Instance by
+	// its bootstrap token (apitokens.Module).
 	Tokens *apitokens.Module
 	Audit  *auditlog.Log
 	// Export serves the Export streams behind their licenses (ADR 0045).
@@ -129,6 +137,13 @@ type Deps struct {
 	Clock func() time.Time
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
+	// Suppressions adds a Suppression.
+	Suppressions *suppressions.Module
+	// Confirmations records the consent a customer collected and reads a Contact's SMS consent.
+	Confirmations *confirmations.Module
+	// Exports is the Data export of a Contact (ADR 0021), projected onto this surface's contract
+	// (resources.ExportMapper).
+	Exports *dataexport.Exporter
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -141,7 +156,8 @@ func NewHandlers(d Deps) *Handlers {
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,
-		unsubscribe: d.Unsubscribe,
+		unsubscribe: d.Unsubscribe, suppressions: d.Suppressions, confirmations: d.Confirmations,
+		exports: d.Exports,
 	}
 }
 

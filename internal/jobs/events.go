@@ -187,13 +187,14 @@ func suppresses(_ events.Envelope, ev events.DomainEvent) bool {
 type SuppressEventWorker struct {
 	river.WorkerDefaults[SuppressEventArgs]
 
-	ent *ent.Client
+	ent          *ent.Client
+	suppressions *suppressions.Module
 }
 
-// NewSuppressEventWorker is the suppression consumer's worker over the raw client: the envelope
-// names the Workspace, which Work scopes to.
-func NewSuppressEventWorker(client *ent.Client) *SuppressEventWorker {
-	return &SuppressEventWorker{ent: client}
+// NewSuppressEventWorker is the suppression consumer's worker over the raw client, whose envelope
+// names the Workspace Work scopes to, and the Suppressions module it adds the address through.
+func NewSuppressEventWorker(client *ent.Client, registry *suppressions.Module) *SuppressEventWorker {
+	return &SuppressEventWorker{ent: client, suppressions: registry}
 }
 
 // Work adds the event's destination to the Workspace's Suppression list when the action implies a
@@ -217,7 +218,7 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	// api token, so this is a scope source outside the site/external/job list.
 	s := w.ent.Scoped(env.WorkspaceID)
 	// A refused destination ends the job (RefusalsEnd); any other error retries it.
-	err = suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
+	err = w.suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
 	if err != nil {
 		return fmt.Errorf("suppress %q: %w", p.Email, err)
 	}
@@ -249,13 +250,14 @@ func countsOnBroadcast(_ events.Envelope, ev events.DomainEvent) bool {
 type BroadcastUnsubscribeEventWorker struct {
 	river.WorkerDefaults[BroadcastUnsubscribeEventArgs]
 
-	ent *ent.Client
+	ent        *ent.Client
+	broadcasts *broadcasts.Module
 }
 
 // NewBroadcastUnsubscribeEventWorker is the broadcasts consumer's worker over the raw client: the
-// envelope names the Workspace, which Work scopes to.
-func NewBroadcastUnsubscribeEventWorker(client *ent.Client) *BroadcastUnsubscribeEventWorker {
-	return &BroadcastUnsubscribeEventWorker{ent: client}
+// envelope names the Workspace, which Work scopes to, and the Broadcasts record the unsubscribe.
+func NewBroadcastUnsubscribeEventWorker(client *ent.Client, mod *broadcasts.Module) *BroadcastUnsubscribeEventWorker {
+	return &BroadcastUnsubscribeEventWorker{ent: client, broadcasts: mod}
 }
 
 // Work marks the received message's recipient as unsubscribed, without restoring identity.
@@ -263,7 +265,7 @@ func (w *BroadcastUnsubscribeEventWorker) Work(ctx context.Context, job *river.J
 	if job.Args.MessageID == 0 {
 		return nil
 	}
-	if _, err := broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.MessageID, job.Args.ObservedAt); err != nil {
+	if _, err := w.broadcasts.RecordUnsubscribe(ctx, w.ent.Scoped(job.Args.WorkspaceID), job.Args.MessageID, job.Args.ObservedAt); err != nil {
 		return fmt.Errorf("count the unsubscribe for the broadcast: %w", err)
 	}
 	return nil

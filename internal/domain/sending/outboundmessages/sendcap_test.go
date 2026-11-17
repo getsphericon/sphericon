@@ -38,7 +38,7 @@ func capped(t *testing.T, env *testhelper.TestEnv, workspaceID int64, perDay *in
 
 // sendCapModule is the send path of an Instance with Send caps, on the test's clock.
 func sendCapModule(env *testhelper.TestEnv, c *testhelper.Clock) *outboundmessages.Module {
-	return newModule(env, c.Now, outboundmessages.WithSendCaps(true))
+	return configured(env, c.Now, outboundmessages.Config{SendCaps: true})
 }
 
 func TestSpentSendCapIsADeferralWithTheWaitUntilTheWorkspaceBucketRefills(t *testing.T) {
@@ -202,7 +202,7 @@ func TestSendsWithoutASendCapSpendNothingFromIt(t *testing.T) {
 func TestTestInboxSendsCountAgainstTheSendCap(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := startClock()
-	m := pinewoodInboxModule(t, env, c, outboundmessages.WithSendCaps(true))
+	m := pinewoodInboxModule(t, env, c, outboundmessages.Config{SendCaps: true})
 	capped(t, env, fixtures.PinewoodID, new(2))
 
 	require.Equal(t, outboundmessages.Sent, sendToReader(t, env, m, "bc:1").Outcome)

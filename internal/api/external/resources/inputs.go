@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -63,6 +64,8 @@ import (
 // goverter:extend stringIn
 // goverter:extend emailIn
 // goverter:extend stringPtrIn
+// goverter:extend emailPtrIn
+// goverter:extend entityIDPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
@@ -97,6 +100,8 @@ import (
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend smsConsentIn
+// goverter:extend timeIn
+// goverter:extend enrollmentStatusIn
 type Inputs interface {
 	// The Channel defaults to email, which the handler picks with ConsentChannel and assigns.
 	// goverter:map SendingSource Source
@@ -105,6 +110,7 @@ type Inputs interface {
 
 	TemplateCreate(source *externalapi.CreateTemplateInput) emailtemplates.CreateInput
 	TemplateUpdate(source *externalapi.UpdateTemplateInput) emailtemplates.UpdateInput
+	EmailLint(source *externalapi.LintEmailInput) emailtemplates.LintInput
 
 	BroadcastCreate(source *externalapi.CreateBroadcastInput) (broadcasts.CreateInput, error)
 	BroadcastUpdate(source *externalapi.UpdateBroadcastInput) (broadcasts.UpdateInput, error)
@@ -115,9 +121,15 @@ type Inputs interface {
 	TelegramBroadcastContentPatch(source externalapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
 	SmsBroadcastContentIn(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
 	SmsBroadcastContentPatch(source externalapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
-	// The list's filter: the API lists every status.
-	// goverter:ignore Statuses
+	// The list's filter: the API lists every status, the newest first (the zero Order).
+	// goverter:ignore Statuses Order
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
+	BroadcastSchedule(source *externalapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
+	BroadcastSetSegment(source *externalapi.SetBroadcastSegmentInput) broadcasts.SetSegmentInput
+	// goverter:map AutomationId AutomationID
+	EnrollmentsFilter(source externalapi.EnrollmentsListParams) automations.EnrollmentsFilter
+	// The Contact a Data export names by its id or its email.
+	ContactExport(source externalapi.ContactsExportParams) dataexport.OpenInput
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -200,8 +212,10 @@ type Inputs interface {
 	// goverter:enum:transform value
 	ConsentChannel(source externalapi.ConsentChannel) channels.Channel
 
-	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
-	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) confirmations.Evidence
+	// The consent a customer collected, with its evidence: a Confirmation's body.
+	// goverter:map . Evidence
+	Confirmation(source *externalapi.CreateConfirmationInput) confirmations.ConfirmInput
+	// The evidence of consent a batch item carries.
 	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
 	// handler's to set.
@@ -255,6 +269,8 @@ func listPatch(list []string) patch.Field[[]string]                       { retu
 func stringIn(o externalapi.OptString) string                             { return o.Or("") }
 func emailIn(o externalapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o externalapi.OptString) *string                         { return convert.Ptr(o) }
+func emailPtrIn(o externalapi.OptEmailAddress) *string                    { return convert.StringPtr(o) }
+func entityIDPtrIn(o externalapi.OptEntityId) *int64                      { return convert.Int64Ptr(o) }
 func nilStringPtrIn(o externalapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o externalapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o externalapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }
@@ -263,6 +279,9 @@ func nilLocalePtrIn(o externalapi.OptNilLocaleTag) *string                { retu
 func nilImageURLPtrIn(o externalapi.OptNilImageUrl) *string               { return convert.StringPtr(o) }
 func nilDatePtrIn(o externalapi.OptNilDate) *time.Time                    { return convert.Ptr(o) }
 func nilEntityIDPtrIn(o externalapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
+
+// enrollmentStatusIn is the status the Enrollment list is narrowed to: empty for every status.
+func enrollmentStatusIn(o externalapi.OptEnrollmentStatus) string { return string(o.Or("")) }
 
 // requiredNilEntityIDPtrIn is a field the body must carry whose null is a choice of its own (a
 // Broadcast's audience, null for all contacts): nil for null, else the id.
@@ -284,6 +303,9 @@ func listPtrIn(list []string) *[]string {
 }
 
 // timestampIn is a moment the request may leave out: the zero time when absent.
+// timeIn is a required time as the module takes it.
+func timeIn(v externalapi.Timestamp) time.Time { return time.Time(v) }
+
 func timestampIn(o externalapi.OptNilTimestamp) time.Time {
 	v, _ := o.Get()
 	return time.Time(v)

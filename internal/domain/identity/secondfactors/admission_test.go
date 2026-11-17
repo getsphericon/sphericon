@@ -25,15 +25,16 @@ var (
 // Workspace publicID names, as the admission does before it asks the requirement.
 func admission(t *testing.T, env *testhelper.TestEnv, userID int64, publicID string) (*secondfactors.Module, *ent.Membership) {
 	t.Helper()
-	_, m, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
+	member, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), userID, publicID)
 	require.NoError(t, err)
+	m := member.Membership
 	return testhelper.Module[*secondfactors.Module](env), m
 }
 
 // check asks the requirement of the Workspace of m about its member at at.
 func check(t *testing.T, factors *secondfactors.Module, m *ent.Membership, at time.Time) error {
 	t.Helper()
-	return factors.CheckRequirement(t.Context(), m.UserID, m.Edges.Workspace.SecondFactorRequiredAt, m.CreatedAt, at)
+	return factors.CheckRequirement(t.Context(), m, at)
 }
 
 func TestAWorkspaceWithNoRequirementWithholdsNoOne(t *testing.T) {
@@ -63,15 +64,13 @@ func TestALaterMembershipHasAGraceOfItsOwn(t *testing.T) {
 	acc, rita := admission(t, env, fixtures.UmbrellaOwnerRitaID, fixtures.UmbrellaPublicID)
 	_, nina := admission(t, env, fixtures.UmbrellaMemberNinaID, fixtures.UmbrellaPublicID)
 
-	ritasEnd, ritaHasOne, err := acc.Deadline(t.Context(), rita)
-	require.NoError(t, err)
-	ninasEnd, ninaHasOne, err := acc.Deadline(t.Context(), nina)
+	deadlines, err := acc.Deadlines(t.Context(), []*ent.Membership{rita, nina})
 	require.NoError(t, err)
 
-	require.True(t, ritaHasOne)
-	require.True(t, ninaHasOne)
-	assert.Equal(t, time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC), ritasEnd.UTC())
-	assert.Equal(t, nina.CreatedAt.Add(secondfactors.GracePeriod), ninasEnd)
+	require.Contains(t, deadlines, rita.ID)
+	require.Contains(t, deadlines, nina.ID)
+	assert.Equal(t, time.Date(2026, 3, 8, 0, 0, 0, 0, time.UTC), deadlines[rita.ID].UTC())
+	assert.Equal(t, nina.CreatedAt.Add(secondfactors.GracePeriod), deadlines[nina.ID])
 }
 
 func TestAMemberWithASecondFactorHasNoDeadline(t *testing.T) {

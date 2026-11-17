@@ -28,7 +28,9 @@ func (h *Handlers) SiteOptionalConsentsSet(ctx context.Context, req *siteapi.Sit
 	if a == nil {
 		return nil, auth.ErrUnauthorized
 	}
-	consent, err := h.consentRecords.SetOptionalConsent(ctx, a.User.ID, string(params.Key), string(req.Version), req.Accepted)
+	in := inputs.OptionalConsentChange(req)
+	in.Key = string(params.Key)
+	consent, err := h.consentRecords.SetOptionalConsent(ctx, a.User.ID, in)
 	if err != nil {
 		return nil, err
 	}

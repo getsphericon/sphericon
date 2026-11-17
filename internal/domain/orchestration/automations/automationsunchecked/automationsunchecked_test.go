@@ -15,10 +15,10 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// cancelFor runs CancelPending for a Contact the way Erasure does.
+// cancelFor runs CancelPending for a Contact the way Erasure does, in its purging transaction.
 func cancelFor(t *testing.T, env *testhelper.TestEnv, contactID int64) error {
 	t.Helper()
-	return env.CancelPendingFor(t, contactID, automationsunchecked.CancelPending)
+	return env.CancelPendingFor(t, contactID, automationsunchecked.New(env.Bus).CancelPending)
 }
 
 func runIDsOf(t *testing.T, env *testhelper.TestEnv, kind string) []any {

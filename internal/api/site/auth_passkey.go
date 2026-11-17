@@ -11,16 +11,16 @@ import (
 // SitePasskeyLoginBegin answers the request options for a usernameless Passkey login and sets
 // the ceremony cookie. It is anonymous and writes nothing (ADR 0052).
 func (h *Handlers) SitePasskeyLoginBegin(context.Context) (*siteapi.SitePasskeyLoginBegunHeaders, error) {
-	raw, ceremony, err := h.passkeys.BeginLogin()
+	begun, err := h.passkeys.BeginLogin()
 	if err != nil {
 		return nil, err
 	}
-	options, err := decodeOptions[siteapi.SitePasskeyRequestOptions](raw)
+	options, err := decodeOptions[siteapi.SitePasskeyRequestOptions](begun.Options)
 	if err != nil {
 		return nil, err
 	}
 	return &siteapi.SitePasskeyLoginBegunHeaders{
-		SetCookie: h.ceremonyCookie(auth.PasskeyLoginPath, ceremony),
+		SetCookie: h.ceremonyCookie(auth.PasskeyLoginPath, begun.Ceremony),
 		Response:  siteapi.SitePasskeyLoginBegun{Options: options},
 	}, nil
 }

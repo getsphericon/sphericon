@@ -23,7 +23,12 @@ import (
 // goverter:extend titlePtrIn
 type Inputs interface {
 	SignupItemCreate(source *staffapi.StaffSignupItemInput) signupitems.Input
+	// The item is the path's, which the handler sets.
+	// goverter:ignore ID
 	SignupItemUpdate(source *staffapi.StaffSignupItemUpdate) signupitems.UpdateInput
+	// The item is the path's, which the handler sets.
+	// goverter:ignore ID
+	SignupItemPublish(source *staffapi.StaffLegalDocumentPublishInput) signupitems.PublishInput
 	// The new order of the Sign-up items, by id.
 	SignupItemOrder(source []staffapi.EntityId) []int64
 

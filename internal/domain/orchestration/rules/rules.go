@@ -167,6 +167,8 @@ type Module struct {
 	cipher *secrets.Cipher
 	bus    *events.Bus
 	life   *versioneddefinition.Lifecycle[ent.Rule, ent.RuleVersion, UpdateInput, definition]
+	// conditions compiles a Rule's Condition.
+	conditions *condition.Module
 	// client makes the call of an http Action.
 	client webhook.Doer
 	// now is the Instance clock a condition's relative date counts back from, a Firing completes
@@ -179,7 +181,7 @@ type Module struct {
 // (internal/domain/content/versioneddefinition); client is the protected HTTP client an http
 // Action calls through (ADR 0039). now is the Instance clock.
 func New(cipher *secrets.Cipher, bus *events.Bus, client webhook.Doer, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, bus: bus, client: client, now: now}
+	m := &Module{cipher: cipher, bus: bus, client: client, now: now, conditions: condition.New(now)}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound: ErrNotFound,
 		// A Rule is discarded, never archived (ADR 0100): the lifecycle never finds one archived.
@@ -269,7 +271,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		return nil, err
 	}
 	in.Name = name
-	return m.life.Edit(ctx, s, id, in.Revision, in.Name, in)
+	return m.life.Edit(ctx, s, id, versioneddefinition.EditInput[UpdateInput]{Revision: in.Revision, Name: in.Name, Edit: in})
 }
 
 // versioned is the Rule's part of the lifecycle (versioneddefinition.Definition).
@@ -532,7 +534,7 @@ func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *str
 	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
 		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, g.Size()))
 	}
-	if _, err := condition.RulePredicate(ctx, s, *cond, nil, m.now()); err != nil {
+	if _, err := m.conditions.RulePredicate(ctx, s, *cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
 	return nil
@@ -699,7 +701,7 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64
 func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Event) (bool, error) {
 	match := contact.ID(ev.ContactID)
 	if cond != nil && *cond != "" {
-		pred, err := condition.RulePredicate(ctx, s, *cond, ev.Properties, m.now())
+		pred, err := m.conditions.RulePredicate(ctx, s, *cond, ev.Properties)
 		if errors.Is(err, condition.ErrStorage) {
 			return false, err
 		}
@@ -797,7 +799,7 @@ func (m *Module) RunActions(ctx context.Context, s *ent.Scoped, firingID int64, 
 	if err != nil {
 		return err
 	}
-	actions, err := FiringActions(ctx, s, f)
+	actions, err := m.FiringActions(ctx, s, f)
 	if err != nil {
 		return err
 	}
@@ -894,7 +896,7 @@ func requireAutomations(ctx context.Context, s *ent.Scoped, actions []Action) er
 // ADR 0100). A draft enrolls nobody until it is published, and Publish refuses an archived
 // Automation, so neither a draft nor an inactive Rule counts. It reads under the Workspace lock, as
 // every reader of Live use does (ADR 0108).
-func ActiveEnrollingInto(ctx context.Context, l *ent.WorkspaceLocked, automationID int64) ([]*ent.Rule, error) {
+func (m *Module) ActiveEnrollingInto(ctx context.Context, l *ent.WorkspaceLocked, automationID int64) ([]*ent.Rule, error) {
 	active, err := l.Rule().Query().
 		Where(rule.StatusEQ(rule.StatusActive), rule.HasLiveVersion()).
 		WithLiveVersion().
@@ -918,7 +920,7 @@ func ActiveEnrollingInto(ctx context.Context, l *ent.WorkspaceLocked, automation
 
 // FiringActions returns the Actions a Firing runs: those of the Rule version that fired, which is
 // never rewritten (ADR 0065), so an edit or a Publish after the Firing changes nothing it runs.
-func FiringActions(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring) ([]Action, error) {
+func (m *Module) FiringActions(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring) ([]Action, error) {
 	v, err := s.RuleVersion().Get(ctx, f.VersionID)
 	if err != nil {
 		return nil, fmt.Errorf("firing %d version: %w", f.ID, err)
@@ -933,8 +935,8 @@ func FiringActions(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring) ([]Act
 // pendingHTTP is the Firing's Actions, and whether the one at index is an http Action that still
 // waits for its call: a result already recorded, or an Action that is not an http one, leaves
 // nothing to do.
-func pendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index int) ([]Action, bool, error) {
-	actions, err := FiringActions(ctx, s, f)
+func (m *Module) pendingHTTP(ctx context.Context, s *ent.Scoped, f *ent.RuleFiring, index int) ([]Action, bool, error) {
+	actions, err := m.FiringActions(ctx, s, f)
 	if err != nil {
 		return nil, false, err
 	}

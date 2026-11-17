@@ -19,9 +19,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -74,6 +79,8 @@ import (
 // goverter:extend stringIn
 // goverter:extend emailIn
 // goverter:extend stringPtrIn
+// goverter:extend emailPtrIn
+// goverter:extend entityIDPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
@@ -89,6 +96,8 @@ import (
 // goverter:extend entityIDIn
 // goverter:extend maxPerSecondPtrIn
 // goverter:extend maxPerDayPtrIn
+// goverter:extend currencyCodePtrIn
+// goverter:extend attributionWindowDaysPtrIn
 // goverter:extend integrationConfigIn
 // goverter:extend integrationConfigPatch
 // goverter:extend int32ToInt
@@ -108,10 +117,26 @@ import (
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend automationStateIn
+// goverter:extend enrollmentStatusIn
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
+// goverter:extend timeIn
 type Inputs interface {
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
 	SecondFactorConfirm(source *siteapi.SiteSecondFactorConfirmInput) secondfactors.ConfirmInput
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
+	SecondFactorDisable(source *siteapi.SiteSecondFactorDisableInput) secondfactors.DisableInput
+	// The Passkey is the path's, which the handler assigns.
+	// goverter:ignore ID
+	PasskeyRename(source *siteapi.SitePasskeyRenameInput) passkeys.RenameInput
+	// The proof of identity comes from the session and the password typed, which the handler
+	// assigns.
+	// goverter:ignore Proof
+	PasskeyRemove(source siteapi.SitePasskeysRemoveParams) passkeys.RemoveInput
 
 	// The restoring User, the actor the Audit log records and whether the session is strong come
 	// from the session, which the handler assigns.
@@ -126,6 +151,7 @@ type Inputs interface {
 	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
 	// goverter:map Timezone Zone
 	TimezoneSet(source *siteapi.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput
+	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
 	// Switching the requirement on: the caller sets Required.
 	// goverter:map Revision | revisionPtrIn
 	// goverter:ignore Required
@@ -133,6 +159,7 @@ type Inputs interface {
 	// The Sign-up browser is the request's cookie, a parameter the handler assigns.
 	// goverter:ignore Browser
 	VerifyEmailLink(source *siteapi.SiteVerifyEmailInput) signup.VerifyEmailLinkInput
+	EmailChange(source *siteapi.SiteEmailChangeInput) users.EmailChangeInput
 	// The flow and the session holder are the request's cookies, which the handler opens and
 	// assigns.
 	// goverter:ignore Flow Session
@@ -156,10 +183,17 @@ type Inputs interface {
 	TelegramBroadcastContentPatch(source siteapi.TelegramBroadcastContentInput) broadcasts.TelegramContentPatch
 	SmsBroadcastContentIn(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentInput
 	SmsBroadcastContentPatch(source siteapi.SmsBroadcastContentInput) broadcasts.SMSContentPatch
-	// The list's filter; the statuses go member by member (BroadcastStatuses).
+	// The list's filter; the statuses go member by member (BroadcastStatuses). The order, which has a
+	// default of its own, is BroadcastsOrder's.
 	// goverter:map Status Statuses
+	// goverter:ignore Order
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
+	BroadcastSchedule(source *siteapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
+	// goverter:map AutomationId AutomationID
+	EnrollmentsFilter(source siteapi.SiteEnrollmentsListParams) automations.EnrollmentsFilter
+	// The Contact a Data export names by its id or its email.
+	ContactExport(source siteapi.SiteContactsExportParams) dataexport.OpenInput
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -211,6 +245,12 @@ type Inputs interface {
 	// The inviting User is the session's, not the request's: the handler sets it.
 	// goverter:ignore InvitedBy
 	InvitationCreate(source *siteapi.SiteCreateInvitationInput) invitations.InviteInput
+	// The Membership changed is the path's, not the request's: the handler sets it.
+	// goverter:ignore ID
+	MembershipRoleChange(source *siteapi.SiteUpdateMembershipInput) memberships.ChangeRoleInput
+	// The optional consent changed is the path's key, not the request's: the handler sets it.
+	// goverter:ignore Key
+	OptionalConsentChange(source *siteapi.SiteOptionalConsentChange) consentrecords.SetOptionalConsentInput
 
 	// Every answer was checked against the contract's enums when the request was decoded.
 	SignupSurvey(source *siteapi.SiteSignupSurveyInput) signupsurveyresponses.Answers
@@ -304,6 +344,8 @@ func listPatch(list []string) patch.Field[[]string]                   { return c
 func stringIn(o siteapi.OptString) string                             { return o.Or("") }
 func emailIn(o siteapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o siteapi.OptString) *string                         { return convert.Ptr(o) }
+func emailPtrIn(o siteapi.OptEmailAddress) *string                    { return convert.StringPtr(o) }
+func entityIDPtrIn(o siteapi.OptEntityId) *int64                      { return convert.Int64Ptr(o) }
 func nilStringPtrIn(o siteapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o siteapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o siteapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }
@@ -315,14 +357,16 @@ func nilEntityIDPtrIn(o siteapi.OptNilEntityId) *int64                { return c
 
 // requiredNilEntityIDPtrIn is a field the body must carry whose null is a choice of its own (a
 // Broadcast's audience, null for all contacts): nil for null, else the id.
-func requiredNilEntityIDPtrIn(o siteapi.NilEntityId) *int64 { return convert.Int64Ptr(o) }
-func boolIn(o siteapi.OptBool) bool                         { return o.Or(false) }
-func boolPtrIn(o siteapi.OptBool) *bool                     { return convert.Ptr(o) }
-func int32In(o siteapi.OptInt32) int                        { return int(o.Or(0)) }
-func entityIDIn(o siteapi.OptEntityId) int64                { return int64(o.Or(0)) }
-func maxPerSecondPtrIn(o siteapi.OptNilMaxPerSecond) *int   { return intPtr(o) }
-func maxPerDayPtrIn(o siteapi.OptNilMaxPerDay) *int         { return intPtr(o) }
-func int32ToInt(v int32) int                                { return int(v) }
+func requiredNilEntityIDPtrIn(o siteapi.NilEntityId) *int64              { return convert.Int64Ptr(o) }
+func boolIn(o siteapi.OptBool) bool                                      { return o.Or(false) }
+func boolPtrIn(o siteapi.OptBool) *bool                                  { return convert.Ptr(o) }
+func int32In(o siteapi.OptInt32) int                                     { return int(o.Or(0)) }
+func entityIDIn(o siteapi.OptEntityId) int64                             { return int64(o.Or(0)) }
+func maxPerSecondPtrIn(o siteapi.OptNilMaxPerSecond) *int                { return intPtr(o) }
+func maxPerDayPtrIn(o siteapi.OptNilMaxPerDay) *int                      { return intPtr(o) }
+func currencyCodePtrIn(o siteapi.OptCurrencyCode) *string                { return convert.StringPtr(o) }
+func attributionWindowDaysPtrIn(o siteapi.OptAttributionWindowDays) *int { return intPtr(o) }
+func int32ToInt(v int32) int                                             { return int(v) }
 
 // listPtrIn is a list an update replaces: an omitted list (nil) keeps the stored one.
 func listPtrIn(list []string) *[]string {
@@ -348,6 +392,9 @@ func buttonsPtrIn(c Inputs, list []siteapi.TelegramButtonInput) *[]telegramrende
 func buttonsPatch(c Inputs, list []siteapi.TelegramButtonInput) patch.Field[[]telegramrender.Button] {
 	return patch.FromPtr(buttonsPtrIn(c, list))
 }
+
+// timeIn is a required time as the module takes it.
+func timeIn(v siteapi.Timestamp) time.Time { return time.Time(v) }
 
 func timestampPtrIn(o siteapi.OptNilTimestamp) *time.Time {
 	v, ok := o.Get()
@@ -516,6 +563,9 @@ func automationStateIn(c Inputs, o siteapi.OptSiteAutomationState) automations.S
 	}
 	return c.AutomationState(v)
 }
+
+// enrollmentStatusIn is the status the Enrollment list is narrowed to: empty for every status.
+func enrollmentStatusIn(o siteapi.OptEnrollmentStatus) string { return string(o.Or("")) }
 
 // automationsSortIn is what the Automation list is ordered by: empty for the default.
 func automationsSortIn(c Inputs, o siteapi.OptSiteAutomationsSort) automations.Sort {

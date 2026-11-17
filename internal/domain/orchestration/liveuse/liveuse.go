@@ -125,7 +125,7 @@ func As(err error) (*Error, bool) {
 }
 
 // Send is one send of Live use (ADR 0099): who sends, on which Channel, and the route it takes.
-// broadcastsuse.LiveSends and automationsuse.LiveSends read them, by the Send route's own
+// broadcastsuse.Module.LiveSends and automationsuse.Module.LiveSends read them, by the Send route's own
 // resolution of the Integration (messaging.Through), so the Removal check and the send path agree
 // on where work sends.
 type Send struct {

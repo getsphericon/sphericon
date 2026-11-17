@@ -20,7 +20,7 @@ var ErrPostalAddressRequired = validation.PostalAddressRequired("outbound: the w
 // RequirePostalAddress refuses to arm marketing email on ch while the Workspace of s has no postal
 // address (ErrPostalAddressRequired). Only email carries the address: the other Channels are never
 // refused.
-func RequirePostalAddress(ctx context.Context, s *ent.Scoped, ch channels.Channel) error {
+func (m *Module) RequirePostalAddress(ctx context.Context, s *ent.Scoped, ch channels.Channel) error {
 	if ch != channels.Email {
 		return nil
 	}

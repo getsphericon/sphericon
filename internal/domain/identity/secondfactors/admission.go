@@ -18,19 +18,19 @@ const GracePeriod = 7 * 24 * time.Hour
 // withholds it from the User (ADR 0020). Every surface answers it 403 second_factor_required.
 var ErrSecondFactorRequired = validation.SecondFactorRequired("secondfactor: the second factor is required", i18n.ErrorsSecondFactorRequired)
 
-// CheckRequirement is nil unless the Two-factor requirement of a Workspace withholds its member
-// at the time at (ErrSecondFactorRequired): requiredAt is when the Workspace's requirement began
-// (nil for none), memberSince when the member's Membership was made, and the member is the User
-// userID.
-// A member is withheld once their grace ends (GracePeriod after the later of the two) and they
-// have no Second factor. Whether a request may pass anyway (a strong session, an operation that
-// lets a withheld User through) is the admission's to say, not the requirement's.
-func (m *Module) CheckRequirement(ctx context.Context, userID int64, requiredAt *time.Time, memberSince, at time.Time) error {
-	end, ok := graceEnds(requiredAt, memberSince)
+// CheckRequirement is nil unless the Two-factor requirement of the Workspace of ms withholds its
+// member at the time at, when the request is made (ErrSecondFactorRequired). The Membership's
+// Workspace edge must be loaded.
+// A member is withheld once their grace ends (GracePeriod after the later of the requirement's
+// start and the Membership's creation) and they have no Second factor. Whether a request may pass
+// anyway (a strong session, an operation that lets a withheld User through) is the admission's to
+// say, not the requirement's.
+func (m *Module) CheckRequirement(ctx context.Context, ms *ent.Membership, at time.Time) error {
+	end, ok := graceEnds(ms.Edges.Workspace.SecondFactorRequiredAt, ms.CreatedAt)
 	if !ok || at.Before(end) {
 		return nil
 	}
-	has, err := m.Active(ctx, userID)
+	has, err := m.Active(ctx, ms.UserID)
 	if err != nil {
 		return err
 	}
@@ -40,21 +40,9 @@ func (m *Module) CheckRequirement(ctx context.Context, userID int64, requiredAt 
 	return ErrSecondFactorRequired
 }
 
-// Deadline is the grace end of the Membership's User in its Workspace, or false when none applies:
-// the Workspace has no requirement or the User has a Second factor. The Membership's Workspace
-// edge must be loaded.
-func (m *Module) Deadline(ctx context.Context, ms *ent.Membership) (time.Time, bool, error) {
-	deadlines, err := m.Deadlines(ctx, []*ent.Membership{ms})
-	if err != nil {
-		return time.Time{}, false, err
-	}
-	end, ok := deadlines[ms.ID]
-	return end, ok, nil
-}
-
 // Deadlines are the grace ends of the Memberships' Users in their Workspaces, by Membership id,
-// for the Memberships a deadline applies to (Deadline), read in one query of the factors. Each
-// Membership's Workspace edge must be loaded.
+// for the Memberships a deadline applies to (the Workspace has a requirement and the User no Second
+// factor), read in one query of the factors. Each Membership's Workspace edge must be loaded.
 func (m *Module) Deadlines(ctx context.Context, ms []*ent.Membership) (map[int64]time.Time, error) {
 	return deadlines(ctx, m.ent, ms)
 }

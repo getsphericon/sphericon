@@ -87,8 +87,9 @@ func TestOfMembersGivesAStrongSessionNoGrace(t *testing.T) {
 func TestSwitchingTheRequirementOnStartsTheCallersGrace(t *testing.T) {
 	at := time.Now().UTC().Truncate(time.Second)
 	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return at }))
-	s, m, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.InitechPublicID)
+	member, err := testhelper.Module[*memberships.Module](env).Scope(t.Context(), fixtures.UmbrellaOwnerRitaID, fixtures.InitechPublicID)
 	require.NoError(t, err)
+	s, m := member.Scope, member.Membership
 
 	revision := env.DB.Workspace.GetX(t.Context(), fixtures.InitechID).Revision
 	v, err := testhelper.Module[*workspaceview.UseCase](env).SetSecondFactorRequirement(t.Context(), s, workspaceview.Caller{Membership: m},

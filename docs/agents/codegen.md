@@ -205,6 +205,10 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
 
 - `mise run generate` — full cycle: typespec → openapi → backend (ent + ogen) → fixture catalog → configuration reference → frontend → i18n types → format.
 - `mise run generate:typespec` / `mise run generate:backend` / `mise run generate:openapi` — partial regens.
+  goverter alone is `GOEXPERIMENT=nojsonv2 go run ./cmd/goverter gen <package>`: `generate:backend`
+  runs it with Go's json v2 experiment off, and with the experiment on goverter writes
+  `jsontext.Value` for `json.RawMessage`, which `generate:check` then reports. A generated file is
+  regenerated that way, never edited by hand.
 
 ### What is generated vs hand-written
 

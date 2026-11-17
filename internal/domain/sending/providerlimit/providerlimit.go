@@ -102,19 +102,31 @@ type Tx func(ctx context.Context, s *ent.Scoped, fn func(ts *ent.Scoped) error) 
 // errShort rolls back a reservation that found a bucket short.
 var errShort = errors.New("providerlimit: a bucket is short")
 
-// Reserve takes one token from every bucket of r at now, or none. It returns the zero Shortfall
-// when the tokens were taken; otherwise how long until every bucket holds one again (nothing is
-// taken then). A reservation with no limit and no Send cap does nothing.
-func Reserve(ctx context.Context, s *ent.Scoped, tx Tx, r Reservation, now time.Time) (Shortfall, error) {
-	return spend(ctx, s, tx, r, now, true)
+// Buckets spends from the token buckets: the role of the send path, which takes a token before
+// each message goes. It has a dependency the reads (Module) do not: the transaction the Workspace
+// and Integration buckets are spent in together.
+type Buckets struct {
+	tx  Tx
+	now func() time.Time
 }
 
-// Spend takes one token from every bucket of r at now without waiting and without the capacity
-// check, so a bucket may go negative (Transactional, ADR 0023 and ADR 0067: never delayed, yet it
-// makes later marketing sends wait longer). A reservation with no limit and no Send cap does
-// nothing.
-func Spend(ctx context.Context, s *ent.Scoped, tx Tx, r Reservation, now time.Time) error {
-	_, err := spend(ctx, s, tx, r, now, false)
+// NewBuckets builds the spending over tx, the transaction both buckets are spent in
+// (events.Bus.WithinAuditTx); now is the clock the buckets refill by.
+func NewBuckets(tx Tx, now func() time.Time) *Buckets { return &Buckets{tx: tx, now: now} }
+
+// Reserve takes one token from every bucket of r at the clock, or none. It returns the zero
+// Shortfall when the tokens were taken; otherwise how long until every bucket holds one again
+// (nothing is taken then). A reservation with no limit and no Send cap does nothing.
+func (b *Buckets) Reserve(ctx context.Context, s *ent.Scoped, r Reservation) (Shortfall, error) {
+	return spend(ctx, s, b.tx, r, b.now(), true)
+}
+
+// Spend takes one token from every bucket of r at the clock without waiting and without the
+// capacity check, so a bucket may go negative (Transactional, ADR 0023 and ADR 0067: never
+// delayed, yet it makes later marketing sends wait longer). A reservation with no limit and no
+// Send cap does nothing.
+func (b *Buckets) Spend(ctx context.Context, s *ent.Scoped, r Reservation) error {
+	_, err := spend(ctx, s, b.tx, r, b.now(), false)
 	return err
 }
 

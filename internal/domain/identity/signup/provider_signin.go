@@ -11,11 +11,8 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/consentrecord"
-	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
 	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
 	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
-	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
-	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signinprovider"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupitems"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
@@ -30,8 +27,6 @@ type SignInConfig struct {
 	Invitations *invitations.Module
 	// SignupItems says whether the Instance asks Sign-up items (ADR 0062).
 	SignupItems *signupitems.Module
-	// SecondFactors says whether the User signing in has a Second factor due (ADR 0020).
-	SecondFactors *secondfactors.Module
 }
 
 // ProviderSignInInput is a Sign-in provider's answer to a flow this browser began: the flow its
@@ -131,7 +126,6 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 		Invitation:          invite,
 		SurveyDue:           m.surveyDue(),
 		SignupItemsInEffect: asked,
-		Now:                 at,
 	})
 	if err != nil {
 		return nil, err
@@ -140,7 +134,7 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 		return &ProviderSignInResult{Outcome: PendingSignupKept, Pending: signedIn.Pending, At: at}, nil
 	}
 	usr := signedIn.User
-	due, err := cfg.SecondFactors.Active(ctx, usr.ID)
+	due, err := m.factors.Active(ctx, usr.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +142,7 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 		// A provider replaces only the password step: an enrolled Second factor still gets the
 		// challenge of ADR 0020, finished through the same second step (and the same Login
 		// throttle) as after a password.
-		binding, err := cfg.SecondFactors.ChallengeBinding(ctx, usr)
+		binding, err := m.factors.ChallengeBinding(ctx, usr)
 		if err != nil {
 			return nil, err
 		}
@@ -174,14 +168,14 @@ func (m *Module) linkIdentity(ctx context.Context, flow signinprovider.Flow, ses
 	if holder.SessionEpoch != session.Epoch {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvalidState}
 	}
-	linked, added, err := m.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, subject)
+	link, err := m.users.LinkIdentity(ctx, users.LinkIdentityInput{UserID: flow.LinkUserID, Provider: flow.Provider, Subject: subject})
 	if errors.Is(err, users.ErrIdentityInUse) {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonIdentityInUse}
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &ProviderSignInResult{Outcome: IdentityLinked, User: linked, Added: added, At: at}, nil
+	return &ProviderSignInResult{Outcome: IdentityLinked, User: link.User, Added: link.Added, At: at}, nil
 }
 
 // signInWithIdentity applies a provider's answer to a sign-in: it reads the facts, takes the one
@@ -229,11 +223,12 @@ func (m *Module) signInWithIdentity(ctx context.Context, in users.ProviderLogin)
 // signIn is signInWithIdentity without an Invitation.
 func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.ProviderSignin, error) {
 	for attempt := 0; ; attempt++ {
-		decision, known, holder, err := m.users.DecideSigninFor(ctx, in)
+		decided, err := m.users.DecideSigninFor(ctx, in)
 		if err != nil {
 			return nil, err
 		}
-		switch decision.Outcome {
+		known, holder := decided.Known, decided.Holder
+		switch decided.Decision.Outcome {
 		case users.SigninKnown:
 			return &users.ProviderSignin{User: known}, nil
 		case users.SigninCreate:
@@ -274,50 +269,49 @@ func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pro
 			}
 			return &users.ProviderSignin{User: taken}, nil
 		default:
-			return nil, &users.SigninRefusedError{Reason: decision.Reason}
+			return nil, &users.SigninRefusedError{Reason: decided.Decision.Reason}
 		}
 	}
 }
 
 // linkToHolder links the provider's identity to the Verified User holderID who holds its email
-// (users.LinkToHolderIn). When that proof is the address's first, what was set up before it goes
-// in the same transaction (afterProofIn).
+// (users.Module.LinkToHolderIn). When that proof is the address's first, what was set up before it
+// goes in the same transaction (afterProofIn).
 func (m *Module) linkToHolder(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, int64, error) {
 	var linked *ent.User
 	var identityID int64
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		now := m.now()
-		u, id, firstProof, err := users.LinkToHolderIn(ctx, tx, pub, holderID, in, now)
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		link, err := m.users.LinkToHolderIn(ctx, tx, holderID, in)
 		if err != nil {
 			return err
 		}
-		linked, identityID = u, id
-		linked, err = afterProofIn(ctx, tx, u, firstProof, now)
+		identityID = link.IdentityID
+		linked, err = m.afterProofIn(ctx, tx, link.User, link.FirstProof)
 		return err
 	})
 	return linked, identityID, err
 }
 
-// afterProofIn is the end of a step that proved u's address at now, on its transaction tx. When
+// afterProofIn is the end of a step that proved u's address, on its transaction tx. When
 // that proof was the address's first, it drops the ways into the account that were set up before
 // it: whoever set them was not shown to control the address, so whoever proves it is the one who
 // controls the account (ADR 0170). The Personal tokens and Connections go in every Workspace of the
 // User, then the Second factor, its Recovery codes and the Passkeys. It returns the User as it
 // stands afterwards, its session epoch the last one.
-func afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof bool, now time.Time) (*ent.User, error) {
+func (m *Module) afterProofIn(ctx context.Context, tx *ent.Client, u *ent.User, firstProof bool) (*ent.User, error) {
 	if !firstProof {
 		return u, nil
 	}
-	held, err := memberships.OfUserIn(ctx, tx, u.ID)
+	held, err := m.memberships.OfUserIn(ctx, tx, u.ID)
 	if err != nil {
 		return nil, err
 	}
 	for _, ms := range held {
-		if err := apitokens.RevokeOfUser(ctx, tx.Scoped(ms.WorkspaceID), u.ID, now); err != nil {
+		if err := m.tokens.RevokeOfUser(ctx, tx.Scoped(ms.WorkspaceID), u.ID); err != nil {
 			return nil, err
 		}
 	}
-	return secondfactors.ClearFactorAndPasskeysIn(ctx, tx, u.ID)
+	return m.factors.ClearFactorAndPasskeysIn(ctx, tx, u.ID)
 }
 
 // lostRace reports whether err is a write of a provider sign-in that another sign-in of the same
@@ -332,7 +326,7 @@ func lostRace(err error) bool {
 // provider proved the address, so no mail is sent. Its email is proven now.
 func (m *Module) createFromProvider(ctx context.Context, in users.ProviderLogin) (*ent.User, error) {
 	created, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.CreateProviderUserIn(ctx, tx, in, m.now())
+		return m.users.CreateProviderUserIn(ctx, tx, in)
 	})
 	return created, err
 }
@@ -344,7 +338,7 @@ func (m *Module) createFromProvider(ctx context.Context, in users.ProviderLogin)
 // User is no longer Unverified.
 func (m *Module) takeOver(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, error) {
 	taken, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.TakeOverIn(ctx, tx, holderID, in, m.now())
+		return m.users.TakeOverIn(ctx, tx, holderID, in)
 	})
 	return taken, err
 }
@@ -374,13 +368,12 @@ func (m *Module) CompletePendingSignup(ctx context.Context, reference string, an
 	if err != nil {
 		return nil, err
 	}
-	surveyDue := m.surveyDue()
-	now := m.now()
+	in := users.CompletePendingSignupInput{ID: id, Consents: consents, SurveyDue: m.surveyDue()}
 	var taken *ent.PendingSignup
-	completed, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, p, err := m.users.CompletePendingSignupIn(ctx, tx, pub, id, consents, surveyDue, now)
-		taken = p
-		return usr, err
+	completed, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		done, err := m.users.CompletePendingSignupIn(ctx, tx, in)
+		taken = done.Pending
+		return done.User, err
 	})
 	if err != nil {
 		return nil, err

@@ -32,10 +32,14 @@ import (
 
 	"github.com/getsphericon/sphericon/ee/domain/insights/abusedetector"
 	"github.com/getsphericon/sphericon/ee/domain/insights/auditentries"
+	"github.com/getsphericon/sphericon/ee/domain/insights/usages"
 	"github.com/getsphericon/sphericon/ee/licensekey"
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/consentrecords"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
@@ -59,7 +63,8 @@ type Config struct {
 	// warning (SPHERICON_SUPPORT_EMAIL).
 	SupportEmail string
 	// HoldMaxExpiry is how far ahead a Staff hold's expiry may be set
-	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is holds.DefaultMaxExpiry.
+	// (SPHERICON_STAFF_HOLD_MAX_EXPIRY); zero is holds.DefaultMaxExpiry. The Edition builds its
+	// Holds with it, which this module sets, clears and lists the holds through.
 	HoldMaxExpiry time.Duration
 	// SendCaps is whether the Instance has Send caps (ADR 0067). Without them the console shows
 	// no Send cap and its endpoints are not found, whatever the License.
@@ -71,34 +76,39 @@ type Module struct {
 	ent      *ent.Client
 	bus      *events.Bus
 	suspend  *suspension.Suspender
+	ws       *workspaces.Module
 	rates    *reputation.Module
 	lic      *licensekey.License
 	audit    *auditentries.Log
+	usage    *usages.Module
 	now      func() time.Time
 	watch    *abusedetector.Watch
-	holdMax  time.Duration
+	holds    *holds.Holds
+	limits   *providerlimit.Module
 	survey   *signupsurveyresponses.Reader
 	sendCaps providerlimit.SendCaps
+	owners   *memberships.Module
+	consents *consentrecords.Module
 }
 
-// New builds the module over the raw client.
-func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, suspender *suspension.Suspender, rates *reputation.Module, cfg Config) *Module {
+// New builds the module over the raw client, the Audit log and the Usage it shows, the Workspaces
+// it finds by their id; owners names the Owners of the feed's Workspaces and consents the feed's
+// Users' consent to the operator's mailings. hs is the Edition's Holds, the one the send path
+// reads: it honours Staff holds under the `staff` license, which every call here checks first, so
+// the console lists the holds a send is Held by. limits reads a Workspace's 24-hour sends.
+func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog *auditentries.Log, usage *usages.Module, suspender *suspension.Suspender, ws *workspaces.Module, rates *reputation.Module, owners *memberships.Module, consents *consentrecords.Module, hs *holds.Holds, limits *providerlimit.Module, cfg Config) *Module {
 	now := cfg.Clock
 	if now == nil {
 		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
 	}
-	holdMax := cfg.HoldMaxExpiry
-	if holdMax <= 0 {
-		holdMax = holds.DefaultMaxExpiry
-	}
 	return &Module{
-		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
-		sendCaps: cfg.SendCaps,
+		ent: client, bus: bus, suspend: suspender, ws: ws, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holds: hs, limits: limits, survey: signupsurveyresponses.NewReader(client),
+		sendCaps: cfg.SendCaps, owners: owners, consents: consents,
 	}
 }
 
 // Watch is the abuse detector's read of a Workspace's standing, with the limits this
-// module shows rates under.
+// module shows rates under: the Edition's detector judges by the same one.
 func (m *Module) Watch() *abusedetector.Watch { return m.watch }
 
 func (m *Module) licensed() error {

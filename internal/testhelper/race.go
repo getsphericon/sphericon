@@ -13,6 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/invitations"
+	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
+	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
@@ -282,10 +285,27 @@ func first(xs []int) int {
 	return xs[0]
 }
 
-// ProvenUsers is the Users a Second factor module built by hand for a race takes
-// (secondfactors.Users): every identity proof holds, so a race test drives the factor's
-// lifecycle, not the proof.
-type ProvenUsers struct{}
+// ProvenUsers is the Users a Second factor or Passkeys module built by hand takes
+// (secondfactors.Users, passkeys.Users): the env's users module, except that every identity proof
+// holds, so a race test drives the factor's lifecycle, not the proof.
+type ProvenUsers struct {
+	*users.Module
+}
+
+// NewProvenUsers is ProvenUsers over env's users module, which publishes on env.Bus.
+func NewProvenUsers(env *TestEnv) ProvenUsers {
+	return ProvenUsers{Module: Module[*users.Module](env)}
+}
 
 // ProveIdentity holds for every User.
 func (ProvenUsers) ProveIdentity(context.Context, *ent.User, users.IdentityProof) error { return nil }
+
+// UsersModules are env's modules the users module writes Memberships and Invitations through, for a
+// test that builds its own users module (users.Modules).
+func UsersModules(env *TestEnv) users.Modules {
+	return users.Modules{
+		Memberships: Module[*memberships.Module](env),
+		Invitations: Module[*invitations.Module](env),
+		JoinDomains: Module[*joindomains.Module](env),
+	}
+}

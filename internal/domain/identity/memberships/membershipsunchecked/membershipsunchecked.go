@@ -13,17 +13,30 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
-// LeaveDoomedWorkspaceIn removes User userID's own Membership like memberships.LeaveIn but lets the
-// only Owner go too, for User deletion of a Workspace that is in its deletion window (ADR 0050):
-// nobody is left to hand it to, and the Workspace is erased on schedule. The User is the actor of
-// the `membership.delete` Audit entry.
-func LeaveDoomedWorkspaceIn(ctx context.Context, ts *ent.Scoped, pub events.Publisher, userID int64) error {
-	target, _, actor, err := memberships.LockSelfIn(ctx, ts, userID)
+// Module holds the unchecked operation over the memberships module.
+type Module struct {
+	memberships *memberships.Module
+	bus         *events.Bus
+}
+
+// New builds the unchecked operation over the memberships module it reads the leaving Membership
+// through, and the bus it publishes the Audit entry on, in the transaction of the scope it is
+// given (events.Bus.RecordAuditIn).
+func New(ms *memberships.Module, bus *events.Bus) *Module {
+	return &Module{memberships: ms, bus: bus}
+}
+
+// LeaveDoomedWorkspaceIn removes User userID's own Membership like memberships.Module.LeaveIn but
+// lets the only Owner go too, for User deletion of a Workspace that is in its deletion window
+// (ADR 0050): nobody is left to hand it to, and the Workspace is erased on schedule. The User is the
+// actor of the `membership.delete` Audit entry, published in the bus transaction ts is bound to.
+func (m *Module) LeaveDoomedWorkspaceIn(ctx context.Context, ts *ent.Scoped, userID int64) error {
+	self, err := m.memberships.LockSelfIn(ctx, ts, userID)
 	if err != nil {
 		return err
 	}
-	if err := ts.Membership().DeleteOneID(target.ID).Exec(ctx); err != nil {
+	if err := ts.Membership().DeleteOneID(self.Membership.ID).Exec(ctx); err != nil {
 		return err
 	}
-	return events.RecordAudit(ctx, pub, memberships.RemovalAudit(ts.WorkspaceID(), actor, target))
+	return m.bus.RecordAuditIn(ctx, ts, memberships.RemovalAudit(ts.WorkspaceID(), self.Actor, self.Membership))
 }

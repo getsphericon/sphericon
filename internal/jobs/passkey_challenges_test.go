@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/jobs"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -15,7 +16,8 @@ import (
 
 func prunePasskeyChallenges(t *testing.T, env *testhelper.TestEnv, now time.Time) {
 	t.Helper()
-	w := jobs.NewPrunePasskeyChallengesWorker(env.DB, func() time.Time { return now })
+	keys := passkeys.New(env.DB, env.Bus, testhelper.NewProvenUsers(env), passkeys.RelyingParty{}, func() time.Time { return now })
+	w := jobs.NewPrunePasskeyChallengesWorker(keys)
 	require.NoError(t, w.Work(t.Context(), job(jobs.PrunePasskeyChallengesArgs{})))
 }
 

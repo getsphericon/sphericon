@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/suppression"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/jobs"
@@ -23,7 +24,7 @@ import (
 
 // suppressEvent works the suppression consumer's job for env, as River hands it to the worker.
 func suppressEvent(ctx context.Context, client *ent.Client, env events.Envelope) error {
-	return jobs.NewSuppressEventWorker(client).Work(ctx, &river.Job[jobs.SuppressEventArgs]{
+	return jobs.NewSuppressEventWorker(client, suppressions.New(time.Now)).Work(ctx, &river.Job[jobs.SuppressEventArgs]{
 		Args: jobs.SuppressEventArgs{EventJob: events.EventJob{Envelope: env}},
 	})
 }

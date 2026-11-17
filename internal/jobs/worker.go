@@ -19,16 +19,22 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
+	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
+	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/privaterelayranges"
@@ -77,7 +83,11 @@ type Deps struct {
 	Ent      *ent.Client
 	Bus      *events.Bus
 	Outbound *outboundmessages.Module
-	Cipher   *secrets.Cipher
+	// Broadcasts records an unsubscribe on the Broadcast that sent the message, and
+	// BroadcastDelivery plans and sends a Broadcast, its sends scheduled as RecipientJobs.
+	Broadcasts        *broadcasts.Module
+	BroadcastDelivery *broadcasts.Delivery
+	Cipher            *secrets.Cipher
 	// SystemSender is the platform's own sender, which delivers the Notices (nil on an Instance
 	// with no outbound mail).
 	SystemSender messaging.EmailSender
@@ -89,8 +99,18 @@ type Deps struct {
 	Users     *users.Module
 	// SecondFactor reminds the Users whose Two-factor grace ends soon (ADR 0020).
 	SecondFactor *secondfactors.Module
-	Orders       *orders.Module
-	Deletion     *workspacedeletion.UseCase
+	// Passkeys prunes the spent challenges of the Passkey ceremonies (ADR 0051).
+	Passkeys *passkeys.Module
+	Orders   *orders.Module
+	// Contacts changes a Contact's Tags for a Rule's tag Actions.
+	Contacts *contacts.Module
+	// Suppressions adds the address of a hard bounce or a complaint (the suppression consumer).
+	Suppressions *suppressions.Module
+	// CapturedMessages prunes the Captured messages past the Test inbox's retention (ADR 0058).
+	CapturedMessages *capturedmessages.Module
+	Deletion         *workspacedeletion.UseCase
+	// Workspaces tells the job runner that a job's Workspace is erased (WorkerConfig).
+	Workspaces *workspaces.Module
 	// MessageRetention deletes old Outbound messages, keeping their figures (ADR 0143).
 	MessageRetention *messageretention.UseCase
 	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
@@ -101,7 +121,9 @@ type Deps struct {
 	JoinDomains   *joindomains.Module
 	// Integrations reads an Integration's provider send quota (ADR 0023) and releases a deleted
 	// Telegram bot's webhook (ADR 0145).
-	Integrations    *integrations.Module
+	Integrations *integrations.Module
+	// Chats prunes the lapsed and used Start tokens (ADR 0076).
+	Chats           *bindings.Chats
 	TrackingDomains *trackingdomains.Module
 	Machine         *privaterelayranges.Detector
 	// Clock is the Instance's clock (app.Clock), which every worker reads; NewClient refuses none.
@@ -128,48 +150,51 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	if now == nil {
 		return nil, errors.New("jobs: Deps.Clock is required: the workers read the Instance clock")
 	}
+	if deps.Workspaces == nil {
+		return nil, errors.New("jobs: Deps.Workspaces is required: the job runner cancels a job of an erased Workspace")
+	}
 	workers := river.NewWorkers()
-	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
-	river.AddWorker(workers, NewSendRecipientWorker(entClient, mod))
+	river.AddWorker(workers, NewSendBroadcastWorker(entClient, deps.BroadcastDelivery))
+	river.AddWorker(workers, NewSendRecipientWorker(entClient, deps.BroadcastDelivery))
 	stepper := deps.StepExecution
 	river.AddWorker(workers, NewEvaluateTriggerWorker(entClient, stepper))
 	river.AddWorker(workers, NewRunStepWorker(entClient, stepper))
 	river.AddWorker(workers, NewLateNoticeWorker(entClient, deps.Callbacks))
 	river.AddWorker(workers, &EvaluateRulesWorker{ent: entClient, mod: deps.Rules})
-	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, bus, stepper, now)})
+	river.AddWorker(workers, &RunRuleActionsWorker{ent: entClient, mod: deps.Rules, runners: RuleActionRunners(mod, deps.Contacts, stepper)})
 	river.AddWorker(workers, NewRunRuleHTTPWorker(entClient, deps.Rules, rand.Float64))
 	river.AddWorker(workers, NewRunHTTPStepWorker(entClient, stepper, rand.Float64))
 	river.AddWorker(workers, NewDeliverWebhookWorker(entClient, cipher, webhook.NewClientAllowing(webhook.DeliveryTimeout, deps.OutboundAllow), now, rand.Float64, bus))
 	river.AddWorker(workers, NewNoticeEventWorker(deps.Notices, systemSender))
 	river.AddWorker(workers, NewSendNoticeWorker(systemSender))
-	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor, now))
+	river.AddWorker(workers, NewRemindSecondFactorWorker(deps.SecondFactor))
 	river.AddWorker(workers, NewVerifySendingDomainWorker(entClient, deps.SendingDomains))
-	river.AddWorker(workers, NewRecheckSendingDomainsWorker(entClient))
+	river.AddWorker(workers, NewRecheckSendingDomainsWorker(deps.SendingDomains))
 	river.AddWorker(workers, NewVerifyJoinDomainWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewRecheckJoinDomainsWorker(deps.JoinDomains))
 	river.AddWorker(workers, NewVerifyTrackingDomainWorker(deps.TrackingDomains))
 	river.AddWorker(workers, NewRecheckTrackingDomainsWorker(deps.TrackingDomains))
 	// SES send quota discovery (ADR 0023): refreshed hourly because quotas grow as an
 	// account matures, and on Integration save by the API handlers.
-	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient))
+	river.AddWorker(workers, NewRefreshSendQuotasWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewRefreshIntegrationQuotaWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewReleaseWebhookWorker(entClient, deps.Integrations))
 	river.AddWorker(workers, NewPurgeAuthAttemptsWorker(entClient, now))
 	river.AddWorker(workers, NewRefreshPrivateRelayWorker(deps.Machine))
-	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Retention.Events, now))
+	river.AddWorker(workers, NewPruneEventsWorker(entClient, deps.Rules, deps.Retention.Events, now))
 	river.AddWorker(workers, NewPruneMessagesWorker(deps.MessageRetention))
 	river.AddWorker(workers, NewPruneWorkspaceMessagesWorker(deps.MessageRetention))
-	river.AddWorker(workers, NewPruneCapturedMessagesWorker(entClient, deps.Retention.CapturedMessages, now))
+	river.AddWorker(workers, NewPruneCapturedMessagesWorker(deps.CapturedMessages, deps.Retention.CapturedMessages))
 	river.AddWorker(workers, NewPruneUnverifiedUsersWorker(deps.Users, deps.Retention.UnverifiedUsers))
-	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(entClient, now))
-	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users, now))
-	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, now))
+	river.AddWorker(workers, NewPrunePasskeyChallengesWorker(deps.Passkeys))
+	river.AddWorker(workers, NewPrunePendingSignupsWorker(deps.Users))
+	river.AddWorker(workers, NewPruneStartTokensWorker(entClient, deps.Chats))
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
-	river.AddWorker(workers, NewSuppressEventWorker(entClient))
-	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient))
-	river.AddWorker(workers, NewMessageObservationWorker(entClient))
+	river.AddWorker(workers, NewSuppressEventWorker(entClient, deps.Suppressions))
+	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient, deps.Broadcasts))
+	river.AddWorker(workers, NewMessageObservationWorker(entClient, mod))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
 	dispatcher := NewWebhookDispatcher()
 	if deps.Webhooks != nil {
@@ -186,7 +211,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewWebhookEventWorker(entClient, dispatcher))
 
 	logger := slog.Default()
-	cfg := newRiverConfig(entClient, workers, logger, extraPeriodic...)
+	cfg := newRiverConfig(deps.Workspaces, workers, logger, extraPeriodic...)
 	if driver.SupportsListener() {
 		// A notification brings every new job at once; the poll only catches one that was missed
 		// (the listener reconnecting), so it can be slow.
@@ -248,10 +273,10 @@ func BaseConfig() *river.Config {
 
 // WorkerConfig is BaseConfig for a client that works jobs, the worker client and the one a test
 // works a job with: it also cancels a job of an erased Workspace before its worker runs
-// (erasedWorkspace), reading the Workspace over client.
-func WorkerConfig(client *ent.Client) *river.Config {
+// (erasedWorkspace), which the Workspaces tell it.
+func WorkerConfig(ws *workspaces.Module) *river.Config {
 	cfg := BaseConfig()
-	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{client: client}, &RefusalsEnd{})
+	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{workspaces: ws}, &RefusalsEnd{})
 	return cfg
 }
 
@@ -269,8 +294,8 @@ func Queues() map[string]river.QueueConfig {
 
 // newRiverConfig builds the river config; extra are the Edition's periodic jobs, added to
 // core's.
-func newRiverConfig(client *ent.Client, workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
-	cfg := WorkerConfig(client)
+func newRiverConfig(ws *workspaces.Module, workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
+	cfg := WorkerConfig(ws)
 	cfg.CompletedJobRetentionPeriod = completedJobRetention
 	cfg.CancelledJobRetentionPeriod = cancelledJobRetention
 	cfg.DiscardedJobRetentionPeriod = discardedJobRetention

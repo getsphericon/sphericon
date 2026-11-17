@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -69,13 +70,13 @@ func TestBroadcastThroughALimitedIntegrationLosesNoRecipient(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), e.OutboundModules(e.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(2).ExecX(ctx)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
 		require.Greater(t, len(ids), 2, "the fixture audience must outgrow one second of capacity")
-		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		w := jobs.NewSendRecipientWorker(e.DB, deliveryOf(mod))
 
 		start := now
 		now = driveRecipients(t, e, w, ids, now)
@@ -100,7 +101,7 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
 		now := time.Now()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now, outboundmessages.WithSendCaps(true))
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), e.OutboundModules(e.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
@@ -109,15 +110,15 @@ func TestBroadcastLargerThanTheSendCapStaysSendingAndFinishesAsTheWindowFreesUp(
 		e.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(sendCap).ExecX(ctx)
 		perToken := 24 * time.Hour / time.Duration(sendCap)
 
-		detail, err := broadcasts.New(e.Bus, testhelper.Renderer(), mod).
-			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID), now)
+		detail, err := broadcasts.New(e.Bus, testhelper.Renderer(), mod, linkclick.New()).
+			Detail(ctx, e.DB.Scoped(fixtures.AcmeID), e.DB.Broadcast.GetX(ctx, fixtures.BroadcastDraftID))
 		require.NoError(t, err)
 		require.NotNil(t, detail.Progress)
 		assert.Equal(t, providerlimit.CauseSendCap, detail.Progress.LimitedBy)
 		require.NotNil(t, detail.Progress.EstimatedCompletion)
 		assert.WithinDuration(t, now.Add(perToken), *detail.Progress.EstimatedCompletion, time.Second, "the one beyond the bucket waits a token")
 
-		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		w := jobs.NewSendRecipientWorker(e.DB, deliveryOf(mod))
 		start := now
 		now = driveRecipients(t, e, w, ids, now)
 
@@ -139,7 +140,7 @@ func TestAutomationStepDefersWhenTransactionalTrafficSpendsTheLimit(t *testing.T
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		require.NoError(t, testhelper.Module[*automations.StepExecution](env).OnEvent(ctx, env.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
@@ -180,7 +181,7 @@ func TestAutomationStepDeferredBySendCapAsksAgainWithinTheBound(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx := context.Background()
 		fs := &fakeSender{}
-		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), time.Now, outboundmessages.WithSendCaps(true))
+		mod := outboundmessages.New(env.Bus, env.CoreHolds(), resolvingTo(fs), messagetoken.New("test-secret", "http://local", time.Now), env.OutboundModules(env.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{SendCaps: true}, time.Now)
 		env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSendCap(1).ExecX(ctx)
 		// The day's one token went to another send just now.
 		env.DB.SendCapLimiter.UpdateOneID(fixtures.SendCapLimiterAcmeID).SetDayFill(0).SetRefilledAt(time.Now()).ExecX(ctx)
@@ -208,7 +209,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		e := newRiverEnv(t)
 		ctx := e.workCtx()
-		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+		mod := outboundmessages.New(e.Bus, e.CoreHolds(), resolvingTo(e.sender), messagetoken.New("test-secret", "http://local", time.Now), e.OutboundModules(e.Bus, time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		e.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).SetMaxPerSecond(1).ExecX(ctx)
 
 		require.NoError(t, testhelper.Module[*automations.StepExecution](e.TestEnv).OnEvent(ctx, e.DB.Scoped(fixtures.AcmeID), automations.OnEventInput{ContactID: fixtures.ContactHoldDemoID, Event: automations.Event{Action: "hold_demo", OccurredAt: time.Now()}}))
@@ -219,7 +220,7 @@ func TestAutomationStepAndBroadcastRecipientShareTheLimit(t *testing.T) {
 
 		ids, err := planAudience(ctx, e.DB, mod, fixtures.BroadcastDraftID)
 		require.NoError(t, err)
-		w := jobs.NewSendRecipientWorker(e.DB, mod)
+		w := jobs.NewSendRecipientWorker(e.DB, deliveryOf(mod))
 		err = w.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastDraftID}))
 		var snooze *river.JobSnoozeError
 		require.ErrorAs(t, err, &snooze, "the Broadcast recipient finds the Automation's spend")

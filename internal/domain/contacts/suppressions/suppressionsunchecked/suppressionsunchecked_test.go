@@ -18,12 +18,12 @@ func TestEraseContactKeepsTheSuppressionRefusingTheAddress(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
 
-	require.NoError(t, suppressionsunchecked.EraseContact(ctx, s, int64(fixtures.ContactErasableID), ""))
+	require.NoError(t, suppressionsunchecked.New().EraseContact(ctx, s, int64(fixtures.ContactErasableID), ""))
 
 	row, err := s.Suppression().Get(ctx, fixtures.SuppressionErasableID)
 	require.NoError(t, err)
 	assert.Nil(t, row.LiftedAt)
-	verdict, err := eligibility.Check(ctx, s, channels.Email, row.Destination, eligibility.SourceBroadcasts)
+	verdict, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.Email, Destination: row.Destination, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.False(t, verdict.Eligible)
 }

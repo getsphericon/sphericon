@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/getsphericon/sphericon/internal/kernel/publicid"
@@ -74,24 +73,16 @@ func (a Actor) auditActor() events.Actor {
 	}
 }
 
-// SuspendWorkspace freezes all outbound sending for a Workspace (ADR 0007): it sets
-// suspended_at together with who did it and why; a blank reason is ErrReasonRequired. The send path reads it as a reversible Hold
-// (ADR 0015); login, reads and /collect are unaffected. It reports whether anything
-// changed: suspending an already-suspended Workspace is a no-op, so the first actor
-// and reason — the ones the owner was told about — are never overwritten. A change is
-// recorded as `workspace.suspend` in the Workspace's Audit log and published as
-// events.WorkspaceSuspended, which tells its owners (ADR 0105), in the same transaction.
-func SuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, reason string, at time.Time) (bool, error) {
-	changed, err := suspend(ctx, bus, byKey(workspaceID), by, reason, at)
-	if err != nil {
-		return false, fmt.Errorf("suspend workspace %d: %w", workspaceID, err)
-	}
-	return changed, nil
+// SuspendInput is who suspends a Workspace and why: the owners are told the reason.
+type SuspendInput struct {
+	By     Actor
+	Reason string
 }
 
-// suspend is SuspendWorkspace of the Workspace target resolves in its transaction.
-func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Actor, reason string, at time.Time) (bool, error) {
-	reason = strings.TrimSpace(reason)
+// suspend is Suspender.Suspend of the Workspace target resolves in its transaction.
+func (s *Suspender) suspend(ctx context.Context, target workspaceTarget, in SuspendInput) (bool, error) {
+	by := in.By
+	reason := strings.TrimSpace(in.Reason)
 	if err := by.validate(); err != nil {
 		return false, err
 	}
@@ -99,12 +90,12 @@ func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Ac
 		return false, ErrReasonRequired
 	}
 	changed := false
-	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		workspaceID, err := target(ctx, tx)
 		if err != nil {
 			return err
 		}
-		moved, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason, at)
+		moved, err := s.workspaces.SuspendIn(ctx, tx, workspaceID, workspaces.SuspendInput{Kind: by.Kind, ByID: nilIfEmpty(by.ID), Reason: reason})
 		if err != nil || !moved {
 			return err
 		}
@@ -118,31 +109,18 @@ func suspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Ac
 	return changed, err
 }
 
-// UnsuspendWorkspace lifts a suspension, clearing its attribution, and records
-// `workspace.unsuspend` for the actor `by`. It stamps cleared_at, so the abuse detector
-// (ADR 0026) counts only Events after the clearance. It reports whether the Workspace was
-// suspended. Held sends resume on their own: the jobs that were snoozed ask Outbound
-// send again.
-func UnsuspendWorkspace(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, at time.Time) (bool, error) {
-	changed, err := unsuspend(ctx, bus, byKey(workspaceID), by, at)
-	if err != nil {
-		return false, fmt.Errorf("unsuspend workspace %d: %w", workspaceID, err)
-	}
-	return changed, nil
-}
-
-// unsuspend is UnsuspendWorkspace of the Workspace target resolves in its transaction.
-func unsuspend(ctx context.Context, bus *events.Bus, target workspaceTarget, by Actor, at time.Time) (bool, error) {
+// unsuspend is Suspender.Unsuspend of the Workspace target resolves in its transaction.
+func (s *Suspender) unsuspend(ctx context.Context, target workspaceTarget, by Actor) (bool, error) {
 	if err := by.validate(); err != nil {
 		return false, err
 	}
 	changed := false
-	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		workspaceID, err := target(ctx, tx)
 		if err != nil {
 			return err
 		}
-		moved, err := workspaces.UnsuspendIn(ctx, tx, workspaceID, at)
+		moved, err := s.workspaces.UnsuspendIn(ctx, tx, workspaceID)
 		if err != nil || !moved {
 			return err
 		}
@@ -162,16 +140,23 @@ func byKey(workspaceID int64) workspaceTarget {
 }
 
 // byPublicID is the Workspace with this Workspace id (ADR 0043), the address an operator types.
-func byPublicID(publicID string) workspaceTarget {
+func (s *Suspender) byPublicID(publicID string) workspaceTarget {
 	return func(ctx context.Context, tx *ent.Client) (int64, error) {
-		return workspaces.IDByPublicIDIn(ctx, tx, publicID)
+		return s.workspaces.IDByPublicIDIn(ctx, tx, publicID)
 	}
 }
 
+// SetAbuseExemptInput is who changes a Workspace's abuse exemption, and whether it is exempt.
+type SetAbuseExemptInput struct {
+	By     Actor
+	Exempt bool
+}
+
 // SetAbuseExempt exempts a Workspace from the abuse detector, or polices it again
-// (ADR 0026), recorded in its Audit log for the actor `by`. It reports whether the flag
+// (ADR 0026), recorded in its Audit log for the actor in.By. It reports whether the flag
 // changed. Exemption never blocks a manual suspension.
-func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, exempt bool) (bool, error) {
+func (s *Suspender) SetAbuseExempt(ctx context.Context, workspaceID int64, in SetAbuseExemptInput) (bool, error) {
+	by, exempt := in.By, in.Exempt
 	if err := by.validate(); err != nil {
 		return false, fmt.Errorf("set abuse exemption: %w", err)
 	}
@@ -180,8 +165,8 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 		action = events.ActionWorkspaceAbuseExempt
 	}
 	changed := false
-	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := workspaces.SetAbuseExemptIn(ctx, tx, workspaceID, exempt)
+	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+		n, err := s.workspaces.SetAbuseExemptIn(ctx, tx, workspaceID, exempt)
 		if err != nil || n == 0 {
 			return err
 		}
@@ -195,20 +180,28 @@ func SetAbuseExempt(ctx context.Context, bus *events.Bus, workspaceID int64, by 
 	return changed, nil
 }
 
-// SetSendCap sets the Workspace's Send cap to sendCap messages per rolling 24 hours, or clears it
-// with nil (ADR 0067), recorded as `workspace.send_cap_change` in its Audit log for the actor `by`
-// with the old and the new value. It reports whether the value changed: setting the same value or
+// SetSendCapInput is who changes a Workspace's Send cap, and the new one: SendCap messages per
+// rolling 24 hours, nil for none.
+type SetSendCapInput struct {
+	By      Actor
+	SendCap *int
+}
+
+// SetSendCap sets the Workspace's Send cap to in.SendCap messages per rolling 24 hours, or clears
+// it with nil (ADR 0067), recorded as `workspace.send_cap_change` in its Audit log for the actor
+// in.By with the old and the new value. It reports whether the value changed: setting the same value or
 // clearing a Workspace with none is a no-op. The Send cap is a lever short of a suspension: a spent
 // one slows sending (a Deferral), it does not stop it. Whether the Instance has Send caps at all is
 // the caller's to check; the Workspace's write refuses a Send cap outside the contract's bounds
 // (workspaces.CheckSendCap).
-func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Actor, sendCap *int) (bool, error) {
+func (s *Suspender) SetSendCap(ctx context.Context, workspaceID int64, in SetSendCapInput) (bool, error) {
+	by, sendCap := in.By, in.SendCap
 	if err := by.validate(); err != nil {
 		return false, fmt.Errorf("set send cap: %w", err)
 	}
 
 	changed := false
-	err := bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		w, err := tx.Workspace.Query().Where(workspace.ID(workspaceID)).ForUpdate().Only(ctx)
 		if err != nil {
 			return err
@@ -217,7 +210,7 @@ func SetSendCap(ctx context.Context, bus *events.Bus, workspaceID int64, by Acto
 		if !differs {
 			return nil
 		}
-		if err := workspaces.SetSendCapIn(ctx, tx, workspaceID, sendCap); err != nil {
+		if err := s.workspaces.SetSendCapIn(ctx, tx, workspaceID, sendCap); err != nil {
 			return err
 		}
 		changed = true

@@ -2,7 +2,6 @@ package providerlimit
 
 import (
 	"context"
-	"time"
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
@@ -45,14 +44,14 @@ type SendCapStatus struct {
 	Sent24h int
 }
 
-// SentLast24h counts the messages the Workspace of s sent over the 24 hours before now, through
-// any route, Transactional included: every message the Send cap was spent for and the provider
-// accepted (ADR 0067).
-func SentLast24h(ctx context.Context, s *ent.Scoped, now time.Time) (int, error) {
+// SentLast24h counts the messages the Workspace of s sent over the 24 hours before the clock,
+// through any route, Transactional included: every message the Send cap was spent for and the
+// provider accepted (ADR 0067).
+func (m *Module) SentLast24h(ctx context.Context, s *ent.Scoped) (int, error) {
 	return s.OutboundMessage().Query().
 		Where(
 			outboundmessage.StatusEQ(outboundmessage.StatusSent),
-			outboundmessage.SentAtGT(now.Add(-window)),
+			outboundmessage.SentAtGT(m.now().Add(-window)),
 		).
 		Count(ctx)
 }

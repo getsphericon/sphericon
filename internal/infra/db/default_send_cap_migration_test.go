@@ -20,9 +20,9 @@ func defaultAfterMigrating(t *testing.T, dir string) *int {
 	sqlDB := testhelper.SchemaBefore(t, "default_send_cap", filepath.Join("testdata", dir))
 	_, err := db.Migrate(t.Context(), sqlDB)
 	require.NoError(t, err)
-	perDay, _, err := suspension.NewDefaultSendCap(entclient.Core.New(sqlDB), true).Get(t.Context())
+	setting, err := suspension.NewDefaultSendCap(entclient.Core.New(sqlDB), true).Get(t.Context())
 	require.NoError(t, err)
-	return perDay
+	return setting.PerDay
 }
 
 // The default Send cap moves from the Instance state row to suspension's table (ADR 0146): a

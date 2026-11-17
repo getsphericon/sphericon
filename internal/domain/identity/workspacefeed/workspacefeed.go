@@ -215,11 +215,12 @@ func touch(ctx context.Context, c *entclient.Client, workspaceIDs ...int64) erro
 	}
 	// The lock keeps the position unique: no other transaction can take the maximum
 	// between this read and the update.
-	top, err := workspaces.TopFeedPosition(ctx, c)
+	feed := workspaces.NewFeed()
+	top, err := feed.TopPosition(ctx, c)
 	if err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
-	if err := workspaces.SetFeedPosition(ctx, c, top+1, workspaceIDs...); err != nil {
+	if err := feed.SetPosition(ctx, c, top+1, workspaceIDs...); err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
 	return nil

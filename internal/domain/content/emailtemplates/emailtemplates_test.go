@@ -2,6 +2,7 @@ package emailtemplates_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -254,20 +255,20 @@ func TestLintWithoutASave(t *testing.T) {
 	m := testhelper.Module[*emailtemplates.Module](env)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	report, err := m.Lint(ctx, s, "Hi", new(warnedBody), nil)
+	report, err := m.Lint(ctx, s, emailtemplates.LintInput{Subject: "Hi", Body: new(warnedBody)})
 	require.NoError(t, err)
 	require.NoError(t, report.Error)
 	assert.ElementsMatch(t, []emailrender.Code{emailrender.CodeOffBrandFont, emailrender.CodeMissingAlt}, codes(report.Warnings))
 
-	report, err = m.Lint(ctx, s, "Hi", new("<div><span>unclosed</div>"), nil)
+	report, err = m.Lint(ctx, s, emailtemplates.LintInput{Subject: "Hi", Body: new("<div><span>unclosed</div>")})
 	require.NoError(t, err)
 	require.ErrorIs(t, report.Error, emailrender.ErrInvalidContent)
 
-	report, err = m.Lint(ctx, s, "Hi", nil, []byte(`{"not":"a document"}`))
+	report, err = m.Lint(ctx, s, emailtemplates.LintInput{Subject: "Hi", Doc: json.RawMessage(`{"not":"a document"}`)})
 	require.NoError(t, err)
 	require.ErrorIs(t, report.Error, emailrender.ErrInvalidContent, "a document that cannot render")
 	assert.Empty(t, report.Warnings)
 
-	_, err = m.Lint(ctx, s, "Hi", nil, nil)
+	_, err = m.Lint(ctx, s, emailtemplates.LintInput{Subject: "Hi"})
 	require.ErrorIs(t, err, emailtemplates.ErrLintBodyOrDoc)
 }

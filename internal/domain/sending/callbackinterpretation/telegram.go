@@ -30,6 +30,8 @@ type telegram struct {
 	ignore
 
 	integ *integrations.Module
+	out   *outboundmessages.Module
+	chats *bindings.Chats
 }
 
 // InboundMessage reads a pressed button or a written message for what it means.
@@ -37,7 +39,7 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 	if m.CallbackID != "" {
 		return t.pressed(ctx, tx, m)
 	}
-	if err := bindings.Redeem(ctx, tx.Scoped, tx.Pub, tx.Integration, tx.Now, bindings.Redemption{
+	if err := t.chats.Redeem(ctx, tx.Scoped, tx.Integration, bindings.Redemption{
 		Destination: m.Destination, ChatID: m.ChatID, Text: m.Text, DedupKey: tx.DedupKey(m.ID),
 	}); err != nil {
 		return err
@@ -51,7 +53,7 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 	if channelstop.IsStopKeyword(m.Text) {
 		return t.stop(ctx, tx, m, events.UnsubscribedByKeyword, nil)
 	}
-	return bindings.Receive(ctx, tx.Scoped, tx.Pub, tx.Integration, bindings.Message{
+	return t.chats.Receive(ctx, tx.Scoped, tx.Integration, bindings.Message{
 		Destination: m.Destination, Text: m.Text, DedupKey: tx.DedupKey(m.ID),
 	})
 }
@@ -61,7 +63,9 @@ func (t telegram) InboundMessage(ctx context.Context, tx Tx, m preset.InboundMes
 // press is answered once the facts are written, so the person's client stops waiting.
 func (t telegram) pressed(ctx context.Context, tx Tx, m preset.InboundMessage) error {
 	if m.Payload == messaging.TelegramUnsubscribePayload {
-		msg, err := outboundmessages.FindTelegramMessage(ctx, tx.Scoped, tx.Integration.ID, m.Destination, m.MessageID)
+		msg, err := t.out.FindTelegramMessage(ctx, tx.Scoped, outboundmessages.FindTelegramMessageInput{
+			IntegrationID: tx.Integration.ID, Destination: m.Destination, ProviderMessageID: m.MessageID,
+		})
 		if err != nil {
 			return err
 		}
@@ -109,7 +113,7 @@ func (t telegram) ReachabilityChange(ctx context.Context, tx Tx, c preset.Reacha
 	case c.Reachable:
 		return t.resume(ctx, tx, c.Destination, c.ID, c.OccurredAt)
 	case c.Reason == preset.Deactivated:
-		return bindings.Remove(ctx, tx.Scoped, tx.Pub, tx.Integration, c.Destination, tx.DedupKey(c.ID))
+		return t.chats.Remove(ctx, tx.Scoped, tx.Integration, bindings.Removal{Destination: c.Destination, DedupKey: tx.DedupKey(c.ID)})
 	default:
 		seq, err := sequence(c.ID)
 		if err != nil {

@@ -43,9 +43,14 @@ func (w world) until(id int64, expires time.Time) {
 	w.env.ExtendHold(w.t.Context(), fixtures.AcmeID, id, expires)
 }
 
+// holds is the module at the world's clock, honouring Staff holds or not.
+func (w world) holds(staffHonoured bool) *holds.Holds {
+	return holds.New(func() bool { return staffHonoured }, 0, func() time.Time { return w.now })
+}
+
 func (w world) standing(t *testing.T, staffHonoured bool) holds.Standing {
 	t.Helper()
-	st, err := holds.Read(w.t.Context(), w.s, w.now, staffHonoured)
+	st, err := w.holds(staffHonoured).Standing(w.t.Context(), w.s)
 	require.NoError(t, err)
 	return st
 }
@@ -150,8 +155,8 @@ func TestReasonHonoursTheLicenseFunctionAndReportsDeletionFirst(t *testing.T) {
 	w := newWorld(t)
 	w.until(fixtures.HoldAcmeLapsedID, w.now.Add(time.Hour))
 	clock := func() time.Time { return w.now }
-	on := holds.New(func() bool { return true }, clock)
-	off := holds.New(func() bool { return false }, clock)
+	on := holds.New(func() bool { return true }, 0, clock)
+	off := holds.New(func() bool { return false }, 0, clock)
 	reason := func(h *holds.Holds) holdreason.Reason {
 		t.Helper()
 		got, err := h.Reason(w.t.Context(), w.s)

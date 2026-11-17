@@ -22,7 +22,7 @@ func (m *Module) UsageList(ctx context.Context, period time.Time, p pagination.P
 	if err := m.licensed(); err != nil {
 		return pagination.Page[UsageEntry]{}, err
 	}
-	page, err := usages.List(ctx, m.ent, m.usagePeriod(period), p)
+	page, err := m.usage.List(ctx, m.usagePeriod(period), p)
 	if err != nil {
 		return pagination.Page[UsageEntry]{}, err
 	}
@@ -46,7 +46,7 @@ func (m *Module) WorkspaceUsage(ctx context.Context, workspaceID string, period 
 	if err != nil {
 		return usages.WorkspaceUsage{}, err
 	}
-	return usages.Get(ctx, s, m.usagePeriod(period))
+	return m.usage.Get(ctx, s, m.usagePeriod(period))
 }
 
 // usagePeriod is the Usage period a read names: the one given, or the current one for zero.

@@ -62,7 +62,9 @@ func handlePassThrough(t *testing.T, body string) (preset.Result, error) {
 	require.NoError(t, err)
 	header := http.Header{}
 	header.Set("X-Token", "t")
-	return p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(body)}, preset.Params{"token": "t"}, time.Unix(0, 0))
+	return engineAt(time.Unix(0, 0)).Handle(t.Context(), p, preset.HandleInput{
+		Request: preset.Request{Header: header, Body: []byte(body)}, Params: preset.Params{"token": "t"},
+	})
 }
 
 // What a transform returns is never trusted: whatever it is, the engine answers with facts of a
@@ -131,7 +133,7 @@ func FuzzTwilioFormBodyBecomesValidFactsOrARefusal(f *testing.F) {
 		header.Set("X-Twilio-Signature", signTwilio(twilioHookURL, body, token))
 		req := preset.Request{URL: twilioHookURL, Header: header, Body: []byte(body)}
 
-		res, err := p.Handle(t.Context(), req, preset.Params{"auth_token": token}, time.Unix(0, 0))
+		res, err := engineAt(time.Unix(0, 0)).Handle(t.Context(), p, preset.HandleInput{Request: req, Params: preset.Params{"auth_token": token}})
 
 		assertValidFactsOrARefusal(t, res, err)
 	})
@@ -197,7 +199,9 @@ func FuzzTelegramUpdateBecomesValidFactsOrARefusal(f *testing.F) {
 	f.Fuzz(func(t *testing.T, body string) {
 		header := http.Header{}
 		header.Set("X-Telegram-Bot-Api-Secret-Token", "fuzz-secret")
-		res, err := p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(body)}, preset.Params{"secret": "fuzz-secret"}, time.Unix(0, 0))
+		res, err := engineAt(time.Unix(0, 0)).Handle(t.Context(), p, preset.HandleInput{
+			Request: preset.Request{Header: header, Body: []byte(body)}, Params: preset.Params{"secret": "fuzz-secret"},
+		})
 		assertValidFactsOrARefusal(t, res, err)
 	})
 }

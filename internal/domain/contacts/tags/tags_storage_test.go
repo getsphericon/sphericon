@@ -10,8 +10,10 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -28,7 +30,8 @@ func closedClient(t *testing.T) (*ent.Client, *events.Bus) {
 // missing contact, an invalid name, or an empty catalogue.
 func TestStorageFailuresSurfaceAsErrors(t *testing.T) {
 	client, bus := closedClient(t)
-	m, c := tags.New(), contacts.New(bus, time.Now)
+	m := tags.New()
+	c := contacts.New(bus, m, confirmations.New(bus, unsubscribes.New(), time.Now), nil)
 	ctx := context.Background()
 	wsID := client.Scoped(fixtures.AcmeID)
 

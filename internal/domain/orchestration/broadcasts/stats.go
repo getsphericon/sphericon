@@ -160,16 +160,16 @@ func Pending() predicate.BroadcastRecipient {
 
 // PendingOfSending counts the recipients the Workspace's sending Broadcasts, held ones aside, still
 // have to send: what they draw from the Send cap bucket before a Broadcast that has yet to start.
-func PendingOfSending(ctx context.Context, s *ent.Scoped) (int, error) {
+func (m *Module) PendingOfSending(ctx context.Context, s *ent.Scoped) (int, error) {
 	return s.BroadcastRecipient().Query().
 		Where(Pending(), broadcastrecipient.HasBroadcastWith(broadcast.StatusEQ(broadcast.StatusSending), broadcast.HoldReasonIsNil())).
 		Count(ctx)
 }
 
 // StatsFor is StatsOf for the given Broadcasts, each figure set carrying its Broadcast's Channel.
-func StatsFor(ctx context.Context, s *ent.Scoped, bs ...*ent.Broadcast) (map[int64]Stats, error) {
+func (m *Module) StatsFor(ctx context.Context, s *ent.Scoped, bs ...*ent.Broadcast) (map[int64]Stats, error) {
 	ids := lo.Map(bs, func(b *ent.Broadcast, _ int) int64 { return b.ID })
-	out, err := StatsOf(ctx, s, ids...)
+	out, err := m.StatsOf(ctx, s, ids...)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func StatsFor(ctx context.Context, s *ent.Scoped, bs ...*ent.Broadcast) (map[int
 // StatsOf reads the figures of the given Broadcasts, whatever their number: a frozen Broadcast's
 // from its BroadcastFigure and nothing live, the others' in two grouped queries over their rows,
 // and every one's Revenue from its Orders. A Broadcast with no rows yet has zero figures.
-func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats, error) {
+func (m *Module) StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats, error) {
 	if len(ids) == 0 {
 		return map[int64]Stats{}, nil
 	}
@@ -194,7 +194,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 	}
 	isFrozen := lo.SliceToMap(frozen, func(f *ent.BroadcastFigure) (int64, bool) { return f.BroadcastID, true })
 	live := lo.Reject(ids, func(id int64, _ int) bool { return isFrozen[id] })
-	out, err := RowStatsOf(ctx, s, live...)
+	out, err := m.RowStatsOf(ctx, s, live...)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +206,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 			Opened: f.Opened, Clicked: f.Clicked, Captured: f.Captured,
 		}
 	}
-	revenue, err := orders.CreditedToBroadcasts(ctx, s, ids...)
+	revenue, err := m.revenues.CreditedToBroadcasts(ctx, s, ids...)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func StatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats,
 
 // RowStatsOf counts the given Broadcasts' figures from their rows, Revenue aside, whether or not
 // they are frozen: what message retention freezes (ADR 0143).
-func RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats, error) {
+func (m *Module) RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Stats, error) {
 	out := make(map[int64]Stats, len(ids))
 	for _, id := range ids {
 		out[id] = Stats{}
@@ -278,26 +278,26 @@ func RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Sta
 		Scan(ctx, &messages); err != nil {
 		return nil, err
 	}
-	for _, m := range messages {
-		st := out[m.BroadcastID]
-		st.Delivered += m.Delivered
-		st.Undelivered += m.Undelivered
-		st.Bounced += m.Bounced
-		st.Complained += m.Complained
-		st.Opened += m.Opened
-		st.Clicked += m.Clicked
-		st.Captured += m.Captured
-		switch m.Status {
+	for _, row := range messages {
+		st := out[row.BroadcastID]
+		st.Delivered += row.Delivered
+		st.Undelivered += row.Undelivered
+		st.Bounced += row.Bounced
+		st.Complained += row.Complained
+		st.Opened += row.Opened
+		st.Clicked += row.Clicked
+		st.Captured += row.Captured
+		switch row.Status {
 		case outboundmessage.StatusSent:
-			st.Sent = m.Count
+			st.Sent = row.Count
 		case outboundmessage.StatusSkipped:
-			st.Skipped = m.Count
+			st.Skipped = row.Count
 		case outboundmessage.StatusFailed:
-			st.Failed = m.Count
+			st.Failed = row.Count
 		case outboundmessage.StatusPending:
 			// still claimed: not ended, so it stays in Pending
 		}
-		out[m.BroadcastID] = st
+		out[row.BroadcastID] = st
 	}
 	for id := range out {
 		st := out[id]
@@ -310,5 +310,5 @@ func RowStatsOf(ctx context.Context, s *ent.Scoped, ids ...int64) (map[int64]Sta
 // The unique constraint of a Broadcast's frozen figures (ADR 0106): no client can break it.
 var _ = db.Declare(
 	db.Fault("broadcast_figures_workspace_id_broadcast_id",
-		"broadcastsunchecked.Freeze writes the one row ON CONFLICT DO NOTHING, so a prune run again keeps the figures it froze first"),
+		"broadcastsunchecked.Module.Freeze writes the one row ON CONFLICT DO NOTHING, so a prune run again keeps the figures it froze first"),
 )

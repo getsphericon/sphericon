@@ -34,9 +34,10 @@ type Detail struct {
 	Progress *Progress
 }
 
-// Detail reads a Broadcast's figures and, when it is sending, its Progress.
-func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, now time.Time) (Detail, error) {
-	figures, err := StatsFor(ctx, s, b)
+// Detail reads a Broadcast's figures and, when it is sending, its Progress at now on Outbound
+// send's clock.
+func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast) (Detail, error) {
+	figures, err := m.StatsFor(ctx, s, b)
 	if err != nil {
 		return Detail{}, err
 	}
@@ -44,7 +45,7 @@ func (m *Module) Detail(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, no
 	if b.Status != broadcast.StatusSending {
 		return d, nil
 	}
-	d.Progress, err = m.progressOf(ctx, s, b, d.Stats, now)
+	d.Progress, err = m.progressOf(ctx, s, b, d.Stats, m.out.Now())
 	return d, err
 }
 
@@ -76,11 +77,11 @@ func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast
 		eta := now.Add(time.Duration(pending) * route.Interval())
 		p.EstimatedCompletion, p.LimitedBy = &eta, providerlimit.CauseProviderLimit
 	}
-	wait, capped, err := m.out.SendCapDrain(ctx, s, pending, now)
+	drain, err := m.out.SendCapDrain(ctx, s, pending)
 	if err != nil {
 		return nil, err
 	}
-	if eta := now.Add(wait); capped && wait > 0 && (p.EstimatedCompletion == nil || eta.After(*p.EstimatedCompletion)) {
+	if eta := now.Add(drain.Wait); drain.Capped && drain.Wait > 0 && (p.EstimatedCompletion == nil || eta.After(*p.EstimatedCompletion)) {
 		p.EstimatedCompletion, p.LimitedBy = &eta, providerlimit.CauseSendCap
 	}
 	return p, nil

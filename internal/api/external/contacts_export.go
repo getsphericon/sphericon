@@ -5,8 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/api/external/resources"
-	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
@@ -14,11 +12,7 @@ import (
 // needing only the contact read scope.
 func (h *Handlers) ContactsExport(ctx context.Context, params externalapi.ContactsExportParams) (externalapi.ContactsExportRes, error) {
 	s := auth.TokenScoped(ctx)
-	var contactID *int64
-	if v, ok := params.ID.Get(); ok {
-		contactID = new(int64(v))
-	}
-	d, err := dataexport.Open(ctx, s, resources.ExportMapper{Converter: mapper}, contactID, dataexport.Ref(params.Email.Get()))
+	d, err := h.exports.Open(ctx, s, inputs.ContactExport(params))
 	if err != nil {
 		return nil, err
 	}

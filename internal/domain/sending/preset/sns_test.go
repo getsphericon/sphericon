@@ -42,7 +42,13 @@ tests:
 type snsSigner struct {
 	key    *rsa.PrivateKey
 	preset *preset.Preset
+	engine *preset.Engine
 }
+
+// signedBy serves the one certificate the stand-in signs with, for any URL.
+type signedBy struct{ cert *x509.Certificate }
+
+func (s signedBy) Certificate(context.Context, string) (*x509.Certificate, error) { return s.cert, nil }
 
 func newSNSSigner(t *testing.T) *snsSigner {
 	t.Helper()
@@ -54,10 +60,9 @@ func newSNSSigner(t *testing.T) *snsSigner {
 	require.NoError(t, err)
 	cert, err := x509.ParseCertificate(der)
 	require.NoError(t, err)
-	p, err := preset.Parse("sns-probe.yaml", []byte(snsProbe),
-		preset.WithSNSCertificates(func(context.Context, string) (*x509.Certificate, error) { return cert, nil }))
+	p, err := preset.Parse("sns-probe.yaml", []byte(snsProbe))
 	require.NoError(t, err)
-	return &snsSigner{key: key, preset: p}
+	return &snsSigner{key: key, preset: p, engine: preset.New(signedBy{cert}, time.Now)}
 }
 
 // handle signs stringToSign with hash, puts the signature into msg under version and hands
@@ -73,7 +78,9 @@ func (s *snsSigner) handle(t *testing.T, msg map[string]string, version string, 
 	msg["SigningCertURL"] = snsCertURL
 	body, err := json.Marshal(msg)
 	require.NoError(t, err)
-	_, err = s.preset.Handle(context.Background(), preset.Request{Body: body}, preset.Params{"topic_arn": snsTopic}, time.Now())
+	_, err = s.engine.Handle(context.Background(), s.preset, preset.HandleInput{
+		Request: preset.Request{Body: body}, Params: preset.Params{"topic_arn": snsTopic},
+	})
 	return err
 }
 

@@ -5,8 +5,8 @@
 //
 // It answers a form's answers against the Sign-up items in effect (Decide, and Module.Check over
 // internal/domain/identity/signupitems), writes the records in the transaction that makes the User or changes the
-// answer (Write), reads a User's current answers (Module.Current) and many Users' current consent
-// to the operator's mailings (Mailings, for the service feed of Users). The records belong to the
+// answer (Module.Write), reads a User's current answers (Module.Current) and many Users' current consent
+// to the operator's mailings (Module.Mailings, for the service feed of Users). The records belong to the
 // User, not to a Workspace, so the package works on the raw *ent.Client (it is in the closed list
 // of docs/architecture/workspace-scoping.md): the Consent record table and nothing else.
 package consentrecords
@@ -120,10 +120,23 @@ func decision(accepted bool) consentrecord.Decision {
 	return consentrecord.DecisionDeclined
 }
 
+// Module is the Consent records over the Instance's Sign-up items.
+type Module struct {
+	ent   *ent.Client
+	bus   *events.Bus
+	items *signupitems.Module
+}
+
+// New builds the module over the raw client, the bus, in whose transaction a change in account
+// settings writes its record, and the Sign-up items.
+func New(client *ent.Client, bus *events.Bus, items *signupitems.Module) *Module {
+	return &Module{ent: client, bus: bus, items: items}
+}
+
 // Write adds the records of consents for the User in tx, the transaction that writes the User or
 // its answer, with the client's address and user agent of the request in ctx (resolved as the
 // rate limiter resolves them, internal/kernel/clientip).
-func Write(ctx context.Context, tx *ent.Client, userID int64, consents Consents) error {
+func (m *Module) Write(ctx context.Context, tx *ent.Client, userID int64, consents Consents) error {
 	if len(consents.Entries) == 0 {
 		return nil
 	}
@@ -161,19 +174,6 @@ type Record struct {
 	UserAgent string
 	// DecidedAt is when the decision was made.
 	DecidedAt time.Time
-}
-
-// Module is the Consent records over the Instance's Sign-up items.
-type Module struct {
-	ent   *ent.Client
-	bus   *events.Bus
-	items *signupitems.Module
-}
-
-// New builds the module over the raw client, the bus, in whose transaction a change in account
-// settings writes its record, and the Sign-up items.
-func New(client *ent.Client, bus *events.Bus, items *signupitems.Module) *Module {
-	return &Module{ent: client, bus: bus, items: items}
 }
 
 // Check answers a form against the Sign-up items in effect now (see Decide): the Consents it
@@ -226,9 +226,10 @@ type Mailing struct {
 // Mailings is the current consent to the operator's mailings of each of the Users that has
 // answered the item standing for it, by User id. A User who never answered it, and every User
 // when no item stands for it, is absent: they have not consented. It reads the records through
-// client, for the service feed of Users (ee/domain/insights/workspaceoversight), which pages over many Users at once.
-func Mailings(ctx context.Context, client *ent.Client, userIDs ...int64) (map[int64]Mailing, error) {
-	rows, err := client.ConsentRecord.Query().
+// the module's raw client, for the service feed of Users (ee/domain/insights/workspaceoversight), which pages over
+// many Users at once.
+func (m *Module) Mailings(ctx context.Context, userIDs ...int64) (map[int64]Mailing, error) {
+	rows, err := m.ent.ConsentRecord.Query().
 		Where(
 			consentrecord.UserIDIn(userIDs...),
 			consentrecord.HasVersionWith(legaldocumentversion.HasItemWith(signupitem.MailingsConsent(true))),
