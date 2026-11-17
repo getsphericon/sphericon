@@ -12,6 +12,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
@@ -29,17 +30,23 @@ import (
 // UseCase records Unsubscribes. Every call receives the Workspace-scoped client (ADR 0017) built
 // by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus         *events.Bus
-	out         *outboundmessages.Module
-	automations *automations.Module
-	now         func() time.Time
+	bus           *events.Bus
+	out           *outboundmessages.Module
+	automations   *automations.Module
+	unsubs        *unsubscribes.Module
+	confirmations *confirmations.Module
+	stops         *channelstop.Module
+	now           func() time.Time
 }
 
 // New builds the unsubscribe use case over the bus, Outbound send, which reads the Broadcast or
 // Automation a text came from, the Automations, whose Enrollment an unsubscribe from one exits,
-// and the Instance clock.
-func New(bus *events.Bus, out *outboundmessages.Module, enrollments *automations.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, out: out, automations: enrollments, now: now}
+// the owners of the rows an opt-out writes (the opt-outs, the Confirmations an opt-out of
+// everything withdraws and the Channel stops of telegram and sms) and the Instance clock.
+func New(bus *events.Bus, out *outboundmessages.Module, enrollments *automations.Module, unsubs *unsubscribes.Module,
+	confs *confirmations.Module, stops *channelstop.Module, now func() time.Time,
+) *UseCase {
+	return &UseCase{bus: bus, out: out, automations: enrollments, unsubs: unsubs, confirmations: confs, stops: stops, now: now}
 }
 
 // RecordLink writes a per-(channel, destination, sending source) opt-out
@@ -78,7 +85,7 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 			// On email the email.unsubscribed Event says how; on Telegram the row does.
 			o.Via = unsubscribe.ViaLink
 		}
-		change, err := unsubscribes.Add(ctx, sc, o)
+		change, err := u.unsubs.Add(ctx, sc, o)
 		if err != nil {
 			return err
 		}
@@ -95,7 +102,8 @@ func (u *UseCase) RecordLink(ctx context.Context, s *ent.Scoped, target linktarg
 		// marketing.confirmed Event is preserved as proof ("confirmed at T1, left at
 		// T2"). A narrower per-source opt-out does NOT touch confirmation.
 		if target.Source == eligibility.SourceEverything && target.Channel == channels.Email {
-			if err := confirmations.Withdraw(ctx, sc, channels.Email, dest, consentstamps.At(at)); err != nil {
+			withdrawal := confirmations.WithdrawInput{Channel: channels.Email, Destination: dest, At: consentstamps.At(at)}
+			if err := u.confirmations.Withdraw(ctx, sc, withdrawal); err != nil {
 				return err
 			}
 		}

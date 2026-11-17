@@ -149,7 +149,7 @@ func TestErasingAContactWhoTextedLeavesOnlyItsPhoneHash(t *testing.T) {
 	suppressed := env.DB.Suppression.Query().Where(entsuppression.ChannelEQ(channels.SMS), entsuppression.Destination(hash)).OnlyX(ctx)
 	assert.Nil(t, suppressed.ContactID, "the Suppression stays, by the hash, detached")
 	// The Suppression is lifted, to see the opt-out refuse on its own.
-	require.NoError(t, suppressions.Remove(ctx, s, suppressed.ID, time.Now()))
+	require.NoError(t, testhelper.Module[*suppressions.Module](env).Remove(ctx, s, suppressed.ID))
 
 	// The person is imported again with the same phone and a fresh Confirmation: no text goes.
 	again, err := env.ExternalScoped(t, apitokens.ScopeContactsWrite).ContactsCreate(ctx, &externalapi.CreateContactInput{
@@ -272,12 +272,12 @@ func TestLiftingTheSuppressionOfANumberThatCameBackLiftsItsErasedTwin(t *testing
 	env.SuppressNumber(ctx, number)
 	eraseContact(t, env, fixtures.ContactTexterID)
 	reimport(t, env, number)
-	again, err := suppressions.AddManual(ctx, s, channels.SMS, number)
+	again, err := testhelper.Module[*suppressions.Module](env).AddManual(ctx, s, channels.SMS, number)
 	require.NoError(t, err)
 	before, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 
-	require.NoError(t, suppressions.Remove(ctx, s, again.ID, time.Now()))
+	require.NoError(t, testhelper.Module[*suppressions.Module](env).Remove(ctx, s, again.ID))
 
 	after, err := eligibility.New().Check(ctx, s, eligibility.CheckInput{Channel: channels.SMS, Destination: number, Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)

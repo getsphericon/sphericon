@@ -7,7 +7,31 @@
 // confirmations.
 package channelstop
 
-import "strings"
+import (
+	"strings"
+	"time"
+
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/infra/events"
+)
+
+// Module records the Channel stops of a Workspace, and reacts to the stops and returns observed
+// in a Channel (Subscribers). It publishes in the transaction of the scope it is given, through
+// the bus.
+type Module struct {
+	bus           *events.Bus
+	confirmations *confirmations.Module
+	unsubs        *unsubscribes.Module
+	now           func() time.Time
+}
+
+// New builds the Channel stops over the bus whose transactions its operations join, the owners of
+// the rows a stop writes (the Confirmations a stop drops and a START records, and the opt-outs)
+// and the Instance clock, which dates a stop recorded by hand.
+func New(bus *events.Bus, confs *confirmations.Module, unsubs *unsubscribes.Module, now func() time.Time) *Module {
+	return &Module{bus: bus, confirmations: confs, unsubs: unsubs, now: now}
+}
 
 // stopKeywords are the messages that are a stop by themselves, lower-cased. The list is the core's,
 // shared by every Channel where a person writes to us (Telegram and SMS); a Channel adds its own

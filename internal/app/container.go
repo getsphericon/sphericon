@@ -39,6 +39,7 @@ import (
 	apitracking "github.com/getsphericon/sphericon/internal/api/tracking"
 	"github.com/getsphericon/sphericon/internal/app/entclient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/identitytokens"
@@ -46,6 +47,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -500,7 +502,11 @@ var editionPackage = do.Package(
 		database := do.MustInvoke[Database](i)
 		bus := events.New(database.DB, do.MustInvoke[entclient.Clients](i).NewTx, do.MustInvoke[Clock](i))
 		bus.UseJobs(do.MustInvoke[*river.Client[*sql.Tx]](i))
-		bus.UseSubscribers(channelstop.Subscribers()...)
+		// The Channel stops react over this bus, so the module their reaction runs in is built over
+		// it here: a module the container builds over the bus could not come before it.
+		clock, unsubs := do.MustInvoke[Clock](i), unsubscribes.New()
+		stops := channelstop.New(bus, confirmations.New(bus, unsubs, clock), unsubs, clock)
+		bus.UseSubscribers(stops.Subscribers()...)
 		bus.UseSubscribers(suppressions.Subscribers()...)
 		// The consumers of the domain events: a publish inserts a job for each that wants it.
 		bus.UseConsumers(append(jobs.EventConsumers(), eejobs.EventConsumers()...)...)
@@ -584,6 +590,7 @@ var jobsPackage = do.Package(
 			SecondFactor:      do.MustInvoke[*secondfactors.Module](i),
 			Passkeys:          do.MustInvoke[*passkeys.Module](i),
 			Orders:            do.MustInvoke[*orders.Module](i),
+			Suppressions:      do.MustInvoke[*suppressions.Module](i),
 			Contacts:          do.MustInvoke[*contacts.Module](i),
 			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
 			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
@@ -831,13 +838,29 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
-			do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[addresscheck.Resolver](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
-		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[Clock](i)), nil
+		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
+			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations and the
+	// Channel stops, which write their rows (ADR 0102).
+	do.Lazy(func(do.Injector) (*unsubscribes.Module, error) {
+		return unsubscribes.New(), nil
+	}),
+	do.Lazy(func(i do.Injector) (*suppressions.Module, error) {
+		return suppressions.New(do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*confirmations.Module, error) {
+		return confirmations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*channelstop.Module, error) {
+		return channelstop.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*confirmations.Module](i),
+			do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -904,7 +927,9 @@ var contentPackage = do.Package(
 			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
-		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*automations.Module](i), do.MustInvoke[Clock](i)), nil
+		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[*automations.Module](i),
+			do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[*confirmations.Module](i), do.MustInvoke[*channelstop.Module](i),
+			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Callback interpretation behind the Ingest hook, a sending module (ADR 0112): it resolves
 	// an ingest key to its Integration and Workspace before any scope exists, so it holds the raw
@@ -1179,6 +1204,8 @@ func externalDeps(i do.Injector) (apiexternal.Deps, error) {
 		Tokens:                do.MustInvoke[*apitokens.Module](i),
 		Audit:                 do.MustInvoke[*auditlog.Log](i),
 		Export:                exportstream.New(edition.Export, do.MustInvoke[*auditlog.Log](i), do.MustInvoke[*secrets.Cipher](i)),
+		Suppressions:          do.MustInvoke[*suppressions.Module](i),
+		Confirmations:         do.MustInvoke[*confirmations.Module](i),
 
 		Unsubscribe: do.MustInvoke[*unsubscriberecording.UseCase](i),
 	}, nil
@@ -1222,6 +1249,9 @@ func siteDeps(i do.Injector) (apisite.Deps, error) {
 		TagDeletion:           do.MustInvoke[*tagdeletion.UseCase](i),
 		CustomFieldRetyping:   do.MustInvoke[*customfieldretyping.UseCase](i),
 		Unsubscribe:           do.MustInvoke[*unsubscriberecording.UseCase](i),
+		Suppressions:          do.MustInvoke[*suppressions.Module](i),
+		Confirmations:         do.MustInvoke[*confirmations.Module](i),
+		ChannelStops:          do.MustInvoke[*channelstop.Module](i),
 		Bindings:              do.MustInvoke[*bindings.Module](i),
 		Templates:             do.MustInvoke[*emailtemplates.Module](i),
 		TemplateViews:         do.MustInvoke[*emailtemplates.Views](i),

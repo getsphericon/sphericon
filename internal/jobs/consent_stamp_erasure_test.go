@@ -2,7 +2,6 @@ package jobs_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent/consentstamp"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/linktarget"
@@ -26,10 +24,10 @@ func TestErasingAContactKeepsOnlyTheTimeOfTheStopsThatStand(t *testing.T) {
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.AcmeID)
 	address := fixtures.ContactAliceEmail
-	require.NoError(t, confirmations.RecordConfirmation(ctx, env.Bus, s, linktarget.Confirmation{
+	require.NoError(t, testhelper.Module[*confirmations.Module](env).RecordConfirmation(ctx, s, linktarget.Confirmation{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Destination: address,
-	}, "", time.Now()))
-	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), time.Now).Unsubscribe(ctx, s, address, eligibility.SourceBroadcasts)
+	}, ""))
+	_, err := testhelper.Module[*unsubscriberecording.UseCase](env).Unsubscribe(ctx, s, address, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 
 	eraseContact(t, env, fixtures.ContactAliceID)

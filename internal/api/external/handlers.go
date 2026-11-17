@@ -9,9 +9,11 @@ import (
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/external/resources"
 	"github.com/getsphericon/sphericon/internal/api/problem"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eventrecording"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
@@ -83,7 +85,9 @@ type Handlers struct {
 	audit  *auditlog.Log
 	export *exportstream.Streams
 	// unsubscribe records an opt-out (a use case, ADR 0102).
-	unsubscribe *unsubscriberecording.UseCase
+	unsubscribe   *unsubscriberecording.UseCase
+	suppressions  *suppressions.Module
+	confirmations *confirmations.Module
 }
 
 // Deps is everything the /api handlers are built from. The domain modules are
@@ -131,6 +135,10 @@ type Deps struct {
 	Clock func() time.Time
 	// Unsubscribe records an opt-out (a use case, ADR 0102).
 	Unsubscribe *unsubscriberecording.UseCase
+	// Suppressions adds a Suppression.
+	Suppressions *suppressions.Module
+	// Confirmations records the consent a customer collected and reads a Contact's SMS consent.
+	Confirmations *confirmations.Module
 }
 
 func NewHandlers(d Deps) *Handlers {
@@ -143,7 +151,7 @@ func NewHandlers(d Deps) *Handlers {
 		eventrecording: d.EventRecording, contacts: d.Contacts, erasure: d.Erasure, tags: d.Tags, tagDeletion: d.TagDeletion, customFieldRetyping: d.CustomFieldRetyping, bindings: d.Bindings, templates: d.Templates, brandKit: d.BrandKit, automations: d.Automations, rules: d.Rules,
 		broadcasts: d.Broadcasts, reputation: d.Reputation, tokens: d.Tokens,
 		audit: d.Audit, export: d.Export,
-		unsubscribe: d.Unsubscribe,
+		unsubscribe: d.Unsubscribe, suppressions: d.Suppressions, confirmations: d.Confirmations,
 	}
 }
 

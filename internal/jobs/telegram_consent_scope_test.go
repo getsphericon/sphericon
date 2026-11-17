@@ -29,7 +29,7 @@ func TestTelegramObservationIdentityIsIndependentForEachBotAndWorkspace(t *testi
 		require.Equal(t, http.StatusOK, reply.Code)
 	}
 	for _, workspaceID := range []int64{fixtures.AcmeID, fixtures.LacunaID} {
-		stop, err := unsubscribes.Get(t.Context(), env.DB.Scoped(workspaceID), channels.Telegram, "4101", eligibility.SourceEverything)
+		stop, err := unsubscribes.New().Get(t.Context(), env.DB.Scoped(workspaceID), unsubscribes.Key{Channel: channels.Telegram, Destination: "4101", Source: eligibility.SourceEverything})
 		require.NoError(t, err)
 		assert.NotNil(t, stop)
 	}
@@ -44,10 +44,10 @@ func TestTelegramResumePreservesASourceScopedOptOut(t *testing.T) {
 		require.Equal(t, http.StatusOK, reply.Code)
 	}
 	scope := env.DB.Scoped(fixtures.LacunaID)
-	source, err := unsubscribes.Get(t.Context(), scope, channels.Telegram, "77407", eligibility.SourceBroadcasts)
+	source, err := unsubscribes.New().Get(t.Context(), scope, unsubscribes.Key{Channel: channels.Telegram, Destination: "77407", Source: eligibility.SourceBroadcasts})
 	require.NoError(t, err)
 	assert.NotNil(t, source)
-	everything, err := unsubscribes.Get(t.Context(), scope, channels.Telegram, "77407", eligibility.SourceEverything)
+	everything, err := unsubscribes.New().Get(t.Context(), scope, unsubscribes.Key{Channel: channels.Telegram, Destination: "77407", Source: eligibility.SourceEverything})
 	notFound := ent.IsNotFound(err)
 	require.True(t, notFound)
 	assert.Nil(t, everything)

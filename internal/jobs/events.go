@@ -187,13 +187,14 @@ func suppresses(_ events.Envelope, ev events.DomainEvent) bool {
 type SuppressEventWorker struct {
 	river.WorkerDefaults[SuppressEventArgs]
 
-	ent *ent.Client
+	ent          *ent.Client
+	suppressions *suppressions.Module
 }
 
-// NewSuppressEventWorker is the suppression consumer's worker over the raw client: the envelope
-// names the Workspace, which Work scopes to.
-func NewSuppressEventWorker(client *ent.Client) *SuppressEventWorker {
-	return &SuppressEventWorker{ent: client}
+// NewSuppressEventWorker is the suppression consumer's worker over the raw client, whose envelope
+// names the Workspace Work scopes to, and the Suppressions module it adds the address through.
+func NewSuppressEventWorker(client *ent.Client, registry *suppressions.Module) *SuppressEventWorker {
+	return &SuppressEventWorker{ent: client, suppressions: registry}
 }
 
 // Work adds the event's destination to the Workspace's Suppression list when the action implies a
@@ -217,7 +218,7 @@ func (w *SuppressEventWorker) Work(ctx context.Context, job *river.Job[SuppressE
 	// api token, so this is a scope source outside the site/external/job list.
 	s := w.ent.Scoped(env.WorkspaceID)
 	// A refused destination ends the job (RefusalsEnd); any other error retries it.
-	err = suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
+	err = w.suppressions.Add(ctx, s, suppressions.Entry{Destination: p.Email, Reason: reason, ContactID: p.ContactID})
 	if err != nil {
 		return fmt.Errorf("suppress %q: %w", p.Email, err)
 	}

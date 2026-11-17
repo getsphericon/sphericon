@@ -40,6 +40,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts/contactsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors/visitorsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -170,32 +173,41 @@ type UseCase struct {
 	broadcasts  *broadcastsunchecked.Module
 	automations *automationsunchecked.Module
 	rules       *rulesunchecked.Module
+	// unsubs reads the opt-outs whose stops an Erasure keeps.
+	unsubs *unsubscribes.Module
 	// The Erasure steps of the owners' unchecked subpackages, which New builds (ADR 0110: only a
 	// use case imports them), and the Contact's row lock.
-	locks    *contactlock.Module
-	contacts *contactsunchecked.Module
-	visitors *visitorsunchecked.Module
-	stamps   *consentstampsunchecked.Module
-	outbound *outboundmessagesunchecked.Module
-	captured *capturedmessagesunchecked.Module
+	locks         *contactlock.Module
+	contacts      *contactsunchecked.Module
+	visitors      *visitorsunchecked.Module
+	stamps        *consentstampsunchecked.Module
+	outbound      *outboundmessagesunchecked.Module
+	captured      *capturedmessagesunchecked.Module
+	optOuts       *unsubscribesunchecked.Module
+	suppressions  *suppressionsunchecked.Module
+	confirmations *confirmationsunchecked.Module
 	// chats reads the Telegram users Bound to the Contact.
 	chats *bindings.Chats
 }
 
-// New builds the Contact erasure use case over the bus whose transaction every erasure runs in and
-// the Broadcasts whose pending work it cancels and the contacts module whose unchecked removal of
-// the Contact row it builds; now is the Instance clock the Broadcasts' unchecked operations read.
-func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, now func() time.Time) *UseCase {
+// New builds the Contact erasure use case over the bus whose transaction every erasure runs in,
+// the Broadcasts whose pending work it cancels, the contacts module whose unchecked removal of the
+// Contact row it builds and the opt-outs whose standing stops it keeps; now is the Instance clock
+// the Broadcasts' unchecked operations read.
+func New(bus *events.Bus, catalogue *broadcasts.Module, people *contacts.Module, unsubs *unsubscribes.Module, now func() time.Time) *UseCase {
 	return &UseCase{
-		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now),
+		bus: bus, broadcasts: broadcastsunchecked.New(catalogue, bus, now), unsubs: unsubs,
 		automations: automationsunchecked.New(bus), rules: rulesunchecked.New(bus),
-		locks:    contactlock.New(),
-		contacts: contactsunchecked.New(people),
-		visitors: visitorsunchecked.New(),
-		stamps:   consentstampsunchecked.New(),
-		outbound: outboundmessagesunchecked.New(),
-		captured: capturedmessagesunchecked.New(),
-		chats:    bindings.NewChats(bus, now),
+		locks:         contactlock.New(),
+		contacts:      contactsunchecked.New(people),
+		visitors:      visitorsunchecked.New(),
+		stamps:        consentstampsunchecked.New(),
+		outbound:      outboundmessagesunchecked.New(),
+		captured:      capturedmessagesunchecked.New(),
+		optOuts:       unsubscribesunchecked.New(),
+		suppressions:  suppressionsunchecked.New(),
+		confirmations: confirmationsunchecked.New(),
+		chats:         bindings.NewChats(bus, now),
 	}
 }
 
@@ -280,9 +292,9 @@ func (u *UseCase) steps() []step {
 		// The Confirmation of the Contact's number that names no Contact; the Contact's own go with
 		// its row. Losing one fails safe (re-confirmation).
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-			return confirmationsunchecked.EraseNumber(ctx, s, t.Phone)
+			return u.confirmations.EraseNumber(ctx, s, t.Phone)
 		},
-		detachOptOuts,
+		u.detachOptOuts,
 		u.anonymizeDelivery,
 		// The Captured messages (Test inbox, ADR 0058) addressed to the subject's Destinations.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {

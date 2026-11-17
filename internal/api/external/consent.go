@@ -5,8 +5,6 @@ import (
 
 	externalapi "github.com/getsphericon/sphericon/gen/external"
 	"github.com/getsphericon/sphericon/internal/api/auth"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 )
 
 // Consent narrows through /api (ADR 0016): these operations add a Suppression or record an
@@ -17,7 +15,7 @@ import (
 func (h *Handlers) SuppressionsCreate(ctx context.Context, req *externalapi.CreateSuppressionInput) (*externalapi.SuppressionResource, error) {
 	s := auth.TokenScoped(ctx)
 
-	created, err := suppressions.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
+	created, err := h.suppressions.AddManual(ctx, s, inputs.SuppressionChannel(req.Channel.Or(externalapi.SuppressionChannelEmail)), req.Destination)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +35,7 @@ func (h *Handlers) UnsubscribesCreate(ctx context.Context, req *externalapi.Crea
 }
 
 func (h *Handlers) ConfirmationsCreate(ctx context.Context, req *externalapi.CreateConfirmationInput) (*externalapi.ConfirmationResource, error) {
-	c, err := confirmations.Confirm(ctx, h.bus, auth.TokenScoped(ctx), inputs.ConsentChannel(req.Channel), req.Destination, inputs.ConfirmationEvidence(req), h.now())
+	c, err := h.confirmations.Confirm(ctx, auth.TokenScoped(ctx), inputs.Confirmation(req))
 	if err != nil {
 		return nil, err
 	}

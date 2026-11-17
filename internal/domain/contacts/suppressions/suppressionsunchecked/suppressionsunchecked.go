@@ -1,8 +1,8 @@
 // Package suppressionsunchecked holds the Suppression part of a Contact's Erasure. It is a step of
 // a Contact's Erasure (ADR 0021), which harms a live Contact when it runs alone: the use case
 // internal/usecase/contacterasure runs each owner's step in its order, in the one transaction of
-// the Erasure; only a use case may import this one (ADR 0110). The suppressions module does not
-// import it.
+// the Erasure, and builds its Module; only a use case may import this one (ADR 0110). The
+// suppressions module does not import it.
 package suppressionsunchecked
 
 import (
@@ -15,6 +15,12 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/phone"
 )
 
+// Module is the Suppression step of a Contact's Erasure.
+type Module struct{}
+
+// New builds the Suppression step of a Contact's Erasure.
+func New() *Module { return &Module{} }
+
 // EraseContact is the Suppression part of the Contact's Erasure: its lifted rows are
 // deleted, since a lifted one refuses nothing any more. Its active rows stay, because they are
 // keyed by destination and keep refusing the address; they lose the Contact reference when the
@@ -22,7 +28,7 @@ import (
 // (ADR 0021): the rows of the Contact's phone, number ("" when it has none), count as its own,
 // and an active one keeps refusing by phone.Hash of the number. A hashed one already standing (a
 // person erased before with the number) makes it redundant.
-func EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number string) error {
+func (m *Module) EraseContact(ctx context.Context, s *ent.Scoped, contactID int64, number string) error {
 	mine := entsuppression.ContactID(contactID)
 	if number != "" {
 		mine = entsuppression.Or(mine, entsuppression.And(

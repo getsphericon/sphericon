@@ -3,7 +3,6 @@ package jobs_test
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -149,9 +148,9 @@ func TestAnAutomationTriggeredByMarketingConfirmedIgnoresAnSMSConfirmation(t *te
 
 	onSMS := router.deliver(t)
 	afterSMS := runs()
-	require.NoError(t, confirmations.RecordConfirmation(ctx, env.Bus, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{
+	require.NoError(t, testhelper.Module[*confirmations.Module](env).RecordConfirmation(ctx, env.DB.Scoped(fixtures.AcmeID), linktarget.Confirmation{
 		Destination: fixtures.ContactTexterEmail, WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactTexterID,
-	}, "203.0.113.10", time.Now()))
+	}, "203.0.113.10"))
 	onEmail := router.deliver(t)
 	afterEmail := runs()
 

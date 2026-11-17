@@ -7,9 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/consentstamps/consentstampsunchecked"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -19,11 +17,11 @@ import (
 // when the Contact row goes. A lifted Suppression honors nothing, so it goes with the Contact. On
 // sms the rows keep refusing the number by its hash, never by the number itself (ADR 0021): the
 // phone leaves only its hash.
-func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
-	if err := unsubscribesunchecked.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
+func (u *UseCase) detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+	if err := u.optOuts.EraseSMS(ctx, s, t.ContactID, t.Phone); err != nil {
 		return err
 	}
-	return suppressionsunchecked.EraseContact(ctx, s, t.ContactID, t.Phone)
+	return u.suppressions.EraseContact(ctx, s, t.ContactID, t.Phone)
 }
 
 // eraseConsentStamps leaves of the times the subject's consent observations occurred only the time
@@ -51,7 +49,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 		}
 	}
 	// The Contact's phone, and the numbers it had before whose opt-outs still name it.
-	numbers, err := unsubscribes.SMSNumbersOf(ctx, s, t.ContactID)
+	numbers, err := u.unsubs.SMSNumbersOf(ctx, s, t.ContactID)
 	if err != nil {
 		return err
 	}
@@ -60,7 +58,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 	}
 	for _, number := range lo.Uniq(numbers) {
 		standing := func(ctx context.Context, _ string) (bool, error) {
-			optOut, err := unsubscribes.SMSOptOut(ctx, s, number)
+			optOut, err := u.unsubs.SMSOptOut(ctx, s, number)
 			return optOut != nil, err
 		}
 		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channels.SMS, Destination: number, Standing: standing}); err != nil {
@@ -74,7 +72,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 // kept by the Destination, still stands.
 func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel channels.Channel, destination string) error {
 	standing := func(ctx context.Context, source string) (bool, error) {
-		_, err := unsubscribes.Get(ctx, s, channel, destination, source)
+		_, err := u.unsubs.Get(ctx, s, unsubscribes.Key{Channel: channel, Destination: destination, Source: source})
 		if ent.IsNotFound(err) {
 			return false, nil
 		}

@@ -26,7 +26,7 @@ const texter = fixtures.ContactTexterPhone
 
 func smsConsent(t *testing.T, env *testhelper.TestEnv) confirmations.ContactSMS {
 	t.Helper()
-	consent, err := confirmations.ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
+	consent, err := testhelper.Module[*confirmations.Module](env).ReadContactSMS(t.Context(), env.DB.Scoped(fixtures.AcmeID), fixtures.ContactTexterID)
 	require.NoError(t, err)
 	return consent
 }

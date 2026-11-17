@@ -207,8 +207,10 @@ type Inputs interface {
 	// goverter:enum:transform value
 	ConsentChannel(source externalapi.ConsentChannel) channels.Channel
 
-	// The evidence of consent a Confirmation carries, from its own body or a batch item's.
-	ConfirmationEvidence(source *externalapi.CreateConfirmationInput) confirmations.Evidence
+	// The consent a customer collected, with its evidence: a Confirmation's body.
+	// goverter:map . Evidence
+	Confirmation(source *externalapi.CreateConfirmationInput) confirmations.ConfirmInput
+	// The evidence of consent a batch item carries.
 	ConsentEvidence(source externalapi.ConsentEvidence) confirmations.Evidence
 	// Where a Broadcast's Test send goes: the address on email, the number on sms. OnlyTo is the
 	// handler's to set.

@@ -16,6 +16,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/trackedlink"
 	"github.com/getsphericon/sphericon/ent/unsubscribe"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram/telegramtest"
@@ -34,7 +35,7 @@ func sayTG(updateID, from int64, text string) string {
 
 func eraseContact(t *testing.T, env *testhelper.TestEnv, contactID int64) {
 	t.Helper()
-	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
+	require.NoError(t, contacterasure.New(env.Bus, testhelper.Module[*broadcasts.Module](env), testhelper.Module[*contacts.Module](env), testhelper.Module[*unsubscribes.Module](env), time.Now).Erase(t.Context(), env.DB.Scoped(fixtures.AcmeID),
 		contacterasure.Identifier{ContactID: contactID}, contacterasure.Requester{Kind: contacterasure.RequesterAPIToken}))
 }
 

@@ -281,10 +281,10 @@ func TestSMSConditions(t *testing.T) {
 
 	// Live: confirming the clean phone moves it in, opting the confirmed one out moves it out.
 	tyrell := env.DB.Scoped(fixtures.TyrellID)
-	_, err := confirmations.ConfirmContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixCleanID,
-		confirmations.Evidence{Wording: "Text me offers.", Source: "test", Brand: "Tyrell"}, time.Now())
+	_, err := testhelper.Module[*confirmations.Module](env).ConfirmContactSMS(ctx, tyrell, fixtures.TyrellMatrixCleanID,
+		confirmations.Evidence{Wording: "Text me offers.", Source: "test", Brand: "Tyrell"})
 	require.NoError(t, err)
-	_, err = channelstop.OptOutContactSMS(ctx, env.Bus, tyrell, fixtures.TyrellMatrixConfirmedID)
+	_, err = testhelper.Module[*channelstop.Module](env).OptOutContactSMS(ctx, tyrell, fixtures.TyrellMatrixConfirmedID)
 	require.NoError(t, err)
 	assert.Equal(t, []int64{fixtures.TyrellMatrixCleanID}, matching(fixtures.TyrellID, "has"))
 	assert.Contains(t, matching(fixtures.TyrellID, "doesNotHave"), int64(fixtures.TyrellMatrixConfirmedID))

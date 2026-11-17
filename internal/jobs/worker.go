@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/identity/noticedelivery"
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
@@ -103,6 +104,8 @@ type Deps struct {
 	Orders   *orders.Module
 	// Contacts changes a Contact's Tags for a Rule's tag Actions.
 	Contacts *contacts.Module
+	// Suppressions adds the address of a hard bounce or a complaint (the suppression consumer).
+	Suppressions *suppressions.Module
 	// CapturedMessages prunes the Captured messages past the Test inbox's retention (ADR 0058).
 	CapturedMessages *capturedmessages.Module
 	Deletion         *workspacedeletion.UseCase
@@ -189,7 +192,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewEraseWorkspacesWorker(deps.Deletion))
 	// The consumers of the domain events (EventConsumers). Those that queue the work an event
 	// calls for queue it through the client itself, which exists once the workers are registered.
-	river.AddWorker(workers, NewSuppressEventWorker(entClient))
+	river.AddWorker(workers, NewSuppressEventWorker(entClient, deps.Suppressions))
 	river.AddWorker(workers, NewBroadcastUnsubscribeEventWorker(entClient, deps.Broadcasts))
 	river.AddWorker(workers, NewMessageObservationWorker(entClient, mod))
 	river.AddWorker(workers, NewOrderEventWorker(entClient, deps.Orders))
