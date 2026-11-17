@@ -193,7 +193,7 @@ rule of an owner governs them any more; it only deletes, and only through the sc
 included, reads the table and changes it only through a function of its owner: the Workspace's
 standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
-(`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
+(`users.Module.ClearSurveyDueIn`, `users.Feed.SetPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
 Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
 `users`; a provider's refusal of an Integration (`integrations.RecordRefused`) for
 `outboundmessages`. A write through a generic helper counts where

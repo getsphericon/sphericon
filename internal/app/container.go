@@ -680,8 +680,8 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*users.Module, error) {
 		passwords := do.MustInvoke[*credentials.Hasher](i)
 		prover := login.New(login.Config[*ent.User]{Throttle: do.MustInvoke[*throttle.Attempts](i).For(throttle.KindLogin), Passwords: passwords})
-		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), do.MustInvoke[Clock](i),
-			users.WithProver(prover)), nil
+		return users.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), passwords, do.MustInvoke[*consentrecords.Module](i), prover,
+			do.MustInvoke[Clock](i)), nil
 	}),
 	// The Sign-up and the steps that make a User Verified with its first Workspace (a domain module
 	// of identity, ADR 0102), which starts with the default Send cap (suspension's, ADR 0146) where
@@ -721,7 +721,7 @@ var identityPackage = do.Package(
 	do.Lazy(func(i do.Injector) (*signupsurveyresponses.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		enabled := signupsurveyresponses.Enabled(cfg.SignupSurvey, do.MustInvoke[*ee.Edition](i).StaffLicensed(), slog.Default())
-		return signupsurveyresponses.New(do.MustInvoke[*events.Bus](i), enabled), nil
+		return signupsurveyresponses.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*users.Module](i), enabled), nil
 	}),
 	// The Invitations (ADR 0102): their lookup by token takes the raw client.
 	do.Lazy(func(i do.Injector) (*invitations.Module, error) {
@@ -933,7 +933,7 @@ var contentPackage = do.Package(
 	// none.
 	do.Lazy(func(i do.Injector) (*workspaceview.UseCase, error) {
 		return workspaceview.New(do.MustInvoke[*events.Bus](i), workspaceview.Modules{
-			Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
+			Users: do.MustInvoke[*users.Module](i), Workspaces: do.MustInvoke[*workspaces.Module](i), Memberships: do.MustInvoke[*memberships.Module](i),
 			SecondFactors: do.MustInvoke[*secondfactors.Module](i), Holds: do.MustInvoke[*holds.Holds](i),
 			Outbound: do.MustInvoke[*outboundmessages.Module](i), TrackingDomains: do.MustInvoke[*trackingdomains.Module](i),
 			DefaultSendCap: do.MustInvoke[*suspension.DefaultSendCap](i), RemovalCheck: do.MustInvoke[*removalcheck.Module](i),

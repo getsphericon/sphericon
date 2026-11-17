@@ -28,6 +28,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/users"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/removalcheck"
@@ -109,6 +110,7 @@ type SetSecondFactorRequirementInput struct {
 // UseCase reads the Workspace view, and makes the changes of a Workspace that answer with it.
 type UseCase struct {
 	bus             *events.Bus
+	users           *users.Module
 	workspaces      *workspaces.Module
 	memberships     *memberships.Module
 	secondFactors   *secondfactors.Module
@@ -125,6 +127,7 @@ type UseCase struct {
 // ADR 0146). RemovalCheck finds the marketing email still to send that holds the postal address
 // (ADR 0156).
 type Modules struct {
+	Users           *users.Module
 	Workspaces      *workspaces.Module
 	Memberships     *memberships.Module
 	SecondFactors   *secondfactors.Module
@@ -140,7 +143,7 @@ type Modules struct {
 // deletion window is measured on.
 func New(bus *events.Bus, mods Modules, now func() time.Time) *UseCase {
 	return &UseCase{
-		bus: bus, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
+		bus: bus, users: mods.Users, workspaces: mods.Workspaces, memberships: mods.Memberships, secondFactors: mods.SecondFactors,
 		holds: mods.Holds, outbound: mods.Outbound, trackingDomains: mods.TrackingDomains, defaultSendCap: mods.DefaultSendCap,
 		removalCheck: mods.RemovalCheck, now: now,
 	}

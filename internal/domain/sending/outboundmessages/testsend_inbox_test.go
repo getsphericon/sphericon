@@ -29,7 +29,7 @@ func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outboundme
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)),
 	)
 	return m.SendTest(context.Background(), asJane(env, fixtures.GlobexID), outboundmessages.TestRequest{
 		To:      to,
@@ -93,7 +93,7 @@ func TestTestSendFromTheSystemSenderPastItsCapIsRefusedWithAWait(t *testing.T) {
 	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider},
 		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)),
 		outboundmessages.WithTestSendBudget(spentBudget{}))
 
 	_, err := m.SendTest(t.Context(), asJane(env, fixtures.GlobexID), outboundmessages.TestRequest{
@@ -115,7 +115,7 @@ func TestTestSendOfATokenNeverGoesFromTheSystemSender(t *testing.T) {
 	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider},
 		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)))
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)))
 	token := env.Bus.Act(env.DB.Scoped(fixtures.GlobexID), events.Actor{Kind: events.ActorAPIToken, ID: "1"})
 
 	res, err := m.SendTest(t.Context(), token, outboundmessages.TestRequest{

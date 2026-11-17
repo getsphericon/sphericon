@@ -28,8 +28,6 @@ internal/domain/identity/invitations
 internal/domain/identity/joindomains
 internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
-internal/domain/identity/users
-internal/domain/identity/users/usersunchecked
 internal/domain/identity/workspaces
 internal/domain/identity/workspaces/workspacesunchecked
 internal/domain/insights/dataexport

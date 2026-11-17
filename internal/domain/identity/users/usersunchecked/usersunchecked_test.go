@@ -19,12 +19,13 @@ import (
 func deleteProven(t *testing.T, env *testhelper.TestEnv, proven *ent.User) error {
 	t.Helper()
 	ctx := t.Context()
-	return env.Bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		d, err := usersunchecked.DeletionIn(ctx, tx, proven)
+	removal := usersunchecked.New(testhelper.Module[*users.Module](env), env.Bus)
+	return env.Bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		d, err := removal.DeletionIn(ctx, tx, proven)
 		if err != nil {
 			return err
 		}
-		return d.Apply(ctx, pub)
+		return removal.ApplyDeletion(ctx, tx, d)
 	})
 }
 

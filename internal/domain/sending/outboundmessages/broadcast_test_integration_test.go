@@ -54,7 +54,7 @@ func broadcastTestTo(env *testhelper.TestEnv, workspaceID int64, from, to string
 		messagetoken.New("test-secret", "http://local", time.Now),
 		time.Now,
 		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, time.Now)),
+		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)),
 	)
 	b := &ent.Broadcast{WorkspaceID: workspaceID, Channel: channels.Email, Subject: new("Launch"), Body: new(htmlBody), FromEmail: &from, IntegrationID: integrationID}
 	return m.SendBroadcastTest(context.Background(), asJane(env, workspaceID), b, outboundmessages.TestAddress{Email: to})

@@ -78,11 +78,11 @@ the edit takes away an address that marketing email still to send needs (ADR 015
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
 `secondfactors.Module.DeletionCode` in its transaction, a wrong one counted on the Login throttle),
-opens the deletion on the locked User row (`usersunchecked.DeletionIn`, which refuses a proof made
+opens the deletion on the locked User row (`usersunchecked.Module.DeletionIn`, which refuses a proof made
 before a password was set or removed), locks the Owner rows of its Workspaces
 (`memberships.SoleOwnershipIn`), refuses the only Owner of a live Workspace, leaves each Workspace
 (`memberships.LeaveIn`, or `membershipsunchecked.LeaveDoomedWorkspaceIn` for one in its deletion
-window) and applies the deletion last, which deletes the row and publishes `UserDeleted`.
+window) and applies the deletion last (`ApplyDeletion`), which deletes the row and publishes `UserDeleted`.
 What stays unchecked lives in `<module>unchecked` (ADR 0110). A write is left unchecked only
 when its check needs a module its owner may not call: one in a higher context, or several at
 once; otherwise the check moves into the owner. It still checks its own input (ADR 0107); what it

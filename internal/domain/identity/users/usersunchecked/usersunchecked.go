@@ -14,11 +14,24 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/events"
 )
 
-// Deletion is the removal of one User, opened on its row under the row's lock so that the use case
-// runs its checks (the Second factor code, the only Owner of a live Workspace) between opening and
-// applying it, on the User the deletion locked.
+// Module is the users module's unchecked removal: it opens a Deletion on the User's row and
+// applies it once the use case's checks have passed (docs/architecture/modules.md, the unchecked
+// operations).
+type Module struct {
+	users *users.Module
+	bus   *events.Bus
+}
+
+// New builds the unchecked removal over the users module it locks the User's row through, and the
+// bus it publishes events.UserDeleted on, in the transaction of the deletion.
+func New(usersModule *users.Module, bus *events.Bus) *Module {
+	return &Module{users: usersModule, bus: bus}
+}
+
+// Deletion is the plan of the removal of one User: the row DeletionIn read under the row's lock,
+// so that the use case runs its checks (the Second factor code, the only Owner of a live Workspace)
+// between opening and applying it, on the User the deletion locked.
 type Deletion struct {
-	tx   *ent.Client
 	user *ent.User
 }
 
@@ -26,8 +39,8 @@ type Deletion struct {
 // transaction tx: it locks the User's row until tx ends, so a change of the User's password waits
 // for it. A password set or removed since the proof was read means the proof no longer fits the
 // User: the deletion is refused with users.ErrProofStale.
-func DeletionIn(ctx context.Context, tx *ent.Client, proven *ent.User) (*Deletion, error) {
-	locked, err := users.LockIn(ctx, tx, proven.ID)
+func (m *Module) DeletionIn(ctx context.Context, tx *ent.Client, proven *ent.User) (*Deletion, error) {
+	locked, err := m.users.LockIn(ctx, tx, proven.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -36,21 +49,22 @@ func DeletionIn(ctx context.Context, tx *ent.Client, proven *ent.User) (*Deletio
 	if hasPassword != hadPassword {
 		return nil, &users.DeletionRefusedError{Reason: users.ErrProofStale}
 	}
-	return &Deletion{tx: tx, user: locked}, nil
+	return &Deletion{user: locked}, nil
 }
 
 // User is the User as the deletion locked it.
 func (d *Deletion) User() *ent.User { return d.user }
 
-// Apply deletes the User and publishes events.UserDeleted, which tells the address (ADR 0105),
-// without asking who asks or what the User owns: the use case proved the one and refused the only
-// Owner of a live Workspace, and removed every Membership, under the same lock before. Linked
-// identities, the Second factor and its Recovery codes follow by cascade, an Invitation the User
-// sent keeps its place with no sender, and Audit entries that name the User are never rewritten.
-// Sessions need nothing: the security handler finds no User.
-func (d *Deletion) Apply(ctx context.Context, pub events.Publisher) error {
-	if err := d.tx.User.DeleteOneID(d.user.ID).Exec(ctx); err != nil {
+// ApplyDeletion deletes the User d was opened on, on the transaction tx it was opened in, and
+// publishes events.UserDeleted in that transaction, which tells the address (ADR 0105), without
+// asking who asks or what the User owns: the use case proved the one and refused the only Owner of
+// a live Workspace, and removed every Membership, under the same lock before. Linked identities,
+// the Second factor and its Recovery codes follow by cascade, an Invitation the User sent keeps its
+// place with no sender, and Audit entries that name the User are never rewritten. Sessions need
+// nothing: the security handler finds no User.
+func (m *Module) ApplyDeletion(ctx context.Context, tx *ent.Client, d *Deletion) error {
+	if err := tx.User.DeleteOneID(d.user.ID).Exec(ctx); err != nil {
 		return err
 	}
-	return pub.Publish(ctx, &events.UserDeleted{UserID: d.user.ID, Email: d.user.Email})
+	return m.bus.PublishIn(ctx, tx, &events.UserDeleted{UserID: d.user.ID, Email: d.user.Email})
 }
