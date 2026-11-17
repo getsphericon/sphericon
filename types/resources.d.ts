@@ -2007,7 +2007,7 @@ export default interface Resources {
         "removed": "Member removed",
         "resetSecondFactor": "Reset 2FA",
         "resetSecondFactorConfirm": "Reset",
-        "resetSecondFactorConfirmDescription": "Their authenticator, recovery codes and passkeys stop working, they are signed out everywhere and we email them about it. They can sign in with their password and set up two-factor authentication again.",
+        "resetSecondFactorConfirmDescription": "Their authenticator, recovery codes and passkeys stop working and they are signed out everywhere. They can sign in with their password and set up two-factor authentication again.",
         "resetSecondFactorConfirmTitle": "Reset this member's two-factor authentication?",
         "resetSecondFactorError": "Failed to reset two-factor authentication",
         "revoke": "Revoke",

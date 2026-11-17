@@ -22,17 +22,16 @@ Admin of any one of them could remove it for all of them, and neither the User n
 Workspaces learned of it. The reset a Staff member makes from the command line
 (`sphericon user reset-second-factor`) already recorded its entry in every Workspace of the User.
 
-An account-wide credential belongs to the account, not to one tenant of it. GitHub draws the same
-line: an organization may require two-factor authentication of its members, but its owners cannot
-reset a member's.
+An account-wide credential belongs to the account, not to one tenant of it. GitHub likewise leaves
+a member's two-factor authentication to the account rather than to an organization's owners.
 
 ## Decisions
 
-- **A reset by an Owner or Admin needs the right in every Workspace of the member.** In each
+- **A reset by an Owner or Admin needs the right in every Workspace of the member.** In each live
   Workspace the User holds a Membership in, the caller holds one too, whose Role passes the rule the
   reset already applied in one Workspace: second_factor:manage, and owners:manage for an Owner's. A
-  Workspace in its deletion window counts, since it can be restored. The rule is read in the reset's
-  transaction. The refusals of the Workspace the reset is made in stand as they were: a Membership
+  Workspace in its deletion window does not count: nobody acts in it until it is restored. The rule
+  is read in the reset's transaction. The refusals of the Workspace the reset is made in stand as they were: a Membership
   outside it is not found, a missing Permission is a 403, and the caller's own factor is a 422.
 - **Otherwise the reset is refused on the member** (422 under `member`), in words that name no
   Workspace: the member also belongs to other Workspaces, so an Owner there or the administrator of
@@ -42,10 +41,11 @@ reset a member's.
   member made it, `user.second_factor_reset` is recorded by its actor in the log of each Workspace
   the User holds a Membership in. An Owner or Admin who made it is a member of each of them, by the
   first decision.
-- **Every reset mails the User.** The reset publishes `user.second_factor_reset` (an account event,
+- **Every reset tells the User.** The reset publishes `user.second_factor_reset` (an account event,
   ADR 0105) in its transaction, and Notice delivery tells the User what is gone, that every session
   ended, that a Workspace which requires a Second factor asks them to enroll again, and to contact an
-  administrator if they did not expect it. The mail carries no link.
+  administrator if they did not expect it. The mail carries no link. An Instance with no System
+  sender sends no Notice, this one included.
 - **The first proof of an address stays silent.** The drop of a factor and Passkeys at the first
   proof of an address (ADR 0170) is no reset: it is neither recorded nor mailed, as before.
 
@@ -56,7 +56,7 @@ reset a member's.
   `sphericon user reset-second-factor`, makes the reset; the member page shows the refusal as it
   shows any refusal of the member.
 - The Workspaces of the member see every reset in their Audit log, and the member learns of every
-  reset from a mail, whoever made it.
+  reset from a mail, whoever made it, where the Instance sends mail.
 
 ## Rejected
 

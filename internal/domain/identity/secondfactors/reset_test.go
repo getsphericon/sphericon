@@ -154,6 +154,23 @@ func TestResetIsRefusedWhenTheCallerIsNoMemberOfAnotherWorkspaceOfTheMember(t *t
 	assert.Empty(t, env.SystemMail.Messages())
 }
 
+// A caller who is a plain member of another Workspace of the member holds no right to reset it
+// there (ADR 0177).
+func TestResetIsRefusedWhenTheCallerIsAPlainMemberOfAnotherWorkspaceOfTheMember(t *testing.T) {
+	env, _ := setup(t)
+	env.Feed(t, func(tx *ent.Client) error {
+		return tx.Membership.UpdateOneID(fixtures.GringottsAbeMembershipID).SetRole(membership.RoleMember).Exec(t.Context())
+	})
+	abe := secondfactors.Caller{UserID: fixtures.ResetAdminAbeID, Role: membership.RoleAdmin, Actor: events.Actor{Kind: events.ActorUser, ID: "abe"}}
+
+	err := resetReese(t, env, abe)
+
+	require.ErrorIs(t, err, memberships.ErrSecondFactorResetElsewhere)
+	st, err := testhelper.Module[*secondfactors.Module](env).Status(t.Context(), fixtures.SecondFactorReeseID)
+	require.NoError(t, err)
+	assert.True(t, st.Enabled)
+}
+
 // In another Workspace of the member the caller needs the same right as in this one: an Admin does
 // not reset the factor of a member who is an Owner there (ADR 0177).
 func TestResetIsRefusedWhenTheMemberIsAnOwnerOfAnotherWorkspaceTheCallerOnlyAdministers(t *testing.T) {

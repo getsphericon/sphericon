@@ -183,12 +183,14 @@ type SecondFactorResetElsewhereInput struct {
 }
 
 // SecondFactorResetElsewhereIn is nil when the User in.CallerID may reset the Second factor of the
-// User of in.Target in every other Workspace that User holds a Membership in, a Workspace in its
-// deletion window included, read on the transaction tx of the reset (ADR 0177): there the caller
-// holds a Membership whose Role passes the rule of one Workspace (resetRight). Otherwise
-// ErrSecondFactorResetElsewhere, whichever Workspace refused.
+// User of in.Target in every other live Workspace that User holds a Membership in, read on the
+// transaction tx of the reset (ADR 0177): there the caller holds a Membership whose Role passes the
+// rule of one Workspace (resetRight). Otherwise ErrSecondFactorResetElsewhere, whichever Workspace
+// refused.
 func (ms *Module) SecondFactorResetElsewhereIn(ctx context.Context, tx *ent.Client, in SecondFactorResetElsewhereInput) error {
-	held, err := ms.OfUserIn(ctx, tx, in.Target.UserID)
+	held, err := tx.Membership.Query().
+		Where(membership.UserID(in.Target.UserID), membership.HasWorkspaceWith(workspaces.Live())).
+		All(ctx)
 	if err != nil {
 		return err
 	}
