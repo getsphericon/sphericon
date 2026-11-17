@@ -143,21 +143,21 @@ func TestResolvePrefersSubjectThenEmailThenPhone(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 
-	got, err := contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new(" user:export-subject "), lo.ToPtr(fixtures.ContactAliceEmail), nil)
+	got, err := testhelper.Module[*contacts.Module](env).Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.AliasKeys{SubjectID: new(" user:export-subject "), Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	require.NotNil(t, got)
 	assert.EqualValues(t, fixtures.ContactExportSubjectID, got.ID, "subject_id wins over email")
 
-	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), new("unknown"), new("nobody@example.com"), new(fixtures.ContactTexterPhone))
+	got, err = testhelper.Module[*contacts.Module](env).Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.AliasKeys{SubjectID: new("unknown"), Email: new("nobody@example.com"), Phone: new(fixtures.ContactTexterPhone)})
 	require.NoError(t, err)
 	require.NotNil(t, got)
 	assert.EqualValues(t, fixtures.ContactTexterID, got.ID, "falls through to the next key")
 
-	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.GlobexID), nil, lo.ToPtr(fixtures.ContactAliceEmail), nil)
+	got, err = testhelper.Module[*contacts.Module](env).Resolve(ctx, env.DB.Scoped(fixtures.GlobexID), contacts.AliasKeys{Email: lo.ToPtr(fixtures.ContactAliceEmail)})
 	require.NoError(t, err)
 	assert.Nil(t, got, "another workspace's contact does not resolve")
 
-	got, err = contacts.Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), nil, nil, nil)
+	got, err = testhelper.Module[*contacts.Module](env).Resolve(ctx, env.DB.Scoped(fixtures.AcmeID), contacts.AliasKeys{})
 	require.NoError(t, err)
 	assert.Nil(t, got, "no key resolves nothing")
 }
@@ -167,7 +167,7 @@ func TestEnsureCustomFieldsWithoutValuesDeclaresNothing(t *testing.T) {
 	before, err := env.DB.CustomField.Query().Count(context.Background())
 	require.NoError(t, err)
 
-	typed, err := contacts.EnsureCustomFields(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil)
+	typed, err := testhelper.Module[*contacts.Module](env).EnsureCustomFields(context.Background(), env.DB.Scoped(fixtures.AcmeID), nil)
 	require.NoError(t, err)
 	assert.Nil(t, typed)
 	after, err := env.DB.CustomField.Query().Count(context.Background())

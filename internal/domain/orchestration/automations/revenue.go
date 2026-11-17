@@ -25,7 +25,7 @@ func (m *Module) ListWithRevenue(ctx context.Context, s *ent.Scoped, p paginatio
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}
-	figures, err := orders.CreditedToAutomations(ctx, s, lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })...)
+	figures, err := orders.NewRevenues().CreditedToAutomations(ctx, s, lo.Map(page.Items, func(a *ent.Automation, _ int) int64 { return a.ID })...)
 	if err != nil {
 		return pagination.Page[WithRevenue]{}, err
 	}
@@ -40,7 +40,7 @@ func (m *Module) GetWithRevenue(ctx context.Context, s *ent.Scoped, id int64) (W
 	if err != nil {
 		return WithRevenue{}, err
 	}
-	figures, err := orders.CreditedToAutomations(ctx, s, a.ID)
+	figures, err := orders.NewRevenues().CreditedToAutomations(ctx, s, a.ID)
 	if err != nil {
 		return WithRevenue{}, err
 	}

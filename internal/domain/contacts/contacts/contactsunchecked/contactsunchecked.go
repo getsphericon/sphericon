@@ -3,8 +3,8 @@
 // which keeps every rule of the field's own row (ADR 0145), and the removal
 // of the Contact row, which only Erasure makes after it has erased the person's rows of the other
 // owners. Their checks are the use cases' (internal/usecase/customfieldretyping and
-// internal/usecase/contacterasure), the one kind of package easement lets import this one. The
-// contacts module does not import it.
+// internal/usecase/contacterasure), the one kind of package easement lets import this one, and
+// which builds its Module. The contacts module does not import it.
 package contactsunchecked
 
 import (
@@ -17,11 +17,20 @@ import (
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
 
-// CustomFieldUpdate is the edit of one Custom field, its name and its type, opened on its row under
-// the Workspace's lock (ADR 0108) so that the use case runs the Removal check of a retype between
-// opening and applying it, on the field the edit read.
+// Module is the contacts module's unchecked operations: it opens a CustomFieldUpdate on the field's
+// row and applies it once the use case's check has passed, and removes a Contact's row for its
+// Erasure (docs/architecture/modules.md, the unchecked operations).
+type Module struct {
+	contacts *contacts.Module
+}
+
+// New builds the unchecked operations over the contacts module they read a Custom field through.
+func New(people *contacts.Module) *Module { return &Module{contacts: people} }
+
+// CustomFieldUpdate is the plan of the edit of one Custom field, its name and its type, opened on
+// its row under the Workspace's lock (ADR 0108) so that the use case runs the Removal check of a
+// retype between opening and applying it, on the field the edit read.
 type CustomFieldUpdate struct {
-	l     *ent.WorkspaceLocked
 	field *ent.CustomField
 	in    contacts.CustomFieldUpdateInput
 	name  patch.Field[string]
@@ -30,10 +39,10 @@ type CustomFieldUpdate struct {
 // CustomFieldUpdateIn opens the edit in of the Custom field with the id in the transaction l holds
 // the Workspace's lock in, and refuses what the field's own rules refuse before anything is
 // written: an unknown id is contacts.ErrCustomFieldNotFound and a new name the name rule refuses is
-// its refusal (validation.Name). The revision the edit was made on is Apply's to compare, at the
-// write (ADR 0119).
-func CustomFieldUpdateIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, in contacts.CustomFieldUpdateInput) (*CustomFieldUpdate, error) {
-	field, err := contacts.CustomField(ctx, l.Scope(), id)
+// its refusal (validation.Name). The revision the edit was made on is ApplyCustomFieldUpdate's to
+// compare, at the write (ADR 0119).
+func (m *Module) CustomFieldUpdateIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, in contacts.CustomFieldUpdateInput) (*CustomFieldUpdate, error) {
+	field, err := m.contacts.CustomField(ctx, l.Scope(), id)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +50,7 @@ func CustomFieldUpdateIn(ctx context.Context, l *ent.WorkspaceLocked, id int64, 
 	if err != nil {
 		return nil, err
 	}
-	return &CustomFieldUpdate{l: l, field: field, in: in, name: name}, nil
+	return &CustomFieldUpdate{field: field, in: in, name: name}, nil
 }
 
 // Key is the field's key, by which Contacts' values and Condition leaves address it.
@@ -56,14 +65,16 @@ func (u *CustomFieldUpdate) Retype() (customfield.Type, bool) {
 	return customfield.Type(raw), true
 }
 
-// Apply renames the field or changes its type, an audited change (ADR 0022), and returns the field
-// as edited. A type change rewrites no stored value: the leaves of the new type read the values as
-// they are, and are false on one of another shape. It does not ask whether a Segment, a Rule or a
-// Broadcast tests the field with a leaf the new type does not take: that is the use case's Removal
-// check, run under the same lock before. It writes on the revision the edit was made on (ADR 0119):
-// a field that has moved past it is contacts.ErrCustomFieldRevisionChanged, and nothing is written.
-func (u *CustomFieldUpdate) Apply(ctx context.Context) (*ent.CustomField, error) {
-	upd := u.l.CustomField().EditAt(u.field.ID, u.in.Revision).
+// ApplyCustomFieldUpdate renames the field u was opened on or changes its type, an audited change
+// (ADR 0022), and returns the field as edited, in the transaction l holds the lock in, the one u
+// was opened in. A type change rewrites no stored value: the leaves of the new type read the values
+// as they are, and are false on one of another shape. It does not ask whether a Segment, a Rule or
+// a Broadcast tests the field with a leaf the new type does not take: that is the use case's
+// Removal check, run under the same lock before. It writes on the revision the edit was made on
+// (ADR 0119): a field that has moved past it is contacts.ErrCustomFieldRevisionChanged, and nothing
+// is written.
+func (m *Module) ApplyCustomFieldUpdate(ctx context.Context, l *ent.WorkspaceLocked, u *CustomFieldUpdate) (*ent.CustomField, error) {
+	upd := l.CustomField().EditAt(u.field.ID, u.in.Revision).
 		Refusing(contacts.ErrCustomFieldNotFound, contacts.ErrCustomFieldRevisionChanged)
 	u.name.ApplySet(upd.SetName)
 	if t, ok := u.Retype(); ok {
@@ -78,7 +89,7 @@ func (u *CustomFieldUpdate) Apply(ctx context.Context) (*ent.CustomField, error)
 // leave the person's Events, Visitors, delivery records and queued work behind:
 // internal/usecase/contacterasure erases those through their owners and removes the row last, in
 // one transaction. contactID is 0 for a subject without a Contact, which removes nothing.
-func DeleteIn(ctx context.Context, s *ent.Scoped, contactID int64) error {
+func (m *Module) DeleteIn(ctx context.Context, s *ent.Scoped, contactID int64) error {
 	if contactID == 0 {
 		return nil
 	}

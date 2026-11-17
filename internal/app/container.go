@@ -46,6 +46,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
@@ -583,6 +584,7 @@ var jobsPackage = do.Package(
 			SecondFactor:      do.MustInvoke[*secondfactors.Module](i),
 			Passkeys:          do.MustInvoke[*passkeys.Module](i),
 			Orders:            do.MustInvoke[*orders.Module](i),
+			Contacts:          do.MustInvoke[*contacts.Module](i),
 			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
 			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
 			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
@@ -826,11 +828,14 @@ var audiencePackage = do.Package(
 		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
-		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i),
-			contacts.WithMailResolver(do.MustInvoke[addresscheck.Resolver](i))), nil
+		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
+			do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
+		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
-		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[Clock](i)), nil
+		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
@@ -841,7 +846,7 @@ var audiencePackage = do.Package(
 		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
-		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[*visitors.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
 		return sendingdomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
@@ -882,15 +887,15 @@ var contentPackage = do.Package(
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[*tags.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
-		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
+		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[*contacts.Module](i)), nil
 	}),
 	// The Identity secret and the check of an Identity token (ADR 0171).
 	do.Lazy(func(i do.Injector) (*identitytokens.Module, error) {
 		return identitytokens.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
-		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*identitytokens.Module](i),
-			do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
+		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*visitors.Module](i),
+			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
@@ -937,7 +942,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*eventrecording.Module, error) {
 		policy := eventrecording.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
-		return eventrecording.New(do.MustInvoke[*events.Bus](i), policy), nil
+		return eventrecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), policy), nil
 	}),
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
 		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
@@ -1102,8 +1107,7 @@ var surfacesPackage = do.Package(
 	}),
 	// The handlers of the Collect API, over the Visitor identification use case (ADR 0111).
 	do.Lazy(func(i do.Injector) (*apicollect.Handlers, error) {
-		return apicollect.NewHandlers(do.MustInvoke[*events.Bus](i), do.MustInvoke[*visitoridentification.UseCase](i),
-			do.MustInvoke[Clock](i)), nil
+		return apicollect.NewHandlers(do.MustInvoke[*visitors.Module](i), do.MustInvoke[*visitoridentification.UseCase](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*hooksHandler, error) {
 		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.Module](i))}, nil

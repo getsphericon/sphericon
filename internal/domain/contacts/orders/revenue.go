@@ -50,21 +50,29 @@ func (f Figures) Of(id int64) Revenue {
 	return Revenue{Credited: f.ByID[id], Currency: f.Currency}
 }
 
+// Revenues reads the revenue of a Workspace. It holds nothing: every call takes the Workspace's
+// scope.
+type Revenues struct{}
+
+// NewRevenues builds the reads of revenue.
+func NewRevenues() *Revenues { return &Revenues{} }
+
 // CreditedToBroadcasts reads the figures of the given Broadcasts in one grouped query.
-func CreditedToBroadcasts(ctx context.Context, s *ent.Scoped, ids ...int64) (Figures, error) {
+func (r *Revenues) CreditedToBroadcasts(ctx context.Context, s *ent.Scoped, ids ...int64) (Figures, error) {
 	return credited(ctx, s, ids, order.FieldBroadcastID, order.BroadcastIDIn(ids...))
 }
 
 // CreditedToAutomations reads the figures of the given Automations in one grouped query.
-func CreditedToAutomations(ctx context.Context, s *ent.Scoped, ids ...int64) (Figures, error) {
+func (r *Revenues) CreditedToAutomations(ctx context.Context, s *ent.Scoped, ids ...int64) (Figures, error) {
 	return credited(ctx, s, ids, order.FieldAutomationID, order.AutomationIDIn(ids...))
 }
 
-// CreditedToAutomationsBetween reads the figures of the given Automations from the Movements that
-// fell in [since, until) only: the Orders completed then, and the net change of their revenue
-// then. Every Movement keeps its own day (ADR 0064), so the figures of a past period do not change.
-func CreditedToAutomationsBetween(ctx context.Context, s *ent.Scoped, since, until time.Time, ids ...int64) (Figures, error) {
-	return credited(ctx, s, ids, order.FieldAutomationID, order.AutomationIDIn(ids...), between(since, until)...)
+// CreditedToAutomationsOver reads the figures of the given Automations from the Movements that
+// fell in the window w, [w.Since, w.Until), only: the Orders completed then, and the net change of
+// their revenue then. Every Movement keeps its own day (ADR 0064), so the figures of a past period
+// do not change.
+func (r *Revenues) CreditedToAutomationsOver(ctx context.Context, s *ent.Scoped, w reportday.Window, ids ...int64) (Figures, error) {
+	return credited(ctx, s, ids, order.FieldAutomationID, order.AutomationIDIn(ids...), between(w.Since, w.Until)...)
 }
 
 func credited(ctx context.Context, s *ent.Scoped, ids []int64, column string, ofThem predicate.Order, within ...predicate.OrderMovement) (Figures, error) {
@@ -152,7 +160,7 @@ type RevenueDay struct {
 
 // WorkspaceRevenueOver reads the revenue of the Workspace behind s over the window w and the period
 // just before it. Until the Reporting currency is set it answers with the currency unset and zeros.
-func WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window) (*WorkspaceRevenue, error) {
+func (r *Revenues) WorkspaceRevenueOver(ctx context.Context, s *ent.Scoped, w reportday.Window) (*WorkspaceRevenue, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return nil, err

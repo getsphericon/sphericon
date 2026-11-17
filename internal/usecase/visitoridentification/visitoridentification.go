@@ -51,15 +51,18 @@ type StartLinkInput struct {
 // the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
 	bus      *events.Bus
+	contacts *contacts.Module
+	visitors *visitors.Module
 	tokens   *identitytokens.Module
 	bindings *bindings.Module
 	now      func() time.Time
 }
 
-// New builds the Identify use case; tokens checks an Identity token, bindings issues start links and
-// now is the Instance clock a Visitor is seen by.
-func New(bus *events.Bus, tokens *identitytokens.Module, b *bindings.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, tokens: tokens, bindings: b, now: now}
+// New builds the Identify use case; people resolves and upserts the Contact, visits sees and binds
+// the Visitor, tokens checks an Identity token, bindings issues start links and hands a Visitor's
+// over, and now is the Instance clock a hand-over is dated by.
+func New(bus *events.Bus, people *contacts.Module, visits *visitors.Module, tokens *identitytokens.Module, b *bindings.Module, now func() time.Time) *UseCase {
+	return &UseCase{bus: bus, contacts: people, visitors: visits, tokens: tokens, bindings: b, now: now}
 }
 
 var (
@@ -106,11 +109,11 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 
 	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
 		core, traits := contacts.FromTraits(input.Traits)
-		fields, err := contacts.KnownCustomFields(ctx, ts, traits)
+		fields, err := u.contacts.KnownCustomFields(ctx, ts, traits)
 		if err != nil {
 			return err
 		}
-		res, err := contacts.UpsertIn(ctx, ts, pub, contact.SourceTracker, contacts.UpsertInput{
+		res, err := u.contacts.UpsertIn(ctx, ts, contact.SourceTracker, contacts.UpsertInput{
 			SubjectID:       input.SubjectID,
 			Email:           input.Email,
 			Phone:           input.Phone,
@@ -125,14 +128,14 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		}
 		c := res.Contact
 
-		vis, err := visitors.SeeIn(ctx, ts, visitorID, u.now())
+		vis, err := u.visitors.SeeIn(ctx, ts, visitorID)
 		if err != nil {
 			return err
 		}
 		if !proven && vis.ContactID != nil && *vis.ContactID != c.ID {
 			return nil
 		}
-		if err := visitors.BindIn(ctx, ts, vis.ID, c.ID, u.now()); err != nil {
+		if err := u.visitors.BindIn(ctx, ts, vis.ID, c.ID); err != nil {
 			return err
 		}
 		if proven {
@@ -166,7 +169,7 @@ func (u *UseCase) StartLink(ctx context.Context, s *ent.Scoped, input StartLinkI
 		if err != nil {
 			return bindings.StartLink{}, err
 		}
-		c, err := contacts.Resolve(ctx, s, p.SubjectID, p.Email, p.Phone)
+		c, err := u.contacts.Resolve(ctx, s, contacts.AliasKeys{SubjectID: p.SubjectID, Email: p.Email, Phone: p.Phone})
 		if err != nil {
 			return bindings.StartLink{}, err
 		}
