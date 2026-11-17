@@ -419,6 +419,12 @@ func (c *InputsImpl) EmailChange(source *site.SiteEmailChangeInput) users.EmailC
 	}
 	return usersEmailChangeInput
 }
+func (c *InputsImpl) EnrollmentsFilter(source site.SiteEnrollmentsListParams) automations.EnrollmentsFilter {
+	var automationsEnrollmentsFilter automations.EnrollmentsFilter
+	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)
+	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
+	return automationsEnrollmentsFilter
+}
 func (c *InputsImpl) IntegrationCreate(source *site.CreateIntegrationInput) (integrations.CreateInput, error) {
 	var integrationsCreateInput integrations.CreateInput
 	if source != nil {

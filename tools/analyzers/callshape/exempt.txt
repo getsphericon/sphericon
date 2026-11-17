@@ -15,10 +15,3 @@ internal/domain/identity/invitations
 internal/domain/identity/joindomains
 internal/domain/identity/memberships
 internal/domain/identity/memberships/membershipsunchecked
-internal/domain/orchestration/automations
-internal/domain/orchestration/automations/automationsunchecked
-internal/domain/orchestration/automations/automationsuse
-internal/domain/orchestration/rules
-internal/domain/orchestration/rules/rulesunchecked
-internal/domain/orchestration/rules/rulesuse
-internal/domain/orchestration/webhookendpoints

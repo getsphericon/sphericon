@@ -10,9 +10,9 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/contactlock"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -74,16 +74,20 @@ type StepExecution struct {
 	now    func() time.Time
 	// contacts changes a Contact's Tags for a tag step, in the transaction of the step's move.
 	contacts *contacts.Module
+	// locks takes the Contact's row lock that orders its Enrollments (lockContact).
+	locks *contactlock.Module
 }
 
 // NewStepExecution builds the Step execution. The bus runs a move and the job that follows it in
-// one transaction; out sends an email step and acts as the `system` actor for a tag step; fence
-// orders a send against an exit of the Enrollment; cipher opens an HTTP step's sealed secrets and
-// client makes its call; now is the Instance clock, read to honour an Enrollment's resume time and
-// to time a wait.
-func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
-	return &StepExecution{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now,
-		contacts: contacts.New(bus, tags.New(), nil, now)}
+// one transaction; out sends an email step and acts as the `system` actor for a tag step; people
+// is the contacts module, which changes a Contact's Tags for a tag step and publishes in the
+// transaction of the bus the move runs in, so it is built over the same bus; fence orders a send
+// against an exit of the Enrollment; cipher opens an HTTP step's sealed secrets and client makes
+// its call; now is the Instance clock, read to honour an Enrollment's resume time and to time a
+// wait.
+func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, people *contacts.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
+	return &StepExecution{bus: bus, out: out, contacts: people, fence: fence, cipher: cipher, client: client, now: now,
+		locks: contactlock.New()}
 }
 
 // OnEventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
@@ -118,7 +122,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 		ev.OccurredAt = m.now()
 	}
 	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
-		return endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
+		return m.endOnEvent(ctx, ts, pub, contactID, ev.Action, ev.OccurredAt)
 	})
 	if err != nil {
 		return err
@@ -151,7 +155,7 @@ func (m *StepExecution) OnEvent(ctx context.Context, s *ent.Scoped, in OnEventIn
 // ended at once is made, with no step queued (enrollOnRule).
 func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in EnrollOnRuleInput) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return enrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID, m.now())
+		return m.enrollOnRule(ctx, ts, pub, in.AutomationID, in.ContactID, in.SourceID, m.now())
 	})
 }
 
@@ -160,7 +164,7 @@ func (m *StepExecution) EnrollOnRule(ctx context.Context, s *ent.Scoped, in Enro
 // Event's action in its live version (enrollOnTrigger).
 func (m *StepExecution) startOnTrigger(ctx context.Context, s *ent.Scoped, automationID, contactID int64, o origin) (bool, error) {
 	return m.start(ctx, s, func(ts *ent.Scoped, pub events.Publisher) (int64, bool, error) {
-		return enrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
+		return m.enrollOnTrigger(ctx, ts, pub, automationID, contactID, o)
 	})
 }
 
@@ -339,7 +343,7 @@ type stepMove struct {
 func (m *StepExecution) advance(ctx context.Context, s *ent.Scoped, runID int64, from int, mv stepMove) error {
 	err := m.bus.WithinScopedEnqueueTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher, q events.Enqueuer) error {
 		if mv.contactID != 0 {
-			_, locked, err := lockContact(ctx, ts, mv.contactID)
+			_, locked, err := m.lockContact(ctx, ts, mv.contactID)
 			if err != nil || !locked {
 				return err // an erased Contact's Enrollment is erased with it
 			}

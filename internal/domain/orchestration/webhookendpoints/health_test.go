@@ -30,7 +30,7 @@ func TestAResponseFromBeforeAnOwnerResetCannotDisableTheEndpoint(t *testing.T) {
 	_, err := r.mod.Update(t.Context(), r.scope(), inFlight.ID, webhookendpoints.UpdateInput{Revision: testhelper.WebhookRevisionIn(t.Context(), t, r.scope(), inFlight.ID), Enabled: patch.Set(true)})
 	require.NoError(t, err)
 
-	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusGone), r.now)
+	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusGone))
 
 	require.NoError(t, err)
 	stored := r.endpoint()
@@ -47,7 +47,7 @@ func TestAnOldSuccessCannotClearFailuresAfterAnOwnerReset(t *testing.T) {
 	require.NoError(t, err)
 	r.record(status(http.StatusBadGateway))
 
-	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, nil, r.now)
+	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, nil)
 
 	require.NoError(t, err)
 	stored := r.endpoint()
@@ -59,10 +59,11 @@ func TestOverlappingFailuresKeepTheFirstFailureOfTheirSeries(t *testing.T) {
 	r := newRecording(t)
 	inFlight := r.endpoint()
 	began := r.now
-	err := r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusServiceUnavailable), began)
+	err := r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusServiceUnavailable))
 	require.NoError(t, err)
 
-	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusBadGateway), began.Add(90*time.Minute))
+	r.now = began.Add(90 * time.Minute)
+	err = r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, status(http.StatusBadGateway))
 
 	require.NoError(t, err)
 	stored := r.endpoint()
@@ -77,7 +78,7 @@ func TestASuccessClearsFailuresRecordedWhileTheRequestWasInFlight(t *testing.T) 
 	inFlight := r.endpoint()
 	r.record(status(http.StatusServiceUnavailable))
 
-	err := r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, nil, r.now)
+	err := r.mod.RecordDelivery(t.Context(), r.scope(), inFlight, nil)
 
 	require.NoError(t, err)
 	stored := r.endpoint()
@@ -105,7 +106,7 @@ func TestFailureCountersRollbackWhenTheDisableEventCannotBeRecorded(t *testing.T
 	fault := errors.New("event queue unavailable")
 	r.env.Bus.UseJobs(refusingEventQueue{fault: fault})
 
-	err := r.mod.RecordDelivery(t.Context(), r.scope(), r.endpoint(), status(http.StatusGone), r.now)
+	err := r.mod.RecordDelivery(t.Context(), r.scope(), r.endpoint(), status(http.StatusGone))
 
 	require.ErrorIs(t, err, fault)
 	stored := r.endpoint()
@@ -149,7 +150,7 @@ func TestConcurrentCurrentGenerationResultsAreBothCounted(t *testing.T) {
 	results := make(chan error, 2)
 	for range 2 {
 		go func() {
-			results <- mod.RecordDelivery(t.Context(), scope, inFlight, status(http.StatusServiceUnavailable), time.Now())
+			results <- mod.RecordDelivery(t.Context(), scope, inFlight, status(http.StatusServiceUnavailable))
 		}()
 	}
 	testhelper.Receive(t, ready, "first result loaded its position")
@@ -192,7 +193,7 @@ func TestAnOwnerResetRollsBackItsGenerationWithItsHealthWrite(t *testing.T) {
 	stored := r.endpoint()
 	assert.Equal(t, before.HealthGeneration, stored.HealthGeneration)
 	assert.Equal(t, before.Edges.Health.ConsecutiveFailures, stored.Edges.Health.ConsecutiveFailures)
-	err = r.mod.RecordDelivery(t.Context(), r.scope(), before, status(http.StatusBadGateway), r.now)
+	err = r.mod.RecordDelivery(t.Context(), r.scope(), before, status(http.StatusBadGateway))
 	require.NoError(t, err)
 	continued := r.endpoint()
 	require.NotNil(t, continued.Edges.Health.ConsecutiveFailures)
@@ -231,7 +232,7 @@ func TestADeliveryThatMeetsAnOwnerDisableLeavesTheRun(t *testing.T) {
 	env.Bus.Use(pauseFirstHealthWrites(ready, resume))
 	result := make(chan error, 1)
 	go func() {
-		result <- mod.RecordDelivery(t.Context(), scope, inFlight, status(http.StatusServiceUnavailable), time.Now())
+		result <- mod.RecordDelivery(t.Context(), scope, inFlight, status(http.StatusServiceUnavailable))
 	}()
 	testhelper.Receive(t, ready, "the delivery loaded its position")
 

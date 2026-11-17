@@ -113,6 +113,7 @@ import (
 // goverter:extend broadcastContentPatch
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend automationStateIn
+// goverter:extend enrollmentStatusIn
 // goverter:extend automationsSortIn
 // goverter:extend sortDirectionIn
 // goverter:extend timeIn
@@ -185,6 +186,8 @@ type Inputs interface {
 	BroadcastsListFilter(source siteapi.SiteBroadcastsListParams) broadcasts.ListFilter
 	BroadcastSchedule(source *siteapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
 	AutomationsListFilter(source siteapi.SiteAutomationsListParams) automations.ListFilter
+	// goverter:map AutomationId AutomationID
+	EnrollmentsFilter(source siteapi.SiteEnrollmentsListParams) automations.EnrollmentsFilter
 
 	WebhookCreate(source *siteapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *siteapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -545,6 +548,9 @@ func automationStateIn(c Inputs, o siteapi.OptSiteAutomationState) automations.S
 	}
 	return c.AutomationState(v)
 }
+
+// enrollmentStatusIn is the status the Enrollment list is narrowed to: empty for every status.
+func enrollmentStatusIn(o siteapi.OptSiteEnrollmentStatus) string { return string(o.Or("")) }
 
 // automationsSortIn is what the Automation list is ordered by: empty for the default.
 func automationsSortIn(c Inputs, o siteapi.OptSiteAutomationsSort) automations.Sort {

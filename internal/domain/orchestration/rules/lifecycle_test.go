@@ -138,7 +138,9 @@ func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 	ctx := context.Background()
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 
-	usingTag := func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) { return rulesuse.UsingTag(ctx, l, "rule-inactive") }
+	usingTag := func(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
+		return rulesuse.New().UsingTag(ctx, l, "rule-inactive")
+	}
 	drafted, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme(env), usingTag)
 	require.NoError(t, err)
 	_, err = m.Publish(ctx, acme(env), fixtures.RuleInactiveID, testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID))
@@ -152,7 +154,7 @@ func TestARuleThatAppliesATagUsesItBeforeAndAfterPublish(t *testing.T) {
 
 // usingVip reads the kept Rules that name the vip Tag.
 func usingVip(l *ent.WorkspaceLocked) ([]*ent.Rule, error) {
-	return rulesuse.UsingTag(context.Background(), l, "vip")
+	return rulesuse.New().UsingTag(context.Background(), l, "vip")
 }
 
 func TestAnActiveRuleWhoseConditionNamesATagUsesIt(t *testing.T) {

@@ -350,6 +350,12 @@ func (c *InputsImpl) EmailLint(source *external.LintEmailInput) emailtemplates.L
 	}
 	return emailtemplatesLintInput
 }
+func (c *InputsImpl) EnrollmentsFilter(source external.EnrollmentsListParams) automations.EnrollmentsFilter {
+	var automationsEnrollmentsFilter automations.EnrollmentsFilter
+	automationsEnrollmentsFilter.AutomationID = int64(source.AutomationId)
+	automationsEnrollmentsFilter.Status = enrollmentStatusIn(source.Status)
+	return automationsEnrollmentsFilter
+}
 func (c *InputsImpl) Event(source external.EventInput, context bool) (eventrecording.Input, error) {
 	var eventrecordingInput eventrecording.Input
 	eventrecordingInput.SubjectID = source.SubjectId

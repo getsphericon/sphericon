@@ -37,16 +37,21 @@ import (
 // Module is the Removal check. Every call receives the scope of the transaction the removal runs
 // in, under the Workspace's lock (ADR 0099).
 type Module struct {
-	senders    *messaging.Resolver
-	segments   *segmentsuse.Module
-	broadcasts *broadcastsuse.Module
+	senders     *messaging.Resolver
+	segments    *segmentsuse.Module
+	automations *automationsuse.Module
+	rules       *rulesuse.Module
+	broadcasts  *broadcastsuse.Module
 }
 
 // New builds the Removal check over the resolver a send builds its sender with: a Sending domain's
 // check reads from it the From an Integration sends with. It builds the readers itself, since
 // easement lets no other package import them.
 func New(senders *messaging.Resolver) *Module {
-	return &Module{senders: senders, segments: segmentsuse.New(), broadcasts: broadcastsuse.New()}
+	return &Module{
+		senders: senders, segments: segmentsuse.New(), automations: automationsuse.New(), rules: rulesuse.New(),
+		broadcasts: broadcastsuse.New(),
+	}
 }
 
 // Tag checks that nothing holds the Tag with the name, in Definition use: a Segment's Condition
@@ -59,11 +64,11 @@ func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) e
 	if err != nil {
 		return err
 	}
-	autos, err := automationsuse.UsingTag(ctx, l, name)
+	autos, err := m.automations.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
-	kept, err := rulesuse.UsingTag(ctx, l, name)
+	kept, err := m.rules.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
@@ -84,7 +89,7 @@ func (m *Module) CustomFieldRetype(ctx context.Context, l *ent.WorkspaceLocked, 
 	if err != nil {
 		return err
 	}
-	kept, err := rulesuse.UnfitForCustomFieldType(ctx, l, key, t)
+	kept, err := m.rules.UnfitForCustomFieldType(ctx, l, key, t)
 	if err != nil {
 		return err
 	}
@@ -162,7 +167,7 @@ func (m *Module) liveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveu
 	if err != nil {
 		return nil, err
 	}
-	stepped, err := automationsuse.LiveSends(ctx, l)
+	stepped, err := m.automations.LiveSends(ctx, l)
 	if err != nil {
 		return nil, err
 	}

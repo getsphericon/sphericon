@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/channelstop"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/callbackinterpretation"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
@@ -427,7 +428,7 @@ func TestATelegramLinkClickedAgainAfterAStartIsANewOptOut(t *testing.T) {
 		OutboundMessageID: fixtures.OutboundMessageParkedClaimID,
 	}
 	clock := testhelper.NewClock(time.Now())
-	u := unsubscriberecording.New(env.Bus, env.OutboundModule(), clock.Now)
+	u := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), clock.Now)
 	scope := env.DB.Scoped(fixtures.AcmeID)
 	require.NoError(t, u.RecordLink(t.Context(), scope, link))
 	// The start is sent after the click (Telegram dates it, to the second), the second click after it.

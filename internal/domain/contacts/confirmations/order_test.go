@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/event"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -44,7 +45,7 @@ func TestALateDoubleOptInIsRecordedAsChangingNothing(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 	left := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
-	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), func() time.Time { return left }).
+	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), testhelper.Module[*automations.Module](env), func() time.Time { return left }).
 		Unsubscribe(t.Context(), s, fixtures.ContactAliceEmail, eligibility.SourceEverything)
 	require.NoError(t, err)
 

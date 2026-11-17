@@ -37,7 +37,7 @@ func (w *RunRuleHTTPWorker) Work(ctx context.Context, job *river.Job[rules.HTTPA
 		return err
 	}
 	s := w.ent.Scoped(f.WorkspaceID)
-	decision, err := w.mod.ExecuteHTTP(ctx, s, f.ID, job.Args.Index, hookAttempt(job.JobRow))
+	decision, err := w.mod.ExecuteHTTP(ctx, s, rules.ExecuteHTTPInput{FiringID: f.ID, Index: job.Args.Index, Attempt: hookAttempt(job.JobRow)})
 	if err != nil {
 		return err
 	}

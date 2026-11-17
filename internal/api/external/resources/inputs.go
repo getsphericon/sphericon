@@ -98,6 +98,7 @@ import (
 // goverter:extend broadcastChannelPtrIn
 // goverter:extend smsConsentIn
 // goverter:extend timeIn
+// goverter:extend enrollmentStatusIn
 type Inputs interface {
 	// The Channel defaults to email, which the handler picks with ConsentChannel and assigns.
 	// goverter:map SendingSource Source
@@ -122,6 +123,8 @@ type Inputs interface {
 	BroadcastsListFilter(source externalapi.BroadcastsListParams) broadcasts.ListFilter
 	BroadcastSchedule(source *externalapi.ScheduleBroadcastInput) broadcasts.ScheduleInput
 	BroadcastSetSegment(source *externalapi.SetBroadcastSegmentInput) broadcasts.SetSegmentInput
+	// goverter:map AutomationId AutomationID
+	EnrollmentsFilter(source externalapi.EnrollmentsListParams) automations.EnrollmentsFilter
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -267,6 +270,9 @@ func nilLocalePtrIn(o externalapi.OptNilLocaleTag) *string                { retu
 func nilImageURLPtrIn(o externalapi.OptNilImageUrl) *string               { return convert.StringPtr(o) }
 func nilDatePtrIn(o externalapi.OptNilDate) *time.Time                    { return convert.Ptr(o) }
 func nilEntityIDPtrIn(o externalapi.OptNilEntityId) *int64                { return convert.Int64Ptr(o) }
+
+// enrollmentStatusIn is the status the Enrollment list is narrowed to: empty for every status.
+func enrollmentStatusIn(o externalapi.OptEnrollmentStatus) string { return string(o.Or("")) }
 
 // requiredNilEntityIDPtrIn is a field the body must carry whose null is a choice of its own (a
 // Broadcast's audience, null for all contacts): nil for null, else the id.

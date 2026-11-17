@@ -241,13 +241,26 @@ func (env *TestEnv) claimBroadcast(t *testing.T, b *ent.Broadcast) {
 
 // CancelPendingFor runs an owner's CancelPending for a Contact of the Initech Workspace the
 // way Erasure does, inside a purging transaction.
-func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(context.Context, *ent.Scoped, int64, events.QueuePurger) error) error {
+func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(context.Context, *ent.Scoped, int64) error) error {
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
-	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
-		return cancel(ctx, ts, contactID, pub)
+	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, _ events.PurgingPublisher) error {
+		return cancel(ctx, ts, contactID)
 	})
+}
+
+// ExitEnrollment ends the Contact's active Enrollment in the Automation through the automations
+// module, in a transaction of the env's bus on the Workspace of s, as an unsubscribe from the
+// Automation does, and reports whether one was ended.
+func (env *TestEnv) ExitEnrollment(ctx context.Context, s *ent.Scoped, automationID, contactID int64) (bool, error) {
+	var exited bool
+	err := env.Bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
+		var err error
+		exited, err = Module[*automations.Module](env).Exit(ctx, ts, automationID, contactID)
+		return err
+	})
+	return exited, err
 }
 
 // RunNextStep takes the oldest waiting step job of an Enrollment from the queue, executes its

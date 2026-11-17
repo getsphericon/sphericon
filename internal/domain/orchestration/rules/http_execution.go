@@ -39,20 +39,29 @@ func (HTTPArgs) InsertOpts() river.InsertOpts {
 	}
 }
 
+// ExecuteHTTPInput is one attempt at the call of an http Action: the Firing, the Action's position
+// in it, and the queue's attempt data.
+type ExecuteHTTPInput struct {
+	FiringID int64
+	Index    int
+	Attempt  httpcall.Attempt
+}
+
 // ExecuteHTTP selects and executes the pending HTTP Action of a Firing through the module's
 // protected HTTP client, and records its result. The adapter supplies only the ordinary attempt
 // information. It needs no queue job, and keeps the Firing's independent Actions and completion
 // semantics. A zero httpcall.Execution means the Action is decided or no longer exists; Retry and
 // Wait leave it Pending, and a final failure is recorded on the Firing (it never Cancels).
-func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, firingID int64, index int, attempt httpcall.Attempt) (httpcall.Execution, error) {
-	f, err := s.RuleFiring().Get(ctx, firingID)
+func (m *Module) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in ExecuteHTTPInput) (httpcall.Execution, error) {
+	index, attempt := in.Index, in.Attempt
+	f, err := s.RuleFiring().Get(ctx, in.FiringID)
 	if ent.IsNotFound(err) {
 		return httpcall.Execution{}, nil
 	}
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	actions, pending, err := pendingHTTP(ctx, s, f, index)
+	actions, pending, err := m.pendingHTTP(ctx, s, f, index)
 	if err != nil || !pending {
 		return httpcall.Execution{}, err
 	}

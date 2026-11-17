@@ -236,7 +236,7 @@ func TestUsingTagCountsTheLiveVersionAndTheDraftOfKeptAutomations(t *testing.T) 
 	using := func() []string {
 		t.Helper()
 		got, err := testhelper.UnderWorkspaceLock(t, env.Bus, acme, func(l *ent.WorkspaceLocked) ([]*ent.Automation, error) {
-			return automationsuse.UsingTag(ctx, l, fixtures.TagVipName)
+			return automationsuse.New().UsingTag(ctx, l, fixtures.TagVipName)
 		})
 		require.NoError(t, err)
 		return lo.Map(got, func(a *ent.Automation, _ int) string { return a.Name })

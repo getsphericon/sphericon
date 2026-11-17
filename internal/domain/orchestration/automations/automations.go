@@ -21,6 +21,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/automation"
 	"github.com/getsphericon/sphericon/ent/automationrun"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/content/versioneddefinition"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/liveuse"
@@ -227,22 +228,29 @@ func SendSteps(v *ent.AutomationVersion) ([]SendStep, error) {
 // Module is the automations module.
 type Module struct {
 	cipher   *secrets.Cipher
+	bus      *events.Bus
 	renderer *emaildoc.Renderer
 	out      *outboundmessages.Module
 	clicks   *linkclick.Module
+	rules    *rules.Module
+	revenues *orders.Revenues
 	life     *versioneddefinition.Lifecycle[ent.Automation, ent.AutomationVersion, edit, definition]
-	// now is the Instance clock a report's period ends by and an activation is dated by.
+	// now is the Instance clock a report's period ends by, an activation is dated by and an
+	// Enrollment's exit is.
 	now func() time.Time
 }
 
 // New builds the automations module. It holds no client: every call takes the
 // Workspace's scoped client (ADR 0017). The cipher seals an HTTP step's secrets; the bus
-// opens the transaction of each move of the definition (internal/domain/content/versioneddefinition); the
-// renderer builds an email step's body from its document; out is Outbound send, whose Send route
-// Publish asks whether the Automation's email steps can send; clicks counts the Link clicks of its
-// report; now is the Instance clock.
-func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, now func() time.Time) *Module {
-	m := &Module{cipher: cipher, renderer: renderer, out: out, clicks: clicks, now: now}
+// opens the transaction of each move of the definition (internal/domain/content/versioneddefinition)
+// and records an Enrollment's exit in the transaction Exit is given; the renderer builds an email
+// step's body from its document; out is Outbound send, whose Send route Publish asks whether the
+// Automation's email steps can send; clicks counts the Link clicks of its report; enrollers reads
+// the Rules that enroll Contacts in an Automation, which hold it against its Archive; now is the
+// Instance clock.
+func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module, enrollers *rules.Module, now func() time.Time) *Module {
+	m := &Module{cipher: cipher, bus: bus, renderer: renderer, out: out, clicks: clicks, rules: enrollers, now: now,
+		revenues: orders.NewRevenues()}
 	m.life = versioneddefinition.New(bus, versioned{m: m}, versioneddefinition.Errors{
 		NotFound:         ErrNotFound,
 		Archived:         ErrArchived,
@@ -659,7 +667,7 @@ func (v versioned) Publishable(ctx context.Context, ts *ent.Scoped, version *ent
 // Senders returns the Workspace's active, kept Automations whose live version has a send step,
 // each with its live version loaded, in id order: the ones that send through a Send route whenever
 // a run reaches such a step. A draft sends nothing until it is published.
-func Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
+func (m *Module) Senders(ctx context.Context, s *ent.Scoped) ([]*ent.Automation, error) {
 	active, err := s.Automation().Query().
 		Where(automation.StatusEQ(automation.StatusActive), automation.HasLiveVersion()).
 		WithLiveVersion().
@@ -689,8 +697,8 @@ func (versioned) Editable(*ent.Automation) error { return nil }
 // enrolls Contacts in it through its live version, or it has active Enrollments. The *liveuse.Error
 // names them. A Rule that is not active does not hold it: its Publish refuses an archived
 // Automation.
-func (versioned) Archivable(ctx context.Context, l *ent.WorkspaceLocked, a *ent.Automation) error {
-	enrolling, err := rules.ActiveEnrollingInto(ctx, l, a.ID)
+func (v versioned) Archivable(ctx context.Context, l *ent.WorkspaceLocked, a *ent.Automation) error {
+	enrolling, err := v.m.rules.ActiveEnrollingInto(ctx, l, a.ID)
 	if err != nil {
 		return err
 	}
