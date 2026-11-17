@@ -27,7 +27,8 @@ func (c *Confirmations) URLs() []string {
 	return append([]string(nil), c.urls...)
 }
 
-func (c *Confirmations) confirm(_ context.Context, url string) error {
+// Confirm records url as confirmed, or fails with the error Fail set.
+func (c *Confirmations) Confirm(_ context.Context, url string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.err != nil {

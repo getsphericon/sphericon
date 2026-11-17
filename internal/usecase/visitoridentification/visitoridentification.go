@@ -53,13 +53,14 @@ type UseCase struct {
 	bus      *events.Bus
 	tokens   *identitytokens.Module
 	bindings *bindings.Module
+	chats    *bindings.Chats
 	now      func() time.Time
 }
 
 // New builds the Identify use case; tokens checks an Identity token, bindings issues start links and
 // now is the Instance clock a Visitor is seen by.
 func New(bus *events.Bus, tokens *identitytokens.Module, b *bindings.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, tokens: tokens, bindings: b, now: now}
+	return &UseCase{bus: bus, tokens: tokens, bindings: b, chats: bindings.NewChats(bus, now), now: now}
 }
 
 var (
@@ -136,7 +137,7 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 			return err
 		}
 		if proven {
-			if err := bindings.HandOver(ctx, ts, pub, vis, c, u.now()); err != nil {
+			if err := u.chats.HandOver(ctx, ts, vis, c); err != nil {
 				return err
 			}
 		}

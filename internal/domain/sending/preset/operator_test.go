@@ -51,7 +51,7 @@ func outcomes(results []preset.CaseResult) (passed, failed []string) {
 func TestRunTestsPassesEachCaseOfACustomFile(t *testing.T) {
 	p := openPreset(t, headerHMACPreset)
 
-	passed, failed := outcomes(p.RunTests(t.Context()))
+	passed, failed := outcomes(engineAt(time.Now()).RunTests(t.Context(), p))
 
 	assert.Contains(t, passed, "a signed request passes")
 	assert.Contains(t, passed, "a signature over another body is refused")
@@ -61,7 +61,7 @@ func TestRunTestsPassesEachCaseOfACustomFile(t *testing.T) {
 func TestOpenFindsABuiltInByName(t *testing.T) {
 	p := openPreset(t, "generic")
 
-	passed, failed := outcomes(p.RunTests(t.Context()))
+	passed, failed := outcomes(engineAt(time.Now()).RunTests(t.Context(), p))
 
 	assert.Contains(t, passed, "a signed notice becomes a Delivery notice")
 	assert.Empty(t, failed)
@@ -81,7 +81,7 @@ func TestRunTestsNamesTheCaseThatDisagrees(t *testing.T) {
 	require.NoError(t, os.WriteFile(broken, edited, 0o600))
 	p := openPreset(t, broken)
 
-	passed, failed := outcomes(p.RunTests(t.Context()))
+	passed, failed := outcomes(engineAt(time.Now()).RunTests(t.Context(), p))
 
 	assert.Equal(t, []string{"a signature over another body is refused"}, failed)
 	assert.Contains(t, passed, "a signed request passes")
@@ -100,7 +100,7 @@ func TestHandleOfASampleMakesTheDeliveryNotices(t *testing.T) {
 	req, params, now := genericSample("v1,o8DDYiIohO1Z+Or1krVV/dGfR+sT1Gi6NDRUuQ/GbNs=")
 	p := openPreset(t, "generic")
 
-	res, err := p.Handle(t.Context(), req, params, now)
+	res, err := engineAt(now).Handle(t.Context(), p, preset.HandleInput{Request: req, Params: params})
 
 	require.NoError(t, err)
 	require.Len(t, res.Notices, 1)
@@ -120,7 +120,9 @@ func TestHandleOfASampleMakesInboundMessagesAndReachabilityChanges(t *testing.T)
 		`{"type":"button","event_id":"8","from":42,"chat":43,"message":12,"data":"unsubscribe"},` +
 		`{"type":"blocked","event_id":"9","from":42},{"type":"unblocked","event_id":"10","from":44}]}`
 
-	res, err := p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(body)}, preset.Params{"token": "chat-token"}, time.Now())
+	res, err := engineAt(time.Now()).Handle(t.Context(), p, preset.HandleInput{
+		Request: preset.Request{Header: header, Body: []byte(body)}, Params: preset.Params{"token": "chat-token"},
+	})
 
 	require.NoError(t, err)
 	assert.Equal(t, []preset.InboundMessage{
@@ -138,7 +140,9 @@ func TestHandleOfAVerifiedRequestWithoutFactsIsEmpty(t *testing.T) {
 	header := http.Header{}
 	header.Set("X-Token", "chat-token")
 
-	res, err := p.Handle(t.Context(), preset.Request{Header: header, Body: []byte(`{"events":[]}`)}, preset.Params{"token": "chat-token"}, time.Now())
+	res, err := engineAt(time.Now()).Handle(t.Context(), p, preset.HandleInput{
+		Request: preset.Request{Header: header, Body: []byte(`{"events":[]}`)}, Params: preset.Params{"token": "chat-token"},
+	})
 
 	require.NoError(t, err)
 	assert.True(t, res.Empty())
@@ -148,7 +152,7 @@ func TestHandleRefusesASampleThatIsNotAuthentic(t *testing.T) {
 	req, params, now := genericSample("v1,wrong")
 	p := openPreset(t, "generic")
 
-	_, err := p.Handle(t.Context(), req, params, now)
+	_, err := engineAt(now).Handle(t.Context(), p, preset.HandleInput{Request: req, Params: params})
 
 	require.ErrorContains(t, err, "not authentic")
 }

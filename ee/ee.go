@@ -74,6 +74,7 @@ type Edition struct {
 	staffSessions *staffmembers.Sessions
 	bus           *events.Bus
 	suspend       *suspension.Suspender
+	holds         *holds.Holds
 	now           func() time.Time
 }
 
@@ -121,6 +122,7 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, now),
 	}
+	e.holds = holds.New(e.HoldsHonoured, staffCfg.HoldMaxExpiry, now)
 	if lic.Has(licensekey.FeatureStaff) {
 		if staffSessions == nil {
 			return nil, errors.New("SPHERICON_STAFF_JWT_SECRET is required with the staff license: the console's Enterprise sections need the Staff member's sign-in")
@@ -171,7 +173,7 @@ func (e *Edition) Service() interface {
 // Holds is the read side of a Workspace's freezes on the send chokepoint (ADR 0009, 0015).
 // It honours Staff holds only with the `staff` license, so an unlicensed instance never
 // freezes on a row it could not have written; deletion and suspension always count.
-func (e *Edition) Holds() *holds.Holds { return holds.New(e.HoldsHonoured, e.now) }
+func (e *Edition) Holds() *holds.Holds { return e.holds }
 
 // HoldsHonoured reports whether Staff holds are honoured at all (the `staff`
 // license): the send path and every read of a hold shown to a Workspace

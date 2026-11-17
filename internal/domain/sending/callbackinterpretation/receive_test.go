@@ -27,7 +27,7 @@ var receiveClock = time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC)
 var secretGenericA = "whsec_" + base64.StdEncoding.EncodeToString([]byte("sphericon-test-secret-A0123456789"))
 
 func receiver(env *testhelper.TestEnv) *callbackinterpretation.Module {
-	return callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), func() time.Time { return receiveClock })
+	return callbackinterpretation.New(env.DB, env.Bus, testhelper.Module[*integrations.Module](env), env.OutboundModule(), preset.NewTestCertificates(), func() time.Time { return receiveClock })
 }
 
 // bounce is a callback of the generic Preset reporting a hard bounce of dest, signed with secret.

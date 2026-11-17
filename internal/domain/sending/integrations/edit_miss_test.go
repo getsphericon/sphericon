@@ -48,7 +48,7 @@ func TestAnEditWhoseQuotaLookupIsNotFoundIsNotAStaleRevision(t *testing.T) {
 	bus := events.New(env.SQLDB, entclient.Core.NewTx, time.Now)
 	bus.UseJobs(failingQueue{err: notFound})
 	ses := &testhelper.FakeSES{}
-	module := integrations.New(bus, env.Cipher, ses.Catalog(), nil, "", time.Now)
+	module := integrations.New(bus, env.Cipher, ses.Catalog(), nil, "", nil, time.Now)
 	row := reload(t, s, fixtures.IntegrationAcmeSesID)
 
 	_, err := module.Update(ctx, s, row.ID, integrations.UpdateInput{

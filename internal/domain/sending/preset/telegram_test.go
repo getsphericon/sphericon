@@ -27,7 +27,9 @@ func TestTelegramIdentityAcceptsExactlyNonnegativeIntegers(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		id := rapid.Int64().Draw(t, "update_id")
 		body := fmt.Sprintf(`{"update_id":%d,"message":{"chat":{"id":42,"type":"private"},"from":{"id":42},"text":"/stop"}}`, id)
-		res, err := p.Handle(ctx, preset.Request{Header: header, Body: []byte(body)}, preset.Params{"secret": "property-secret"}, time.Unix(0, 0))
+		res, err := engineAt(time.Unix(0, 0)).Handle(ctx, p, preset.HandleInput{
+			Request: preset.Request{Header: header, Body: []byte(body)}, Params: preset.Params{"secret": "property-secret"},
+		})
 		malformed := errors.Is(err, preset.ErrMalformed)
 		wantMalformed := id < 0
 		assert.Equal(t, wantMalformed, malformed)

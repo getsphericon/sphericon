@@ -24,12 +24,12 @@ func (m *Module) reserve(ctx context.Context, s *ent.Scoped, req Request, r Rout
 		res.IntegrationID, res.Limits = r.Integration.ID, r.Limits
 	}
 	if req.Kind() == outboundmessage.KindTransactional {
-		if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
+		if err := m.buckets.Spend(ctx, s, res); err != nil {
 			return providerlimit.Shortfall{}, fmt.Errorf("outbound: spend send capacity: %w", err)
 		}
 		return providerlimit.Shortfall{}, nil
 	}
-	short, err := providerlimit.Reserve(ctx, s, m.bus.WithinAuditTx, res, m.now())
+	short, err := m.buckets.Reserve(ctx, s, res)
 	if err != nil {
 		return providerlimit.Shortfall{}, fmt.Errorf("outbound: reserve send capacity: %w", err)
 	}
@@ -47,7 +47,7 @@ func (m *Module) spendCall(ctx context.Context, s *ent.Scoped, r Route, messageI
 		return
 	}
 	res := providerlimit.Reservation{IntegrationID: r.Integration.ID, Limits: r.Limits}
-	if err := providerlimit.Spend(ctx, s, m.bus.WithinAuditTx, res, m.now()); err != nil {
+	if err := m.buckets.Spend(ctx, s, res); err != nil {
 		slog.WarnContext(ctx, "outbound: spend of the provider limit failed", "message_id", messageID, "err", err)
 	}
 }
@@ -61,7 +61,7 @@ func (m *Module) SendCapStatus(ctx context.Context, s *ent.Scoped, ws *ent.Works
 	if perDay == nil {
 		return nil, nil
 	}
-	sent, err := providerlimit.SentLast24h(ctx, s, m.now())
+	sent, err := m.limits.SentLast24h(ctx, s)
 	if err != nil {
 		return nil, fmt.Errorf("outbound: count the sends of the last 24 hours: %w", err)
 	}
@@ -90,7 +90,7 @@ func (m *Module) SendCapDrain(ctx context.Context, s *ent.Scoped, n int) (SendCa
 	if sendCap == nil {
 		return SendCapWait{}, nil
 	}
-	wait, err := providerlimit.SendCapDrain(ctx, s, *sendCap, n, m.now())
+	wait, err := m.limits.SendCapDrain(ctx, s, providerlimit.DrainInput{SendCap: *sendCap, N: n, At: m.now()})
 	if err != nil {
 		return SendCapWait{}, fmt.Errorf("outbound: read the send cap bucket: %w", err)
 	}

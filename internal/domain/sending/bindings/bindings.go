@@ -67,6 +67,20 @@ func New(integ *integrations.Module, now func() time.Time) *Module {
 	return &Module{integ: integ, now: now}
 }
 
+// Chats is what the bots learn about the chats bound to them: a `/start <token>` that binds one, a
+// message read from one, a chat Telegram no longer reaches, and the Bindings a Visitor hands over.
+// It records the System events of those changes in the transaction of the scope it is given, so
+// that scope must be bound to a transaction of its bus (events.Bus.PublishIn). It is a role apart
+// from Module: it publishes, and it reads no Integration's config.
+type Chats struct {
+	bus *events.Bus
+	now func() time.Time
+}
+
+// NewChats builds the chats' side of the Bindings over the bus their events are published on; now
+// is the clock a Binding is dated and a Start token is spent and lapses by.
+func NewChats(bus *events.Bus, now func() time.Time) *Chats { return &Chats{bus: bus, now: now} }
+
 // StartLink is a start link and when it lapses.
 type StartLink struct {
 	URL       string
@@ -210,8 +224,9 @@ type Redemption struct {
 // moved to the token's owner (the latest owner wins). It records telegram.bound for a Contact that
 // gained the chat and telegram.unbound for the Contact that lost it. Anything else (another
 // message, a bare `/start`, a used, expired or other bot's token) records nothing: the bot never
-// answers. Run it inside the transaction s and pub are bound to.
-func Redeem(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, r Redemption) error {
+// answers. Run it inside a transaction of the bus that s is bound to.
+func (c *Chats) Redeem(ctx context.Context, s *ent.Scoped, bot *ent.Integration, r Redemption) error {
+	now := c.now()
 	token, ok := startToken(r.Text)
 	if !ok {
 		return nil
@@ -251,7 +266,7 @@ func Redeem(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 			return fmt.Errorf("lock contact: %w", err)
 		}
 	}
-	return bind(ctx, s, pub, bot, now, own, r)
+	return c.bind(ctx, s, bot, now, own, r)
 }
 
 // owner is whose a Binding is: exactly one of a Contact and a Visitor.
@@ -274,7 +289,7 @@ func startToken(text string) (string, bool) {
 // bind gives the chat of r to own: a new Binding, or the chat's Binding on bot moved to it. A
 // Binding another redemption wrote since the read is found on the second read, which the insert's
 // conflict and the read share the key of.
-func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, own owner, r Redemption) error {
+func (c *Chats) bind(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now time.Time, own owner, r Redemption) error {
 	for range 2 {
 		existing, err := s.Binding().Query().
 			Where(binding.IntegrationID(bot.ID), binding.Destination(r.Destination)).
@@ -286,20 +301,20 @@ func bind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Int
 			case err != nil:
 				return err
 			case created:
-				return announce(ctx, s, pub, bot, systemevent.TelegramBound, own.contactID, r.DedupKey+"/bound")
+				return c.announce(ctx, s, bot, systemevent.TelegramBound, own.contactID, r.DedupKey+"/bound")
 			}
 			// Another redemption bound the chat since the read: read its Binding.
 			continue
 		case err != nil:
 			return fmt.Errorf("find binding: %w", err)
 		}
-		return rebind(ctx, s, pub, bot, now, own, r, existing)
+		return c.rebind(ctx, s, bot, now, own, r, existing)
 	}
 	return fmt.Errorf("bind: the Binding of the chat on bot %d was neither written nor found", bot.ID)
 }
 
 // rebind moves the chat's existing Binding on bot to own, and announces what changed hands.
-func rebind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, now time.Time, own owner, r Redemption, existing *ent.Binding) error {
+func (c *Chats) rebind(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now time.Time, own owner, r Redemption, existing *ent.Binding) error {
 	if lo.FromPtr(existing.ContactID) == lo.FromPtr(own.contactID) && lo.FromPtr(existing.VisitorID) == lo.FromPtr(own.visitorID) {
 		// The chat stays with its owner: nobody gains or loses it, so nothing is announced.
 		if existing.ChatID == r.ChatID {
@@ -319,10 +334,10 @@ func rebind(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	if err := move.Exec(ctx); err != nil {
 		return fmt.Errorf("move binding: %w", err)
 	}
-	if err := announce(ctx, s, pub, bot, systemevent.TelegramUnbound, existing.ContactID, r.DedupKey+"/unbound"); err != nil {
+	if err := c.announce(ctx, s, bot, systemevent.TelegramUnbound, existing.ContactID, r.DedupKey+"/unbound"); err != nil {
 		return err
 	}
-	return announce(ctx, s, pub, bot, systemevent.TelegramBound, own.contactID, r.DedupKey+"/bound")
+	return c.announce(ctx, s, bot, systemevent.TelegramBound, own.contactID, r.DedupKey+"/bound")
 }
 
 // createBinding writes the Binding of the chat; false, with nothing written, when the chat already
@@ -346,7 +361,7 @@ func createBinding(ctx context.Context, s *ent.Scoped, bot *ent.Integration, now
 
 // DestinationsOf are the Telegram user ids Bound to the Contact on any bot of the Workspace, its own
 // or through one of its Visitors.
-func DestinationsOf(ctx context.Context, s *ent.Scoped, contactID int64) ([]string, error) {
+func (c *Chats) DestinationsOf(ctx context.Context, s *ent.Scoped, contactID int64) ([]string, error) {
 	ids, err := s.Binding().Query().
 		Where(binding.Or(binding.ContactID(contactID), binding.HasVisitorWith(visitor.ContactID(contactID)))).
 		Unique(true).
@@ -358,13 +373,21 @@ func DestinationsOf(ctx context.Context, s *ent.Scoped, contactID int64) ([]stri
 	return ids, nil
 }
 
+// Removal is a chat Remove unbinds: the Destination on the bot, and the key its event is
+// deduplicated by.
+type Removal struct {
+	Destination string
+	DedupKey    string
+}
+
 // Remove deletes the Binding of the Destination on bot, a chat Telegram says no longer reaches a
 // person (a deactivated user, a chat that does not exist), and records telegram.unbound for the
-// Contact it reached, if it was a Contact's. No Binding is nothing to remove. dedup keys the event, so a retried removal records it once. Run it inside the
-// transaction s and pub are bound to.
-func Remove(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, destination, dedup string) error {
+// Contact it reached, if it was a Contact's. No Binding is nothing to remove. The removal's
+// DedupKey keys the event, so a retried removal records it once. Run it inside a transaction of
+// the bus that s is bound to.
+func (c *Chats) Remove(ctx context.Context, s *ent.Scoped, bot *ent.Integration, r Removal) error {
 	b, err := s.Binding().Query().
-		Where(binding.IntegrationID(bot.ID), binding.Destination(destination)).
+		Where(binding.IntegrationID(bot.ID), binding.Destination(r.Destination)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil
@@ -375,21 +398,21 @@ func Remove(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	if err := s.Binding().DeleteOneID(b.ID).Exec(ctx); err != nil {
 		return fmt.Errorf("delete binding: %w", err)
 	}
-	return announce(ctx, s, pub, bot, systemevent.TelegramUnbound, b.ContactID, dedup)
+	return c.announce(ctx, s, bot, systemevent.TelegramUnbound, b.ContactID, r.DedupKey)
 }
 
 // announce records the System event of a Contact gaining or losing the chat; a Visitor with no
 // Contact has none to record it for.
-func announce(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, action string, contactID *int64, dedup string) error {
+func (c *Chats) announce(ctx context.Context, s *ent.Scoped, bot *ent.Integration, action string, contactID *int64, dedup string) error {
 	if contactID == nil {
 		return nil
 	}
-	c, err := s.Contact().Get(ctx, *contactID)
+	contact, err := s.Contact().Get(ctx, *contactID)
 	if err != nil {
 		return fmt.Errorf("read contact: %w", err)
 	}
-	return pub.Publish(ctx, &events.BindingChange{
-		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
+	return c.bus.PublishIn(ctx, s, &events.BindingChange{
+		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: contact.ID, Email: lo.FromPtr(contact.Email),
 		IntegrationID: bot.ID, DedupID: dedup,
 	})
 }
@@ -404,9 +427,9 @@ type Message struct {
 
 // Receive records telegram.received for the Contact the message's Destination is Bound to on bot,
 // with the text cut by events.ReceivedText. A Destination that is unknown, or Bound to a Visitor,
-// records nothing and creates no Contact. Run it inside the transaction s and pub
-// are bound to.
-func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.Integration, m Message) error {
+// records nothing and creates no Contact. Run it inside a transaction of the bus that s is bound
+// to.
+func (c *Chats) Receive(ctx context.Context, s *ent.Scoped, bot *ent.Integration, m Message) error {
 	b, err := s.Binding().Query().
 		Where(binding.IntegrationID(bot.ID), binding.Destination(m.Destination)).
 		Only(ctx)
@@ -419,21 +442,21 @@ func Receive(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.
 	if b.ContactID == nil {
 		return nil
 	}
-	c, err := s.Contact().Get(ctx, *b.ContactID)
+	contact, err := s.Contact().Get(ctx, *b.ContactID)
 	if err != nil {
 		return fmt.Errorf("read contact: %w", err)
 	}
-	return pub.Publish(ctx, &events.TelegramReceived{
-		WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email), IntegrationID: bot.ID,
+	return c.bus.PublishIn(ctx, s, &events.TelegramReceived{
+		WorkspaceID: s.WorkspaceID(), ContactID: contact.ID, Email: lo.FromPtr(contact.Email), IntegrationID: bot.ID,
 		Text: events.ReceivedText(m.Text), DedupID: m.DedupKey,
 	})
 }
 
-// HandOver gives the Contact c every Binding of the Visitor vis, which a proven Identify has just
-// bound to c (ADR 0171), and records telegram.bound for each. Run it in the transaction s and pub
-// are bound to. A Visitor with no Binding hands over nothing, so a repeated Identify records
-// nothing.
-func HandOver(ctx context.Context, s *ent.Scoped, pub events.Publisher, vis *ent.Visitor, c *ent.Contact, now time.Time) error {
+// HandOver gives the Contact to every Binding of the Visitor vis, which a proven Identify has just
+// bound to it (ADR 0171), and records telegram.bound for each. Run it inside a transaction of the
+// bus that s is bound to. A Visitor with no Binding hands over nothing, so a repeated Identify
+// records nothing.
+func (c *Chats) HandOver(ctx context.Context, s *ent.Scoped, vis *ent.Visitor, to *ent.Contact) error {
 	rows, err := s.Binding().Query().Where(binding.VisitorID(vis.ID)).Order(binding.ByID()).All(ctx)
 	if err != nil {
 		return fmt.Errorf("list visitor bindings: %w", err)
@@ -442,13 +465,13 @@ func HandOver(ctx context.Context, s *ent.Scoped, pub events.Publisher, vis *ent
 		return nil
 	}
 	ids := lo.Map(rows, func(b *ent.Binding, _ int) int64 { return b.ID })
-	if err := s.Binding().Update().Where(binding.IDIn(ids...)).SetContactID(c.ID).ClearVisitorID().SetBoundAt(now).Exec(ctx); err != nil {
+	if err := s.Binding().Update().Where(binding.IDIn(ids...)).SetContactID(to.ID).ClearVisitorID().SetBoundAt(c.now()).Exec(ctx); err != nil {
 		return fmt.Errorf("hand over bindings: %w", err)
 	}
 	for _, b := range rows {
-		err := pub.Publish(ctx, &events.BindingChange{
-			Action: systemevent.TelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: c.ID, Email: lo.FromPtr(c.Email),
-			IntegrationID: b.IntegrationID, DedupID: fmt.Sprintf("telegram:binding:%d:contact:%d/bound", b.ID, c.ID),
+		err := c.bus.PublishIn(ctx, s, &events.BindingChange{
+			Action: systemevent.TelegramBound, WorkspaceID: s.WorkspaceID(), ContactID: to.ID, Email: lo.FromPtr(to.Email),
+			IntegrationID: b.IntegrationID, DedupID: fmt.Sprintf("telegram:binding:%d:contact:%d/bound", b.ID, to.ID),
 		})
 		if err != nil {
 			return err
@@ -457,13 +480,14 @@ func HandOver(ctx context.Context, s *ent.Scoped, pub events.Publisher, vis *ent
 	return nil
 }
 
-// PruneStartTokens deletes the Start tokens that lapsed by now or were used, in every Workspace,
-// and returns how many went. A lapsed or used token redeems nothing; the tracker and a merge tag
-// issue a fresh one per call, so they would otherwise pile up. The one function of the package
-// that takes the raw client, called by a river job: the tokens belong to no one Workspace's request.
-func PruneStartTokens(ctx context.Context, client *ent.Client, now time.Time) (int, error) {
+// PruneStartTokens deletes the Start tokens that lapsed by the clock or were used, in every
+// Workspace, and returns how many went. A lapsed or used token redeems nothing; the tracker and a
+// merge tag issue a fresh one per call, so they would otherwise pile up. The one operation of the
+// package that takes the raw client, called by a river job: the tokens belong to no one Workspace's
+// request.
+func (c *Chats) PruneStartTokens(ctx context.Context, client *ent.Client) (int, error) {
 	n, err := client.StartToken.Delete().
-		Where(starttoken.Or(starttoken.ExpiresAtLTE(now), starttoken.UsedAtNotNil())).
+		Where(starttoken.Or(starttoken.ExpiresAtLTE(c.now()), starttoken.UsedAtNotNil())).
 		Exec(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("prune start tokens: %w", err)

@@ -22,18 +22,20 @@ func (RefreshSendQuotasArgs) Kind() string { return "send_quota_refresh" }
 type RefreshSendQuotasWorker struct {
 	river.WorkerDefaults[RefreshSendQuotasArgs]
 
-	ent *ent.Client
+	ent          *ent.Client
+	integrations *integrations.Module
 }
 
-// NewRefreshSendQuotasWorker builds the worker that queues a quota read of every Integration due one.
-func NewRefreshSendQuotasWorker(client *ent.Client) *RefreshSendQuotasWorker {
-	return &RefreshSendQuotasWorker{ent: client}
+// NewRefreshSendQuotasWorker builds the worker that queues a quota read of every Integration due one,
+// which the Integrations module lists.
+func NewRefreshSendQuotasWorker(client *ent.Client, mod *integrations.Module) *RefreshSendQuotasWorker {
+	return &RefreshSendQuotasWorker{ent: client, integrations: mod}
 }
 
 // Work fans the hourly tick out into one RefreshIntegrationQuota job per Integration,
 // so each lookup has its own isolation and retry (the Sending-domain recheck pattern).
 func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[RefreshSendQuotasArgs]) error {
-	due, err := integrations.DueForQuotaRefresh(ctx, w.ent, quotaRefreshBatchSize)
+	due, err := w.integrations.DueForQuotaRefresh(ctx, w.ent, quotaRefreshBatchSize)
 	if err != nil {
 		return err
 	}

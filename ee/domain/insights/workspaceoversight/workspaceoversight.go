@@ -78,7 +78,8 @@ type Module struct {
 	usage    *usages.Module
 	now      func() time.Time
 	watch    *abusedetector.Watch
-	holdMax  time.Duration
+	holds    *holds.Holds
+	limits   *providerlimit.Module
 	survey   *signupsurveyresponses.Reader
 	sendCaps providerlimit.SendCaps
 }
@@ -89,12 +90,8 @@ func New(client *ent.Client, bus *events.Bus, lic *licensekey.License, auditLog 
 	if now == nil {
 		panic("workspaceoversight: Config.Clock is required: the module reads the Instance clock")
 	}
-	holdMax := cfg.HoldMaxExpiry
-	if holdMax <= 0 {
-		holdMax = holds.DefaultMaxExpiry
-	}
 	return &Module{
-		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holdMax: holdMax, survey: signupsurveyresponses.NewReader(client),
+		ent: client, bus: bus, suspend: suspender, rates: rates, lic: lic, audit: auditLog, usage: usage, now: now, watch: abusedetector.NewWatch(lic, cfg.Abuse, rates, now), holds: holds.New(func() bool { return true }, cfg.HoldMaxExpiry, now), limits: providerlimit.New(now), survey: signupsurveyresponses.NewReader(client),
 		sendCaps: cfg.SendCaps,
 	}
 }

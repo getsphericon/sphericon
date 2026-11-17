@@ -3,7 +3,6 @@ package jobs
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"github.com/riverqueue/river"
 
@@ -21,17 +20,17 @@ func (PruneStartTokensArgs) Kind() string { return "start_tokens_prune" }
 type PruneStartTokensWorker struct {
 	river.WorkerDefaults[PruneStartTokensArgs]
 
-	ent *ent.Client
-	now func() time.Time
+	ent   *ent.Client
+	chats *bindings.Chats
 }
 
-// NewPruneStartTokensWorker builds the purge of Start tokens lapsed by the clock now.
-func NewPruneStartTokensWorker(client *ent.Client, now func() time.Time) *PruneStartTokensWorker {
-	return &PruneStartTokensWorker{ent: client, now: now}
+// NewPruneStartTokensWorker builds the purge of Start tokens lapsed by the clock of chats.
+func NewPruneStartTokensWorker(client *ent.Client, chats *bindings.Chats) *PruneStartTokensWorker {
+	return &PruneStartTokensWorker{ent: client, chats: chats}
 }
 
 func (w *PruneStartTokensWorker) Work(ctx context.Context, _ *river.Job[PruneStartTokensArgs]) error {
-	deleted, err := bindings.PruneStartTokens(ctx, w.ent, w.now())
+	deleted, err := w.chats.PruneStartTokens(ctx, w.ent)
 	if err != nil {
 		return err
 	}

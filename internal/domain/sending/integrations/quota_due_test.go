@@ -16,7 +16,7 @@ import (
 
 func TestIntegrationsDueForQuotaRefreshAreTheSESOnes(t *testing.T) {
 	env := testhelper.Setup(t)
-	due, err := integrations.DueForQuotaRefresh(t.Context(), env.DB, 100)
+	due, err := testhelper.Module[*integrations.Module](env).DueForQuotaRefresh(t.Context(), env.DB, 100)
 	require.NoError(t, err)
 	ids := lo.Map(due, func(i *ent.Integration, _ int) int64 { return i.ID })
 	assert.Contains(t, ids, int64(fixtures.IntegrationAcmeSesID))
@@ -29,7 +29,7 @@ func TestIntegrationsDueForQuotaRefreshLeaveADeletedIntegrationOut(t *testing.T)
 	env := testhelper.Setup(t)
 	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeSesID).SetDiscardedAt(time.Now()).ExecX(t.Context())
 
-	due, err := integrations.DueForQuotaRefresh(t.Context(), env.DB, 100)
+	due, err := testhelper.Module[*integrations.Module](env).DueForQuotaRefresh(t.Context(), env.DB, 100)
 
 	require.NoError(t, err)
 	ids := lo.Map(due, func(i *ent.Integration, _ int) int64 { return i.ID })

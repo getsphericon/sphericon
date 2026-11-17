@@ -18,23 +18,32 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// deletion opens the Deletion of the Integration id under Acme's lock and runs then on it, in the
+// opened is a Deletion opened under Acme's lock, with the module that opened it and the
 // transaction that holds the lock and queues its jobs.
-func deletion(t *testing.T, env *testhelper.TestEnv, id int64, then func(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error) error {
+type opened struct {
+	m *integrationsunchecked.Module
+	l *ent.WorkspaceLocked
+	d *integrationsunchecked.Deletion
+}
+
+// deletion opens the Deletion of the Integration id under Acme's lock and runs then on it, in the
+// transaction that holds the lock.
+func deletion(t *testing.T, env *testhelper.TestEnv, id int64, then func(ctx context.Context, o opened) error) error {
 	t.Helper()
 	ctx := t.Context()
-	return env.Bus.WithinWorkspaceLockEnqueueTx(ctx, env.DB.Scoped(fixtures.AcmeID), func(wl *ent.WorkspaceLocked, _ events.Publisher, q events.Enqueuer) error {
-		d, err := integrationsunchecked.DeletionIn(ctx, wl, id)
+	m := integrationsunchecked.New(env.Bus, time.Now)
+	return env.Bus.WithinWorkspaceLockTx(ctx, env.DB.Scoped(fixtures.AcmeID), func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
+		d, err := m.DeletionIn(ctx, wl, id)
 		if err != nil {
 			return err
 		}
-		return then(ctx, d, q)
+		return then(ctx, opened{m: m, l: wl, d: d})
 	})
 }
 
-// apply applies the deletion it is handed at now.
-func apply(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error {
-	return d.Apply(ctx, time.Now(), q)
+// apply applies the deletion it is handed.
+func apply(ctx context.Context, o opened) error {
+	return o.m.ApplyDeletion(ctx, o.l, o.d)
 }
 
 // integration reads Acme's Integration id as it is now, deleted or not.
@@ -62,8 +71,8 @@ func releases(t *testing.T, env *testhelper.TestEnv) []integrations.ReleaseWebho
 
 // applyThenRefuse applies the deletion it is handed, then fails its transaction with errRefused,
 // as a refusal after the write would.
-func applyThenRefuse(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error {
-	return errors.Join(apply(ctx, d, q), errRefused)
+func applyThenRefuse(ctx context.Context, o opened) error {
+	return errors.Join(apply(ctx, o), errRefused)
 }
 
 var errRefused = errors.New("refused after the apply")
@@ -73,9 +82,9 @@ func TestApplyingTheDeletionOfAKeptIntegrationDiscardsItAndGivesUpTheDefault(t *
 	env := testhelper.Setup(t)
 	var done bool
 
-	err := deletion(t, env, fixtures.IntegrationAcmeDefaultID, func(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error {
-		done = d.Done()
-		return apply(ctx, d, q)
+	err := deletion(t, env, fixtures.IntegrationAcmeDefaultID, func(ctx context.Context, o opened) error {
+		done = o.d.Done()
+		return apply(ctx, o)
 	})
 
 	require.NoError(t, err)
@@ -94,9 +103,9 @@ func TestTheDeletionOfADeletedIntegrationIsDone(t *testing.T) {
 	before := integration(t, env, fixtures.IntegrationAcmeArchivedID)
 	var done bool
 
-	err := deletion(t, env, fixtures.IntegrationAcmeArchivedID, func(ctx context.Context, d *integrationsunchecked.Deletion, q events.Enqueuer) error {
-		done = d.Done()
-		return apply(ctx, d, q)
+	err := deletion(t, env, fixtures.IntegrationAcmeArchivedID, func(ctx context.Context, o opened) error {
+		done = o.d.Done()
+		return apply(ctx, o)
 	})
 
 	require.NoError(t, err)
@@ -150,7 +159,7 @@ func TestTheDeletionOfAnUnknownIntegrationIsNotFound(t *testing.T) {
 	env := testhelper.Setup(t)
 	for name, id := range map[string]int64{"unknown": 999999, "another Workspace's": fixtures.IntegrationGlobexID} {
 		t.Run(name, func(t *testing.T) {
-			err := deletion(t, env, id, func(context.Context, *integrationsunchecked.Deletion, events.Enqueuer) error { return nil })
+			err := deletion(t, env, id, func(context.Context, opened) error { return nil })
 
 			require.ErrorIs(t, err, integrations.ErrNotFound)
 		})

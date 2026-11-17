@@ -99,40 +99,42 @@ func standingOf(ws *ent.Workspace, staff []*ent.Hold, staffHonoured bool) Standi
 	return st
 }
 
-// Read is the standing of the scope's Workspace at now, one query for its row and one for
-// its active Staff holds (none are read without the license).
-func Read(ctx context.Context, s *ent.Scoped, now time.Time, staffHonoured bool) (Standing, error) {
+// Holds answers the send path's "may this Workspace send now" from the standing, and sets and
+// clears a Staff hold. The one thing that varies between editions is whether Staff holds are
+// honoured (the `staff` license).
+type Holds struct {
+	honoured  func() bool
+	maxExpiry time.Duration
+	now       func() time.Time
+}
+
+// New builds the module. honoured reports whether Staff holds count at all (deletion and
+// suspension always do); maxExpiry is how far ahead of the clock a set may put a hold's expiry
+// (SPHERICON_STAFF_HOLD_MAX_EXPIRY; zero is DefaultMaxExpiry); now is the clock a hold's expiry is
+// read and checked against.
+func New(honoured func() bool, maxExpiry time.Duration, now func() time.Time) *Holds {
+	if maxExpiry <= 0 {
+		maxExpiry = DefaultMaxExpiry
+	}
+	return &Holds{honoured: honoured, maxExpiry: maxExpiry, now: now}
+}
+
+// Standing is the standing of the scope's Workspace now, as this instance honours it: one query
+// for its row and one for its active Staff holds (none are read when they are not honoured).
+func (h *Holds) Standing(ctx context.Context, s *ent.Scoped) (Standing, error) {
 	ws, err := s.Workspace(ctx)
 	if err != nil {
 		return Standing{}, err
 	}
+	honoured := h.honoured()
 	var staff []*ent.Hold
-	if staffHonoured {
-		staff, err = s.Hold().Query().Where(ActiveAt(now)).Order(enthold.ByKey()).All(ctx)
+	if honoured {
+		staff, err = s.Hold().Query().Where(ActiveAt(h.now())).Order(enthold.ByKey()).All(ctx)
 		if err != nil {
 			return Standing{}, err
 		}
 	}
-	return standingOf(ws, staff, staffHonoured), nil
-}
-
-// Holds answers the send path's "may this Workspace send now" from the standing. The one
-// thing that varies between editions is whether Staff holds are honoured (the `staff`
-// license); it is the one function the constructor takes.
-type Holds struct {
-	honoured func() bool
-	now      func() time.Time
-}
-
-// New builds the module. honoured reports whether Staff holds count at all (deletion and
-// suspension always do); now is the clock a hold's expiry is read against.
-func New(honoured func() bool, now func() time.Time) *Holds {
-	return &Holds{honoured: honoured, now: now}
-}
-
-// Standing is the standing of the scope's Workspace now, as this instance honours it.
-func (h *Holds) Standing(ctx context.Context, s *ent.Scoped) (Standing, error) {
-	return Read(ctx, s, h.now(), h.honoured())
+	return standingOf(ws, staff, honoured), nil
 }
 
 // Reason is the reason a send is Held for the scope's Workspace, "" when it may send.

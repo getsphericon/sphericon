@@ -64,7 +64,7 @@ type testCase struct {
 // Parse reads one Preset file: it must be YAML, valid against the published Preset
 // JSON Schema, carry a params schema that compiles, a verify block that is coherent
 // and a transform that compiles. An error names the file and the line.
-func Parse(name string, data []byte, opts ...Option) (*Preset, error) {
+func Parse(name string, data []byte) (*Preset, error) {
 	var root yaml.Node
 	if err := yaml.Unmarshal(data, &root); err != nil {
 		return nil, parseError(name, yamlErrorLine(err), err.Error())
@@ -102,7 +102,7 @@ func Parse(name string, data []byte, opts ...Option) (*Preset, error) {
 	if err != nil {
 		return nil, parseError(name, at("params"), err.Error())
 	}
-	v, err := newVerifier(f.Verify, buildOptions(opts))
+	v, err := newVerifier(f.Verify)
 	if err != nil {
 		return nil, parseError(name, at("verify"), err.Error())
 	}
@@ -244,25 +244,25 @@ type Registry struct {
 // file at its root. It is the one entry the server uses at start: a file that fails to
 // parse, to validate or to compile, or a name that collides with a built-in (or with
 // another custom file), is an error naming the file.
-func Load(custom fs.FS, opts ...Option) (*Registry, error) {
+func Load(custom fs.FS) (*Registry, error) {
 	r := &Registry{byName: map[string]*Preset{}}
 	sub, err := fs.Sub(builtinFS, "builtin")
 	if err != nil {
 		return nil, err
 	}
-	if err := r.add(sub, "built-in ", opts); err != nil {
+	if err := r.add(sub, "built-in "); err != nil {
 		return nil, err
 	}
 	if custom == nil {
 		return r, nil
 	}
-	if err := r.add(custom, "", opts); err != nil {
+	if err := r.add(custom, ""); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (r *Registry) add(fsys fs.FS, label string, opts []Option) error {
+func (r *Registry) add(fsys fs.FS, label string) error {
 	entries, err := fs.ReadDir(fsys, ".")
 	if err != nil {
 		return fmt.Errorf("preset: read directory: %w", err)
@@ -276,7 +276,7 @@ func (r *Registry) add(fsys fs.FS, label string, opts []Option) error {
 		if err != nil {
 			return fmt.Errorf("preset %s%s: %w", label, e.Name(), err)
 		}
-		p, err := Parse(label+e.Name(), data, opts...)
+		p, err := Parse(label+e.Name(), data)
 		if err != nil {
 			return err
 		}
@@ -311,21 +311,22 @@ type CaseResult struct {
 	Err  error
 }
 
-// RunTests runs each case the Preset carries: it posts the case's request with its
-// params and clock and expects the facts, or the refusal, it names.
-func (p *Preset) RunTests(ctx context.Context) []CaseResult {
+// RunTests runs each case p carries: it posts the case's request with its params and expects the
+// facts, or the refusal, it names. A case runs offline, at the clock it names (the Unix epoch when
+// it names none) and with the test certificate (TestCertificates), whatever the engine's own.
+func (*Engine) RunTests(ctx context.Context, p *Preset) []CaseResult {
 	results := make([]CaseResult, 0, len(p.tests))
 	for i := range p.tests {
 		c := &p.tests[i]
-		results = append(results, CaseResult{Name: c.Name, Err: p.forTest().runCase(ctx, c)})
+		results = append(results, CaseResult{Name: c.Name, Err: runCase(ctx, p, c)})
 	}
 	return results
 }
 
-// Test runs the cases the Preset carries; the error lists every case that disagreed.
-func (p *Preset) Test(ctx context.Context) error {
+// Test runs the cases p carries; the error lists every case that disagreed.
+func (e *Engine) Test(ctx context.Context, p *Preset) error {
 	var failed []error
-	for _, r := range p.RunTests(ctx) {
+	for _, r := range e.RunTests(ctx, p) {
 		if r.Err != nil {
 			failed = append(failed, fmt.Errorf("preset %s, case %q: %w", p.name, r.Name, r.Err))
 		}
@@ -333,7 +334,8 @@ func (p *Preset) Test(ctx context.Context) error {
 	return errors.Join(failed...)
 }
 
-func (p *Preset) runCase(ctx context.Context, c *testCase) error {
+// runCase runs one case of p on an engine of its own: offline, at the case's clock.
+func runCase(ctx context.Context, p *Preset, c *testCase) error {
 	now := time.Unix(0, 0)
 	if c.Now != "" {
 		parsed, err := time.Parse(time.RFC3339, c.Now)
@@ -346,7 +348,10 @@ func (p *Preset) runCase(ctx context.Context, c *testCase) error {
 	for k, v := range c.Request.Headers {
 		header.Set(k, v)
 	}
-	res, err := p.Handle(ctx, Request{URL: c.Request.URL, Header: header, Body: []byte(c.Request.Body)}, Params(c.Params), now)
+	engine := New(NewTestCertificates(), func() time.Time { return now })
+	res, err := engine.Handle(ctx, p, HandleInput{
+		Request: Request{URL: c.Request.URL, Header: header, Body: []byte(c.Request.Body)}, Params: Params(c.Params),
+	})
 
 	if c.Expect.Refused != "" {
 		want := map[string]error{

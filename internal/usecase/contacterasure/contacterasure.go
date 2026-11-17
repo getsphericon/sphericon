@@ -42,6 +42,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts/broadcastsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/rules/rulesunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/domain/sending/capturedmessages/capturedmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -168,12 +169,17 @@ type UseCase struct {
 	// messages, which New builds (ADR 0110: only a use case imports them).
 	outbound *outboundmessagesunchecked.Module
 	captured *capturedmessagesunchecked.Module
+	// chats reads the Telegram users Bound to the Contact.
+	chats *bindings.Chats
 }
 
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in;
 // now is the Instance clock a Broadcast left with nothing pending settles by.
 func New(bus *events.Bus, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, now: now, outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New()}
+	return &UseCase{
+		bus: bus, now: now, outbound: outboundmessagesunchecked.New(), captured: capturedmessagesunchecked.New(),
+		chats: bindings.NewChats(bus, now),
+	}
 }
 
 // Erase erases the identified data subject in one transaction: either all of it
@@ -238,7 +244,7 @@ func (u *UseCase) steps() []step {
 		func(ctx context.Context, s *ent.Scoped, t *Target, pub events.PurgingPublisher) error {
 			return pub.PurgeWebhookJobs(ctx, s.WorkspaceID(), t.ContactID, t.destinations())
 		},
-		eraseConsentStamps,
+		u.eraseConsentStamps,
 		// The Outbound message module deletes the short links of the Contact's messages, before
 		// anonymizeDelivery clears the contact_id they are found by.
 		func(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {

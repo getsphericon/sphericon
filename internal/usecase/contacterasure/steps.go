@@ -10,7 +10,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions/suppressionsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes/unsubscribesunchecked"
-	"github.com/getsphericon/sphericon/internal/domain/sending/bindings"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 )
@@ -34,14 +33,14 @@ func detachOptOuts(ctx context.Context, s *ent.Scoped, t *Target, _ events.Purgi
 // deletions: an observation in flight holds its stamp first and the Contact after, so the Erasure,
 // which holds the Contact, waits for it here rather than in the middle of rows that observation
 // writes next.
-func eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
+func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Target, _ events.PurgingPublisher) error {
 	for _, address := range t.Destinations {
 		if err := eraseStampsOf(ctx, s, channels.Email, address); err != nil {
 			return err
 		}
 	}
 	if t.ContactID != 0 {
-		users, err := bindings.DestinationsOf(ctx, s, t.ContactID)
+		users, err := u.chats.DestinationsOf(ctx, s, t.ContactID)
 		if err != nil {
 			return err
 		}

@@ -34,11 +34,11 @@ type Input struct {
 // otherwise: a service that stops renewing frees the Workspace by then.
 const DefaultMaxExpiry = 30 * 24 * time.Hour
 
-// Limits are what a hold's expiry is checked against: the moment of the set, and how far ahead of
-// it the Instance lets an expiry be (SPHERICON_STAFF_HOLD_MAX_EXPIRY).
-type Limits struct {
-	Now       time.Time
-	MaxExpiry time.Duration
+// SetInput is a hold a setter sets: its key, who sets it and what it states.
+type SetInput struct {
+	Key   string
+	SetBy string
+	Hold  Input
 }
 
 var (
@@ -56,8 +56,8 @@ var (
 
 // check refuses an input the rules of a hold refuse: the contract's bounds of the reason code, the
 // message and the action URL (package bounds), an action URL that is no absolute https URL without
-// credentials, and an expiry that is not ahead of now or further than the maximum.
-func (in Input) check(lim Limits) error {
+// credentials, and an expiry that is not ahead of now or further than maxExpiry from it.
+func (in Input) check(now time.Time, maxExpiry time.Duration) error {
 	if err := validation.Length(fieldname.ReasonCode, in.ReasonCode,
 		bounds.HoldReasonCodeMinLength, bounds.HoldReasonCodeMaxLength); err != nil {
 		return err
@@ -79,11 +79,11 @@ func (in Input) check(lim Limits) error {
 			return ErrActionURL
 		}
 	}
-	if !in.ExpiresAt.After(lim.Now) {
+	if !in.ExpiresAt.After(now) {
 		return ErrExpiryInPast
 	}
-	if in.ExpiresAt.After(lim.Now.Add(lim.MaxExpiry)) {
-		return ErrTooLong.With("at most " + lim.MaxExpiry.String() + " from now")
+	if in.ExpiresAt.After(now.Add(maxExpiry)) {
+		return ErrTooLong.With("at most " + maxExpiry.String() + " from now")
 	}
 	return nil
 }
@@ -95,14 +95,16 @@ type Change struct {
 	Changed bool
 }
 
-// Set sets the hold under key on the scope's Workspace, or renews it when it exists: one call
+// Set sets the hold under in.Key on the scope's Workspace, or renews it when it exists: one call
 // does both and repeating it is harmless (Changed is false when the stored hold already says
-// what in says). setBy names who set it. The input is refused when the rules of a hold refuse it
-// (its bounds, its action URL, its expiry against lim); nothing is set then.
-func Set(ctx context.Context, s *ent.Scoped, key, setBy string, in Input, lim Limits) (Change, error) {
-	if err := in.check(lim); err != nil {
+// what in.Hold says). in.SetBy names who set it. The hold is refused when the rules of a hold
+// refuse it (its bounds, its action URL, its expiry against the clock and the module's maximum);
+// nothing is set then.
+func (h *Holds) Set(ctx context.Context, s *ent.Scoped, in SetInput) (Change, error) {
+	if err := in.Hold.check(h.now(), h.maxExpiry); err != nil {
 		return Change{}, err
 	}
+	key, setBy, hold := in.Key, in.SetBy, in.Hold
 	// A concurrent first set of the same key inserts nothing; the retry then finds the row
 	// and renews it.
 	for range 2 {
@@ -110,8 +112,8 @@ func Set(ctx context.Context, s *ent.Scoped, key, setBy string, in Input, lim Li
 		switch {
 		case ent.IsNotFound(err):
 			id, err := s.Hold().Create().
-				SetKey(key).SetReasonCode(in.ReasonCode).SetMessage(in.Message).SetNillableActionURL(in.ActionURL).
-				SetExpiresAt(in.ExpiresAt).SetSetBy(setBy).
+				SetKey(key).SetReasonCode(hold.ReasonCode).SetMessage(hold.Message).SetNillableActionURL(hold.ActionURL).
+				SetExpiresAt(hold.ExpiresAt).SetSetBy(setBy).
 				OnConflictColumns(enthold.FieldWorkspaceID, enthold.FieldKey).DoNothing().
 				ID(ctx)
 			inserted, err := db.Inserted(err)
@@ -126,14 +128,14 @@ func Set(ctx context.Context, s *ent.Scoped, key, setBy string, in Input, lim Li
 		case err != nil:
 			return Change{}, err
 		}
-		if same(existing, in) {
+		if same(existing, hold) {
 			return Change{Hold: existing}, nil
 		}
 		update := s.Hold().UpdateOneID(existing.ID).
-			SetReasonCode(in.ReasonCode).SetMessage(in.Message).
-			SetExpiresAt(in.ExpiresAt).SetSetBy(setBy)
-		if in.ActionURL != nil {
-			update.SetActionURL(*in.ActionURL)
+			SetReasonCode(hold.ReasonCode).SetMessage(hold.Message).
+			SetExpiresAt(hold.ExpiresAt).SetSetBy(setBy)
+		if hold.ActionURL != nil {
+			update.SetActionURL(*hold.ActionURL)
 		} else {
 			update.ClearActionURL()
 		}
@@ -144,7 +146,7 @@ func Set(ctx context.Context, s *ent.Scoped, key, setBy string, in Input, lim Li
 }
 
 // Clear removes the hold under key. Clearing a missing hold succeeds and changes nothing.
-func Clear(ctx context.Context, s *ent.Scoped, key string) (Change, error) {
+func (h *Holds) Clear(ctx context.Context, s *ent.Scoped, key string) (Change, error) {
 	existing, err := s.Hold().Query().Where(enthold.Key(key)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return Change{}, nil

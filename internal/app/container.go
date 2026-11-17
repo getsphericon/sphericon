@@ -139,9 +139,10 @@ import (
 // The seams below are the services a test harness replaces with do.Override or
 // do.OverrideValue before it invokes anything (an override does not reach a dependent that is
 // already built): Clock, Version, Database, SystemSender, SigninEndpoints,
-// IntegrationOptions, OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
+// OAuthFetcher, *JobsUI, and the plain types *licensekey.License,
 // *credentials.Hasher, *messaging.Catalog, outboundmessages.Senders, domainname.TXTLookup, privaterelayranges.Source,
-// *preset.Registry, *emaildoc.Renderer, *db.SchemaWatch and apisite.Migrations. Every other
+// *preset.Registry, preset.Certificates, integrations.Confirmer, *emaildoc.Renderer, *db.SchemaWatch and
+// apisite.Migrations. Every other
 // difference from production is configuration.
 //
 // A provider takes what it needs with do.MustInvoke while it builds and keeps no injector: a
@@ -165,7 +166,8 @@ func Container(cfg *config.Config) *do.RootScope {
 	do.ProvideValue(injector, Clock(time.Now))
 	do.ProvideValue(injector, Version(buildinfo.Current().Version))
 	do.ProvideValue(injector, SigninEndpoints{})
-	do.ProvideValue(injector, IntegrationOptions{})
+	do.ProvideValue[preset.Certificates](injector, preset.NewSNSCertificates())
+	do.ProvideValue[integrations.Confirmer](injector, integrations.NewWebConfirmer())
 	return injector
 }
 
@@ -211,9 +213,6 @@ type SystemSender struct {
 // SigninEndpoints replace where the Sign-in providers (ADR 0048) are reached, by name: a test's
 // fake; none in production.
 type SigninEndpoints map[string]signinprovider.Endpoints
-
-// IntegrationOptions configure the Integrations module; none in production.
-type IntegrationOptions []integrations.Option
 
 // OAuthFetcher downloads OAuth Client ID Metadata Documents (ADR 0016).
 type OAuthFetcher struct {
@@ -583,6 +582,7 @@ var jobsPackage = do.Package(
 			StepExecution:    do.MustInvoke[*automations.StepExecution](i),
 			JoinDomains:      do.MustInvoke[*joindomains.Module](i),
 			Integrations:     do.MustInvoke[*integrations.Module](i),
+			Chats:            do.MustInvoke[*bindings.Chats](i),
 			TrackingDomains:  do.MustInvoke[*trackingdomains.Module](i),
 			Machine:          do.MustInvoke[*privaterelayranges.Detector](i),
 			Clock:            do.MustInvoke[Clock](i),
@@ -826,13 +826,17 @@ var audiencePackage = do.Package(
 	do.Lazy(func(i do.Injector) (*integrations.Module, error) {
 		cfg := do.MustInvoke[*config.Config](i)
 		return integrations.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[*messaging.Catalog](i),
-			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[Clock](i), do.MustInvoke[IntegrationOptions](i)...), nil
+			do.MustInvoke[*preset.Registry](i), cfg.AppURL, do.MustInvoke[integrations.Confirmer](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*integrationdeletion.UseCase, error) {
 		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
 		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+	}),
+	// The chats' side of the Bindings: the jobs prune its Start tokens.
+	do.Lazy(func(i do.Injector) (*bindings.Chats, error) {
+		return bindings.NewChats(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
 		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
@@ -891,7 +895,8 @@ var contentPackage = do.Package(
 	// client.
 	do.Lazy(func(i do.Injector) (*callbackinterpretation.Module, error) {
 		return callbackinterpretation.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i),
-			do.MustInvoke[*integrations.Module](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*integrations.Module](i), do.MustInvoke[*outboundmessages.Module](i), do.MustInvoke[preset.Certificates](i),
+			do.MustInvoke[Clock](i)), nil
 	}),
 	// The opens and clicks of the Outbound messages (ADR 0053): a token names a message before any
 	// scope exists, so it holds the raw client.

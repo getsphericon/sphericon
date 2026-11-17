@@ -250,7 +250,7 @@ type Converter interface {
 
 	// The config is a oneOf the generator cannot express, and the params, hook URL and
 	// retiring secrets come from the integrations module (decryption, instance URL), and
-	// the Provider limit from providerlimit.Statuses: the handler attaches them.
+	// the Provider limit from providerlimit.Module.Statuses: the handler attaches them.
 	// goverter:ignore Config
 	// goverter:ignore Params
 	// goverter:ignore SecretsRetiring

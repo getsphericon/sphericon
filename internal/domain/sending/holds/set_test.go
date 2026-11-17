@@ -16,10 +16,6 @@ func (w world) input() holds.Input {
 	return holds.Input{ReasonCode: "review", Message: "held", ExpiresAt: w.now.Add(time.Hour)}
 }
 
-func (w world) limits() holds.Limits {
-	return holds.Limits{Now: w.now, MaxExpiry: holds.DefaultMaxExpiry}
-}
-
 // A hold is checked by its owner whoever sets it: the Staff console's service endpoint, or any
 // other caller that skips the contract (ADR 0107).
 func TestSettingAHoldRefusesWhatItsRulesRefuse(t *testing.T) {
@@ -42,7 +38,7 @@ func TestSettingAHoldRefusesWhatItsRulesRefuse(t *testing.T) {
 			in := w.input()
 			tc.edit(&in)
 
-			_, err := holds.Set(t.Context(), w.s, "review", "service-a", in, w.limits())
+			_, err := w.holds(true).Set(t.Context(), w.s, holds.SetInput{Key: "review", SetBy: "service-a", Hold: in})
 
 			require.ErrorIs(t, err, tc.want)
 		})
@@ -53,9 +49,9 @@ func TestSettingAHoldRefusesWhatItsRulesRefuse(t *testing.T) {
 func TestSettingAHoldTwiceChangesNothingTheSecondTime(t *testing.T) {
 	w := newWorld(t)
 
-	first, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input(), w.limits())
+	first, err := w.holds(true).Set(w.t.Context(), w.s, holds.SetInput{Key: "review", SetBy: "service-a", Hold: w.input()})
 	require.NoError(t, err)
-	second, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input(), w.limits())
+	second, err := w.holds(true).Set(w.t.Context(), w.s, holds.SetInput{Key: "review", SetBy: "service-a", Hold: w.input()})
 	require.NoError(t, err)
 
 	assert.True(t, first.Changed)
@@ -65,12 +61,12 @@ func TestSettingAHoldTwiceChangesNothingTheSecondTime(t *testing.T) {
 
 func TestSettingAHoldWithNewTermsRenewsTheSameRow(t *testing.T) {
 	w := newWorld(t)
-	first, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input(), w.limits())
+	first, err := w.holds(true).Set(w.t.Context(), w.s, holds.SetInput{Key: "review", SetBy: "service-a", Hold: w.input()})
 	require.NoError(t, err)
 	renewed := w.input()
 	renewed.Message = "still held"
 
-	second, err := holds.Set(w.t.Context(), w.s, "review", "service-b", renewed, w.limits())
+	second, err := w.holds(true).Set(w.t.Context(), w.s, holds.SetInput{Key: "review", SetBy: "service-b", Hold: renewed})
 	require.NoError(t, err)
 
 	assert.True(t, second.Changed)
@@ -81,12 +77,12 @@ func TestSettingAHoldWithNewTermsRenewsTheSameRow(t *testing.T) {
 
 func TestClearingAHoldRemovesItAndClearingAMissingOneSucceeds(t *testing.T) {
 	w := newWorld(t)
-	_, err := holds.Set(w.t.Context(), w.s, "review", "service-a", w.input(), w.limits())
+	_, err := w.holds(true).Set(w.t.Context(), w.s, holds.SetInput{Key: "review", SetBy: "service-a", Hold: w.input()})
 	require.NoError(t, err)
 
-	cleared, err := holds.Clear(w.t.Context(), w.s, "review")
+	cleared, err := w.holds(true).Clear(w.t.Context(), w.s, "review")
 	require.NoError(t, err)
-	again, err := holds.Clear(w.t.Context(), w.s, "review")
+	again, err := w.holds(true).Clear(w.t.Context(), w.s, "review")
 	require.NoError(t, err)
 
 	assert.True(t, cleared.Changed)

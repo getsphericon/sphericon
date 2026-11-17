@@ -16,6 +16,9 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
+// reads are the limits read at the wall clock.
+var reads = providerlimit.New(time.Now)
+
 func TestEffectiveOfReportsManualValuesAndTheirSource(t *testing.T) {
 	perSecond, perDay := 14, 50000
 
@@ -90,7 +93,7 @@ func TestUsageCountsSentMessagesPerIntegrationOverTheLastDay(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := t.Context()
 
-	got, err := providerlimit.Usage(ctx, env.DB.Scoped(fixtures.AcmeID), time.Now())
+	got, err := reads.Usage(ctx, env.DB.Scoped(fixtures.AcmeID))
 	require.NoError(t, err)
 	assert.Equal(t, map[int64]int{
 		fixtures.IntegrationAcmeDefaultID: 2, // the third send is 30 hours old
@@ -134,10 +137,10 @@ func TestStatusesPairUsageWithTheEffectiveLimits(t *testing.T) {
 	require.NoError(t, s.Integration().UpdateOneID(fixtures.IntegrationAcmeSesID).SetMaxPerSecond(5).SetMaxPerDay(1000).Exec(ctx))
 	rows, err := s.Integration().Query().WithProviderState().All(ctx)
 	require.NoError(t, err)
-	usage, err := providerlimit.Usage(ctx, s, time.Now())
+	usage, err := reads.Usage(ctx, s)
 	require.NoError(t, err)
 
-	got, err := providerlimit.Statuses(ctx, s, rows, time.Now())
+	got, err := reads.Statuses(ctx, s, rows)
 	require.NoError(t, err)
 
 	require.Len(t, got, len(rows))
@@ -161,8 +164,8 @@ func TestUsageAndStatusesReturnTheStoresError(t *testing.T) {
 	rows, err := s.Integration().Query().All(t.Context())
 	require.NoError(t, err)
 
-	usage, usageErr := providerlimit.Usage(ctx, s, time.Now())
-	statuses, statusesErr := providerlimit.Statuses(ctx, s, rows, time.Now())
+	usage, usageErr := reads.Usage(ctx, s)
+	statuses, statusesErr := reads.Statuses(ctx, s, rows)
 
 	require.ErrorIs(t, usageErr, context.Canceled)
 	assert.Nil(t, usage)
@@ -186,9 +189,9 @@ func TestUsageCountsOverTheLast24HoursExactly(t *testing.T) {
 		First(ctx)
 	require.NoError(t, err)
 
-	inside, err := providerlimit.Usage(ctx, s, oldest.SentAt.Add(23*time.Hour+30*time.Minute))
+	inside, err := providerlimit.New(func() time.Time { return oldest.SentAt.Add(23*time.Hour + 30*time.Minute) }).Usage(ctx, s)
 	require.NoError(t, err)
-	outside, err := providerlimit.Usage(ctx, s, oldest.SentAt.Add(24*time.Hour+30*time.Minute))
+	outside, err := providerlimit.New(func() time.Time { return oldest.SentAt.Add(24*time.Hour + 30*time.Minute) }).Usage(ctx, s)
 	require.NoError(t, err)
 
 	countedInside, countedOutside := inside[fixtures.IntegrationAcmeDefaultID], outside[fixtures.IntegrationAcmeDefaultID]
@@ -220,16 +223,16 @@ func TestSendCapDrainIsTheTimeTheBucketTakesToHoldTheMessages(t *testing.T) {
 		require.NoError(t, acme.SendCapLimiter().UpdateOneID(fixtures.SendCapLimiterAcmeID).
 			SetDayFill(tc.fill).SetRefilledAt(tc.refilledAt).Exec(ctx))
 
-		got, err := providerlimit.SendCapDrain(ctx, acme, 100, tc.n, now)
+		got, err := reads.SendCapDrain(ctx, acme, providerlimit.DrainInput{SendCap: 100, N: tc.n, At: now})
 
 		require.NoError(t, err, name)
 		assert.Equal(t, tc.want, got, name)
 	}
 
 	tyrell := env.DB.Scoped(fixtures.TyrellID)
-	within, err := providerlimit.SendCapDrain(ctx, tyrell, 100, 100, now)
+	within, err := reads.SendCapDrain(ctx, tyrell, providerlimit.DrainInput{SendCap: 100, N: 100, At: now})
 	require.NoError(t, err)
-	beyond, err := providerlimit.SendCapDrain(ctx, tyrell, 100, 150, now)
+	beyond, err := reads.SendCapDrain(ctx, tyrell, providerlimit.DrainInput{SendCap: 100, N: 150, At: now})
 	require.NoError(t, err)
 	assert.Zero(t, within, "a Workspace without a bucket row starts full")
 	assert.Equal(t, 12*time.Hour, beyond)
@@ -240,7 +243,7 @@ func TestSendCapDrainReturnsTheStoresErrorAndNoWait(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	got, err := providerlimit.SendCapDrain(ctx, env.DB.Scoped(fixtures.AcmeID), 100, 150, time.Now())
+	got, err := reads.SendCapDrain(ctx, env.DB.Scoped(fixtures.AcmeID), providerlimit.DrainInput{SendCap: 100, N: 150, At: time.Now()})
 
 	require.ErrorIs(t, err, context.Canceled)
 	assert.Zero(t, got)
