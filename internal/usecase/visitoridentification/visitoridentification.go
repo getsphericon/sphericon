@@ -108,7 +108,7 @@ func (u *UseCase) Identify(ctx context.Context, s *ent.Scoped, input Input) erro
 		return err
 	}
 
-	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	return u.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		core, traits := contacts.FromTraits(input.Traits)
 		fields, err := u.contacts.KnownCustomFields(ctx, ts, traits)
 		if err != nil {

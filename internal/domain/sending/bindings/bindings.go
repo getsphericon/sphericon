@@ -413,12 +413,12 @@ func (c *Chats) announce(ctx context.Context, s *ent.Scoped, bot *ent.Integratio
 	if contactID == nil {
 		return nil
 	}
-	contact, err := s.Contact().Get(ctx, *contactID)
+	person, err := s.Contact().Get(ctx, *contactID)
 	if err != nil {
 		return fmt.Errorf("read contact: %w", err)
 	}
 	return c.bus.PublishIn(ctx, s, &events.BindingChange{
-		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: contact.ID, Email: lo.FromPtr(contact.Email),
+		Action: action, WorkspaceID: s.WorkspaceID(), ContactID: person.ID, Email: lo.FromPtr(person.Email),
 		IntegrationID: bot.ID, DedupID: dedup,
 	})
 }
@@ -448,12 +448,12 @@ func (c *Chats) Receive(ctx context.Context, s *ent.Scoped, bot *ent.Integration
 	if b.ContactID == nil {
 		return nil
 	}
-	contact, err := s.Contact().Get(ctx, *b.ContactID)
+	person, err := s.Contact().Get(ctx, *b.ContactID)
 	if err != nil {
 		return fmt.Errorf("read contact: %w", err)
 	}
 	return c.bus.PublishIn(ctx, s, &events.TelegramReceived{
-		WorkspaceID: s.WorkspaceID(), ContactID: contact.ID, Email: lo.FromPtr(contact.Email), IntegrationID: bot.ID,
+		WorkspaceID: s.WorkspaceID(), ContactID: person.ID, Email: lo.FromPtr(person.Email), IntegrationID: bot.ID,
 		Text: events.ReceivedText(m.Text), DedupID: m.DedupKey,
 	})
 }

@@ -86,7 +86,7 @@ func (m *Module) mailVerdicts(ctx context.Context, items []IntakeInput) map[stri
 // consent.
 func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, in IntakeInput, mail map[string]addresscheck.Verdict) (Result, error) {
 	var res Result
-	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, pub events.Publisher) error {
+	err := m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
 		if err := admitAddress(ctx, ts, in.Email, mail); err != nil {
 			return err
 		}
