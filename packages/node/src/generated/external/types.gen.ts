@@ -945,9 +945,13 @@ export type BroadcastReport = {
    */
   failedCount: number;
   /**
-   * Recipients whose send has not ended yet
+   * Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed over
    */
   pendingCount: number;
+  /**
+   * Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the broadcast is cancelled.
+   */
+  cancelledCount: number;
   /**
    * Recipients that opened the email; null on a Channel that cannot tell
    */
@@ -1027,6 +1031,10 @@ export type BroadcastResource = {
    */
   recipients?: number;
   /**
+   * The recipients Cancel left unsent: those with no message when it landed (ADR 0150). A message already handed to the provider goes out and is not counted. Answered by Cancel only.
+   */
+  unsent?: number;
+  /**
    * When the broadcast finished sending
    */
   sentAt?: Timestamp | null;
@@ -1060,7 +1068,8 @@ export const BroadcastStatus = {
   SCHEDULED: 'scheduled',
   SENDING: 'sending',
   SENT: 'sent',
-  FAILED: 'failed'
+  FAILED: 'failed',
+  CANCELLED: 'cancelled'
 } as const;
 
 /**
@@ -7085,6 +7094,41 @@ export type BroadcastsArchiveResponses = {
 };
 
 export type BroadcastsArchiveResponse = BroadcastsArchiveResponses[keyof BroadcastsArchiveResponses];
+
+export type BroadcastsCancelData = {
+  body?: never;
+  path: {
+    /**
+     * Unique identifier
+     */
+    id: EntityId;
+  };
+  query?: never;
+  url: '/broadcasts/{id}/cancel';
+};
+
+export type BroadcastsCancelErrors = {
+  /**
+   * The answer of every request a surface refuses or fails (RFC 7807), whatever its status: the
+   * status is the response's and the body's `status`, and `code` tells apart the answers a client
+   * branches on. A 429 (a rate limit, ADR 0025) and a 503 also carry `Retry-After` and, for the
+   * rate limit, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset`; the body's
+   * `retryAfter` is the wait for a client that reads only the body. Every operation declares it,
+   * as the `default` response (ADR 0103).
+   */
+  default: ProblemDetails;
+};
+
+export type BroadcastsCancelError = BroadcastsCancelErrors[keyof BroadcastsCancelErrors];
+
+export type BroadcastsCancelResponses = {
+  /**
+   * The request has succeeded.
+   */
+  200: BroadcastResource;
+};
+
+export type BroadcastsCancelResponse = BroadcastsCancelResponses[keyof BroadcastsCancelResponses];
 
 export type BroadcastsReportData = {
   body?: never;

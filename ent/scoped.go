@@ -12128,6 +12128,24 @@ func (x *BroadcastScopedCreate) SetNillableFailedAt(v *time.Time) *BroadcastScop
 
 const RoleOf_BroadcastScopedCreate_SetNillableFailedAt = RoleStep
 
+// SetCancelledAt sets the "cancelled_at" field.
+func (x *BroadcastScopedCreate) SetCancelledAt(v time.Time) *BroadcastScopedCreate {
+	x.set = append(x.set, func(b *BroadcastCreate) { b.SetCancelledAt(v) })
+	return x
+}
+
+const RoleOf_BroadcastScopedCreate_SetCancelledAt = RoleStep
+
+// SetNillableCancelledAt sets the "cancelled_at" field if the given value is not nil.
+func (x *BroadcastScopedCreate) SetNillableCancelledAt(v *time.Time) *BroadcastScopedCreate {
+	if v != nil {
+		x.SetCancelledAt(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastScopedCreate_SetNillableCancelledAt = RoleStep
+
 // SetHoldReason sets the "hold_reason" field.
 func (x *BroadcastScopedCreate) SetHoldReason(v holdreason.Reason) *BroadcastScopedCreate {
 	x.set = append(x.set, func(b *BroadcastCreate) { b.SetHoldReason(v) })
@@ -12834,6 +12852,30 @@ func (u *BroadcastScopedUpsert) ClearFailedAt() *BroadcastScopedUpsert {
 }
 
 const RoleOf_BroadcastScopedUpsert_ClearFailedAt = RoleStep
+
+// SetCancelledAt sets the "cancelled_at" field.
+func (u *BroadcastScopedUpsert) SetCancelledAt(v time.Time) *BroadcastScopedUpsert {
+	u.u.Set(broadcast.FieldCancelledAt, v)
+	return u
+}
+
+const RoleOf_BroadcastScopedUpsert_SetCancelledAt = RoleStep
+
+// UpdateCancelledAt sets the "cancelled_at" field to the value that was provided on create.
+func (u *BroadcastScopedUpsert) UpdateCancelledAt() *BroadcastScopedUpsert {
+	u.u.SetExcluded(broadcast.FieldCancelledAt)
+	return u
+}
+
+const RoleOf_BroadcastScopedUpsert_UpdateCancelledAt = RoleStep
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (u *BroadcastScopedUpsert) ClearCancelledAt() *BroadcastScopedUpsert {
+	u.u.SetNull(broadcast.FieldCancelledAt)
+	return u
+}
+
+const RoleOf_BroadcastScopedUpsert_ClearCancelledAt = RoleStep
 
 // SetHoldReason sets the "hold_reason" field.
 func (u *BroadcastScopedUpsert) SetHoldReason(v holdreason.Reason) *BroadcastScopedUpsert {
@@ -13711,6 +13753,32 @@ func (x *BroadcastScopedUpdateOne) ClearFailedAt() *BroadcastScopedUpdateOne {
 
 const RoleOf_BroadcastScopedUpdateOne_ClearFailedAt = RoleStep
 
+// SetCancelledAt sets the "cancelled_at" field.
+func (x *BroadcastScopedUpdateOne) SetCancelledAt(v time.Time) *BroadcastScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.SetCancelledAt(v) })
+	return x
+}
+
+const RoleOf_BroadcastScopedUpdateOne_SetCancelledAt = RoleStep
+
+// SetNillableCancelledAt sets the "cancelled_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdateOne) SetNillableCancelledAt(v *time.Time) *BroadcastScopedUpdateOne {
+	if v != nil {
+		x.SetCancelledAt(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastScopedUpdateOne_SetNillableCancelledAt = RoleStep
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (x *BroadcastScopedUpdateOne) ClearCancelledAt() *BroadcastScopedUpdateOne {
+	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.ClearCancelledAt() })
+	return x
+}
+
+const RoleOf_BroadcastScopedUpdateOne_ClearCancelledAt = RoleStep
+
 // SetHoldReason sets the "hold_reason" field.
 func (x *BroadcastScopedUpdateOne) SetHoldReason(v holdreason.Reason) *BroadcastScopedUpdateOne {
 	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.SetHoldReason(v) })
@@ -14494,6 +14562,32 @@ func (x *BroadcastScopedUpdate) ClearFailedAt() *BroadcastScopedUpdate {
 }
 
 const RoleOf_BroadcastScopedUpdate_ClearFailedAt = RoleStep
+
+// SetCancelledAt sets the "cancelled_at" field.
+func (x *BroadcastScopedUpdate) SetCancelledAt(v time.Time) *BroadcastScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastUpdate) { b.SetCancelledAt(v) })
+	return x
+}
+
+const RoleOf_BroadcastScopedUpdate_SetCancelledAt = RoleStep
+
+// SetNillableCancelledAt sets the "cancelled_at" field if the given value is not nil.
+func (x *BroadcastScopedUpdate) SetNillableCancelledAt(v *time.Time) *BroadcastScopedUpdate {
+	if v != nil {
+		x.SetCancelledAt(*v)
+	}
+	return x
+}
+
+const RoleOf_BroadcastScopedUpdate_SetNillableCancelledAt = RoleStep
+
+// ClearCancelledAt clears the value of the "cancelled_at" field.
+func (x *BroadcastScopedUpdate) ClearCancelledAt() *BroadcastScopedUpdate {
+	x.set = append(x.set, func(b *BroadcastUpdate) { b.ClearCancelledAt() })
+	return x
+}
+
+const RoleOf_BroadcastScopedUpdate_ClearCancelledAt = RoleStep
 
 // SetHoldReason sets the "hold_reason" field.
 func (x *BroadcastScopedUpdate) SetHoldReason(v holdreason.Reason) *BroadcastScopedUpdate {

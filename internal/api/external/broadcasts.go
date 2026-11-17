@@ -120,6 +120,19 @@ func (h *Handlers) BroadcastsUnschedule(ctx context.Context, params externalapi.
 	return &res, nil
 }
 
+// BroadcastsCancel ends a sending broadcast (ADR 0150) and answers it with the recipients it left
+// unsent. It only narrows reach, so it is authoring (broadcasts:write), not send-class: a token, or
+// a Connection without mcp:send, that cannot send can still stop a send.
+func (h *Handlers) BroadcastsCancel(ctx context.Context, params externalapi.BroadcastsCancelParams) (*externalapi.BroadcastResource, error) {
+	cancelled, err := h.broadcasts.Cancel(ctx, auth.TokenScoped(ctx), int64(params.ID))
+	if err != nil {
+		return nil, err
+	}
+	res := mapper.BroadcastToResource(cancelled.Broadcast)
+	res.Unsent = externalapi.NewOptInt32(narrow.Int32(cancelled.Unsent))
+	return &res, nil
+}
+
 // BroadcastsTestSend renders the broadcast with sample merge data and sends it to
 // one address: no recipient rows, no tracking, never the audience. A token is no User, so the
 // Test send never goes from the System sender. A Connection without mcp:send sends it only to its

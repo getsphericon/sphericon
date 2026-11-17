@@ -691,6 +691,7 @@ func (c *ConverterImpl) BroadcastStatsToResource(source broadcasts.Figures) site
 	siteapiSiteBroadcastStats.SkippedCount = count(source.Skipped)
 	siteapiSiteBroadcastStats.FailedCount = count(source.Failed)
 	siteapiSiteBroadcastStats.PendingCount = count(source.Pending)
+	siteapiSiteBroadcastStats.CancelledCount = count(source.Cancelled)
 	siteapiSiteBroadcastStats.OpenedCount = nilInt32(source.Opened)
 	siteapiSiteBroadcastStats.ClickedCount = count(source.Clicked)
 	siteapiSiteBroadcastStats.UnsubscribedCount = count(source.Unsubscribed)
@@ -713,6 +714,8 @@ func (c *ConverterImpl) BroadcastStatusToResource(source broadcast.Status) site.
 	switch source {
 	case broadcast.DefaultStatus:
 		siteapiBroadcastStatus = site.BroadcastStatusDraft
+	case broadcast.StatusCancelled:
+		siteapiBroadcastStatus = site.BroadcastStatusCancelled
 	// Skipped StatusDraft(draft) -> BroadcastStatusDraft(draft) because it duplicates DefaultStatus(draft) -> BroadcastStatusDraft(draft)
 	case broadcast.StatusFailed:
 		siteapiBroadcastStatus = site.BroadcastStatusFailed
@@ -741,6 +744,7 @@ func (c *ConverterImpl) BroadcastToResource(source *ent.Broadcast) site.SiteBroa
 		siteapiSiteBroadcastResource.HoldReason = optNilHoldReason(c, (*source).HoldReason)
 		siteapiSiteBroadcastResource.ScheduledAt = optNilTimestamp((*source).ScheduledAt)
 		// siteapiSiteBroadcastResource.Recipients: ignore
+		// siteapiSiteBroadcastResource.Unsent: ignore
 		siteapiSiteBroadcastResource.SentAt = optNilTimestamp((*source).SentAt)
 		siteapiSiteBroadcastResource.FailedAt = optNilTimestamp((*source).FailedAt)
 		// siteapiSiteBroadcastResource.Stats: ignore

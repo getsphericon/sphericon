@@ -479,6 +479,19 @@ func (m *BroadcastMutation) unchanged(ctx context.Context) (*Broadcast, bool, er
 			return nil, false, nil
 		}
 	}
+	if v, ok := m.CancelledAt(); ok {
+		if row.CancelledAt == nil {
+			return nil, false, nil
+		}
+		if !sameTime(v, *row.CancelledAt) {
+			return nil, false, nil
+		}
+	}
+	if m.CancelledAtCleared() {
+		if row.CancelledAt != nil {
+			return nil, false, nil
+		}
+	}
 	if v, ok := m.HoldReason(); ok {
 		if row.HoldReason == nil {
 			return nil, false, nil

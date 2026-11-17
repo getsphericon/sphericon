@@ -27,6 +27,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/orders"
 	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
@@ -55,6 +56,9 @@ var (
 	// ErrArchived: the Broadcast is archived, so it is read-only to its owner until it is
 	// unarchived (ADR 0100).
 	ErrArchived = validation.Conflict("broadcasts: broadcast is archived", i18n.ErrorsBroadcastArchived)
+	// ErrNotSending: only a sending Broadcast is cancelled (ADR 0150); a draft, a scheduled one and
+	// a finished one (sent, failed, cancelled) are not.
+	ErrNotSending = validation.Conflict("broadcasts: broadcast is not sending", i18n.ErrorsBroadcastNotSending)
 	// ErrNotScheduled: the Broadcast is not scheduled, so there is no schedule to clear.
 	ErrNotScheduled = validation.Refuse("broadcasts: broadcast is not scheduled", i18n.ErrorsBroadcastNotScheduled)
 )
@@ -224,6 +228,46 @@ func (m *Module) Unschedule(ctx context.Context, s *ent.Scoped, id int64) (*ent.
 	return s.Broadcast().Get(ctx, id)
 }
 
+// Cancelled is what Cancel did: the cancelled Broadcast and how many of its Recipients it left
+// unsent.
+type Cancelled struct {
+	Broadcast *ent.Broadcast
+	// Unsent counts the Recipients with no Outbound message when Cancel landed: none is created for
+	// them afterwards. A message already claimed goes out and is not counted.
+	Unsent int
+}
+
+// Cancel ends a sending Broadcast, held or not, in cancelled (ADR 0150): a compare-and-swap on the
+// status alone, which drops its hold reason. From then on no Recipient without an Outbound message
+// gets one: the plan refuses a cancelled Broadcast and stops if the move overtakes it, and a send
+// job's claim or failure is withdrawn once it sees the move (Delivery.SendRecipient). A message
+// claimed before it goes out, since a provider cannot be called back. Anything but a sending
+// Broadcast is ErrNotSending. The Unsent count is read after the move, a moment's count: a claim
+// written before it is not in it, and neither are the rows of a plan the move overtook. The
+// report's cancelled figure, derived from the rows, counts every one that ends unsent.
+func (m *Module) Cancel(ctx context.Context, s *ent.Scoped, id int64) (Cancelled, error) {
+	err := fire(ctx, s, id, triggerCancel, func(u *ent.BroadcastScopedUpdate) {
+		u.SetCancelledAt(m.out.Now()).ClearHoldReason()
+	})
+	if errors.Is(err, lifecycle.ErrInvalidTransition) {
+		return Cancelled{}, fmt.Errorf("%w: %w", ErrNotSending, err)
+	}
+	if err != nil {
+		return Cancelled{}, err
+	}
+	unsent, err := s.BroadcastRecipient().Query().
+		Where(broadcastrecipient.BroadcastID(id), unclaimed()).
+		Count(ctx)
+	if err != nil {
+		return Cancelled{}, err
+	}
+	b, err := m.Get(ctx, s, id)
+	if err != nil {
+		return Cancelled{}, err
+	}
+	return Cancelled{Broadcast: b, Unsent: unsent}, nil
+}
+
 // claim makes a move out of draft or scheduled through the transition table and queues the
 // send job (at `at`, nil for as soon as possible) in the same transaction. The write is a
 // compare-and-swap on the status, so two racing requests cannot both win, and a job that
@@ -296,7 +340,7 @@ var claimable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSchedu
 // --- Authoring (ADR 0016): drafts, Segment, report ---
 
 var (
-	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed) and
+	// ErrNotDraft: the Broadcast is past draft (scheduled, sending, sent, failed, cancelled) and
 	// can no longer be edited or re-targeted through the authoring surface.
 	ErrNotDraft = validation.Conflict("broadcasts: broadcast is not a draft", i18n.ErrorsBroadcastNotDraft)
 	// ErrRevisionChanged: the edit, Send or Schedule was made on a revision the Broadcast has moved
@@ -609,9 +653,9 @@ func (m *Module) SetSegment(ctx context.Context, s *ent.Scoped, id int64, in Set
 
 // archivable is the statuses a Broadcast is archived in: a draft and a finished one. A scheduled
 // or sending Broadcast is work in flight, Live use of itself (ADR 0099).
-var archivable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSent, broadcast.StatusFailed}
+var archivable = []broadcast.Status{broadcast.StatusDraft, broadcast.StatusSent, broadcast.StatusFailed, broadcast.StatusCancelled}
 
-// Archive puts a draft, sent or failed Broadcast aside (ADR 0100) and returns it: it leaves the
+// Archive puts a draft, sent, failed or cancelled Broadcast aside (ADR 0100) and returns it: it leaves the
 // lists for the archived view, its Recipients, report, tracking and figures stay, and it is
 // read-only until unarchived. A Broadcast is never deleted. A scheduled or sending one is
 // ErrNotArchivable. Archiving an archived Broadcast changes nothing. It holds the Workspace's

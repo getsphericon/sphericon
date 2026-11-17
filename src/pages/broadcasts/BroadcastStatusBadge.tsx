@@ -10,6 +10,7 @@ const STATUS_COLORS: Record<BroadcastStatus, string> = {
   sending: 'yellow',
   sent: 'teal',
   failed: 'red',
+  cancelled: 'orange',
 }
 
 // The status of a Broadcast, as the list and the report show it.

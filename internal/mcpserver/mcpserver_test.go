@@ -66,7 +66,7 @@ var (
 		"contacts_upsert_batch", "events_record_batch",
 		"contacts_list", "contacts_create", "contacts_get", "contacts_update", "contacts_delete", "contacts_erase_by", "contacts_export",
 		"broadcasts_list", "broadcasts_create", "broadcasts_get", "broadcasts_update",
-		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive",
+		"broadcasts_set_segment", "broadcasts_test_send", "broadcasts_report", "broadcasts_archive", "broadcasts_unarchive", "broadcasts_cancel",
 		"events_record", "events_actions_list", "whoami", "workspace_get",
 		"custom_fields_list", "custom_fields_update", "sending_domains_list", "sending_domains_create", "sending_domains_get", "sending_domains_update", "sending_domains_delete", "sending_domains_verify", "sending_domains_rates",
 		"tracking_domains_list", "tracking_domains_set", "tracking_domains_verify",
@@ -204,6 +204,23 @@ func TestMCPPublishNeedsMCPSendAndDeactivateDoesNot(t *testing.T) {
 	require.False(t, deactivatedRule.IsError, text(t, deactivatedRule))
 	assert.Contains(t, text(t, deactivatedAutomation), `"status":"inactive"`)
 	assert.Contains(t, text(t, deactivatedRule), `"status":"inactive"`)
+}
+
+// Cancelling a sending Broadcast only narrows reach (ADR 0150): a Connection that cannot send sees
+// the tool and stops the send with the write scope alone, and learns how many were left unsent.
+func TestMCPCancelNeedsNoMCPSend(t *testing.T) {
+	env := testhelper.Setup(t)
+	author := env.MCPClient(t, env.ScopedBearer(t, apitokens.ScopeBroadcastsWrite))
+	listed := listedTools(t, author)
+
+	res := call(t, author, "broadcasts_cancel", map[string]any{"id": testhelper.ID(fixtures.BroadcastSendingID)})
+
+	assert.Contains(t, toolNames(listed), "broadcasts_cancel")
+	require.False(t, res.IsError, text(t, res))
+	assert.Contains(t, text(t, res), `"status":"cancelled"`)
+	assert.Contains(t, text(t, res), `"unsent":0`)
+	status := env.DB.Broadcast.GetX(t.Context(), fixtures.BroadcastSendingID).Status
+	assert.Equal(t, broadcast.StatusCancelled, status)
 }
 
 // Regenerating an Integration's hook key is hidden from agents: the new URL is a secret an

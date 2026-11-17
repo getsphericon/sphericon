@@ -700,6 +700,9 @@ func ScopedEntities() []*ScopedEntity {
 				if src.FailedAt != nil {
 					b.SetFailedAt(*src.FailedAt)
 				}
+				if src.CancelledAt != nil {
+					b.SetCancelledAt(*src.CancelledAt)
+				}
 				if src.HoldReason != nil {
 					b.SetHoldReason(*src.HoldReason)
 				}

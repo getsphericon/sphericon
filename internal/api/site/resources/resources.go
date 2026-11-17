@@ -308,6 +308,8 @@ type Converter interface {
 	// goverter:ignore Warnings
 	// Recipients are counted by Schedule (ADR 0149): the handler attaches them to its answer.
 	// goverter:ignore Recipients
+	// The unsent are counted by Cancel (ADR 0150): the handler attaches them to its answer.
+	// goverter:ignore Unsent
 	// goverter:map . Content | broadcastContent
 	BroadcastToResource(source *ent.Broadcast) siteapi.SiteBroadcastResource
 	// The email content of an email Broadcast, the arm of its content that broadcastContent wraps.
@@ -327,6 +329,7 @@ type Converter interface {
 	// goverter:map Clicked ClickedCount
 	// goverter:map Unsubscribed UnsubscribedCount
 	// goverter:map Failed FailedCount
+	// goverter:map Cancelled CancelledCount
 	// goverter:map Delivered DeliveredCount
 	// goverter:map Undelivered UndeliveredCount
 	// goverter:map Bounced BouncedCount

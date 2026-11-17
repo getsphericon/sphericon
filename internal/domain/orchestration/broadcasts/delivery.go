@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/broadcast"
 	"github.com/getsphericon/sphericon/ent/broadcastrecipient"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
@@ -53,7 +54,8 @@ func NewDelivery(out *outboundmessages.Module, sched Scheduler) *Delivery {
 // SendRecipient hands one recipient's email to Outbound send, then settles the Broadcast if
 // that was its last pending recipient. It is idempotent: a recipient already decided is left
 // alone (a stale job is just that), and the Outbound idempotency key makes a retry after a
-// committed send replay the recorded result.
+// committed send replay the recorded result. A recipient of a cancelled Broadcast that has no
+// message gets none (ADR 0150): the job is done, and a claim that raced Cancel is withdrawn.
 //
 // A returned error is for the job to retry (DeliverRecipient reads it): *HeldError (the source is on hold),
 // *DeferredError (a send limit is spent), outboundmessages.ErrInProgress (a live claim) or a
@@ -84,6 +86,9 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	if err != nil {
 		return fmt.Errorf("load broadcast %d: %w", rec.BroadcastID, err)
 	}
+	if stopped, err := cancelledBefore(ctx, s, b, rec); err != nil || stopped {
+		return err
+	}
 	c, err := s.Contact().Get(ctx, rec.ContactID)
 	if ent.IsNotFound(err) {
 		return nil // the Contact was erased (ADR 0021): never send to it
@@ -102,6 +107,7 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	if err != nil {
 		return err
 	}
+	req.Stopped = cancelledAt(b.ID)
 	res, err := d.out.Send(ctx, s, req)
 	if err != nil {
 		return err
@@ -112,6 +118,43 @@ func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.Broadcas
 	return d.settle(ctx, s, rec, res)
 }
 
+// cancelledBefore reports whether the recipient's Broadcast b was cancelled before anything was
+// claimed for it (ADR 0150): no message is created for it, sent or failed. A claim written before
+// Cancel goes on, so a recipient that has one is not stopped here. It reads b as loaded: a Cancel
+// that lands after it is caught at the claim (Request.Stopped).
+func cancelledBefore(ctx context.Context, s *ent.Scoped, b *ent.Broadcast, rec *ent.BroadcastRecipient) (bool, error) {
+	if b.Status != broadcast.StatusCancelled {
+		return false, nil
+	}
+	none, err := s.BroadcastRecipient().Query().Where(broadcastrecipient.ID(rec.ID), unclaimed()).Exist(ctx)
+	if err != nil {
+		return false, fmt.Errorf("read recipient %d: %w", rec.ID, err)
+	}
+	return none, nil
+}
+
+// cancelledAt is the question a recipient's message asks of Broadcast id once its row is written
+// (Request.Stopped, outboundmessages.Failure.Stopped): when it was cancelled, nil while it is not,
+// so a write that raced Cancel loses.
+func cancelledAt(id int64) outboundmessages.SourceStop {
+	return func(ctx context.Context, s *ent.Scoped) (*time.Time, error) {
+		b, err := s.Broadcast().Query().Where(broadcast.ID(id)).Select(broadcast.FieldStatus, broadcast.FieldCancelledAt).Only(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("read broadcast %d: %w", id, err)
+		}
+		if b.Status != broadcast.StatusCancelled {
+			return nil, nil
+		}
+		return b.CancelledAt, nil
+	}
+}
+
+// stillSending reports whether Broadcast id still sends: the question the plan asks once its rows
+// are written, so a plan that Cancel overtook schedules nothing.
+func stillSending(ctx context.Context, s *ent.Scoped, id int64) (bool, error) {
+	return s.Broadcast().Query().Where(broadcast.ID(id), broadcast.StatusEQ(broadcast.StatusSending)).Exist(ctx)
+}
+
 // errNoEmail is the reason of a recipient whose Contact has no address to send to.
 var errNoEmail = errors.New("contact has no email")
 
@@ -119,7 +162,7 @@ var errNoEmail = errors.New("contact has no email")
 // send that already went out stays sent). outboundmessages.ErrInProgress is a live claim: the caller
 // waits and asks again.
 func (d *Delivery) fail(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient, cause error) error {
-	res, err := d.out.FailRecipient(ctx, s, rec, cause)
+	res, err := d.out.FailRecipient(ctx, s, outboundmessages.Failure{Recipient: rec, Cause: cause, Stopped: cancelledAt(rec.BroadcastID)})
 	if err != nil {
 		return err
 	}
@@ -188,6 +231,13 @@ func (d *Delivery) giveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	if err != nil {
 		return err
 	}
+	b, err := s.Broadcast().Get(ctx, rec.BroadcastID)
+	if err != nil {
+		return fmt.Errorf("load broadcast %d: %w", rec.BroadcastID, err)
+	}
+	if stopped, err := cancelledBefore(ctx, s, b, rec); err != nil || stopped {
+		return err
+	}
 	if err := d.fail(ctx, s, rec, cause); err != nil {
 		return err
 	}
@@ -196,10 +246,15 @@ func (d *Delivery) giveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 
 // setHold records why a Broadcast is held: the reason Outbound send held it for, a
 // Workspace-level one (holds.Reason*) or one of its source's own (outboundmessages.Hold*). The update
-// refuses a reason the column does not declare. With clearHold it is the only writer of the hold
-// reason.
+// refuses a reason the column does not declare. A cancelled Broadcast is held by nothing: a job
+// that saw the hold before Cancel writes no reason after it. With clearHold it is the only writer
+// of the hold reason.
 func setHold(ctx context.Context, s *ent.Scoped, broadcastID int64, reason holdreason.Reason) error {
-	return s.Broadcast().UpdateOneID(broadcastID).SetHoldReason(reason).Exec(ctx)
+	_, err := s.Broadcast().Update().
+		Where(broadcast.ID(broadcastID), broadcast.StatusNEQ(broadcast.StatusCancelled)).
+		SetHoldReason(reason).
+		Save(ctx)
+	return err
 }
 
 // clearHold records that a Broadcast is no longer held.

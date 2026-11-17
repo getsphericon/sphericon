@@ -25,6 +25,7 @@ const (
 	triggerResume     trigger = "resume"     // scheduled -> sending; a re-run of sending converges (a queued job)
 	triggerFinalize   trigger = "finalize"   // sending -> sent
 	triggerFail       trigger = "fail"       // sending -> failed
+	triggerCancel     trigger = "cancel"     // sending -> cancelled (ADR 0150)
 )
 
 // update is the extra columns a move writes together with the status.
@@ -35,7 +36,9 @@ type update func(*ent.BroadcastScopedUpdate)
 // (draft, scheduled) and, as a convergent re-plan, while sending; from sent or failed it is
 // an invalid transition, so a late or retried job cannot regress a finished Broadcast. Resume
 // is the plan of a queued job, enqueued after the claim: it is not legal from draft, so an
-// unschedule that lands after the job was queued is not undone by it.
+// unschedule that lands after the job was queued is not undone by it. Cancel ends a sending
+// Broadcast, held or not, in cancelled (ADR 0150), final like sent and failed: a plan or a
+// finalize that lands after it is refused, so a job queued before it cannot revive the send.
 func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 	m := lifecycle.New(lifecycle.Storage[broadcast.Status]{
 		Read: func(ctx context.Context) (broadcast.Status, error) {
@@ -76,9 +79,11 @@ func machine(s *ent.Scoped, id int64, set update) *stateless.StateMachine {
 		PermitReentry(triggerPlan).
 		PermitReentry(triggerResume).
 		Permit(triggerFinalize, broadcast.StatusSent).
-		Permit(triggerFail, broadcast.StatusFailed)
+		Permit(triggerFail, broadcast.StatusFailed).
+		Permit(triggerCancel, broadcast.StatusCancelled)
 	m.Configure(broadcast.StatusSent)
 	m.Configure(broadcast.StatusFailed)
+	m.Configure(broadcast.StatusCancelled)
 	return m
 }
 

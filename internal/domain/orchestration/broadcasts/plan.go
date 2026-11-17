@@ -18,6 +18,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/db"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/emailrender"
+	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
 	"github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -189,6 +190,17 @@ func (d *Delivery) plan(ctx context.Context, s *ent.Scoped, id int64, t trigger)
 		IDs(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// A Cancel that landed while the rows were written stops the plan here (ADR 0150): nothing is
+	// paced or scheduled, and the rows read as cancelled. Asked after the rows are written, as a
+	// claim asks, so a Cancel that misses them in its count is seen here.
+	live, err := stillSending(ctx, s, b.ID)
+	if err != nil {
+		return nil, fmt.Errorf("read broadcast %d: %w", b.ID, err)
+	}
+	if !live {
+		return nil, fmt.Errorf("%w: broadcast %d was cancelled while it was planned", lifecycle.ErrInvalidTransition, b.ID)
 	}
 
 	if len(ids) == 0 {

@@ -52,6 +52,7 @@ const (
 	SiteBrandKitSaveOperation                          OperationName = "SiteBrandKitSave"
 	SiteBroadcastLinksListOperation                    OperationName = "SiteBroadcastLinksList"
 	SiteBroadcastsArchiveOperation                     OperationName = "SiteBroadcastsArchive"
+	SiteBroadcastsCancelOperation                      OperationName = "SiteBroadcastsCancel"
 	SiteBroadcastsCreateOperation                      OperationName = "SiteBroadcastsCreate"
 	SiteBroadcastsGetOperation                         OperationName = "SiteBroadcastsGet"
 	SiteBroadcastsListOperation                        OperationName = "SiteBroadcastsList"

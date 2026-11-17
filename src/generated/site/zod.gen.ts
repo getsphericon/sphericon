@@ -290,7 +290,8 @@ export const zBroadcastStatus = z.enum([
   'scheduled',
   'sending',
   'sent',
-  'failed'
+  'failed',
+  'cancelled'
 ]);
 
 /**
@@ -1564,6 +1565,7 @@ export const zSiteBroadcastStats = z.object({
   skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  cancelledCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
   clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -3195,6 +3197,7 @@ export const zSiteBroadcastResource = z.object({
   holdReason: z.exactOptional(zHoldReason.nullable()),
   scheduledAt: z.exactOptional(zTimestamp.nullable()),
   recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  unsent: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
   sentAt: z.exactOptional(zTimestamp.nullable()),
   failedAt: z.exactOptional(zTimestamp.nullable()),
   stats: zSiteBroadcastStats,
@@ -5514,6 +5517,16 @@ export const zSiteBroadcastsArchivePath = z.object({
  * The request has succeeded.
  */
 export const zSiteBroadcastsArchiveResponse = zSiteBroadcastResource;
+
+export const zSiteBroadcastsCancelPath = z.object({
+  workspaceId: zWorkspaceId,
+  id: zEntityId
+});
+
+/**
+ * The request has succeeded.
+ */
+export const zSiteBroadcastsCancelResponse = zSiteBroadcastResource;
 
 export const zSiteBroadcastsScheduleBody = zScheduleBroadcastInput;
 

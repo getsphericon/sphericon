@@ -76,6 +76,8 @@ type Broadcast struct {
 	SentAt *time.Time `json:"sent_at,omitempty"`
 	// FailedAt holds the value of the "failed_at" field.
 	FailedAt *time.Time `json:"failed_at,omitempty"`
+	// CancelledAt holds the value of the "cancelled_at" field.
+	CancelledAt *time.Time `json:"cancelled_at,omitempty"`
 	// HoldReason holds the value of the "hold_reason" field.
 	HoldReason *holdreason.Reason `json:"hold_reason,omitempty"`
 	// LastScheduledAt holds the value of the "last_scheduled_at" field.
@@ -167,7 +169,7 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldText, broadcast.FieldImageURL, broadcast.FieldUnsubscribeButton, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
-		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldArchivedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldLastScheduledAt:
+		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldArchivedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldCancelledAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -365,6 +367,13 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 				_m.FailedAt = new(time.Time)
 				*_m.FailedAt = value.Time
 			}
+		case broadcast.FieldCancelledAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field cancelled_at", values[i])
+			} else if value.Valid {
+				_m.CancelledAt = new(time.Time)
+				*_m.CancelledAt = value.Time
+			}
 		case broadcast.FieldHoldReason:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hold_reason", values[i])
@@ -545,6 +554,11 @@ func (_m *Broadcast) String() string {
 	builder.WriteString(", ")
 	if v := _m.FailedAt; v != nil {
 		builder.WriteString("failed_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.CancelledAt; v != nil {
+		builder.WriteString("cancelled_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

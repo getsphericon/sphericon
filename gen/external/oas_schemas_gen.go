@@ -3377,8 +3377,12 @@ type BroadcastReport struct {
 	SkippedCount int32 `json:"skippedCount"`
 	// Messages that failed to send.
 	FailedCount int32 `json:"failedCount"`
-	// Recipients whose send has not ended yet.
+	// Recipients whose send has not ended yet; none on a cancelled broadcast but a message already handed
+	// over.
 	PendingCount int32 `json:"pendingCount"`
+	// Recipients a Cancel left unsent: no message was created for them (ADR 0150). Zero unless the
+	// broadcast is cancelled.
+	CancelledCount int32 `json:"cancelledCount"`
 	// Recipients that opened the email; null on a Channel that cannot tell.
 	OpenedCount NilInt32 `json:"openedCount"`
 	// Recipients that clicked a link.
@@ -3439,6 +3443,11 @@ func (s *BroadcastReport) GetFailedCount() int32 {
 // GetPendingCount returns the value of PendingCount.
 func (s *BroadcastReport) GetPendingCount() int32 {
 	return s.PendingCount
+}
+
+// GetCancelledCount returns the value of CancelledCount.
+func (s *BroadcastReport) GetCancelledCount() int32 {
+	return s.CancelledCount
 }
 
 // GetOpenedCount returns the value of OpenedCount.
@@ -3526,6 +3535,11 @@ func (s *BroadcastReport) SetPendingCount(val int32) {
 	s.PendingCount = val
 }
 
+// SetCancelledCount sets the value of CancelledCount.
+func (s *BroadcastReport) SetCancelledCount(val int32) {
+	s.CancelledCount = val
+}
+
 // SetOpenedCount sets the value of OpenedCount.
 func (s *BroadcastReport) SetOpenedCount(val NilInt32) {
 	s.OpenedCount = val
@@ -3600,6 +3614,9 @@ type BroadcastResource struct {
 	// Schedule only. It is the count at Schedule, not a promise: recipients are resolved at send time from
 	// the condition copied then (ADR 0065).
 	Recipients OptInt32 `json:"recipients"`
+	// The recipients Cancel left unsent: those with no message when it landed (ADR 0150). A message
+	// already handed to the provider goes out and is not counted. Answered by Cancel only.
+	Unsent OptInt32 `json:"unsent"`
 	// When the broadcast finished sending.
 	SentAt OptNilTimestamp `json:"sentAt"`
 	// When the broadcast failed.
@@ -3654,6 +3671,11 @@ func (s *BroadcastResource) GetScheduledAt() OptNilTimestamp {
 // GetRecipients returns the value of Recipients.
 func (s *BroadcastResource) GetRecipients() OptInt32 {
 	return s.Recipients
+}
+
+// GetUnsent returns the value of Unsent.
+func (s *BroadcastResource) GetUnsent() OptInt32 {
+	return s.Unsent
 }
 
 // GetSentAt returns the value of SentAt.
@@ -3726,6 +3748,11 @@ func (s *BroadcastResource) SetRecipients(val OptInt32) {
 	s.Recipients = val
 }
 
+// SetUnsent sets the value of Unsent.
+func (s *BroadcastResource) SetUnsent(val OptInt32) {
+	s.Unsent = val
+}
+
 // SetSentAt sets the value of SentAt.
 func (s *BroadcastResource) SetSentAt(val OptNilTimestamp) {
 	s.SentAt = val
@@ -3766,6 +3793,7 @@ const (
 	BroadcastStatusSending   BroadcastStatus = "sending"
 	BroadcastStatusSent      BroadcastStatus = "sent"
 	BroadcastStatusFailed    BroadcastStatus = "failed"
+	BroadcastStatusCancelled BroadcastStatus = "cancelled"
 )
 
 // AllValues returns all BroadcastStatus values.
@@ -3776,6 +3804,7 @@ func (BroadcastStatus) AllValues() []BroadcastStatus {
 		BroadcastStatusSending,
 		BroadcastStatusSent,
 		BroadcastStatusFailed,
+		BroadcastStatusCancelled,
 	}
 }
 
@@ -3791,6 +3820,8 @@ func (s BroadcastStatus) MarshalText() ([]byte, error) {
 	case BroadcastStatusSent:
 		return []byte(s), nil
 	case BroadcastStatusFailed:
+		return []byte(s), nil
+	case BroadcastStatusCancelled:
 		return []byte(s), nil
 	default:
 		return nil, errors.Errorf("invalid value: %q", s)
@@ -3814,6 +3845,9 @@ func (s *BroadcastStatus) UnmarshalText(data []byte) error {
 		return nil
 	case BroadcastStatusFailed:
 		*s = BroadcastStatusFailed
+		return nil
+	case BroadcastStatusCancelled:
+		*s = BroadcastStatusCancelled
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import {
   handleSiteBroadcastLinksList,
+  handleSiteBroadcastsCancel,
   handleSiteBroadcastsGet,
   handleSiteSegmentsGet,
 } from '../../generated/site/msw.gen.ts'
@@ -24,6 +25,7 @@ const STATS = {
   sentCount: 190,
   skippedCount: 4,
   pendingCount: 0,
+  cancelledCount: 0,
   openedCount: 80,
   clickedCount: 20,
   unsubscribedCount: 3,
@@ -134,6 +136,57 @@ test('shows the provider_refused hold of a Telegram broadcast', async () => {
   await expect
     .element(screen.getByText(/refused the integration's credentials.*Save the integration again/))
     .toBeInTheDocument()
+})
+
+// Cancel cannot be undone (ADR 0150): the confirmation names how many have not been sent yet and
+// that sent mail cannot be recalled, and the toast how many the cancel left unsent.
+test('cancels a sending broadcast after a confirmation that names the unsent', async () => {
+  const cancelled: unknown[] = []
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({ ...BROADCAST, status: 'sending', stats: { ...STATS, pendingCount: 42 } }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+    handleSiteBroadcastsCancel(({ params }) => {
+      cancelled.push(params.id)
+      return HttpResponse.json({ ...BROADCAST, status: 'cancelled', unsent: 41 })
+    }),
+  )
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await screen.getByRole('button', { name: 'Cancel sending' }).click()
+  const dialog = screen.getByRole('dialog')
+  await expect
+    .element(dialog.getByText(/42 recipients have not been sent it yet.*cannot be recalled/))
+    .toBeVisible()
+  await dialog.getByRole('button', { name: 'Cancel broadcast' }).click()
+
+  await expect.poll(() => cancelled).toEqual([testId(5)])
+  await expect
+    .element(screen.getByText('Broadcast cancelled: 41 recipients left unsent'))
+    .toBeInTheDocument()
+})
+
+// A cancelled broadcast shows how many it left unsent, and no Cancel.
+test('a cancelled broadcast shows its cancelled figure', async () => {
+  worker.use(
+    handleSiteBroadcastsGet(() =>
+      HttpResponse.json({
+        ...BROADCAST,
+        status: 'cancelled',
+        stats: { ...STATS, cancelledCount: 37 },
+      }),
+    ),
+    handleSiteBroadcastLinksList(() => HttpResponse.json({ items: [] })),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastReportPage />, REPORT_ROUTE)
+
+  await expect.element(screen.getByText('Cancelled', { exact: true }).first()).toBeInTheDocument()
+  await expect.element(screen.getByText('37', { exact: true })).toBeInTheDocument()
+  await expect
+    .element(screen.getByRole('button', { name: 'Cancel sending' }))
+    .not.toBeInTheDocument()
 })
 
 test('shows an error alert when the broadcast fails to load', async () => {

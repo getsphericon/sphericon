@@ -501,10 +501,11 @@ var (
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
 		{Name: "condition", Type: field.TypeString, Nullable: true},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed"}, Default: "draft"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed", "cancelled"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
 		{Name: "failed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "cancelled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "hold_reason", Type: field.TypeEnum, Nullable: true, Enums: []string{"workspace_suspended", "workspace_pending_deletion", "staff_hold", "no_integration", "unverified_domain", "provider_stopped", "provider_refused"}},
 		{Name: "last_scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "segment_id", Type: field.TypeInt64, Nullable: true},
@@ -519,19 +520,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "broadcasts_segments_segment",
-				Columns:    []*schema.Column{BroadcastsColumns[26]},
+				Columns:    []*schema.Column{BroadcastsColumns[27]},
 				RefColumns: []*schema.Column{SegmentsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_integrations_integration",
-				Columns:    []*schema.Column{BroadcastsColumns[27]},
+				Columns:    []*schema.Column{BroadcastsColumns[28]},
 				RefColumns: []*schema.Column{IntegrationsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "broadcasts_workspaces_broadcasts",
-				Columns:    []*schema.Column{BroadcastsColumns[28]},
+				Columns:    []*schema.Column{BroadcastsColumns[29]},
 				RefColumns: []*schema.Column{WorkspacesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -540,12 +541,12 @@ var (
 			{
 				Name:    "broadcast_workspace_id_segment_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[28], BroadcastsColumns[26]},
+				Columns: []*schema.Column{BroadcastsColumns[29], BroadcastsColumns[27]},
 			},
 			{
 				Name:    "broadcast_workspace_id_integration_id",
 				Unique:  false,
-				Columns: []*schema.Column{BroadcastsColumns[28], BroadcastsColumns[27]},
+				Columns: []*schema.Column{BroadcastsColumns[29], BroadcastsColumns[28]},
 			},
 		},
 	}
@@ -3488,6 +3489,7 @@ func init() {
 		Table: "broadcasts",
 	}
 	BroadcastsTable.Annotation.Checks = map[string]string{
+		"broadcasts_cancelled_at_check": "status <> 'cancelled' OR cancelled_at IS NOT NULL",
 		"broadcasts_channel_check":      "channel IN ('email', 'telegram', 'sms')",
 		"broadcasts_condition_check":    "condition = '' OR condition IS JSON OBJECT",
 		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL) OR (channel = 'sms' AND text IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL)",
@@ -3495,7 +3497,7 @@ func init() {
 		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped', 'provider_refused')",
 		"broadcasts_scheduled_at_check": "status <> 'scheduled' OR scheduled_at IS NOT NULL",
 		"broadcasts_sent_at_check":      "status <> 'sent' OR sent_at IS NOT NULL",
-		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed')",
+		"broadcasts_status_check":       "status IN ('draft', 'scheduled', 'sending', 'sent', 'failed', 'cancelled')",
 	}
 	BroadcastFiguresTable.ForeignKeys[0].RefTable = BroadcastsTable
 	BroadcastFiguresTable.ForeignKeys[1].RefTable = WorkspacesTable

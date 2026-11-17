@@ -47,8 +47,9 @@ test('lists broadcasts with status, hold badge and counters', async () => {
 
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
   await expect.element(screen.getByText('Autumn digest')).toBeInTheDocument()
-  await expect.element(screen.getByText('Draft')).toBeInTheDocument()
-  await expect.element(screen.getByText('Sending', { exact: true })).toBeInTheDocument()
+  const table = screen.getByRole('table')
+  await expect.element(table.getByText('Draft')).toBeInTheDocument()
+  await expect.element(table.getByText('Sending', { exact: true })).toBeInTheDocument()
   await expect.element(screen.getByText('On hold')).toBeInTheDocument()
   await expect.element(screen.getByText('45').first()).toBeInTheDocument()
   await expect.element(screen.getByText('$1,234.56').first()).toBeInTheDocument()
@@ -307,4 +308,54 @@ test('a list opened on a Channel asks the API for that Channel only', async () =
 
   await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
   expect(channels).toEqual(['email'])
+})
+
+// The status filter lists every status a broadcast can be in, cancelled included (ADR 0150), and
+// keeps the choice in the URL; a list opened on a status asks the API for it.
+test('the list filters by status through the URL', async () => {
+  const statuses: string[][] = []
+  worker.use(
+    handleSiteBroadcastsList(({ request }) => {
+      statuses.push(new URL(request.url).searchParams.getAll('status'))
+      return HttpResponse.json({ items: [DRAFT], totalItems: 1 })
+    }),
+  )
+
+  const { screen, navigate } = await renderWithRouter(<BroadcastsListPage />, {
+    ...LIST_ROUTE,
+    initialPath: `${LIST_ROUTE.initialPath}?status=sending`,
+  })
+  await expect.element(screen.getByText('Spring launch')).toBeInTheDocument()
+  await screen.getByRole('combobox', { name: 'Status' }).click()
+  await screen.getByRole('option', { name: 'Cancelled' }).click()
+
+  expect(statuses).toEqual([['sending']])
+  expect(navigate).toHaveBeenCalledWith(
+    expect.objectContaining({ search: { status: 'cancelled' }, replace: true }),
+  )
+})
+
+// A cancelled broadcast says in the list how many it left unsent (ADR 0150).
+test('a cancelled broadcast shows how many it left unsent', async () => {
+  worker.use(
+    handleSiteBroadcastsList(() =>
+      HttpResponse.json({
+        items: [
+          {
+            ...HELD,
+            status: 'cancelled',
+            holdReason: null,
+            stats: { ...STATS, cancelledCount: 12 },
+          },
+        ],
+        totalItems: 1,
+      }),
+    ),
+  )
+
+  const { screen } = await renderWithRouter(<BroadcastsListPage />, LIST_ROUTE)
+
+  const table = screen.getByRole('table')
+  await expect.element(table.getByText('Cancelled', { exact: true })).toBeInTheDocument()
+  await expect.element(table.getByText('12 not sent')).toBeInTheDocument()
 })

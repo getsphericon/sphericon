@@ -273,6 +273,8 @@ func (c *InputsImpl) BroadcastSchedule(source *site.ScheduleBroadcastInput) broa
 func (c *InputsImpl) BroadcastStatus(source site.BroadcastStatus) broadcast.Status {
 	var broadcastStatus broadcast.Status
 	switch source {
+	case site.BroadcastStatusCancelled:
+		broadcastStatus = broadcast.StatusCancelled
 	case site.BroadcastStatusDraft:
 		broadcastStatus = broadcast.StatusDraft
 	case site.BroadcastStatusFailed:

@@ -167,6 +167,11 @@ func FailedAt(v time.Time) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldFailedAt, v))
 }
 
+// CancelledAt applies equality check predicate on the "cancelled_at" field. It's identical to CancelledAtEQ.
+func CancelledAt(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldCancelledAt, v))
+}
+
 // LastScheduledAt applies equality check predicate on the "last_scheduled_at" field. It's identical to LastScheduledAtEQ.
 func LastScheduledAt(v time.Time) predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldEQ(FieldLastScheduledAt, v))
@@ -1400,6 +1405,56 @@ func FailedAtIsNil() predicate.Broadcast {
 // FailedAtNotNil applies the NotNil predicate on the "failed_at" field.
 func FailedAtNotNil() predicate.Broadcast {
 	return predicate.Broadcast(sql.FieldNotNull(FieldFailedAt))
+}
+
+// CancelledAtEQ applies the EQ predicate on the "cancelled_at" field.
+func CancelledAtEQ(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldEQ(FieldCancelledAt, v))
+}
+
+// CancelledAtNEQ applies the NEQ predicate on the "cancelled_at" field.
+func CancelledAtNEQ(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNEQ(FieldCancelledAt, v))
+}
+
+// CancelledAtIn applies the In predicate on the "cancelled_at" field.
+func CancelledAtIn(vs ...time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIn(FieldCancelledAt, vs...))
+}
+
+// CancelledAtNotIn applies the NotIn predicate on the "cancelled_at" field.
+func CancelledAtNotIn(vs ...time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotIn(FieldCancelledAt, vs...))
+}
+
+// CancelledAtGT applies the GT predicate on the "cancelled_at" field.
+func CancelledAtGT(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGT(FieldCancelledAt, v))
+}
+
+// CancelledAtGTE applies the GTE predicate on the "cancelled_at" field.
+func CancelledAtGTE(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldGTE(FieldCancelledAt, v))
+}
+
+// CancelledAtLT applies the LT predicate on the "cancelled_at" field.
+func CancelledAtLT(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLT(FieldCancelledAt, v))
+}
+
+// CancelledAtLTE applies the LTE predicate on the "cancelled_at" field.
+func CancelledAtLTE(v time.Time) predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldLTE(FieldCancelledAt, v))
+}
+
+// CancelledAtIsNil applies the IsNil predicate on the "cancelled_at" field.
+func CancelledAtIsNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldIsNull(FieldCancelledAt))
+}
+
+// CancelledAtNotNil applies the NotNil predicate on the "cancelled_at" field.
+func CancelledAtNotNil() predicate.Broadcast {
+	return predicate.Broadcast(sql.FieldNotNull(FieldCancelledAt))
 }
 
 // HoldReasonEQ applies the EQ predicate on the "hold_reason" field.
