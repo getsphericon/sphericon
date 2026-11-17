@@ -223,7 +223,7 @@ func (m *Module) ConfirmEnrollment(ctx context.Context, u *ent.User, in ConfirmI
 	}
 	userID := u.ID
 	var issued *CodesIssued
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -265,7 +265,7 @@ func (m *Module) RegenerateRecoveryCodes(ctx context.Context, u *ent.User, proof
 	}
 	userID := u.ID
 	var issued *CodesIssued
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		before, err := snapshotIn(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -306,7 +306,7 @@ func (m *Module) Disable(ctx context.Context, u *ent.User, in DisableInput) (*en
 	}
 	userID := u.ID
 	var saved *ent.User
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		locked, err := m.users.LockIn(ctx, tx, userID)
 		if err != nil {
 			return err
@@ -346,7 +346,7 @@ func (m *Module) Disable(ctx context.Context, u *ent.User, in DisableInput) (*en
 func (m *Module) Verify(ctx context.Context, pending login.Pending[*ent.User], code string) (Method, error) {
 	binding := pending.Binding
 	var method Method
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
 		u, err := m.users.LockIn(ctx, tx, pending.Principal.ID)
 		if err != nil {
 			return err
