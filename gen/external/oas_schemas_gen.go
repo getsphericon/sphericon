@@ -14228,6 +14228,74 @@ func (o OptNilSendCap) Or(d SendCap) SendCap {
 	return d
 }
 
+// NewOptNilSesConfigurationSetName returns new OptNilSesConfigurationSetName with value set to v.
+func NewOptNilSesConfigurationSetName(v SesConfigurationSetName) OptNilSesConfigurationSetName {
+	return OptNilSesConfigurationSetName{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSesConfigurationSetName is optional nullable SesConfigurationSetName.
+type OptNilSesConfigurationSetName struct {
+	Value SesConfigurationSetName
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSesConfigurationSetName was set.
+func (o OptNilSesConfigurationSetName) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSesConfigurationSetName) Reset() {
+	var v SesConfigurationSetName
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSesConfigurationSetName) SetTo(v SesConfigurationSetName) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSesConfigurationSetName) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSesConfigurationSetName) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SesConfigurationSetName
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSesConfigurationSetName) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSesConfigurationSetName) Get() (v SesConfigurationSetName, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSesConfigurationSetName) Or(d SesConfigurationSetName) SesConfigurationSetName {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSmsConfirmation returns new OptNilSmsConfirmation with value set to v.
 func NewOptNilSmsConfirmation(v SmsConfirmation) OptNilSmsConfirmation {
 	return OptNilSmsConfirmation{
@@ -17713,7 +17781,7 @@ type SesConfig struct {
 	// Last 4 chars of the access key id, for recognition.
 	AccessKeyIdLast4 OptNilString `json:"accessKeyIdLast4"`
 	// The SES configuration set every send names; empty when sends go through the account's default pool.
-	ConfigurationSet OptNilString `json:"configurationSet"`
+	ConfigurationSet OptNilSesConfigurationSetName `json:"configurationSet"`
 	// True when SES said, at the last save, that it has no configuration set of that name: SES refuses
 	// every message that names it, and a refused message is not sent again, until the set exists. False
 	// when no set is named or SES did not answer.
@@ -17751,7 +17819,7 @@ func (s *SesConfig) GetAccessKeyIdLast4() OptNilString {
 }
 
 // GetConfigurationSet returns the value of ConfigurationSet.
-func (s *SesConfig) GetConfigurationSet() OptNilString {
+func (s *SesConfig) GetConfigurationSet() OptNilSesConfigurationSetName {
 	return s.ConfigurationSet
 }
 
@@ -17791,7 +17859,7 @@ func (s *SesConfig) SetAccessKeyIdLast4(val OptNilString) {
 }
 
 // SetConfigurationSet sets the value of ConfigurationSet.
-func (s *SesConfig) SetConfigurationSet(val OptNilString) {
+func (s *SesConfig) SetConfigurationSet(val OptNilSesConfigurationSetName) {
 	s.ConfigurationSet = val
 }
 
@@ -17812,10 +17880,10 @@ type SesConfigInput struct {
 	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
 	Endpoint OptNilString `json:"endpoint"`
 	// The SES configuration set every send through the Integration names, to route it to a dedicated IP
-	// pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's
-	// default pool; an update that omits it clears it. Saving asks SES whether the set exists, best
-	// effort: an unknown set saves with `configurationSetMissing` and is never refused.
-	ConfigurationSet OptNilString `json:"configurationSet"`
+	// pool. Omit or null to send through the account's default pool; an update that omits it clears it.
+	// Saving asks SES whether the set exists, best effort: an unknown set saves with
+	// `configurationSetMissing` and is never refused.
+	ConfigurationSet OptNilSesConfigurationSetName `json:"configurationSet"`
 }
 
 // GetKind returns the value of Kind.
@@ -17854,7 +17922,7 @@ func (s *SesConfigInput) GetEndpoint() OptNilString {
 }
 
 // GetConfigurationSet returns the value of ConfigurationSet.
-func (s *SesConfigInput) GetConfigurationSet() OptNilString {
+func (s *SesConfigInput) GetConfigurationSet() OptNilSesConfigurationSetName {
 	return s.ConfigurationSet
 }
 
@@ -17894,7 +17962,7 @@ func (s *SesConfigInput) SetEndpoint(val OptNilString) {
 }
 
 // SetConfigurationSet sets the value of ConfigurationSet.
-func (s *SesConfigInput) SetConfigurationSet(val OptNilString) {
+func (s *SesConfigInput) SetConfigurationSet(val OptNilSesConfigurationSetName) {
 	s.ConfigurationSet = val
 }
 
@@ -17965,6 +18033,8 @@ func (s *SesConfigKind) UnmarshalText(data []byte) error {
 		return errors.Errorf("invalid value: %q", data)
 	}
 }
+
+type SesConfigurationSetName string
 
 // Request body for setting a broadcast's Segment.
 // Ref: #/components/schemas/SetBroadcastSegmentInput

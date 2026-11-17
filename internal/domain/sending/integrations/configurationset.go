@@ -7,8 +7,26 @@ import (
 
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/ses"
+	"github.com/getsphericon/sphericon/internal/kernel/bounds"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
+
+// fieldConfigurationSet is the field a refusal of an SES configuration set's name is on.
+const fieldConfigurationSet = fieldConfig + ".configurationSet"
+
+// validConfigurationSet refuses a configuration set name the contract does not allow; an empty one
+// names no set.
+func validConfigurationSet(set string) error {
+	if set == "" {
+		return nil
+	}
+	if err := validation.Length(fieldConfigurationSet, set,
+		bounds.SesConfigurationSetMinLength, bounds.SesConfigurationSetMaxLength); err != nil {
+		return err
+	}
+	return validation.Pattern(fieldConfigurationSet, set, bounds.SesConfigurationSetPattern)
+}
 
 // checkConfigurationSet asks SES whether the configuration set an SES config about to be saved
 // names exists, and returns the config with the answer recorded: ConfigurationSetMissing only

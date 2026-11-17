@@ -5,7 +5,7 @@ import type {
   IntegrationProvider,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
-import { zEmailAddress } from '../../generated/site/zod.gen.ts'
+import { zEmailAddress, zSesConfigurationSetName } from '../../generated/site/zod.gen.ts'
 import { NO_LIMITS } from './providerLimit.ts'
 import type { ProviderLimitValues } from './providerLimit.ts'
 
@@ -141,6 +141,16 @@ export function buildConfig(values: IntegrationFormValues): IntegrationConfigInp
   }
 }
 
+// configurationSetError is what is wrong with an SES configuration set's name by the contract's rule,
+// null for a valid name or none: a blank field names no set.
+export function configurationSetError(value: string): string | null {
+  const set = value.trim()
+  if (set === '') {
+    return null
+  }
+  return zSesConfigurationSetName.safeParse(set).error?.issues[0]?.message ?? null
+}
+
 // paramsOf is the params a Twilio account's form sends beside its config: its callbacks are signed
 // with its Auth Token, the `twilio` Preset's param, kept apart from the send credential so either
 // rotates alone. A blank one (saving the credentials again) sends none and keeps the stored one.
@@ -210,6 +220,16 @@ export function credentialsSchema(
         if (values[field].trim() === '') {
           ctx.addIssue({ code: 'custom', path: [field], input: '' })
         }
+      }
+      const setError =
+        variant.kind === 'ses' ? configurationSetError(values.configurationSet) : null
+      if (setError !== null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['configurationSet'],
+          message: setError,
+          input: values.configurationSet,
+        })
       }
       const email = variant.kind === 'smtp' || variant.kind === 'ses'
       const from = values.from.trim()

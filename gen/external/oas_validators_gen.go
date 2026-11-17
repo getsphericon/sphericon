@@ -6313,6 +6313,24 @@ func (s *SesConfig) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.ConfigurationSet.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "configurationSet",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -6347,6 +6365,24 @@ func (s *SesConfigInput) Validate() error {
 			Error: err,
 		})
 	}
+	if err := func() error {
+		if value, ok := s.ConfigurationSet.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "configurationSet",
+			Error: err,
+		})
+	}
 	if len(failures) > 0 {
 		return &validate.Error{Fields: failures}
 	}
@@ -6369,6 +6405,26 @@ func (s SesConfigKind) Validate() error {
 	default:
 		return errors.Errorf("invalid value: %v", s)
 	}
+}
+
+func (s SesConfigurationSetName) Validate() error {
+	alias := (string)(s)
+	if err := (validate.String{
+		MinLength:     1,
+		MinLengthSet:  true,
+		MaxLength:     64,
+		MaxLengthSet:  true,
+		Email:         false,
+		Hostname:      false,
+		Regex:         regexMap["^[A-Za-z0-9_-]+$"],
+		MinNumeric:    0,
+		MinNumericSet: false,
+		MaxNumeric:    0,
+		MaxNumericSet: false,
+	}).Validate(string(alias)); err != nil {
+		return errors.Wrap(err, "string")
+	}
+	return nil
 }
 
 func (s *SetBroadcastSegmentInput) Validate() error {

@@ -455,7 +455,7 @@ func integrationConfigIn(in externalapi.IntegrationConfigInput) (integrations.Co
 		return integrations.ConfigInput{SES: &integrations.SESConfig{
 			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
 			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
-			ConfigurationSet: c.ConfigurationSet.Or(""),
+			ConfigurationSet: string(c.ConfigurationSet.Or("")),
 		}}, nil
 	case externalapi.InboxConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil

@@ -12120,6 +12120,11 @@
           },
           "configurationSet": {
             "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SesConfigurationSetName"
+              }
+            ],
             "nullable": true,
             "description": "The SES configuration set every send names; empty when sends go through the account's default pool"
           },
@@ -12161,12 +12166,24 @@
           },
           "configurationSet": {
             "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SesConfigurationSetName"
+              }
+            ],
             "nullable": true,
-            "description": "The SES configuration set every send through the Integration names, to route it to a dedicated IP pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused"
+            "description": "The SES configuration set every send through the Integration names, to route it to a dedicated IP pool. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused"
           }
         },
         "description": "SES credentials",
         "additionalProperties": false
+      },
+      "SesConfigurationSetName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z0-9_-]+$",
+        "description": "The name of an SES configuration set, as SES names one: letters, digits, hyphens and underscores"
       },
       "SetBroadcastSegmentInput": {
         "type": "object",
