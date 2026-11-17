@@ -51,8 +51,8 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "invalid rule", want: "invalid rule: ", head: len("invalid rule: "),
 			site: func(c *siteapi.Client) error {
-				return refusalOf(c.SiteRulesCreate(t.Context(), &siteapi.SiteCreateRuleInput{Name: "x", TriggerEvents: []string{"signup"},
-					Actions: []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString("  ")}}}, siteapi.SiteRulesCreateParams{WorkspaceId: ws}))
+				return refusalOf(c.SiteRulesCreate(t.Context(), &siteapi.CreateRuleInput{Name: "x", TriggerEvents: []string{"signup"},
+					Actions: []siteapi.RuleActionInput{{Type: siteapi.RuleActionTypeApplyTag, Tag: siteapi.NewOptString("  ")}}}, siteapi.SiteRulesCreateParams{WorkspaceId: ws}))
 			},
 			ext: func(c *externalapi.Client) error {
 				return refusalOf(c.RulesCreate(t.Context(), &externalapi.CreateRuleInput{Name: "x", TriggerEvents: []string{"signup"},
@@ -80,7 +80,7 @@ func TestPairRefusalsReadTheSameOnBothSurfaces(t *testing.T) {
 		{
 			name: "invalid trigger", want: "invalid trigger: ", head: len("invalid trigger: "),
 			site: func(c *siteapi.Client) error {
-				return refusalOf(c.SiteAutomationsCreate(t.Context(), &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: systemevent.EmailSent},
+				return refusalOf(c.SiteAutomationsCreate(t.Context(), &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.EmailSent},
 					siteapi.SiteAutomationsCreateParams{WorkspaceId: ws}))
 			},
 			ext: func(c *externalapi.Client) error {

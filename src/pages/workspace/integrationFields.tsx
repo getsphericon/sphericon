@@ -137,6 +137,13 @@ export function EmailFields({
         required
         {...form.getInputProps('from')}
       />
+      {isSes ? (
+        <TextInput
+          label={t(($) => $.settings.integrations.fields.configurationSet)}
+          description={t(($) => $.settings.integrations.fields.configurationSetHint)}
+          {...form.getInputProps('configurationSet')}
+        />
+      ) : null}
     </>
   )
 }

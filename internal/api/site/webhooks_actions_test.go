@@ -59,7 +59,7 @@ func TestSiteWebhookTestSendReportsTheAnswerAndIsAudited(t *testing.T) {
 	got, err := owner.SiteWebhooksTest(ctx, &siteapi.TestWebhookInput{EventType: systemevent.EmailOpened}, params)
 	require.NoError(t, err)
 	assert.False(t, got.Delivered)
-	assert.Equal(t, siteapi.SiteWebhookErrorKindHTTPStatus, got.Kind.Value)
+	assert.Equal(t, siteapi.WebhookErrorKindHTTPStatus, got.Kind.Value)
 	assert.Equal(t, int32(http.StatusGone), got.Status.Value)
 
 	row, err := env.DB.WebhookEndpoint.Query().Where(webhookendpoint.ID(fixtures.WebhookCodebasicsID)).WithHealth().Only(ctx)

@@ -12,7 +12,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { siteRulesGet, siteRulesUpdate } from '../../generated/site/sdk.gen.ts'
 import type { SiteRuleResource } from '../../generated/site/types.gen.ts'
-import { zSiteUpdateRuleInput } from '../../generated/site/zod.gen.ts'
+import { zUpdateRuleInput } from '../../generated/site/zod.gen.ts'
 import { resourceEditorAdapter, withRevision } from '../../resources/resourceEditor.ts'
 import { editorSessionRaces } from '../../test/editorSessionRaces.ts'
 import type { RaceRig } from '../../test/editorSessionRaces.ts'
@@ -120,7 +120,7 @@ function serve({ refuse }: { refuse: boolean }) {
   worker.use(
     handleSiteRulesGet(() => HttpResponse.json(server)),
     handleSiteRulesUpdate(async ({ request }) => {
-      const { name, ...definition } = zSiteUpdateRuleInput.parse(await request.json())
+      const { name, ...definition } = zUpdateRuleInput.parse(await request.json())
       await gate.hold()
       if (refuse) {
         return problem(422, 'Refused definition')

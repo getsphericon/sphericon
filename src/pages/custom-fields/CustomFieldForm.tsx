@@ -1,14 +1,14 @@
 import { Button, Select, Stack, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import { zSiteCustomFieldType } from '../../generated/site/zod.gen.ts'
+import { zCustomFieldType } from '../../generated/site/zod.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 
 // What a Custom field's edit sends, and what its form holds: its name and its type. Its key never
 // changes.
 export interface CustomFieldPayload {
   name: string
-  type: (typeof zSiteCustomFieldType.options)[number]
+  type: (typeof zCustomFieldType.options)[number]
 }
 export interface CustomFieldValues {
   name: string
@@ -34,7 +34,7 @@ export function CustomFieldForm({
           label={t(($) => $.customFields.typeLabel)}
           description={t(($) => $.customFields.typeHint)}
           allowDeselect={false}
-          data={zSiteCustomFieldType.options.map((type) => ({
+          data={zCustomFieldType.options.map((type) => ({
             value: type,
             label: t(($) => $.customFields.types[type]),
           }))}

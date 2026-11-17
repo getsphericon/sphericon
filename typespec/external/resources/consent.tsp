@@ -11,20 +11,6 @@ enum ConsentChannel {
   sms,
 }
 
-/** A Channel a destination can be suppressed on */
-enum SuppressionChannel {
-  email,
-  telegram,
-  sms,
-}
-
-/** Why a destination is on the suppression (do-not-send) list */
-enum SuppressionReason {
-  bounce,
-  complaint,
-  manual,
-}
-
 /** A suppressed destination: no send surface delivers to it */
 model SuppressionResource {
   /** Unique identifier */

@@ -193,6 +193,87 @@ export const zAuditTarget = z.object({
 });
 
 /**
+ * Closed error kind of an HTTP step's body
+ */
+export const zAutomationHttpErrorKind = z.enum(['invalid_body']);
+
+/**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export const zAutomationHttpHeader = z.object({
+  name: z.string(),
+  value: z.exactOptional(z.string())
+});
+
+/**
+ * One request header of an HTTP step. The value is a secret: it is never returned.
+ */
+export const zAutomationHttpHeaderInput = z.strictObject({
+  name: z.string(),
+  value: z.exactOptional(z.string())
+});
+
+/**
+ * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
+ */
+export const zAutomationReportPeriod = z.enum([
+  '7d',
+  '14d',
+  '30d',
+  '90d'
+]);
+
+/**
+ * How many enrollments began, and how many ended with each outcome
+ */
+export const zAutomationResultCounts = z.object({
+  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * One Report day of an automation's results
+ */
+export const zAutomationResultsPoint = z.object({
+  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  date: z.string()
+});
+
+/**
+ * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
+ */
+export const zAutomationStatus = z.enum(['active', 'inactive']);
+
+/**
+ * The messages of the send step at one position
+ */
+export const zAutomationStepFigures = z.object({
+  step: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * Kind of automation step
+ */
+export const zAutomationStepType = z.enum([
+  'email',
+  'telegram',
+  'sms',
+  'wait',
+  'apply_tag',
+  'remove_tag',
+  'http'
+]);
+
+/**
  * The Channel a Broadcast sends on, fixed when it is created (ADR 0080)
  */
 export const zBroadcastChannel = z.enum([
@@ -211,6 +292,165 @@ export const zBroadcastStatus = z.enum([
   'sent',
   'failed'
 ]);
+
+/**
+ * The surface that asked for the send a Captured message belongs to
+ */
+export const zCapturedMessageSurface = z.enum([
+  'broadcast',
+  'automation',
+  'transactional',
+  'test'
+]);
+
+/**
+ * The CNAME record to publish: `host` must point at `target`
+ */
+export const zCnameRecord = z.object({
+  type: z.enum(['CNAME']),
+  host: z.string(),
+  target: z.string()
+});
+
+/**
+ * How a condition group combines its entries
+ */
+export const zConditionCombinator = z.enum(['and', 'or']);
+
+/**
+ * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
+ * two split time at `at`
+ */
+export const zConditionDateOperator = z.enum(['before', 'after']);
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
+ * date-time with a UTC offset is a moment, as for the date leaf.
+ */
+export const zConditionDateWithinLeaf = z.object({
+  kind: z.enum(['dateWithin']),
+  field: z.string(),
+  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
+ * date-time with a UTC offset is a moment, as for the date leaf.
+ */
+export const zConditionDateWithinLeafInput = z.strictObject({
+  kind: z.enum(['dateWithin']),
+  field: z.string(),
+  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
+ * How an event leaf bounds the count: at least `times`, or at most `times`
+ */
+export const zConditionEventOperator = z.enum(['atLeast', 'atMost']);
+
+/**
+ * A test of how many times a contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export const zConditionEventLeaf = z.object({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zConditionEventOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * A test of how many times a contact performed an Event action, over all time or within the
+ * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
+ * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
+ * longer than Event retention is capped by it: expired Events are no longer counted.
+ */
+export const zConditionEventLeafInput = z.strictObject({
+  kind: z.enum(['event']),
+  action: z.string(),
+  operator: zConditionEventOperator,
+  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * How a number leaf compares the field with `value`: greater than, greater than or equal,
+ * less than, or less than or equal
+ */
+export const zConditionNumberOperator = z.enum([
+  'gt',
+  'gte',
+  'lt',
+  'lte'
+]);
+
+/**
+ * A comparison of a number: a custom field of the workspace whose type is number
+ * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
+ * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
+ * leaf false.
+ */
+export const zConditionNumberLeaf = z.object({
+  kind: z.enum(['number']),
+  field: z.string(),
+  operator: zConditionNumberOperator,
+  value: z.number()
+});
+
+/**
+ * A comparison of a number: a custom field of the workspace whose type is number
+ * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
+ * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
+ * leaf false.
+ */
+export const zConditionNumberLeafInput = z.strictObject({
+  kind: z.enum(['number']),
+  field: z.string(),
+  operator: zConditionNumberOperator,
+  value: z.number()
+});
+
+/**
+ * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
+ * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
+ * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
+ * number leaf, a datetime one tested by the date leaves).
+ */
+export const zConditionOperator = z.enum([
+  'eq',
+  'neq',
+  'contains',
+  'beginsWith',
+  'null',
+  'notNull',
+  'has',
+  'doesNotHave'
+]);
+
+/**
+ * One test of a condition: a field, an operator and a value
+ */
+export const zConditionLeaf = z.object({
+  kind: z.enum(['rule']),
+  field: z.string(),
+  operator: zConditionOperator,
+  value: z.exactOptional(z.string())
+});
+
+/**
+ * One test of a condition: a field, an operator and a value
+ */
+export const zConditionLeafInput = z.strictObject({
+  kind: z.enum(['rule']),
+  field: z.string(),
+  operator: zConditionOperator,
+  value: z.exactOptional(z.string())
+});
 
 /**
  * How a Confirmation was obtained, strongest first: a double opt-in (the person clicked the link), a keyword (the person texted START), imported (consent an API client or an import collected itself, with its evidence), grandfathered (a prior basis asserted when confirmed opt-in was turned on). A Confirmation is replaced only by a stronger one.
@@ -269,6 +509,34 @@ export const zCreateWebhookInput = z.strictObject({
 export const zCurrencyCode = z.string().regex(/^[A-Z]{3}$/);
 
 /**
+ * A Custom field's value type
+ */
+export const zCustomFieldType = z.enum([
+  'string',
+  'number',
+  'bool',
+  'datetime'
+]);
+
+/**
+ * A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership
+ */
+export const zDnsRecord = z.object({
+  type: z.enum(['TXT']),
+  host: z.string(),
+  value: z.string()
+});
+
+/**
+ * The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+ */
+export const zDryRunHttpStepResult = z.object({
+  body: z.exactOptional(z.string()),
+  errorKind: z.exactOptional(zAutomationHttpErrorKind),
+  detail: z.exactOptional(z.string())
+});
+
+/**
  * The email editor's JSON document, an opaque object the server checks against the schema
  * `email_schema` returns. One named model, as JsonObject.
  */
@@ -303,6 +571,40 @@ export const zEmailBroadcastContentInput = z.strictObject({
 });
 
 /**
+ * Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render
+ * to valid JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address
+ * this instance does not permit), `http_status` (a non-2xx answer, see `status`) and
+ * `network` (any other transport failure).
+ */
+export const zEnrollmentFailureKind = z.enum([
+  'invalid_body',
+  'timeout',
+  'blocked_address',
+  'http_status',
+  'network'
+]);
+
+/**
+ * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
+ */
+export const zEnrollmentFailure = z.object({
+  kind: zEnrollmentFailureKind,
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  excerpt: z.exactOptional(z.string())
+});
+
+/**
+ * Where a Contact is in an Automation
+ */
+export const zEnrollmentStatus = z.enum([
+  'active',
+  'completed',
+  'failed',
+  'exited',
+  'goal_reached'
+]);
+
+/**
  * A primary key as a client sees it (ADR 0142): the key sealed under the Instance's id key and
  * written as 22 base62 characters, which say nothing about how many rows a table holds or when
  * one was made. The servers open it back into the key: a malformed id is refused as a 400 before
@@ -310,6 +612,21 @@ export const zEmailBroadcastContentInput = z.strictObject({
  * malformed id from a valid one without trying it.
  */
 export const zEntityId = z.string().regex(/^[0-9A-Za-z]{22}$/);
+
+/**
+ * Request body for rendering an HTTP step's body for a Contact
+ */
+export const zDryRunHttpStepInput = z.strictObject({
+  body: z.string(),
+  contactId: zEntityId
+});
+
+/**
+ * Request body for dry-running a Rule on a stored Event
+ */
+export const zDryRunRuleInput = z.strictObject({
+  eventId: zEntityId
+});
 
 /**
  * Scopes an OAuth client may be granted without any extra opt-in: the external
@@ -362,11 +679,38 @@ export const zHoldReason = z.enum([
 export const zImageUrl = z.string().max(2048).regex(/^https:\/\/\S+$/);
 
 /**
+ * The Test inbox has no settings
+ */
+export const zInboxConfig = z.object({
+  kind: z.enum(['inbox'])
+});
+
+/**
  * The Test inbox takes no credentials: a Workspace has at most one
  */
 export const zInboxConfigInput = z.strictObject({
   kind: z.enum(['inbox'])
 });
+
+/**
+ * Delivery channel an integration belongs to
+ */
+export const zIntegrationChannel = z.enum([
+  'email',
+  'sms',
+  'telegram'
+]);
+
+/**
+ * Concrete sending provider
+ */
+export const zIntegrationProvider = z.enum([
+  'smtp',
+  'ses',
+  'inbox',
+  'telegram',
+  'twilio'
+]);
 
 /**
  * Request body for issuing a Telegram start link
@@ -391,6 +735,14 @@ export const zLegalDocumentLabel = z.string().min(1).max(64);
  * A Legal document's text, in Markdown
  */
 export const zLegalDocumentMarkdown = z.string().max(100000);
+
+/**
+ * How often one link of a broadcast's or an automation's emails was clicked
+ */
+export const zLinkClicks = z.object({
+  url: z.string(),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
 
 /**
  * What a lint finding is about (ADR 0040)
@@ -428,6 +780,61 @@ export const zMaxPerDay = z.int().gte(1).lte(100000000);
  * A per-second Provider limit the caller may set
  */
 export const zMaxPerSecond = z.int().gte(1).lte(10000);
+
+/**
+ * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
+ * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
+ * lowers `amount` on its own day. Orders in another currency are counted in neither field.
+ */
+export const zMessageRevenue = z.object({
+  reportingCurrency: zCurrencyCode.nullable(),
+  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  amount: z.string().regex(/^[0-9]+$/)
+});
+
+/**
+ * One period of an automation's results. Each count is what happened in the period: an
+ * enrollment counts as entered on the Report day it began and under its outcome on the Report day
+ * it ended, whenever it began, so an enrollment still running counts as entered only.
+ */
+export const zAutomationPeriodResults = z.object({
+  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  from: z.string(),
+  to: z.string(),
+  averageDurationSeconds: z.string().regex(/^[0-9]+$/).nullable(),
+  revenue: zMessageRevenue
+});
+
+/**
+ * An automation's results over a period of Report days, read from its enrollments, with the
+ * period just before it to compare with
+ */
+export const zAutomationResults = z.object({
+  period: zAutomationReportPeriod,
+  current: zAutomationPeriodResults,
+  previous: zAutomationPeriodResults,
+  series: z.array(zAutomationResultsPoint)
+});
+
+/**
+ * An automation's engagement figures over its whole history and its results over a period
+ */
+export const zAutomationReport = z.object({
+  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  revenue: zMessageRevenue,
+  links: z.array(zLinkClicks),
+  results: zAutomationResults,
+  steps: z.array(zAutomationStepFigures)
+});
 
 /**
  * What a person calls a named row (a Tag, a Segment, a Rule, an Automation, a Template, a
@@ -539,6 +946,15 @@ export const zPersonalScope = z.enum([
 ]);
 
 /**
+ * A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks
+ */
+export const zPresetResource = z.object({
+  name: z.string(),
+  description: z.string(),
+  paramsSchema: zJsonObject
+});
+
+/**
  * A machine-readable reason a client branches on, beyond the HTTP status
  */
 export const zProblemCode = z.enum([
@@ -561,6 +977,40 @@ export const zProblemDebug = z.object({
   requestId: z.exactOptional(z.string()),
   method: z.string(),
   path: z.string()
+});
+
+/**
+ * Where an effective Provider limit comes from
+ */
+export const zProviderLimitSource = z.enum(['manual', 'provider']);
+
+/**
+ * One effective ceiling: the lowest of the manual and provider values, manual on a tie
+ */
+export const zProviderLimitValue = z.object({
+  limit: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  source: zProviderLimitSource.nullable()
+});
+
+/**
+ * A reason to look at an Integration's Provider limit
+ */
+export const zProviderLimitWarning = z.enum([
+  'unlimited',
+  'providerQuotaUnavailable',
+  'providerStopped',
+  'providerProbation',
+  'providerSandbox'
+]);
+
+/**
+ * The Provider limit as enforced, with the last 24 hours of usage
+ */
+export const zProviderLimitStatus = z.object({
+  perSecond: zProviderLimitValue,
+  perDay: zProviderLimitValue,
+  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  warnings: z.array(zProviderLimitWarning)
 });
 
 /**
@@ -603,6 +1053,112 @@ export const zRevisionInput = z.strictObject({
 });
 
 /**
+ * How one Action of a Firing ended
+ */
+export const zRuleActionStatus = z.enum([
+  'succeeded',
+  'failed',
+  'skipped',
+  'pending'
+]);
+
+/**
+ * Kind of Rule action
+ */
+export const zRuleActionType = z.enum([
+  'apply_tag',
+  'remove_tag',
+  'enroll_automation',
+  'http'
+]);
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
+ */
+export const zRuleAction = z.object({
+  type: zRuleActionType,
+  tag: z.exactOptional(z.string()),
+  automationId: z.exactOptional(zEntityId),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
+  body: z.exactOptional(z.string()),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
+});
+
+/**
+ * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
+ */
+export const zRuleActionInput = z.strictObject({
+  type: zRuleActionType,
+  tag: z.exactOptional(z.string()),
+  automationId: z.exactOptional(zEntityId),
+  id: z.exactOptional(z.string()),
+  url: z.exactOptional(z.string()),
+  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
+  body: z.exactOptional(z.string()),
+  secret: z.exactOptional(z.string()),
+  clearSecret: z.exactOptional(z.boolean()),
+  hasSecret: z.exactOptional(z.boolean())
+});
+
+/**
+ * What one Action did when a Rule fired
+ */
+export const zRuleActionResult = z.object({
+  type: zRuleActionType,
+  status: zRuleActionStatus,
+  detail: z.exactOptional(z.string())
+});
+
+/**
+ * One Action a Rule would run, described without running it
+ */
+export const zRuleDryRunAction = z.object({
+  type: z.string(),
+  summary: z.string()
+});
+
+/**
+ * Whether a stored Event would fire a Rule, and if not, why
+ */
+export const zRuleDryRunOutcome = z.enum([
+  'would_fire',
+  'not_triggered',
+  'no_contact',
+  'machine',
+  'backfill',
+  'condition_not_met'
+]);
+
+/**
+ * What a stored Event would do to a Rule. Nothing was written or run.
+ */
+export const zRuleDryRunResource = z.object({
+  outcome: zRuleDryRunOutcome,
+  actions: z.array(zRuleDryRunAction)
+});
+
+/**
+ * Rule lifecycle status: active reacts to Events, inactive acts on nothing
+ */
+export const zRuleStatus = z.enum(['active', 'inactive']);
+
+/**
+ * The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
+ * all its Integrations, Transactional included. The platform sets it; the Workspace only reads it.
+ * Sends beyond it are deferred until the 24-hour window frees up, never refused; Transactional mail
+ * is never delayed. It is not a Provider limit, which each Integration sets for its own provider
+ * account.
+ */
+export const zSendCap = z.object({
+  perDay: zMaxPerDay,
+  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
+});
+
+/**
  * Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them
  * only when the user explicitly opts in. mcp:send is the MCP-specific key: send-class
  * tools are not listed over /mcp without it, so any send-class grant brings it along.
@@ -615,6 +1171,20 @@ export const zSendScope = z.enum([
 ]);
 
 /**
+ * SES config without the secret access key
+ */
+export const zSesConfig = z.object({
+  kind: z.enum(['ses']),
+  region: z.string(),
+  from: zEmailAddress,
+  fromName: z.exactOptional(z.string().nullable()),
+  endpoint: z.exactOptional(z.string().nullable()),
+  accessKeyIdLast4: z.exactOptional(z.string().nullable()),
+  configurationSet: z.exactOptional(z.string().nullable()),
+  configurationSetMissing: z.boolean()
+});
+
+/**
  * SES credentials
  */
 export const zSesConfigInput = z.strictObject({
@@ -624,7 +1194,8 @@ export const zSesConfigInput = z.strictObject({
   secretAccessKey: z.string(),
   from: zEmailAddress,
   fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable())
+  endpoint: z.exactOptional(z.string().nullable()),
+  configurationSet: z.exactOptional(z.string().nullable())
 });
 
 /**
@@ -948,60 +1519,6 @@ export const zSiteAuditRetentionInput = z.strictObject({
 });
 
 /**
- * Closed error kind of an HTTP step's body
- */
-export const zSiteAutomationHttpErrorKind = z.enum(['invalid_body']);
-
-/**
- * One request header of an HTTP step. The value is a secret: it is never returned.
- */
-export const zSiteAutomationHttpHeader = z.object({
-  name: z.string(),
-  value: z.exactOptional(z.string())
-});
-
-/**
- * One request header of an HTTP step. The value is a secret: it is never returned.
- */
-export const zSiteAutomationHttpHeaderInput = z.strictObject({
-  name: z.string(),
-  value: z.exactOptional(z.string())
-});
-
-/**
- * The length of the period an automation's results are read over, in Report days (ADR 0057), today included
- */
-export const zSiteAutomationReportPeriod = z.enum([
-  '7d',
-  '14d',
-  '30d',
-  '90d'
-]);
-
-/**
- * How many enrollments began, and how many ended with each outcome
- */
-export const zSiteAutomationResultCounts = z.object({
-  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * One Report day of an automation's results
- */
-export const zSiteAutomationResultsPoint = z.object({
-  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  date: z.string()
-});
-
-/**
  * The state an automation is in, as the list shows it: draft until it is first published, then
  * active or inactive
  */
@@ -1009,33 +1526,6 @@ export const zSiteAutomationState = z.enum([
   'draft',
   'active',
   'inactive'
-]);
-
-/**
- * Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody
- */
-export const zSiteAutomationStatus = z.enum(['active', 'inactive']);
-
-/**
- * The messages of the send step at one position
- */
-export const zSiteAutomationStepFigures = z.object({
-  step: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  sent: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  skipped: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * Kind of automation step
- */
-export const zSiteAutomationStepType = z.enum([
-  'email',
-  'telegram',
-  'sms',
-  'wait',
-  'apply_tag',
-  'remove_tag',
-  'http'
 ]);
 
 /**
@@ -1047,6 +1537,44 @@ export const zSiteAutomationsSort = z.enum(['name', 'createdAt']);
  * What slows a sending broadcast
  */
 export const zSiteBroadcastLimit = z.enum(['sendCap', 'providerLimit']);
+
+/**
+ * A broadcast's per-link click figures, most clicked first
+ */
+export const zSiteBroadcastLinkClicksList = z.object({
+  items: z.array(zLinkClicks)
+});
+
+/**
+ * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
+ * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
+ * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
+ * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
+ * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
+ * rate; only SMS reports undelivered.
+ */
+export const zSiteBroadcastStats = z.object({
+  recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  deliveryRate: z.number().nullable(),
+  openRate: z.number().nullable(),
+  clickRate: z.number(),
+  clickToOpenRate: z.number().nullable(),
+  unsubscribeRate: z.number(),
+  failureRate: z.number(),
+  revenue: zMessageRevenue
+});
 
 /**
  * The order of the broadcast list
@@ -1063,165 +1591,6 @@ export const zSiteBroadcastsOrder = z.enum([
 export const zSiteCapturedMessageHeader = z.object({
   name: z.string(),
   value: z.string()
-});
-
-/**
- * The surface that asked for the send a Captured message belongs to
- */
-export const zSiteCapturedMessageSurface = z.enum([
-  'broadcast',
-  'automation',
-  'transactional',
-  'test'
-]);
-
-/**
- * The CNAME record to publish: `host` must point at `target`
- */
-export const zSiteCnameRecord = z.object({
-  type: z.enum(['CNAME']),
-  host: z.string(),
-  target: z.string()
-});
-
-/**
- * How a condition group combines its entries
- */
-export const zSiteConditionCombinator = z.enum(['and', 'or']);
-
-/**
- * Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the
- * two split time at `at`
- */
-export const zSiteConditionDateOperator = z.enum(['before', 'after']);
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
- * date-time with a UTC offset is a moment, as for the date leaf.
- */
-export const zSiteConditionDateWithinLeaf = z.object({
-  kind: z.enum(['dateWithin']),
-  field: z.string(),
-  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is within the last `withinDays` days up to now, so a moment still to come is not within. Only a
- * date-time with a UTC offset is a moment, as for the date leaf.
- */
-export const zSiteConditionDateWithinLeafInput = z.strictObject({
-  kind: z.enum(['dateWithin']),
-  field: z.string(),
-  withinDays: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * How an event leaf bounds the count: at least `times`, or at most `times`
- */
-export const zSiteConditionEventOperator = z.enum(['atLeast', 'atMost']);
-
-/**
- * A test of how many times a contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zSiteConditionEventLeaf = z.object({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zSiteConditionEventOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * A test of how many times a contact performed an Event action, over all time or within the
- * last `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of
- * both. Engagement Events made by software (machine opens and clicks) are not counted. A window
- * longer than Event retention is capped by it: expired Events are no longer counted.
- */
-export const zSiteConditionEventLeafInput = z.strictObject({
-  kind: z.enum(['event']),
-  action: z.string(),
-  operator: zSiteConditionEventOperator,
-  times: z.int().gte(0).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  withinDays: z.exactOptional(z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * How a number leaf compares the field with `value`: greater than, greater than or equal,
- * less than, or less than or equal
- */
-export const zSiteConditionNumberOperator = z.enum([
-  'gt',
-  'gte',
-  'lt',
-  'lte'
-]);
-
-/**
- * A comparison of a number: a custom field of the workspace whose type is number
- * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
- * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
- * leaf false.
- */
-export const zSiteConditionNumberLeaf = z.object({
-  kind: z.enum(['number']),
-  field: z.string(),
-  operator: zSiteConditionNumberOperator,
-  value: z.number()
-});
-
-/**
- * A comparison of a number: a custom field of the workspace whose type is number
- * ("custom:<key>"), or a property of the Event that fired a rule ("trigger:<key>", valid only in a
- * rule). A missing key, or a value that is not a number (text, a boolean, null, a list), makes the
- * leaf false.
- */
-export const zSiteConditionNumberLeafInput = z.strictObject({
-  kind: z.enum(['number']),
-  field: z.string(),
-  operator: zSiteConditionNumberOperator,
-  value: z.number()
-});
-
-/**
- * What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and
- * notNull; the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its type,
- * which the custom field lists as `ruleOperators` (a number custom field is also compared by a
- * number leaf, a datetime one tested by the date leaves).
- */
-export const zSiteConditionOperator = z.enum([
-  'eq',
-  'neq',
-  'contains',
-  'beginsWith',
-  'null',
-  'notNull',
-  'has',
-  'doesNotHave'
-]);
-
-/**
- * One test of a condition: a field, an operator and a value
- */
-export const zSiteConditionLeaf = z.object({
-  kind: z.enum(['rule']),
-  field: z.string(),
-  operator: zSiteConditionOperator,
-  value: z.exactOptional(z.string())
-});
-
-/**
- * One test of a condition: a field, an operator and a value
- */
-export const zSiteConditionLeafInput = z.strictObject({
-  kind: z.enum(['rule']),
-  field: z.string(),
-  operator: zSiteConditionOperator,
-  value: z.exactOptional(z.string())
 });
 
 /**
@@ -1251,16 +1620,6 @@ export const zSiteCreateWorkspaceInput = z.strictObject({
 });
 
 /**
- * A Custom field's value type
- */
-export const zSiteCustomFieldType = z.enum([
-  'string',
-  'number',
-  'bool',
-  'datetime'
-]);
-
-/**
  * Confirmation of User deletion (ADR 0050): the User's own email typed in, their password
  * (a User with no password sends the token of the mailed link instead) and, when a Second
  * factor is enrolled, a current code.
@@ -1287,44 +1646,11 @@ export const zSiteDeleteWorkspaceInput = z.strictObject({
 });
 
 /**
- * A TXT record the user publishes: a sending domain's DKIM key, or a tracking domain's ownership
- */
-export const zSiteDnsRecord = z.object({
-  type: z.enum(['TXT']),
-  host: z.string(),
-  value: z.string()
-});
-
-/**
  * Whether the Workspace admits Users by Join domain
  */
 export const zSiteDomainJoinResource = z.object({
   enabled: z.boolean(),
   revision: zRevision
-});
-
-/**
- * Request body for rendering an HTTP step's body for a Contact
- */
-export const zSiteDryRunHttpStepInput = z.strictObject({
-  body: z.string(),
-  contactId: zEntityId
-});
-
-/**
- * The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
- */
-export const zSiteDryRunHttpStepResult = z.object({
-  body: z.exactOptional(z.string()),
-  errorKind: z.exactOptional(zSiteAutomationHttpErrorKind),
-  detail: z.exactOptional(z.string())
-});
-
-/**
- * Site request body for dry-running a Rule on a stored Event
- */
-export const zSiteDryRunRuleInput = z.strictObject({
-  eventId: zEntityId
 });
 
 /**
@@ -1335,38 +1661,6 @@ export const zSiteEmailChangeInput = z.strictObject({
   newEmail: zEmailAddress,
   currentPassword: z.string()
 });
-
-/**
- * Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`,
- * `http_status` (see `status`) and `network`.
- */
-export const zSiteEnrollmentFailureKind = z.enum([
-  'invalid_body',
-  'timeout',
-  'blocked_address',
-  'http_status',
-  'network'
-]);
-
-/**
- * What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
- */
-export const zSiteEnrollmentFailure = z.object({
-  kind: zSiteEnrollmentFailureKind,
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  excerpt: z.exactOptional(z.string())
-});
-
-/**
- * Where a Contact is in an Automation
- */
-export const zSiteEnrollmentStatus = z.enum([
-  'active',
-  'completed',
-  'failed',
-  'exited',
-  'goal_reached'
-]);
 
 /**
  * Distinct event actions seen in a workspace (for segment/filter pickers)
@@ -1391,39 +1685,12 @@ export const zSiteIdentitySecretResource = z.object({
 });
 
 /**
- * The Test inbox has no settings
- */
-export const zSiteInboxConfig = z.object({
-  kind: z.enum(['inbox'])
-});
-
-/**
  * What the Release check found (ADR 0032): the one part of the Instance's state a Workspace Owner
  * sees. The Instance's settings are the Staff console's (ADR 0063).
  */
 export const zSiteInstanceRelease = z.object({
   latestRelease: z.exactOptional(z.string())
 });
-
-/**
- * Delivery channel an integration belongs to
- */
-export const zSiteIntegrationChannel = z.enum([
-  'email',
-  'sms',
-  'telegram'
-]);
-
-/**
- * Concrete sending provider
- */
-export const zSiteIntegrationProvider = z.enum([
-  'smtp',
-  'ses',
-  'inbox',
-  'telegram',
-  'twilio'
-]);
 
 /**
  * Roles that may be invited. owner is never invited — it is transferred.
@@ -1444,21 +1711,6 @@ export const zSiteCreateInvitationInput = z.strictObject({
 export const zSiteInvitationLookupResult = z.object({
   workspaceName: z.string(),
   email: zEmailAddress
-});
-
-/**
- * How often one link of a broadcast's or an automation's emails was clicked
- */
-export const zSiteLinkClicks = z.object({
-  url: z.string(),
-  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
- * A broadcast's per-link click figures, most clicked first
- */
-export const zSiteBroadcastLinkClicksList = z.object({
-  items: z.array(zSiteLinkClicks)
 });
 
 /**
@@ -1507,93 +1759,6 @@ export const zSiteMembershipSource = z.enum([
   'invitation',
   'domain'
 ]);
-
-/**
- * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
- * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
- * lowers `amount` on its own day. Until the currency is set `reportingCurrency` is null and
- * there is no figure to show. Orders in another currency are counted in neither field.
- */
-export const zSiteMessageRevenue = z.object({
-  reportingCurrency: zCurrencyCode.nullable(),
-  orders: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  amount: z.string().regex(/^[0-9]+$/)
-});
-
-/**
- * One period of an automation's results. Each count is what happened in the period: an
- * enrollment counts as entered on the Report day it began and under its outcome on the Report day
- * it ended, whenever it began, so an enrollment still running counts as entered only.
- */
-export const zSiteAutomationPeriodResults = z.object({
-  entered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  completed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  goalReached: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  exited: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failed: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  from: z.string(),
-  to: z.string(),
-  averageDurationSeconds: z.string().regex(/^[0-9]+$/).nullable(),
-  revenue: zSiteMessageRevenue
-});
-
-/**
- * An automation's results over a period of Report days, read from its enrollments, with the
- * period just before it to compare with
- */
-export const zSiteAutomationResults = z.object({
-  period: zSiteAutomationReportPeriod,
-  current: zSiteAutomationPeriodResults,
-  previous: zSiteAutomationPeriodResults,
-  series: z.array(zSiteAutomationResultsPoint)
-});
-
-/**
- * An automation's engagement figures
- */
-export const zSiteAutomationReport = z.object({
-  opens: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  clicks: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  delivered: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  bounced: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  complained: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  captured: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  revenue: zSiteMessageRevenue,
-  links: z.array(zSiteLinkClicks),
-  results: zSiteAutomationResults,
-  steps: z.array(zSiteAutomationStepFigures)
-});
-
-/**
- * Delivery figures of a broadcast, derived from its recipients and their messages, per Channel
- * (ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and
- * unsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram
- * reports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS
- * reports delivered and undelivered, and no opened, bounced or complained count, delivery or open
- * rate; only SMS reports undelivered.
- */
-export const zSiteBroadcastStats = z.object({
-  recipientsTotal: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  sentCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  skippedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  failedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  pendingCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  openedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  clickedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  unsubscribedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  deliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  undeliveredCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  bouncedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  complainedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  capturedCount: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  deliveryRate: z.number().nullable(),
-  openRate: z.number().nullable(),
-  clickRate: z.number(),
-  clickToOpenRate: z.number().nullable(),
-  unsubscribeRate: z.number(),
-  failureRate: z.number(),
-  revenue: zSiteMessageRevenue
-});
 
 /**
  * One Report day of the New people report: the Contacts created that day by the door they
@@ -1855,54 +2020,11 @@ export const zSitePendingSignup = z.object({
 });
 
 /**
- * A Preset the Instance offers
- */
-export const zSitePresetResource = z.object({
-  name: z.string(),
-  description: z.string(),
-  paramsSchema: zJsonObject
-});
-
-/**
  * Result of a segment preview: how many deliverable contacts match
  */
 export const zSitePreviewSegmentResult = z.object({
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   recipients: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * Where an effective Provider limit comes from
- */
-export const zSiteProviderLimitSource = z.enum(['manual', 'provider']);
-
-/**
- * One effective ceiling: the lowest of the manual and provider values, manual on a tie
- */
-export const zSiteProviderLimitValue = z.object({
-  limit: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  source: zSiteProviderLimitSource.nullable()
-});
-
-/**
- * A reason to look at an Integration's Provider limit
- */
-export const zSiteProviderLimitWarning = z.enum([
-  'unlimited',
-  'providerQuotaUnavailable',
-  'providerStopped',
-  'providerProbation',
-  'providerSandbox'
-]);
-
-/**
- * The Provider limit as enforced, with the last 24 hours of usage
- */
-export const zSiteProviderLimitStatus = z.object({
-  perSecond: zSiteProviderLimitValue,
-  perDay: zSiteProviderLimitValue,
-  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  warnings: z.array(zSiteProviderLimitWarning)
 });
 
 /**
@@ -1962,100 +2084,6 @@ export const zSiteRevenueSettingsResource = z.object({
   attributionWindowDays: zAttributionWindowDays,
   revision: zRevision
 });
-
-/**
- * How one Action of a Firing ended
- */
-export const zSiteRuleActionStatus = z.enum([
-  'succeeded',
-  'failed',
-  'skipped',
-  'pending'
-]);
-
-/**
- * Kind of Rule action
- */
-export const zSiteRuleActionType = z.enum([
-  'apply_tag',
-  'remove_tag',
-  'enroll_automation',
-  'http'
-]);
-
-/**
- * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
- */
-export const zSiteRuleAction = z.object({
-  type: zSiteRuleActionType,
-  tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
-  body: z.exactOptional(z.string()),
-  secret: z.exactOptional(z.string()),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
-});
-
-/**
- * One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag name, http actions the call.
- */
-export const zSiteRuleActionInput = z.strictObject({
-  type: zSiteRuleActionType,
-  tag: z.exactOptional(z.string()),
-  automationId: z.exactOptional(zEntityId),
-  id: z.exactOptional(z.string()),
-  url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeaderInput).max(5)),
-  body: z.exactOptional(z.string()),
-  secret: z.exactOptional(z.string()),
-  clearSecret: z.exactOptional(z.boolean()),
-  hasSecret: z.exactOptional(z.boolean())
-});
-
-/**
- * What one Action did when a Rule fired
- */
-export const zSiteRuleActionResult = z.object({
-  type: zSiteRuleActionType,
-  status: zSiteRuleActionStatus,
-  detail: z.exactOptional(z.string())
-});
-
-/**
- * One Action a Rule would run, described without running it
- */
-export const zSiteRuleDryRunAction = z.object({
-  type: z.string(),
-  summary: z.string()
-});
-
-/**
- * Whether a stored Event would fire a Rule, and if not, why
- */
-export const zSiteRuleDryRunOutcome = z.enum([
-  'would_fire',
-  'not_triggered',
-  'no_contact',
-  'machine',
-  'backfill',
-  'condition_not_met'
-]);
-
-/**
- * What a stored Event would do to a Rule. Nothing was written or run.
- */
-export const zSiteRuleDryRunResource = z.object({
-  outcome: zSiteRuleDryRunOutcome,
-  actions: z.array(zSiteRuleDryRunAction)
-});
-
-/**
- * Rule lifecycle status: active reacts to Events, inactive acts on nothing
- */
-export const zSiteRuleStatus = z.enum(['active', 'inactive']);
 
 /**
  * Save the Brand kit: the first save creates it and the starter Templates, a later one replaces
@@ -2121,17 +2149,6 @@ export const zSiteSecondFactorStatus = z.object({
 });
 
 /**
- * The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across
- * all its Integrations, Transactional included. The platform sets it; the Workspace only reads it.
- * Sends beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It
- * is not a Provider limit, which each Integration sets for its own provider account.
- */
-export const zSiteSendCap = z.object({
-  perDay: zMaxPerDay,
-  sentLast24h: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
-});
-
-/**
  * The Complaint and Bounce rates of one Sending domain over a window
  */
 export const zSiteSendingDomainRates = z.object({
@@ -2162,18 +2179,6 @@ export const zSiteAnalyticsOverview = z.object({
   previous: zSiteAnalyticsPeriod,
   timeseries: z.array(zSiteAnalyticsPoint),
   deliverability: zSiteAnalyticsDeliverability
-});
-
-/**
- * SES config without the secret access key
- */
-export const zSiteSesConfig = z.object({
-  kind: z.enum(['ses']),
-  region: z.string(),
-  from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable()),
-  endpoint: z.exactOptional(z.string().nullable()),
-  accessKeyIdLast4: z.exactOptional(z.string().nullable())
 });
 
 /**
@@ -2310,85 +2315,12 @@ export const zSiteSmsLengthLimit = z.object({
 });
 
 /**
- * SMTP config without the password
- */
-export const zSiteSmtpConfig = z.object({
-  kind: z.enum(['smtp']),
-  host: z.string(),
-  port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  username: z.exactOptional(z.string().nullable()),
-  from: zEmailAddress,
-  fromName: z.exactOptional(z.string().nullable())
-});
-
-/**
- * The channel a suppression applies to
- */
-export const zSiteSuppressionChannel = z.enum([
-  'email',
-  'telegram',
-  'sms'
-]);
-
-/**
- * Site request body for manually suppressing a destination
- */
-export const zSiteCreateSuppressionInput = z.strictObject({
-  channel: z.exactOptional(zSiteSuppressionChannel),
-  destination: z.string()
-});
-
-/**
- * Why a destination is on the suppression (do-not-send) list. Unsubscribe is
- * not a suppression — it is a separate, per-source opt-out.
- */
-export const zSiteSuppressionReason = z.enum([
-  'bounce',
-  'complaint',
-  'manual'
-]);
-
-/**
- * A Telegram bot without its token: who it is, as Telegram said when it was connected
- */
-export const zSiteTelegramConfig = z.object({
-  kind: z.enum(['telegram']),
-  botId: z.string().regex(/^[0-9]+$/),
-  username: z.string()
-});
-
-/**
  * What a test send did: on email the address the preview went out from
  */
 export const zSiteTestSendBroadcastResult = z.object({
   from: z.exactOptional(zEmailAddress),
   captured: z.boolean()
 });
-
-/**
- * What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
- * snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
- * the links already sent and the snippet already installed on it, until its CNAME leaves the edge
- */
-export const zSiteTrackingDomainRole = z.enum([
-  'current',
-  'replacement',
-  'retired'
-]);
-
-/**
- * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
- */
-export const zSiteTrackingReason = z.enum(['host_taken']);
-
-/**
- * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
- */
-export const zSiteTrackingState = z.enum([
-  'pending',
-  'dns_verified',
-  'serving'
-]);
 
 /**
  * The channel a transactional send went out on (email today; sms reserved)
@@ -2404,15 +2336,6 @@ export const zSiteTransactionalEmailStatus = z.enum([
   'suppressed',
   'failed'
 ]);
-
-/**
- * Request body for updating a custom field: its key never changes
- */
-export const zSiteUpdateCustomFieldInput = z.strictObject({
-  revision: zRevision,
-  name: z.exactOptional(zName),
-  type: z.exactOptional(zSiteCustomFieldType)
-});
 
 /**
  * Change a member's role. Only an owner may grant/transfer the owner role.
@@ -2455,39 +2378,6 @@ export const zSiteVerifyEmailInput = z.strictObject({
 });
 
 /**
- * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
- * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
- * than the window). Absent while the endpoint is enabled.
- */
-export const zSiteWebhookDisabledReason = z.enum([
-  'owner',
-  'gone',
-  'persistent_failure'
-]);
-
-/**
- * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
- * time), `blocked_address` (the URL names an address this instance does not permit),
- * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
- * failure).
- */
-export const zSiteWebhookErrorKind = z.enum([
-  'timeout',
-  'blocked_address',
-  'http_status',
-  'network'
-]);
-
-/**
- * What the receiver answered to a test delivery. The endpoint's failure state is not touched.
- */
-export const zSiteWebhookTestResult = z.object({
-  delivered: z.boolean(),
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
-  kind: z.exactOptional(zSiteWebhookErrorKind)
-});
-
-/**
  * SMS's content of a Broadcast as stored
  */
 export const zSmsBroadcastContent = z.object({
@@ -2517,27 +2407,16 @@ export const zSmsFromKind = z.enum([
 ]);
 
 /**
- * A Twilio account without its secret
+ * SMTP config without the password
  */
-export const zSiteTwilioConfig = z.object({
-  kind: z.enum(['twilio']),
-  accountSid: z.string(),
-  apiKeySid: z.string().nullable(),
-  from: z.string(),
-  fromKind: zSmsFromKind,
-  callbacksSet: z.boolean()
+export const zSmtpConfig = z.object({
+  kind: z.enum(['smtp']),
+  host: z.string(),
+  port: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  username: z.exactOptional(z.string().nullable()),
+  from: zEmailAddress,
+  fromName: z.exactOptional(z.string().nullable())
 });
-
-/**
- * Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
- */
-export const zSiteIntegrationConfig = z.discriminatedUnion('kind', [
-  zSiteSmtpConfig.extend({ kind: z.literal('smtp') }),
-  zSiteSesConfig.extend({ kind: z.literal('ses') }),
-  zSiteInboxConfig.extend({ kind: z.literal('inbox') }),
-  zSiteTelegramConfig.extend({ kind: z.literal('telegram') }),
-  zSiteTwilioConfig.extend({ kind: z.literal('twilio') })
-]);
 
 /**
  * SMTP credentials
@@ -2557,6 +2436,33 @@ export const zSmtpConfigInput = z.strictObject({
  * others do not carry an unused schema.
  */
 export const zSortDirection = z.enum(['asc', 'desc']);
+
+/**
+ * A Channel a destination can be suppressed on
+ */
+export const zSuppressionChannel = z.enum([
+  'email',
+  'telegram',
+  'sms'
+]);
+
+/**
+ * Site request body for manually suppressing a destination
+ */
+export const zSiteCreateSuppressionInput = z.strictObject({
+  channel: z.exactOptional(zSuppressionChannel),
+  destination: z.string()
+});
+
+/**
+ * Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a
+ * suppression: it is a separate, per-source opt-out.
+ */
+export const zSuppressionReason = z.enum([
+  'bounce',
+  'complaint',
+  'manual'
+]);
 
 /**
  * The action of a System event: an Event sphericon itself records, never a customer. An Event's
@@ -2610,10 +2516,10 @@ export const zTelegramButton = z.object({
 
 /**
  * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds.
+ * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
  */
-export const zSiteAutomationStep = z.object({
-  type: zSiteAutomationStepType,
+export const zAutomationStep = z.object({
+  type: zAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   doc: z.exactOptional(zEditorDocument),
@@ -2622,7 +2528,7 @@ export const zSiteAutomationStep = z.object({
   tag: z.exactOptional(z.string()),
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeader).max(5)),
+  headers: z.exactOptional(z.array(zAutomationHttpHeader).max(5)),
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean()),
@@ -2638,12 +2544,12 @@ export const zSiteAutomationStep = z.object({
 /**
  * One version of an automation's definition: what publishing makes it do (ADR 0065)
  */
-export const zSiteAutomationVersion = z.object({
+export const zAutomationVersion = z.object({
   number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   triggerEvent: z.string(),
   exitEvents: z.array(z.string()),
   goalEvent: z.string().nullable(),
-  steps: z.array(zSiteAutomationStep)
+  steps: z.array(zAutomationStep)
 });
 
 /**
@@ -2677,10 +2583,10 @@ export const zTelegramButtonInput = z.strictObject({
 
 /**
  * One node in an automation's ordered, linear sequence. A flat shape: email
- * steps carry subject/body, wait steps carry seconds.
+ * steps carry subject/body, wait steps carry seconds, tag steps carry the tag name.
  */
-export const zSiteAutomationStepInput = z.strictObject({
-  type: zSiteAutomationStepType,
+export const zAutomationStepInput = z.strictObject({
+  type: zAutomationStepType,
   subject: z.exactOptional(z.string()),
   body: z.exactOptional(z.string()),
   doc: z.exactOptional(zEditorDocument),
@@ -2689,7 +2595,7 @@ export const zSiteAutomationStepInput = z.strictObject({
   tag: z.exactOptional(z.string()),
   id: z.exactOptional(z.string()),
   url: z.exactOptional(z.string()),
-  headers: z.exactOptional(z.array(zSiteAutomationHttpHeaderInput).max(5)),
+  headers: z.exactOptional(z.array(zAutomationHttpHeaderInput).max(5)),
   secret: z.exactOptional(z.string()),
   clearSecret: z.exactOptional(z.boolean()),
   hasSecret: z.exactOptional(z.boolean()),
@@ -2703,28 +2609,14 @@ export const zSiteAutomationStepInput = z.strictObject({
 });
 
 /**
- * Site request body for creating an automation
+ * Request body for creating an automation (always created inactive)
  */
-export const zSiteCreateAutomationInput = z.strictObject({
+export const zCreateAutomationInput = z.strictObject({
   name: zName,
   triggerEvent: z.string(),
   exitEvents: z.exactOptional(z.array(z.string())),
   goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStepInput))
-});
-
-/**
- * Site request body for updating an automation. The name changes at once; the trigger, exit and
- * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
- * version's, and publishing makes the draft live.
- */
-export const zSiteUpdateAutomationInput = z.strictObject({
-  revision: zRevision,
-  name: z.exactOptional(zName),
-  triggerEvent: z.exactOptional(z.string()),
-  exitEvents: z.exactOptional(z.array(z.string())),
-  goalEvent: z.exactOptional(z.string().nullable()),
-  steps: z.exactOptional(z.array(zSiteAutomationStepInput))
+  steps: z.exactOptional(z.array(zAutomationStepInput))
 });
 
 /**
@@ -2758,6 +2650,15 @@ export const zCreateBroadcastInput = z.strictObject({
   content: zBroadcastContentInput,
   segmentId: zEntityId.nullable(),
   integrationId: z.exactOptional(zEntityId.nullable())
+});
+
+/**
+ * A Telegram bot without its token: who it is, as Telegram said when it was connected
+ */
+export const zTelegramConfig = z.object({
+  kind: z.enum(['telegram']),
+  botId: z.string().regex(/^[0-9]+$/),
+  username: z.string()
 });
 
 /**
@@ -2878,6 +2779,53 @@ export const zAuditEntryResource = z.object({
 export const zAuditEntryList = z.object({
   items: z.array(zAuditEntryResource),
   nextCursor: z.exactOptional(z.string().nullable())
+});
+
+/**
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
+ * the palette the editor offers and what an agent is told to use: write a message in these values.
+ * Its values are written into a message when the message is authored, so saving it never changes a
+ * message already written. A Workspace that has not saved one has the defaults and `saved` false.
+ */
+export const zBrandKitResource = z.object({
+  saved: z.boolean(),
+  accentColor: z.string(),
+  textColor: z.string(),
+  backgroundColor: z.string(),
+  headingFont: z.string(),
+  bodyFont: z.string(),
+  logoUrl: z.string(),
+  buttonTextColor: z.string(),
+  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  footerText: z.string(),
+  updatedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision
+});
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
+ * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
+ * false.
+ */
+export const zConditionDateLeaf = z.object({
+  kind: z.enum(['date']),
+  field: z.string(),
+  operator: zConditionDateOperator,
+  at: zTimestamp
+});
+
+/**
+ * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
+ * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
+ * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
+ * false.
+ */
+export const zConditionDateLeafInput = z.strictObject({
+  kind: z.enum(['date']),
+  field: z.string(),
+  operator: zConditionDateOperator,
+  at: zTimestamp
 });
 
 /**
@@ -3034,11 +2982,63 @@ export const zContactExportDocument = z.object({
 });
 
 /**
+ * One Contact's progress through an Automation. Erased with the Contact.
+ */
+export const zEnrollmentResource = z.object({
+  id: zEntityId,
+  automationId: zEntityId,
+  contactId: zEntityId,
+  status: zEnrollmentStatus,
+  currentStep: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  resumeAt: z.exactOptional(zTimestamp),
+  failure: z.exactOptional(zEnrollmentFailure),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
+ * One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
+ */
+export const zRuleFiringResource = z.object({
+  id: zEntityId,
+  ruleId: zEntityId,
+  contactId: zEntityId,
+  action: z.string(),
+  eventSourceId: z.string(),
+  results: z.array(zRuleActionResult),
+  completedAt: z.exactOptional(zTimestamp),
+  createdAt: zTimestamp
+});
+
+/**
  * Request body for scheduling a broadcast
  */
 export const zScheduleBroadcastInput = z.strictObject({
   revision: zRevision,
   scheduledAt: zTimestamp
+});
+
+/**
+ * Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the
+ * DKIM TXT record. The private key is never returned. `verified` is re-checked in the
+ * background: the domain loses it (`verificationLostAt`) if the DNS record disappears.
+ */
+export const zSendingDomainResource = z.object({
+  id: zEntityId,
+  domain: z.string(),
+  dkimSelector: z.string(),
+  verified: z.boolean(),
+  dkimRecord: zDnsRecord,
+  spfRecord: zDnsRecord,
+  dmarcRecord: zDnsRecord,
+  dmarcCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  dmarcFoundAt: z.exactOptional(zTimestamp.nullable()),
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  verifiedAt: z.exactOptional(zTimestamp.nullable()),
+  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
 });
 
 /**
@@ -3126,11 +3126,11 @@ export const zSiteAttentionList = z.object({
 export const zSiteAutomationResource = z.object({
   id: zEntityId,
   name: z.string(),
-  status: zSiteAutomationStatus,
-  live: zSiteAutomationVersion.nullable(),
-  draft: zSiteAutomationVersion.nullable(),
+  status: zAutomationStatus,
+  live: zAutomationVersion.nullable(),
+  draft: zAutomationVersion.nullable(),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
-  revenue: z.exactOptional(zSiteMessageRevenue),
+  revenue: z.exactOptional(zMessageRevenue),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -3145,27 +3145,6 @@ export const zSiteBindingResource = z.object({
   integrationName: z.string(),
   botUsername: z.exactOptional(z.string().nullable()),
   boundAt: zTimestamp
-});
-
-/**
- * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
- * the palette the editor offers and what an agent is told to use. Its values are written into a
- * message when the message is authored, so saving it never changes a message already written. A
- * Workspace that has not saved one has the defaults and `saved` false.
- */
-export const zSiteBrandKitResource = z.object({
-  saved: z.boolean(),
-  accentColor: z.string(),
-  textColor: z.string(),
-  backgroundColor: z.string(),
-  headingFont: z.string(),
-  bodyFont: z.string(),
-  logoUrl: z.string(),
-  buttonTextColor: z.string(),
-  buttonRadius: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  footerText: z.string(),
-  updatedAt: z.exactOptional(zTimestamp.nullable()),
-  revision: zRevision
 });
 
 /**
@@ -3212,7 +3191,7 @@ export const zSiteBroadcastResource = z.object({
 export const zSiteCapturedMessageFields = z.object({
   integrationId: zEntityId,
   outboundMessageId: zEntityId.nullable(),
-  surface: zSiteCapturedMessageSurface,
+  surface: zCapturedMessageSurface,
   sendingSource: z.string().nullable(),
   recipient: z.string(),
   from: z.string(),
@@ -3229,7 +3208,7 @@ export const zSiteCapturedMessageResource = z.object({
   id: zEntityId,
   integrationId: zEntityId,
   outboundMessageId: zEntityId.nullable(),
-  surface: zSiteCapturedMessageSurface,
+  surface: zCapturedMessageSurface,
   sendingSource: z.string().nullable(),
   recipient: z.string(),
   from: z.string(),
@@ -3250,7 +3229,7 @@ export const zSiteCapturedMessageSummary = z.object({
   id: zEntityId,
   integrationId: zEntityId,
   outboundMessageId: zEntityId.nullable(),
-  surface: zSiteCapturedMessageSurface,
+  surface: zCapturedMessageSurface,
   sendingSource: z.string().nullable(),
   recipient: z.string(),
   from: z.string(),
@@ -3258,32 +3237,6 @@ export const zSiteCapturedMessageSummary = z.object({
   subject: z.string(),
   fromUnverified: z.boolean(),
   createdAt: zTimestamp
-});
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
- * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
- * false.
- */
-export const zSiteConditionDateLeaf = z.object({
-  kind: z.enum(['date']),
-  field: z.string(),
-  operator: zSiteConditionDateOperator,
-  at: zTimestamp
-});
-
-/**
- * A test of a custom field of the workspace whose type is datetime ("custom:<key>"): its moment
- * is before or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date
- * without a time, a date-time without an offset or a value that is not a date-time makes the leaf
- * false.
- */
-export const zSiteConditionDateLeafInput = z.strictObject({
-  kind: z.enum(['date']),
-  field: z.string(),
-  operator: zSiteConditionDateOperator,
-  at: zTimestamp
 });
 
 /**
@@ -3359,8 +3312,8 @@ export const zSiteCustomFieldResource = z.object({
   id: zEntityId,
   key: z.string(),
   name: z.string(),
-  type: zSiteCustomFieldType,
-  ruleOperators: z.array(zSiteConditionOperator),
+  type: zCustomFieldType,
+  ruleOperators: z.array(zConditionOperator),
   revision: zRevision,
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -3383,21 +3336,6 @@ export const zSiteEmailTemplateResource = z.object({
 });
 
 /**
- * One Contact's progress through an Automation
- */
-export const zSiteEnrollmentResource = z.object({
-  id: zEntityId,
-  automationId: zEntityId,
-  contactId: zEntityId,
-  status: zSiteEnrollmentStatus,
-  currentStep: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  resumeAt: z.exactOptional(zTimestamp),
-  failure: z.exactOptional(zSiteEnrollmentFailure),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
-});
-
-/**
  * A tracked event shown in the activity feed
  */
 export const zSiteEventResource = z.object({
@@ -3409,30 +3347,6 @@ export const zSiteEventResource = z.object({
   emailSubject: z.exactOptional(z.string().nullable()),
   occurredAt: zTimestamp,
   createdAt: zTimestamp
-});
-
-/**
- * A workspace sending-provider integration
- */
-export const zSiteIntegrationResource = z.object({
-  id: zEntityId,
-  name: z.string(),
-  channel: zSiteIntegrationChannel,
-  provider: zSiteIntegrationProvider,
-  enabled: z.boolean(),
-  isDefault: z.boolean(),
-  maxPerSecond: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  maxPerDay: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
-  providerLimit: zSiteProviderLimitStatus,
-  config: zSiteIntegrationConfig,
-  preset: z.string().nullable(),
-  params: zJsonObject,
-  secretsRetiring: z.array(z.string()),
-  hookUrl: z.string(),
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
-  revision: zRevision,
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
 });
 
 /**
@@ -3465,7 +3379,7 @@ export const zSiteJoinDomainResource = z.object({
   id: zEntityId,
   domain: z.string(),
   verified: z.boolean(),
-  record: zSiteDnsRecord,
+  record: zDnsRecord,
   lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
   verifiedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
@@ -3581,44 +3495,6 @@ export const zSiteCreatePersonalTokenResponse = z.object({
 });
 
 /**
- * One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
- */
-export const zSiteRuleFiringResource = z.object({
-  id: zEntityId,
-  ruleId: zEntityId,
-  contactId: zEntityId,
-  action: z.string(),
-  eventSourceId: z.string(),
-  results: z.array(zSiteRuleActionResult),
-  completedAt: z.exactOptional(zTimestamp),
-  createdAt: zTimestamp
-});
-
-/**
- * Sending domain resource used by the site UI (ADR 0010). sphericon generates the
- * DKIM keypair; the user publishes the DKIM TXT to authenticate the domain. The
- * private key is never exposed. `verified` is re-checked in the background:
- * the domain loses it (`verificationLostAt`) if the DNS record disappears.
- */
-export const zSiteSendingDomainResource = z.object({
-  id: zEntityId,
-  domain: z.string(),
-  dkimSelector: z.string(),
-  verified: z.boolean(),
-  dkimRecord: zSiteDnsRecord,
-  spfRecord: zSiteDnsRecord,
-  dmarcRecord: zSiteDnsRecord,
-  dmarcCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  dmarcFoundAt: z.exactOptional(zTimestamp.nullable()),
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  verifiedAt: z.exactOptional(zTimestamp.nullable()),
-  verificationLostAt: z.exactOptional(zTimestamp.nullable()),
-  discardedAt: z.exactOptional(zTimestamp.nullable()),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
-});
-
-/**
  * The Workspace's Setup checklist: its steps are read now, never ticked by hand, and the read
  * that first finds every step done stamps the Workspace, which keeps it complete for good
  */
@@ -3632,9 +3508,9 @@ export const zSiteSetupProgress = z.object({
  */
 export const zSiteSuppressionResource = z.object({
   id: zEntityId,
-  channel: zSiteSuppressionChannel,
+  channel: zSuppressionChannel,
   destination: z.string(),
-  reason: zSiteSuppressionReason,
+  reason: zSuppressionReason,
   liftedAt: z.exactOptional(zTimestamp.nullable()),
   createdAt: zTimestamp,
   updatedAt: zTimestamp
@@ -3647,24 +3523,6 @@ export const zSiteTagResource = z.object({
   id: zEntityId,
   name: z.string(),
   createdAt: zTimestamp
-});
-
-/**
- * A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and the first-party tracker are served
- */
-export const zSiteTrackingDomainResource = z.object({
-  id: zEntityId,
-  host: z.string(),
-  role: zSiteTrackingDomainRole,
-  state: zSiteTrackingState,
-  reason: z.exactOptional(zSiteTrackingReason),
-  record: zSiteCnameRecord,
-  ownershipRecord: zSiteDnsRecord,
-  servedAt: z.exactOptional(zTimestamp.nullable()),
-  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
-  stateChangedAt: z.exactOptional(zTimestamp.nullable()),
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
 });
 
 /**
@@ -3695,34 +3553,6 @@ export const zSiteUserResource = z.object({
   signupSurveyDue: z.boolean(),
   acceptancesPending: z.array(zSiteSignupItem),
   createdAt: zTimestamp
-});
-
-/**
- * The failure state of an endpoint that is currently failing; absent while it is healthy.
- */
-export const zSiteWebhookFailure = z.object({
-  consecutiveFailures: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  since: zTimestamp,
-  lastFailureAt: zTimestamp,
-  kind: zSiteWebhookErrorKind,
-  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
-});
-
-/**
- * Webhook endpoint resource used by the site UI
- */
-export const zSiteWebhookEndpointResource = z.object({
-  id: zEntityId,
-  url: z.string(),
-  secret: z.string(),
-  eventTypes: z.array(z.string()),
-  enabled: z.boolean(),
-  disabledAt: z.exactOptional(zTimestamp),
-  disabledReason: z.exactOptional(zSiteWebhookDisabledReason),
-  failure: z.exactOptional(zSiteWebhookFailure),
-  revision: zRevision,
-  createdAt: zTimestamp,
-  updatedAt: zTimestamp
 });
 
 /**
@@ -3788,6 +3618,96 @@ export const zTokenOnlyScope = z.enum([
 ]);
 
 /**
+ * What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+ * snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+ * the links already sent and the snippet already installed on it, until its CNAME leaves the edge
+ */
+export const zTrackingDomainRole = z.enum([
+  'current',
+  'replacement',
+  'retired'
+]);
+
+/**
+ * Why a Tracking domain is held back although its records may be right: `host_taken` means another Workspace already has this host verified (ADR 0038)
+ */
+export const zTrackingReason = z.enum(['host_taken']);
+
+/**
+ * State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS on the host answers
+ */
+export const zTrackingState = z.enum([
+  'pending',
+  'dns_verified',
+  'serving'
+]);
+
+/**
+ * A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and the first-party tracker are served
+ */
+export const zTrackingDomainResource = z.object({
+  id: zEntityId,
+  host: z.string(),
+  role: zTrackingDomainRole,
+  state: zTrackingState,
+  reason: z.exactOptional(zTrackingReason),
+  record: zCnameRecord,
+  ownershipRecord: zDnsRecord,
+  servedAt: z.exactOptional(zTimestamp.nullable()),
+  lastCheckedAt: z.exactOptional(zTimestamp.nullable()),
+  stateChangedAt: z.exactOptional(zTimestamp.nullable()),
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
+ * A Twilio account without its secret
+ */
+export const zTwilioConfig = z.object({
+  kind: z.enum(['twilio']),
+  accountSid: z.string(),
+  apiKeySid: z.string().nullable(),
+  from: z.string(),
+  fromKind: zSmsFromKind,
+  callbacksSet: z.boolean()
+});
+
+/**
+ * Provider config as returned, discriminated by `kind`. Secrets are omitted.
+ */
+export const zIntegrationConfig = z.discriminatedUnion('kind', [
+  zSmtpConfig.extend({ kind: z.literal('smtp') }),
+  zSesConfig.extend({ kind: z.literal('ses') }),
+  zInboxConfig.extend({ kind: z.literal('inbox') }),
+  zTelegramConfig.extend({ kind: z.literal('telegram') }),
+  zTwilioConfig.extend({ kind: z.literal('twilio') })
+]);
+
+/**
+ * A workspace sending-provider integration
+ */
+export const zSiteIntegrationResource = z.object({
+  id: zEntityId,
+  name: z.string(),
+  channel: zIntegrationChannel,
+  provider: zIntegrationProvider,
+  enabled: z.boolean(),
+  isDefault: z.boolean(),
+  maxPerSecond: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  maxPerDay: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).nullable(),
+  providerLimit: zProviderLimitStatus,
+  config: zIntegrationConfig,
+  preset: z.string().nullable(),
+  params: zJsonObject,
+  secretsRetiring: z.array(z.string()),
+  hookUrl: z.string(),
+  discardedAt: z.exactOptional(zTimestamp.nullable()),
+  revision: zRevision,
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
  * A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a Messaging Service's delivery reports, at the integration's hook. The Auth Token that signs Twilio's callbacks is the `twilio` Preset's `auth_token` param, kept and rotated apart from these credentials
  */
 export const zTwilioConfigInput = z.strictObject({
@@ -3824,6 +3744,20 @@ export const zCreateIntegrationInput = z.strictObject({
 });
 
 /**
+ * Request body for updating an automation. The name changes at once; the trigger, exit and
+ * goal events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
+ * version's, and only publishing makes the draft live.
+ */
+export const zUpdateAutomationInput = z.strictObject({
+  revision: zRevision,
+  name: z.exactOptional(zName),
+  triggerEvent: z.exactOptional(z.string()),
+  exitEvents: z.exactOptional(z.array(z.string())),
+  goalEvent: z.exactOptional(z.string().nullable()),
+  steps: z.exactOptional(z.array(zAutomationStepInput))
+});
+
+/**
  * Request body for updating a draft broadcast: an omitted field keeps its value, null clears it
  */
 export const zUpdateBroadcastInput = z.strictObject({
@@ -3851,6 +3785,15 @@ export const zUpdateContactInput = z.object({
   city: z.exactOptional(z.string().max(255).nullable()),
   avatar: z.exactOptional(zImageUrl.nullable()),
   customFields: z.exactOptional(zJsonObject.nullable())
+});
+
+/**
+ * Request body for updating a custom field: its key never changes
+ */
+export const zUpdateCustomFieldInput = z.strictObject({
+  revision: zRevision,
+  name: z.exactOptional(zName),
+  type: z.exactOptional(zCustomFieldType)
 });
 
 /**
@@ -3957,6 +3900,67 @@ export const zSiteUpdateMeInput = z.strictObject({
 });
 
 /**
+ * Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the
+ * receiver answered 410 Gone) and `persistent_failure` (deliveries failed for longer
+ * than the window). Absent while the endpoint is enabled.
+ */
+export const zWebhookDisabledReason = z.enum([
+  'owner',
+  'gone',
+  'persistent_failure'
+]);
+
+/**
+ * Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in
+ * time), `blocked_address` (the URL names an address this instance does not permit),
+ * `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+ * failure).
+ */
+export const zWebhookErrorKind = z.enum([
+  'timeout',
+  'blocked_address',
+  'http_status',
+  'network'
+]);
+
+/**
+ * The failure state of an endpoint that is currently failing; absent while it is healthy.
+ */
+export const zWebhookFailure = z.object({
+  consecutiveFailures: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  since: zTimestamp,
+  lastFailureAt: zTimestamp,
+  kind: zWebhookErrorKind,
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }))
+});
+
+/**
+ * Webhook endpoint resource used by the site UI
+ */
+export const zSiteWebhookEndpointResource = z.object({
+  id: zEntityId,
+  url: z.string(),
+  secret: z.string(),
+  eventTypes: z.array(z.string()),
+  enabled: z.boolean(),
+  disabledAt: z.exactOptional(zTimestamp),
+  disabledReason: z.exactOptional(zWebhookDisabledReason),
+  failure: z.exactOptional(zWebhookFailure),
+  revision: zRevision,
+  createdAt: zTimestamp,
+  updatedAt: zTimestamp
+});
+
+/**
+ * What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+ */
+export const zWebhookTestResult = z.object({
+  delivered: z.boolean(),
+  status: z.exactOptional(z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })),
+  kind: z.exactOptional(zWebhookErrorKind)
+});
+
+/**
  * A Workspace id (ADR 0043): 8 random base62 characters, assigned once at creation and the
  * Workspace's one public address.
  */
@@ -4019,7 +4023,7 @@ export const zSiteWorkspaceResource = z.object({
   secondFactorRequiredAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
   secondFactorRequirementGraceEndsAt: z.exactOptional(zTimestamp.nullable()),
-  sendCap: z.exactOptional(zSiteSendCap.nullable()),
+  sendCap: z.exactOptional(zSendCap.nullable()),
   accountLinkAvailable: z.boolean(),
   createdAt: zTimestamp,
   revision: zRevision
@@ -4056,73 +4060,83 @@ export const zProblemDetails = z.object({
  * A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none).
  */
-export const zSiteConditionGroup = z.object({
+export const zConditionGroup = z.object({
   kind: z.enum(['group']),
-  combinator: zSiteConditionCombinator,
+  combinator: zConditionCombinator,
   not: z.exactOptional(z.boolean()),
-  rules: z.array(z.lazy((): any => zSiteConditionNode))
+  rules: z.array(z.lazy((): any => zConditionNode))
 });
 
 /**
  * A group of tests combined with and/or, optionally negated. An empty group matches every
  * contact (an empty negated group matches none).
  */
-export const zSiteConditionGroupInput = z.strictObject({
+export const zConditionGroupInput = z.strictObject({
   kind: z.enum(['group']),
-  combinator: zSiteConditionCombinator,
+  combinator: zConditionCombinator,
   not: z.exactOptional(z.boolean()),
-  rules: z.array(z.lazy((): any => zSiteConditionNodeInput))
+  rules: z.array(z.lazy((): any => zConditionNodeInput))
 });
 
 /**
  * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
  * group inside a condition group, discriminated by `kind`.
  */
-export const zSiteConditionNode = z.discriminatedUnion('kind', [
-  zSiteConditionLeaf.extend({ kind: z.literal('rule') }),
-  zSiteConditionEventLeaf.extend({ kind: z.literal('event') }),
-  zSiteConditionNumberLeaf.extend({ kind: z.literal('number') }),
-  zSiteConditionDateLeaf.extend({ kind: z.literal('date') }),
-  zSiteConditionDateWithinLeaf.extend({ kind: z.literal('dateWithin') }),
-  zSiteConditionGroup.extend({ kind: z.literal('group') })
+export const zConditionNode = z.discriminatedUnion('kind', [
+  zConditionLeaf.extend({ kind: z.literal('rule') }),
+  zConditionEventLeaf.extend({ kind: z.literal('event') }),
+  zConditionNumberLeaf.extend({ kind: z.literal('number') }),
+  zConditionDateLeaf.extend({ kind: z.literal('date') }),
+  zConditionDateWithinLeaf.extend({ kind: z.literal('dateWithin') }),
+  zConditionGroup.extend({ kind: z.literal('group') })
 ]);
 
 /**
  * A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested
  * group inside a condition group, discriminated by `kind`.
  */
-export const zSiteConditionNodeInput = z.discriminatedUnion('kind', [
-  zSiteConditionLeafInput.extend({ kind: z.literal('rule') }),
-  zSiteConditionEventLeafInput.extend({ kind: z.literal('event') }),
-  zSiteConditionNumberLeafInput.extend({ kind: z.literal('number') }),
-  zSiteConditionDateLeafInput.extend({ kind: z.literal('date') }),
-  zSiteConditionDateWithinLeafInput.extend({ kind: z.literal('dateWithin') }),
-  zSiteConditionGroupInput.extend({ kind: z.literal('group') })
+export const zConditionNodeInput = z.discriminatedUnion('kind', [
+  zConditionLeafInput.extend({ kind: z.literal('rule') }),
+  zConditionEventLeafInput.extend({ kind: z.literal('event') }),
+  zConditionNumberLeafInput.extend({ kind: z.literal('number') }),
+  zConditionDateLeafInput.extend({ kind: z.literal('date') }),
+  zConditionDateWithinLeafInput.extend({ kind: z.literal('dateWithin') }),
+  zConditionGroupInput.extend({ kind: z.literal('group') })
 ]);
 
 /**
- * Site request body for creating a Rule: it is created inactive, with its definition as the draft
+ * Request body for creating a Rule: it is created inactive, with its definition as the draft
  */
-export const zSiteCreateRuleInput = z.strictObject({
+export const zCreateRuleInput = z.strictObject({
   name: zName,
   triggerEvents: z.array(z.string()).min(1),
-  condition: z.exactOptional(zSiteConditionGroupInput),
-  actions: z.exactOptional(z.array(zSiteRuleActionInput))
+  condition: z.exactOptional(zConditionGroupInput),
+  actions: z.exactOptional(z.array(zRuleActionInput))
 });
 
 /**
- * Site request body for creating a segment
+ * Request body for creating a segment
  */
-export const zSiteCreateSegmentInput = z.strictObject({
+export const zCreateSegmentInput = z.strictObject({
   name: zName,
-  condition: zSiteConditionGroupInput
+  condition: zConditionGroupInput
+});
+
+/**
+ * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
+ */
+export const zRuleVersion = z.object({
+  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
+  triggerEvents: z.array(z.string()),
+  condition: z.exactOptional(zConditionGroup),
+  actions: z.array(zRuleAction)
 });
 
 /**
  * Request body for previewing a condition's segment
  */
 export const zSitePreviewSegmentInput = z.strictObject({
-  condition: z.exactOptional(zSiteConditionGroupInput),
+  condition: z.exactOptional(zConditionGroupInput),
   channel: z.exactOptional(zBroadcastChannel),
   integrationId: z.exactOptional(zEntityId.nullable())
 });
@@ -4133,9 +4147,9 @@ export const zSitePreviewSegmentInput = z.strictObject({
 export const zSiteRuleResource = z.object({
   id: zEntityId,
   name: z.string(),
-  status: zSiteRuleStatus,
-  live: z.lazy((): any => zSiteRuleVersion).nullable(),
-  draft: z.lazy((): any => zSiteRuleVersion).nullable(),
+  status: zRuleStatus,
+  live: zRuleVersion.nullable(),
+  draft: zRuleVersion.nullable(),
   activatedAt: z.exactOptional(zTimestamp.nullable()),
   discardedAt: z.exactOptional(zTimestamp.nullable()),
   revision: zRevision,
@@ -4144,22 +4158,12 @@ export const zSiteRuleResource = z.object({
 });
 
 /**
- * One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions
- */
-export const zSiteRuleVersion = z.object({
-  number: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
-  triggerEvents: z.array(z.string()),
-  condition: z.exactOptional(zSiteConditionGroup),
-  actions: z.array(zSiteRuleAction)
-});
-
-/**
  * Segment resource used by the site UI
  */
 export const zSiteSegmentResource = z.object({
   id: zEntityId,
   name: z.string(),
-  condition: z.exactOptional(zSiteConditionGroup),
+  condition: z.exactOptional(zConditionGroup),
   archivedAt: z.exactOptional(zTimestamp.nullable()),
   revision: zRevision,
   createdAt: zTimestamp,
@@ -4167,23 +4171,23 @@ export const zSiteSegmentResource = z.object({
 });
 
 /**
- * Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
+ * Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and Actions write the draft, and the ones left out keep the draft's, else the live version's.
  */
-export const zSiteUpdateRuleInput = z.strictObject({
+export const zUpdateRuleInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
   triggerEvents: z.exactOptional(z.array(z.string()).min(1)),
-  condition: z.exactOptional(zSiteConditionGroupInput),
-  actions: z.exactOptional(z.array(zSiteRuleActionInput))
+  condition: z.exactOptional(zConditionGroupInput),
+  actions: z.exactOptional(z.array(zRuleActionInput))
 });
 
 /**
- * Site request body for updating a segment
+ * Request body for updating a segment
  */
-export const zSiteUpdateSegmentInput = z.strictObject({
+export const zUpdateSegmentInput = z.strictObject({
   revision: zRevision,
   name: z.exactOptional(zName),
-  condition: z.exactOptional(zSiteConditionGroupInput)
+  condition: z.exactOptional(zConditionGroupInput)
 });
 
 /**
@@ -4245,6 +4249,23 @@ export const zPageQueryPage = z.int().gte(1).max(2147483647, { error: 'Invalid v
  * Page size
  */
 export const zPageQueryPageSize = z.int().gte(1).lte(100).default(25);
+
+/**
+ * Unique identifier
+ */
+export const zSendingDomainResourceKeyId = zEntityId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSendingDomainResourceKeyWorkspaceId = zWorkspaceId;
+
+/**
+ * The Workspace id: its short opaque public address and the route key for nested
+ * workspace resources (ADR 0043)
+ */
+export const zSendingDomainResourceParentKey = zWorkspaceId;
 
 /**
  * Unique identifier
@@ -4549,23 +4570,6 @@ export const zSiteSegmentResourceKeyWorkspaceId = zWorkspaceId;
  * workspace resources (ADR 0043)
  */
 export const zSiteSegmentResourceParentKey = zWorkspaceId;
-
-/**
- * Unique identifier
- */
-export const zSiteSendingDomainResourceKeyId = zEntityId;
-
-/**
- * The Workspace id: its short opaque public address and the route key for nested
- * workspace resources (ADR 0043)
- */
-export const zSiteSendingDomainResourceKeyWorkspaceId = zWorkspaceId;
-
-/**
- * The Workspace id: its short opaque public address and the route key for nested
- * workspace resources (ADR 0043)
- */
-export const zSiteSendingDomainResourceParentKey = zWorkspaceId;
 
 /**
  * true lists the lifted suppressions instead of the active ones; the default hides them
@@ -4962,7 +4966,7 @@ export const zSiteOAuthDecideResponse = zSiteOAuthDecisionResult;
 /**
  * The request has succeeded.
  */
-export const zSitePresetsListResponse = z.array(zSitePresetResource);
+export const zSitePresetsListResponse = z.array(zPresetResource);
 
 /**
  * There is no content to send for this request, but the headers may be useful.
@@ -5249,7 +5253,7 @@ export const zSiteAutomationsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteAutomationsCreateBody = zSiteCreateAutomationInput;
+export const zSiteAutomationsCreateBody = zCreateAutomationInput;
 
 export const zSiteAutomationsCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -5260,7 +5264,7 @@ export const zSiteAutomationsCreatePath = z.object({
  */
 export const zSiteAutomationsCreateResponse = zSiteAutomationResource;
 
-export const zSiteAutomationsDryRunHttpStepBody = zSiteDryRunHttpStepInput;
+export const zSiteAutomationsDryRunHttpStepBody = zDryRunHttpStepInput;
 
 export const zSiteAutomationsDryRunHttpStepPath = z.object({
   workspaceId: zWorkspaceId
@@ -5269,7 +5273,7 @@ export const zSiteAutomationsDryRunHttpStepPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteAutomationsDryRunHttpStepResponse = zSiteDryRunHttpStepResult;
+export const zSiteAutomationsDryRunHttpStepResponse = zDryRunHttpStepResult;
 
 export const zSiteEnrollmentsListPath = z.object({
   workspaceId: zWorkspaceId,
@@ -5279,14 +5283,14 @@ export const zSiteEnrollmentsListPath = z.object({
 export const zSiteEnrollmentsListQuery = z.object({
   page: z.int().gte(1).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }).optional().default(1),
   pageSize: z.int().gte(1).lte(100).optional().default(25),
-  status: z.exactOptional(zSiteEnrollmentStatus)
+  status: z.exactOptional(zEnrollmentStatus)
 });
 
 /**
  * Paginated response
  */
 export const zSiteEnrollmentsListResponse = z.object({
-  items: z.array(zSiteEnrollmentResource),
+  items: z.array(zEnrollmentResource),
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -5302,7 +5306,7 @@ export const zSiteEnrollmentsGetPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteEnrollmentsGetResponse = zSiteEnrollmentResource;
+export const zSiteEnrollmentsGetResponse = zEnrollmentResource;
 
 export const zSiteAutomationReportsGetPath = z.object({
   workspaceId: zWorkspaceId,
@@ -5310,13 +5314,13 @@ export const zSiteAutomationReportsGetPath = z.object({
 });
 
 export const zSiteAutomationReportsGetQuery = z.object({
-  period: z.exactOptional(zSiteAutomationReportPeriod)
+  period: z.exactOptional(zAutomationReportPeriod)
 });
 
 /**
  * The request has succeeded.
  */
-export const zSiteAutomationReportsGetResponse = zSiteAutomationReport;
+export const zSiteAutomationReportsGetResponse = zAutomationReport;
 
 export const zSiteAutomationsGetPath = z.object({
   workspaceId: zWorkspaceId,
@@ -5328,7 +5332,7 @@ export const zSiteAutomationsGetPath = z.object({
  */
 export const zSiteAutomationsGetResponse = zSiteAutomationResource;
 
-export const zSiteAutomationsUpdateBody = zSiteUpdateAutomationInput;
+export const zSiteAutomationsUpdateBody = zUpdateAutomationInput;
 
 export const zSiteAutomationsUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -5401,7 +5405,7 @@ export const zSiteBrandKitGetPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteBrandKitGetResponse = zSiteBrandKitResource;
+export const zSiteBrandKitGetResponse = zBrandKitResource;
 
 export const zSiteBrandKitSaveBody = zSiteSaveBrandKitInput;
 
@@ -5412,7 +5416,7 @@ export const zSiteBrandKitSavePath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteBrandKitSaveResponse = zSiteBrandKitResource;
+export const zSiteBrandKitSaveResponse = zBrandKitResource;
 
 export const zSiteBrandKitRecreateStarterTemplatesPath = z.object({
   workspaceId: zWorkspaceId
@@ -5843,7 +5847,7 @@ export const zSiteCustomFieldsGetPath = z.object({
  */
 export const zSiteCustomFieldsGetResponse = zSiteCustomFieldResource;
 
-export const zSiteCustomFieldsUpdateBody = zSiteUpdateCustomFieldInput;
+export const zSiteCustomFieldsUpdateBody = zUpdateCustomFieldInput;
 
 export const zSiteCustomFieldsUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -6188,7 +6192,7 @@ export const zSiteRulesDeletePath = z.object({
  */
 export const zSiteRulesDeleteResponse = z.void();
 
-export const zSiteRulesDryRunBody = zSiteDryRunRuleInput;
+export const zSiteRulesDryRunBody = zDryRunRuleInput;
 
 export const zSiteRulesDryRunPath = z.object({
   workspaceId: zWorkspaceId,
@@ -6198,7 +6202,7 @@ export const zSiteRulesDryRunPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteRulesDryRunResponse = zSiteRuleDryRunResource;
+export const zSiteRulesDryRunResponse = zRuleDryRunResource;
 
 export const zSiteRuleFiringsListPath = z.object({
   workspaceId: zWorkspaceId,
@@ -6214,7 +6218,7 @@ export const zSiteRuleFiringsListQuery = z.object({
  * Paginated response
  */
 export const zSiteRuleFiringsListResponse = z.object({
-  items: z.array(zSiteRuleFiringResource),
+  items: z.array(zRuleFiringResource),
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -6275,7 +6279,7 @@ export const zSiteSendingDomainsListQuery = z.object({
  * Paginated response
  */
 export const zSiteSendingDomainsListResponse = z.object({
-  items: z.array(zSiteSendingDomainResource),
+  items: z.array(zSendingDomainResource),
   page: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   pageSize: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
   totalItems: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' }),
@@ -6291,7 +6295,7 @@ export const zSiteSendingDomainsCreatePath = z.object({
 /**
  * The request has succeeded and a new resource has been created as a result.
  */
-export const zSiteSendingDomainsCreateResponse = zSiteSendingDomainResource;
+export const zSiteSendingDomainsCreateResponse = zSendingDomainResource;
 
 export const zSiteSendingDomainsDeletePath = z.object({
   workspaceId: zWorkspaceId,
@@ -6311,7 +6315,7 @@ export const zSiteSendingDomainsGetPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteSendingDomainsGetResponse = zSiteSendingDomainResource;
+export const zSiteSendingDomainsGetResponse = zSendingDomainResource;
 
 export const zSiteSendingDomainsVerifyPath = z.object({
   workspaceId: zWorkspaceId,
@@ -6321,7 +6325,7 @@ export const zSiteSendingDomainsVerifyPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteSendingDomainsVerifyResponse = zSiteSendingDomainResource;
+export const zSiteSendingDomainsVerifyResponse = zSendingDomainResource;
 
 export const zSiteSetupChecklistGetPath = z.object({
   workspaceId: zWorkspaceId
@@ -6527,7 +6531,7 @@ export const zSiteTrackingDomainsListPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteTrackingDomainsListResponse = z.array(zSiteTrackingDomainResource);
+export const zSiteTrackingDomainsListResponse = z.array(zTrackingDomainResource);
 
 export const zSiteTrackingDomainsSetBody = zSetTrackingDomainInput;
 
@@ -6538,7 +6542,7 @@ export const zSiteTrackingDomainsSetPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteTrackingDomainsSetResponse = zSiteTrackingDomainResource;
+export const zSiteTrackingDomainsSetResponse = zTrackingDomainResource;
 
 export const zSiteTrackingDomainsRemovePath = z.object({
   workspaceId: zWorkspaceId,
@@ -6558,7 +6562,7 @@ export const zSiteTrackingDomainsVerifyPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteTrackingDomainsVerifyResponse = zSiteTrackingDomainResource;
+export const zSiteTrackingDomainsVerifyResponse = zTrackingDomainResource;
 
 export const zSiteTransactionalEmailsListPath = z.object({
   workspaceId: zWorkspaceId
@@ -6663,7 +6667,7 @@ export const zSiteWebhooksTestPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zSiteWebhooksTestResponse = zSiteWebhookTestResult;
+export const zSiteWebhooksTestResponse = zWebhookTestResult;
 
 export const zSiteRulesListPath = z.object({
   workspaceId: zWorkspaceId
@@ -6685,7 +6689,7 @@ export const zSiteRulesListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteRulesCreateBody = zSiteCreateRuleInput;
+export const zSiteRulesCreateBody = zCreateRuleInput;
 
 export const zSiteRulesCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -6706,7 +6710,7 @@ export const zSiteRulesGetPath = z.object({
  */
 export const zSiteRulesGetResponse = zSiteRuleResource;
 
-export const zSiteRulesUpdateBody = zSiteUpdateRuleInput;
+export const zSiteRulesUpdateBody = zUpdateRuleInput;
 
 export const zSiteRulesUpdatePath = z.object({
   workspaceId: zWorkspaceId,
@@ -6773,7 +6777,7 @@ export const zSiteSegmentsListResponse = z.object({
   totalPages: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
-export const zSiteSegmentsCreateBody = zSiteCreateSegmentInput;
+export const zSiteSegmentsCreateBody = zCreateSegmentInput;
 
 export const zSiteSegmentsCreatePath = z.object({
   workspaceId: zWorkspaceId
@@ -6805,7 +6809,7 @@ export const zSiteSegmentsGetPath = z.object({
  */
 export const zSiteSegmentsGetResponse = zSiteSegmentResource;
 
-export const zSiteSegmentsUpdateBody = zSiteUpdateSegmentInput;
+export const zSiteSegmentsUpdateBody = zUpdateSegmentInput;
 
 export const zSiteSegmentsUpdatePath = z.object({
   workspaceId: zWorkspaceId,

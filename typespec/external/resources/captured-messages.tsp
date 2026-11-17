@@ -5,16 +5,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** The surface that asked for the send a Captured message belongs to */
-enum CapturedMessageSurface {
-  broadcast,
-  automation,
-  transactional,
-
-  /** A Test send of a Broadcast: it has no Outbound message */
-  test,
-}
-
 /** One header line of a Captured message */
 model CapturedMessageHeader {
   @untrusted

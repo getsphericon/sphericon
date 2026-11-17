@@ -10523,7 +10523,7 @@ type SiteEnrollmentsListParams struct {
 	// Page size.
 	PageSize OptInt32 `json:",omitempty,omitzero"`
 	// Only Enrollments in this status.
-	Status OptSiteEnrollmentStatus `json:",omitempty,omitzero"`
+	Status OptEnrollmentStatus `json:",omitempty,omitzero"`
 }
 
 func unpackSiteEnrollmentsListParams(packed middleware.Parameters) (params SiteEnrollmentsListParams) {
@@ -10565,7 +10565,7 @@ func unpackSiteEnrollmentsListParams(packed middleware.Parameters) (params SiteE
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.Status = v.(OptSiteEnrollmentStatus)
+			params.Status = v.(OptEnrollmentStatus)
 		}
 	}
 	return params
@@ -10837,7 +10837,7 @@ func decodeSiteEnrollmentsListParams(args [2]string, argsEscaped bool, r *http.R
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotStatusVal SiteEnrollmentStatus
+				var paramsDotStatusVal EnrollmentStatus
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -10849,7 +10849,7 @@ func decodeSiteEnrollmentsListParams(args [2]string, argsEscaped bool, r *http.R
 						return err
 					}
 
-					paramsDotStatusVal = SiteEnrollmentStatus(c)
+					paramsDotStatusVal = EnrollmentStatus(c)
 					return nil
 				}(); err != nil {
 					return err

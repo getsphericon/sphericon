@@ -34,11 +34,8 @@ import { ChangedNotice } from '../../editing/ChangedNotice.tsx'
 import { useEditorEffects } from '../../editing/useEditorEffects.ts'
 import { useEditorSession } from '../../editing/useEditorSession.ts'
 import { siteAutomationsGetQueryKey } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
-import type {
-  SiteAutomationResource,
-  SiteAutomationVersion,
-} from '../../generated/site/types.gen.ts'
+import { AutomationStepType } from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { useNotify } from '../../hooks/useNotify.ts'
 import { Route as automationsRoute } from '../../routes/workspaces/$workspaceId/automations/index.tsx'
 import { stepsToGraph } from './definition.ts'
@@ -135,7 +132,7 @@ interface AutomationBuilderProps {
   workspaceId: string
   automation: SiteAutomationResource
   // The version the canvas edits and a save writes over: the draft, else the live one.
-  edited: SiteAutomationVersion
+  edited: AutomationVersion
 }
 
 // The SDK owns its own editor theme and only auto-detects it from
@@ -245,7 +242,7 @@ function BuilderBar({
 // the canvas holds an email step, saved or not: Publish is refused until the Workspace has one.
 function CanvasPostalAddressNotice({ workspaceId }: { workspaceId: string }) {
   const sendsEmail = useStore((state) =>
-    state.nodes.some((node) => node.data.type === SiteAutomationStepType.EMAIL),
+    state.nodes.some((node) => node.data.type === AutomationStepType.EMAIL),
   )
   return sendsEmail ? <PostalAddressNotice workspaceId={workspaceId} /> : null
 }

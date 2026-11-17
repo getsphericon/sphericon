@@ -23,7 +23,7 @@ func TestSiteWebhooksShowTheFailureState(t *testing.T) {
 	res := failing
 	f, has := res.Failure.Get()
 	require.True(t, has)
-	assert.Equal(t, siteapi.SiteWebhookErrorKindHTTPStatus, f.Kind)
+	assert.Equal(t, siteapi.WebhookErrorKindHTTPStatus, f.Kind)
 	assert.Equal(t, int32(503), f.Status.Value)
 	assert.Equal(t, int32(7), f.ConsecutiveFailures)
 	assert.True(t, time.Time(f.Since).Before(time.Time(f.LastFailureAt)))
@@ -42,13 +42,13 @@ func TestSiteWebhooksShowWhyAnEndpointTurnedItselfOff(t *testing.T) {
 	require.NoError(t, err)
 	res := gone
 	assert.False(t, res.Enabled)
-	assert.Equal(t, siteapi.SiteWebhookDisabledReasonGone, res.DisabledReason.Value)
+	assert.Equal(t, siteapi.WebhookDisabledReasonGone, res.DisabledReason.Value)
 	assert.True(t, res.DisabledAt.IsSet(), "when it turned off is shown")
 
 	byOwner, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsDisabledID)})
 	require.NoError(t, err)
 	ownerRes := byOwner
-	assert.Equal(t, siteapi.SiteWebhookDisabledReasonOwner, ownerRes.DisabledReason.Value)
+	assert.Equal(t, siteapi.WebhookDisabledReasonOwner, ownerRes.DisabledReason.Value)
 	assert.True(t, ownerRes.DisabledAt.IsSet())
 
 	healthy, err := c.SiteWebhooksGet(ctx, siteapi.SiteWebhooksGetParams{WorkspaceId: fixtures.AcmePublicID, ID: siteapi.EntityId(fixtures.WebhookCodebasicsID)})

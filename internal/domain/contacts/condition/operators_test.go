@@ -66,7 +66,7 @@ func TestCustomFieldKeyIsABoundArgument(t *testing.T) {
 	// ingest created, and it only ever reaches the query as one quoted literal.
 	payload := fixtures.CustomFieldInitrodeInjectionKey
 	// Four representative operators for the injection probe.
-	for _, op := range []string{string(siteapi.SiteConditionOperatorEq), string(siteapi.SiteConditionOperatorNeq), string(siteapi.SiteConditionOperatorContains), string(siteapi.SiteConditionOperatorNotNull)} {
+	for _, op := range []string{string(siteapi.ConditionOperatorEq), string(siteapi.ConditionOperatorNeq), string(siteapi.ConditionOperatorContains), string(siteapi.ConditionOperatorNotNull)} {
 		assert.Empty(t, match(rule("custom:"+payload, op, "a")), op)
 	}
 }

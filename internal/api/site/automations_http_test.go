@@ -25,12 +25,12 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	body := `{"text":"{{ first_name }}"}`
 
-	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
+	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Notify Slack", TriggerEvent: "signup",
-		Steps: []siteapi.SiteAutomationStepInput{{
-			Type: siteapi.SiteAutomationStepTypeHTTP, Body: siteapi.NewOptString(body),
+		Steps: []siteapi.AutomationStepInput{{
+			Type: siteapi.AutomationStepTypeHTTP, Body: siteapi.NewOptString(body),
 			URL:     siteapi.NewOptString("https://hooks.slack.com/services/T0/SECRETPATH"),
-			Headers: []siteapi.SiteAutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
+			Headers: []siteapi.AutomationHttpHeaderInput{{Name: "Authorization", Value: siteapi.NewOptString("Bearer hunter2")}},
 			Secret:  siteapi.NewOptString("whsec_topsecret"),
 		}},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
@@ -49,7 +49,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 
 	// Editing the body and resending only the step id keeps the stored secrets.
 	step.Body = siteapi.NewOptString(`{"text":"edited"}`)
-	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []siteapi.SiteAutomationStepInput{testhelper.Resend[siteapi.SiteAutomationStepInput](t, &step)}},
+	updated, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))), Steps: []siteapi.AutomationStepInput{testhelper.Resend[siteapi.AutomationStepInput](t, &step)}},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	upd := updated
@@ -100,25 +100,25 @@ func TestSiteHTTPStepDryRunRendersForAContactWithoutCalling(t *testing.T) {
 	params := siteapi.SiteAutomationsDryRunHttpStepParams{WorkspaceId: fixtures.AcmePublicID}
 	contact := siteapi.EntityId(fixtures.ContactAliceID)
 
-	ok, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.SiteDryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: contact}, params)
+	ok, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.DryRunHttpStepInput{Body: `{"name":"{{ first_name }}"}`, ContactId: contact}, params)
 	require.NoError(t, err)
 	rendered := ok
 	assert.JSONEq(t, `{"name":"Alice"}`, rendered.Body.Or(""))
 
-	bad, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.SiteDryRunHttpStepInput{Body: `{"n": {{ nope }}}`, ContactId: contact}, params)
+	bad, err := c.SiteAutomationsDryRunHttpStep(ctx, &siteapi.DryRunHttpStepInput{Body: `{"n": {{ nope }}}`, ContactId: contact}, params)
 	require.NoError(t, err)
 	failed := bad
-	assert.Equal(t, siteapi.SiteAutomationHttpErrorKindInvalidBody, failed.ErrorKind.Or(""))
+	assert.Equal(t, siteapi.AutomationHttpErrorKindInvalidBody, failed.ErrorKind.Or(""))
 	assert.False(t, failed.Body.Set)
 }
 
 func TestSiteHTTPStepRefusedAtSaveIsUnprocessable(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	_, err := c.SiteAutomationsCreate(context.Background(), &siteapi.SiteCreateAutomationInput{
+	_, err := c.SiteAutomationsCreate(context.Background(), &siteapi.CreateAutomationInput{
 		Name: "Bad", TriggerEvent: "signup",
-		Steps: []siteapi.SiteAutomationStepInput{{
-			Type: siteapi.SiteAutomationStepTypeHTTP, URL: siteapi.NewOptString("https://hooks.example.com/x"),
+		Steps: []siteapi.AutomationStepInput{{
+			Type: siteapi.AutomationStepTypeHTTP, URL: siteapi.NewOptString("https://hooks.example.com/x"),
 			Body: siteapi.NewOptString(`{"a": {{ nope }}}`),
 		}},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -132,16 +132,16 @@ func TestSiteAutomationRefusesInfrastructureEventsAsTrigger(t *testing.T) {
 	params := siteapi.SiteAutomationsCreateParams{WorkspaceId: fixtures.AcmePublicID}
 
 	for _, trigger := range []string{systemevent.EmailDelivered, systemevent.EmailDelayed, systemevent.EmailDropped, systemevent.EmailBounced, systemevent.EmailComplained, systemevent.EmailSent} {
-		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, trigger)
 	}
 
 	for _, trigger := range []string{systemevent.EmailOpened, systemevent.EmailClicked, systemevent.EmailUnsubscribed} {
-		_, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
+		_, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: siteapi.Name("From " + trigger), TriggerEvent: trigger}, params)
 		require.NoError(t, err, trigger)
 	}
 
-	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), TriggerEvent: siteapi.NewOptString(systemevent.EmailBounced)},
+	_, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWinBackID)))), TriggerEvent: siteapi.NewOptString(systemevent.EmailBounced)},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AutomationWinBackID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }

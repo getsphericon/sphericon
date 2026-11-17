@@ -8,7 +8,7 @@ import {
   siteEventsListOptions,
   siteRulesDryRunMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteRuleDryRunOutcome } from '../../generated/site/types.gen.ts'
+import { RuleDryRunOutcome } from '../../generated/site/types.gen.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 
@@ -60,7 +60,7 @@ export function RuleDryRun({ workspaceId, ruleId }: { workspaceId: string; ruleI
       ) : null}
       {dryRun.data ? (
         <Alert
-          color={dryRun.data.outcome === SiteRuleDryRunOutcome.WOULD_FIRE ? 'teal' : 'gray'}
+          color={dryRun.data.outcome === RuleDryRunOutcome.WOULD_FIRE ? 'teal' : 'gray'}
           title={t(($) => $.rules.dryRunOutcome[dryRun.data.outcome])}
         >
           {dryRun.data.actions.length > 0 ? (

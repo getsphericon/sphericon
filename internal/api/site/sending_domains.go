@@ -10,7 +10,7 @@ import (
 
 // sendingDomainResource maps the row, then attaches the DNS records the user publishes, which
 // the sendingdomains module derives and the mapper cannot see.
-func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SiteSendingDomainResource {
+func (h *Handlers) sendingDomainResource(d *ent.SendingDomain) siteapi.SendingDomainResource {
 	rec := h.sendingDomains.Records(d)
 	res := mapper.SendingDomainToResource(d)
 	res.DkimRecord = mapper.DnsRecordToResource(rec.DKIM)
@@ -30,7 +30,7 @@ func (h *Handlers) SiteSendingDomainsList(ctx context.Context, params siteapi.Si
 	return mapper.SendingDomainsListPage(page.Map(h.sendingDomainResource)), nil
 }
 
-func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (*siteapi.SiteSendingDomainResource, error) {
+func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.CreateSendingDomainInput, _ siteapi.SiteSendingDomainsCreateParams) (*siteapi.SendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	d, err := h.sendingDomains.Create(ctx, s, inputs.SendingDomainCreate(req))
@@ -41,7 +41,7 @@ func (h *Handlers) SiteSendingDomainsCreate(ctx context.Context, req *siteapi.Cr
 	return &res, nil
 }
 
-func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (*siteapi.SiteSendingDomainResource, error) {
+func (h *Handlers) SiteSendingDomainsGet(ctx context.Context, params siteapi.SiteSendingDomainsGetParams) (*siteapi.SendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)
@@ -59,7 +59,7 @@ func (h *Handlers) SiteSendingDomainsDelete(ctx context.Context, params siteapi.
 	return h.sendingDomainDeletion.Delete(ctx, workspaceScope(ctx), int64(params.ID))
 }
 
-func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (*siteapi.SiteSendingDomainResource, error) {
+func (h *Handlers) SiteSendingDomainsVerify(ctx context.Context, params siteapi.SiteSendingDomainsVerifyParams) (*siteapi.SendingDomainResource, error) {
 	s := workspaceScope(ctx)
 
 	id := int64(params.ID)

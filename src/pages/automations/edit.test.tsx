@@ -10,10 +10,7 @@ import {
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type {
-  SiteAutomationResource,
-  SiteAutomationVersion,
-} from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { Route as automationsDetailRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/index.tsx'
 import { testId, workspace } from '../../test/payloads.ts'
@@ -155,7 +152,7 @@ test('saving sends the trigger event typed on the canvas, a custom one included'
 })
 
 // withSteps is STORED's draft with other steps.
-function withSteps(steps: SiteAutomationVersion['steps']): SiteAutomationVersion {
+function withSteps(steps: AutomationVersion['steps']): AutomationVersion {
   return { number: 1, triggerEvent: 'email.clicked', exitEvents: [], goalEvent: null, steps }
 }
 

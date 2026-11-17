@@ -1,5 +1,5 @@
 import type {
-  SiteBrandKitResource,
+  BrandKitResource,
   SiteIntegrationResource,
   SiteWorkspaceResource,
 } from '../generated/site/types.gen.ts'
@@ -18,7 +18,7 @@ export function page<T>(items: T[], totalItems = items.length) {
 export const hex = (digits: string) => `#${digits}`
 
 // The Brand kit of a Workspace that has not saved one: the defaults, `saved` false.
-export const UNSAVED_BRAND_KIT: SiteBrandKitResource = {
+export const UNSAVED_BRAND_KIT: BrandKitResource = {
   saved: false,
   accentColor: hex('2563eb'),
   textColor: hex('111827'),

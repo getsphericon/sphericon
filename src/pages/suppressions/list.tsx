@@ -32,8 +32,8 @@ import {
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
   SiteCreateSuppressionInput,
-  SiteSuppressionChannel,
-  SiteSuppressionReason,
+  SuppressionChannel,
+  SuppressionReason,
 } from '../../generated/site/types.gen.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
 import { usePaginationText } from '../../hooks/usePaginationText.ts'
@@ -42,7 +42,7 @@ import { Route as suppressionsRoute } from '../../routes/workspaces/$workspaceId
 import { can } from '../../utils/permissions.ts'
 import { isErasedNumber } from '../../utils/phone.ts'
 
-const REASON_COLORS: Record<SiteSuppressionReason, string> = {
+const REASON_COLORS: Record<SuppressionReason, string> = {
   bounce: 'orange',
   complaint: 'red',
   manual: 'gray',
@@ -50,7 +50,7 @@ const REASON_COLORS: Record<SiteSuppressionReason, string> = {
 
 // What a destination is on each Channel, as the add form asks for it.
 const destinationField: Record<
-  SiteSuppressionChannel,
+  SuppressionChannel,
   {
     label: (t: TFunction) => string
     hint: (t: TFunction) => string
@@ -247,7 +247,7 @@ export function SuppressionsListPage() {
     })
 
   // One option per Channel, in the order a person reads them.
-  const channelLabels: Record<SiteSuppressionChannel, string> = {
+  const channelLabels: Record<SuppressionChannel, string> = {
     email: t(($) => $.suppressions.channelEmail),
     telegram: t(($) => $.suppressions.channelTelegram),
     sms: t(($) => $.suppressions.channelSms),

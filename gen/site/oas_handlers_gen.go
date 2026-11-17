@@ -5660,7 +5660,7 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response *SiteAutomationReport
+	var response *AutomationReport
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -5689,7 +5689,7 @@ func (s *Server) handleSiteAutomationReportsGetRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteAutomationReportsGetParams
-			Response = *SiteAutomationReport
+			Response = *AutomationReport
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -6108,7 +6108,7 @@ func (s *Server) handleSiteAutomationsCreateRequest(args [1]string, argsEscaped 
 		}
 
 		type (
-			Request  = *SiteCreateAutomationInput
+			Request  = *CreateAutomationInput
 			Params   = SiteAutomationsCreateParams
 			Response = *SiteAutomationResource
 		)
@@ -6508,7 +6508,7 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 		}
 	}()
 
-	var response *SiteDryRunHttpStepResult
+	var response *DryRunHttpStepResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -6527,9 +6527,9 @@ func (s *Server) handleSiteAutomationsDryRunHttpStepRequest(args [1]string, args
 		}
 
 		type (
-			Request  = *SiteDryRunHttpStepInput
+			Request  = *DryRunHttpStepInput
 			Params   = SiteAutomationsDryRunHttpStepParams
-			Response = *SiteDryRunHttpStepResult
+			Response = *DryRunHttpStepResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7828,7 +7828,7 @@ func (s *Server) handleSiteAutomationsUpdateRequest(args [2]string, argsEscaped 
 		}
 
 		type (
-			Request  = *SiteUpdateAutomationInput
+			Request  = *UpdateAutomationInput
 			Params   = SiteAutomationsUpdateParams
 			Response = *SiteAutomationResource
 		)
@@ -8009,7 +8009,7 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response *SiteBrandKitResource
+	var response *BrandKitResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8030,7 +8030,7 @@ func (s *Server) handleSiteBrandKitGetRequest(args [1]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = SiteBrandKitGetParams
-			Response = *SiteBrandKitResource
+			Response = *BrandKitResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8428,7 +8428,7 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 		}
 	}()
 
-	var response *SiteBrandKitResource
+	var response *BrandKitResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8449,7 +8449,7 @@ func (s *Server) handleSiteBrandKitSaveRequest(args [1]string, argsEscaped bool,
 		type (
 			Request  = *SiteSaveBrandKitInput
 			Params   = SiteBrandKitSaveParams
-			Response = *SiteBrandKitResource
+			Response = *BrandKitResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14126,7 +14126,7 @@ func (s *Server) handleSiteCustomFieldsUpdateRequest(args [2]string, argsEscaped
 		}
 
 		type (
-			Request  = *SiteUpdateCustomFieldInput
+			Request  = *UpdateCustomFieldInput
 			Params   = SiteCustomFieldsUpdateParams
 			Response = *SiteCustomFieldResource
 		)
@@ -14723,7 +14723,7 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response *SiteEnrollmentResource
+	var response *EnrollmentResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14752,7 +14752,7 @@ func (s *Server) handleSiteEnrollmentsGetRequest(args [3]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = SiteEnrollmentsGetParams
-			Response = *SiteEnrollmentResource
+			Response = *EnrollmentResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23945,7 +23945,7 @@ func (s *Server) handleSitePresetsListRequest(args [0]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response []SitePresetResource
+	var response []PresetResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23961,7 +23961,7 @@ func (s *Server) handleSitePresetsListRequest(args [0]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = []SitePresetResource
+			Response = []PresetResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25069,7 +25069,7 @@ func (s *Server) handleSiteRulesCreateRequest(args [1]string, argsEscaped bool, 
 		}
 
 		type (
-			Request  = *SiteCreateRuleInput
+			Request  = *CreateRuleInput
 			Params   = SiteRulesCreateParams
 			Response = *SiteRuleResource
 		)
@@ -25674,7 +25674,7 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 		}
 	}()
 
-	var response *SiteRuleDryRunResource
+	var response *RuleDryRunResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -25697,9 +25697,9 @@ func (s *Server) handleSiteRulesDryRunRequest(args [2]string, argsEscaped bool, 
 		}
 
 		type (
-			Request  = *SiteDryRunRuleInput
+			Request  = *DryRunRuleInput
 			Params   = SiteRulesDryRunParams
-			Response = *SiteRuleDryRunResource
+			Response = *RuleDryRunResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26768,7 +26768,7 @@ func (s *Server) handleSiteRulesUpdateRequest(args [2]string, argsEscaped bool, 
 		}
 
 		type (
-			Request  = *SiteUpdateRuleInput
+			Request  = *UpdateRuleInput
 			Params   = SiteRulesUpdateParams
 			Response = *SiteRuleResource
 		)
@@ -28537,7 +28537,7 @@ func (s *Server) handleSiteSegmentsCreateRequest(args [1]string, argsEscaped boo
 		}
 
 		type (
-			Request  = *SiteCreateSegmentInput
+			Request  = *CreateSegmentInput
 			Params   = SiteSegmentsCreateParams
 			Response = *SiteSegmentResource
 		)
@@ -29591,7 +29591,7 @@ func (s *Server) handleSiteSegmentsUpdateRequest(args [2]string, argsEscaped boo
 		}
 
 		type (
-			Request  = *SiteUpdateSegmentInput
+			Request  = *UpdateSegmentInput
 			Params   = SiteSegmentsUpdateParams
 			Response = *SiteSegmentResource
 		)
@@ -29787,7 +29787,7 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 		}
 	}()
 
-	var response *SiteSendingDomainResource
+	var response *SendingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -29808,7 +29808,7 @@ func (s *Server) handleSiteSendingDomainsCreateRequest(args [1]string, argsEscap
 		type (
 			Request  = *CreateSendingDomainInput
 			Params   = SiteSendingDomainsCreateParams
-			Response = *SiteSendingDomainResource
+			Response = *SendingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30193,7 +30193,7 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *SiteSendingDomainResource
+	var response *SendingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30218,7 +30218,7 @@ func (s *Server) handleSiteSendingDomainsGetRequest(args [2]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = SiteSendingDomainsGetParams
-			Response = *SiteSendingDomainResource
+			Response = *SendingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -30607,7 +30607,7 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 
 	var rawBody []byte
 
-	var response *SiteSendingDomainResource
+	var response *SendingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -30632,7 +30632,7 @@ func (s *Server) handleSiteSendingDomainsVerifyRequest(args [2]string, argsEscap
 		type (
 			Request  = struct{}
 			Params   = SiteSendingDomainsVerifyParams
-			Response = *SiteSendingDomainResource
+			Response = *SendingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -35841,7 +35841,7 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 
 	var rawBody []byte
 
-	var response []SiteTrackingDomainResource
+	var response []TrackingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -35862,7 +35862,7 @@ func (s *Server) handleSiteTrackingDomainsListRequest(args [1]string, argsEscape
 		type (
 			Request  = struct{}
 			Params   = SiteTrackingDomainsListParams
-			Response = []SiteTrackingDomainResource
+			Response = []TrackingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36267,7 +36267,7 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 		}
 	}()
 
-	var response *SiteTrackingDomainResource
+	var response *TrackingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36288,7 +36288,7 @@ func (s *Server) handleSiteTrackingDomainsSetRequest(args [1]string, argsEscaped
 		type (
 			Request  = *SetTrackingDomainInput
 			Params   = SiteTrackingDomainsSetParams
-			Response = *SiteTrackingDomainResource
+			Response = *TrackingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -36468,7 +36468,7 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 
 	var rawBody []byte
 
-	var response *SiteTrackingDomainResource
+	var response *TrackingDomainResource
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -36493,7 +36493,7 @@ func (s *Server) handleSiteTrackingDomainsVerifyRequest(args [2]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = SiteTrackingDomainsVerifyParams
-			Response = *SiteTrackingDomainResource
+			Response = *TrackingDomainResource
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -39323,7 +39323,7 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 		}
 	}()
 
-	var response *SiteWebhookTestResult
+	var response *WebhookTestResult
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -39348,7 +39348,7 @@ func (s *Server) handleSiteWebhooksTestRequest(args [2]string, argsEscaped bool,
 		type (
 			Request  = *TestWebhookInput
 			Params   = SiteWebhooksTestParams
-			Response = *SiteWebhookTestResult
+			Response = *WebhookTestResult
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

@@ -1,4 +1,5 @@
-// The Integration write bodies: /site and /api take the same input.
+// The Integration models /site and /api show and take the same way: its Channel, provider and
+// Provider limit, its config as returned and as written, its write bodies and the Presets.
 
 namespace Sphericon;
 
@@ -29,6 +30,9 @@ model SesConfigInput {
 
   /** Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS */
   endpoint?: string | null;
+
+  /** The SES configuration set every send through the Integration names, to route it to a dedicated IP pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused */
+  configurationSet?: string | null;
 }
 
 /** The Test inbox takes no credentials: a Workspace has at most one */
@@ -129,4 +133,167 @@ model UpdateIntegrationInput {
 
   /** Stop accepting the retiring value of every rotating secret */
   retireSecrets?: boolean;
+}
+
+/** Delivery channel an integration belongs to */
+enum IntegrationChannel {
+  email,
+  sms,
+
+  /** A Workspace's own Telegram bot */
+  telegram,
+}
+
+/** Concrete sending provider */
+enum IntegrationProvider {
+  smtp,
+  ses,
+
+  /** The Test inbox: sends nothing outside and keeps each message as a Captured message */
+  inbox,
+
+  /** A Telegram bot, through the Bot API */
+  telegram,
+
+  /** A Twilio account, on the `sms` channel */
+  twilio,
+}
+
+/** Where an effective Provider limit comes from */
+enum ProviderLimitSource {
+  /** Set by the user on the Integration */
+  manual,
+
+  /** Reported by the provider */
+  provider,
+}
+
+/** A reason to look at an Integration's Provider limit */
+enum ProviderLimitWarning {
+  /** No ceiling applies: sends are not paced and the provider may throttle or block them (never set on a Test inbox, which sends to no provider) */
+  unlimited,
+
+  /** The provider's send quota could not be read (no permission, or a compatible service without the call), so only the manual limit applies */
+  providerQuotaUnavailable,
+
+  /** The provider has stopped the account (SES enforcement SHUTDOWN): sends through the Integration are held until it sends again */
+  providerStopped,
+
+  /** The provider has put the account under review (SES enforcement PROBATION); it still sends */
+  providerProbation,
+
+  /** The account is in the provider's sandbox (SES without production access): it delivers only to verified addresses */
+  providerSandbox,
+}
+
+/** One effective ceiling: the lowest of the manual and provider values, manual on a tie */
+model ProviderLimitValue {
+  /** The ceiling in messages; null means this window is not limited */
+  limit: int32 | null;
+
+  /** Where the ceiling comes from; null when there is none */
+  source: ProviderLimitSource | null;
+}
+
+/** The Provider limit as enforced, with the last 24 hours of usage */
+model ProviderLimitStatus {
+  /** Most messages per second */
+  perSecond: ProviderLimitValue;
+
+  /** Most messages per rolling 24 hours */
+  perDay: ProviderLimitValue;
+
+  /** Messages the provider accepted from this Integration in the last 24 hours */
+  sentLast24h: int32;
+
+  /** Reasons to review the limit; empty when there is nothing to flag */
+  warnings: ProviderLimitWarning[];
+}
+
+/** SMTP config without the password */
+model SmtpConfig {
+  kind: "smtp";
+  host: string;
+  port: int32;
+  username?: string | null;
+  from: EmailAddress;
+  fromName?: string | null;
+}
+
+/** SES config without the secret access key */
+model SesConfig {
+  kind: "ses";
+  region: string;
+  from: EmailAddress;
+  fromName?: string | null;
+
+  /** Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS */
+  endpoint?: string | null;
+
+  /** Last 4 chars of the access key id, for recognition */
+  accessKeyIdLast4?: string | null;
+
+  /** The SES configuration set every send names; empty when sends go through the account's default pool */
+  configurationSet?: string | null;
+
+  /** True when SES said, at the last save, that it has no configuration set of that name: SES refuses every message that names it, and a refused message is not sent again, until the set exists. False when no set is named or SES did not answer */
+  configurationSetMissing: boolean;
+}
+
+/** The Test inbox has no settings */
+model InboxConfig {
+  kind: "inbox";
+}
+
+/** A Telegram bot without its token: who it is, as Telegram said when it was connected */
+model TelegramConfig {
+  kind: "telegram";
+
+  /** The bot's numeric Telegram id */
+  botId: int64;
+
+  /** The bot's @username, without the @ */
+  username: string;
+}
+
+/** A Twilio account without its secret */
+model TwilioConfig {
+  kind: "twilio";
+
+  /** The Account SID */
+  accountSid: string;
+
+  /** The API key messages are sent with; null when they are sent with the Auth Token */
+  apiKeySid: string | null;
+
+  /** What messages go out from */
+  from: string;
+
+  /** What kind of sender `from` is */
+  fromKind: SmsFromKind;
+
+  /** Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback */
+  callbacksSet: boolean;
+}
+
+/** Provider config as returned, discriminated by `kind`. Secrets are omitted. */
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
+union IntegrationConfig {
+  smtp: SmtpConfig,
+  ses: SesConfig,
+  inbox: InboxConfig,
+  telegram: TelegramConfig,
+  twilio: TwilioConfig,
+}
+
+/** A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks */
+model PresetResource {
+  /** The name an Integration's `preset` refers to */
+  name: string;
+
+  /** What the Preset is for */
+  description: string;
+
+  /** JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked `writeOnly` is a secret: it is never returned by a read. */
+  paramsSchema: JsonObject;
 }

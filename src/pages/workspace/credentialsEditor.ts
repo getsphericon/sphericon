@@ -1,7 +1,7 @@
 import { siteIntegrationsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteIntegrationsUpdate } from '../../generated/site/sdk.gen.ts'
-import type { SiteIntegrationProvider } from '../../generated/site/types.gen.ts'
-import { zSiteIntegrationProvider } from '../../generated/site/zod.gen.ts'
+import type { IntegrationProvider } from '../../generated/site/types.gen.ts'
+import { zIntegrationProvider } from '../../generated/site/zod.gen.ts'
 import { defineModalEditor } from '../../resources/defineResource.tsx'
 import { withRevision } from '../../resources/resourceEditor.ts'
 import { CredentialsForm } from './CredentialsForm.tsx'
@@ -37,7 +37,7 @@ type CredentialsEditor = ReturnType<typeof credentialsEditorOf>
 
 // One editor per variant, made once: what the form requires depends on it.
 const editors = new Map<string, CredentialsEditor>(
-  zSiteIntegrationProvider.options.flatMap((kind: SiteIntegrationProvider) =>
+  zIntegrationProvider.options.flatMap((kind: IntegrationProvider) =>
     (kind === 'ses' ? [false, true] : [false]).map(
       (compatible) => [`${kind}:${compatible}`, credentialsEditorOf({ kind, compatible })] as const,
     ),

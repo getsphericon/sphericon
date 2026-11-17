@@ -72,7 +72,7 @@ func (c *InputsImpl) AnalyticsWindow(source site.SiteAnalyticsRange) analyticsre
 	}
 	return analyticsreportWindow
 }
-func (c *InputsImpl) AutomationCreate(source *site.SiteCreateAutomationInput) automations.CreateInput {
+func (c *InputsImpl) AutomationCreate(source *site.CreateAutomationInput) automations.CreateInput {
 	var automationsCreateInput automations.CreateInput
 	if source != nil {
 		automationsCreateInput.Name = nameIn((*source).Name)
@@ -118,7 +118,7 @@ func (c *InputsImpl) AutomationState(source site.SiteAutomationState) automation
 	}
 	return automationsState
 }
-func (c *InputsImpl) AutomationStep(source site.SiteAutomationStepInput) automationstep.Step {
+func (c *InputsImpl) AutomationStep(source site.AutomationStepInput) automationstep.Step {
 	var automationstepStep automationstep.Step
 	automationstepStep.Type = c.AutomationStepType(source.Type)
 	automationstepStep.IntegrationID = nilEntityIDPtrIn(source.IntegrationId)
@@ -144,36 +144,36 @@ func (c *InputsImpl) AutomationStep(source site.SiteAutomationStepInput) automat
 	if source.Headers != nil {
 		automationstepStep.Headers = make([]httpcall.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepStep.Headers[j] = c.siteapiSiteAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.siteapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
 		}
 	}
 	automationstepStep.Secret = stringIn(source.Secret)
 	automationstepStep.ClearSecret = boolIn(source.ClearSecret)
 	return automationstepStep
 }
-func (c *InputsImpl) AutomationStepType(source site.SiteAutomationStepType) automationstep.Kind {
+func (c *InputsImpl) AutomationStepType(source site.AutomationStepType) automationstep.Kind {
 	var automationstepKind automationstep.Kind
 	switch source {
-	case site.SiteAutomationStepTypeApplyTag:
+	case site.AutomationStepTypeApplyTag:
 		automationstepKind = automationstep.ApplyTag
-	case site.SiteAutomationStepTypeEmail:
+	case site.AutomationStepTypeEmail:
 		automationstepKind = automationstep.Email
-	case site.SiteAutomationStepTypeHTTP:
+	case site.AutomationStepTypeHTTP:
 		automationstepKind = automationstep.HTTP
-	case site.SiteAutomationStepTypeRemoveTag:
+	case site.AutomationStepTypeRemoveTag:
 		automationstepKind = automationstep.RemoveTag
-	case site.SiteAutomationStepTypeSMS:
+	case site.AutomationStepTypeSMS:
 		automationstepKind = automationstep.SMS
-	case site.SiteAutomationStepTypeTelegram:
+	case site.AutomationStepTypeTelegram:
 		automationstepKind = automationstep.Telegram
-	case site.SiteAutomationStepTypeWait:
+	case site.AutomationStepTypeWait:
 		automationstepKind = automationstep.Wait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return automationstepKind
 }
-func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStepInput) []automationstep.Step {
+func (c *InputsImpl) AutomationSteps(source []site.AutomationStepInput) []automationstep.Step {
 	var automationstepStepList []automationstep.Step
 	if source != nil {
 		automationstepStepList = make([]automationstep.Step, len(source))
@@ -183,7 +183,7 @@ func (c *InputsImpl) AutomationSteps(source []site.SiteAutomationStepInput) []au
 	}
 	return automationstepStepList
 }
-func (c *InputsImpl) AutomationUpdate(source *site.SiteUpdateAutomationInput) automations.UpdateInput {
+func (c *InputsImpl) AutomationUpdate(source *site.UpdateAutomationInput) automations.UpdateInput {
 	var automationsUpdateInput automations.UpdateInput
 	if source != nil {
 		automationsUpdateInput.Revision = revisionIn((*source).Revision)
@@ -385,7 +385,7 @@ func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts
 	}
 	return contactsUpdateInput
 }
-func (c *InputsImpl) CustomFieldUpdate(source *site.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
+func (c *InputsImpl) CustomFieldUpdate(source *site.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput {
 	var contactsCustomFieldUpdateInput contacts.CustomFieldUpdateInput
 	if source != nil {
 		contactsCustomFieldUpdateInput.Revision = revisionIn((*source).Revision)
@@ -633,33 +633,33 @@ func (c *InputsImpl) RevenueSettingsSet(source *site.SiteUpdateRevenueSettingsIn
 	}
 	return workspacesSetRevenueSettingsInput
 }
-func (c *InputsImpl) RuleActionType(source site.SiteRuleActionType) rules.ActionType {
+func (c *InputsImpl) RuleActionType(source site.RuleActionType) rules.ActionType {
 	var rulesActionType rules.ActionType
 	switch source {
-	case site.SiteRuleActionTypeApplyTag:
+	case site.RuleActionTypeApplyTag:
 		rulesActionType = rules.ActionApplyTag
-	case site.SiteRuleActionTypeEnrollAutomation:
+	case site.RuleActionTypeEnrollAutomation:
 		rulesActionType = rules.ActionEnroll
-	case site.SiteRuleActionTypeHTTP:
+	case site.RuleActionTypeHTTP:
 		rulesActionType = rules.ActionHTTP
-	case site.SiteRuleActionTypeRemoveTag:
+	case site.RuleActionTypeRemoveTag:
 		rulesActionType = rules.ActionRemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return rulesActionType
 }
-func (c *InputsImpl) RuleActions(source []site.SiteRuleActionInput) []rules.Action {
+func (c *InputsImpl) RuleActions(source []site.RuleActionInput) []rules.Action {
 	var rulesActionList []rules.Action
 	if source != nil {
 		rulesActionList = make([]rules.Action, len(source))
 		for i := 0; i < len(source); i++ {
-			rulesActionList[i] = c.siteapiSiteRuleActionInputToRulesAction(source[i])
+			rulesActionList[i] = c.siteapiRuleActionInputToRulesAction(source[i])
 		}
 	}
 	return rulesActionList
 }
-func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateInput, error) {
+func (c *InputsImpl) RuleCreate(source *site.CreateRuleInput) (rules.CreateInput, error) {
 	var rulesCreateInput rules.CreateInput
 	if source != nil {
 		rulesCreateInput.Name = nameIn((*source).Name)
@@ -678,7 +678,7 @@ func (c *InputsImpl) RuleCreate(source *site.SiteCreateRuleInput) (rules.CreateI
 	}
 	return rulesCreateInput, nil
 }
-func (c *InputsImpl) RuleUpdate(source *site.SiteUpdateRuleInput) (rules.UpdateInput, error) {
+func (c *InputsImpl) RuleUpdate(source *site.UpdateRuleInput) (rules.UpdateInput, error) {
 	var rulesUpdateInput rules.UpdateInput
 	if source != nil {
 		rulesUpdateInput.Revision = revisionIn((*source).Revision)
@@ -718,7 +718,7 @@ func (c *InputsImpl) SecondFactorRequire(source *site.RevisionInput) workspacevi
 	}
 	return workspaceviewSetSecondFactorRequirementInput
 }
-func (c *InputsImpl) SegmentCreate(source *site.SiteCreateSegmentInput) (segments.CreateInput, error) {
+func (c *InputsImpl) SegmentCreate(source *site.CreateSegmentInput) (segments.CreateInput, error) {
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
 		segmentsCreateInput.Name = nameIn((*source).Name)
@@ -743,7 +743,7 @@ func (c *InputsImpl) SegmentPreview(source *site.SitePreviewSegmentInput) (segme
 	}
 	return segmentsPreviewInput, nil
 }
-func (c *InputsImpl) SegmentUpdate(source *site.SiteUpdateSegmentInput) (segments.UpdateInput, error) {
+func (c *InputsImpl) SegmentUpdate(source *site.UpdateSegmentInput) (segments.UpdateInput, error) {
 	var segmentsUpdateInput segments.UpdateInput
 	if source != nil {
 		segmentsUpdateInput.Revision = revisionIn((*source).Revision)
@@ -905,14 +905,14 @@ func (c *InputsImpl) SortDirection(source site.SortDirection) pagination.Directi
 	}
 	return paginationDirection
 }
-func (c *InputsImpl) SuppressionChannel(source site.SiteSuppressionChannel) channels.Channel {
+func (c *InputsImpl) SuppressionChannel(source site.SuppressionChannel) channels.Channel {
 	var channelsChannel channels.Channel
 	switch source {
-	case site.SiteSuppressionChannelEmail:
+	case site.SuppressionChannelEmail:
 		channelsChannel = channels.Email
-	case site.SiteSuppressionChannelSMS:
+	case site.SuppressionChannelSMS:
 		channelsChannel = channels.SMS
-	case site.SiteSuppressionChannelTelegram:
+	case site.SuppressionChannelTelegram:
 		channelsChannel = channels.Telegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
@@ -1054,19 +1054,13 @@ func (c *InputsImpl) WorkspaceUpdate(source *site.SiteUpdateWorkspaceInput) work
 	}
 	return workspaceviewUpdateInput
 }
-func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
-	var consentrecordsReAcceptance consentrecords.ReAcceptance
-	consentrecordsReAcceptance.Key = string(source.Key)
-	consentrecordsReAcceptance.Version = string(source.Version)
-	return consentrecordsReAcceptance
-}
-func (c *InputsImpl) siteapiSiteAutomationHttpHeaderInputToHttpcallHeader(source site.SiteAutomationHttpHeaderInput) httpcall.Header {
+func (c *InputsImpl) siteapiAutomationHttpHeaderInputToHttpcallHeader(source site.AutomationHttpHeaderInput) httpcall.Header {
 	var httpcallHeader httpcall.Header
 	httpcallHeader.Name = source.Name
 	httpcallHeader.Value = stringIn(source.Value)
 	return httpcallHeader
 }
-func (c *InputsImpl) siteapiSiteRuleActionInputToRulesAction(source site.SiteRuleActionInput) rules.Action {
+func (c *InputsImpl) siteapiRuleActionInputToRulesAction(source site.RuleActionInput) rules.Action {
 	var rulesAction rules.Action
 	rulesAction.Type = c.RuleActionType(source.Type)
 	rulesAction.Tag = stringIn(source.Tag)
@@ -1076,13 +1070,19 @@ func (c *InputsImpl) siteapiSiteRuleActionInputToRulesAction(source site.SiteRul
 	if source.Headers != nil {
 		rulesAction.Headers = make([]httpcall.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			rulesAction.Headers[i] = c.siteapiSiteAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
+			rulesAction.Headers[i] = c.siteapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
 		}
 	}
 	rulesAction.Body = stringIn(source.Body)
 	rulesAction.Secret = stringIn(source.Secret)
 	rulesAction.ClearSecret = boolIn(source.ClearSecret)
 	return rulesAction
+}
+func (c *InputsImpl) siteapiSiteAcceptanceToConsentrecordsReAcceptance(source site.SiteAcceptance) consentrecords.ReAcceptance {
+	var consentrecordsReAcceptance consentrecords.ReAcceptance
+	consentrecordsReAcceptance.Key = string(source.Key)
+	consentrecordsReAcceptance.Version = string(source.Version)
+	return consentrecordsReAcceptance
 }
 func (c *InputsImpl) siteapiSiteSignupItemAnswerToConsentrecordsAnswer(source site.SiteSignupItemAnswer) consentrecords.Answer {
 	var consentrecordsAnswer consentrecords.Answer

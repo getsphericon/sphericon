@@ -3,7 +3,7 @@ import { MantineValueEditor } from '@react-querybuilder/mantine'
 import type { MantineValueEditorProps } from '@react-querybuilder/mantine'
 import { useTranslation } from 'react-i18next'
 
-import { zSiteConditionEventLeaf } from '../../generated/site/zod.gen.ts'
+import { zConditionEventLeaf } from '../../generated/site/zod.gen.ts'
 import { eventCount, eventCountOf, eventFieldPrefix, isCountOperator } from './condition.ts'
 import { smsField, telegramField } from './fieldOperators.ts'
 
@@ -12,8 +12,8 @@ import { smsField, telegramField } from './fieldOperators.ts'
 function least(min: number | null): { min?: number } {
   return min === null ? {} : { min }
 }
-const leastTimes = least(zSiteConditionEventLeaf.shape.times.minValue)
-const leastDays = least(zSiteConditionEventLeaf.shape.withinDays.unwrap().minValue)
+const leastTimes = least(zConditionEventLeaf.shape.times.minValue)
+const leastDays = least(zConditionEventLeaf.shape.withinDays.unwrap().minValue)
 
 // A typed number, or nothing for a cleared input.
 function typed(input: unknown): number | undefined {

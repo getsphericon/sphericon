@@ -35,7 +35,7 @@ func TestSiteSendingDomainsCRUD(t *testing.T) {
 	assert.False(t, res.Verified, "a new domain starts unverified")
 	assert.Equal(t, "sphericon._domainkey.marketing.example.com", res.DkimRecord.Host)
 	assert.Contains(t, res.DkimRecord.Value, "v=DKIM1; k=rsa; p=")
-	assert.Equal(t, siteapi.SiteDnsRecordTypeTXT, res.DkimRecord.Type)
+	assert.Equal(t, siteapi.DnsRecordTypeTXT, res.DkimRecord.Type)
 	assert.NotEmpty(t, res.SpfRecord.Value)
 	assert.Equal(t, "_dmarc.marketing.example.com", res.DmarcRecord.Host)
 

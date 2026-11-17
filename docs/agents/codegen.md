@@ -141,6 +141,14 @@ Go interfaces (`mise run generate:mocks` task list)  ──moq──▶ <pkg>/mo
   Go type per surface (`JsonObject`, `OptNilJsonObject`, …), so one converter extend per type
   serves every field; an inline record would get a type, and an extend, of its own per field.
 
+- **A model /site and /api show or take the same way is declared once** (ADR 0111), in
+  `typespec/common/<topic>.tsp`, named without a surface prefix and imported by the `main.tsp` of
+  each surface that uses it, before its resources (an enum first checked through a template of
+  another file loses its doc). Every declared model is emitted, so a surface never imports a topic
+  it does not use. A resource /site routes under the Workspace takes its parent in /site's own
+  file (`@@parentResource(SendingDomainResource, SiteWorkspaceResource)`). A model whose fields
+  differ between the surfaces (an `@untrusted` mark, a field only one shows) stays each one's own.
+
 - **Contract decorators** (ADR 0069): every `x-*` extension a Go reader depends on is written by
   a typed decorator, never by a raw `@extension`, which `tsp compile` refuses for these keys.
 

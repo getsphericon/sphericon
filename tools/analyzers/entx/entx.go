@@ -1,8 +1,9 @@
 // Package entx holds what the analyzers share about the generated ent package: finding the method a
 // selector calls on one of its types, and reading the manifest of roles the generator declares there
 // (ent/template/roles.tmpl): what a type is, the entity it belongs to, the role of a method and the
-// state field a method writes. Nothing here guesses from a name: a type or a method the manifest does
-// not describe has no kind and no role, and ent/schema/roles_test.go keeps the manifest complete.
+// state field a method writes, with the form of that field. Nothing here guesses from a name: a type
+// or a method the manifest does not describe has no kind and no role, and ent/schema/roles_test.go
+// keeps the manifest complete.
 package entx
 
 import (
@@ -138,6 +139,13 @@ func RoleOf(named *types.Named, method string) Role {
 func EntityOf(named *types.Named) string {
 	e, _ := value(named.Obj().Pkg(), "EntityOf_"+named.Obj().Name())
 	return e
+}
+
+// StateForm is the form the schema declares for the entity's state field (StateForm<Entity><Field>:
+// "machine" or "latch"), or "" for a field of neither form.
+func StateForm(pkg *types.Package, entity, field string) string {
+	form, _ := value(pkg, "StateForm"+entity+field)
+	return form
 }
 
 // StateWrite returns the machine or latch field a method of an update or upsert builder sets or

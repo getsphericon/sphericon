@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { sitePresetsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteIntegrationResource, SitePresetResource } from '../../generated/site/types.gen.ts'
+import type { SiteIntegrationResource, PresetResource } from '../../generated/site/types.gen.ts'
 import type { ResourceFormProps } from '../../resources/defineResource.tsx'
 import {
   formSchema,
@@ -57,7 +57,7 @@ function PresetParamsForm({
   onChange,
   onSubmit,
 }: {
-  preset: SitePresetResource
+  preset: PresetResource
   stored: SiteIntegrationResource
   params: PresetParams
   failure: unknown

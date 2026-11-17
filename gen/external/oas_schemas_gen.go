@@ -2930,8 +2930,10 @@ func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
 
-// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
-// message in these values. A Workspace that has not saved one has the defaults and `saved` false.
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
+// palette the editor offers and what an agent is told to use: write a message in these values. Its
+// values are written into a message when the message is authored, so saving it never changes a message
+// already written. A Workspace that has not saved one has the defaults and `saved` false.
 // Ref: #/components/schemas/BrandKitResource
 type BrandKitResource struct {
 	// False until the Brand kit is first saved; the values are then the defaults.
@@ -11519,7 +11521,7 @@ func (s *JsonObject) init() JsonObject {
 	return m
 }
 
-// How often one link of an automation's emails was clicked.
+// How often one link of a broadcast's or an automation's emails was clicked.
 // Ref: #/components/schemas/LinkClicks
 type LinkClicks struct {
 	// The link's destination URL.
@@ -11744,7 +11746,9 @@ type MaxPerDay int32
 
 type MaxPerSecond int32
 
-// Orders credited to a broadcast or an automation and their net revenue (ADR 0064).
+// The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
+// 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
+// on its own day. Orders in another currency are counted in neither field.
 // Ref: #/components/schemas/MessageRevenue
 type MessageRevenue struct {
 	// The Reporting currency, null until the first order or an owner or admin sets it; every figure is
@@ -17708,6 +17712,12 @@ type SesConfig struct {
 	Endpoint OptNilString `json:"endpoint"`
 	// Last 4 chars of the access key id, for recognition.
 	AccessKeyIdLast4 OptNilString `json:"accessKeyIdLast4"`
+	// The SES configuration set every send names; empty when sends go through the account's default pool.
+	ConfigurationSet OptNilString `json:"configurationSet"`
+	// True when SES said, at the last save, that it has no configuration set of that name: SES refuses
+	// every message that names it, and a refused message is not sent again, until the set exists. False
+	// when no set is named or SES did not answer.
+	ConfigurationSetMissing bool `json:"configurationSetMissing"`
 }
 
 // GetKind returns the value of Kind.
@@ -17740,6 +17750,16 @@ func (s *SesConfig) GetAccessKeyIdLast4() OptNilString {
 	return s.AccessKeyIdLast4
 }
 
+// GetConfigurationSet returns the value of ConfigurationSet.
+func (s *SesConfig) GetConfigurationSet() OptNilString {
+	return s.ConfigurationSet
+}
+
+// GetConfigurationSetMissing returns the value of ConfigurationSetMissing.
+func (s *SesConfig) GetConfigurationSetMissing() bool {
+	return s.ConfigurationSetMissing
+}
+
 // SetKind sets the value of Kind.
 func (s *SesConfig) SetKind(val SesConfigKind) {
 	s.Kind = val
@@ -17770,6 +17790,16 @@ func (s *SesConfig) SetAccessKeyIdLast4(val OptNilString) {
 	s.AccessKeyIdLast4 = val
 }
 
+// SetConfigurationSet sets the value of ConfigurationSet.
+func (s *SesConfig) SetConfigurationSet(val OptNilString) {
+	s.ConfigurationSet = val
+}
+
+// SetConfigurationSetMissing sets the value of ConfigurationSetMissing.
+func (s *SesConfig) SetConfigurationSetMissing(val bool) {
+	s.ConfigurationSetMissing = val
+}
+
 // SES credentials.
 // Ref: #/components/schemas/SesConfigInput
 type SesConfigInput struct {
@@ -17781,6 +17811,11 @@ type SesConfigInput struct {
 	FromName        OptNilString       `json:"fromName"`
 	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
 	Endpoint OptNilString `json:"endpoint"`
+	// The SES configuration set every send through the Integration names, to route it to a dedicated IP
+	// pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's
+	// default pool; an update that omits it clears it. Saving asks SES whether the set exists, best
+	// effort: an unknown set saves with `configurationSetMissing` and is never refused.
+	ConfigurationSet OptNilString `json:"configurationSet"`
 }
 
 // GetKind returns the value of Kind.
@@ -17818,6 +17853,11 @@ func (s *SesConfigInput) GetEndpoint() OptNilString {
 	return s.Endpoint
 }
 
+// GetConfigurationSet returns the value of ConfigurationSet.
+func (s *SesConfigInput) GetConfigurationSet() OptNilString {
+	return s.ConfigurationSet
+}
+
 // SetKind sets the value of Kind.
 func (s *SesConfigInput) SetKind(val SesConfigInputKind) {
 	s.Kind = val
@@ -17851,6 +17891,11 @@ func (s *SesConfigInput) SetFromName(val OptNilString) {
 // SetEndpoint sets the value of Endpoint.
 func (s *SesConfigInput) SetEndpoint(val OptNilString) {
 	s.Endpoint = val
+}
+
+// SetConfigurationSet sets the value of ConfigurationSet.
+func (s *SesConfigInput) SetConfigurationSet(val OptNilString) {
+	s.ConfigurationSet = val
 }
 
 type SesConfigInputKind string
@@ -18613,7 +18658,8 @@ func (s *SuppressionChannel) UnmarshalText(data []byte) error {
 	}
 }
 
-// Why a destination is on the suppression (do-not-send) list.
+// Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a suppression: it
+// is a separate, per-source opt-out.
 // Ref: #/components/schemas/SuppressionReason
 type SuppressionReason string
 

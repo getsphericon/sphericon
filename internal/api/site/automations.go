@@ -17,7 +17,7 @@ func (h *Handlers) SiteAutomationsList(ctx context.Context, params siteapi.SiteA
 	return mapper.AutomationsListPage(page), nil
 }
 
-func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.SiteCreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (*siteapi.SiteAutomationResource, error) {
+func (h *Handlers) SiteAutomationsCreate(ctx context.Context, req *siteapi.CreateAutomationInput, _ siteapi.SiteAutomationsCreateParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	a, err := h.automations.Create(ctx, ws, inputs.AutomationCreate(req))
@@ -39,7 +39,7 @@ func (h *Handlers) SiteAutomationsGet(ctx context.Context, params siteapi.SiteAu
 	return &res, nil
 }
 
-func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.SiteUpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (*siteapi.SiteAutomationResource, error) {
+func (h *Handlers) SiteAutomationsUpdate(ctx context.Context, req *siteapi.UpdateAutomationInput, params siteapi.SiteAutomationsUpdateParams) (*siteapi.SiteAutomationResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)

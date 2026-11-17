@@ -54,7 +54,7 @@ const (
 	MaxConditionNodes = 50
 )
 
-// ActionType is the kind of an Action; its values are the contract's SiteRuleActionType.
+// ActionType is the kind of an Action; its values are the contract's RuleActionType.
 type ActionType string
 
 // The Action types. Each has a Runner (ActionRunners) that does it.

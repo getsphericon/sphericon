@@ -11,8 +11,8 @@ import {
   siteEventsActionsOptions,
   siteSegmentsPreviewMutation,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteConditionEventOperator } from '../../generated/site/types.gen.ts'
-import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import { ConditionEventOperator } from '../../generated/site/types.gen.ts'
+import type { ConditionGroup } from '../../generated/site/types.gen.ts'
 import { useEventActionLabel } from '../../hooks/useEventActionLabel.ts'
 import { useTimeZone } from '../../hooks/useFormat.ts'
 import { eventFieldPrefix, eventPresets, toCondition, toDraft, toQuery } from './condition.ts'
@@ -38,8 +38,8 @@ import { TriggerFieldSelector } from './TriggerFieldSelector.tsx'
 const eventOperators: Operator[] = [
   { name: eventPresets.performed, label: 'performed' },
   { name: eventPresets.notPerformed, label: 'not performed' },
-  { name: SiteConditionEventOperator.AT_LEAST, label: 'at least (times)' },
-  { name: SiteConditionEventOperator.AT_MOST, label: 'at most (times)' },
+  { name: ConditionEventOperator.AT_LEAST, label: 'at least (times)' },
+  { name: ConditionEventOperator.AT_MOST, label: 'at most (times)' },
 ]
 
 const contactFields: Field[] = [
@@ -66,7 +66,7 @@ interface ConditionBuilderProps {
   // The Condition the builder starts from. The builder keeps its own state from then on (an
   // operator the user picked stays picked, a count can be blank while it is typed), so a later
   // change of this value is not read: a form that loads another Condition remounts the builder.
-  initialValue: SiteConditionGroup
+  initialValue: ConditionGroup
   // Every edit, as a draft: toCondition is undefined while an event count, a number or a day is
   // blank.
   onChange: (draft: ConditionDraft) => void

@@ -8,20 +8,20 @@ import { LinkClickTable } from '../../components/LinkClickTable.tsx'
 import { StatCard } from '../../components/StatCard.tsx'
 import { siteAutomationReportsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  SiteAutomationReport,
-  SiteAutomationReportPeriod,
-  SiteAutomationResults,
-  SiteAutomationStepFigures,
+  AutomationReport,
+  AutomationReportPeriod,
+  AutomationResults,
+  AutomationStepFigures,
 } from '../../generated/site/types.gen.ts'
-import { zSiteAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
+import { zAutomationReportPeriod } from '../../generated/site/zod.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { formatMessageRevenue } from '../../utils/messageRevenue.ts'
 
-const PERIODS = zSiteAutomationReportPeriod.options
+const PERIODS = zAutomationReportPeriod.options
 
 // What an Automation's Enrollments did over the period, each figure with the period before it: the
 // line under a figure is its value then and the change since.
-function ResultsFigures({ results }: { results: SiteAutomationResults }) {
+function ResultsFigures({ results }: { results: AutomationResults }) {
   const { t } = useTranslation()
   const { formatChange, formatDate, formatDuration, locale } = useFormat()
   const { current, previous } = results
@@ -112,7 +112,7 @@ function ResultsFigures({ results }: { results: SiteAutomationResults }) {
 
 // What each send step sent and skipped, by its position: a skipped send moves the Enrollment on
 // (ADR 0081), so this is where a step that missed people shows. Renders nothing before any send.
-function StepFigures({ steps }: { steps: SiteAutomationStepFigures[] }) {
+function StepFigures({ steps }: { steps: AutomationStepFigures[] }) {
   const { t } = useTranslation()
   const { formatNumber } = useFormat()
 
@@ -151,7 +151,7 @@ function StepFigures({ steps }: { steps: SiteAutomationStepFigures[] }) {
 }
 
 // How the emails of an Automation were engaged with over its whole history.
-function Engagement({ report }: { report: SiteAutomationReport }) {
+function Engagement({ report }: { report: AutomationReport }) {
   const { t } = useTranslation()
   const { locale } = useFormat()
   const revenue = formatMessageRevenue(report.revenue, locale)
@@ -193,7 +193,7 @@ export function AutomationReport({
   automationId: string
 }) {
   const { t } = useTranslation()
-  const [picked, setPicked] = useState<SiteAutomationReportPeriod>()
+  const [picked, setPicked] = useState<AutomationReportPeriod>()
   const reportQuery = useQuery({
     ...siteAutomationReportsGetOptions({
       path: { workspaceId, automationId },

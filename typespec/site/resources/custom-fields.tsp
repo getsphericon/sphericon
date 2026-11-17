@@ -5,14 +5,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** A Custom field's value type */
-enum SiteCustomFieldType {
-  string,
-  number,
-  bool,
-  datetime,
-}
-
 /** Custom field definition — a typed, named Contact attribute (ADR 0006). Auto-created
  on first sight from Identify; the catalogue feeds the segment builder. */
 @resource("custom-fields")
@@ -30,10 +22,10 @@ model SiteCustomFieldResource {
   name: string;
 
   /** Value type: inferred from the first value, changed by an owner or admin */
-  type: SiteCustomFieldType;
+  type: CustomFieldType;
 
   /** The operators a rule leaf on this field takes, by its type */
-  ruleOperators: SiteConditionOperator[];
+  ruleOperators: ConditionOperator[];
 
   /** The revision of the state this answer shows (ADR 0119): an update names it */
   revision: Revision;
@@ -43,18 +35,6 @@ model SiteCustomFieldResource {
 
   /** Last update timestamp */
   updatedAt: Timestamp;
-}
-
-/** Request body for updating a custom field: its key never changes */
-model SiteUpdateCustomFieldInput {
-  /** The custom field's `revision` the edit was made on (ADR 0119): the one it was read with */
-  revision: Revision;
-
-  /** Display name */
-  name?: Name;
-
-  /** Value type. Stored values are not rewritten: the leaves of the new type read them as they are */
-  type?: SiteCustomFieldType;
 }
 
 // The catalogue: created by use, listed, renamed and retyped. Nested via @parentResource + @autoRoute.
@@ -85,6 +65,6 @@ namespace SiteCustomFields {
   @requiresPermissions(#[Permission.customFieldsManage])
   op update(
     ...ResourceParameters<SiteCustomFieldResource>,
-    @body body: SiteUpdateCustomFieldInput,
+    @body body: UpdateCustomFieldInput,
   ): SiteCustomFieldResource | Problem;
 }

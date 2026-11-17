@@ -7,7 +7,7 @@ import {
   handleSiteRulesGet,
   handleSiteRulesRevert,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteRuleFiringResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
+import type { RuleFiringResource, SiteRuleResource } from '../../generated/site/types.gen.ts'
 import { Route as rulesDetailRoute } from '../../routes/workspaces/$workspaceId/rules/$ruleId/index.tsx'
 import { page, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
@@ -40,7 +40,7 @@ const EDITED: SiteRuleResource = {
   },
 }
 
-const RUNNING: SiteRuleFiringResource = {
+const RUNNING: RuleFiringResource = {
   id: testId(70),
   ruleId: testId(7),
   contactId: testId(33),
@@ -53,7 +53,7 @@ const RUNNING: SiteRuleFiringResource = {
   createdAt: '2026-01-02T00:00:00Z',
 }
 
-const FIRING: SiteRuleFiringResource = { ...RUNNING, completedAt: '2026-01-02T00:00:00Z' }
+const FIRING: RuleFiringResource = { ...RUNNING, completedAt: '2026-01-02T00:00:00Z' }
 
 test('shows the rule and each Firing with its Event, Contact and every Action result', async () => {
   worker.use(

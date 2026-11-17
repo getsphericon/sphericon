@@ -10,6 +10,8 @@ func TestRaw(t *testing.T) {
 	c := &ent.Client{}
 	c.Tag.Create().SetName("a").SaveX() // want `^rule 10: a test creates a row inline.*; fix: add a fixture row \(see internal/AGENTS.md\)`
 	c.Tag.CreateBulk(nil)               // want `^rule 10:`
+	c.Tag.MapCreateBulk(nil, nil)       // want `^rule 10:`
+	c.Tag.Query()
 }
 
 func TestScoped(t *testing.T) {

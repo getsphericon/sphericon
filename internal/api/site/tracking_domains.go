@@ -12,7 +12,7 @@ import (
 
 // trackingDomainResource maps the row, then attaches the CNAME and the ownership TXT to publish,
 // which the module builds and the mapper cannot see.
-func (h *Handlers) trackingDomainResource(d *ent.TrackingDomain) siteapi.SiteTrackingDomainResource {
+func (h *Handlers) trackingDomainResource(d *ent.TrackingDomain) siteapi.TrackingDomainResource {
 	res := mapper.TrackingDomainToResource(d)
 	res.Record = mapper.CnameRecordToResource(h.trackingDomains.Record(d))
 	res.OwnershipRecord = mapper.OwnershipRecordToResource(h.trackingDomains.OwnershipRecord(d))
@@ -20,12 +20,12 @@ func (h *Handlers) trackingDomainResource(d *ent.TrackingDomain) siteapi.SiteTra
 }
 
 // SiteTrackingDomainsList lists the Workspace's Tracking domains. Any member.
-func (h *Handlers) SiteTrackingDomainsList(ctx context.Context, _ siteapi.SiteTrackingDomainsListParams) ([]siteapi.SiteTrackingDomainResource, error) {
+func (h *Handlers) SiteTrackingDomainsList(ctx context.Context, _ siteapi.SiteTrackingDomainsListParams) ([]siteapi.TrackingDomainResource, error) {
 	rows, err := h.trackingDomains.List(ctx, workspaceScope(ctx))
 	if err != nil {
 		return nil, err
 	}
-	items := make([]siteapi.SiteTrackingDomainResource, len(rows))
+	items := make([]siteapi.TrackingDomainResource, len(rows))
 	for i, d := range rows {
 		items[i] = h.trackingDomainResource(d)
 	}
@@ -33,7 +33,7 @@ func (h *Handlers) SiteTrackingDomainsList(ctx context.Context, _ siteapi.SiteTr
 }
 
 // SiteTrackingDomainsSet sets the Workspace's Tracking domain. Permission tracking_domains:manage.
-func (h *Handlers) SiteTrackingDomainsSet(ctx context.Context, req *siteapi.SetTrackingDomainInput, _ siteapi.SiteTrackingDomainsSetParams) (*siteapi.SiteTrackingDomainResource, error) {
+func (h *Handlers) SiteTrackingDomainsSet(ctx context.Context, req *siteapi.SetTrackingDomainInput, _ siteapi.SiteTrackingDomainsSetParams) (*siteapi.TrackingDomainResource, error) {
 	d, err := h.trackingDomains.Set(ctx, workspaceScope(ctx), req.Host)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (h *Handlers) SiteTrackingDomainsSet(ctx context.Context, req *siteapi.SetT
 }
 
 // SiteTrackingDomainsVerify checks a Tracking domain now. Permission tracking_domains:manage.
-func (h *Handlers) SiteTrackingDomainsVerify(ctx context.Context, params siteapi.SiteTrackingDomainsVerifyParams) (*siteapi.SiteTrackingDomainResource, error) {
+func (h *Handlers) SiteTrackingDomainsVerify(ctx context.Context, params siteapi.SiteTrackingDomainsVerifyParams) (*siteapi.TrackingDomainResource, error) {
 	d, err := h.trackingDomains.Verify(ctx, workspaceScope(ctx), int64(params.ID))
 	if err != nil {
 		return nil, err

@@ -78,13 +78,13 @@ var SystemEventActions = Table{
 }
 
 // ConditionCombinators is how a condition Group joins its rules, in the condition module, from the
-// contract's SiteConditionCombinator enum.
+// contract's ConditionCombinator enum.
 var ConditionCombinators = Table{
 	Spec:    siteSpec,
 	Out:     "internal/domain/contacts/condition/combinator_gen.go",
 	Package: "condition",
 	Decls: Enum{
-		Schema: "SiteConditionCombinator",
+		Schema: "ConditionCombinator",
 		Doc:    []string{"Combinator is how a Group joins its rules: And, every rule matches; Or, any rule does."},
 		Type:   "Combinator",
 	}.Decls,

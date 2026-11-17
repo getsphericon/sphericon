@@ -281,7 +281,7 @@ type Invoker interface {
 	// read from its enrollments for the chosen period and the one before it.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/report
-	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*SiteAutomationReport, error)
+	SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*AutomationReport, error)
 	// SiteAutomationsArchive invokes SiteAutomations_archive operation.
 	//
 	// Archive an automation: it leaves the list, enrolls nobody (an active one is deactivated) and keeps
@@ -295,7 +295,7 @@ type Invoker interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/automations
-	SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error)
+	SiteAutomationsCreate(ctx context.Context, request *CreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error)
 	// SiteAutomationsDeactivate invokes SiteAutomations_deactivate operation.
 	//
 	// Deactivate an automation (stops new enrollments). 409 when it is archived.
@@ -307,7 +307,7 @@ type Invoker interface {
 	// Render an HTTP step's body for a Contact and validate it, calling nothing.
 	//
 	// POST /workspaces/{workspaceId}/automations/dry-run-http-step
-	SiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*SiteDryRunHttpStepResult, error)
+	SiteAutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*DryRunHttpStepResult, error)
 	// SiteAutomationsGet invokes SiteAutomations_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -351,13 +351,13 @@ type Invoker interface {
 	// archived.
 	//
 	// PUT /workspaces/{workspaceId}/automations/{id}
-	SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error)
+	SiteAutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error)
 	// SiteBrandKitGet invokes SiteBrandKit_get operation.
 	//
 	// Read the Brand kit. Every member may read it.
 	//
 	// GET /workspaces/{workspaceId}/brand-kit
-	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*SiteBrandKitResource, error)
+	SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*BrandKitResource, error)
 	// SiteBrandKitRecreateStarterTemplates invokes SiteBrandKit_recreateStarterTemplates operation.
 	//
 	// Create the starter Templates again from the saved Brand kit (owner and admin only). It adds new
@@ -373,7 +373,7 @@ type Invoker interface {
 	// changes no message already written. A change is recorded as an Audit entry.
 	//
 	// PUT /workspaces/{workspaceId}/brand-kit
-	SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*SiteBrandKitResource, error)
+	SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*BrandKitResource, error)
 	// SiteBroadcastLinksList invokes SiteBroadcastLinks_list operation.
 	//
 	// The links of a broadcast that were clicked, with a count each, most clicked first. The counts come
@@ -562,7 +562,7 @@ type Invoker interface {
 	// and admins only.
 	//
 	// PUT /workspaces/{workspaceId}/custom-fields/{id}
-	SiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error)
+	SiteCustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error)
 	// SiteDomainJoinGet invokes SiteDomainJoin_get operation.
 	//
 	// Read the domain join switch (owner and admin only).
@@ -581,7 +581,7 @@ type Invoker interface {
 	// Get one Enrollment of an Automation.
 	//
 	// GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}
-	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*SiteEnrollmentResource, error)
+	SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*EnrollmentResource, error)
 	// SiteEnrollmentsList invokes SiteEnrollments_list operation.
 	//
 	// List an Automation's Enrollments, newest first.
@@ -917,7 +917,7 @@ type Invoker interface {
 	// List the Presets the Instance offers, with the params schema of each.
 	//
 	// GET /presets
-	SitePresetsList(ctx context.Context) ([]SitePresetResource, error)
+	SitePresetsList(ctx context.Context) ([]PresetResource, error)
 	// SitePublicConfirmationsPerform invokes SitePublicConfirmations_perform operation.
 	//
 	// Perform a double opt-in confirmation (ADR 0013). The deliberate human act behind the confirmation
@@ -958,7 +958,7 @@ type Invoker interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/rules
-	SiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error)
+	SiteRulesCreate(ctx context.Context, request *CreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error)
 	// SiteRulesDeactivate invokes SiteRules_deactivate operation.
 	//
 	// Deactivate a Rule: it stops firing.
@@ -977,7 +977,7 @@ type Invoker interface {
 	// nothing.
 	//
 	// POST /workspaces/{workspaceId}/rules/{id}/dry-run
-	SiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (*SiteRuleDryRunResource, error)
+	SiteRulesDryRun(ctx context.Context, request *DryRunRuleInput, params SiteRulesDryRunParams) (*RuleDryRunResource, error)
 	// SiteRulesGet invokes SiteRules_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -1009,7 +1009,7 @@ type Invoker interface {
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/rules/{id}
-	SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error)
+	SiteRulesUpdate(ctx context.Context, request *UpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error)
 	// SiteSchemaApplyMigrations invokes SiteSchema_applyMigrations operation.
 	//
 	// Run the migrations the database has not run, the button of the error page. Only a development build
@@ -1081,7 +1081,7 @@ type Invoker interface {
 	// Create a resource from the site UI.
 	//
 	// POST /workspaces/{workspaceId}/segments
-	SiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error)
+	SiteSegmentsCreate(ctx context.Context, request *CreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error)
 	// SiteSegmentsGet invokes SiteSegments_get operation.
 	//
 	// Get a resource by ID for the site UI.
@@ -1111,13 +1111,13 @@ type Invoker interface {
 	// Update a resource from the site UI.
 	//
 	// PUT /workspaces/{workspaceId}/segments/{id}
-	SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error)
+	SiteSegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error)
 	// SiteSendingDomainsCreate invokes SiteSendingDomains_create operation.
 	//
 	// Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains
-	SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SiteSendingDomainResource, error)
+	SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SendingDomainResource, error)
 	// SiteSendingDomainsDelete invokes SiteSendingDomains_delete operation.
 	//
 	// Delete a sending domain for good: it leaves the list and is never restored; what it sent keeps its
@@ -1131,7 +1131,7 @@ type Invoker interface {
 	// Get a sending domain by ID for the site UI, deleted or not.
 	//
 	// GET /workspaces/{workspaceId}/sending-domains/{id}
-	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SiteSendingDomainResource, error)
+	SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SendingDomainResource, error)
 	// SiteSendingDomainsList invokes SiteSendingDomains_list operation.
 	//
 	// List sending domains for the site UI.
@@ -1145,7 +1145,7 @@ type Invoker interface {
 	// only.
 	//
 	// POST /workspaces/{workspaceId}/sending-domains/{id}/verify
-	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SiteSendingDomainResource, error)
+	SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SendingDomainResource, error)
 	// SiteSetupChecklistGet invokes SiteSetupChecklist_get operation.
 	//
 	// The Workspace's Setup checklist.
@@ -1305,7 +1305,7 @@ type Invoker interface {
 	// Empty while the Instance offers none.
 	//
 	// GET /workspaces/{workspaceId}/tracking-domains
-	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]SiteTrackingDomainResource, error)
+	SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]TrackingDomainResource, error)
 	// SiteTrackingDomainsRemove invokes SiteTrackingDomains_remove operation.
 	//
 	// Remove a Tracking domain by its role (owner and admin only). The current one stops being used: it is
@@ -1324,14 +1324,14 @@ type Invoker interface {
 	// of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
 	//
 	// POST /workspaces/{workspaceId}/tracking-domains
-	SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*SiteTrackingDomainResource, error)
+	SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*TrackingDomainResource, error)
 	// SiteTrackingDomainsVerify invokes SiteTrackingDomains_verify operation.
 	//
 	// Check the host now (owner and admin only) and answer once the check is done: the Tracking domain as
 	// it left it. A replacement that reaches `serving` becomes current.
 	//
 	// POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
-	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*SiteTrackingDomainResource, error)
+	SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*TrackingDomainResource, error)
 	// SiteTransactionalEmailsList invokes SiteTransactionalEmails_list operation.
 	//
 	// List transactional sends, most recent first.
@@ -1438,7 +1438,7 @@ type Invoker interface {
 	// Owners and admins only.
 	//
 	// POST /workspaces/{workspaceId}/webhooks/{id}/test
-	SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (*SiteWebhookTestResult, error)
+	SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (*WebhookTestResult, error)
 	// SiteWebhooksUpdate invokes SiteWebhooks_update operation.
 	//
 	// Update a webhook endpoint. Owners and admins only.
@@ -5643,12 +5643,12 @@ func (c *Client) sendSiteAuthVerifyEmail(ctx context.Context, request *SiteVerif
 // read from its enrollments for the chosen period and the one before it.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/report
-func (c *Client) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*SiteAutomationReport, error) {
+func (c *Client) SiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (*AutomationReport, error) {
 	res, err := c.sendSiteAutomationReportsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (res *SiteAutomationReport, err error) {
+func (c *Client) sendSiteAutomationReportsGet(ctx context.Context, params SiteAutomationReportsGetParams) (res *AutomationReport, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomationReports_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -5980,12 +5980,12 @@ func (c *Client) sendSiteAutomationsArchive(ctx context.Context, params SiteAuto
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/automations
-func (c *Client) SiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error) {
+func (c *Client) SiteAutomationsCreate(ctx context.Context, request *CreateAutomationInput, params SiteAutomationsCreateParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *SiteCreateAutomationInput, params SiteAutomationsCreateParams) (res *SiteAutomationResource, err error) {
+func (c *Client) sendSiteAutomationsCreate(ctx context.Context, request *CreateAutomationInput, params SiteAutomationsCreateParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -6275,12 +6275,12 @@ func (c *Client) sendSiteAutomationsDeactivate(ctx context.Context, params SiteA
 // Render an HTTP step's body for a Contact and validate it, calling nothing.
 //
 // POST /workspaces/{workspaceId}/automations/dry-run-http-step
-func (c *Client) SiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*SiteDryRunHttpStepResult, error) {
+func (c *Client) SiteAutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (*DryRunHttpStepResult, error) {
 	res, err := c.sendSiteAutomationsDryRunHttpStep(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsDryRunHttpStep(ctx context.Context, request *SiteDryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (res *SiteDryRunHttpStepResult, err error) {
+func (c *Client) sendSiteAutomationsDryRunHttpStep(ctx context.Context, request *DryRunHttpStepInput, params SiteAutomationsDryRunHttpStepParams) (res *DryRunHttpStepResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_dryRunHttpStep"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -7312,12 +7312,12 @@ func (c *Client) sendSiteAutomationsUnarchive(ctx context.Context, params SiteAu
 // archived.
 //
 // PUT /workspaces/{workspaceId}/automations/{id}
-func (c *Client) SiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error) {
+func (c *Client) SiteAutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params SiteAutomationsUpdateParams) (*SiteAutomationResource, error) {
 	res, err := c.sendSiteAutomationsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpdateAutomationInput, params SiteAutomationsUpdateParams) (res *SiteAutomationResource, err error) {
+func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *UpdateAutomationInput, params SiteAutomationsUpdateParams) (res *SiteAutomationResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteAutomations_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -7471,12 +7471,12 @@ func (c *Client) sendSiteAutomationsUpdate(ctx context.Context, request *SiteUpd
 // Read the Brand kit. Every member may read it.
 //
 // GET /workspaces/{workspaceId}/brand-kit
-func (c *Client) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*SiteBrandKitResource, error) {
+func (c *Client) SiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (*BrandKitResource, error) {
 	res, err := c.sendSiteBrandKitGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (res *SiteBrandKitResource, err error) {
+func (c *Client) sendSiteBrandKitGet(ctx context.Context, params SiteBrandKitGetParams) (res *BrandKitResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBrandKit_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -7745,12 +7745,12 @@ func (c *Client) sendSiteBrandKitRecreateStarterTemplates(ctx context.Context, p
 // changes no message already written. A change is recorded as an Audit entry.
 //
 // PUT /workspaces/{workspaceId}/brand-kit
-func (c *Client) SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*SiteBrandKitResource, error) {
+func (c *Client) SiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (*BrandKitResource, error) {
 	res, err := c.sendSiteBrandKitSave(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (res *SiteBrandKitResource, err error) {
+func (c *Client) sendSiteBrandKitSave(ctx context.Context, request *SiteSaveBrandKitInput, params SiteBrandKitSaveParams) (res *BrandKitResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteBrandKit_save"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -12087,12 +12087,12 @@ func (c *Client) sendSiteCustomFieldsList(ctx context.Context, params SiteCustom
 // and admins only.
 //
 // PUT /workspaces/{workspaceId}/custom-fields/{id}
-func (c *Client) SiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error) {
+func (c *Client) SiteCustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (*SiteCustomFieldResource, error) {
 	res, err := c.sendSiteCustomFieldsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteCustomFieldsUpdate(ctx context.Context, request *SiteUpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (res *SiteCustomFieldResource, err error) {
+func (c *Client) sendSiteCustomFieldsUpdate(ctx context.Context, request *UpdateCustomFieldInput, params SiteCustomFieldsUpdateParams) (res *SiteCustomFieldResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteCustomFields_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -12520,12 +12520,12 @@ func (c *Client) sendSiteDomainJoinSet(ctx context.Context, request *SiteSetDoma
 // Get one Enrollment of an Automation.
 //
 // GET /workspaces/{workspaceId}/automations/{automationId}/enrollments/{enrollmentId}
-func (c *Client) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*SiteEnrollmentResource, error) {
+func (c *Client) SiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (*EnrollmentResource, error) {
 	res, err := c.sendSiteEnrollmentsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (res *SiteEnrollmentResource, err error) {
+func (c *Client) sendSiteEnrollmentsGet(ctx context.Context, params SiteEnrollmentsGetParams) (res *EnrollmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteEnrollments_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -18993,12 +18993,12 @@ func (c *Client) sendSitePersonalTokensList(ctx context.Context, params SitePers
 // List the Presets the Instance offers, with the params schema of each.
 //
 // GET /presets
-func (c *Client) SitePresetsList(ctx context.Context) ([]SitePresetResource, error) {
+func (c *Client) SitePresetsList(ctx context.Context) ([]PresetResource, error) {
 	res, err := c.sendSitePresetsList(ctx)
 	return res, err
 }
 
-func (c *Client) sendSitePresetsList(ctx context.Context) (res []SitePresetResource, err error) {
+func (c *Client) sendSitePresetsList(ctx context.Context) (res []PresetResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SitePresets_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -19736,12 +19736,12 @@ func (c *Client) sendSiteRuleFiringsList(ctx context.Context, params SiteRuleFir
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/rules
-func (c *Client) SiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error) {
+func (c *Client) SiteRulesCreate(ctx context.Context, request *CreateRuleInput, params SiteRulesCreateParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesCreate(ctx context.Context, request *SiteCreateRuleInput, params SiteRulesCreateParams) (res *SiteRuleResource, err error) {
+func (c *Client) sendSiteRulesCreate(ctx context.Context, request *CreateRuleInput, params SiteRulesCreateParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20188,12 +20188,12 @@ func (c *Client) sendSiteRulesDelete(ctx context.Context, params SiteRulesDelete
 // nothing.
 //
 // POST /workspaces/{workspaceId}/rules/{id}/dry-run
-func (c *Client) SiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (*SiteRuleDryRunResource, error) {
+func (c *Client) SiteRulesDryRun(ctx context.Context, request *DryRunRuleInput, params SiteRulesDryRunParams) (*RuleDryRunResource, error) {
 	res, err := c.sendSiteRulesDryRun(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesDryRun(ctx context.Context, request *SiteDryRunRuleInput, params SiteRulesDryRunParams) (res *SiteRuleDryRunResource, err error) {
+func (c *Client) sendSiteRulesDryRun(ctx context.Context, request *DryRunRuleInput, params SiteRulesDryRunParams) (res *RuleDryRunResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_dryRun"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -20999,12 +20999,12 @@ func (c *Client) sendSiteRulesRevert(ctx context.Context, request *RevisionInput
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/rules/{id}
-func (c *Client) SiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error) {
+func (c *Client) SiteRulesUpdate(ctx context.Context, request *UpdateRuleInput, params SiteRulesUpdateParams) (*SiteRuleResource, error) {
 	res, err := c.sendSiteRulesUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteRulesUpdate(ctx context.Context, request *SiteUpdateRuleInput, params SiteRulesUpdateParams) (res *SiteRuleResource, err error) {
+func (c *Client) sendSiteRulesUpdate(ctx context.Context, request *UpdateRuleInput, params SiteRulesUpdateParams) (res *SiteRuleResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteRules_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -22185,12 +22185,12 @@ func (c *Client) sendSiteSegmentsArchive(ctx context.Context, params SiteSegment
 // Create a resource from the site UI.
 //
 // POST /workspaces/{workspaceId}/segments
-func (c *Client) SiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error) {
+func (c *Client) SiteSegmentsCreate(ctx context.Context, request *CreateSegmentInput, params SiteSegmentsCreateParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsCreate(ctx context.Context, request *SiteCreateSegmentInput, params SiteSegmentsCreateParams) (res *SiteSegmentResource, err error) {
+func (c *Client) sendSiteSegmentsCreate(ctx context.Context, request *CreateSegmentInput, params SiteSegmentsCreateParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -22964,12 +22964,12 @@ func (c *Client) sendSiteSegmentsUnarchive(ctx context.Context, params SiteSegme
 // Update a resource from the site UI.
 //
 // PUT /workspaces/{workspaceId}/segments/{id}
-func (c *Client) SiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error) {
+func (c *Client) SiteSegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SiteSegmentsUpdateParams) (*SiteSegmentResource, error) {
 	res, err := c.sendSiteSegmentsUpdate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdateSegmentInput, params SiteSegmentsUpdateParams) (res *SiteSegmentResource, err error) {
+func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *UpdateSegmentInput, params SiteSegmentsUpdateParams) (res *SiteSegmentResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSegments_update"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -23123,12 +23123,12 @@ func (c *Client) sendSiteSegmentsUpdate(ctx context.Context, request *SiteUpdate
 // Add a sending domain; mints the DKIM keypair and returns the DNS records. Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/sending-domains
-func (c *Client) SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SiteSendingDomainResource, error) {
+func (c *Client) SiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (*SendingDomainResource, error) {
 	res, err := c.sendSiteSendingDomainsCreate(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (res *SiteSendingDomainResource, err error) {
+func (c *Client) sendSiteSendingDomainsCreate(ctx context.Context, request *CreateSendingDomainInput, params SiteSendingDomainsCreateParams) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_create"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -23419,12 +23419,12 @@ func (c *Client) sendSiteSendingDomainsDelete(ctx context.Context, params SiteSe
 // Get a sending domain by ID for the site UI, deleted or not.
 //
 // GET /workspaces/{workspaceId}/sending-domains/{id}
-func (c *Client) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SiteSendingDomainResource, error) {
+func (c *Client) SiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (*SendingDomainResource, error) {
 	res, err := c.sendSiteSendingDomainsGet(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (res *SiteSendingDomainResource, err error) {
+func (c *Client) sendSiteSendingDomainsGet(ctx context.Context, params SiteSendingDomainsGetParams) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_get"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -23750,12 +23750,12 @@ func (c *Client) sendSiteSendingDomainsList(ctx context.Context, params SiteSend
 // only.
 //
 // POST /workspaces/{workspaceId}/sending-domains/{id}/verify
-func (c *Client) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SiteSendingDomainResource, error) {
+func (c *Client) SiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (*SendingDomainResource, error) {
 	res, err := c.sendSiteSendingDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (res *SiteSendingDomainResource, err error) {
+func (c *Client) sendSiteSendingDomainsVerify(ctx context.Context, params SiteSendingDomainsVerifyParams) (res *SendingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteSendingDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -27672,12 +27672,12 @@ func (c *Client) sendSiteTokensUpdate(ctx context.Context, request *SiteUpdateTo
 // Empty while the Instance offers none.
 //
 // GET /workspaces/{workspaceId}/tracking-domains
-func (c *Client) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]SiteTrackingDomainResource, error) {
+func (c *Client) SiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) ([]TrackingDomainResource, error) {
 	res, err := c.sendSiteTrackingDomainsList(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (res []SiteTrackingDomainResource, err error) {
+func (c *Client) sendSiteTrackingDomainsList(ctx context.Context, params SiteTrackingDomainsListParams) (res []TrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_list"),
 		semconv.HTTPRequestMethodKey.String("GET"),
@@ -27970,12 +27970,12 @@ func (c *Client) sendSiteTrackingDomainsRemove(ctx context.Context, params SiteT
 // of the Instance's own is 422; 404 when the Instance offers no Tracking domains.
 //
 // POST /workspaces/{workspaceId}/tracking-domains
-func (c *Client) SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*SiteTrackingDomainResource, error) {
+func (c *Client) SiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (*TrackingDomainResource, error) {
 	res, err := c.sendSiteTrackingDomainsSet(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (res *SiteTrackingDomainResource, err error) {
+func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTrackingDomainInput, params SiteTrackingDomainsSetParams) (res *TrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_set"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -28109,12 +28109,12 @@ func (c *Client) sendSiteTrackingDomainsSet(ctx context.Context, request *SetTra
 // it left it. A replacement that reaches `serving` becomes current.
 //
 // POST /workspaces/{workspaceId}/tracking-domains/{id}/verify
-func (c *Client) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*SiteTrackingDomainResource, error) {
+func (c *Client) SiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (*TrackingDomainResource, error) {
 	res, err := c.sendSiteTrackingDomainsVerify(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendSiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (res *SiteTrackingDomainResource, err error) {
+func (c *Client) sendSiteTrackingDomainsVerify(ctx context.Context, params SiteTrackingDomainsVerifyParams) (res *TrackingDomainResource, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteTrackingDomains_verify"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -30048,12 +30048,12 @@ func (c *Client) sendSiteWebhooksRegenerateSecret(ctx context.Context, params Si
 // Owners and admins only.
 //
 // POST /workspaces/{workspaceId}/webhooks/{id}/test
-func (c *Client) SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (*SiteWebhookTestResult, error) {
+func (c *Client) SiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (*WebhookTestResult, error) {
 	res, err := c.sendSiteWebhooksTest(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendSiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (res *SiteWebhookTestResult, err error) {
+func (c *Client) sendSiteWebhooksTest(ctx context.Context, request *TestWebhookInput, params SiteWebhooksTestParams) (res *WebhookTestResult, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("SiteWebhooks_test"),
 		semconv.HTTPRequestMethodKey.String("POST"),

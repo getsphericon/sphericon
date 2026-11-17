@@ -8,10 +8,7 @@ import {
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type {
-  SiteAutomationResource,
-  SiteAutomationVersion,
-} from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationVersion } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -34,7 +31,7 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   automationId: testId(5),
 })
 const NOW = '2026-01-01T00:00:00Z'
-const DRAFT: SiteAutomationVersion = {
+const DRAFT: AutomationVersion = {
   number: 1,
   triggerEvent: 'email.clicked',
   exitEvents: [],

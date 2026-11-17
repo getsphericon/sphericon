@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 
 import { CenteredLayout } from '../components/CenteredLayout.tsx'
 import { sitePublicUnsubscribesPerformMutation } from '../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteIntegrationChannel } from '../generated/site/types.gen.ts'
+import type { IntegrationChannel } from '../generated/site/types.gen.ts'
 import { useUnsubscribeCopy } from '../hooks/useUnsubscribeCopy.ts'
 import { Route as unsubscribeRoute } from '../routes/unsubscribe.tsx'
 
@@ -25,7 +25,7 @@ export function Unsubscribe({
 }: {
   token: string
   all?: string | undefined
-  channel?: SiteIntegrationChannel | undefined
+  channel?: IntegrationChannel | undefined
 }) {
   const { t } = useTranslation()
   const copy = useUnsubscribeCopy(channel)

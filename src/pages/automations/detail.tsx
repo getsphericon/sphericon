@@ -16,11 +16,11 @@ import {
   siteEnrollmentsListOptions,
   siteIntegrationsGetOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteAutomationStepType } from '../../generated/site/types.gen.ts'
+import { AutomationStepType } from '../../generated/site/types.gen.ts'
 import type {
-  SiteAutomationStep,
-  SiteAutomationVersion,
-  SiteEnrollmentResource,
+  AutomationStep,
+  AutomationVersion,
+  EnrollmentResource,
 } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
@@ -48,17 +48,17 @@ function IntegrationName({ workspaceId, id }: { workspaceId: string; id: string 
 }
 
 // A step by its kind, with the subject of an email or the Tag of a tag step.
-function stepLabel(t: TFunction, step: SiteAutomationStep): string {
+function stepLabel(t: TFunction, step: AutomationStep): string {
   const kind = {
-    [SiteAutomationStepType.EMAIL]: t(($) => $.automations.stepEmail),
-    [SiteAutomationStepType.TELEGRAM]: t(($) => $.automations.stepTelegram),
-    [SiteAutomationStepType.SMS]: t(($) => $.automations.stepSms),
-    [SiteAutomationStepType.WAIT]: t(($) => $.automations.stepWait),
-    [SiteAutomationStepType.APPLY_TAG]: t(($) => $.automations.stepApplyTag),
-    [SiteAutomationStepType.REMOVE_TAG]: t(($) => $.automations.stepRemoveTag),
-    [SiteAutomationStepType.HTTP]: t(($) => $.automations.stepHttp),
+    [AutomationStepType.EMAIL]: t(($) => $.automations.stepEmail),
+    [AutomationStepType.TELEGRAM]: t(($) => $.automations.stepTelegram),
+    [AutomationStepType.SMS]: t(($) => $.automations.stepSms),
+    [AutomationStepType.WAIT]: t(($) => $.automations.stepWait),
+    [AutomationStepType.APPLY_TAG]: t(($) => $.automations.stepApplyTag),
+    [AutomationStepType.REMOVE_TAG]: t(($) => $.automations.stepRemoveTag),
+    [AutomationStepType.HTTP]: t(($) => $.automations.stepHttp),
   }[step.type]
-  const detail = step.type === SiteAutomationStepType.EMAIL ? step.subject : step.tag
+  const detail = step.type === AutomationStepType.EMAIL ? step.subject : step.tag
   return detail ? `${kind}: ${detail}` : kind
 }
 
@@ -70,7 +70,7 @@ function AutomationVersionSummary({
   version,
 }: {
   workspaceId: string
-  version: SiteAutomationVersion
+  version: AutomationVersion
 }) {
   const { t } = useTranslation()
   return (
@@ -148,7 +148,7 @@ function AutomationDetail() {
   ).data
   // The version Publish arms: the draft, else the live version made active again (ADR 0156).
   const armed = automation.draft ?? automation.live
-  const sendsEmail = armed?.steps.some((step) => step.type === SiteAutomationStepType.EMAIL)
+  const sendsEmail = armed?.steps.some((step) => step.type === AutomationStepType.EMAIL)
 
   return (
     <Stack>
@@ -206,7 +206,7 @@ function AutomationDetail() {
           {
             accessor: 'contactId',
             title: t(($) => $.automations.failedEnrollmentContact),
-          } satisfies FieldColumn<SiteEnrollmentResource>,
+          } satisfies FieldColumn<EnrollmentResource>,
           {
             accessor: 'status',
             title: t(($) => $.automations.statusLabel),

@@ -18,7 +18,7 @@ func (h *Handlers) SiteRulesList(ctx context.Context, params siteapi.SiteRulesLi
 }
 
 // SiteRulesCreate always stores a draft.
-func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.SiteCreateRuleInput, _ siteapi.SiteRulesCreateParams) (*siteapi.SiteRuleResource, error) {
+func (h *Handlers) SiteRulesCreate(ctx context.Context, req *siteapi.CreateRuleInput, _ siteapi.SiteRulesCreateParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.RuleCreate(req)
@@ -44,7 +44,7 @@ func (h *Handlers) SiteRulesGet(ctx context.Context, params siteapi.SiteRulesGet
 	return &res, nil
 }
 
-func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.SiteUpdateRuleInput, params siteapi.SiteRulesUpdateParams) (*siteapi.SiteRuleResource, error) {
+func (h *Handlers) SiteRulesUpdate(ctx context.Context, req *siteapi.UpdateRuleInput, params siteapi.SiteRulesUpdateParams) (*siteapi.SiteRuleResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.RuleUpdate(req)
@@ -107,7 +107,7 @@ func (h *Handlers) SiteRulesDeactivate(ctx context.Context, params siteapi.SiteR
 }
 
 // SiteRulesDryRun reports what a stored Event would do to the Rule, writing and running nothing.
-func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.SiteDryRunRuleInput, params siteapi.SiteRulesDryRunParams) (*siteapi.SiteRuleDryRunResource, error) {
+func (h *Handlers) SiteRulesDryRun(ctx context.Context, req *siteapi.DryRunRuleInput, params siteapi.SiteRulesDryRunParams) (*siteapi.RuleDryRunResource, error) {
 	ws := workspaceScope(ctx)
 
 	dry, err := h.rules.DryRun(ctx, ws, int64(params.ID), int64(req.EventId))

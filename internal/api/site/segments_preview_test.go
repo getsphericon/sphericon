@@ -30,7 +30,7 @@ func TestSiteSegmentsPreviewCountsMatchingActiveContacts(t *testing.T) {
 
 	def := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"preview-pro"}]}`
 	res, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	assert.Equal(t, int32(1), res.Count)
@@ -49,7 +49,7 @@ func tryPreviewOne(t *testing.T, c *siteapi.Client, leaf string) (*siteapi.SiteP
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
 	return c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DunderPublicID})
 }
 
@@ -88,7 +88,7 @@ func TestSiteSegmentsStoreAnEventCount(t *testing.T) {
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"event","action":"pricing_viewed","operator":"atLeast","times":2,"withinDays":7}]}`
 	sent := testhelper.SiteRuleGroup(t, def)
 
-	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "Pricing twice", Condition: sent},
+	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Pricing twice", Condition: sent},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	stored, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: created.ID})
@@ -154,11 +154,11 @@ func TestSiteCustomFieldsListTheRuleOperatorsAConditionTakes(t *testing.T) {
 	seats, found := lo.Find(listed.Items, func(f siteapi.SiteCustomFieldResource) bool { return f.Key == "seats" })
 	require.True(t, found)
 
-	assert.Equal(t, []siteapi.SiteConditionOperator{
-		siteapi.SiteConditionOperatorEq, siteapi.SiteConditionOperatorNeq, siteapi.SiteConditionOperatorNotNull,
+	assert.Equal(t, []siteapi.ConditionOperator{
+		siteapi.ConditionOperatorEq, siteapi.ConditionOperatorNeq, siteapi.ConditionOperatorNotNull,
 	}, seats.RuleOperators, "a number field is compared by a number leaf, not by contains")
 	for _, f := range listed.Items {
-		for _, op := range siteapi.SiteConditionOperator("").AllValues() {
+		for _, op := range siteapi.ConditionOperator("").AllValues() {
 			_, err := tryPreviewOne(t, c, `{"kind":"rule","field":"custom:`+f.Key+`","operator":"`+string(op)+`","value":"x"}`)
 			assert.Equal(t, !slices.Contains(f.RuleOperators, op), refusedWith(err, http.StatusUnprocessableEntity), "%s on the %s field %s", op, f.Type, f.Key)
 		}
@@ -176,7 +176,7 @@ func TestSiteSegmentsStoreNumberAndDateLeaves(t *testing.T) {
 		`{"kind":"dateWithin","field":"custom:renews_at","withinDays":30}]}`
 	sent := testhelper.SiteRuleGroup(t, def)
 
-	created, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "Small and renewing", Condition: sent},
+	created, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "Small and renewing", Condition: sent},
 		siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.DunderPublicID})
 	require.NoError(t, err)
 	stored, err := c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: fixtures.DunderPublicID, ID: created.ID})
@@ -192,7 +192,7 @@ func TestSiteSegmentsPreviewRejectsInvalidDefinition(t *testing.T) {
 	ctx := context.Background()
 
 	_, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
+		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -202,7 +202,7 @@ func TestSiteSegmentsCreateRejectsInvalidRuleDefinition(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 
-	_, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "Bad rule",
 		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -216,12 +216,12 @@ func TestSiteSegmentsCreateAndUpdateShareValidation(t *testing.T) {
 	bad := testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
 
 	// Create rejects a bad definition.
-	_, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name: "Bad", Condition: bad,
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptSiteConditionGroupInput(bad)},
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: siteapi.Revision(env.SegmentRevision(ctx, t, fixtures.SegmentActiveID)), Condition: siteapi.NewOptConditionGroupInput(bad)},
 		siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.SegmentActiveID)})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 }
@@ -254,12 +254,12 @@ func TestSiteSegmentsUpdateContractRejectsNullCondition(t *testing.T) {
 	raw := env.SiteActorVia(t, fixtures.OwnerJohnEmail, func(inner ht.Client) ht.Client {
 		return rawBody{inner: inner, body: `{"revision": 1, "condition": null}`}
 	})
-	_, err = raw.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{}, params)
+	_, err = raw.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{}, params)
 	bad := testhelper.SiteRefusal(t, err, http.StatusBadRequest)
 	assert.Equal(t, siteapi.NewOptInt32(http.StatusBadRequest), bad.Status)
 
 	// Absent condition still updates the name and keeps the Condition.
-	updated, err := reader.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: stored.Revision, Name: siteapi.NewOptName("Renamed")}, params)
+	updated, err := reader.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: stored.Revision, Name: siteapi.NewOptName("Renamed")}, params)
 	require.NoError(t, err)
 	assert.Equal(t, "Renamed", updated.Name)
 	assert.Equal(t, stored.Condition, updated.Condition)

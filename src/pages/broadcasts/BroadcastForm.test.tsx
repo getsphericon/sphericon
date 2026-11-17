@@ -10,7 +10,7 @@ import {
   handleSiteTemplatesList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteSendCap } from '../../generated/site/types.gen.ts'
+import type { SendCap } from '../../generated/site/types.gen.ts'
 import { Route as broadcastsRoute } from '../../routes/workspaces/$workspaceId/broadcasts/index.tsx'
 import { Route as broadcastsCreateRoute } from '../../routes/workspaces/$workspaceId/broadcasts/new.tsx'
 import { testId } from '../../test/payloads.ts'
@@ -105,7 +105,7 @@ async function chooseAudience(screen: Screen, audience = 'All contacts') {
 function serve(
   templates: ReturnType<typeof template>[],
   bodies: unknown[] = [],
-  sendCap: SiteSendCap | null = null,
+  sendCap: SendCap | null = null,
 ) {
   worker.use(
     handleSiteWorkspacesList({ body: [{ ...workspace, sendCap }] }),

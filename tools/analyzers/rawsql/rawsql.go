@@ -9,7 +9,6 @@
 package rawsql
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -17,8 +16,8 @@ import (
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/reason"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
@@ -27,7 +26,7 @@ const marker = "raw sql:"
 
 const entSQLPath = "entgo.io/ent/dialect/sql"
 
-var fix = "build it with ent (a predicate, an aggregate, an upsert), or if ent cannot express it write `// " +
+const fix = "build it with ent (a predicate, an aggregate, an upsert), or if ent cannot express it write `// " +
 	marker + " <reason>` on the line above"
 
 // Analyzer reports raw SQL that gives no reason.
@@ -45,9 +44,9 @@ var stdMethods = map[string]bool{"Exec": true, "Query": true, "QueryRow": true}
 var fragmentFuncs = map[string]bool{"P": true, "ExprFunc": true, "Expr": true, "ExprP": true, "Raw": true}
 
 func run(pass *analysis.Pass) (any, error) {
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
 	insp.WithStack([]ast.Node{(*ast.CallExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		if !push {
@@ -64,8 +63,8 @@ func run(pass *analysis.Pass) (any, error) {
 		if reason.Given(pass.Fset, stack, marker) {
 			return true
 		}
-		pass.Reportf(call.Pos(), "%s", rule.Message(4,
-			"raw SQL "+kind+" with no reason written next to it", fix))
+		rule.Report(pass, call.Pos(), 4,
+			"raw SQL "+kind+" with no reason written next to it", fix)
 		return true
 	})
 	return nil, nil

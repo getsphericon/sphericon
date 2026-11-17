@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type {
   IntegrationConfigInput,
-  SiteIntegrationProvider,
+  IntegrationProvider,
   SiteIntegrationResource,
 } from '../../generated/site/types.gen.ts'
 import { zEmailAddress } from '../../generated/site/zod.gen.ts'
@@ -19,7 +19,7 @@ type TwilioCredential = 'apiKey' | 'authToken'
 // from whichever fields the selected provider uses.
 export interface IntegrationFormValues extends ProviderLimitValues {
   name: string
-  provider: SiteIntegrationProvider
+  provider: IntegrationProvider
   isDefault: boolean
   host: string
   port: number
@@ -29,6 +29,7 @@ export interface IntegrationFormValues extends ProviderLimitValues {
   accessKeyId: string
   secretAccessKey: string
   endpoint: string
+  configurationSet: string
   from: string
   fromName: string
   token: string
@@ -51,6 +52,7 @@ export const INITIAL_VALUES: IntegrationFormValues = {
   accessKeyId: '',
   secretAccessKey: '',
   endpoint: '',
+  configurationSet: '',
   from: '',
   fromName: '',
   token: '',
@@ -82,6 +84,7 @@ export function storedValues(integration: SiteIntegrationResource): IntegrationF
         ...values,
         region: config.region,
         endpoint: config.endpoint ?? '',
+        configurationSet: config.configurationSet ?? '',
         from: config.from,
         fromName: config.fromName ?? '',
       }
@@ -122,6 +125,7 @@ export function buildConfig(values: IntegrationFormValues): IntegrationConfigInp
       accessKeyId: values.accessKeyId.trim(),
       secretAccessKey: values.secretAccessKey,
       endpoint: values.endpoint.trim() || null,
+      configurationSet: values.configurationSet.trim() || null,
       from: values.from.trim(),
       fromName: values.fromName.trim() || null,
     }
@@ -163,7 +167,7 @@ export interface CredentialsBody {
 // CredentialsVariant is what the credentials form of an Integration depends on: its kind, and
 // whether an SES one is an SES-compatible service with its own endpoint.
 export interface CredentialsVariant {
-  kind: SiteIntegrationProvider
+  kind: IntegrationProvider
   compatible: boolean
 }
 

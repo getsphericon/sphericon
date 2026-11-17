@@ -6606,7 +6606,7 @@
             "description": "The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet is revision 1"
           }
         },
-        "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a\nmessage in these values. A Workspace that has not saved one has the defaults and `saved` false."
+        "description": "The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets\nthe palette the editor offers and what an agent is told to use: write a message in these values.\nIts values are written into a message when the message is authored, so saving it never changes a\nmessage already written. A Workspace that has not saved one has the defaults and `saved` false."
       },
       "BroadcastChannel": {
         "type": "string",
@@ -10780,7 +10780,7 @@
             "description": "Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention"
           }
         },
-        "description": "How often one link of an automation's emails was clicked"
+        "description": "How often one link of a broadcast's or an automation's emails was clicked"
       },
       "LintCode": {
         "type": "string",
@@ -10911,7 +10911,7 @@
             "description": "Net revenue of those Orders, in the minor unit of the Reporting currency (cents for USD)"
           }
         },
-        "description": "Orders credited to a broadcast or an automation and their net revenue (ADR 0064)"
+        "description": "The Orders credited to one Broadcast or Automation and the net revenue of their Movements\n(ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund\nlowers `amount` on its own day. Orders in another currency are counted in neither field."
       },
       "Name": {
         "type": "string",
@@ -12092,7 +12092,7 @@
       },
       "SesConfig": {
         "type": "object",
-        "required": ["kind", "region", "from"],
+        "required": ["kind", "region", "from", "configurationSetMissing"],
         "properties": {
           "kind": {
             "type": "string",
@@ -12117,6 +12117,15 @@
             "type": "string",
             "nullable": true,
             "description": "Last 4 chars of the access key id, for recognition"
+          },
+          "configurationSet": {
+            "type": "string",
+            "nullable": true,
+            "description": "The SES configuration set every send names; empty when sends go through the account's default pool"
+          },
+          "configurationSetMissing": {
+            "type": "boolean",
+            "description": "True when SES said, at the last save, that it has no configuration set of that name: SES refuses every message that names it, and a refused message is not sent again, until the set exists. False when no set is named or SES did not answer"
           }
         },
         "description": "SES config without the secret access key"
@@ -12149,6 +12158,11 @@
             "type": "string",
             "nullable": true,
             "description": "Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS"
+          },
+          "configurationSet": {
+            "type": "string",
+            "nullable": true,
+            "description": "The SES configuration set every send through the Integration names, to route it to a dedicated IP pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused"
           }
         },
         "description": "SES credentials",
@@ -12449,7 +12463,7 @@
       "SuppressionReason": {
         "type": "string",
         "enum": ["bounce", "complaint", "manual"],
-        "description": "Why a destination is on the suppression (do-not-send) list"
+        "description": "Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a\nsuppression: it is a separate, per-source opt-out."
       },
       "SuppressionResource": {
         "type": "object",

@@ -23,7 +23,6 @@
 package handmapper
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -35,7 +34,10 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
+	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
 // Analyzer reports a hand-written ent-to-resource mapper and a hand-built module input in a handler.
@@ -54,40 +56,38 @@ var (
 
 func run(pass *analysis.Pass) (any, error) {
 	registered := registeredHelpers(pass)
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	skipped := skippedFiles(pass)
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
 	via := viaConverter(pass, insp)
-	if isHandlerPackage(pass.Pkg.Path()) {
-		reportInputLiterals(pass, insp)
+	if isOneOf(pass.Pkg.Path(), handlerPackages) {
+		reportInputLiterals(pass, insp, skipped)
 	}
 	reported := map[*ast.FuncDecl]bool{}
 	for fn := range inspector.All[*ast.FuncDecl](insp) {
-		if skippedFile(pass, fn.Pos()) || registered[fn.Name.Name] {
+		if skipped(fn.Pos()) || registered[fn.Name.Name] {
 			continue
 		}
 		obj, ok := pass.TypesInfo.Defs[fn.Name].(*types.Func)
 		if !ok {
 			continue
 		}
-		sig, isSig := obj.Type().(*types.Signature)
-		if !isSig {
-			continue
-		}
-		if !anyType(sig.Params(), isEntity) || !anyType(sig.Results(), isResource) {
+		sig := obj.Signature()
+		if !anyType(sig.Results(), isResource) || !anyType(sig.Params(), isEntity) {
 			continue
 		}
 		if via[obj] {
 			continue
 		}
 		reported[fn] = true
-		pass.Reportf(fn.Name.Pos(), "%s", rule.Message(1,
+		rule.Report(pass, fn.Name.Pos(), 1,
 			fn.Name.Name+" maps an ent entity to an API resource by hand",
-			"add a method to the surface's goverter Converter (or register a goverter:extend helper) and call it"))
+			"add a method to the surface's goverter Converter (or register a goverter:extend helper) and call it")
 	}
-	if isLiteralPackage(pass.Pkg.Path()) {
-		reportEntityLiterals(pass, insp, func(fn *ast.FuncDecl) bool {
+	if isOneOf(pass.Pkg.Path(), literalPackages) {
+		reportEntityLiterals(pass, insp, skipped, func(fn *ast.FuncDecl) bool {
 			return reported[fn] || registered[fn.Name.Name]
 		}, via)
 	}
@@ -98,15 +98,12 @@ func run(pass *analysis.Pass) (any, error) {
 // of every surface (/collect too, which takes no module input) and internal/server, which renders
 // the refusals with the contract's problem types. The resources subpackages are the goverter homes,
 // whose registered helpers read entity fields by design.
-var literalPackages = append([]string{"/internal/server", "/internal/api/collect"}, handlerPackages...)
+var literalPackages = append([]string{"internal/server", "internal/api/collect"}, handlerPackages...)
 
-func isLiteralPackage(path string) bool {
-	for _, p := range literalPackages {
-		if strings.HasSuffix(path, p) {
-			return true
-		}
-	}
-	return false
+// isOneOf holds for the package at path when it is one of the module's packages rels, not one below it.
+func isOneOf(path string, rels []string) bool {
+	rel, ok := strings.CutPrefix(path, tier.Module)
+	return ok && slices.Contains(rels, rel)
 }
 
 // reportEntityLiterals reports each composite literal of a generated API type that reads a field of an
@@ -115,10 +112,10 @@ func isLiteralPackage(path string) bool {
 // method, or to a function of the package that maps through one, is not read by hand; a function
 // literal is a function of its own (its literals are visited on their own), and so is a nested literal
 // of an API type. A function the function-level check already reported (skip) is not reported twice.
-func reportEntityLiterals(pass *analysis.Pass, insp *inspector.Inspector, skip func(*ast.FuncDecl) bool, via map[types.Object]bool) {
+func reportEntityLiterals(pass *analysis.Pass, insp *inspector.Inspector, skipped func(token.Pos) bool, skip func(*ast.FuncDecl) bool, via map[types.Object]bool) {
 	insp.WithStack([]ast.Node{(*ast.CompositeLit)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
 		lit, isLit := n.(*ast.CompositeLit)
-		if !isLit || !push || skippedFile(pass, lit.Pos()) {
+		if !isLit || !push || skipped(lit.Pos()) {
 			return true
 		}
 		if fn := enclosingFunc(stack); fn != nil && skip(fn) {
@@ -132,9 +129,9 @@ func reportEntityLiterals(pass *analysis.Pass, insp *inspector.Inspector, skip f
 		if entity == nil {
 			return true
 		}
-		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
+		rule.Report(pass, lit.Pos(), 1,
 			qualified(named)+" is built by hand from the fields of "+qualified(entity),
-			"add a method to the surface's goverter Converter (a list method for a slice of entities; a value it cannot see is a `goverter:map ... | helper`) and call it"))
+			"add a method to the surface's goverter Converter (a list method for a slice of entities; a value it cannot see is a `goverter:map ... | helper`) and call it")
 		return true
 	})
 }
@@ -218,62 +215,48 @@ func qualified(n *types.Named) string { return n.Obj().Pkg().Name() + "." + n.Ob
 // handlers, which hand a module what the request says. Their subpackages are not handlers: resources
 // holds the goverter Inputs and its extend helpers, the one place a module input is built by hand (a
 // oneOf is beyond goverter).
-var handlerPackages = []string{"/internal/api/site", "/internal/api/external", "/internal/api/staff", "/ee/api/staff"}
-
-func isHandlerPackage(path string) bool {
-	for _, p := range handlerPackages {
-		if strings.HasSuffix(path, p) {
-			return true
-		}
-	}
-	return false
-}
+var handlerPackages = []string{"internal/api/site", "internal/api/external", "internal/api/staff", "ee/api/staff"}
 
 // reportInputLiterals reports each struct literal of a module input type in a handler package.
-func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector) {
+func reportInputLiterals(pass *analysis.Pass, insp *inspector.Inspector, skipped func(token.Pos) bool) {
 	for lit := range inspector.All[*ast.CompositeLit](insp) {
-		if skippedFile(pass, lit.Pos()) {
+		if skipped(lit.Pos()) {
 			continue
 		}
 		named, ok := types.Unalias(pass.TypesInfo.TypeOf(lit)).(*types.Named)
 		if !ok || !isModuleInput(pass.Pkg, named) {
 			continue
 		}
-		name := named.Obj().Pkg().Name() + "." + named.Obj().Name()
-		pass.Reportf(lit.Pos(), "%s", rule.Message(1,
-			name+" is built by hand from the request",
-			"add a method to the surface's goverter Inputs (resources/inputs.go), call it, and assign after it only the fields it ignores"))
+		rule.Report(pass, lit.Pos(), 1,
+			qualified(named)+" is built by hand from the request",
+			"add a method to the surface's goverter Inputs (resources/inputs.go), call it, and assign after it only the fields it ignores")
 	}
 }
 
-// isModuleInput is a module's input: a struct type named ...Input declared in a package under
-// internal/ other than the one checked. The name is the modules' own convention for what an
-// operation takes (automations.CreateInput, apitokens.Input, eventrecording.Input), so a new module is
-// covered the day it is written, where a list of types would go stale. A type of a generated API
-// package (siteapi.SiteCreateAutomationInput) is the request itself, and a type the handler package
-// declares is its own.
+// isModuleInput is a module's input: a struct type named ...Input declared in a package of the domain
+// or the use case tier (tier.IsCore), of either edition. The name is the modules' own convention for
+// what an operation takes (automations.CreateInput, apitokens.Input, eventrecording.Input), so a new
+// module is covered the day it is written, where a list of types would go stale. A type of a
+// generated API package (siteapi.CreateAutomationInput) is the request itself, and a type the
+// handler package declares is its own.
 func isModuleInput(self *types.Package, n *types.Named) bool {
 	pkg := n.Obj().Pkg()
-	if pkg == nil || pkg == self || isResource(n) || !strings.HasSuffix(n.Obj().Name(), "Input") {
-		return false
-	}
-	if !strings.HasPrefix(pkg.Path(), "internal/") && !strings.Contains(pkg.Path(), "/internal/") {
+	if pkg == nil || pkg == self || !tier.IsCore(pkg.Path()) || !strings.HasSuffix(n.Obj().Name(), "Input") {
 		return false
 	}
 	_, isStruct := n.Underlying().(*types.Struct)
 	return isStruct
 }
 
-func skippedFile(pass *analysis.Pass, pos token.Pos) bool {
-	if strings.HasSuffix(pass.Fset.File(pos).Name(), "_test.go") {
-		return true
-	}
+// skippedFiles tells whether a position stands in a file that is not API code: a test file or a
+// generated one. Each file of the pass is classified once.
+func skippedFiles(pass *analysis.Pass) func(token.Pos) bool {
+	skipped := make(map[*token.File]bool, len(pass.Files))
 	for _, f := range pass.Files {
-		if f.FileStart <= pos && pos < f.FileEnd {
-			return ast.IsGenerated(f)
-		}
+		tf := pass.Fset.File(f.FileStart)
+		skipped[tf] = strings.HasSuffix(tf.Name(), "_test.go") || ast.IsGenerated(f)
 	}
-	return false
+	return func(pos token.Pos) bool { return skipped[pass.Fset.File(pos)] }
 }
 
 // viaConverter is the set of functions of the package that map through a goverter converter: they
@@ -327,10 +310,7 @@ func viaConverter(pass *analysis.Pass, insp *inspector.Inspector) map[types.Obje
 }
 
 func isConverter(t types.Type) bool {
-	if p, ok := t.(*types.Pointer); ok {
-		t = p.Elem()
-	}
-	named, ok := t.(*types.Named)
+	named, ok := deref(t).(*types.Named)
 	if !ok {
 		return false
 	}
@@ -344,6 +324,9 @@ func registeredHelpers(pass *analysis.Pass) map[string]bool {
 	for _, f := range pass.Files {
 		for _, cg := range f.Comments {
 			for _, c := range cg.List {
+				if !strings.Contains(c.Text, "goverter:") {
+					continue
+				}
 				if m := pipeLine.FindStringSubmatch(c.Text); m != nil {
 					names[m[1]] = true
 				}
@@ -397,19 +380,14 @@ func mentions(t types.Type, pred func(*types.Named) bool, depth int) bool {
 	return false
 }
 
-// isEntity is a generated ent entity: a type of the ent package with Unwrap and Value methods
-// (the client, the scope and the builders have not).
+// isEntity is a generated ent entity, as the manifest of roles of the ent package says (entx).
 func isEntity(n *types.Named) bool {
-	pkg := n.Obj().Pkg()
-	if pkg == nil || (pkg.Path() != "ent" && !strings.HasSuffix(pkg.Path(), "/ent")) {
-		return false
-	}
-	ms := types.NewMethodSet(types.NewPointer(n))
-	return ms.Lookup(pkg, "Unwrap") != nil && ms.Lookup(pkg, "Value") != nil
+	_, ok := entx.Named(n)
+	return ok && entx.KindOf(n) == entx.Entity
 }
 
 // isResource is a type of a generated API package (gen/site, gen/external, ...).
 func isResource(n *types.Named) bool {
 	pkg := n.Obj().Pkg()
-	return pkg != nil && (strings.HasPrefix(pkg.Path(), "gen/") || strings.Contains(pkg.Path(), "/gen/"))
+	return pkg != nil && strings.HasPrefix(pkg.Path(), tier.Module+"gen/")
 }

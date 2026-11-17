@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/getsphericon/sphericon/ent"
@@ -171,6 +172,8 @@ type (
 		From            string
 		FromName        string
 		Endpoint        string
+		// ConfigurationSet is the SES configuration set every send names; empty names none.
+		ConfigurationSet string
 	}
 )
 
@@ -234,6 +237,11 @@ func (m *Module) Create(ctx context.Context, s *ent.Scoped, in CreateInput) (Vie
 	}
 	if in.Config.SES != nil {
 		if err := requireProviderLimit(in.Config.SES.Endpoint, in.MaxPerSecond, in.MaxPerDay); err != nil {
+			return View{}, err
+		}
+	}
+	if provider == providers.SES {
+		if plaintext, err = m.checkConfigurationSet(ctx, plaintext); err != nil {
 			return View{}, err
 		}
 	}
@@ -385,7 +393,7 @@ func (m *Module) Update(ctx context.Context, s *ent.Scoped, id int64, in UpdateI
 		if sealed, err = m.editTwilio(ctx, row, in); err != nil {
 			return View{}, err
 		}
-	} else if sealed, err = m.sealEditedConfig(row, in.Config.Ptr()); err != nil {
+	} else if sealed, err = m.sealEditedConfig(ctx, row, in.Config.Ptr()); err != nil {
 		return View{}, err
 	}
 	if err := m.keepsProviderLimit(row, in); err != nil {
@@ -506,8 +514,9 @@ func refuseDiscarded(row *ent.Integration) error {
 
 // sealEditedConfig validates an edited provider config and seals it, nil when the edit sends
 // none. Secrets are redacted on read, so a partial edit re-sends blank secret fields: the stored
-// secrets are carried forward instead of being overwritten with nothing.
-func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*string, error) {
+// secrets are carried forward instead of being overwritten with nothing. An SES config's
+// configuration set is checked with SES anew (checkConfigurationSet).
+func (m *Module) sealEditedConfig(ctx context.Context, row *ent.Integration, cfg *ConfigInput) (*string, error) {
 	if cfg == nil {
 		return nil, nil
 	}
@@ -524,6 +533,11 @@ func (m *Module) sealEditedConfig(row *ent.Integration, cfg *ConfigInput) (*stri
 	}
 	if plaintext, err = mergeSecrets(provider, plaintext, prev); err != nil {
 		return nil, err
+	}
+	if provider == providers.SES {
+		if plaintext, err = m.checkConfigurationSet(ctx, plaintext); err != nil {
+			return nil, err
+		}
 	}
 	enc, err := m.cipher.Encrypt(plaintext)
 	if err != nil {
@@ -695,6 +709,7 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 		plaintext, err = json.Marshal(ses.Config{
 			Region: c.Region, AccessKeyID: c.AccessKeyID, SecretAccessKey: c.SecretAccessKey,
 			From: c.From, FromName: c.FromName, Endpoint: c.Endpoint,
+			ConfigurationSet: strings.TrimSpace(c.ConfigurationSet),
 		})
 	case in.Inbox != nil:
 		provider = providers.Inbox
@@ -731,6 +746,9 @@ func (m *Module) encode(in ConfigInput) (providers.Provider, channels.Channel, [
 		return "", "", nil, configError(errUnknownProvider)
 	}
 	if err := m.catalog.Validate(provider, plaintext); err != nil {
+		if errors.Is(err, ses.ErrConfigurationSet) {
+			return "", "", nil, refuse(fieldConfig+".configurationSet", i18n.ErrorsIntegrationSesConfigurationSet, nil)
+		}
 		return "", "", nil, configError(err)
 	}
 	return provider, provider.Channel(), plaintext, nil
@@ -821,6 +839,10 @@ type (
 		FromName         string
 		Endpoint         string
 		AccessKeyIDLast4 string
+		ConfigurationSet string
+		// ConfigurationSetMissing is the warning that SES said, at the last save, that it has no
+		// such configuration set.
+		ConfigurationSetMissing bool
 	}
 )
 
@@ -850,6 +872,7 @@ func (m *Module) Redact(row *ent.Integration) (RedactedConfig, error) {
 		}
 		return RedactedConfig{SES: &RedactedSES{
 			Region: c.Region, From: c.From, FromName: c.FromName, Endpoint: c.Endpoint, AccessKeyIDLast4: last4,
+			ConfigurationSet: c.ConfigurationSet, ConfigurationSetMissing: c.ConfigurationSetMissing,
 		}}, nil
 	case providers.Inbox:
 		return RedactedConfig{Inbox: &RedactedInbox{}}, nil

@@ -7,10 +7,7 @@ import {
   siteSegmentsGetOptions,
   siteSegmentsPreviewOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type {
-  SiteBroadcastResource,
-  SiteConditionGroupInput,
-} from '../../generated/site/types.gen.ts'
+import type { SiteBroadcastResource, ConditionGroupInput } from '../../generated/site/types.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 
 // What Schedule arms, shown before it does (ADR 0149): the Recipients the saved Broadcast would take
@@ -70,7 +67,7 @@ function Recipients({
   condition,
 }: {
   broadcast: SiteBroadcastResource
-  condition?: SiteConditionGroupInput | undefined
+  condition?: ConditionGroupInput | undefined
 }) {
   const { t } = useTranslation()
   const { workspaceId } = workspaceRoute.useParams()

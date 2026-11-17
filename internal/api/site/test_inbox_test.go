@@ -67,12 +67,12 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 	created, err := createInbox(t, c, fixtures.AcmePublicID)
 
 	require.NoError(t, err)
-	assert.Equal(t, siteapi.SiteIntegrationProviderInbox, created.Provider)
-	assert.Equal(t, siteapi.SiteIntegrationChannelEmail, created.Channel)
+	assert.Equal(t, siteapi.IntegrationProviderInbox, created.Provider)
+	assert.Equal(t, siteapi.IntegrationChannelEmail, created.Channel)
 	assert.False(t, created.IsDefault, "a Test inbox never becomes the default by itself")
-	kind, ok := created.Config.OneOf.GetSiteInboxConfig()
+	kind, ok := created.Config.OneOf.GetInboxConfig()
 	require.True(t, ok)
-	assert.Equal(t, siteapi.SiteInboxConfigKindInbox, kind.Kind)
+	assert.Equal(t, siteapi.InboxConfigKindInbox, kind.Kind)
 	defaults := env.DB.Integration.Query().
 		Where(integration.WorkspaceID(fixtures.AcmeID), integration.IsDefault(true)).CountX(t.Context())
 	assert.Equal(t, 1, defaults, "the existing default is untouched")
@@ -81,7 +81,7 @@ func TestSiteTestInboxIsCreatedWithoutCredentialsAndIsNotTheDefault(t *testing.T
 	require.NoError(t, err)
 	limit := reread.ProviderLimit.PerDay
 	assert.Equal(t, int32(200), limit.Limit.Value, "it reports its own ceiling")
-	assert.Equal(t, siteapi.NewNilSiteProviderLimitSource(siteapi.SiteProviderLimitSourceProvider), limit.Source)
+	assert.Equal(t, siteapi.NewNilProviderLimitSource(siteapi.ProviderLimitSourceProvider), limit.Source)
 }
 
 func TestSiteTestInboxCanBeChosenAsTheDefaultLikeAnyIntegration(t *testing.T) {
@@ -131,7 +131,7 @@ func TestSiteCapturedMessagesAreListedNewestFirstAndOnlyForTheOwnWorkspace(t *te
 	assert.Equal(t, int64(fixtures.CapturedMessageGlobexWelcomeID), int64(page.Items[0].ID), "newest first")
 	assert.Equal(t, int64(fixtures.CapturedMessageGlobexNewsletterID), int64(page.Items[1].ID))
 	welcome := page.Items[0]
-	assert.Equal(t, siteapi.SiteCapturedMessageSurfaceTransactional, welcome.Surface)
+	assert.Equal(t, siteapi.CapturedMessageSurfaceTransactional, welcome.Surface)
 	assert.Equal(t, fixtures.CapturedMessageGlobexWelcomeSubject, welcome.Subject)
 	assert.True(t, welcome.FromUnverified)
 	assert.True(t, welcome.OutboundMessageId.Null, "a message with no Outbound message names none")

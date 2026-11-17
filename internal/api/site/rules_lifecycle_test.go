@@ -34,11 +34,11 @@ func TestSiteRulesDeleteKeepsARuleWithOrWithoutFirings(t *testing.T) {
 		require.NoError(t, err)
 		_, discardedAt := res.DiscardedAt.Get()
 		assert.True(t, discardedAt)
-		assert.Equal(t, siteapi.SiteRuleStatusInactive, res.Status)
+		assert.Equal(t, siteapi.RuleStatusInactive, res.Status)
 
 		again := c.SiteRulesDelete(ctx, siteapi.SiteRulesDeleteParams{WorkspaceId: ws, ID: id})
 		require.NoError(t, again)
-		_, renamed := c.SiteRulesUpdate(ctx, &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(id))), Name: siteapi.NewOptName("renamed")},
+		_, renamed := c.SiteRulesUpdate(ctx, &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(id))), Name: siteapi.NewOptName("renamed")},
 			siteapi.SiteRulesUpdateParams{WorkspaceId: ws, ID: id})
 		testhelper.SiteRefusal(t, renamed, http.StatusNotFound, "a deleted Rule changes no more")
 		_, published := c.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.RuleRevision(ctx, t, int64(id)))}, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: id})
@@ -60,12 +60,12 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	ws := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	actions := make([]siteapi.SiteRuleActionInput, rules.MaxActions+1)
+	actions := make([]siteapi.RuleActionInput, rules.MaxActions+1)
 	for i := range actions {
-		actions[i] = tagAction(siteapi.SiteRuleActionTypeApplyTag, "t"+strconv.Itoa(i))
+		actions[i] = tagAction(siteapi.RuleActionTypeApplyTag, "t"+strconv.Itoa(i))
 	}
 
-	_, tooMany := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{Name: "big", TriggerEvents: []string{"a"}, Actions: actions},
+	_, tooMany := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{Name: "big", TriggerEvents: []string{"a"}, Actions: actions},
 		siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	refused := testhelper.SiteRefusal(t, tooMany, http.StatusUnprocessableEntity)
 	assert.Contains(t, refused.Detail.Or(""), "at most 20 Actions")
@@ -77,9 +77,9 @@ func TestSiteRulesRefuseTooManyActionsAndAnOversizedCondition(t *testing.T) {
 		body.WriteString(leaf + ",")
 	}
 	body.WriteString(leaf + `]}`)
-	_, bigCondition := c.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	_, bigCondition := c.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name: "wide", TriggerEvents: []string{"a"},
-		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, body.String())),
+		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, body.String())),
 	}, siteapi.SiteRulesCreateParams{WorkspaceId: ws})
 	refusedCondition := testhelper.SiteRefusal(t, bigCondition, http.StatusUnprocessableEntity)
 	assert.Contains(t, refusedCondition.Detail.Or(""), "Condition")

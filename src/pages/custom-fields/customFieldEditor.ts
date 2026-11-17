@@ -1,13 +1,13 @@
 import { siteCustomFieldsGetOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteCustomFieldsUpdate } from '../../generated/site/sdk.gen.ts'
-import { zSiteUpdateCustomFieldInput } from '../../generated/site/zod.gen.ts'
+import { zUpdateCustomFieldInput } from '../../generated/site/zod.gen.ts'
 import { defineModalEditor } from '../../resources/defineResource.tsx'
 import { withRevision } from '../../resources/resourceEditor.ts'
 import { resourceFormSchema } from '../../resources/resourceFormSchema.ts'
 import { CustomFieldForm } from './CustomFieldForm.tsx'
 
 const customFieldSchema = resourceFormSchema(
-  zSiteUpdateCustomFieldInput.pick({ name: true, type: true }).required(),
+  zUpdateCustomFieldInput.pick({ name: true, type: true }).required(),
   { name: '', type: 'string' },
 )
 

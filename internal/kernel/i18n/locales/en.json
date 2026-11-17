@@ -256,6 +256,7 @@
   "errors.staff_not_found": "staff not found",
   "errors.identity_in_use": "this provider account is linked to another user",
   "errors.integration_secret_required": "enter the secret again: it is only kept while the host, port, username, region, endpoint and key id stay the same",
+  "errors.integration_ses_configuration_set": "use up to 64 letters, digits, hyphens and underscores, as SES names a configuration set",
   "errors.integration_telegram_token_format": "this is not a Telegram bot token: copy it from @BotFather, it looks like 123456789:AA…",
   "errors.integration_telegram_token_refused": "Telegram does not accept this bot token: copy it again from @BotFather, or issue a new one there",
   "errors.integration_telegram_other_bot": "this token belongs to another bot; add a new Integration",

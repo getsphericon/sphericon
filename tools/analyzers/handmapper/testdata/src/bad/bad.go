@@ -1,8 +1,8 @@
 package bad
 
 import (
-	"example/ent"
-	"example/gen/site"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/gen/site"
 )
 
 func contactResource(c *ent.Contact) site.ContactResource { // want `rule 1: contactResource maps.*fix: .*goverter`

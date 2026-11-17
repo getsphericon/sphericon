@@ -5,7 +5,7 @@ import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { siteIntegrationsListOptions } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteIntegrationChannel } from '../../generated/site/types.gen.ts'
+import type { IntegrationChannel } from '../../generated/site/types.gen.ts'
 import { Route as workspaceRoute } from '../../routes/workspaces/$workspaceId/route.tsx'
 
 // The picker's value for "no Integration named", which sends through the Channel's default. The
@@ -14,7 +14,7 @@ const DEFAULT_INTEGRATION = 'default'
 
 // integrationControl is the picker of the Integration a send step on the Channel sends through:
 // the Channel's kept Integrations, or its default (ADR 0081).
-export function integrationControl(channel: SiteIntegrationChannel): ComponentType<ControlProps> {
+export function integrationControl(channel: IntegrationChannel): ComponentType<ControlProps> {
   return function IntegrationControl(props: ControlProps) {
     const { data, label, path } = props
     const { t } = useTranslation()

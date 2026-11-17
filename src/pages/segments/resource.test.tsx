@@ -14,7 +14,7 @@ import {
   handleSiteSegmentsList,
   handleSiteSegmentsUpdate,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import type { ConditionGroup } from '../../generated/site/types.gen.ts'
 import { zSiteSegmentsUpdateBody } from '../../generated/site/zod.gen.ts'
 import { Route as segmentsEditRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/edit.tsx'
 import { Route as segmentsDetailRoute } from '../../routes/workspaces/$workspaceId/segments/$segmentId/index.tsx'
@@ -27,7 +27,7 @@ import { routeMount } from '../../test/routeMount.ts'
 import { worker } from '../../test/worker.ts'
 import { SegmentCreatePage, SegmentEditPage } from './resource.tsx'
 
-const RULE: SiteConditionGroup = {
+const RULE: ConditionGroup = {
   kind: 'group',
   combinator: 'and',
   rules: [{ kind: 'rule', field: 'email', operator: 'contains', value: '@x' }],
@@ -197,7 +197,7 @@ test('a successful save reloads the Condition editor from the saved definition',
 
 test('an unfinished Condition is refused, then saves its completed structured edit', async () => {
   const bodies: unknown[] = []
-  const condition: SiteConditionGroup = {
+  const condition: ConditionGroup = {
     kind: 'group',
     combinator: 'and',
     rules: [{ kind: 'event', action: 'purchased', operator: 'atLeast', times: 2, withinDays: 7 }],
