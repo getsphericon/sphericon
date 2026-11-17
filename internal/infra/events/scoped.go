@@ -80,6 +80,7 @@ type PurgingPublisher interface {
 // dependency.
 func (b *Bus) WithinScopedPurgeTx(ctx context.Context, s *ent.Scoped, fn func(ts *ent.Scoped, pub PurgingPublisher) error) error {
 	return b.within(ctx, func(tx *ent.Client, pub *txPublisher) error {
+		pub.purging = true
 		// The scope keeps its actor, so deleting the Contact is audited (id only) in the
 		// erasure's own transaction (ADR 0022).
 		return fn(s.InTx(tx, auditPublisher{pub: pub}), pub)

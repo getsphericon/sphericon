@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations/automationsunchecked"
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts/broadcastsunchecked"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages/outboundmessagesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -41,6 +42,7 @@ const Budget = 100
 type UseCase struct {
 	client    *ent.Client
 	bus       *events.Bus
+	unchecked *broadcastsunchecked.Module
 	retention time.Duration
 	batch     int
 	now       func() time.Time
@@ -50,9 +52,11 @@ type UseCase struct {
 }
 
 // New returns the use case deleting messages older than retention (0 disables it), batch rows to a
-// transaction (Batch; a test passes 1 to turn every loop), by the Instance clock now.
-func New(client *ent.Client, bus *events.Bus, retention time.Duration, batch int, now func() time.Time) *UseCase {
-	return &UseCase{client: client, bus: bus, retention: retention, batch: batch, now: now, messages: outboundmessagesunchecked.New()}
+// transaction (Batch; a test passes 1 to turn every loop), by the Instance clock now. A finished
+// Broadcast of catalogue is frozen and pruned by its unchecked steps.
+func New(client *ent.Client, bus *events.Bus, catalogue *broadcasts.Module, retention time.Duration, batch int, now func() time.Time) *UseCase {
+	return &UseCase{client: client, bus: bus, unchecked: broadcastsunchecked.New(catalogue, bus, now), retention: retention, batch: batch, now: now,
+		messages: outboundmessagesunchecked.New()}
 }
 
 // Pruned is how many Outbound messages a run deleted, by kind, and whether its budget ran out
@@ -173,7 +177,7 @@ func (r *run) broadcasts(ctx context.Context) (int, error) {
 // broadcast freezes one finished Broadcast's figures, deletes its recipients each with its
 // messages, then the messages left, and marks it pruned once nothing is.
 func (r *run) broadcast(ctx context.Context, id int64) (int, error) {
-	if err := broadcastsunchecked.Freeze(ctx, r.s, id); err != nil {
+	if err := r.unchecked.Freeze(ctx, r.s, id); err != nil {
 		return 0, err
 	}
 	var total int
@@ -185,13 +189,13 @@ func (r *run) broadcast(ctx context.Context, id int64) (int, error) {
 		var deleted int
 		err := r.bus.WithinAuditTx(ctx, r.s, func(ts *ent.Scoped) error {
 			var err error
-			if ids, err = broadcastsunchecked.RecipientsOf(ctx, ts, id, r.batch); err != nil || len(ids) == 0 {
+			if ids, err = r.unchecked.RecipientsOf(ctx, ts, id, r.batch); err != nil || len(ids) == 0 {
 				return err
 			}
 			if deleted, err = r.messages.DeleteOfRecipients(ctx, ts, ids); err != nil {
 				return err
 			}
-			return broadcastsunchecked.DeleteRecipients(ctx, ts, ids)
+			return r.unchecked.DeleteRecipients(ctx, ts, ids)
 		})
 		if err != nil {
 			return total, err
@@ -214,7 +218,7 @@ func (r *run) broadcast(ctx context.Context, id int64) (int, error) {
 			break
 		}
 	}
-	return total, broadcastsunchecked.Pruned(ctx, r.s, id, r.now)
+	return total, r.unchecked.Pruned(ctx, r.s, id)
 }
 
 // kind deletes the Workspace's messages of the kind created before the cutoff that have left

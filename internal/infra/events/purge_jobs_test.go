@@ -2,6 +2,7 @@ package events_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/riverqueue/river"
@@ -53,4 +54,44 @@ func TestPurgeJobsRemovesMoreThanOneBatch(t *testing.T) {
 	}))
 
 	assert.Empty(t, env.JobsOf(t, jobkind.SendRecipient.Kind))
+}
+
+// PurgeJobsIn purges in the Erasure's transaction the scope is bound to: the purge commits with it
+// and rolls back with it.
+func TestPurgeJobsInJoinsThePurgingTransactionOfTheScope(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
+	scope := env.DB.Scoped(fixtures.InitechID)
+	ids := []int64{fixtures.BroadcastRecipientErasablePendingID}
+	boom := errors.New("erasure failed")
+
+	err := env.Bus.WithinScopedPurgeTx(ctx, scope, func(ts *ent.Scoped, _ events.PurgingPublisher) error {
+		require.NoError(t, env.Bus.PurgeJobsIn(ctx, ts, jobkind.SendRecipient, ids))
+		return boom
+	})
+	require.ErrorIs(t, err, boom)
+	assert.Len(t, env.JobsOf(t, jobkind.SendRecipient.Kind), 1, "the purge rolls back with the transaction")
+
+	require.NoError(t, env.Bus.WithinScopedPurgeTx(ctx, scope, func(ts *ent.Scoped, _ events.PurgingPublisher) error {
+		return env.Bus.PurgeJobsIn(ctx, ts, jobkind.SendRecipient, ids)
+	}))
+	assert.Empty(t, env.JobsOf(t, jobkind.SendRecipient.Kind), "the purge commits with the transaction")
+}
+
+// Only the Erasure's transaction purges: a scope bound to another transaction of the bus is
+// ErrNotPurging, one bound to none ErrNotInBusTx, and no job goes.
+func TestPurgeJobsInRefusesAScopeOutsideAPurgingTransaction(t *testing.T) {
+	env := testhelper.Setup(t)
+	ctx := context.Background()
+	env.EnqueueJob(t, jobs.SendRecipientArgs{WorkspaceID: fixtures.InitechID, RecipientID: fixtures.BroadcastRecipientErasablePendingID, BroadcastID: 1})
+	scope := env.DB.Scoped(fixtures.InitechID)
+	ids := []int64{fixtures.BroadcastRecipientErasablePendingID}
+
+	require.ErrorIs(t, env.Bus.PurgeJobsIn(ctx, scope, jobkind.SendRecipient, ids), events.ErrNotInBusTx)
+	require.NoError(t, env.Bus.WithinScopedTx(ctx, scope, func(ts *ent.Scoped, _ events.Publisher) error {
+		require.ErrorIs(t, env.Bus.PurgeJobsIn(ctx, ts, jobkind.SendRecipient, ids), events.ErrNotPurging)
+		return nil
+	}))
+	assert.Len(t, env.JobsOf(t, jobkind.SendRecipient.Kind), 1)
 }

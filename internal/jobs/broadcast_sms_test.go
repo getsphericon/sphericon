@@ -98,13 +98,12 @@ func TestAnSMSBroadcastPacesAtTheProviderLimit(t *testing.T) {
 	account := env.LacunaTwilio(t)
 	env.DB.Integration.UpdateOneID(int64(account.Integration.ID)).SetMaxPerSecond(4).ExecX(ctx)
 	id := int64(fixtures.BroadcastLacunaSmsHelloID)
-	del := broadcasts.NewDelivery(env.OutboundModule())
+	del := testhelper.Module[*broadcasts.Delivery](env)
 	s := env.DB.Scoped(fixtures.LacunaID)
-	start := time.Now()
 
 	ids, err := del.Plan(ctx, s, id)
 	require.NoError(t, err)
-	times, err := del.Pace(ctx, s, id, ids, start)
+	times, err := del.Pace(ctx, s, id, ids)
 	require.NoError(t, err)
 
 	require.Len(t, times, 4)

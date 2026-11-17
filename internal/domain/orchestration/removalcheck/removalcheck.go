@@ -37,15 +37,16 @@ import (
 // Module is the Removal check. Every call receives the scope of the transaction the removal runs
 // in, under the Workspace's lock (ADR 0099).
 type Module struct {
-	senders  *messaging.Resolver
-	segments *segmentsuse.Module
+	senders    *messaging.Resolver
+	segments   *segmentsuse.Module
+	broadcasts *broadcastsuse.Module
 }
 
 // New builds the Removal check over the resolver a send builds its sender with: a Sending domain's
 // check reads from it the From an Integration sends with. It builds the readers itself, since
 // easement lets no other package import them.
 func New(senders *messaging.Resolver) *Module {
-	return &Module{senders: senders, segments: segmentsuse.New()}
+	return &Module{senders: senders, segments: segmentsuse.New(), broadcasts: broadcastsuse.New()}
 }
 
 // Tag checks that nothing holds the Tag with the name, in Definition use: a Segment's Condition
@@ -66,7 +67,7 @@ func (m *Module) Tag(ctx context.Context, l *ent.WorkspaceLocked, name string) e
 	if err != nil {
 		return err
 	}
-	armed, err := broadcastsuse.UsingTag(ctx, l, name)
+	armed, err := m.broadcasts.UsingTag(ctx, l, name)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (m *Module) CustomFieldRetype(ctx context.Context, l *ent.WorkspaceLocked, 
 	if err != nil {
 		return err
 	}
-	armed, err := broadcastsuse.UnfitForCustomFieldType(ctx, l, key, t)
+	armed, err := m.broadcasts.UnfitForCustomFieldType(ctx, l, key, t)
 	if err != nil {
 		return err
 	}
@@ -100,7 +101,7 @@ func (m *Module) CustomFieldRetype(ctx context.Context, l *ent.WorkspaceLocked, 
 // (messaging.Through): the Integration it names or, naming none, its own Channel's default. It
 // returns nil, or a *liveuse.Error naming that work, Broadcasts first, then Automations.
 func (m *Module) Integration(ctx context.Context, l *ent.WorkspaceLocked, id int64) error {
-	sends, err := liveSends(ctx, l)
+	sends, err := m.liveSends(ctx, l)
 	if err != nil {
 		return err
 	}
@@ -114,7 +115,7 @@ func (m *Module) Integration(ctx context.Context, l *ent.WorkspaceLocked, id int
 // carries none), by the resolution a send takes (messaging.Through, messaging.EffectiveFrom). It
 // returns nil, or a *liveuse.Error naming that work, Broadcasts first, then Automations.
 func (m *Module) SendingDomain(ctx context.Context, l *ent.WorkspaceLocked, domain string) error {
-	sends, err := liveSends(ctx, l)
+	sends, err := m.liveSends(ctx, l)
 	if err != nil {
 		return err
 	}
@@ -147,7 +148,7 @@ func (m *Module) SendingDomain(ctx context.Context, l *ent.WorkspaceLocked, doma
 // without one. It returns nil, or a *liveuse.Error naming that work, Broadcasts first, then
 // Automations.
 func (m *Module) PostalAddress(ctx context.Context, l *ent.WorkspaceLocked) error {
-	sends, err := liveSends(ctx, l)
+	sends, err := m.liveSends(ctx, l)
 	if err != nil {
 		return err
 	}
@@ -156,8 +157,8 @@ func (m *Module) PostalAddress(ctx context.Context, l *ent.WorkspaceLocked) erro
 }
 
 // liveSends is the Live use that sends (ADR 0099): the Broadcasts' sends, then the Automations'.
-func liveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
-	sent, err := broadcastsuse.LiveSends(ctx, l)
+func (m *Module) liveSends(ctx context.Context, l *ent.WorkspaceLocked) ([]liveuse.Send, error) {
+	sent, err := m.broadcasts.LiveSends(ctx, l)
 	if err != nil {
 		return nil, err
 	}

@@ -105,13 +105,12 @@ func TestATelegramBroadcastPacesAtALoweredProviderLimit(t *testing.T) {
 	bot := env.LacunaTelegram(t)
 	env.DB.Integration.UpdateOneID(int64(bot.Integration.ID)).SetMaxPerSecond(2).ExecX(ctx)
 	id := int64(fixtures.BroadcastLacunaTelegramChathamID)
-	del := broadcasts.NewDelivery(env.OutboundModule())
+	del := testhelper.Module[*broadcasts.Delivery](env)
 	s := env.DB.Scoped(fixtures.LacunaID)
-	start := time.Now()
 
 	ids, err := del.Plan(ctx, s, id)
 	require.NoError(t, err)
-	times, err := del.Pace(ctx, s, id, ids, start)
+	times, err := del.Pace(ctx, s, id, ids)
 	require.NoError(t, err)
 
 	require.Len(t, times, 3, "Ben, Eve and Fay")
@@ -124,19 +123,19 @@ func TestATelegramBroadcastPacesAtALoweredProviderLimit(t *testing.T) {
 // next Contact starts one second after it at two calls a second, and the bucket never goes negative.
 // Tia has two chats; Ben, Eve and Fay one each.
 func TestATelegramBroadcastPaceReservesOneStepPerChatOfARecipient(t *testing.T) {
-	env := testhelper.Setup(t)
+	start := time.Now()
+	env := testhelper.Setup(t, testhelper.WithClock(func() time.Time { return start }))
 	ctx := t.Context()
 	bot := env.LacunaTelegram(t)
 	env.DB.Integration.UpdateOneID(int64(bot.Integration.ID)).SetMaxPerSecond(2).ExecX(ctx)
 	id := int64(fixtures.BroadcastLacunaTelegramHelloID)
-	del := broadcasts.NewDelivery(env.OutboundModule())
+	del := testhelper.Module[*broadcasts.Delivery](env)
 	s := env.DB.Scoped(fixtures.LacunaID)
-	start := time.Now()
 
 	ids, err := del.Plan(ctx, s, id)
 	require.NoError(t, err)
 	require.Len(t, ids, 4)
-	times, err := del.Pace(ctx, s, id, ids, start)
+	times, err := del.Pace(ctx, s, id, ids)
 	require.NoError(t, err)
 
 	require.Len(t, times, 4)
@@ -174,7 +173,7 @@ func TestATelegramBroadcastDoesNotReachAContactThroughItsVisitorsBinding(t *test
 	s := env.DB.Scoped(fixtures.AcmeID)
 	b := env.DB.Broadcast.UpdateOneID(fixtures.BroadcastTelegramDraftID).SetIntegrationID(fixtures.IntegrationAcmeTelegramID).SaveX(ctx)
 
-	size, err := broadcasts.AudienceSize(ctx, s, b, time.Now())
+	size, err := testhelper.Module[*broadcasts.Module](env).AudienceSize(ctx, s, b)
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, size, "Liam by his own Binding; not Emma, whose only chat is her phone Visitor's")

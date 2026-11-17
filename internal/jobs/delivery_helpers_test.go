@@ -6,7 +6,14 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
+	"github.com/getsphericon/sphericon/internal/jobs"
 )
+
+// deliveryOf is the Broadcast delivery over mod, its sends scheduled as recipient jobs, as the
+// wiring builds it.
+func deliveryOf(mod *outboundmessages.Module) *broadcasts.Delivery {
+	return broadcasts.NewDelivery(mod, jobs.RecipientJobs{})
+}
 
 // planAudience plans a Broadcast through the module and returns its recipient ids, as the
 // send worker does before it enqueues the recipient jobs.
@@ -15,7 +22,7 @@ func planAudience(ctx context.Context, client *ent.Client, mod *outboundmessages
 	if err != nil {
 		return nil, err
 	}
-	return broadcasts.NewDelivery(mod).Plan(ctx, client.Scoped(b.WorkspaceID), broadcastID)
+	return deliveryOf(mod).Plan(ctx, client.Scoped(b.WorkspaceID), broadcastID)
 }
 
 // deliverRecipient sends one recipient through the module, as the recipient worker does.
@@ -27,5 +34,5 @@ func deliverRecipient(ctx context.Context, client *ent.Client, mod *outboundmess
 	if err != nil {
 		return err
 	}
-	return broadcasts.NewDelivery(mod).SendRecipient(ctx, client.Scoped(rec.WorkspaceID), recipientID)
+	return deliveryOf(mod).SendRecipient(ctx, client.Scoped(rec.WorkspaceID), recipientID)
 }
