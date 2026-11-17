@@ -934,10 +934,18 @@ as `completed`). There are no parallel paths: an Enrollment is at one
 Step at a time.
 _Avoid_: Action, node, block, stage
 
+**Step record**:
+What an Enrollment keeps of one Step it reached: when it reached and left it, the path taken at a
+Branch, a Split or a Wait for event (at a Branch, whether each path's Condition was true, false or
+unknown), a wait's due moment, why the Step was skipped, and, while the Enrollment runs, the Event a
+Wait for event arrived on and an HTTP step's response. One per Enrollment and Step; the Enrollment
+timeline and the reports per path read them.
+_Avoid_: Step run, step log, node execution
+
 **Enrollment timeline**:
-What one Enrollment went through, read from what was recorded: each Step and when, the path taken and,
-at a Branch, whether each path's Condition was true, false or unknown (never the values tested), each
-wait's due moment, each send's outcome and an exit or goal.
+What one Enrollment went through, read from its Step records and what its sends recorded: each Step
+and when, the path taken and, at a Branch, whether each path's Condition was true, false or unknown
+(never the values tested), each wait's due moment, each send's outcome and an exit or goal.
 _Avoid_: Log, trace, debug view
 
 **Path preview**:
