@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # An Automation branches into nested paths that rejoin

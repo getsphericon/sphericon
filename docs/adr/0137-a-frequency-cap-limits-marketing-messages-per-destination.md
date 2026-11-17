@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # A frequency cap limits marketing messages per Destination

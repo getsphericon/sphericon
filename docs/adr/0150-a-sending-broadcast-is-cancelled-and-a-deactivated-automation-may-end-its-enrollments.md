@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: [1435, 1436]
 ---
 
 # A sending Broadcast is cancelled, and a deactivated Automation may end its Enrollments

@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # An Automation chooses a path by Condition, by weight or by an awaited Event

@@ -1,5 +1,6 @@
 ---
 status: accepted
+build: none
 ---
 
 # A Trigger, exit or goal matches an Event by its action and properties
