@@ -9,6 +9,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/twilio"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -156,7 +157,7 @@ func (m *Module) editTwilio(ctx context.Context, row *ent.Integration, in Update
 	next.CallbacksSet = stored.CallbacksSet
 	// The same credentials saved again change nothing, unless Twilio refused them at a send: the
 	// Owner saves them once the account works again, and they are checked anew and the hold goes.
-	if next == stored && row.ProviderRefusedAt == nil {
+	if next == stored && providerlimit.Refused(row) == nil {
 		return nil, nil
 	}
 	plaintext, err := m.connectTwilio(ctx, next, row.IngestKey)

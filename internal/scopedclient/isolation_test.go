@@ -79,6 +79,28 @@ func clearSingleton(ctx context.Context, t *testing.T, scoped *ent.Scoped, e *en
 	}
 }
 
+// replantMakingRoom is replantInAcme, for an entity of one row per row it references (an
+// Integration's provider state) too: when every Acme row it could reference has its own, those go to
+// make room, and the row is re-created again.
+func replantMakingRoom(ctx context.Context, t *testing.T, env *testhelper.TestEnv, entities []*ent.ScopedEntity, e *ent.ScopedEntity, own []int64, from int64) (int64, error) {
+	t.Helper()
+	ws, err := replantInAcme(ctx, t, env, entities, e, from)
+	if !ent.IsConstraintError(err) {
+		return ws, err
+	}
+	if err := inAcme(ctx, env, func(scoped *ent.Scoped) error {
+		for _, id := range own {
+			if err := e.Delete(ctx, scoped, id); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+	return replantInAcme(ctx, t, env, entities, e, from)
+}
+
 // names lists the schema names of the entities.
 func names(entities []*ent.ScopedEntity) []string {
 	return lo.Map(entities, func(e *ent.ScopedEntity, _ int) string { return e.Name })
@@ -158,7 +180,7 @@ func TestScopedClientIsolation(t *testing.T) {
 					clearSingleton(ctx, t, scoped, e, own)
 					return nil
 				}))
-				ws, err := replantInAcme(ctx, t, env, entities, e, foreign[0])
+				ws, err := replantMakingRoom(ctx, t, env, entities, e, own, foreign[0])
 				require.NoError(t, err)
 				assert.Equal(t, acme, ws)
 

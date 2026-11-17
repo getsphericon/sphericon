@@ -67,6 +67,7 @@ func (d *Detector) Run(ctx context.Context) (Summary, error) {
 	}
 	candidates, err := d.client.Workspace.Query().
 		Where(suspension.NotSuspended(), workspace.AbuseExempt(false), workspaces.Live()).
+		WithStanding().
 		All(ctx)
 	if err != nil {
 		return sum, errors.Join(append(errs, fmt.Errorf("list workspaces for the abuse detector: %w", err))...)
@@ -95,7 +96,7 @@ func (d *Detector) Run(ctx context.Context) (Summary, error) {
 				errs = append(errs, err)
 			}
 		default:
-			if ws.AbuseWarningNotifiedAt != nil {
+			if workspaces.StandingOf(ws).AbuseWarningNotifiedAt != nil {
 				if err := workspaces.ClearAbuseWarning(ctx, d.client, ws.ID); err != nil {
 					errs = append(errs, fmt.Errorf("end the warning episode of workspace %d: %w", ws.ID, err))
 				}
@@ -125,7 +126,7 @@ var metricNames = map[Metric]i18n.ID{Complaint: i18n.MetricComplaint, Bounce: i1
 // transaction, so the warning exists iff the marker does, and the marker is cleared when the
 // Workspace leaves the tier.
 func (d *Detector) warn(ctx context.Context, ws *ent.Workspace, b Breach, now time.Time) (bool, error) {
-	if ws.AbuseWarningNotifiedAt != nil {
+	if workspaces.StandingOf(ws).AbuseWarningNotifiedAt != nil {
 		return false, nil
 	}
 	err := d.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {

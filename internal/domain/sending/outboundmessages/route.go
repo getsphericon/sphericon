@@ -86,7 +86,7 @@ func (m *Module) Route(ctx context.Context, s *ent.Scoped, ch channels.Channel, 
 	if integ != nil && providerlimit.Stopped(integ) {
 		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: holdreason.ProviderStopped}, nil
 	}
-	if integ != nil && integ.ProviderRefusedAt != nil {
+	if integ != nil && providerlimit.Refused(integ) != nil {
 		return Route{Integration: integ, Limits: providerlimit.EffectiveOf(integ).Limits(), Hold: holdreason.ProviderRefused}, nil
 	}
 	// Without a default row the sender is still asked: a test double sends for any Workspace.

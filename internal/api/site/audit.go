@@ -13,7 +13,7 @@ import (
 
 // SiteAuditList shows the Workspace's Audit log, newest first. Owner and admin only;
 // an instance without an Enterprise license answers 402 (ADR 0014, ADR 0022).
-func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditListParams) (*siteapi.SiteAuditEntryList, error) {
+func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditListParams) (*siteapi.AuditEntryList, error) {
 	page, err := h.audit.Page(ctx, workspaceScope(ctx), auditlog.Query{
 		Filter: events.AuditFilter{
 			From:       time.Time(params.From.Or(siteapi.Timestamp{})),
@@ -32,7 +32,7 @@ func (h *Handlers) SiteAuditList(ctx context.Context, params siteapi.SiteAuditLi
 	if err != nil {
 		return nil, err
 	}
-	out := &siteapi.SiteAuditEntryList{Items: mapper.AuditEntriesToResources(page.Entries)}
+	out := &siteapi.AuditEntryList{Items: mapper.AuditEntriesToResources(page.Entries)}
 	if page.Next != "" {
 		out.NextCursor = siteapi.NewOptNilString(page.Next)
 	}

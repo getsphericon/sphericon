@@ -5735,7 +5735,7 @@
                 "$ref": "#/components/schemas/AuditActorKind"
               }
             ],
-            "description": "The kind of actor; a staff member is shown as \"Sphericon staff\""
+            "description": "The kind of actor; a staff member is shown to the customer as \"Sphericon staff\""
           },
           "id": {
             "type": "string",
@@ -11239,10 +11239,10 @@
             "type": "number",
             "format": "double",
             "nullable": true,
-            "description": "numerator / denominator, null when the denominator is zero"
+            "description": "numerator / denominator, null when the denominator is zero, never reported as 0"
           }
         },
-        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011). The rate is\nnull when the denominator is zero: an undefined rate is never reported as 0."
+        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no\ndisplay floor: the rate is null only when the denominator is zero, an undefined rate never\nbeing reported as 0."
       },
       "RecordEventsBatchInput": {
         "type": "object",

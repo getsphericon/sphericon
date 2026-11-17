@@ -36,7 +36,7 @@ func TestTheStoredAuditRowsKeepTheStaffIdWhileTheCustomerSeesStaff(t *testing.T)
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	page := res
-	suspensions := lo.Filter(page.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool {
+	suspensions := lo.Filter(page.Items, func(e siteapi.AuditEntryResource, _ int) bool {
 		return e.Action == events.ActionWorkspaceSuspend || e.Action == events.ActionWorkspaceUnsuspend
 	})
 	for _, e := range suspensions {

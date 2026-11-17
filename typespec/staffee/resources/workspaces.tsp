@@ -1,3 +1,5 @@
+import "../../common/abuse.tsp";
+
 using TypeSpec.Http;
 
 namespace Sphericon;
@@ -56,21 +58,6 @@ model StaffWorkspaceResource {
   warned: boolean;
 }
 
-/** Which metric of a Sending domain breached the abuse detector's warning limit */
-enum StaffAbuseMetric {
-  complaint,
-  bounce,
-}
-
-/** A Sending domain in the warning tier (ADR 0026), by the detector's own computation */
-model StaffAbuseWarning {
-  domain: string;
-  metric: StaffAbuseMetric;
-
-  /** The rate, 0–1 */
-  rate: float64;
-}
-
 /** A Workspace's standing with the abuse detector (ADR 0026) */
 model StaffAbuse {
   /** Exempt from the detector: neither warned nor frozen automatically */
@@ -86,7 +73,7 @@ model StaffAbuse {
   freezeNotifiedAt?: Timestamp | null;
 
   /** Present while the Workspace is in the warning tier, computed now */
-  warning?: StaffAbuseWarning | null;
+  warning?: AbuseWarning | null;
 }
 
 /** A rate as the (numerator, denominator, rate) triple (ADR 0011) */
@@ -224,17 +211,10 @@ model StaffSuspendInput {
   reason: string;
 }
 
-/** The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
- * anything changed */
-model StaffExemptionChange {
-  changed: boolean;
-  workspace: StaffWorkspaceResource;
-}
-
-/** The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether
- * anything changed (suspending a suspended Workspace and unsuspending an active one
- * change nothing). */
-model StaffSuspensionChange {
+/** The outcome of a suspend, unsuspend, exempt or un-exempt: the Workspace as it now stands,
+ * and whether anything changed (suspending a suspended Workspace and unsuspending an active
+ * one change nothing, nor does exempting an exempt one). */
+model StaffWorkspaceChange {
   changed: boolean;
   workspace: StaffWorkspaceResource;
 }
@@ -260,26 +240,26 @@ namespace StaffWorkspaces {
   @route("/{workspaceId}/suspend")
   @post
   op suspend(@path workspaceId: WorkspaceId, @body body: StaffSuspendInput):
-    | StaffSuspensionChange
+    | StaffWorkspaceChange
     | Problem;
 
   /** Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is
    * not suspended is left as it was. */
   @route("/{workspaceId}/unsuspend")
   @post
-  op unsuspend(@path workspaceId: WorkspaceId): StaffSuspensionChange | Problem;
+  op unsuspend(@path workspaceId: WorkspaceId): StaffWorkspaceChange | Problem;
 
   /** Exempt a Workspace from the abuse detector (ADR 0026): it is neither warned nor
    * frozen automatically, but stays listed with its rates and can still be suspended by
    * hand. Audited. Idempotent. */
   @route("/{workspaceId}/exempt")
   @post
-  op exempt(@path workspaceId: WorkspaceId): StaffExemptionChange | Problem;
+  op exempt(@path workspaceId: WorkspaceId): StaffWorkspaceChange | Problem;
 
   /** Police a Workspace by the abuse detector again. Audited. Idempotent. */
   @route("/{workspaceId}/unexempt")
   @post
-  op unexempt(@path workspaceId: WorkspaceId): StaffExemptionChange | Problem;
+  op unexempt(@path workspaceId: WorkspaceId): StaffWorkspaceChange | Problem;
 
   /** Set a Workspace's Send cap (ADR 0067) as the signed-in Staff member: its sends beyond it in a
    * rolling 24 hours are deferred, not refused. Audited. Idempotent. Not found on an Instance that

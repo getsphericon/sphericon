@@ -56,8 +56,10 @@ func (m *Module) Deliver(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpo
 
 // RecordDelivery applies an outcome to the current failure run, in commit order. e is the
 // snapshot loaded before the HTTP request: only its id and reset generation are authoritative
-// here. Results from before a manual enable, or for a disabled/deleted endpoint, are stale.
-// Health writes, automatic disabling, its audit and notification event commit together.
+// here. Results from before a manual enable, or for a disabled/deleted endpoint, are stale. The
+// failure run is written beside the endpoint (ADR 0168), so a delivery leaves the endpoint's row,
+// and its revision, as they were; automatic disabling writes the row. Health writes, automatic
+// disabling, its audit and notification event commit together.
 func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.WebhookEndpoint, sendErr error, now time.Time) error {
 	change := HealthChange{Trigger: Succeed, At: now}
 	if sendErr != nil {
@@ -71,7 +73,7 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 	}
 	return retryHealth(ctx, func() error {
 		return m.bus.WithinScopedTx(ctx, events.Unaudited(s), func(ts *ent.Scoped, pub events.Publisher) error {
-			before, err := ts.WebhookEndpoint().Get(ctx, e.ID)
+			before, err := withHealth(ctx, ts, e.ID)
 			if ent.IsNotFound(err) {
 				return nil
 			}
@@ -88,16 +90,24 @@ func (m *Module) RecordDelivery(ctx context.Context, s *ent.Scoped, e *ent.Webho
 }
 
 // deliveryStorage is the health storage of a delivery outcome, joining RecordDelivery's
-// transaction: the first conditional update holds the row through automatic disabling, its audited
-// write and the publication of its notification event.
+// transaction: the conditional write of the run, then automatic disabling, conditional on the
+// endpoint as loaded, its audited write and the publication of its notification event.
 func (m *Module) deliveryStorage(ts *ent.Scoped, pub events.Publisher, before *ent.WebhookEndpoint, change HealthChange) lifecycle.Storage[HealthState] {
 	return lifecycle.Storage[HealthState]{Write: func(ctx context.Context, _, to HealthState) (bool, error) {
-		u := ts.WebhookEndpoint().UpdateOneID(before.ID).Where(atHealth(before)...)
+		if change.Trigger == Succeed && healthState(before) == Healthy {
+			// Nothing to record: the run is checked, not written, as a write that changes nothing
+			// would only move the moment of the last write.
+			if err := keepRun(ctx, ts, before); err != nil {
+				return false, err
+			}
+			return true, nil
+		}
+		u := ts.WebhookEndpointHealth().Update().Where(deliveredRunOf(before)...)
 		if change.Trigger == Succeed {
 			clearFailures(u)
 		} else {
 			u.AddConsecutiveFailures(1).SetLastErrorKind(change.Failure.Kind).SetLastFailureAt(change.At)
-			if before.FailingSince == nil {
+			if HealthOf(before).FailingSince == nil {
 				u.SetFailingSince(change.At)
 			}
 			if change.Failure.Kind == webhook.KindHTTPStatus {
@@ -106,11 +116,7 @@ func (m *Module) deliveryStorage(ts *ent.Scoped, pub events.Publisher, before *e
 				u.ClearLastErrorStatus()
 			}
 		}
-		err := u.Exec(ctx)
-		if ent.IsNotFound(err) {
-			return false, errHealthConflict
-		}
-		if err != nil {
+		if err := swapRun(ctx, u); err != nil {
 			return false, err
 		}
 		if to != Disabled {
@@ -118,10 +124,9 @@ func (m *Module) deliveryStorage(ts *ent.Scoped, pub events.Publisher, before *e
 		}
 		reason, _ := disableReason(before, change.Failure, change.At)
 		sys := m.bus.Act(ts, events.Actor{Kind: events.ActorSystem})
-		// The first conditional update holds this row until the transaction ends. Audit only the
-		// disable, not the preceding data-plane failure counters.
-		err = sys.WebhookEndpoint().UpdateOneID(before.ID).
-			Where(webhookendpoint.DisabledAtIsNil()).
+		// Audit only the disable, not the preceding data-plane failure counters.
+		err := sys.WebhookEndpoint().UpdateOneID(before.ID).
+			Where(atHealth(before)...).
 			SetDisabledAt(change.At).SetDisabledReason(reason).Exec(ctx)
 		if ent.IsNotFound(err) {
 			return false, errHealthConflict

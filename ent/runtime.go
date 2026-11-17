@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/legaldocumentdraft"
@@ -79,7 +80,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -934,10 +937,25 @@ func init() {
 	integrationDescMaxPerDay := integrationFields[11].Descriptor()
 	// integration.MaxPerDayValidator is a validator for the "max_per_day" field. It is called by the builders before save.
 	integration.MaxPerDayValidator = integrationDescMaxPerDay.Validators[0].(func(int) error)
-	// integrationDescProviderSandbox is the schema descriptor for provider_sandbox field.
-	integrationDescProviderSandbox := integrationFields[15].Descriptor()
-	// integration.DefaultProviderSandbox holds the default value on creation for the provider_sandbox field.
-	integration.DefaultProviderSandbox = integrationDescProviderSandbox.Default.(bool)
+	integrationproviderstateMixin := schema.IntegrationProviderState{}.Mixin()
+	integrationproviderstateMixinFields0 := integrationproviderstateMixin[0].Fields()
+	_ = integrationproviderstateMixinFields0
+	integrationproviderstateFields := schema.IntegrationProviderState{}.Fields()
+	_ = integrationproviderstateFields
+	// integrationproviderstateDescCreatedAt is the schema descriptor for created_at field.
+	integrationproviderstateDescCreatedAt := integrationproviderstateMixinFields0[0].Descriptor()
+	// integrationproviderstate.DefaultCreatedAt holds the default value on creation for the created_at field.
+	integrationproviderstate.DefaultCreatedAt = integrationproviderstateDescCreatedAt.Default.(func() time.Time)
+	// integrationproviderstateDescUpdatedAt is the schema descriptor for updated_at field.
+	integrationproviderstateDescUpdatedAt := integrationproviderstateMixinFields0[1].Descriptor()
+	// integrationproviderstate.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	integrationproviderstate.DefaultUpdatedAt = integrationproviderstateDescUpdatedAt.Default.(func() time.Time)
+	// integrationproviderstate.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	integrationproviderstate.UpdateDefaultUpdatedAt = integrationproviderstateDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// integrationproviderstateDescProviderSandbox is the schema descriptor for provider_sandbox field.
+	integrationproviderstateDescProviderSandbox := integrationproviderstateFields[5].Descriptor()
+	// integrationproviderstate.DefaultProviderSandbox holds the default value on creation for the provider_sandbox field.
+	integrationproviderstate.DefaultProviderSandbox = integrationproviderstateDescProviderSandbox.Default.(bool)
 	invitationMixin := schema.Invitation{}.Mixin()
 	invitationMixinFields0 := invitationMixin[0].Fields()
 	_ = invitationMixinFields0
@@ -1987,6 +2005,21 @@ func init() {
 	webhookendpointDescHealthGeneration := webhookendpointFields[5].Descriptor()
 	// webhookendpoint.HealthGenerationValidator is a validator for the "health_generation" field. It is called by the builders before save.
 	webhookendpoint.HealthGenerationValidator = webhookendpointDescHealthGeneration.Validators[0].(func(int64) error)
+	webhookendpointhealthMixin := schema.WebhookEndpointHealth{}.Mixin()
+	webhookendpointhealthMixinFields0 := webhookendpointhealthMixin[0].Fields()
+	_ = webhookendpointhealthMixinFields0
+	webhookendpointhealthFields := schema.WebhookEndpointHealth{}.Fields()
+	_ = webhookendpointhealthFields
+	// webhookendpointhealthDescCreatedAt is the schema descriptor for created_at field.
+	webhookendpointhealthDescCreatedAt := webhookendpointhealthMixinFields0[0].Descriptor()
+	// webhookendpointhealth.DefaultCreatedAt holds the default value on creation for the created_at field.
+	webhookendpointhealth.DefaultCreatedAt = webhookendpointhealthDescCreatedAt.Default.(func() time.Time)
+	// webhookendpointhealthDescUpdatedAt is the schema descriptor for updated_at field.
+	webhookendpointhealthDescUpdatedAt := webhookendpointhealthMixinFields0[1].Descriptor()
+	// webhookendpointhealth.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	webhookendpointhealth.DefaultUpdatedAt = webhookendpointhealthDescUpdatedAt.Default.(func() time.Time)
+	// webhookendpointhealth.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	webhookendpointhealth.UpdateDefaultUpdatedAt = webhookendpointhealthDescUpdatedAt.UpdateDefault.(func() time.Time)
 	workspaceMixin := schema.Workspace{}.Mixin()
 	workspaceMixinFields0 := workspaceMixin[0].Fields()
 	_ = workspaceMixinFields0
@@ -2049,29 +2082,44 @@ func init() {
 	// workspace.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	workspace.TimezoneValidator = workspaceDescTimezone.Validators[0].(func(string) error)
 	// workspaceDescReportingCurrency is the schema descriptor for reporting_currency field.
-	workspaceDescReportingCurrency := workspaceFields[9].Descriptor()
+	workspaceDescReportingCurrency := workspaceFields[8].Descriptor()
 	// workspace.ReportingCurrencyValidator is a validator for the "reporting_currency" field. It is called by the builders before save.
 	workspace.ReportingCurrencyValidator = workspaceDescReportingCurrency.Validators[0].(func(string) error)
 	// workspaceDescAttributionWindowDays is the schema descriptor for attribution_window_days field.
-	workspaceDescAttributionWindowDays := workspaceFields[10].Descriptor()
+	workspaceDescAttributionWindowDays := workspaceFields[9].Descriptor()
 	// workspace.DefaultAttributionWindowDays holds the default value on creation for the attribution_window_days field.
 	workspace.DefaultAttributionWindowDays = workspaceDescAttributionWindowDays.Default.(int)
 	// workspace.AttributionWindowDaysValidator is a validator for the "attribution_window_days" field. It is called by the builders before save.
 	workspace.AttributionWindowDaysValidator = workspaceDescAttributionWindowDays.Validators[0].(func(int) error)
 	// workspaceDescSendCap is the schema descriptor for send_cap field.
-	workspaceDescSendCap := workspaceFields[11].Descriptor()
+	workspaceDescSendCap := workspaceFields[10].Descriptor()
 	// workspace.SendCapValidator is a validator for the "send_cap" field. It is called by the builders before save.
 	workspace.SendCapValidator = workspaceDescSendCap.Validators[0].(func(int) error)
 	// workspaceDescDomainJoinEnabled is the schema descriptor for domain_join_enabled field.
-	workspaceDescDomainJoinEnabled := workspaceFields[12].Descriptor()
+	workspaceDescDomainJoinEnabled := workspaceFields[11].Descriptor()
 	// workspace.DefaultDomainJoinEnabled holds the default value on creation for the domain_join_enabled field.
 	workspace.DefaultDomainJoinEnabled = workspaceDescDomainJoinEnabled.Default.(bool)
-	// workspaceDescFeedPosition is the schema descriptor for feed_position field.
-	workspaceDescFeedPosition := workspaceFields[14].Descriptor()
-	// workspace.DefaultFeedPosition holds the default value on creation for the feed_position field.
-	workspace.DefaultFeedPosition = workspaceDescFeedPosition.Default.(int64)
 	// workspaceDescAbuseExempt is the schema descriptor for abuse_exempt field.
-	workspaceDescAbuseExempt := workspaceFields[21].Descriptor()
+	workspaceDescAbuseExempt := workspaceFields[19].Descriptor()
 	// workspace.DefaultAbuseExempt holds the default value on creation for the abuse_exempt field.
 	workspace.DefaultAbuseExempt = workspaceDescAbuseExempt.Default.(bool)
+	workspacestandingMixin := schema.WorkspaceStanding{}.Mixin()
+	workspacestandingMixinFields0 := workspacestandingMixin[0].Fields()
+	_ = workspacestandingMixinFields0
+	workspacestandingFields := schema.WorkspaceStanding{}.Fields()
+	_ = workspacestandingFields
+	// workspacestandingDescCreatedAt is the schema descriptor for created_at field.
+	workspacestandingDescCreatedAt := workspacestandingMixinFields0[0].Descriptor()
+	// workspacestanding.DefaultCreatedAt holds the default value on creation for the created_at field.
+	workspacestanding.DefaultCreatedAt = workspacestandingDescCreatedAt.Default.(func() time.Time)
+	// workspacestandingDescUpdatedAt is the schema descriptor for updated_at field.
+	workspacestandingDescUpdatedAt := workspacestandingMixinFields0[1].Descriptor()
+	// workspacestanding.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	workspacestanding.DefaultUpdatedAt = workspacestandingDescUpdatedAt.Default.(func() time.Time)
+	// workspacestanding.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	workspacestanding.UpdateDefaultUpdatedAt = workspacestandingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// workspacestandingDescFeedPosition is the schema descriptor for feed_position field.
+	workspacestandingDescFeedPosition := workspacestandingFields[2].Descriptor()
+	// workspacestanding.DefaultFeedPosition holds the default value on creation for the feed_position field.
+	workspacestanding.DefaultFeedPosition = workspacestandingDescFeedPosition.Default.(int64)
 }

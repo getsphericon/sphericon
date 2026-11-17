@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/binding"
 	"github.com/getsphericon/sphericon/ent/capturedmessage"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/starttoken"
@@ -289,154 +290,6 @@ func (_u *IntegrationUpdate) ClearMaxPerDay() *IntegrationUpdate {
 	return _u
 }
 
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (_u *IntegrationUpdate) SetProviderMaxPerSecond(v int) *IntegrationUpdate {
-	_u.mutation.ResetProviderMaxPerSecond()
-	_u.mutation.SetProviderMaxPerSecond(v)
-	return _u
-}
-
-// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderMaxPerSecond(v *int) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderMaxPerSecond(*v)
-	}
-	return _u
-}
-
-// AddProviderMaxPerSecond adds value to the "provider_max_per_second" field.
-func (_u *IntegrationUpdate) AddProviderMaxPerSecond(v int) *IntegrationUpdate {
-	_u.mutation.AddProviderMaxPerSecond(v)
-	return _u
-}
-
-// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
-func (_u *IntegrationUpdate) ClearProviderMaxPerSecond() *IntegrationUpdate {
-	_u.mutation.ClearProviderMaxPerSecond()
-	return _u
-}
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (_u *IntegrationUpdate) SetProviderMaxPerDay(v int) *IntegrationUpdate {
-	_u.mutation.ResetProviderMaxPerDay()
-	_u.mutation.SetProviderMaxPerDay(v)
-	return _u
-}
-
-// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderMaxPerDay(v *int) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderMaxPerDay(*v)
-	}
-	return _u
-}
-
-// AddProviderMaxPerDay adds value to the "provider_max_per_day" field.
-func (_u *IntegrationUpdate) AddProviderMaxPerDay(v int) *IntegrationUpdate {
-	_u.mutation.AddProviderMaxPerDay(v)
-	return _u
-}
-
-// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
-func (_u *IntegrationUpdate) ClearProviderMaxPerDay() *IntegrationUpdate {
-	_u.mutation.ClearProviderMaxPerDay()
-	return _u
-}
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (_u *IntegrationUpdate) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpdate {
-	_u.mutation.SetProviderEnforcement(v)
-	return _u
-}
-
-// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderEnforcement(*v)
-	}
-	return _u
-}
-
-// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
-func (_u *IntegrationUpdate) ClearProviderEnforcement() *IntegrationUpdate {
-	_u.mutation.ClearProviderEnforcement()
-	return _u
-}
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (_u *IntegrationUpdate) SetProviderSandbox(v bool) *IntegrationUpdate {
-	_u.mutation.SetProviderSandbox(v)
-	return _u
-}
-
-// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderSandbox(v *bool) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderSandbox(*v)
-	}
-	return _u
-}
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (_u *IntegrationUpdate) SetProviderRefusedAt(v time.Time) *IntegrationUpdate {
-	_u.mutation.SetProviderRefusedAt(v)
-	return _u
-}
-
-// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderRefusedAt(*v)
-	}
-	return _u
-}
-
-// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
-func (_u *IntegrationUpdate) ClearProviderRefusedAt() *IntegrationUpdate {
-	_u.mutation.ClearProviderRefusedAt()
-	return _u
-}
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (_u *IntegrationUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdate {
-	_u.mutation.SetProviderQuotaCheckedAt(v)
-	return _u
-}
-
-// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderQuotaCheckedAt(*v)
-	}
-	return _u
-}
-
-// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
-func (_u *IntegrationUpdate) ClearProviderQuotaCheckedAt() *IntegrationUpdate {
-	_u.mutation.ClearProviderQuotaCheckedAt()
-	return _u
-}
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (_u *IntegrationUpdate) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpdate {
-	_u.mutation.SetProviderQuotaFailedAt(v)
-	return _u
-}
-
-// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
-func (_u *IntegrationUpdate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationUpdate {
-	if v != nil {
-		_u.SetProviderQuotaFailedAt(*v)
-	}
-	return _u
-}
-
-// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
-func (_u *IntegrationUpdate) ClearProviderQuotaFailedAt() *IntegrationUpdate {
-	_u.mutation.ClearProviderQuotaFailedAt()
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *IntegrationUpdate) SetWorkspace(v *Workspace) *IntegrationUpdate {
 	return _u.SetWorkspaceID(v.ID)
@@ -459,6 +312,25 @@ func (_u *IntegrationUpdate) SetNillableProviderLimiterID(id *int64) *Integratio
 // SetProviderLimiter sets the "provider_limiter" edge to the ProviderLimiter entity.
 func (_u *IntegrationUpdate) SetProviderLimiter(v *ProviderLimiter) *IntegrationUpdate {
 	return _u.SetProviderLimiterID(v.ID)
+}
+
+// SetProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID.
+func (_u *IntegrationUpdate) SetProviderStateID(id int64) *IntegrationUpdate {
+	_u.mutation.SetProviderStateID(id)
+	return _u
+}
+
+// SetNillableProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID if the given value is not nil.
+func (_u *IntegrationUpdate) SetNillableProviderStateID(id *int64) *IntegrationUpdate {
+	if id != nil {
+		_u = _u.SetProviderStateID(*id)
+	}
+	return _u
+}
+
+// SetProviderState sets the "provider_state" edge to the IntegrationProviderState entity.
+func (_u *IntegrationUpdate) SetProviderState(v *IntegrationProviderState) *IntegrationUpdate {
+	return _u.SetProviderStateID(v.ID)
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
@@ -520,6 +392,12 @@ func (_u *IntegrationUpdate) ClearWorkspace() *IntegrationUpdate {
 // ClearProviderLimiter clears the "provider_limiter" edge to the ProviderLimiter entity.
 func (_u *IntegrationUpdate) ClearProviderLimiter() *IntegrationUpdate {
 	_u.mutation.ClearProviderLimiter()
+	return _u
+}
+
+// ClearProviderState clears the "provider_state" edge to the IntegrationProviderState entity.
+func (_u *IntegrationUpdate) ClearProviderState() *IntegrationUpdate {
+	_u.mutation.ClearProviderState()
 	return _u
 }
 
@@ -664,11 +542,6 @@ func (_u *IntegrationUpdate) check() error {
 			return &ValidationError{Name: "max_per_day", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_day": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ProviderEnforcement(); ok {
-		if err := integration.ProviderEnforcementValidator(v); err != nil {
-			return &ValidationError{Name: "provider_enforcement", err: fmt.Errorf(`ent: validator failed for field "Integration.provider_enforcement": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Integration.workspace"`)
 	}
@@ -759,51 +632,6 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.MaxPerDayCleared() {
 		_spec.ClearField(integration.FieldMaxPerDay, field.TypeInt)
 	}
-	if value, ok := _u.mutation.ProviderMaxPerSecond(); ok {
-		_spec.SetField(integration.FieldProviderMaxPerSecond, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedProviderMaxPerSecond(); ok {
-		_spec.AddField(integration.FieldProviderMaxPerSecond, field.TypeInt, value)
-	}
-	if _u.mutation.ProviderMaxPerSecondCleared() {
-		_spec.ClearField(integration.FieldProviderMaxPerSecond, field.TypeInt)
-	}
-	if value, ok := _u.mutation.ProviderMaxPerDay(); ok {
-		_spec.SetField(integration.FieldProviderMaxPerDay, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedProviderMaxPerDay(); ok {
-		_spec.AddField(integration.FieldProviderMaxPerDay, field.TypeInt, value)
-	}
-	if _u.mutation.ProviderMaxPerDayCleared() {
-		_spec.ClearField(integration.FieldProviderMaxPerDay, field.TypeInt)
-	}
-	if value, ok := _u.mutation.ProviderEnforcement(); ok {
-		_spec.SetField(integration.FieldProviderEnforcement, field.TypeEnum, value)
-	}
-	if _u.mutation.ProviderEnforcementCleared() {
-		_spec.ClearField(integration.FieldProviderEnforcement, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.ProviderSandbox(); ok {
-		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.ProviderRefusedAt(); ok {
-		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProviderRefusedAtCleared() {
-		_spec.ClearField(integration.FieldProviderRefusedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
-		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProviderQuotaCheckedAtCleared() {
-		_spec.ClearField(integration.FieldProviderQuotaCheckedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProviderQuotaFailedAt(); ok {
-		_spec.SetField(integration.FieldProviderQuotaFailedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProviderQuotaFailedAtCleared() {
-		_spec.ClearField(integration.FieldProviderQuotaFailedAt, field.TypeTime)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -855,6 +683,35 @@ func (_u *IntegrationUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProviderStateCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   integration.ProviderStateTable,
+			Columns: []string{integration.ProviderStateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProviderStateIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   integration.ProviderStateTable,
+			Columns: []string{integration.ProviderStateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1272,154 +1129,6 @@ func (_u *IntegrationUpdateOne) ClearMaxPerDay() *IntegrationUpdateOne {
 	return _u
 }
 
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (_u *IntegrationUpdateOne) SetProviderMaxPerSecond(v int) *IntegrationUpdateOne {
-	_u.mutation.ResetProviderMaxPerSecond()
-	_u.mutation.SetProviderMaxPerSecond(v)
-	return _u
-}
-
-// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderMaxPerSecond(v *int) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderMaxPerSecond(*v)
-	}
-	return _u
-}
-
-// AddProviderMaxPerSecond adds value to the "provider_max_per_second" field.
-func (_u *IntegrationUpdateOne) AddProviderMaxPerSecond(v int) *IntegrationUpdateOne {
-	_u.mutation.AddProviderMaxPerSecond(v)
-	return _u
-}
-
-// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
-func (_u *IntegrationUpdateOne) ClearProviderMaxPerSecond() *IntegrationUpdateOne {
-	_u.mutation.ClearProviderMaxPerSecond()
-	return _u
-}
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (_u *IntegrationUpdateOne) SetProviderMaxPerDay(v int) *IntegrationUpdateOne {
-	_u.mutation.ResetProviderMaxPerDay()
-	_u.mutation.SetProviderMaxPerDay(v)
-	return _u
-}
-
-// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderMaxPerDay(v *int) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderMaxPerDay(*v)
-	}
-	return _u
-}
-
-// AddProviderMaxPerDay adds value to the "provider_max_per_day" field.
-func (_u *IntegrationUpdateOne) AddProviderMaxPerDay(v int) *IntegrationUpdateOne {
-	_u.mutation.AddProviderMaxPerDay(v)
-	return _u
-}
-
-// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
-func (_u *IntegrationUpdateOne) ClearProviderMaxPerDay() *IntegrationUpdateOne {
-	_u.mutation.ClearProviderMaxPerDay()
-	return _u
-}
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (_u *IntegrationUpdateOne) SetProviderEnforcement(v providers.Enforcement) *IntegrationUpdateOne {
-	_u.mutation.SetProviderEnforcement(v)
-	return _u
-}
-
-// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderEnforcement(*v)
-	}
-	return _u
-}
-
-// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
-func (_u *IntegrationUpdateOne) ClearProviderEnforcement() *IntegrationUpdateOne {
-	_u.mutation.ClearProviderEnforcement()
-	return _u
-}
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (_u *IntegrationUpdateOne) SetProviderSandbox(v bool) *IntegrationUpdateOne {
-	_u.mutation.SetProviderSandbox(v)
-	return _u
-}
-
-// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderSandbox(v *bool) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderSandbox(*v)
-	}
-	return _u
-}
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (_u *IntegrationUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationUpdateOne {
-	_u.mutation.SetProviderRefusedAt(v)
-	return _u
-}
-
-// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderRefusedAt(*v)
-	}
-	return _u
-}
-
-// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
-func (_u *IntegrationUpdateOne) ClearProviderRefusedAt() *IntegrationUpdateOne {
-	_u.mutation.ClearProviderRefusedAt()
-	return _u
-}
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (_u *IntegrationUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationUpdateOne {
-	_u.mutation.SetProviderQuotaCheckedAt(v)
-	return _u
-}
-
-// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderQuotaCheckedAt(*v)
-	}
-	return _u
-}
-
-// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
-func (_u *IntegrationUpdateOne) ClearProviderQuotaCheckedAt() *IntegrationUpdateOne {
-	_u.mutation.ClearProviderQuotaCheckedAt()
-	return _u
-}
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (_u *IntegrationUpdateOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationUpdateOne {
-	_u.mutation.SetProviderQuotaFailedAt(v)
-	return _u
-}
-
-// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
-func (_u *IntegrationUpdateOne) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationUpdateOne {
-	if v != nil {
-		_u.SetProviderQuotaFailedAt(*v)
-	}
-	return _u
-}
-
-// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
-func (_u *IntegrationUpdateOne) ClearProviderQuotaFailedAt() *IntegrationUpdateOne {
-	_u.mutation.ClearProviderQuotaFailedAt()
-	return _u
-}
-
 // SetWorkspace sets the "workspace" edge to the Workspace entity.
 func (_u *IntegrationUpdateOne) SetWorkspace(v *Workspace) *IntegrationUpdateOne {
 	return _u.SetWorkspaceID(v.ID)
@@ -1442,6 +1151,25 @@ func (_u *IntegrationUpdateOne) SetNillableProviderLimiterID(id *int64) *Integra
 // SetProviderLimiter sets the "provider_limiter" edge to the ProviderLimiter entity.
 func (_u *IntegrationUpdateOne) SetProviderLimiter(v *ProviderLimiter) *IntegrationUpdateOne {
 	return _u.SetProviderLimiterID(v.ID)
+}
+
+// SetProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID.
+func (_u *IntegrationUpdateOne) SetProviderStateID(id int64) *IntegrationUpdateOne {
+	_u.mutation.SetProviderStateID(id)
+	return _u
+}
+
+// SetNillableProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID if the given value is not nil.
+func (_u *IntegrationUpdateOne) SetNillableProviderStateID(id *int64) *IntegrationUpdateOne {
+	if id != nil {
+		_u = _u.SetProviderStateID(*id)
+	}
+	return _u
+}
+
+// SetProviderState sets the "provider_state" edge to the IntegrationProviderState entity.
+func (_u *IntegrationUpdateOne) SetProviderState(v *IntegrationProviderState) *IntegrationUpdateOne {
+	return _u.SetProviderStateID(v.ID)
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
@@ -1503,6 +1231,12 @@ func (_u *IntegrationUpdateOne) ClearWorkspace() *IntegrationUpdateOne {
 // ClearProviderLimiter clears the "provider_limiter" edge to the ProviderLimiter entity.
 func (_u *IntegrationUpdateOne) ClearProviderLimiter() *IntegrationUpdateOne {
 	_u.mutation.ClearProviderLimiter()
+	return _u
+}
+
+// ClearProviderState clears the "provider_state" edge to the IntegrationProviderState entity.
+func (_u *IntegrationUpdateOne) ClearProviderState() *IntegrationUpdateOne {
+	_u.mutation.ClearProviderState()
 	return _u
 }
 
@@ -1660,11 +1394,6 @@ func (_u *IntegrationUpdateOne) check() error {
 			return &ValidationError{Name: "max_per_day", err: fmt.Errorf(`ent: validator failed for field "Integration.max_per_day": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ProviderEnforcement(); ok {
-		if err := integration.ProviderEnforcementValidator(v); err != nil {
-			return &ValidationError{Name: "provider_enforcement", err: fmt.Errorf(`ent: validator failed for field "Integration.provider_enforcement": %w`, err)}
-		}
-	}
 	if _u.mutation.WorkspaceCleared() && len(_u.mutation.WorkspaceIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Integration.workspace"`)
 	}
@@ -1772,51 +1501,6 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 	if _u.mutation.MaxPerDayCleared() {
 		_spec.ClearField(integration.FieldMaxPerDay, field.TypeInt)
 	}
-	if value, ok := _u.mutation.ProviderMaxPerSecond(); ok {
-		_spec.SetField(integration.FieldProviderMaxPerSecond, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedProviderMaxPerSecond(); ok {
-		_spec.AddField(integration.FieldProviderMaxPerSecond, field.TypeInt, value)
-	}
-	if _u.mutation.ProviderMaxPerSecondCleared() {
-		_spec.ClearField(integration.FieldProviderMaxPerSecond, field.TypeInt)
-	}
-	if value, ok := _u.mutation.ProviderMaxPerDay(); ok {
-		_spec.SetField(integration.FieldProviderMaxPerDay, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedProviderMaxPerDay(); ok {
-		_spec.AddField(integration.FieldProviderMaxPerDay, field.TypeInt, value)
-	}
-	if _u.mutation.ProviderMaxPerDayCleared() {
-		_spec.ClearField(integration.FieldProviderMaxPerDay, field.TypeInt)
-	}
-	if value, ok := _u.mutation.ProviderEnforcement(); ok {
-		_spec.SetField(integration.FieldProviderEnforcement, field.TypeEnum, value)
-	}
-	if _u.mutation.ProviderEnforcementCleared() {
-		_spec.ClearField(integration.FieldProviderEnforcement, field.TypeEnum)
-	}
-	if value, ok := _u.mutation.ProviderSandbox(); ok {
-		_spec.SetField(integration.FieldProviderSandbox, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.ProviderRefusedAt(); ok {
-		_spec.SetField(integration.FieldProviderRefusedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProviderRefusedAtCleared() {
-		_spec.ClearField(integration.FieldProviderRefusedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProviderQuotaCheckedAt(); ok {
-		_spec.SetField(integration.FieldProviderQuotaCheckedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProviderQuotaCheckedAtCleared() {
-		_spec.ClearField(integration.FieldProviderQuotaCheckedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.ProviderQuotaFailedAt(); ok {
-		_spec.SetField(integration.FieldProviderQuotaFailedAt, field.TypeTime, value)
-	}
-	if _u.mutation.ProviderQuotaFailedAtCleared() {
-		_spec.ClearField(integration.FieldProviderQuotaFailedAt, field.TypeTime)
-	}
 	if _u.mutation.WorkspaceCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -1868,6 +1552,35 @@ func (_u *IntegrationUpdateOne) sqlSave(ctx context.Context) (_node *Integration
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(providerlimiter.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProviderStateCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   integration.ProviderStateTable,
+			Columns: []string{integration.ProviderStateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProviderStateIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   integration.ProviderStateTable,
+			Columns: []string{integration.ProviderStateColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

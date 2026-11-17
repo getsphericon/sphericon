@@ -26,7 +26,7 @@ func TestTheListNarrowsToStatusesAndPutsTheSoonestScheduleFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	ids := listedBroadcastIDs(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.SiteBroadcastsListParams{
-		Status: []siteapi.SiteBroadcastStatus{siteapi.SiteBroadcastStatusScheduled, siteapi.SiteBroadcastStatusSending},
+		Status: []siteapi.BroadcastStatus{siteapi.BroadcastStatusScheduled, siteapi.BroadcastStatusSending},
 		Order:  siteapi.NewOptSiteBroadcastsOrder(siteapi.SiteBroadcastsOrderScheduledSoonest),
 	})
 
@@ -41,7 +41,7 @@ func TestTheListPutsTheLastSentFirst(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	ids := listedBroadcastIDs(t, env.SiteActor(t, fixtures.MemberMaryEmail), siteapi.SiteBroadcastsListParams{
-		Status:   []siteapi.SiteBroadcastStatus{siteapi.SiteBroadcastStatusSent},
+		Status:   []siteapi.BroadcastStatus{siteapi.BroadcastStatusSent},
 		Order:    siteapi.NewOptSiteBroadcastsOrder(siteapi.SiteBroadcastsOrderSentLatest),
 		PageSize: siteapi.NewOptInt32(3),
 	})

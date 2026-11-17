@@ -130,7 +130,7 @@ func (UnimplementedHandler) SiteAuditGetRetention(ctx context.Context, params Si
 // List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 //
 // GET /workspaces/{workspaceId}/audit-entries
-func (UnimplementedHandler) SiteAuditList(ctx context.Context, params SiteAuditListParams) (r *SiteAuditEntryList, _ error) {
+func (UnimplementedHandler) SiteAuditList(ctx context.Context, params SiteAuditListParams) (r *AuditEntryList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

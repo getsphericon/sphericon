@@ -46,11 +46,11 @@ import {
   siteAuditListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  SiteAuditActor,
-  SiteAuditActorKind,
-  SiteAuditEntryResource,
+  AuditActor,
+  AuditActorKind,
+  AuditEntryResource,
 } from '../../generated/site/types.gen.ts'
-import { zSiteAuditActorKind } from '../../generated/site/zod.gen.ts'
+import { zAuditActorKind } from '../../generated/site/zod.gen.ts'
 import { useAuditActionLabel } from '../../hooks/useAuditActionLabel.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useFormat, useTimeZone } from '../../hooks/useFormat.ts'
@@ -86,7 +86,7 @@ function isHidden(error: unknown) {
 // anyone else by the name snapshot of the entry.
 function useActorLabel() {
   const { t } = useTranslation()
-  return ({ kind, name, id }: SiteAuditActor) => {
+  return ({ kind, name, id }: AuditActor) => {
     if (kind === 'system') {
       return t(($) => $.settings.auditLog.actorSystem)
     }
@@ -119,7 +119,7 @@ function FilterValue({
   )
 }
 
-function TargetLabel({ entry }: { entry: SiteAuditEntryResource }) {
+function TargetLabel({ entry }: { entry: AuditEntryResource }) {
   const { type, name, id } = entry.target
   return (
     <>
@@ -183,7 +183,7 @@ function EntryDetails({
   diff,
   filter,
   onFilterChange,
-}: FilterProps & { entry: SiteAuditEntryResource; diff: Record<string, unknown> | null }) {
+}: FilterProps & { entry: AuditEntryResource; diff: Record<string, unknown> | null }) {
   const { t } = useTranslation()
   return (
     <Stack gap="xs">
@@ -218,18 +218,14 @@ function EntryDetails({
 }
 
 // The filter that narrows the log to an entry's target: its type, and its id when it has one.
-function targetFilter(filter: AuditFilter, { type, id }: SiteAuditEntryResource['target']) {
+function targetFilter(filter: AuditFilter, { type, id }: AuditEntryResource['target']) {
   return withValue(withValue(filter, 'targetType', type), 'targetId', id)
 }
 
 // EntryRows is one entry; when it has details (a diff, a request, a client address), a chevron
 // expands them beneath the row so the list stays scannable. Its actor and target narrow the
 // log to their entries.
-function EntryRows({
-  entry,
-  filter,
-  onFilterChange,
-}: FilterProps & { entry: SiteAuditEntryResource }) {
+function EntryRows({ entry, filter, onFilterChange }: FilterProps & { entry: AuditEntryResource }) {
   const { formatDateTime } = useFormat()
   const { t } = useTranslation()
   const actorLabel = useActorLabel()
@@ -523,7 +519,7 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
   const actorLabel = useActorLabel()
   const actionLabel = useAuditActionLabel()
   const facets = useSuspenseQuery(siteAuditFacetsOptions({ path: { workspaceId } })).data
-  const kindLabels: Record<SiteAuditActorKind, string> = {
+  const kindLabels: Record<AuditActorKind, string> = {
     user: t(($) => $.settings.auditLog.kindUser),
     api_token: t(($) => $.settings.auditLog.kindApiToken),
     staff: t(($) => $.settings.auditLog.kindStaff),
@@ -534,7 +530,7 @@ function FilterBar({ workspaceId, filter, onFilterChange }: FilterProps & { work
     current && filter.actorKind && !facets.actors.some((actor) => actorValue(actor) === current)
       ? [...facets.actors, { kind: filter.actorKind, id: filter.actorId ?? null }]
       : facets.actors
-  const actorGroups = zSiteAuditActorKind.options.flatMap((kind) => {
+  const actorGroups = zAuditActorKind.options.flatMap((kind) => {
     const items = actors
       .filter((actor) => actor.kind === kind)
       .map((actor) => ({ value: actorValue(actor), label: actorLabel(actor) || kindLabels[kind] }))

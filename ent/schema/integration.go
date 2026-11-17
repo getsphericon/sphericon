@@ -96,54 +96,6 @@ func (Integration) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			Positive(),
-		// Provider-reported quota (ADR 0023): what SES GetSendQuota last said, folded into
-		// the effective ceiling by the minimum rule. Nil means the provider reported none.
-		field.Int("provider_max_per_second").
-			Annotations(Bookkeeping{}).
-			Optional().
-			Nillable(),
-		field.Int("provider_max_per_day").
-			Annotations(Bookkeeping{}).
-			Optional().
-			Nillable(),
-		// The account's standing (ADR 0067) is, like provider_max_*, a reading of the provider
-		// that each successful read overwrites whole, not a state the platform moves: nobody
-		// asks when it changed, and provider_quota_checked_at says when it was read. A save of
-		// new credentials clears it, as it may name another account.
-		//
-		// What the provider last said it is doing about the account (SES EnforcementStatus);
-		// nil is nothing. `shutdown` holds every send through the Integration until a read
-		// finds the account sending again; `probation` is a warning.
-		field.Enum("provider_enforcement").
-			Annotations(Bookkeeping{}).
-			GoType(providers.Enforcement("")).
-			Optional().
-			Nillable(),
-		// Whether the provider last said the account is in its sandbox, delivering only to
-		// verified addresses (SES without production access); a warning, not a hold.
-		field.Bool("provider_sandbox").
-			Annotations(Bookkeeping{}, Attribute(reasonLatest)).
-			Default(false),
-		// When a send found the provider refusing the Integration's credentials (Telegram's 401):
-		// the Integration is held (provider_refused) until it is saved again with credentials the
-		// provider accepts, which clears it. Nil is not refused. Unlike provider_enforcement it is
-		// found at send time, not read from the provider.
-		field.Time("provider_refused_at").
-			Annotations(Bookkeeping{}, Machine()).
-			Optional().
-			Nillable(),
-		// When the quota was last looked up, successfully or not.
-		field.Time("provider_quota_checked_at").
-			Annotations(Bookkeeping{}, Attribute(reasonLatest)).
-			Optional().
-			Nillable(),
-		// When the lookup first failed (no ses:GetSendQuota permission, an SES-compatible
-		// service) in the failing run it is still in; the UI warns while it is set and a
-		// later success clears it. A further failure keeps the first moment.
-		field.Time("provider_quota_failed_at").
-			Annotations(Bookkeeping{}, Attribute(reasonFoundRun)).
-			Optional().
-			Nillable(),
 	}
 }
 
@@ -151,6 +103,10 @@ func (Integration) Edges() []ent.Edge {
 	return []ent.Edge{
 		// Purging an Integration (Workspace erasure) deletes its Provider limit state with it.
 		edge.To("provider_limiter", ProviderLimiter.Type).
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		// What the provider last said about it (ADR 0168) dies with it.
+		edge.To("provider_state", IntegrationProviderState.Type).
 			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
 		// What a Test inbox kept (ADR 0058) dies with the Integration; only Workspace deletion

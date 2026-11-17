@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/testhelper"
@@ -107,7 +108,7 @@ func TestTheProviderStandingOfAnIntegrationIsAnItem(t *testing.T) {
 func TestAnIntegrationWhoseCredentialsTheProviderRefusedIsABlockedItemSinceTheRefusal(t *testing.T) {
 	env := testhelper.Setup(t)
 	refusedAt := time.Now().Add(-time.Hour).Truncate(time.Microsecond)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+	require.NoError(t, env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
 		SetProviderRefusedAt(refusedAt).Exec(t.Context()))
 
 	items := itemsOf(t, env, fixtures.AcmeID)

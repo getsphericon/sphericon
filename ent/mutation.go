@@ -43,6 +43,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/instanceauditentry"
 	"github.com/getsphericon/sphericon/ent/instancestate"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/legaldocumentdraft"
@@ -88,7 +89,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/usertombstone"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -105,81 +108,84 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeApiToken             = "ApiToken"
-	TypeAuditEntry           = "AuditEntry"
-	TypeAuthAttempt          = "AuthAttempt"
-	TypeAutomation           = "Automation"
-	TypeAutomationFigure     = "AutomationFigure"
-	TypeAutomationRun        = "AutomationRun"
-	TypeAutomationVersion    = "AutomationVersion"
-	TypeBinding              = "Binding"
-	TypeBrandKit             = "BrandKit"
-	TypeBroadcast            = "Broadcast"
-	TypeBroadcastFigure      = "BroadcastFigure"
-	TypeBroadcastRecipient   = "BroadcastRecipient"
-	TypeCapturedMessage      = "CapturedMessage"
-	TypeConfirmation         = "Confirmation"
-	TypeConsentRecord        = "ConsentRecord"
-	TypeConsentStamp         = "ConsentStamp"
-	TypeContact              = "Contact"
-	TypeContactTag           = "ContactTag"
-	TypeCustomField          = "CustomField"
-	TypeDefaultSendCap       = "DefaultSendCap"
-	TypeEmailTemplate        = "EmailTemplate"
-	TypeErasure              = "Erasure"
-	TypeEvent                = "Event"
-	TypeEventJournalEntry    = "EventJournalEntry"
-	TypeEventReceipt         = "EventReceipt"
-	TypeHeldOrderEvent       = "HeldOrderEvent"
-	TypeHold                 = "Hold"
-	TypeIdentitySecret       = "IdentitySecret"
-	TypeInstanceAuditEntry   = "InstanceAuditEntry"
-	TypeInstanceState        = "InstanceState"
-	TypeIntegration          = "Integration"
-	TypeInvitation           = "Invitation"
-	TypeJoinDomain           = "JoinDomain"
-	TypeLegalDocumentDraft   = "LegalDocumentDraft"
-	TypeLegalDocumentVersion = "LegalDocumentVersion"
-	TypeMembership           = "Membership"
-	TypeOAuthClient          = "OAuthClient"
-	TypeOAuthCode            = "OAuthCode"
-	TypeOAuthRefreshToken    = "OAuthRefreshToken"
-	TypeOrder                = "Order"
-	TypeOrderMovement        = "OrderMovement"
-	TypeOutboundMessage      = "OutboundMessage"
-	TypePasskey              = "Passkey"
-	TypePasskeyChallenge     = "PasskeyChallenge"
-	TypePendingSignup        = "PendingSignup"
-	TypePrivateRelayRange    = "PrivateRelayRange"
-	TypeProviderLimiter      = "ProviderLimiter"
-	TypeRecoveryCode         = "RecoveryCode"
-	TypeRule                 = "Rule"
-	TypeRuleFiring           = "RuleFiring"
-	TypeRuleVersion          = "RuleVersion"
-	TypeRuleVersionTrigger   = "RuleVersionTrigger"
-	TypeSchemaState          = "SchemaState"
-	TypeSecondFactor         = "SecondFactor"
-	TypeSegment              = "Segment"
-	TypeSendCapLimiter       = "SendCapLimiter"
-	TypeSendingDomain        = "SendingDomain"
-	TypeServiceCredential    = "ServiceCredential"
-	TypeSignupItem           = "SignupItem"
-	TypeSignupSurveyResponse = "SignupSurveyResponse"
-	TypeStaffMember          = "StaffMember"
-	TypeStartToken           = "StartToken"
-	TypeSuppression          = "Suppression"
-	TypeTag                  = "Tag"
-	TypeTrackedLink          = "TrackedLink"
-	TypeTrackingDomain       = "TrackingDomain"
-	TypeTrackingHostChange   = "TrackingHostChange"
-	TypeUnsubscribe          = "Unsubscribe"
-	TypeUsage                = "Usage"
-	TypeUser                 = "User"
-	TypeUserIdentity         = "UserIdentity"
-	TypeUserTombstone        = "UserTombstone"
-	TypeVisitor              = "Visitor"
-	TypeWebhookEndpoint      = "WebhookEndpoint"
-	TypeWorkspace            = "Workspace"
+	TypeApiToken                 = "ApiToken"
+	TypeAuditEntry               = "AuditEntry"
+	TypeAuthAttempt              = "AuthAttempt"
+	TypeAutomation               = "Automation"
+	TypeAutomationFigure         = "AutomationFigure"
+	TypeAutomationRun            = "AutomationRun"
+	TypeAutomationVersion        = "AutomationVersion"
+	TypeBinding                  = "Binding"
+	TypeBrandKit                 = "BrandKit"
+	TypeBroadcast                = "Broadcast"
+	TypeBroadcastFigure          = "BroadcastFigure"
+	TypeBroadcastRecipient       = "BroadcastRecipient"
+	TypeCapturedMessage          = "CapturedMessage"
+	TypeConfirmation             = "Confirmation"
+	TypeConsentRecord            = "ConsentRecord"
+	TypeConsentStamp             = "ConsentStamp"
+	TypeContact                  = "Contact"
+	TypeContactTag               = "ContactTag"
+	TypeCustomField              = "CustomField"
+	TypeDefaultSendCap           = "DefaultSendCap"
+	TypeEmailTemplate            = "EmailTemplate"
+	TypeErasure                  = "Erasure"
+	TypeEvent                    = "Event"
+	TypeEventJournalEntry        = "EventJournalEntry"
+	TypeEventReceipt             = "EventReceipt"
+	TypeHeldOrderEvent           = "HeldOrderEvent"
+	TypeHold                     = "Hold"
+	TypeIdentitySecret           = "IdentitySecret"
+	TypeInstanceAuditEntry       = "InstanceAuditEntry"
+	TypeInstanceState            = "InstanceState"
+	TypeIntegration              = "Integration"
+	TypeIntegrationProviderState = "IntegrationProviderState"
+	TypeInvitation               = "Invitation"
+	TypeJoinDomain               = "JoinDomain"
+	TypeLegalDocumentDraft       = "LegalDocumentDraft"
+	TypeLegalDocumentVersion     = "LegalDocumentVersion"
+	TypeMembership               = "Membership"
+	TypeOAuthClient              = "OAuthClient"
+	TypeOAuthCode                = "OAuthCode"
+	TypeOAuthRefreshToken        = "OAuthRefreshToken"
+	TypeOrder                    = "Order"
+	TypeOrderMovement            = "OrderMovement"
+	TypeOutboundMessage          = "OutboundMessage"
+	TypePasskey                  = "Passkey"
+	TypePasskeyChallenge         = "PasskeyChallenge"
+	TypePendingSignup            = "PendingSignup"
+	TypePrivateRelayRange        = "PrivateRelayRange"
+	TypeProviderLimiter          = "ProviderLimiter"
+	TypeRecoveryCode             = "RecoveryCode"
+	TypeRule                     = "Rule"
+	TypeRuleFiring               = "RuleFiring"
+	TypeRuleVersion              = "RuleVersion"
+	TypeRuleVersionTrigger       = "RuleVersionTrigger"
+	TypeSchemaState              = "SchemaState"
+	TypeSecondFactor             = "SecondFactor"
+	TypeSegment                  = "Segment"
+	TypeSendCapLimiter           = "SendCapLimiter"
+	TypeSendingDomain            = "SendingDomain"
+	TypeServiceCredential        = "ServiceCredential"
+	TypeSignupItem               = "SignupItem"
+	TypeSignupSurveyResponse     = "SignupSurveyResponse"
+	TypeStaffMember              = "StaffMember"
+	TypeStartToken               = "StartToken"
+	TypeSuppression              = "Suppression"
+	TypeTag                      = "Tag"
+	TypeTrackedLink              = "TrackedLink"
+	TypeTrackingDomain           = "TrackingDomain"
+	TypeTrackingHostChange       = "TrackingHostChange"
+	TypeUnsubscribe              = "Unsubscribe"
+	TypeUsage                    = "Usage"
+	TypeUser                     = "User"
+	TypeUserIdentity             = "UserIdentity"
+	TypeUserTombstone            = "UserTombstone"
+	TypeVisitor                  = "Visitor"
+	TypeWebhookEndpoint          = "WebhookEndpoint"
+	TypeWebhookEndpointHealth    = "WebhookEndpointHealth"
+	TypeWorkspace                = "Workspace"
+	TypeWorkspaceStanding        = "WorkspaceStanding"
 )
 
 // ApiTokenMutation represents an operation that mutates the ApiToken nodes in the graph.
@@ -32245,53 +32251,46 @@ func (m *InstanceStateMutation) ResetEdge(name string) error {
 // IntegrationMutation represents an operation that mutates the Integration nodes in the graph.
 type IntegrationMutation struct {
 	config
-	op                         Op
-	typ                        string
-	id                         *int64
-	created_at                 *time.Time
-	updated_at                 *time.Time
-	discarded_at               *time.Time
-	revision                   *int64
-	addrevision                *int64
-	name                       *string
-	channel                    *channels.Channel
-	provider                   *providers.Provider
-	config_encrypted           *string
-	preset                     *string
-	params_encrypted           *string
-	ingest_key                 *string
-	enabled                    *bool
-	is_default                 *bool
-	max_per_second             *int
-	addmax_per_second          *int
-	max_per_day                *int
-	addmax_per_day             *int
-	provider_max_per_second    *int
-	addprovider_max_per_second *int
-	provider_max_per_day       *int
-	addprovider_max_per_day    *int
-	provider_enforcement       *providers.Enforcement
-	provider_sandbox           *bool
-	provider_refused_at        *time.Time
-	provider_quota_checked_at  *time.Time
-	provider_quota_failed_at   *time.Time
-	clearedFields              map[string]struct{}
-	workspace                  *int64
-	clearedworkspace           bool
-	provider_limiter           *int64
-	clearedprovider_limiter    bool
-	captured_messages          map[int64]struct{}
-	removedcaptured_messages   map[int64]struct{}
-	clearedcaptured_messages   bool
-	bindings                   map[int64]struct{}
-	removedbindings            map[int64]struct{}
-	clearedbindings            bool
-	start_tokens               map[int64]struct{}
-	removedstart_tokens        map[int64]struct{}
-	clearedstart_tokens        bool
-	done                       bool
-	oldValue                   func(context.Context) (*Integration, error)
-	predicates                 []predicate.Integration
+	op                       Op
+	typ                      string
+	id                       *int64
+	created_at               *time.Time
+	updated_at               *time.Time
+	discarded_at             *time.Time
+	revision                 *int64
+	addrevision              *int64
+	name                     *string
+	channel                  *channels.Channel
+	provider                 *providers.Provider
+	config_encrypted         *string
+	preset                   *string
+	params_encrypted         *string
+	ingest_key               *string
+	enabled                  *bool
+	is_default               *bool
+	max_per_second           *int
+	addmax_per_second        *int
+	max_per_day              *int
+	addmax_per_day           *int
+	clearedFields            map[string]struct{}
+	workspace                *int64
+	clearedworkspace         bool
+	provider_limiter         *int64
+	clearedprovider_limiter  bool
+	provider_state           *int64
+	clearedprovider_state    bool
+	captured_messages        map[int64]struct{}
+	removedcaptured_messages map[int64]struct{}
+	clearedcaptured_messages bool
+	bindings                 map[int64]struct{}
+	removedbindings          map[int64]struct{}
+	clearedbindings          bool
+	start_tokens             map[int64]struct{}
+	removedstart_tokens      map[int64]struct{}
+	clearedstart_tokens      bool
+	done                     bool
+	oldValue                 func(context.Context) (*Integration, error)
+	predicates               []predicate.Integration
 }
 
 var _ ent.Mutation = (*IntegrationMutation)(nil)
@@ -33101,378 +33100,6 @@ func (m *IntegrationMutation) ResetMaxPerDay() {
 	delete(m.clearedFields, integration.FieldMaxPerDay)
 }
 
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (m *IntegrationMutation) SetProviderMaxPerSecond(i int) {
-	m.provider_max_per_second = &i
-	m.addprovider_max_per_second = nil
-}
-
-// ProviderMaxPerSecond returns the value of the "provider_max_per_second" field in the mutation.
-func (m *IntegrationMutation) ProviderMaxPerSecond() (r int, exists bool) {
-	v := m.provider_max_per_second
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderMaxPerSecond returns the old "provider_max_per_second" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderMaxPerSecond(ctx context.Context) (v *int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderMaxPerSecond is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderMaxPerSecond requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderMaxPerSecond: %w", err)
-	}
-	return oldValue.ProviderMaxPerSecond, nil
-}
-
-// AddProviderMaxPerSecond adds i to the "provider_max_per_second" field.
-func (m *IntegrationMutation) AddProviderMaxPerSecond(i int) {
-	if m.addprovider_max_per_second != nil {
-		*m.addprovider_max_per_second += i
-	} else {
-		m.addprovider_max_per_second = &i
-	}
-}
-
-// AddedProviderMaxPerSecond returns the value that was added to the "provider_max_per_second" field in this mutation.
-func (m *IntegrationMutation) AddedProviderMaxPerSecond() (r int, exists bool) {
-	v := m.addprovider_max_per_second
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
-func (m *IntegrationMutation) ClearProviderMaxPerSecond() {
-	m.provider_max_per_second = nil
-	m.addprovider_max_per_second = nil
-	m.clearedFields[integration.FieldProviderMaxPerSecond] = struct{}{}
-}
-
-// ProviderMaxPerSecondCleared returns if the "provider_max_per_second" field was cleared in this mutation.
-func (m *IntegrationMutation) ProviderMaxPerSecondCleared() bool {
-	_, ok := m.clearedFields[integration.FieldProviderMaxPerSecond]
-	return ok
-}
-
-// ResetProviderMaxPerSecond resets all changes to the "provider_max_per_second" field.
-func (m *IntegrationMutation) ResetProviderMaxPerSecond() {
-	m.provider_max_per_second = nil
-	m.addprovider_max_per_second = nil
-	delete(m.clearedFields, integration.FieldProviderMaxPerSecond)
-}
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (m *IntegrationMutation) SetProviderMaxPerDay(i int) {
-	m.provider_max_per_day = &i
-	m.addprovider_max_per_day = nil
-}
-
-// ProviderMaxPerDay returns the value of the "provider_max_per_day" field in the mutation.
-func (m *IntegrationMutation) ProviderMaxPerDay() (r int, exists bool) {
-	v := m.provider_max_per_day
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderMaxPerDay returns the old "provider_max_per_day" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderMaxPerDay(ctx context.Context) (v *int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderMaxPerDay is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderMaxPerDay requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderMaxPerDay: %w", err)
-	}
-	return oldValue.ProviderMaxPerDay, nil
-}
-
-// AddProviderMaxPerDay adds i to the "provider_max_per_day" field.
-func (m *IntegrationMutation) AddProviderMaxPerDay(i int) {
-	if m.addprovider_max_per_day != nil {
-		*m.addprovider_max_per_day += i
-	} else {
-		m.addprovider_max_per_day = &i
-	}
-}
-
-// AddedProviderMaxPerDay returns the value that was added to the "provider_max_per_day" field in this mutation.
-func (m *IntegrationMutation) AddedProviderMaxPerDay() (r int, exists bool) {
-	v := m.addprovider_max_per_day
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
-func (m *IntegrationMutation) ClearProviderMaxPerDay() {
-	m.provider_max_per_day = nil
-	m.addprovider_max_per_day = nil
-	m.clearedFields[integration.FieldProviderMaxPerDay] = struct{}{}
-}
-
-// ProviderMaxPerDayCleared returns if the "provider_max_per_day" field was cleared in this mutation.
-func (m *IntegrationMutation) ProviderMaxPerDayCleared() bool {
-	_, ok := m.clearedFields[integration.FieldProviderMaxPerDay]
-	return ok
-}
-
-// ResetProviderMaxPerDay resets all changes to the "provider_max_per_day" field.
-func (m *IntegrationMutation) ResetProviderMaxPerDay() {
-	m.provider_max_per_day = nil
-	m.addprovider_max_per_day = nil
-	delete(m.clearedFields, integration.FieldProviderMaxPerDay)
-}
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (m *IntegrationMutation) SetProviderEnforcement(pr providers.Enforcement) {
-	m.provider_enforcement = &pr
-}
-
-// ProviderEnforcement returns the value of the "provider_enforcement" field in the mutation.
-func (m *IntegrationMutation) ProviderEnforcement() (r providers.Enforcement, exists bool) {
-	v := m.provider_enforcement
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderEnforcement returns the old "provider_enforcement" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderEnforcement(ctx context.Context) (v *providers.Enforcement, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderEnforcement is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderEnforcement requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderEnforcement: %w", err)
-	}
-	return oldValue.ProviderEnforcement, nil
-}
-
-// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
-func (m *IntegrationMutation) ClearProviderEnforcement() {
-	m.provider_enforcement = nil
-	m.clearedFields[integration.FieldProviderEnforcement] = struct{}{}
-}
-
-// ProviderEnforcementCleared returns if the "provider_enforcement" field was cleared in this mutation.
-func (m *IntegrationMutation) ProviderEnforcementCleared() bool {
-	_, ok := m.clearedFields[integration.FieldProviderEnforcement]
-	return ok
-}
-
-// ResetProviderEnforcement resets all changes to the "provider_enforcement" field.
-func (m *IntegrationMutation) ResetProviderEnforcement() {
-	m.provider_enforcement = nil
-	delete(m.clearedFields, integration.FieldProviderEnforcement)
-}
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (m *IntegrationMutation) SetProviderSandbox(b bool) {
-	m.provider_sandbox = &b
-}
-
-// ProviderSandbox returns the value of the "provider_sandbox" field in the mutation.
-func (m *IntegrationMutation) ProviderSandbox() (r bool, exists bool) {
-	v := m.provider_sandbox
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderSandbox returns the old "provider_sandbox" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderSandbox(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderSandbox is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderSandbox requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderSandbox: %w", err)
-	}
-	return oldValue.ProviderSandbox, nil
-}
-
-// ResetProviderSandbox resets all changes to the "provider_sandbox" field.
-func (m *IntegrationMutation) ResetProviderSandbox() {
-	m.provider_sandbox = nil
-}
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (m *IntegrationMutation) SetProviderRefusedAt(t time.Time) {
-	m.provider_refused_at = &t
-}
-
-// ProviderRefusedAt returns the value of the "provider_refused_at" field in the mutation.
-func (m *IntegrationMutation) ProviderRefusedAt() (r time.Time, exists bool) {
-	v := m.provider_refused_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderRefusedAt returns the old "provider_refused_at" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderRefusedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderRefusedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderRefusedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderRefusedAt: %w", err)
-	}
-	return oldValue.ProviderRefusedAt, nil
-}
-
-// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
-func (m *IntegrationMutation) ClearProviderRefusedAt() {
-	m.provider_refused_at = nil
-	m.clearedFields[integration.FieldProviderRefusedAt] = struct{}{}
-}
-
-// ProviderRefusedAtCleared returns if the "provider_refused_at" field was cleared in this mutation.
-func (m *IntegrationMutation) ProviderRefusedAtCleared() bool {
-	_, ok := m.clearedFields[integration.FieldProviderRefusedAt]
-	return ok
-}
-
-// ResetProviderRefusedAt resets all changes to the "provider_refused_at" field.
-func (m *IntegrationMutation) ResetProviderRefusedAt() {
-	m.provider_refused_at = nil
-	delete(m.clearedFields, integration.FieldProviderRefusedAt)
-}
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (m *IntegrationMutation) SetProviderQuotaCheckedAt(t time.Time) {
-	m.provider_quota_checked_at = &t
-}
-
-// ProviderQuotaCheckedAt returns the value of the "provider_quota_checked_at" field in the mutation.
-func (m *IntegrationMutation) ProviderQuotaCheckedAt() (r time.Time, exists bool) {
-	v := m.provider_quota_checked_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderQuotaCheckedAt returns the old "provider_quota_checked_at" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderQuotaCheckedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderQuotaCheckedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderQuotaCheckedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderQuotaCheckedAt: %w", err)
-	}
-	return oldValue.ProviderQuotaCheckedAt, nil
-}
-
-// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
-func (m *IntegrationMutation) ClearProviderQuotaCheckedAt() {
-	m.provider_quota_checked_at = nil
-	m.clearedFields[integration.FieldProviderQuotaCheckedAt] = struct{}{}
-}
-
-// ProviderQuotaCheckedAtCleared returns if the "provider_quota_checked_at" field was cleared in this mutation.
-func (m *IntegrationMutation) ProviderQuotaCheckedAtCleared() bool {
-	_, ok := m.clearedFields[integration.FieldProviderQuotaCheckedAt]
-	return ok
-}
-
-// ResetProviderQuotaCheckedAt resets all changes to the "provider_quota_checked_at" field.
-func (m *IntegrationMutation) ResetProviderQuotaCheckedAt() {
-	m.provider_quota_checked_at = nil
-	delete(m.clearedFields, integration.FieldProviderQuotaCheckedAt)
-}
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (m *IntegrationMutation) SetProviderQuotaFailedAt(t time.Time) {
-	m.provider_quota_failed_at = &t
-}
-
-// ProviderQuotaFailedAt returns the value of the "provider_quota_failed_at" field in the mutation.
-func (m *IntegrationMutation) ProviderQuotaFailedAt() (r time.Time, exists bool) {
-	v := m.provider_quota_failed_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldProviderQuotaFailedAt returns the old "provider_quota_failed_at" field's value of the Integration entity.
-// If the Integration object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *IntegrationMutation) OldProviderQuotaFailedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldProviderQuotaFailedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldProviderQuotaFailedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldProviderQuotaFailedAt: %w", err)
-	}
-	return oldValue.ProviderQuotaFailedAt, nil
-}
-
-// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
-func (m *IntegrationMutation) ClearProviderQuotaFailedAt() {
-	m.provider_quota_failed_at = nil
-	m.clearedFields[integration.FieldProviderQuotaFailedAt] = struct{}{}
-}
-
-// ProviderQuotaFailedAtCleared returns if the "provider_quota_failed_at" field was cleared in this mutation.
-func (m *IntegrationMutation) ProviderQuotaFailedAtCleared() bool {
-	_, ok := m.clearedFields[integration.FieldProviderQuotaFailedAt]
-	return ok
-}
-
-// ResetProviderQuotaFailedAt resets all changes to the "provider_quota_failed_at" field.
-func (m *IntegrationMutation) ResetProviderQuotaFailedAt() {
-	m.provider_quota_failed_at = nil
-	delete(m.clearedFields, integration.FieldProviderQuotaFailedAt)
-}
-
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
 func (m *IntegrationMutation) ClearWorkspace() {
 	m.clearedworkspace = true
@@ -33537,6 +33164,45 @@ func (m *IntegrationMutation) ProviderLimiterIDs() (ids []int64) {
 func (m *IntegrationMutation) ResetProviderLimiter() {
 	m.provider_limiter = nil
 	m.clearedprovider_limiter = false
+}
+
+// SetProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by id.
+func (m *IntegrationMutation) SetProviderStateID(id int64) {
+	m.provider_state = &id
+}
+
+// ClearProviderState clears the "provider_state" edge to the IntegrationProviderState entity.
+func (m *IntegrationMutation) ClearProviderState() {
+	m.clearedprovider_state = true
+}
+
+// ProviderStateCleared reports if the "provider_state" edge to the IntegrationProviderState entity was cleared.
+func (m *IntegrationMutation) ProviderStateCleared() bool {
+	return m.clearedprovider_state
+}
+
+// ProviderStateID returns the "provider_state" edge ID in the mutation.
+func (m *IntegrationMutation) ProviderStateID() (id int64, exists bool) {
+	if m.provider_state != nil {
+		return *m.provider_state, true
+	}
+	return
+}
+
+// ProviderStateIDs returns the "provider_state" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProviderStateID instead. It exists only for internal usage by the builders.
+func (m *IntegrationMutation) ProviderStateIDs() (ids []int64) {
+	if id := m.provider_state; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProviderState resets all changes to the "provider_state" edge.
+func (m *IntegrationMutation) ResetProviderState() {
+	m.provider_state = nil
+	m.clearedprovider_state = false
 }
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by ids.
@@ -33735,7 +33401,7 @@ func (m *IntegrationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IntegrationMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, integration.FieldCreatedAt)
 	}
@@ -33784,27 +33450,6 @@ func (m *IntegrationMutation) Fields() []string {
 	if m.max_per_day != nil {
 		fields = append(fields, integration.FieldMaxPerDay)
 	}
-	if m.provider_max_per_second != nil {
-		fields = append(fields, integration.FieldProviderMaxPerSecond)
-	}
-	if m.provider_max_per_day != nil {
-		fields = append(fields, integration.FieldProviderMaxPerDay)
-	}
-	if m.provider_enforcement != nil {
-		fields = append(fields, integration.FieldProviderEnforcement)
-	}
-	if m.provider_sandbox != nil {
-		fields = append(fields, integration.FieldProviderSandbox)
-	}
-	if m.provider_refused_at != nil {
-		fields = append(fields, integration.FieldProviderRefusedAt)
-	}
-	if m.provider_quota_checked_at != nil {
-		fields = append(fields, integration.FieldProviderQuotaCheckedAt)
-	}
-	if m.provider_quota_failed_at != nil {
-		fields = append(fields, integration.FieldProviderQuotaFailedAt)
-	}
 	return fields
 }
 
@@ -33845,20 +33490,6 @@ func (m *IntegrationMutation) Field(name string) (ent.Value, bool) {
 		return m.MaxPerSecond()
 	case integration.FieldMaxPerDay:
 		return m.MaxPerDay()
-	case integration.FieldProviderMaxPerSecond:
-		return m.ProviderMaxPerSecond()
-	case integration.FieldProviderMaxPerDay:
-		return m.ProviderMaxPerDay()
-	case integration.FieldProviderEnforcement:
-		return m.ProviderEnforcement()
-	case integration.FieldProviderSandbox:
-		return m.ProviderSandbox()
-	case integration.FieldProviderRefusedAt:
-		return m.ProviderRefusedAt()
-	case integration.FieldProviderQuotaCheckedAt:
-		return m.ProviderQuotaCheckedAt()
-	case integration.FieldProviderQuotaFailedAt:
-		return m.ProviderQuotaFailedAt()
 	}
 	return nil, false
 }
@@ -33900,20 +33531,6 @@ func (m *IntegrationMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldMaxPerSecond(ctx)
 	case integration.FieldMaxPerDay:
 		return m.OldMaxPerDay(ctx)
-	case integration.FieldProviderMaxPerSecond:
-		return m.OldProviderMaxPerSecond(ctx)
-	case integration.FieldProviderMaxPerDay:
-		return m.OldProviderMaxPerDay(ctx)
-	case integration.FieldProviderEnforcement:
-		return m.OldProviderEnforcement(ctx)
-	case integration.FieldProviderSandbox:
-		return m.OldProviderSandbox(ctx)
-	case integration.FieldProviderRefusedAt:
-		return m.OldProviderRefusedAt(ctx)
-	case integration.FieldProviderQuotaCheckedAt:
-		return m.OldProviderQuotaCheckedAt(ctx)
-	case integration.FieldProviderQuotaFailedAt:
-		return m.OldProviderQuotaFailedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Integration field %s", name)
 }
@@ -34035,55 +33652,6 @@ func (m *IntegrationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMaxPerDay(v)
 		return nil
-	case integration.FieldProviderMaxPerSecond:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderMaxPerSecond(v)
-		return nil
-	case integration.FieldProviderMaxPerDay:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderMaxPerDay(v)
-		return nil
-	case integration.FieldProviderEnforcement:
-		v, ok := value.(providers.Enforcement)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderEnforcement(v)
-		return nil
-	case integration.FieldProviderSandbox:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderSandbox(v)
-		return nil
-	case integration.FieldProviderRefusedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderRefusedAt(v)
-		return nil
-	case integration.FieldProviderQuotaCheckedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderQuotaCheckedAt(v)
-		return nil
-	case integration.FieldProviderQuotaFailedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetProviderQuotaFailedAt(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Integration field %s", name)
 }
@@ -34101,12 +33669,6 @@ func (m *IntegrationMutation) AddedFields() []string {
 	if m.addmax_per_day != nil {
 		fields = append(fields, integration.FieldMaxPerDay)
 	}
-	if m.addprovider_max_per_second != nil {
-		fields = append(fields, integration.FieldProviderMaxPerSecond)
-	}
-	if m.addprovider_max_per_day != nil {
-		fields = append(fields, integration.FieldProviderMaxPerDay)
-	}
 	return fields
 }
 
@@ -34121,10 +33683,6 @@ func (m *IntegrationMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedMaxPerSecond()
 	case integration.FieldMaxPerDay:
 		return m.AddedMaxPerDay()
-	case integration.FieldProviderMaxPerSecond:
-		return m.AddedProviderMaxPerSecond()
-	case integration.FieldProviderMaxPerDay:
-		return m.AddedProviderMaxPerDay()
 	}
 	return nil, false
 }
@@ -34155,20 +33713,6 @@ func (m *IntegrationMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddMaxPerDay(v)
 		return nil
-	case integration.FieldProviderMaxPerSecond:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddProviderMaxPerSecond(v)
-		return nil
-	case integration.FieldProviderMaxPerDay:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddProviderMaxPerDay(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Integration numeric field %s", name)
 }
@@ -34191,24 +33735,6 @@ func (m *IntegrationMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(integration.FieldMaxPerDay) {
 		fields = append(fields, integration.FieldMaxPerDay)
-	}
-	if m.FieldCleared(integration.FieldProviderMaxPerSecond) {
-		fields = append(fields, integration.FieldProviderMaxPerSecond)
-	}
-	if m.FieldCleared(integration.FieldProviderMaxPerDay) {
-		fields = append(fields, integration.FieldProviderMaxPerDay)
-	}
-	if m.FieldCleared(integration.FieldProviderEnforcement) {
-		fields = append(fields, integration.FieldProviderEnforcement)
-	}
-	if m.FieldCleared(integration.FieldProviderRefusedAt) {
-		fields = append(fields, integration.FieldProviderRefusedAt)
-	}
-	if m.FieldCleared(integration.FieldProviderQuotaCheckedAt) {
-		fields = append(fields, integration.FieldProviderQuotaCheckedAt)
-	}
-	if m.FieldCleared(integration.FieldProviderQuotaFailedAt) {
-		fields = append(fields, integration.FieldProviderQuotaFailedAt)
 	}
 	return fields
 }
@@ -34238,24 +33764,6 @@ func (m *IntegrationMutation) ClearField(name string) error {
 		return nil
 	case integration.FieldMaxPerDay:
 		m.ClearMaxPerDay()
-		return nil
-	case integration.FieldProviderMaxPerSecond:
-		m.ClearProviderMaxPerSecond()
-		return nil
-	case integration.FieldProviderMaxPerDay:
-		m.ClearProviderMaxPerDay()
-		return nil
-	case integration.FieldProviderEnforcement:
-		m.ClearProviderEnforcement()
-		return nil
-	case integration.FieldProviderRefusedAt:
-		m.ClearProviderRefusedAt()
-		return nil
-	case integration.FieldProviderQuotaCheckedAt:
-		m.ClearProviderQuotaCheckedAt()
-		return nil
-	case integration.FieldProviderQuotaFailedAt:
-		m.ClearProviderQuotaFailedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Integration nullable field %s", name)
@@ -34313,39 +33821,21 @@ func (m *IntegrationMutation) ResetField(name string) error {
 	case integration.FieldMaxPerDay:
 		m.ResetMaxPerDay()
 		return nil
-	case integration.FieldProviderMaxPerSecond:
-		m.ResetProviderMaxPerSecond()
-		return nil
-	case integration.FieldProviderMaxPerDay:
-		m.ResetProviderMaxPerDay()
-		return nil
-	case integration.FieldProviderEnforcement:
-		m.ResetProviderEnforcement()
-		return nil
-	case integration.FieldProviderSandbox:
-		m.ResetProviderSandbox()
-		return nil
-	case integration.FieldProviderRefusedAt:
-		m.ResetProviderRefusedAt()
-		return nil
-	case integration.FieldProviderQuotaCheckedAt:
-		m.ResetProviderQuotaCheckedAt()
-		return nil
-	case integration.FieldProviderQuotaFailedAt:
-		m.ResetProviderQuotaFailedAt()
-		return nil
 	}
 	return fmt.Errorf("unknown Integration field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *IntegrationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.workspace != nil {
 		edges = append(edges, integration.EdgeWorkspace)
 	}
 	if m.provider_limiter != nil {
 		edges = append(edges, integration.EdgeProviderLimiter)
+	}
+	if m.provider_state != nil {
+		edges = append(edges, integration.EdgeProviderState)
 	}
 	if m.captured_messages != nil {
 		edges = append(edges, integration.EdgeCapturedMessages)
@@ -34369,6 +33859,10 @@ func (m *IntegrationMutation) AddedIDs(name string) []ent.Value {
 		}
 	case integration.EdgeProviderLimiter:
 		if id := m.provider_limiter; id != nil {
+			return []ent.Value{*id}
+		}
+	case integration.EdgeProviderState:
+		if id := m.provider_state; id != nil {
 			return []ent.Value{*id}
 		}
 	case integration.EdgeCapturedMessages:
@@ -34395,7 +33889,7 @@ func (m *IntegrationMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *IntegrationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedcaptured_messages != nil {
 		edges = append(edges, integration.EdgeCapturedMessages)
 	}
@@ -34436,12 +33930,15 @@ func (m *IntegrationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *IntegrationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedworkspace {
 		edges = append(edges, integration.EdgeWorkspace)
 	}
 	if m.clearedprovider_limiter {
 		edges = append(edges, integration.EdgeProviderLimiter)
+	}
+	if m.clearedprovider_state {
+		edges = append(edges, integration.EdgeProviderState)
 	}
 	if m.clearedcaptured_messages {
 		edges = append(edges, integration.EdgeCapturedMessages)
@@ -34463,6 +33960,8 @@ func (m *IntegrationMutation) EdgeCleared(name string) bool {
 		return m.clearedworkspace
 	case integration.EdgeProviderLimiter:
 		return m.clearedprovider_limiter
+	case integration.EdgeProviderState:
+		return m.clearedprovider_state
 	case integration.EdgeCapturedMessages:
 		return m.clearedcaptured_messages
 	case integration.EdgeBindings:
@@ -34483,6 +33982,9 @@ func (m *IntegrationMutation) ClearEdge(name string) error {
 	case integration.EdgeProviderLimiter:
 		m.ClearProviderLimiter()
 		return nil
+	case integration.EdgeProviderState:
+		m.ClearProviderState()
+		return nil
 	}
 	return fmt.Errorf("unknown Integration unique edge %s", name)
 }
@@ -34497,6 +33999,9 @@ func (m *IntegrationMutation) ResetEdge(name string) error {
 	case integration.EdgeProviderLimiter:
 		m.ResetProviderLimiter()
 		return nil
+	case integration.EdgeProviderState:
+		m.ResetProviderState()
+		return nil
 	case integration.EdgeCapturedMessages:
 		m.ResetCapturedMessages()
 		return nil
@@ -34508,6 +34013,1166 @@ func (m *IntegrationMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Integration edge %s", name)
+}
+
+// IntegrationProviderStateMutation represents an operation that mutates the IntegrationProviderState nodes in the graph.
+type IntegrationProviderStateMutation struct {
+	config
+	op                         Op
+	typ                        string
+	id                         *int64
+	created_at                 *time.Time
+	updated_at                 *time.Time
+	provider_max_per_second    *int
+	addprovider_max_per_second *int
+	provider_max_per_day       *int
+	addprovider_max_per_day    *int
+	provider_enforcement       *providers.Enforcement
+	provider_sandbox           *bool
+	provider_refused_at        *time.Time
+	provider_quota_checked_at  *time.Time
+	provider_quota_failed_at   *time.Time
+	clearedFields              map[string]struct{}
+	workspace                  *int64
+	clearedworkspace           bool
+	integration                *int64
+	clearedintegration         bool
+	done                       bool
+	oldValue                   func(context.Context) (*IntegrationProviderState, error)
+	predicates                 []predicate.IntegrationProviderState
+}
+
+var _ ent.Mutation = (*IntegrationProviderStateMutation)(nil)
+
+// integrationproviderstateOption allows management of the mutation configuration using functional options.
+type integrationproviderstateOption func(*IntegrationProviderStateMutation)
+
+// newIntegrationProviderStateMutation creates new mutation for the IntegrationProviderState entity.
+func newIntegrationProviderStateMutation(c config, op Op, opts ...integrationproviderstateOption) *IntegrationProviderStateMutation {
+	m := &IntegrationProviderStateMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeIntegrationProviderState,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withIntegrationProviderStateID sets the ID field of the mutation.
+func withIntegrationProviderStateID(id int64) integrationproviderstateOption {
+	return func(m *IntegrationProviderStateMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *IntegrationProviderState
+		)
+		m.oldValue = func(ctx context.Context) (*IntegrationProviderState, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().IntegrationProviderState.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withIntegrationProviderState sets the old IntegrationProviderState of the mutation.
+func withIntegrationProviderState(node *IntegrationProviderState) integrationproviderstateOption {
+	return func(m *IntegrationProviderStateMutation) {
+		m.oldValue = func(context.Context) (*IntegrationProviderState, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m IntegrationProviderStateMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m IntegrationProviderStateMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of IntegrationProviderState entities.
+func (m *IntegrationProviderStateMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *IntegrationProviderStateMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *IntegrationProviderStateMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().IntegrationProviderState.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *IntegrationProviderStateMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *IntegrationProviderStateMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *IntegrationProviderStateMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *IntegrationProviderStateMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *IntegrationProviderStateMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *IntegrationProviderStateMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *IntegrationProviderStateMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *IntegrationProviderStateMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *IntegrationProviderStateMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetIntegrationID sets the "integration_id" field.
+func (m *IntegrationProviderStateMutation) SetIntegrationID(i int64) {
+	m.integration = &i
+}
+
+// IntegrationID returns the value of the "integration_id" field in the mutation.
+func (m *IntegrationProviderStateMutation) IntegrationID() (r int64, exists bool) {
+	v := m.integration
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntegrationID returns the old "integration_id" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldIntegrationID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIntegrationID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIntegrationID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntegrationID: %w", err)
+	}
+	return oldValue.IntegrationID, nil
+}
+
+// ResetIntegrationID resets all changes to the "integration_id" field.
+func (m *IntegrationProviderStateMutation) ResetIntegrationID() {
+	m.integration = nil
+}
+
+// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
+func (m *IntegrationProviderStateMutation) SetProviderMaxPerSecond(i int) {
+	m.provider_max_per_second = &i
+	m.addprovider_max_per_second = nil
+}
+
+// ProviderMaxPerSecond returns the value of the "provider_max_per_second" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderMaxPerSecond() (r int, exists bool) {
+	v := m.provider_max_per_second
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderMaxPerSecond returns the old "provider_max_per_second" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderMaxPerSecond(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderMaxPerSecond is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderMaxPerSecond requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderMaxPerSecond: %w", err)
+	}
+	return oldValue.ProviderMaxPerSecond, nil
+}
+
+// AddProviderMaxPerSecond adds i to the "provider_max_per_second" field.
+func (m *IntegrationProviderStateMutation) AddProviderMaxPerSecond(i int) {
+	if m.addprovider_max_per_second != nil {
+		*m.addprovider_max_per_second += i
+	} else {
+		m.addprovider_max_per_second = &i
+	}
+}
+
+// AddedProviderMaxPerSecond returns the value that was added to the "provider_max_per_second" field in this mutation.
+func (m *IntegrationProviderStateMutation) AddedProviderMaxPerSecond() (r int, exists bool) {
+	v := m.addprovider_max_per_second
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
+func (m *IntegrationProviderStateMutation) ClearProviderMaxPerSecond() {
+	m.provider_max_per_second = nil
+	m.addprovider_max_per_second = nil
+	m.clearedFields[integrationproviderstate.FieldProviderMaxPerSecond] = struct{}{}
+}
+
+// ProviderMaxPerSecondCleared returns if the "provider_max_per_second" field was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ProviderMaxPerSecondCleared() bool {
+	_, ok := m.clearedFields[integrationproviderstate.FieldProviderMaxPerSecond]
+	return ok
+}
+
+// ResetProviderMaxPerSecond resets all changes to the "provider_max_per_second" field.
+func (m *IntegrationProviderStateMutation) ResetProviderMaxPerSecond() {
+	m.provider_max_per_second = nil
+	m.addprovider_max_per_second = nil
+	delete(m.clearedFields, integrationproviderstate.FieldProviderMaxPerSecond)
+}
+
+// SetProviderMaxPerDay sets the "provider_max_per_day" field.
+func (m *IntegrationProviderStateMutation) SetProviderMaxPerDay(i int) {
+	m.provider_max_per_day = &i
+	m.addprovider_max_per_day = nil
+}
+
+// ProviderMaxPerDay returns the value of the "provider_max_per_day" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderMaxPerDay() (r int, exists bool) {
+	v := m.provider_max_per_day
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderMaxPerDay returns the old "provider_max_per_day" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderMaxPerDay(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderMaxPerDay is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderMaxPerDay requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderMaxPerDay: %w", err)
+	}
+	return oldValue.ProviderMaxPerDay, nil
+}
+
+// AddProviderMaxPerDay adds i to the "provider_max_per_day" field.
+func (m *IntegrationProviderStateMutation) AddProviderMaxPerDay(i int) {
+	if m.addprovider_max_per_day != nil {
+		*m.addprovider_max_per_day += i
+	} else {
+		m.addprovider_max_per_day = &i
+	}
+}
+
+// AddedProviderMaxPerDay returns the value that was added to the "provider_max_per_day" field in this mutation.
+func (m *IntegrationProviderStateMutation) AddedProviderMaxPerDay() (r int, exists bool) {
+	v := m.addprovider_max_per_day
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
+func (m *IntegrationProviderStateMutation) ClearProviderMaxPerDay() {
+	m.provider_max_per_day = nil
+	m.addprovider_max_per_day = nil
+	m.clearedFields[integrationproviderstate.FieldProviderMaxPerDay] = struct{}{}
+}
+
+// ProviderMaxPerDayCleared returns if the "provider_max_per_day" field was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ProviderMaxPerDayCleared() bool {
+	_, ok := m.clearedFields[integrationproviderstate.FieldProviderMaxPerDay]
+	return ok
+}
+
+// ResetProviderMaxPerDay resets all changes to the "provider_max_per_day" field.
+func (m *IntegrationProviderStateMutation) ResetProviderMaxPerDay() {
+	m.provider_max_per_day = nil
+	m.addprovider_max_per_day = nil
+	delete(m.clearedFields, integrationproviderstate.FieldProviderMaxPerDay)
+}
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (m *IntegrationProviderStateMutation) SetProviderEnforcement(pr providers.Enforcement) {
+	m.provider_enforcement = &pr
+}
+
+// ProviderEnforcement returns the value of the "provider_enforcement" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderEnforcement() (r providers.Enforcement, exists bool) {
+	v := m.provider_enforcement
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderEnforcement returns the old "provider_enforcement" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderEnforcement(ctx context.Context) (v *providers.Enforcement, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderEnforcement is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderEnforcement requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderEnforcement: %w", err)
+	}
+	return oldValue.ProviderEnforcement, nil
+}
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (m *IntegrationProviderStateMutation) ClearProviderEnforcement() {
+	m.provider_enforcement = nil
+	m.clearedFields[integrationproviderstate.FieldProviderEnforcement] = struct{}{}
+}
+
+// ProviderEnforcementCleared returns if the "provider_enforcement" field was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ProviderEnforcementCleared() bool {
+	_, ok := m.clearedFields[integrationproviderstate.FieldProviderEnforcement]
+	return ok
+}
+
+// ResetProviderEnforcement resets all changes to the "provider_enforcement" field.
+func (m *IntegrationProviderStateMutation) ResetProviderEnforcement() {
+	m.provider_enforcement = nil
+	delete(m.clearedFields, integrationproviderstate.FieldProviderEnforcement)
+}
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (m *IntegrationProviderStateMutation) SetProviderSandbox(b bool) {
+	m.provider_sandbox = &b
+}
+
+// ProviderSandbox returns the value of the "provider_sandbox" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderSandbox() (r bool, exists bool) {
+	v := m.provider_sandbox
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderSandbox returns the old "provider_sandbox" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderSandbox(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderSandbox is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderSandbox requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderSandbox: %w", err)
+	}
+	return oldValue.ProviderSandbox, nil
+}
+
+// ResetProviderSandbox resets all changes to the "provider_sandbox" field.
+func (m *IntegrationProviderStateMutation) ResetProviderSandbox() {
+	m.provider_sandbox = nil
+}
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (m *IntegrationProviderStateMutation) SetProviderRefusedAt(t time.Time) {
+	m.provider_refused_at = &t
+}
+
+// ProviderRefusedAt returns the value of the "provider_refused_at" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderRefusedAt() (r time.Time, exists bool) {
+	v := m.provider_refused_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderRefusedAt returns the old "provider_refused_at" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderRefusedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderRefusedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderRefusedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderRefusedAt: %w", err)
+	}
+	return oldValue.ProviderRefusedAt, nil
+}
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (m *IntegrationProviderStateMutation) ClearProviderRefusedAt() {
+	m.provider_refused_at = nil
+	m.clearedFields[integrationproviderstate.FieldProviderRefusedAt] = struct{}{}
+}
+
+// ProviderRefusedAtCleared returns if the "provider_refused_at" field was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ProviderRefusedAtCleared() bool {
+	_, ok := m.clearedFields[integrationproviderstate.FieldProviderRefusedAt]
+	return ok
+}
+
+// ResetProviderRefusedAt resets all changes to the "provider_refused_at" field.
+func (m *IntegrationProviderStateMutation) ResetProviderRefusedAt() {
+	m.provider_refused_at = nil
+	delete(m.clearedFields, integrationproviderstate.FieldProviderRefusedAt)
+}
+
+// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
+func (m *IntegrationProviderStateMutation) SetProviderQuotaCheckedAt(t time.Time) {
+	m.provider_quota_checked_at = &t
+}
+
+// ProviderQuotaCheckedAt returns the value of the "provider_quota_checked_at" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderQuotaCheckedAt() (r time.Time, exists bool) {
+	v := m.provider_quota_checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderQuotaCheckedAt returns the old "provider_quota_checked_at" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderQuotaCheckedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderQuotaCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderQuotaCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderQuotaCheckedAt: %w", err)
+	}
+	return oldValue.ProviderQuotaCheckedAt, nil
+}
+
+// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
+func (m *IntegrationProviderStateMutation) ClearProviderQuotaCheckedAt() {
+	m.provider_quota_checked_at = nil
+	m.clearedFields[integrationproviderstate.FieldProviderQuotaCheckedAt] = struct{}{}
+}
+
+// ProviderQuotaCheckedAtCleared returns if the "provider_quota_checked_at" field was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ProviderQuotaCheckedAtCleared() bool {
+	_, ok := m.clearedFields[integrationproviderstate.FieldProviderQuotaCheckedAt]
+	return ok
+}
+
+// ResetProviderQuotaCheckedAt resets all changes to the "provider_quota_checked_at" field.
+func (m *IntegrationProviderStateMutation) ResetProviderQuotaCheckedAt() {
+	m.provider_quota_checked_at = nil
+	delete(m.clearedFields, integrationproviderstate.FieldProviderQuotaCheckedAt)
+}
+
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (m *IntegrationProviderStateMutation) SetProviderQuotaFailedAt(t time.Time) {
+	m.provider_quota_failed_at = &t
+}
+
+// ProviderQuotaFailedAt returns the value of the "provider_quota_failed_at" field in the mutation.
+func (m *IntegrationProviderStateMutation) ProviderQuotaFailedAt() (r time.Time, exists bool) {
+	v := m.provider_quota_failed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderQuotaFailedAt returns the old "provider_quota_failed_at" field's value of the IntegrationProviderState entity.
+// If the IntegrationProviderState object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IntegrationProviderStateMutation) OldProviderQuotaFailedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderQuotaFailedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderQuotaFailedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderQuotaFailedAt: %w", err)
+	}
+	return oldValue.ProviderQuotaFailedAt, nil
+}
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (m *IntegrationProviderStateMutation) ClearProviderQuotaFailedAt() {
+	m.provider_quota_failed_at = nil
+	m.clearedFields[integrationproviderstate.FieldProviderQuotaFailedAt] = struct{}{}
+}
+
+// ProviderQuotaFailedAtCleared returns if the "provider_quota_failed_at" field was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ProviderQuotaFailedAtCleared() bool {
+	_, ok := m.clearedFields[integrationproviderstate.FieldProviderQuotaFailedAt]
+	return ok
+}
+
+// ResetProviderQuotaFailedAt resets all changes to the "provider_quota_failed_at" field.
+func (m *IntegrationProviderStateMutation) ResetProviderQuotaFailedAt() {
+	m.provider_quota_failed_at = nil
+	delete(m.clearedFields, integrationproviderstate.FieldProviderQuotaFailedAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *IntegrationProviderStateMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[integrationproviderstate.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *IntegrationProviderStateMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *IntegrationProviderStateMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *IntegrationProviderStateMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearIntegration clears the "integration" edge to the Integration entity.
+func (m *IntegrationProviderStateMutation) ClearIntegration() {
+	m.clearedintegration = true
+	m.clearedFields[integrationproviderstate.FieldIntegrationID] = struct{}{}
+}
+
+// IntegrationCleared reports if the "integration" edge to the Integration entity was cleared.
+func (m *IntegrationProviderStateMutation) IntegrationCleared() bool {
+	return m.clearedintegration
+}
+
+// IntegrationIDs returns the "integration" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// IntegrationID instead. It exists only for internal usage by the builders.
+func (m *IntegrationProviderStateMutation) IntegrationIDs() (ids []int64) {
+	if id := m.integration; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetIntegration resets all changes to the "integration" edge.
+func (m *IntegrationProviderStateMutation) ResetIntegration() {
+	m.integration = nil
+	m.clearedintegration = false
+}
+
+// Where appends a list predicates to the IntegrationProviderStateMutation builder.
+func (m *IntegrationProviderStateMutation) Where(ps ...predicate.IntegrationProviderState) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the IntegrationProviderStateMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *IntegrationProviderStateMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.IntegrationProviderState, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *IntegrationProviderStateMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *IntegrationProviderStateMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (IntegrationProviderState).
+func (m *IntegrationProviderStateMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *IntegrationProviderStateMutation) Fields() []string {
+	fields := make([]string, 0, 11)
+	if m.created_at != nil {
+		fields = append(fields, integrationproviderstate.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, integrationproviderstate.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, integrationproviderstate.FieldWorkspaceID)
+	}
+	if m.integration != nil {
+		fields = append(fields, integrationproviderstate.FieldIntegrationID)
+	}
+	if m.provider_max_per_second != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderMaxPerSecond)
+	}
+	if m.provider_max_per_day != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderMaxPerDay)
+	}
+	if m.provider_enforcement != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderEnforcement)
+	}
+	if m.provider_sandbox != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderSandbox)
+	}
+	if m.provider_refused_at != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderRefusedAt)
+	}
+	if m.provider_quota_checked_at != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderQuotaCheckedAt)
+	}
+	if m.provider_quota_failed_at != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderQuotaFailedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *IntegrationProviderStateMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case integrationproviderstate.FieldCreatedAt:
+		return m.CreatedAt()
+	case integrationproviderstate.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case integrationproviderstate.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case integrationproviderstate.FieldIntegrationID:
+		return m.IntegrationID()
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		return m.ProviderMaxPerSecond()
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		return m.ProviderMaxPerDay()
+	case integrationproviderstate.FieldProviderEnforcement:
+		return m.ProviderEnforcement()
+	case integrationproviderstate.FieldProviderSandbox:
+		return m.ProviderSandbox()
+	case integrationproviderstate.FieldProviderRefusedAt:
+		return m.ProviderRefusedAt()
+	case integrationproviderstate.FieldProviderQuotaCheckedAt:
+		return m.ProviderQuotaCheckedAt()
+	case integrationproviderstate.FieldProviderQuotaFailedAt:
+		return m.ProviderQuotaFailedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *IntegrationProviderStateMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case integrationproviderstate.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case integrationproviderstate.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case integrationproviderstate.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case integrationproviderstate.FieldIntegrationID:
+		return m.OldIntegrationID(ctx)
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		return m.OldProviderMaxPerSecond(ctx)
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		return m.OldProviderMaxPerDay(ctx)
+	case integrationproviderstate.FieldProviderEnforcement:
+		return m.OldProviderEnforcement(ctx)
+	case integrationproviderstate.FieldProviderSandbox:
+		return m.OldProviderSandbox(ctx)
+	case integrationproviderstate.FieldProviderRefusedAt:
+		return m.OldProviderRefusedAt(ctx)
+	case integrationproviderstate.FieldProviderQuotaCheckedAt:
+		return m.OldProviderQuotaCheckedAt(ctx)
+	case integrationproviderstate.FieldProviderQuotaFailedAt:
+		return m.OldProviderQuotaFailedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown IntegrationProviderState field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *IntegrationProviderStateMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case integrationproviderstate.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case integrationproviderstate.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case integrationproviderstate.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case integrationproviderstate.FieldIntegrationID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntegrationID(v)
+		return nil
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderMaxPerSecond(v)
+		return nil
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderMaxPerDay(v)
+		return nil
+	case integrationproviderstate.FieldProviderEnforcement:
+		v, ok := value.(providers.Enforcement)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderEnforcement(v)
+		return nil
+	case integrationproviderstate.FieldProviderSandbox:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderSandbox(v)
+		return nil
+	case integrationproviderstate.FieldProviderRefusedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderRefusedAt(v)
+		return nil
+	case integrationproviderstate.FieldProviderQuotaCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderQuotaCheckedAt(v)
+		return nil
+	case integrationproviderstate.FieldProviderQuotaFailedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderQuotaFailedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown IntegrationProviderState field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *IntegrationProviderStateMutation) AddedFields() []string {
+	var fields []string
+	if m.addprovider_max_per_second != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderMaxPerSecond)
+	}
+	if m.addprovider_max_per_day != nil {
+		fields = append(fields, integrationproviderstate.FieldProviderMaxPerDay)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *IntegrationProviderStateMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		return m.AddedProviderMaxPerSecond()
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		return m.AddedProviderMaxPerDay()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *IntegrationProviderStateMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProviderMaxPerSecond(v)
+		return nil
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProviderMaxPerDay(v)
+		return nil
+	}
+	return fmt.Errorf("unknown IntegrationProviderState numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *IntegrationProviderStateMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(integrationproviderstate.FieldProviderMaxPerSecond) {
+		fields = append(fields, integrationproviderstate.FieldProviderMaxPerSecond)
+	}
+	if m.FieldCleared(integrationproviderstate.FieldProviderMaxPerDay) {
+		fields = append(fields, integrationproviderstate.FieldProviderMaxPerDay)
+	}
+	if m.FieldCleared(integrationproviderstate.FieldProviderEnforcement) {
+		fields = append(fields, integrationproviderstate.FieldProviderEnforcement)
+	}
+	if m.FieldCleared(integrationproviderstate.FieldProviderRefusedAt) {
+		fields = append(fields, integrationproviderstate.FieldProviderRefusedAt)
+	}
+	if m.FieldCleared(integrationproviderstate.FieldProviderQuotaCheckedAt) {
+		fields = append(fields, integrationproviderstate.FieldProviderQuotaCheckedAt)
+	}
+	if m.FieldCleared(integrationproviderstate.FieldProviderQuotaFailedAt) {
+		fields = append(fields, integrationproviderstate.FieldProviderQuotaFailedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *IntegrationProviderStateMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *IntegrationProviderStateMutation) ClearField(name string) error {
+	switch name {
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		m.ClearProviderMaxPerSecond()
+		return nil
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		m.ClearProviderMaxPerDay()
+		return nil
+	case integrationproviderstate.FieldProviderEnforcement:
+		m.ClearProviderEnforcement()
+		return nil
+	case integrationproviderstate.FieldProviderRefusedAt:
+		m.ClearProviderRefusedAt()
+		return nil
+	case integrationproviderstate.FieldProviderQuotaCheckedAt:
+		m.ClearProviderQuotaCheckedAt()
+		return nil
+	case integrationproviderstate.FieldProviderQuotaFailedAt:
+		m.ClearProviderQuotaFailedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown IntegrationProviderState nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *IntegrationProviderStateMutation) ResetField(name string) error {
+	switch name {
+	case integrationproviderstate.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case integrationproviderstate.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case integrationproviderstate.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case integrationproviderstate.FieldIntegrationID:
+		m.ResetIntegrationID()
+		return nil
+	case integrationproviderstate.FieldProviderMaxPerSecond:
+		m.ResetProviderMaxPerSecond()
+		return nil
+	case integrationproviderstate.FieldProviderMaxPerDay:
+		m.ResetProviderMaxPerDay()
+		return nil
+	case integrationproviderstate.FieldProviderEnforcement:
+		m.ResetProviderEnforcement()
+		return nil
+	case integrationproviderstate.FieldProviderSandbox:
+		m.ResetProviderSandbox()
+		return nil
+	case integrationproviderstate.FieldProviderRefusedAt:
+		m.ResetProviderRefusedAt()
+		return nil
+	case integrationproviderstate.FieldProviderQuotaCheckedAt:
+		m.ResetProviderQuotaCheckedAt()
+		return nil
+	case integrationproviderstate.FieldProviderQuotaFailedAt:
+		m.ResetProviderQuotaFailedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown IntegrationProviderState field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *IntegrationProviderStateMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, integrationproviderstate.EdgeWorkspace)
+	}
+	if m.integration != nil {
+		edges = append(edges, integrationproviderstate.EdgeIntegration)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *IntegrationProviderStateMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case integrationproviderstate.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case integrationproviderstate.EdgeIntegration:
+		if id := m.integration; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *IntegrationProviderStateMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *IntegrationProviderStateMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *IntegrationProviderStateMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, integrationproviderstate.EdgeWorkspace)
+	}
+	if m.clearedintegration {
+		edges = append(edges, integrationproviderstate.EdgeIntegration)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *IntegrationProviderStateMutation) EdgeCleared(name string) bool {
+	switch name {
+	case integrationproviderstate.EdgeWorkspace:
+		return m.clearedworkspace
+	case integrationproviderstate.EdgeIntegration:
+		return m.clearedintegration
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *IntegrationProviderStateMutation) ClearEdge(name string) error {
+	switch name {
+	case integrationproviderstate.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case integrationproviderstate.EdgeIntegration:
+		m.ClearIntegration()
+		return nil
+	}
+	return fmt.Errorf("unknown IntegrationProviderState unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *IntegrationProviderStateMutation) ResetEdge(name string) error {
+	switch name {
+	case integrationproviderstate.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case integrationproviderstate.EdgeIntegration:
+		m.ResetIntegration()
+		return nil
+	}
+	return fmt.Errorf("unknown IntegrationProviderState edge %s", name)
 }
 
 // InvitationMutation represents an operation that mutates the Invitation nodes in the graph.
@@ -72645,34 +73310,29 @@ func (m *VisitorMutation) ResetEdge(name string) error {
 // WebhookEndpointMutation represents an operation that mutates the WebhookEndpoint nodes in the graph.
 type WebhookEndpointMutation struct {
 	config
-	op                      Op
-	typ                     string
-	id                      *int64
-	created_at              *time.Time
-	updated_at              *time.Time
-	revision                *int64
-	addrevision             *int64
-	url                     *string
-	secret_encrypted        *string
-	event_types             *[]string
-	appendevent_types       []string
-	disabled_at             *time.Time
-	health_generation       *int64
-	addhealth_generation    *int64
-	consecutive_failures    *int
-	addconsecutive_failures *int
-	failing_since           *time.Time
-	last_error_kind         *webhook.ErrorKind
-	last_error_status       *int
-	addlast_error_status    *int
-	last_failure_at         *time.Time
-	disabled_reason         *webhookendpoint.DisabledReason
-	clearedFields           map[string]struct{}
-	workspace               *int64
-	clearedworkspace        bool
-	done                    bool
-	oldValue                func(context.Context) (*WebhookEndpoint, error)
-	predicates              []predicate.WebhookEndpoint
+	op                   Op
+	typ                  string
+	id                   *int64
+	created_at           *time.Time
+	updated_at           *time.Time
+	revision             *int64
+	addrevision          *int64
+	url                  *string
+	secret_encrypted     *string
+	event_types          *[]string
+	appendevent_types    []string
+	disabled_at          *time.Time
+	health_generation    *int64
+	addhealth_generation *int64
+	disabled_reason      *webhookendpoint.DisabledReason
+	clearedFields        map[string]struct{}
+	workspace            *int64
+	clearedworkspace     bool
+	health               *int64
+	clearedhealth        bool
+	done                 bool
+	oldValue             func(context.Context) (*WebhookEndpoint, error)
+	predicates           []predicate.WebhookEndpoint
 }
 
 var _ ent.Mutation = (*WebhookEndpointMutation)(nil)
@@ -73199,293 +73859,6 @@ func (m *WebhookEndpointMutation) ResetHealthGeneration() {
 	delete(m.clearedFields, webhookendpoint.FieldHealthGeneration)
 }
 
-// SetConsecutiveFailures sets the "consecutive_failures" field.
-func (m *WebhookEndpointMutation) SetConsecutiveFailures(i int) {
-	m.consecutive_failures = &i
-	m.addconsecutive_failures = nil
-}
-
-// ConsecutiveFailures returns the value of the "consecutive_failures" field in the mutation.
-func (m *WebhookEndpointMutation) ConsecutiveFailures() (r int, exists bool) {
-	v := m.consecutive_failures
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldConsecutiveFailures returns the old "consecutive_failures" field's value of the WebhookEndpoint entity.
-// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldConsecutiveFailures(ctx context.Context) (v *int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldConsecutiveFailures is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldConsecutiveFailures requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldConsecutiveFailures: %w", err)
-	}
-	return oldValue.ConsecutiveFailures, nil
-}
-
-// AddConsecutiveFailures adds i to the "consecutive_failures" field.
-func (m *WebhookEndpointMutation) AddConsecutiveFailures(i int) {
-	if m.addconsecutive_failures != nil {
-		*m.addconsecutive_failures += i
-	} else {
-		m.addconsecutive_failures = &i
-	}
-}
-
-// AddedConsecutiveFailures returns the value that was added to the "consecutive_failures" field in this mutation.
-func (m *WebhookEndpointMutation) AddedConsecutiveFailures() (r int, exists bool) {
-	v := m.addconsecutive_failures
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
-func (m *WebhookEndpointMutation) ClearConsecutiveFailures() {
-	m.consecutive_failures = nil
-	m.addconsecutive_failures = nil
-	m.clearedFields[webhookendpoint.FieldConsecutiveFailures] = struct{}{}
-}
-
-// ConsecutiveFailuresCleared returns if the "consecutive_failures" field was cleared in this mutation.
-func (m *WebhookEndpointMutation) ConsecutiveFailuresCleared() bool {
-	_, ok := m.clearedFields[webhookendpoint.FieldConsecutiveFailures]
-	return ok
-}
-
-// ResetConsecutiveFailures resets all changes to the "consecutive_failures" field.
-func (m *WebhookEndpointMutation) ResetConsecutiveFailures() {
-	m.consecutive_failures = nil
-	m.addconsecutive_failures = nil
-	delete(m.clearedFields, webhookendpoint.FieldConsecutiveFailures)
-}
-
-// SetFailingSince sets the "failing_since" field.
-func (m *WebhookEndpointMutation) SetFailingSince(t time.Time) {
-	m.failing_since = &t
-}
-
-// FailingSince returns the value of the "failing_since" field in the mutation.
-func (m *WebhookEndpointMutation) FailingSince() (r time.Time, exists bool) {
-	v := m.failing_since
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFailingSince returns the old "failing_since" field's value of the WebhookEndpoint entity.
-// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldFailingSince(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFailingSince is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFailingSince requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFailingSince: %w", err)
-	}
-	return oldValue.FailingSince, nil
-}
-
-// ClearFailingSince clears the value of the "failing_since" field.
-func (m *WebhookEndpointMutation) ClearFailingSince() {
-	m.failing_since = nil
-	m.clearedFields[webhookendpoint.FieldFailingSince] = struct{}{}
-}
-
-// FailingSinceCleared returns if the "failing_since" field was cleared in this mutation.
-func (m *WebhookEndpointMutation) FailingSinceCleared() bool {
-	_, ok := m.clearedFields[webhookendpoint.FieldFailingSince]
-	return ok
-}
-
-// ResetFailingSince resets all changes to the "failing_since" field.
-func (m *WebhookEndpointMutation) ResetFailingSince() {
-	m.failing_since = nil
-	delete(m.clearedFields, webhookendpoint.FieldFailingSince)
-}
-
-// SetLastErrorKind sets the "last_error_kind" field.
-func (m *WebhookEndpointMutation) SetLastErrorKind(wk webhook.ErrorKind) {
-	m.last_error_kind = &wk
-}
-
-// LastErrorKind returns the value of the "last_error_kind" field in the mutation.
-func (m *WebhookEndpointMutation) LastErrorKind() (r webhook.ErrorKind, exists bool) {
-	v := m.last_error_kind
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastErrorKind returns the old "last_error_kind" field's value of the WebhookEndpoint entity.
-// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldLastErrorKind(ctx context.Context) (v *webhook.ErrorKind, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastErrorKind is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastErrorKind requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastErrorKind: %w", err)
-	}
-	return oldValue.LastErrorKind, nil
-}
-
-// ClearLastErrorKind clears the value of the "last_error_kind" field.
-func (m *WebhookEndpointMutation) ClearLastErrorKind() {
-	m.last_error_kind = nil
-	m.clearedFields[webhookendpoint.FieldLastErrorKind] = struct{}{}
-}
-
-// LastErrorKindCleared returns if the "last_error_kind" field was cleared in this mutation.
-func (m *WebhookEndpointMutation) LastErrorKindCleared() bool {
-	_, ok := m.clearedFields[webhookendpoint.FieldLastErrorKind]
-	return ok
-}
-
-// ResetLastErrorKind resets all changes to the "last_error_kind" field.
-func (m *WebhookEndpointMutation) ResetLastErrorKind() {
-	m.last_error_kind = nil
-	delete(m.clearedFields, webhookendpoint.FieldLastErrorKind)
-}
-
-// SetLastErrorStatus sets the "last_error_status" field.
-func (m *WebhookEndpointMutation) SetLastErrorStatus(i int) {
-	m.last_error_status = &i
-	m.addlast_error_status = nil
-}
-
-// LastErrorStatus returns the value of the "last_error_status" field in the mutation.
-func (m *WebhookEndpointMutation) LastErrorStatus() (r int, exists bool) {
-	v := m.last_error_status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastErrorStatus returns the old "last_error_status" field's value of the WebhookEndpoint entity.
-// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldLastErrorStatus(ctx context.Context) (v *int, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastErrorStatus is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastErrorStatus requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastErrorStatus: %w", err)
-	}
-	return oldValue.LastErrorStatus, nil
-}
-
-// AddLastErrorStatus adds i to the "last_error_status" field.
-func (m *WebhookEndpointMutation) AddLastErrorStatus(i int) {
-	if m.addlast_error_status != nil {
-		*m.addlast_error_status += i
-	} else {
-		m.addlast_error_status = &i
-	}
-}
-
-// AddedLastErrorStatus returns the value that was added to the "last_error_status" field in this mutation.
-func (m *WebhookEndpointMutation) AddedLastErrorStatus() (r int, exists bool) {
-	v := m.addlast_error_status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearLastErrorStatus clears the value of the "last_error_status" field.
-func (m *WebhookEndpointMutation) ClearLastErrorStatus() {
-	m.last_error_status = nil
-	m.addlast_error_status = nil
-	m.clearedFields[webhookendpoint.FieldLastErrorStatus] = struct{}{}
-}
-
-// LastErrorStatusCleared returns if the "last_error_status" field was cleared in this mutation.
-func (m *WebhookEndpointMutation) LastErrorStatusCleared() bool {
-	_, ok := m.clearedFields[webhookendpoint.FieldLastErrorStatus]
-	return ok
-}
-
-// ResetLastErrorStatus resets all changes to the "last_error_status" field.
-func (m *WebhookEndpointMutation) ResetLastErrorStatus() {
-	m.last_error_status = nil
-	m.addlast_error_status = nil
-	delete(m.clearedFields, webhookendpoint.FieldLastErrorStatus)
-}
-
-// SetLastFailureAt sets the "last_failure_at" field.
-func (m *WebhookEndpointMutation) SetLastFailureAt(t time.Time) {
-	m.last_failure_at = &t
-}
-
-// LastFailureAt returns the value of the "last_failure_at" field in the mutation.
-func (m *WebhookEndpointMutation) LastFailureAt() (r time.Time, exists bool) {
-	v := m.last_failure_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastFailureAt returns the old "last_failure_at" field's value of the WebhookEndpoint entity.
-// If the WebhookEndpoint object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebhookEndpointMutation) OldLastFailureAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldLastFailureAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldLastFailureAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastFailureAt: %w", err)
-	}
-	return oldValue.LastFailureAt, nil
-}
-
-// ClearLastFailureAt clears the value of the "last_failure_at" field.
-func (m *WebhookEndpointMutation) ClearLastFailureAt() {
-	m.last_failure_at = nil
-	m.clearedFields[webhookendpoint.FieldLastFailureAt] = struct{}{}
-}
-
-// LastFailureAtCleared returns if the "last_failure_at" field was cleared in this mutation.
-func (m *WebhookEndpointMutation) LastFailureAtCleared() bool {
-	_, ok := m.clearedFields[webhookendpoint.FieldLastFailureAt]
-	return ok
-}
-
-// ResetLastFailureAt resets all changes to the "last_failure_at" field.
-func (m *WebhookEndpointMutation) ResetLastFailureAt() {
-	m.last_failure_at = nil
-	delete(m.clearedFields, webhookendpoint.FieldLastFailureAt)
-}
-
 // SetDisabledReason sets the "disabled_reason" field.
 func (m *WebhookEndpointMutation) SetDisabledReason(wr webhookendpoint.DisabledReason) {
 	m.disabled_reason = &wr
@@ -73562,6 +73935,45 @@ func (m *WebhookEndpointMutation) ResetWorkspace() {
 	m.clearedworkspace = false
 }
 
+// SetHealthID sets the "health" edge to the WebhookEndpointHealth entity by id.
+func (m *WebhookEndpointMutation) SetHealthID(id int64) {
+	m.health = &id
+}
+
+// ClearHealth clears the "health" edge to the WebhookEndpointHealth entity.
+func (m *WebhookEndpointMutation) ClearHealth() {
+	m.clearedhealth = true
+}
+
+// HealthCleared reports if the "health" edge to the WebhookEndpointHealth entity was cleared.
+func (m *WebhookEndpointMutation) HealthCleared() bool {
+	return m.clearedhealth
+}
+
+// HealthID returns the "health" edge ID in the mutation.
+func (m *WebhookEndpointMutation) HealthID() (id int64, exists bool) {
+	if m.health != nil {
+		return *m.health, true
+	}
+	return
+}
+
+// HealthIDs returns the "health" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// HealthID instead. It exists only for internal usage by the builders.
+func (m *WebhookEndpointMutation) HealthIDs() (ids []int64) {
+	if id := m.health; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetHealth resets all changes to the "health" edge.
+func (m *WebhookEndpointMutation) ResetHealth() {
+	m.health = nil
+	m.clearedhealth = false
+}
+
 // Where appends a list predicates to the WebhookEndpointMutation builder.
 func (m *WebhookEndpointMutation) Where(ps ...predicate.WebhookEndpoint) {
 	m.predicates = append(m.predicates, ps...)
@@ -73596,7 +74008,7 @@ func (m *WebhookEndpointMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WebhookEndpointMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, webhookendpoint.FieldCreatedAt)
 	}
@@ -73623,21 +74035,6 @@ func (m *WebhookEndpointMutation) Fields() []string {
 	}
 	if m.health_generation != nil {
 		fields = append(fields, webhookendpoint.FieldHealthGeneration)
-	}
-	if m.consecutive_failures != nil {
-		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
-	}
-	if m.failing_since != nil {
-		fields = append(fields, webhookendpoint.FieldFailingSince)
-	}
-	if m.last_error_kind != nil {
-		fields = append(fields, webhookendpoint.FieldLastErrorKind)
-	}
-	if m.last_error_status != nil {
-		fields = append(fields, webhookendpoint.FieldLastErrorStatus)
-	}
-	if m.last_failure_at != nil {
-		fields = append(fields, webhookendpoint.FieldLastFailureAt)
 	}
 	if m.disabled_reason != nil {
 		fields = append(fields, webhookendpoint.FieldDisabledReason)
@@ -73668,16 +74065,6 @@ func (m *WebhookEndpointMutation) Field(name string) (ent.Value, bool) {
 		return m.DisabledAt()
 	case webhookendpoint.FieldHealthGeneration:
 		return m.HealthGeneration()
-	case webhookendpoint.FieldConsecutiveFailures:
-		return m.ConsecutiveFailures()
-	case webhookendpoint.FieldFailingSince:
-		return m.FailingSince()
-	case webhookendpoint.FieldLastErrorKind:
-		return m.LastErrorKind()
-	case webhookendpoint.FieldLastErrorStatus:
-		return m.LastErrorStatus()
-	case webhookendpoint.FieldLastFailureAt:
-		return m.LastFailureAt()
 	case webhookendpoint.FieldDisabledReason:
 		return m.DisabledReason()
 	}
@@ -73707,16 +74094,6 @@ func (m *WebhookEndpointMutation) OldField(ctx context.Context, name string) (en
 		return m.OldDisabledAt(ctx)
 	case webhookendpoint.FieldHealthGeneration:
 		return m.OldHealthGeneration(ctx)
-	case webhookendpoint.FieldConsecutiveFailures:
-		return m.OldConsecutiveFailures(ctx)
-	case webhookendpoint.FieldFailingSince:
-		return m.OldFailingSince(ctx)
-	case webhookendpoint.FieldLastErrorKind:
-		return m.OldLastErrorKind(ctx)
-	case webhookendpoint.FieldLastErrorStatus:
-		return m.OldLastErrorStatus(ctx)
-	case webhookendpoint.FieldLastFailureAt:
-		return m.OldLastFailureAt(ctx)
 	case webhookendpoint.FieldDisabledReason:
 		return m.OldDisabledReason(ctx)
 	}
@@ -73791,41 +74168,6 @@ func (m *WebhookEndpointMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetHealthGeneration(v)
 		return nil
-	case webhookendpoint.FieldConsecutiveFailures:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetConsecutiveFailures(v)
-		return nil
-	case webhookendpoint.FieldFailingSince:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFailingSince(v)
-		return nil
-	case webhookendpoint.FieldLastErrorKind:
-		v, ok := value.(webhook.ErrorKind)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastErrorKind(v)
-		return nil
-	case webhookendpoint.FieldLastErrorStatus:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastErrorStatus(v)
-		return nil
-	case webhookendpoint.FieldLastFailureAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastFailureAt(v)
-		return nil
 	case webhookendpoint.FieldDisabledReason:
 		v, ok := value.(webhookendpoint.DisabledReason)
 		if !ok {
@@ -73847,12 +74189,6 @@ func (m *WebhookEndpointMutation) AddedFields() []string {
 	if m.addhealth_generation != nil {
 		fields = append(fields, webhookendpoint.FieldHealthGeneration)
 	}
-	if m.addconsecutive_failures != nil {
-		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
-	}
-	if m.addlast_error_status != nil {
-		fields = append(fields, webhookendpoint.FieldLastErrorStatus)
-	}
 	return fields
 }
 
@@ -73865,10 +74201,6 @@ func (m *WebhookEndpointMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRevision()
 	case webhookendpoint.FieldHealthGeneration:
 		return m.AddedHealthGeneration()
-	case webhookendpoint.FieldConsecutiveFailures:
-		return m.AddedConsecutiveFailures()
-	case webhookendpoint.FieldLastErrorStatus:
-		return m.AddedLastErrorStatus()
 	}
 	return nil, false
 }
@@ -73892,20 +74224,6 @@ func (m *WebhookEndpointMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddHealthGeneration(v)
 		return nil
-	case webhookendpoint.FieldConsecutiveFailures:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddConsecutiveFailures(v)
-		return nil
-	case webhookendpoint.FieldLastErrorStatus:
-		v, ok := value.(int)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddLastErrorStatus(v)
-		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint numeric field %s", name)
 }
@@ -73922,21 +74240,6 @@ func (m *WebhookEndpointMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(webhookendpoint.FieldHealthGeneration) {
 		fields = append(fields, webhookendpoint.FieldHealthGeneration)
-	}
-	if m.FieldCleared(webhookendpoint.FieldConsecutiveFailures) {
-		fields = append(fields, webhookendpoint.FieldConsecutiveFailures)
-	}
-	if m.FieldCleared(webhookendpoint.FieldFailingSince) {
-		fields = append(fields, webhookendpoint.FieldFailingSince)
-	}
-	if m.FieldCleared(webhookendpoint.FieldLastErrorKind) {
-		fields = append(fields, webhookendpoint.FieldLastErrorKind)
-	}
-	if m.FieldCleared(webhookendpoint.FieldLastErrorStatus) {
-		fields = append(fields, webhookendpoint.FieldLastErrorStatus)
-	}
-	if m.FieldCleared(webhookendpoint.FieldLastFailureAt) {
-		fields = append(fields, webhookendpoint.FieldLastFailureAt)
 	}
 	if m.FieldCleared(webhookendpoint.FieldDisabledReason) {
 		fields = append(fields, webhookendpoint.FieldDisabledReason)
@@ -73963,21 +74266,6 @@ func (m *WebhookEndpointMutation) ClearField(name string) error {
 		return nil
 	case webhookendpoint.FieldHealthGeneration:
 		m.ClearHealthGeneration()
-		return nil
-	case webhookendpoint.FieldConsecutiveFailures:
-		m.ClearConsecutiveFailures()
-		return nil
-	case webhookendpoint.FieldFailingSince:
-		m.ClearFailingSince()
-		return nil
-	case webhookendpoint.FieldLastErrorKind:
-		m.ClearLastErrorKind()
-		return nil
-	case webhookendpoint.FieldLastErrorStatus:
-		m.ClearLastErrorStatus()
-		return nil
-	case webhookendpoint.FieldLastFailureAt:
-		m.ClearLastFailureAt()
 		return nil
 	case webhookendpoint.FieldDisabledReason:
 		m.ClearDisabledReason()
@@ -74017,21 +74305,6 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 	case webhookendpoint.FieldHealthGeneration:
 		m.ResetHealthGeneration()
 		return nil
-	case webhookendpoint.FieldConsecutiveFailures:
-		m.ResetConsecutiveFailures()
-		return nil
-	case webhookendpoint.FieldFailingSince:
-		m.ResetFailingSince()
-		return nil
-	case webhookendpoint.FieldLastErrorKind:
-		m.ResetLastErrorKind()
-		return nil
-	case webhookendpoint.FieldLastErrorStatus:
-		m.ResetLastErrorStatus()
-		return nil
-	case webhookendpoint.FieldLastFailureAt:
-		m.ResetLastFailureAt()
-		return nil
 	case webhookendpoint.FieldDisabledReason:
 		m.ResetDisabledReason()
 		return nil
@@ -74041,9 +74314,12 @@ func (m *WebhookEndpointMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WebhookEndpointMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.workspace != nil {
 		edges = append(edges, webhookendpoint.EdgeWorkspace)
+	}
+	if m.health != nil {
+		edges = append(edges, webhookendpoint.EdgeHealth)
 	}
 	return edges
 }
@@ -74056,13 +74332,17 @@ func (m *WebhookEndpointMutation) AddedIDs(name string) []ent.Value {
 		if id := m.workspace; id != nil {
 			return []ent.Value{*id}
 		}
+	case webhookendpoint.EdgeHealth:
+		if id := m.health; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WebhookEndpointMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -74074,9 +74354,12 @@ func (m *WebhookEndpointMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WebhookEndpointMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedworkspace {
 		edges = append(edges, webhookendpoint.EdgeWorkspace)
+	}
+	if m.clearedhealth {
+		edges = append(edges, webhookendpoint.EdgeHealth)
 	}
 	return edges
 }
@@ -74087,6 +74370,8 @@ func (m *WebhookEndpointMutation) EdgeCleared(name string) bool {
 	switch name {
 	case webhookendpoint.EdgeWorkspace:
 		return m.clearedworkspace
+	case webhookendpoint.EdgeHealth:
+		return m.clearedhealth
 	}
 	return false
 }
@@ -74097,6 +74382,9 @@ func (m *WebhookEndpointMutation) ClearEdge(name string) error {
 	switch name {
 	case webhookendpoint.EdgeWorkspace:
 		m.ClearWorkspace()
+		return nil
+	case webhookendpoint.EdgeHealth:
+		m.ClearHealth()
 		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint unique edge %s", name)
@@ -74109,196 +74397,1235 @@ func (m *WebhookEndpointMutation) ResetEdge(name string) error {
 	case webhookendpoint.EdgeWorkspace:
 		m.ResetWorkspace()
 		return nil
+	case webhookendpoint.EdgeHealth:
+		m.ResetHealth()
+		return nil
 	}
 	return fmt.Errorf("unknown WebhookEndpoint edge %s", name)
+}
+
+// WebhookEndpointHealthMutation represents an operation that mutates the WebhookEndpointHealth nodes in the graph.
+type WebhookEndpointHealthMutation struct {
+	config
+	op                      Op
+	typ                     string
+	id                      *int64
+	created_at              *time.Time
+	updated_at              *time.Time
+	consecutive_failures    *int
+	addconsecutive_failures *int
+	failing_since           *time.Time
+	last_error_kind         *webhook.ErrorKind
+	last_error_status       *int
+	addlast_error_status    *int
+	last_failure_at         *time.Time
+	clearedFields           map[string]struct{}
+	workspace               *int64
+	clearedworkspace        bool
+	webhook_endpoint        *int64
+	clearedwebhook_endpoint bool
+	done                    bool
+	oldValue                func(context.Context) (*WebhookEndpointHealth, error)
+	predicates              []predicate.WebhookEndpointHealth
+}
+
+var _ ent.Mutation = (*WebhookEndpointHealthMutation)(nil)
+
+// webhookendpointhealthOption allows management of the mutation configuration using functional options.
+type webhookendpointhealthOption func(*WebhookEndpointHealthMutation)
+
+// newWebhookEndpointHealthMutation creates new mutation for the WebhookEndpointHealth entity.
+func newWebhookEndpointHealthMutation(c config, op Op, opts ...webhookendpointhealthOption) *WebhookEndpointHealthMutation {
+	m := &WebhookEndpointHealthMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeWebhookEndpointHealth,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withWebhookEndpointHealthID sets the ID field of the mutation.
+func withWebhookEndpointHealthID(id int64) webhookendpointhealthOption {
+	return func(m *WebhookEndpointHealthMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *WebhookEndpointHealth
+		)
+		m.oldValue = func(ctx context.Context) (*WebhookEndpointHealth, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().WebhookEndpointHealth.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withWebhookEndpointHealth sets the old WebhookEndpointHealth of the mutation.
+func withWebhookEndpointHealth(node *WebhookEndpointHealth) webhookendpointhealthOption {
+	return func(m *WebhookEndpointHealthMutation) {
+		m.oldValue = func(context.Context) (*WebhookEndpointHealth, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m WebhookEndpointHealthMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m WebhookEndpointHealthMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of WebhookEndpointHealth entities.
+func (m *WebhookEndpointHealthMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *WebhookEndpointHealthMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *WebhookEndpointHealthMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().WebhookEndpointHealth.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *WebhookEndpointHealthMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *WebhookEndpointHealthMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *WebhookEndpointHealthMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *WebhookEndpointHealthMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *WebhookEndpointHealthMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *WebhookEndpointHealthMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *WebhookEndpointHealthMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *WebhookEndpointHealthMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *WebhookEndpointHealthMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetWebhookEndpointID sets the "webhook_endpoint_id" field.
+func (m *WebhookEndpointHealthMutation) SetWebhookEndpointID(i int64) {
+	m.webhook_endpoint = &i
+}
+
+// WebhookEndpointID returns the value of the "webhook_endpoint_id" field in the mutation.
+func (m *WebhookEndpointHealthMutation) WebhookEndpointID() (r int64, exists bool) {
+	v := m.webhook_endpoint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWebhookEndpointID returns the old "webhook_endpoint_id" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldWebhookEndpointID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWebhookEndpointID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWebhookEndpointID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWebhookEndpointID: %w", err)
+	}
+	return oldValue.WebhookEndpointID, nil
+}
+
+// ResetWebhookEndpointID resets all changes to the "webhook_endpoint_id" field.
+func (m *WebhookEndpointHealthMutation) ResetWebhookEndpointID() {
+	m.webhook_endpoint = nil
+}
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (m *WebhookEndpointHealthMutation) SetConsecutiveFailures(i int) {
+	m.consecutive_failures = &i
+	m.addconsecutive_failures = nil
+}
+
+// ConsecutiveFailures returns the value of the "consecutive_failures" field in the mutation.
+func (m *WebhookEndpointHealthMutation) ConsecutiveFailures() (r int, exists bool) {
+	v := m.consecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConsecutiveFailures returns the old "consecutive_failures" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldConsecutiveFailures(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConsecutiveFailures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConsecutiveFailures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConsecutiveFailures: %w", err)
+	}
+	return oldValue.ConsecutiveFailures, nil
+}
+
+// AddConsecutiveFailures adds i to the "consecutive_failures" field.
+func (m *WebhookEndpointHealthMutation) AddConsecutiveFailures(i int) {
+	if m.addconsecutive_failures != nil {
+		*m.addconsecutive_failures += i
+	} else {
+		m.addconsecutive_failures = &i
+	}
+}
+
+// AddedConsecutiveFailures returns the value that was added to the "consecutive_failures" field in this mutation.
+func (m *WebhookEndpointHealthMutation) AddedConsecutiveFailures() (r int, exists bool) {
+	v := m.addconsecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (m *WebhookEndpointHealthMutation) ClearConsecutiveFailures() {
+	m.consecutive_failures = nil
+	m.addconsecutive_failures = nil
+	m.clearedFields[webhookendpointhealth.FieldConsecutiveFailures] = struct{}{}
+}
+
+// ConsecutiveFailuresCleared returns if the "consecutive_failures" field was cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) ConsecutiveFailuresCleared() bool {
+	_, ok := m.clearedFields[webhookendpointhealth.FieldConsecutiveFailures]
+	return ok
+}
+
+// ResetConsecutiveFailures resets all changes to the "consecutive_failures" field.
+func (m *WebhookEndpointHealthMutation) ResetConsecutiveFailures() {
+	m.consecutive_failures = nil
+	m.addconsecutive_failures = nil
+	delete(m.clearedFields, webhookendpointhealth.FieldConsecutiveFailures)
+}
+
+// SetFailingSince sets the "failing_since" field.
+func (m *WebhookEndpointHealthMutation) SetFailingSince(t time.Time) {
+	m.failing_since = &t
+}
+
+// FailingSince returns the value of the "failing_since" field in the mutation.
+func (m *WebhookEndpointHealthMutation) FailingSince() (r time.Time, exists bool) {
+	v := m.failing_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailingSince returns the old "failing_since" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldFailingSince(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailingSince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailingSince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailingSince: %w", err)
+	}
+	return oldValue.FailingSince, nil
+}
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (m *WebhookEndpointHealthMutation) ClearFailingSince() {
+	m.failing_since = nil
+	m.clearedFields[webhookendpointhealth.FieldFailingSince] = struct{}{}
+}
+
+// FailingSinceCleared returns if the "failing_since" field was cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) FailingSinceCleared() bool {
+	_, ok := m.clearedFields[webhookendpointhealth.FieldFailingSince]
+	return ok
+}
+
+// ResetFailingSince resets all changes to the "failing_since" field.
+func (m *WebhookEndpointHealthMutation) ResetFailingSince() {
+	m.failing_since = nil
+	delete(m.clearedFields, webhookendpointhealth.FieldFailingSince)
+}
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (m *WebhookEndpointHealthMutation) SetLastErrorKind(wk webhook.ErrorKind) {
+	m.last_error_kind = &wk
+}
+
+// LastErrorKind returns the value of the "last_error_kind" field in the mutation.
+func (m *WebhookEndpointHealthMutation) LastErrorKind() (r webhook.ErrorKind, exists bool) {
+	v := m.last_error_kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastErrorKind returns the old "last_error_kind" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldLastErrorKind(ctx context.Context) (v *webhook.ErrorKind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastErrorKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastErrorKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastErrorKind: %w", err)
+	}
+	return oldValue.LastErrorKind, nil
+}
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (m *WebhookEndpointHealthMutation) ClearLastErrorKind() {
+	m.last_error_kind = nil
+	m.clearedFields[webhookendpointhealth.FieldLastErrorKind] = struct{}{}
+}
+
+// LastErrorKindCleared returns if the "last_error_kind" field was cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) LastErrorKindCleared() bool {
+	_, ok := m.clearedFields[webhookendpointhealth.FieldLastErrorKind]
+	return ok
+}
+
+// ResetLastErrorKind resets all changes to the "last_error_kind" field.
+func (m *WebhookEndpointHealthMutation) ResetLastErrorKind() {
+	m.last_error_kind = nil
+	delete(m.clearedFields, webhookendpointhealth.FieldLastErrorKind)
+}
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (m *WebhookEndpointHealthMutation) SetLastErrorStatus(i int) {
+	m.last_error_status = &i
+	m.addlast_error_status = nil
+}
+
+// LastErrorStatus returns the value of the "last_error_status" field in the mutation.
+func (m *WebhookEndpointHealthMutation) LastErrorStatus() (r int, exists bool) {
+	v := m.last_error_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastErrorStatus returns the old "last_error_status" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldLastErrorStatus(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastErrorStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastErrorStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastErrorStatus: %w", err)
+	}
+	return oldValue.LastErrorStatus, nil
+}
+
+// AddLastErrorStatus adds i to the "last_error_status" field.
+func (m *WebhookEndpointHealthMutation) AddLastErrorStatus(i int) {
+	if m.addlast_error_status != nil {
+		*m.addlast_error_status += i
+	} else {
+		m.addlast_error_status = &i
+	}
+}
+
+// AddedLastErrorStatus returns the value that was added to the "last_error_status" field in this mutation.
+func (m *WebhookEndpointHealthMutation) AddedLastErrorStatus() (r int, exists bool) {
+	v := m.addlast_error_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (m *WebhookEndpointHealthMutation) ClearLastErrorStatus() {
+	m.last_error_status = nil
+	m.addlast_error_status = nil
+	m.clearedFields[webhookendpointhealth.FieldLastErrorStatus] = struct{}{}
+}
+
+// LastErrorStatusCleared returns if the "last_error_status" field was cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) LastErrorStatusCleared() bool {
+	_, ok := m.clearedFields[webhookendpointhealth.FieldLastErrorStatus]
+	return ok
+}
+
+// ResetLastErrorStatus resets all changes to the "last_error_status" field.
+func (m *WebhookEndpointHealthMutation) ResetLastErrorStatus() {
+	m.last_error_status = nil
+	m.addlast_error_status = nil
+	delete(m.clearedFields, webhookendpointhealth.FieldLastErrorStatus)
+}
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (m *WebhookEndpointHealthMutation) SetLastFailureAt(t time.Time) {
+	m.last_failure_at = &t
+}
+
+// LastFailureAt returns the value of the "last_failure_at" field in the mutation.
+func (m *WebhookEndpointHealthMutation) LastFailureAt() (r time.Time, exists bool) {
+	v := m.last_failure_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastFailureAt returns the old "last_failure_at" field's value of the WebhookEndpointHealth entity.
+// If the WebhookEndpointHealth object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebhookEndpointHealthMutation) OldLastFailureAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastFailureAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastFailureAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastFailureAt: %w", err)
+	}
+	return oldValue.LastFailureAt, nil
+}
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (m *WebhookEndpointHealthMutation) ClearLastFailureAt() {
+	m.last_failure_at = nil
+	m.clearedFields[webhookendpointhealth.FieldLastFailureAt] = struct{}{}
+}
+
+// LastFailureAtCleared returns if the "last_failure_at" field was cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) LastFailureAtCleared() bool {
+	_, ok := m.clearedFields[webhookendpointhealth.FieldLastFailureAt]
+	return ok
+}
+
+// ResetLastFailureAt resets all changes to the "last_failure_at" field.
+func (m *WebhookEndpointHealthMutation) ResetLastFailureAt() {
+	m.last_failure_at = nil
+	delete(m.clearedFields, webhookendpointhealth.FieldLastFailureAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *WebhookEndpointHealthMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[webhookendpointhealth.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *WebhookEndpointHealthMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *WebhookEndpointHealthMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *WebhookEndpointHealthMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// ClearWebhookEndpoint clears the "webhook_endpoint" edge to the WebhookEndpoint entity.
+func (m *WebhookEndpointHealthMutation) ClearWebhookEndpoint() {
+	m.clearedwebhook_endpoint = true
+	m.clearedFields[webhookendpointhealth.FieldWebhookEndpointID] = struct{}{}
+}
+
+// WebhookEndpointCleared reports if the "webhook_endpoint" edge to the WebhookEndpoint entity was cleared.
+func (m *WebhookEndpointHealthMutation) WebhookEndpointCleared() bool {
+	return m.clearedwebhook_endpoint
+}
+
+// WebhookEndpointIDs returns the "webhook_endpoint" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WebhookEndpointID instead. It exists only for internal usage by the builders.
+func (m *WebhookEndpointHealthMutation) WebhookEndpointIDs() (ids []int64) {
+	if id := m.webhook_endpoint; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWebhookEndpoint resets all changes to the "webhook_endpoint" edge.
+func (m *WebhookEndpointHealthMutation) ResetWebhookEndpoint() {
+	m.webhook_endpoint = nil
+	m.clearedwebhook_endpoint = false
+}
+
+// Where appends a list predicates to the WebhookEndpointHealthMutation builder.
+func (m *WebhookEndpointHealthMutation) Where(ps ...predicate.WebhookEndpointHealth) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the WebhookEndpointHealthMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *WebhookEndpointHealthMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.WebhookEndpointHealth, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *WebhookEndpointHealthMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *WebhookEndpointHealthMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (WebhookEndpointHealth).
+func (m *WebhookEndpointHealthMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *WebhookEndpointHealthMutation) Fields() []string {
+	fields := make([]string, 0, 9)
+	if m.created_at != nil {
+		fields = append(fields, webhookendpointhealth.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, webhookendpointhealth.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, webhookendpointhealth.FieldWorkspaceID)
+	}
+	if m.webhook_endpoint != nil {
+		fields = append(fields, webhookendpointhealth.FieldWebhookEndpointID)
+	}
+	if m.consecutive_failures != nil {
+		fields = append(fields, webhookendpointhealth.FieldConsecutiveFailures)
+	}
+	if m.failing_since != nil {
+		fields = append(fields, webhookendpointhealth.FieldFailingSince)
+	}
+	if m.last_error_kind != nil {
+		fields = append(fields, webhookendpointhealth.FieldLastErrorKind)
+	}
+	if m.last_error_status != nil {
+		fields = append(fields, webhookendpointhealth.FieldLastErrorStatus)
+	}
+	if m.last_failure_at != nil {
+		fields = append(fields, webhookendpointhealth.FieldLastFailureAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *WebhookEndpointHealthMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case webhookendpointhealth.FieldCreatedAt:
+		return m.CreatedAt()
+	case webhookendpointhealth.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case webhookendpointhealth.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case webhookendpointhealth.FieldWebhookEndpointID:
+		return m.WebhookEndpointID()
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		return m.ConsecutiveFailures()
+	case webhookendpointhealth.FieldFailingSince:
+		return m.FailingSince()
+	case webhookendpointhealth.FieldLastErrorKind:
+		return m.LastErrorKind()
+	case webhookendpointhealth.FieldLastErrorStatus:
+		return m.LastErrorStatus()
+	case webhookendpointhealth.FieldLastFailureAt:
+		return m.LastFailureAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *WebhookEndpointHealthMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case webhookendpointhealth.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case webhookendpointhealth.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case webhookendpointhealth.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case webhookendpointhealth.FieldWebhookEndpointID:
+		return m.OldWebhookEndpointID(ctx)
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		return m.OldConsecutiveFailures(ctx)
+	case webhookendpointhealth.FieldFailingSince:
+		return m.OldFailingSince(ctx)
+	case webhookendpointhealth.FieldLastErrorKind:
+		return m.OldLastErrorKind(ctx)
+	case webhookendpointhealth.FieldLastErrorStatus:
+		return m.OldLastErrorStatus(ctx)
+	case webhookendpointhealth.FieldLastFailureAt:
+		return m.OldLastFailureAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown WebhookEndpointHealth field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WebhookEndpointHealthMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case webhookendpointhealth.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case webhookendpointhealth.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case webhookendpointhealth.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case webhookendpointhealth.FieldWebhookEndpointID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWebhookEndpointID(v)
+		return nil
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConsecutiveFailures(v)
+		return nil
+	case webhookendpointhealth.FieldFailingSince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailingSince(v)
+		return nil
+	case webhookendpointhealth.FieldLastErrorKind:
+		v, ok := value.(webhook.ErrorKind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastErrorKind(v)
+		return nil
+	case webhookendpointhealth.FieldLastErrorStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastErrorStatus(v)
+		return nil
+	case webhookendpointhealth.FieldLastFailureAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastFailureAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WebhookEndpointHealth field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *WebhookEndpointHealthMutation) AddedFields() []string {
+	var fields []string
+	if m.addconsecutive_failures != nil {
+		fields = append(fields, webhookendpointhealth.FieldConsecutiveFailures)
+	}
+	if m.addlast_error_status != nil {
+		fields = append(fields, webhookendpointhealth.FieldLastErrorStatus)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *WebhookEndpointHealthMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		return m.AddedConsecutiveFailures()
+	case webhookendpointhealth.FieldLastErrorStatus:
+		return m.AddedLastErrorStatus()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WebhookEndpointHealthMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConsecutiveFailures(v)
+		return nil
+	case webhookendpointhealth.FieldLastErrorStatus:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLastErrorStatus(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WebhookEndpointHealth numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *WebhookEndpointHealthMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(webhookendpointhealth.FieldConsecutiveFailures) {
+		fields = append(fields, webhookendpointhealth.FieldConsecutiveFailures)
+	}
+	if m.FieldCleared(webhookendpointhealth.FieldFailingSince) {
+		fields = append(fields, webhookendpointhealth.FieldFailingSince)
+	}
+	if m.FieldCleared(webhookendpointhealth.FieldLastErrorKind) {
+		fields = append(fields, webhookendpointhealth.FieldLastErrorKind)
+	}
+	if m.FieldCleared(webhookendpointhealth.FieldLastErrorStatus) {
+		fields = append(fields, webhookendpointhealth.FieldLastErrorStatus)
+	}
+	if m.FieldCleared(webhookendpointhealth.FieldLastFailureAt) {
+		fields = append(fields, webhookendpointhealth.FieldLastFailureAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *WebhookEndpointHealthMutation) ClearField(name string) error {
+	switch name {
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		m.ClearConsecutiveFailures()
+		return nil
+	case webhookendpointhealth.FieldFailingSince:
+		m.ClearFailingSince()
+		return nil
+	case webhookendpointhealth.FieldLastErrorKind:
+		m.ClearLastErrorKind()
+		return nil
+	case webhookendpointhealth.FieldLastErrorStatus:
+		m.ClearLastErrorStatus()
+		return nil
+	case webhookendpointhealth.FieldLastFailureAt:
+		m.ClearLastFailureAt()
+		return nil
+	}
+	return fmt.Errorf("unknown WebhookEndpointHealth nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *WebhookEndpointHealthMutation) ResetField(name string) error {
+	switch name {
+	case webhookendpointhealth.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case webhookendpointhealth.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case webhookendpointhealth.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case webhookendpointhealth.FieldWebhookEndpointID:
+		m.ResetWebhookEndpointID()
+		return nil
+	case webhookendpointhealth.FieldConsecutiveFailures:
+		m.ResetConsecutiveFailures()
+		return nil
+	case webhookendpointhealth.FieldFailingSince:
+		m.ResetFailingSince()
+		return nil
+	case webhookendpointhealth.FieldLastErrorKind:
+		m.ResetLastErrorKind()
+		return nil
+	case webhookendpointhealth.FieldLastErrorStatus:
+		m.ResetLastErrorStatus()
+		return nil
+	case webhookendpointhealth.FieldLastFailureAt:
+		m.ResetLastFailureAt()
+		return nil
+	}
+	return fmt.Errorf("unknown WebhookEndpointHealth field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *WebhookEndpointHealthMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.workspace != nil {
+		edges = append(edges, webhookendpointhealth.EdgeWorkspace)
+	}
+	if m.webhook_endpoint != nil {
+		edges = append(edges, webhookendpointhealth.EdgeWebhookEndpoint)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *WebhookEndpointHealthMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case webhookendpointhealth.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	case webhookendpointhealth.EdgeWebhookEndpoint:
+		if id := m.webhook_endpoint; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *WebhookEndpointHealthMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *WebhookEndpointHealthMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedworkspace {
+		edges = append(edges, webhookendpointhealth.EdgeWorkspace)
+	}
+	if m.clearedwebhook_endpoint {
+		edges = append(edges, webhookendpointhealth.EdgeWebhookEndpoint)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *WebhookEndpointHealthMutation) EdgeCleared(name string) bool {
+	switch name {
+	case webhookendpointhealth.EdgeWorkspace:
+		return m.clearedworkspace
+	case webhookendpointhealth.EdgeWebhookEndpoint:
+		return m.clearedwebhook_endpoint
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *WebhookEndpointHealthMutation) ClearEdge(name string) error {
+	switch name {
+	case webhookendpointhealth.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	case webhookendpointhealth.EdgeWebhookEndpoint:
+		m.ClearWebhookEndpoint()
+		return nil
+	}
+	return fmt.Errorf("unknown WebhookEndpointHealth unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *WebhookEndpointHealthMutation) ResetEdge(name string) error {
+	switch name {
+	case webhookendpointhealth.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	case webhookendpointhealth.EdgeWebhookEndpoint:
+		m.ResetWebhookEndpoint()
+		return nil
+	}
+	return fmt.Errorf("unknown WebhookEndpointHealth edge %s", name)
 }
 
 // WorkspaceMutation represents an operation that mutates the Workspace nodes in the graph.
 type WorkspaceMutation struct {
 	config
-	op                           Op
-	typ                          string
-	id                           *int64
-	created_at                   *time.Time
-	updated_at                   *time.Time
-	discarded_at                 *time.Time
-	revision                     *int64
-	addrevision                  *int64
-	name                         *string
-	public_id                    *string
-	collect_key                  *string
-	require_confirmed_opt_in     *bool
-	postal_address               *string
-	retention_days               *int
-	addretention_days            *int
-	timezone                     *string
-	setup_completed_at           *time.Time
-	reporting_currency           *string
-	attribution_window_days      *int
-	addattribution_window_days   *int
-	send_cap                     *int
-	addsend_cap                  *int
-	domain_join_enabled          *bool
-	second_factor_required_at    *time.Time
-	feed_position                *int64
-	addfeed_position             *int64
-	erased_at                    *time.Time
-	suspended_at                 *time.Time
-	suspended_by_kind            *workspace.SuspendedByKind
-	suspended_by_id              *string
-	suspension_reason            *string
-	cleared_at                   *time.Time
-	abuse_exempt                 *bool
-	abuse_warning_notified_at    *time.Time
-	abuse_freeze_notified_at     *time.Time
-	clearedFields                map[string]struct{}
-	contacts                     map[int64]struct{}
-	removedcontacts              map[int64]struct{}
-	clearedcontacts              bool
-	custom_fields                map[int64]struct{}
-	removedcustom_fields         map[int64]struct{}
-	clearedcustom_fields         bool
-	tags                         map[int64]struct{}
-	removedtags                  map[int64]struct{}
-	clearedtags                  bool
-	segments                     map[int64]struct{}
-	removedsegments              map[int64]struct{}
-	clearedsegments              bool
-	events                       map[int64]struct{}
-	removedevents                map[int64]struct{}
-	clearedevents                bool
-	event_journal_entries        map[int64]struct{}
-	removedevent_journal_entries map[int64]struct{}
-	clearedevent_journal_entries bool
-	orders                       map[int64]struct{}
-	removedorders                map[int64]struct{}
-	clearedorders                bool
-	order_movements              map[int64]struct{}
-	removedorder_movements       map[int64]struct{}
-	clearedorder_movements       bool
-	held_order_events            map[int64]struct{}
-	removedheld_order_events     map[int64]struct{}
-	clearedheld_order_events     bool
-	visitors                     map[int64]struct{}
-	removedvisitors              map[int64]struct{}
-	clearedvisitors              bool
-	bindings                     map[int64]struct{}
-	removedbindings              map[int64]struct{}
-	clearedbindings              bool
-	start_tokens                 map[int64]struct{}
-	removedstart_tokens          map[int64]struct{}
-	clearedstart_tokens          bool
-	api_tokens                   map[int64]struct{}
-	removedapi_tokens            map[int64]struct{}
-	clearedapi_tokens            bool
-	oauth_codes                  map[int64]struct{}
-	removedoauth_codes           map[int64]struct{}
-	clearedoauth_codes           bool
-	integrations                 map[int64]struct{}
-	removedintegrations          map[int64]struct{}
-	clearedintegrations          bool
-	sending_domains              map[int64]struct{}
-	removedsending_domains       map[int64]struct{}
-	clearedsending_domains       bool
-	join_domains                 map[int64]struct{}
-	removedjoin_domains          map[int64]struct{}
-	clearedjoin_domains          bool
-	tracking_domains             map[int64]struct{}
-	removedtracking_domains      map[int64]struct{}
-	clearedtracking_domains      bool
-	provider_limiters            map[int64]struct{}
-	removedprovider_limiters     map[int64]struct{}
-	clearedprovider_limiters     bool
-	send_cap_limiters            map[int64]struct{}
-	removedsend_cap_limiters     map[int64]struct{}
-	clearedsend_cap_limiters     bool
-	holds                        map[int64]struct{}
-	removedholds                 map[int64]struct{}
-	clearedholds                 bool
-	broadcasts                   map[int64]struct{}
-	removedbroadcasts            map[int64]struct{}
-	clearedbroadcasts            bool
-	broadcast_recipients         map[int64]struct{}
-	removedbroadcast_recipients  map[int64]struct{}
-	clearedbroadcast_recipients  bool
-	broadcast_figures            map[int64]struct{}
-	removedbroadcast_figures     map[int64]struct{}
-	clearedbroadcast_figures     bool
-	automation_figures           map[int64]struct{}
-	removedautomation_figures    map[int64]struct{}
-	clearedautomation_figures    bool
-	email_templates              map[int64]struct{}
-	removedemail_templates       map[int64]struct{}
-	clearedemail_templates       bool
-	brand_kits                   map[int64]struct{}
-	removedbrand_kits            map[int64]struct{}
-	clearedbrand_kits            bool
-	identity_secrets             map[int64]struct{}
-	removedidentity_secrets      map[int64]struct{}
-	clearedidentity_secrets      bool
-	automations                  map[int64]struct{}
-	removedautomations           map[int64]struct{}
-	clearedautomations           bool
-	automation_versions          map[int64]struct{}
-	removedautomation_versions   map[int64]struct{}
-	clearedautomation_versions   bool
-	automation_runs              map[int64]struct{}
-	removedautomation_runs       map[int64]struct{}
-	clearedautomation_runs       bool
-	rules                        map[int64]struct{}
-	removedrules                 map[int64]struct{}
-	clearedrules                 bool
-	rule_versions                map[int64]struct{}
-	removedrule_versions         map[int64]struct{}
-	clearedrule_versions         bool
-	rule_version_triggers        map[int64]struct{}
-	removedrule_version_triggers map[int64]struct{}
-	clearedrule_version_triggers bool
-	rule_firings                 map[int64]struct{}
-	removedrule_firings          map[int64]struct{}
-	clearedrule_firings          bool
-	webhook_endpoints            map[int64]struct{}
-	removedwebhook_endpoints     map[int64]struct{}
-	clearedwebhook_endpoints     bool
-	suppressions                 map[int64]struct{}
-	removedsuppressions          map[int64]struct{}
-	clearedsuppressions          bool
-	unsubscribes                 map[int64]struct{}
-	removedunsubscribes          map[int64]struct{}
-	clearedunsubscribes          bool
-	confirmations                map[int64]struct{}
-	removedconfirmations         map[int64]struct{}
-	clearedconfirmations         bool
-	consent_stamps               map[int64]struct{}
-	removedconsent_stamps        map[int64]struct{}
-	clearedconsent_stamps        bool
-	outbound_messages            map[int64]struct{}
-	removedoutbound_messages     map[int64]struct{}
-	clearedoutbound_messages     bool
-	tracked_links                map[int64]struct{}
-	removedtracked_links         map[int64]struct{}
-	clearedtracked_links         bool
-	captured_messages            map[int64]struct{}
-	removedcaptured_messages     map[int64]struct{}
-	clearedcaptured_messages     bool
-	memberships                  map[int64]struct{}
-	removedmemberships           map[int64]struct{}
-	clearedmemberships           bool
-	invitations                  map[int64]struct{}
-	removedinvitations           map[int64]struct{}
-	clearedinvitations           bool
-	audit_entries                map[int64]struct{}
-	removedaudit_entries         map[int64]struct{}
-	clearedaudit_entries         bool
-	erasures                     map[int64]struct{}
-	removederasures              map[int64]struct{}
-	clearederasures              bool
-	usages                       map[int64]struct{}
-	removedusages                map[int64]struct{}
-	clearedusages                bool
-	done                         bool
-	oldValue                     func(context.Context) (*Workspace, error)
-	predicates                   []predicate.Workspace
+	op                                 Op
+	typ                                string
+	id                                 *int64
+	created_at                         *time.Time
+	updated_at                         *time.Time
+	discarded_at                       *time.Time
+	revision                           *int64
+	addrevision                        *int64
+	name                               *string
+	public_id                          *string
+	collect_key                        *string
+	require_confirmed_opt_in           *bool
+	postal_address                     *string
+	retention_days                     *int
+	addretention_days                  *int
+	timezone                           *string
+	reporting_currency                 *string
+	attribution_window_days            *int
+	addattribution_window_days         *int
+	send_cap                           *int
+	addsend_cap                        *int
+	domain_join_enabled                *bool
+	second_factor_required_at          *time.Time
+	erased_at                          *time.Time
+	suspended_at                       *time.Time
+	suspended_by_kind                  *workspace.SuspendedByKind
+	suspended_by_id                    *string
+	suspension_reason                  *string
+	cleared_at                         *time.Time
+	abuse_exempt                       *bool
+	clearedFields                      map[string]struct{}
+	contacts                           map[int64]struct{}
+	removedcontacts                    map[int64]struct{}
+	clearedcontacts                    bool
+	custom_fields                      map[int64]struct{}
+	removedcustom_fields               map[int64]struct{}
+	clearedcustom_fields               bool
+	tags                               map[int64]struct{}
+	removedtags                        map[int64]struct{}
+	clearedtags                        bool
+	segments                           map[int64]struct{}
+	removedsegments                    map[int64]struct{}
+	clearedsegments                    bool
+	events                             map[int64]struct{}
+	removedevents                      map[int64]struct{}
+	clearedevents                      bool
+	event_journal_entries              map[int64]struct{}
+	removedevent_journal_entries       map[int64]struct{}
+	clearedevent_journal_entries       bool
+	orders                             map[int64]struct{}
+	removedorders                      map[int64]struct{}
+	clearedorders                      bool
+	order_movements                    map[int64]struct{}
+	removedorder_movements             map[int64]struct{}
+	clearedorder_movements             bool
+	held_order_events                  map[int64]struct{}
+	removedheld_order_events           map[int64]struct{}
+	clearedheld_order_events           bool
+	visitors                           map[int64]struct{}
+	removedvisitors                    map[int64]struct{}
+	clearedvisitors                    bool
+	bindings                           map[int64]struct{}
+	removedbindings                    map[int64]struct{}
+	clearedbindings                    bool
+	start_tokens                       map[int64]struct{}
+	removedstart_tokens                map[int64]struct{}
+	clearedstart_tokens                bool
+	api_tokens                         map[int64]struct{}
+	removedapi_tokens                  map[int64]struct{}
+	clearedapi_tokens                  bool
+	oauth_codes                        map[int64]struct{}
+	removedoauth_codes                 map[int64]struct{}
+	clearedoauth_codes                 bool
+	integrations                       map[int64]struct{}
+	removedintegrations                map[int64]struct{}
+	clearedintegrations                bool
+	sending_domains                    map[int64]struct{}
+	removedsending_domains             map[int64]struct{}
+	clearedsending_domains             bool
+	join_domains                       map[int64]struct{}
+	removedjoin_domains                map[int64]struct{}
+	clearedjoin_domains                bool
+	tracking_domains                   map[int64]struct{}
+	removedtracking_domains            map[int64]struct{}
+	clearedtracking_domains            bool
+	provider_limiters                  map[int64]struct{}
+	removedprovider_limiters           map[int64]struct{}
+	clearedprovider_limiters           bool
+	send_cap_limiters                  map[int64]struct{}
+	removedsend_cap_limiters           map[int64]struct{}
+	clearedsend_cap_limiters           bool
+	holds                              map[int64]struct{}
+	removedholds                       map[int64]struct{}
+	clearedholds                       bool
+	broadcasts                         map[int64]struct{}
+	removedbroadcasts                  map[int64]struct{}
+	clearedbroadcasts                  bool
+	broadcast_recipients               map[int64]struct{}
+	removedbroadcast_recipients        map[int64]struct{}
+	clearedbroadcast_recipients        bool
+	broadcast_figures                  map[int64]struct{}
+	removedbroadcast_figures           map[int64]struct{}
+	clearedbroadcast_figures           bool
+	automation_figures                 map[int64]struct{}
+	removedautomation_figures          map[int64]struct{}
+	clearedautomation_figures          bool
+	email_templates                    map[int64]struct{}
+	removedemail_templates             map[int64]struct{}
+	clearedemail_templates             bool
+	brand_kits                         map[int64]struct{}
+	removedbrand_kits                  map[int64]struct{}
+	clearedbrand_kits                  bool
+	identity_secrets                   map[int64]struct{}
+	removedidentity_secrets            map[int64]struct{}
+	clearedidentity_secrets            bool
+	automations                        map[int64]struct{}
+	removedautomations                 map[int64]struct{}
+	clearedautomations                 bool
+	automation_versions                map[int64]struct{}
+	removedautomation_versions         map[int64]struct{}
+	clearedautomation_versions         bool
+	automation_runs                    map[int64]struct{}
+	removedautomation_runs             map[int64]struct{}
+	clearedautomation_runs             bool
+	rules                              map[int64]struct{}
+	removedrules                       map[int64]struct{}
+	clearedrules                       bool
+	rule_versions                      map[int64]struct{}
+	removedrule_versions               map[int64]struct{}
+	clearedrule_versions               bool
+	rule_version_triggers              map[int64]struct{}
+	removedrule_version_triggers       map[int64]struct{}
+	clearedrule_version_triggers       bool
+	rule_firings                       map[int64]struct{}
+	removedrule_firings                map[int64]struct{}
+	clearedrule_firings                bool
+	webhook_endpoints                  map[int64]struct{}
+	removedwebhook_endpoints           map[int64]struct{}
+	clearedwebhook_endpoints           bool
+	suppressions                       map[int64]struct{}
+	removedsuppressions                map[int64]struct{}
+	clearedsuppressions                bool
+	unsubscribes                       map[int64]struct{}
+	removedunsubscribes                map[int64]struct{}
+	clearedunsubscribes                bool
+	confirmations                      map[int64]struct{}
+	removedconfirmations               map[int64]struct{}
+	clearedconfirmations               bool
+	consent_stamps                     map[int64]struct{}
+	removedconsent_stamps              map[int64]struct{}
+	clearedconsent_stamps              bool
+	outbound_messages                  map[int64]struct{}
+	removedoutbound_messages           map[int64]struct{}
+	clearedoutbound_messages           bool
+	tracked_links                      map[int64]struct{}
+	removedtracked_links               map[int64]struct{}
+	clearedtracked_links               bool
+	captured_messages                  map[int64]struct{}
+	removedcaptured_messages           map[int64]struct{}
+	clearedcaptured_messages           bool
+	memberships                        map[int64]struct{}
+	removedmemberships                 map[int64]struct{}
+	clearedmemberships                 bool
+	invitations                        map[int64]struct{}
+	removedinvitations                 map[int64]struct{}
+	clearedinvitations                 bool
+	audit_entries                      map[int64]struct{}
+	removedaudit_entries               map[int64]struct{}
+	clearedaudit_entries               bool
+	erasures                           map[int64]struct{}
+	removederasures                    map[int64]struct{}
+	clearederasures                    bool
+	usages                             map[int64]struct{}
+	removedusages                      map[int64]struct{}
+	clearedusages                      bool
+	integration_provider_states        map[int64]struct{}
+	removedintegration_provider_states map[int64]struct{}
+	clearedintegration_provider_states bool
+	webhook_endpoint_healths           map[int64]struct{}
+	removedwebhook_endpoint_healths    map[int64]struct{}
+	clearedwebhook_endpoint_healths    bool
+	standing                           *int64
+	clearedstanding                    bool
+	done                               bool
+	oldValue                           func(context.Context) (*Workspace, error)
+	predicates                         []predicate.Workspace
 }
 
 var _ ent.Mutation = (*WorkspaceMutation)(nil)
@@ -74894,55 +76221,6 @@ func (m *WorkspaceMutation) ResetTimezone() {
 	delete(m.clearedFields, workspace.FieldTimezone)
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (m *WorkspaceMutation) SetSetupCompletedAt(t time.Time) {
-	m.setup_completed_at = &t
-}
-
-// SetupCompletedAt returns the value of the "setup_completed_at" field in the mutation.
-func (m *WorkspaceMutation) SetupCompletedAt() (r time.Time, exists bool) {
-	v := m.setup_completed_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldSetupCompletedAt returns the old "setup_completed_at" field's value of the Workspace entity.
-// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldSetupCompletedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSetupCompletedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSetupCompletedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSetupCompletedAt: %w", err)
-	}
-	return oldValue.SetupCompletedAt, nil
-}
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (m *WorkspaceMutation) ClearSetupCompletedAt() {
-	m.setup_completed_at = nil
-	m.clearedFields[workspace.FieldSetupCompletedAt] = struct{}{}
-}
-
-// SetupCompletedAtCleared returns if the "setup_completed_at" field was cleared in this mutation.
-func (m *WorkspaceMutation) SetupCompletedAtCleared() bool {
-	_, ok := m.clearedFields[workspace.FieldSetupCompletedAt]
-	return ok
-}
-
-// ResetSetupCompletedAt resets all changes to the "setup_completed_at" field.
-func (m *WorkspaceMutation) ResetSetupCompletedAt() {
-	m.setup_completed_at = nil
-	delete(m.clearedFields, workspace.FieldSetupCompletedAt)
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (m *WorkspaceMutation) SetReportingCurrency(s string) {
 	m.reporting_currency = &s
@@ -75201,62 +76479,6 @@ func (m *WorkspaceMutation) SecondFactorRequiredAtCleared() bool {
 func (m *WorkspaceMutation) ResetSecondFactorRequiredAt() {
 	m.second_factor_required_at = nil
 	delete(m.clearedFields, workspace.FieldSecondFactorRequiredAt)
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (m *WorkspaceMutation) SetFeedPosition(i int64) {
-	m.feed_position = &i
-	m.addfeed_position = nil
-}
-
-// FeedPosition returns the value of the "feed_position" field in the mutation.
-func (m *WorkspaceMutation) FeedPosition() (r int64, exists bool) {
-	v := m.feed_position
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFeedPosition returns the old "feed_position" field's value of the Workspace entity.
-// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldFeedPosition(ctx context.Context) (v int64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFeedPosition is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFeedPosition requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFeedPosition: %w", err)
-	}
-	return oldValue.FeedPosition, nil
-}
-
-// AddFeedPosition adds i to the "feed_position" field.
-func (m *WorkspaceMutation) AddFeedPosition(i int64) {
-	if m.addfeed_position != nil {
-		*m.addfeed_position += i
-	} else {
-		m.addfeed_position = &i
-	}
-}
-
-// AddedFeedPosition returns the value that was added to the "feed_position" field in this mutation.
-func (m *WorkspaceMutation) AddedFeedPosition() (r int64, exists bool) {
-	v := m.addfeed_position
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetFeedPosition resets all changes to the "feed_position" field.
-func (m *WorkspaceMutation) ResetFeedPosition() {
-	m.feed_position = nil
-	m.addfeed_position = nil
 }
 
 // SetErasedAt sets the "erased_at" field.
@@ -75587,104 +76809,6 @@ func (m *WorkspaceMutation) OldAbuseExempt(ctx context.Context) (v bool, err err
 // ResetAbuseExempt resets all changes to the "abuse_exempt" field.
 func (m *WorkspaceMutation) ResetAbuseExempt() {
 	m.abuse_exempt = nil
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (m *WorkspaceMutation) SetAbuseWarningNotifiedAt(t time.Time) {
-	m.abuse_warning_notified_at = &t
-}
-
-// AbuseWarningNotifiedAt returns the value of the "abuse_warning_notified_at" field in the mutation.
-func (m *WorkspaceMutation) AbuseWarningNotifiedAt() (r time.Time, exists bool) {
-	v := m.abuse_warning_notified_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAbuseWarningNotifiedAt returns the old "abuse_warning_notified_at" field's value of the Workspace entity.
-// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldAbuseWarningNotifiedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAbuseWarningNotifiedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAbuseWarningNotifiedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAbuseWarningNotifiedAt: %w", err)
-	}
-	return oldValue.AbuseWarningNotifiedAt, nil
-}
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (m *WorkspaceMutation) ClearAbuseWarningNotifiedAt() {
-	m.abuse_warning_notified_at = nil
-	m.clearedFields[workspace.FieldAbuseWarningNotifiedAt] = struct{}{}
-}
-
-// AbuseWarningNotifiedAtCleared returns if the "abuse_warning_notified_at" field was cleared in this mutation.
-func (m *WorkspaceMutation) AbuseWarningNotifiedAtCleared() bool {
-	_, ok := m.clearedFields[workspace.FieldAbuseWarningNotifiedAt]
-	return ok
-}
-
-// ResetAbuseWarningNotifiedAt resets all changes to the "abuse_warning_notified_at" field.
-func (m *WorkspaceMutation) ResetAbuseWarningNotifiedAt() {
-	m.abuse_warning_notified_at = nil
-	delete(m.clearedFields, workspace.FieldAbuseWarningNotifiedAt)
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (m *WorkspaceMutation) SetAbuseFreezeNotifiedAt(t time.Time) {
-	m.abuse_freeze_notified_at = &t
-}
-
-// AbuseFreezeNotifiedAt returns the value of the "abuse_freeze_notified_at" field in the mutation.
-func (m *WorkspaceMutation) AbuseFreezeNotifiedAt() (r time.Time, exists bool) {
-	v := m.abuse_freeze_notified_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAbuseFreezeNotifiedAt returns the old "abuse_freeze_notified_at" field's value of the Workspace entity.
-// If the Workspace object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WorkspaceMutation) OldAbuseFreezeNotifiedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAbuseFreezeNotifiedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAbuseFreezeNotifiedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAbuseFreezeNotifiedAt: %w", err)
-	}
-	return oldValue.AbuseFreezeNotifiedAt, nil
-}
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (m *WorkspaceMutation) ClearAbuseFreezeNotifiedAt() {
-	m.abuse_freeze_notified_at = nil
-	m.clearedFields[workspace.FieldAbuseFreezeNotifiedAt] = struct{}{}
-}
-
-// AbuseFreezeNotifiedAtCleared returns if the "abuse_freeze_notified_at" field was cleared in this mutation.
-func (m *WorkspaceMutation) AbuseFreezeNotifiedAtCleared() bool {
-	_, ok := m.clearedFields[workspace.FieldAbuseFreezeNotifiedAt]
-	return ok
-}
-
-// ResetAbuseFreezeNotifiedAt resets all changes to the "abuse_freeze_notified_at" field.
-func (m *WorkspaceMutation) ResetAbuseFreezeNotifiedAt() {
-	m.abuse_freeze_notified_at = nil
-	delete(m.clearedFields, workspace.FieldAbuseFreezeNotifiedAt)
 }
 
 // AddContactIDs adds the "contacts" edge to the Contact entity by ids.
@@ -78279,6 +79403,153 @@ func (m *WorkspaceMutation) ResetUsages() {
 	m.removedusages = nil
 }
 
+// AddIntegrationProviderStateIDs adds the "integration_provider_states" edge to the IntegrationProviderState entity by ids.
+func (m *WorkspaceMutation) AddIntegrationProviderStateIDs(ids ...int64) {
+	if m.integration_provider_states == nil {
+		m.integration_provider_states = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.integration_provider_states[ids[i]] = struct{}{}
+	}
+}
+
+// ClearIntegrationProviderStates clears the "integration_provider_states" edge to the IntegrationProviderState entity.
+func (m *WorkspaceMutation) ClearIntegrationProviderStates() {
+	m.clearedintegration_provider_states = true
+}
+
+// IntegrationProviderStatesCleared reports if the "integration_provider_states" edge to the IntegrationProviderState entity was cleared.
+func (m *WorkspaceMutation) IntegrationProviderStatesCleared() bool {
+	return m.clearedintegration_provider_states
+}
+
+// RemoveIntegrationProviderStateIDs removes the "integration_provider_states" edge to the IntegrationProviderState entity by IDs.
+func (m *WorkspaceMutation) RemoveIntegrationProviderStateIDs(ids ...int64) {
+	if m.removedintegration_provider_states == nil {
+		m.removedintegration_provider_states = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.integration_provider_states, ids[i])
+		m.removedintegration_provider_states[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedIntegrationProviderStates returns the removed IDs of the "integration_provider_states" edge to the IntegrationProviderState entity.
+func (m *WorkspaceMutation) RemovedIntegrationProviderStatesIDs() (ids []int64) {
+	for id := range m.removedintegration_provider_states {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// IntegrationProviderStatesIDs returns the "integration_provider_states" edge IDs in the mutation.
+func (m *WorkspaceMutation) IntegrationProviderStatesIDs() (ids []int64) {
+	for id := range m.integration_provider_states {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetIntegrationProviderStates resets all changes to the "integration_provider_states" edge.
+func (m *WorkspaceMutation) ResetIntegrationProviderStates() {
+	m.integration_provider_states = nil
+	m.clearedintegration_provider_states = false
+	m.removedintegration_provider_states = nil
+}
+
+// AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by ids.
+func (m *WorkspaceMutation) AddWebhookEndpointHealthIDs(ids ...int64) {
+	if m.webhook_endpoint_healths == nil {
+		m.webhook_endpoint_healths = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.webhook_endpoint_healths[ids[i]] = struct{}{}
+	}
+}
+
+// ClearWebhookEndpointHealths clears the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity.
+func (m *WorkspaceMutation) ClearWebhookEndpointHealths() {
+	m.clearedwebhook_endpoint_healths = true
+}
+
+// WebhookEndpointHealthsCleared reports if the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity was cleared.
+func (m *WorkspaceMutation) WebhookEndpointHealthsCleared() bool {
+	return m.clearedwebhook_endpoint_healths
+}
+
+// RemoveWebhookEndpointHealthIDs removes the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
+func (m *WorkspaceMutation) RemoveWebhookEndpointHealthIDs(ids ...int64) {
+	if m.removedwebhook_endpoint_healths == nil {
+		m.removedwebhook_endpoint_healths = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.webhook_endpoint_healths, ids[i])
+		m.removedwebhook_endpoint_healths[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedWebhookEndpointHealths returns the removed IDs of the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity.
+func (m *WorkspaceMutation) RemovedWebhookEndpointHealthsIDs() (ids []int64) {
+	for id := range m.removedwebhook_endpoint_healths {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// WebhookEndpointHealthsIDs returns the "webhook_endpoint_healths" edge IDs in the mutation.
+func (m *WorkspaceMutation) WebhookEndpointHealthsIDs() (ids []int64) {
+	for id := range m.webhook_endpoint_healths {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetWebhookEndpointHealths resets all changes to the "webhook_endpoint_healths" edge.
+func (m *WorkspaceMutation) ResetWebhookEndpointHealths() {
+	m.webhook_endpoint_healths = nil
+	m.clearedwebhook_endpoint_healths = false
+	m.removedwebhook_endpoint_healths = nil
+}
+
+// SetStandingID sets the "standing" edge to the WorkspaceStanding entity by id.
+func (m *WorkspaceMutation) SetStandingID(id int64) {
+	m.standing = &id
+}
+
+// ClearStanding clears the "standing" edge to the WorkspaceStanding entity.
+func (m *WorkspaceMutation) ClearStanding() {
+	m.clearedstanding = true
+}
+
+// StandingCleared reports if the "standing" edge to the WorkspaceStanding entity was cleared.
+func (m *WorkspaceMutation) StandingCleared() bool {
+	return m.clearedstanding
+}
+
+// StandingID returns the "standing" edge ID in the mutation.
+func (m *WorkspaceMutation) StandingID() (id int64, exists bool) {
+	if m.standing != nil {
+		return *m.standing, true
+	}
+	return
+}
+
+// StandingIDs returns the "standing" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// StandingID instead. It exists only for internal usage by the builders.
+func (m *WorkspaceMutation) StandingIDs() (ids []int64) {
+	if id := m.standing; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetStanding resets all changes to the "standing" edge.
+func (m *WorkspaceMutation) ResetStanding() {
+	m.standing = nil
+	m.clearedstanding = false
+}
+
 // Where appends a list predicates to the WorkspaceMutation builder.
 func (m *WorkspaceMutation) Where(ps ...predicate.Workspace) {
 	m.predicates = append(m.predicates, ps...)
@@ -78313,7 +79584,7 @@ func (m *WorkspaceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *WorkspaceMutation) Fields() []string {
-	fields := make([]string, 0, 27)
+	fields := make([]string, 0, 23)
 	if m.created_at != nil {
 		fields = append(fields, workspace.FieldCreatedAt)
 	}
@@ -78347,9 +79618,6 @@ func (m *WorkspaceMutation) Fields() []string {
 	if m.timezone != nil {
 		fields = append(fields, workspace.FieldTimezone)
 	}
-	if m.setup_completed_at != nil {
-		fields = append(fields, workspace.FieldSetupCompletedAt)
-	}
 	if m.reporting_currency != nil {
 		fields = append(fields, workspace.FieldReportingCurrency)
 	}
@@ -78364,9 +79632,6 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.second_factor_required_at != nil {
 		fields = append(fields, workspace.FieldSecondFactorRequiredAt)
-	}
-	if m.feed_position != nil {
-		fields = append(fields, workspace.FieldFeedPosition)
 	}
 	if m.erased_at != nil {
 		fields = append(fields, workspace.FieldErasedAt)
@@ -78388,12 +79653,6 @@ func (m *WorkspaceMutation) Fields() []string {
 	}
 	if m.abuse_exempt != nil {
 		fields = append(fields, workspace.FieldAbuseExempt)
-	}
-	if m.abuse_warning_notified_at != nil {
-		fields = append(fields, workspace.FieldAbuseWarningNotifiedAt)
-	}
-	if m.abuse_freeze_notified_at != nil {
-		fields = append(fields, workspace.FieldAbuseFreezeNotifiedAt)
 	}
 	return fields
 }
@@ -78425,8 +79684,6 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.RetentionDays()
 	case workspace.FieldTimezone:
 		return m.Timezone()
-	case workspace.FieldSetupCompletedAt:
-		return m.SetupCompletedAt()
 	case workspace.FieldReportingCurrency:
 		return m.ReportingCurrency()
 	case workspace.FieldAttributionWindowDays:
@@ -78437,8 +79694,6 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.DomainJoinEnabled()
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.SecondFactorRequiredAt()
-	case workspace.FieldFeedPosition:
-		return m.FeedPosition()
 	case workspace.FieldErasedAt:
 		return m.ErasedAt()
 	case workspace.FieldSuspendedAt:
@@ -78453,10 +79708,6 @@ func (m *WorkspaceMutation) Field(name string) (ent.Value, bool) {
 		return m.ClearedAt()
 	case workspace.FieldAbuseExempt:
 		return m.AbuseExempt()
-	case workspace.FieldAbuseWarningNotifiedAt:
-		return m.AbuseWarningNotifiedAt()
-	case workspace.FieldAbuseFreezeNotifiedAt:
-		return m.AbuseFreezeNotifiedAt()
 	}
 	return nil, false
 }
@@ -78488,8 +79739,6 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldRetentionDays(ctx)
 	case workspace.FieldTimezone:
 		return m.OldTimezone(ctx)
-	case workspace.FieldSetupCompletedAt:
-		return m.OldSetupCompletedAt(ctx)
 	case workspace.FieldReportingCurrency:
 		return m.OldReportingCurrency(ctx)
 	case workspace.FieldAttributionWindowDays:
@@ -78500,8 +79749,6 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldDomainJoinEnabled(ctx)
 	case workspace.FieldSecondFactorRequiredAt:
 		return m.OldSecondFactorRequiredAt(ctx)
-	case workspace.FieldFeedPosition:
-		return m.OldFeedPosition(ctx)
 	case workspace.FieldErasedAt:
 		return m.OldErasedAt(ctx)
 	case workspace.FieldSuspendedAt:
@@ -78516,10 +79763,6 @@ func (m *WorkspaceMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldClearedAt(ctx)
 	case workspace.FieldAbuseExempt:
 		return m.OldAbuseExempt(ctx)
-	case workspace.FieldAbuseWarningNotifiedAt:
-		return m.OldAbuseWarningNotifiedAt(ctx)
-	case workspace.FieldAbuseFreezeNotifiedAt:
-		return m.OldAbuseFreezeNotifiedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Workspace field %s", name)
 }
@@ -78606,13 +79849,6 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTimezone(v)
 		return nil
-	case workspace.FieldSetupCompletedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetSetupCompletedAt(v)
-		return nil
 	case workspace.FieldReportingCurrency:
 		v, ok := value.(string)
 		if !ok {
@@ -78647,13 +79883,6 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSecondFactorRequiredAt(v)
-		return nil
-	case workspace.FieldFeedPosition:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFeedPosition(v)
 		return nil
 	case workspace.FieldErasedAt:
 		v, ok := value.(time.Time)
@@ -78704,20 +79933,6 @@ func (m *WorkspaceMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAbuseExempt(v)
 		return nil
-	case workspace.FieldAbuseWarningNotifiedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAbuseWarningNotifiedAt(v)
-		return nil
-	case workspace.FieldAbuseFreezeNotifiedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAbuseFreezeNotifiedAt(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Workspace field %s", name)
 }
@@ -78738,9 +79953,6 @@ func (m *WorkspaceMutation) AddedFields() []string {
 	if m.addsend_cap != nil {
 		fields = append(fields, workspace.FieldSendCap)
 	}
-	if m.addfeed_position != nil {
-		fields = append(fields, workspace.FieldFeedPosition)
-	}
 	return fields
 }
 
@@ -78757,8 +79969,6 @@ func (m *WorkspaceMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAttributionWindowDays()
 	case workspace.FieldSendCap:
 		return m.AddedSendCap()
-	case workspace.FieldFeedPosition:
-		return m.AddedFeedPosition()
 	}
 	return nil, false
 }
@@ -78796,13 +80006,6 @@ func (m *WorkspaceMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddSendCap(v)
 		return nil
-	case workspace.FieldFeedPosition:
-		v, ok := value.(int64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddFeedPosition(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Workspace numeric field %s", name)
 }
@@ -78822,9 +80025,6 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(workspace.FieldTimezone) {
 		fields = append(fields, workspace.FieldTimezone)
-	}
-	if m.FieldCleared(workspace.FieldSetupCompletedAt) {
-		fields = append(fields, workspace.FieldSetupCompletedAt)
 	}
 	if m.FieldCleared(workspace.FieldReportingCurrency) {
 		fields = append(fields, workspace.FieldReportingCurrency)
@@ -78853,12 +80053,6 @@ func (m *WorkspaceMutation) ClearedFields() []string {
 	if m.FieldCleared(workspace.FieldClearedAt) {
 		fields = append(fields, workspace.FieldClearedAt)
 	}
-	if m.FieldCleared(workspace.FieldAbuseWarningNotifiedAt) {
-		fields = append(fields, workspace.FieldAbuseWarningNotifiedAt)
-	}
-	if m.FieldCleared(workspace.FieldAbuseFreezeNotifiedAt) {
-		fields = append(fields, workspace.FieldAbuseFreezeNotifiedAt)
-	}
 	return fields
 }
 
@@ -78884,9 +80078,6 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldTimezone:
 		m.ClearTimezone()
-		return nil
-	case workspace.FieldSetupCompletedAt:
-		m.ClearSetupCompletedAt()
 		return nil
 	case workspace.FieldReportingCurrency:
 		m.ClearReportingCurrency()
@@ -78914,12 +80105,6 @@ func (m *WorkspaceMutation) ClearField(name string) error {
 		return nil
 	case workspace.FieldClearedAt:
 		m.ClearClearedAt()
-		return nil
-	case workspace.FieldAbuseWarningNotifiedAt:
-		m.ClearAbuseWarningNotifiedAt()
-		return nil
-	case workspace.FieldAbuseFreezeNotifiedAt:
-		m.ClearAbuseFreezeNotifiedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Workspace nullable field %s", name)
@@ -78962,9 +80147,6 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 	case workspace.FieldTimezone:
 		m.ResetTimezone()
 		return nil
-	case workspace.FieldSetupCompletedAt:
-		m.ResetSetupCompletedAt()
-		return nil
 	case workspace.FieldReportingCurrency:
 		m.ResetReportingCurrency()
 		return nil
@@ -78979,9 +80161,6 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 		return nil
 	case workspace.FieldSecondFactorRequiredAt:
 		m.ResetSecondFactorRequiredAt()
-		return nil
-	case workspace.FieldFeedPosition:
-		m.ResetFeedPosition()
 		return nil
 	case workspace.FieldErasedAt:
 		m.ResetErasedAt()
@@ -79004,19 +80183,13 @@ func (m *WorkspaceMutation) ResetField(name string) error {
 	case workspace.FieldAbuseExempt:
 		m.ResetAbuseExempt()
 		return nil
-	case workspace.FieldAbuseWarningNotifiedAt:
-		m.ResetAbuseWarningNotifiedAt()
-		return nil
-	case workspace.FieldAbuseFreezeNotifiedAt:
-		m.ResetAbuseFreezeNotifiedAt()
-		return nil
 	}
 	return fmt.Errorf("unknown Workspace field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WorkspaceMutation) AddedEdges() []string {
-	edges := make([]string, 0, 48)
+	edges := make([]string, 0, 51)
 	if m.contacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -79160,6 +80333,15 @@ func (m *WorkspaceMutation) AddedEdges() []string {
 	}
 	if m.usages != nil {
 		edges = append(edges, workspace.EdgeUsages)
+	}
+	if m.integration_provider_states != nil {
+		edges = append(edges, workspace.EdgeIntegrationProviderStates)
+	}
+	if m.webhook_endpoint_healths != nil {
+		edges = append(edges, workspace.EdgeWebhookEndpointHealths)
+	}
+	if m.standing != nil {
+		edges = append(edges, workspace.EdgeStanding)
 	}
 	return edges
 }
@@ -79456,13 +80638,29 @@ func (m *WorkspaceMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeIntegrationProviderStates:
+		ids := make([]ent.Value, 0, len(m.integration_provider_states))
+		for id := range m.integration_provider_states {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeWebhookEndpointHealths:
+		ids := make([]ent.Value, 0, len(m.webhook_endpoint_healths))
+		for id := range m.webhook_endpoint_healths {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeStanding:
+		if id := m.standing; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *WorkspaceMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 48)
+	edges := make([]string, 0, 51)
 	if m.removedcontacts != nil {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -79606,6 +80804,12 @@ func (m *WorkspaceMutation) RemovedEdges() []string {
 	}
 	if m.removedusages != nil {
 		edges = append(edges, workspace.EdgeUsages)
+	}
+	if m.removedintegration_provider_states != nil {
+		edges = append(edges, workspace.EdgeIntegrationProviderStates)
+	}
+	if m.removedwebhook_endpoint_healths != nil {
+		edges = append(edges, workspace.EdgeWebhookEndpointHealths)
 	}
 	return edges
 }
@@ -79902,13 +81106,25 @@ func (m *WorkspaceMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case workspace.EdgeIntegrationProviderStates:
+		ids := make([]ent.Value, 0, len(m.removedintegration_provider_states))
+		for id := range m.removedintegration_provider_states {
+			ids = append(ids, id)
+		}
+		return ids
+	case workspace.EdgeWebhookEndpointHealths:
+		ids := make([]ent.Value, 0, len(m.removedwebhook_endpoint_healths))
+		for id := range m.removedwebhook_endpoint_healths {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WorkspaceMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 48)
+	edges := make([]string, 0, 51)
 	if m.clearedcontacts {
 		edges = append(edges, workspace.EdgeContacts)
 	}
@@ -80053,6 +81269,15 @@ func (m *WorkspaceMutation) ClearedEdges() []string {
 	if m.clearedusages {
 		edges = append(edges, workspace.EdgeUsages)
 	}
+	if m.clearedintegration_provider_states {
+		edges = append(edges, workspace.EdgeIntegrationProviderStates)
+	}
+	if m.clearedwebhook_endpoint_healths {
+		edges = append(edges, workspace.EdgeWebhookEndpointHealths)
+	}
+	if m.clearedstanding {
+		edges = append(edges, workspace.EdgeStanding)
+	}
 	return edges
 }
 
@@ -80156,6 +81381,12 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 		return m.clearederasures
 	case workspace.EdgeUsages:
 		return m.clearedusages
+	case workspace.EdgeIntegrationProviderStates:
+		return m.clearedintegration_provider_states
+	case workspace.EdgeWebhookEndpointHealths:
+		return m.clearedwebhook_endpoint_healths
+	case workspace.EdgeStanding:
+		return m.clearedstanding
 	}
 	return false
 }
@@ -80164,6 +81395,9 @@ func (m *WorkspaceMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *WorkspaceMutation) ClearEdge(name string) error {
 	switch name {
+	case workspace.EdgeStanding:
+		m.ClearStanding()
+		return nil
 	}
 	return fmt.Errorf("unknown Workspace unique edge %s", name)
 }
@@ -80316,6 +81550,821 @@ func (m *WorkspaceMutation) ResetEdge(name string) error {
 	case workspace.EdgeUsages:
 		m.ResetUsages()
 		return nil
+	case workspace.EdgeIntegrationProviderStates:
+		m.ResetIntegrationProviderStates()
+		return nil
+	case workspace.EdgeWebhookEndpointHealths:
+		m.ResetWebhookEndpointHealths()
+		return nil
+	case workspace.EdgeStanding:
+		m.ResetStanding()
+		return nil
 	}
 	return fmt.Errorf("unknown Workspace edge %s", name)
+}
+
+// WorkspaceStandingMutation represents an operation that mutates the WorkspaceStanding nodes in the graph.
+type WorkspaceStandingMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	created_at                *time.Time
+	updated_at                *time.Time
+	feed_position             *int64
+	addfeed_position          *int64
+	setup_completed_at        *time.Time
+	abuse_warning_notified_at *time.Time
+	abuse_freeze_notified_at  *time.Time
+	clearedFields             map[string]struct{}
+	workspace                 *int64
+	clearedworkspace          bool
+	done                      bool
+	oldValue                  func(context.Context) (*WorkspaceStanding, error)
+	predicates                []predicate.WorkspaceStanding
+}
+
+var _ ent.Mutation = (*WorkspaceStandingMutation)(nil)
+
+// workspacestandingOption allows management of the mutation configuration using functional options.
+type workspacestandingOption func(*WorkspaceStandingMutation)
+
+// newWorkspaceStandingMutation creates new mutation for the WorkspaceStanding entity.
+func newWorkspaceStandingMutation(c config, op Op, opts ...workspacestandingOption) *WorkspaceStandingMutation {
+	m := &WorkspaceStandingMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeWorkspaceStanding,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withWorkspaceStandingID sets the ID field of the mutation.
+func withWorkspaceStandingID(id int64) workspacestandingOption {
+	return func(m *WorkspaceStandingMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *WorkspaceStanding
+		)
+		m.oldValue = func(ctx context.Context) (*WorkspaceStanding, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().WorkspaceStanding.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withWorkspaceStanding sets the old WorkspaceStanding of the mutation.
+func withWorkspaceStanding(node *WorkspaceStanding) workspacestandingOption {
+	return func(m *WorkspaceStandingMutation) {
+		m.oldValue = func(context.Context) (*WorkspaceStanding, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m WorkspaceStandingMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m WorkspaceStandingMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of WorkspaceStanding entities.
+func (m *WorkspaceStandingMutation) SetID(id int64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *WorkspaceStandingMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *WorkspaceStandingMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().WorkspaceStanding.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *WorkspaceStandingMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *WorkspaceStandingMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *WorkspaceStandingMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *WorkspaceStandingMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *WorkspaceStandingMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *WorkspaceStandingMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetWorkspaceID sets the "workspace_id" field.
+func (m *WorkspaceStandingMutation) SetWorkspaceID(i int64) {
+	m.workspace = &i
+}
+
+// WorkspaceID returns the value of the "workspace_id" field in the mutation.
+func (m *WorkspaceStandingMutation) WorkspaceID() (r int64, exists bool) {
+	v := m.workspace
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWorkspaceID returns the old "workspace_id" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldWorkspaceID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldWorkspaceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldWorkspaceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWorkspaceID: %w", err)
+	}
+	return oldValue.WorkspaceID, nil
+}
+
+// ResetWorkspaceID resets all changes to the "workspace_id" field.
+func (m *WorkspaceStandingMutation) ResetWorkspaceID() {
+	m.workspace = nil
+}
+
+// SetFeedPosition sets the "feed_position" field.
+func (m *WorkspaceStandingMutation) SetFeedPosition(i int64) {
+	m.feed_position = &i
+	m.addfeed_position = nil
+}
+
+// FeedPosition returns the value of the "feed_position" field in the mutation.
+func (m *WorkspaceStandingMutation) FeedPosition() (r int64, exists bool) {
+	v := m.feed_position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeedPosition returns the old "feed_position" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldFeedPosition(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeedPosition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeedPosition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeedPosition: %w", err)
+	}
+	return oldValue.FeedPosition, nil
+}
+
+// AddFeedPosition adds i to the "feed_position" field.
+func (m *WorkspaceStandingMutation) AddFeedPosition(i int64) {
+	if m.addfeed_position != nil {
+		*m.addfeed_position += i
+	} else {
+		m.addfeed_position = &i
+	}
+}
+
+// AddedFeedPosition returns the value that was added to the "feed_position" field in this mutation.
+func (m *WorkspaceStandingMutation) AddedFeedPosition() (r int64, exists bool) {
+	v := m.addfeed_position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFeedPosition resets all changes to the "feed_position" field.
+func (m *WorkspaceStandingMutation) ResetFeedPosition() {
+	m.feed_position = nil
+	m.addfeed_position = nil
+}
+
+// SetSetupCompletedAt sets the "setup_completed_at" field.
+func (m *WorkspaceStandingMutation) SetSetupCompletedAt(t time.Time) {
+	m.setup_completed_at = &t
+}
+
+// SetupCompletedAt returns the value of the "setup_completed_at" field in the mutation.
+func (m *WorkspaceStandingMutation) SetupCompletedAt() (r time.Time, exists bool) {
+	v := m.setup_completed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSetupCompletedAt returns the old "setup_completed_at" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldSetupCompletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSetupCompletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSetupCompletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSetupCompletedAt: %w", err)
+	}
+	return oldValue.SetupCompletedAt, nil
+}
+
+// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
+func (m *WorkspaceStandingMutation) ClearSetupCompletedAt() {
+	m.setup_completed_at = nil
+	m.clearedFields[workspacestanding.FieldSetupCompletedAt] = struct{}{}
+}
+
+// SetupCompletedAtCleared returns if the "setup_completed_at" field was cleared in this mutation.
+func (m *WorkspaceStandingMutation) SetupCompletedAtCleared() bool {
+	_, ok := m.clearedFields[workspacestanding.FieldSetupCompletedAt]
+	return ok
+}
+
+// ResetSetupCompletedAt resets all changes to the "setup_completed_at" field.
+func (m *WorkspaceStandingMutation) ResetSetupCompletedAt() {
+	m.setup_completed_at = nil
+	delete(m.clearedFields, workspacestanding.FieldSetupCompletedAt)
+}
+
+// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
+func (m *WorkspaceStandingMutation) SetAbuseWarningNotifiedAt(t time.Time) {
+	m.abuse_warning_notified_at = &t
+}
+
+// AbuseWarningNotifiedAt returns the value of the "abuse_warning_notified_at" field in the mutation.
+func (m *WorkspaceStandingMutation) AbuseWarningNotifiedAt() (r time.Time, exists bool) {
+	v := m.abuse_warning_notified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAbuseWarningNotifiedAt returns the old "abuse_warning_notified_at" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldAbuseWarningNotifiedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAbuseWarningNotifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAbuseWarningNotifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAbuseWarningNotifiedAt: %w", err)
+	}
+	return oldValue.AbuseWarningNotifiedAt, nil
+}
+
+// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
+func (m *WorkspaceStandingMutation) ClearAbuseWarningNotifiedAt() {
+	m.abuse_warning_notified_at = nil
+	m.clearedFields[workspacestanding.FieldAbuseWarningNotifiedAt] = struct{}{}
+}
+
+// AbuseWarningNotifiedAtCleared returns if the "abuse_warning_notified_at" field was cleared in this mutation.
+func (m *WorkspaceStandingMutation) AbuseWarningNotifiedAtCleared() bool {
+	_, ok := m.clearedFields[workspacestanding.FieldAbuseWarningNotifiedAt]
+	return ok
+}
+
+// ResetAbuseWarningNotifiedAt resets all changes to the "abuse_warning_notified_at" field.
+func (m *WorkspaceStandingMutation) ResetAbuseWarningNotifiedAt() {
+	m.abuse_warning_notified_at = nil
+	delete(m.clearedFields, workspacestanding.FieldAbuseWarningNotifiedAt)
+}
+
+// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
+func (m *WorkspaceStandingMutation) SetAbuseFreezeNotifiedAt(t time.Time) {
+	m.abuse_freeze_notified_at = &t
+}
+
+// AbuseFreezeNotifiedAt returns the value of the "abuse_freeze_notified_at" field in the mutation.
+func (m *WorkspaceStandingMutation) AbuseFreezeNotifiedAt() (r time.Time, exists bool) {
+	v := m.abuse_freeze_notified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAbuseFreezeNotifiedAt returns the old "abuse_freeze_notified_at" field's value of the WorkspaceStanding entity.
+// If the WorkspaceStanding object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WorkspaceStandingMutation) OldAbuseFreezeNotifiedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAbuseFreezeNotifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAbuseFreezeNotifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAbuseFreezeNotifiedAt: %w", err)
+	}
+	return oldValue.AbuseFreezeNotifiedAt, nil
+}
+
+// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
+func (m *WorkspaceStandingMutation) ClearAbuseFreezeNotifiedAt() {
+	m.abuse_freeze_notified_at = nil
+	m.clearedFields[workspacestanding.FieldAbuseFreezeNotifiedAt] = struct{}{}
+}
+
+// AbuseFreezeNotifiedAtCleared returns if the "abuse_freeze_notified_at" field was cleared in this mutation.
+func (m *WorkspaceStandingMutation) AbuseFreezeNotifiedAtCleared() bool {
+	_, ok := m.clearedFields[workspacestanding.FieldAbuseFreezeNotifiedAt]
+	return ok
+}
+
+// ResetAbuseFreezeNotifiedAt resets all changes to the "abuse_freeze_notified_at" field.
+func (m *WorkspaceStandingMutation) ResetAbuseFreezeNotifiedAt() {
+	m.abuse_freeze_notified_at = nil
+	delete(m.clearedFields, workspacestanding.FieldAbuseFreezeNotifiedAt)
+}
+
+// ClearWorkspace clears the "workspace" edge to the Workspace entity.
+func (m *WorkspaceStandingMutation) ClearWorkspace() {
+	m.clearedworkspace = true
+	m.clearedFields[workspacestanding.FieldWorkspaceID] = struct{}{}
+}
+
+// WorkspaceCleared reports if the "workspace" edge to the Workspace entity was cleared.
+func (m *WorkspaceStandingMutation) WorkspaceCleared() bool {
+	return m.clearedworkspace
+}
+
+// WorkspaceIDs returns the "workspace" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WorkspaceID instead. It exists only for internal usage by the builders.
+func (m *WorkspaceStandingMutation) WorkspaceIDs() (ids []int64) {
+	if id := m.workspace; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWorkspace resets all changes to the "workspace" edge.
+func (m *WorkspaceStandingMutation) ResetWorkspace() {
+	m.workspace = nil
+	m.clearedworkspace = false
+}
+
+// Where appends a list predicates to the WorkspaceStandingMutation builder.
+func (m *WorkspaceStandingMutation) Where(ps ...predicate.WorkspaceStanding) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the WorkspaceStandingMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *WorkspaceStandingMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.WorkspaceStanding, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *WorkspaceStandingMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *WorkspaceStandingMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (WorkspaceStanding).
+func (m *WorkspaceStandingMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *WorkspaceStandingMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.created_at != nil {
+		fields = append(fields, workspacestanding.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, workspacestanding.FieldUpdatedAt)
+	}
+	if m.workspace != nil {
+		fields = append(fields, workspacestanding.FieldWorkspaceID)
+	}
+	if m.feed_position != nil {
+		fields = append(fields, workspacestanding.FieldFeedPosition)
+	}
+	if m.setup_completed_at != nil {
+		fields = append(fields, workspacestanding.FieldSetupCompletedAt)
+	}
+	if m.abuse_warning_notified_at != nil {
+		fields = append(fields, workspacestanding.FieldAbuseWarningNotifiedAt)
+	}
+	if m.abuse_freeze_notified_at != nil {
+		fields = append(fields, workspacestanding.FieldAbuseFreezeNotifiedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *WorkspaceStandingMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case workspacestanding.FieldCreatedAt:
+		return m.CreatedAt()
+	case workspacestanding.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case workspacestanding.FieldWorkspaceID:
+		return m.WorkspaceID()
+	case workspacestanding.FieldFeedPosition:
+		return m.FeedPosition()
+	case workspacestanding.FieldSetupCompletedAt:
+		return m.SetupCompletedAt()
+	case workspacestanding.FieldAbuseWarningNotifiedAt:
+		return m.AbuseWarningNotifiedAt()
+	case workspacestanding.FieldAbuseFreezeNotifiedAt:
+		return m.AbuseFreezeNotifiedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *WorkspaceStandingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case workspacestanding.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case workspacestanding.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case workspacestanding.FieldWorkspaceID:
+		return m.OldWorkspaceID(ctx)
+	case workspacestanding.FieldFeedPosition:
+		return m.OldFeedPosition(ctx)
+	case workspacestanding.FieldSetupCompletedAt:
+		return m.OldSetupCompletedAt(ctx)
+	case workspacestanding.FieldAbuseWarningNotifiedAt:
+		return m.OldAbuseWarningNotifiedAt(ctx)
+	case workspacestanding.FieldAbuseFreezeNotifiedAt:
+		return m.OldAbuseFreezeNotifiedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown WorkspaceStanding field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WorkspaceStandingMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case workspacestanding.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case workspacestanding.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case workspacestanding.FieldWorkspaceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWorkspaceID(v)
+		return nil
+	case workspacestanding.FieldFeedPosition:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeedPosition(v)
+		return nil
+	case workspacestanding.FieldSetupCompletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSetupCompletedAt(v)
+		return nil
+	case workspacestanding.FieldAbuseWarningNotifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAbuseWarningNotifiedAt(v)
+		return nil
+	case workspacestanding.FieldAbuseFreezeNotifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAbuseFreezeNotifiedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WorkspaceStanding field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *WorkspaceStandingMutation) AddedFields() []string {
+	var fields []string
+	if m.addfeed_position != nil {
+		fields = append(fields, workspacestanding.FieldFeedPosition)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *WorkspaceStandingMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case workspacestanding.FieldFeedPosition:
+		return m.AddedFeedPosition()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WorkspaceStandingMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case workspacestanding.FieldFeedPosition:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFeedPosition(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WorkspaceStanding numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *WorkspaceStandingMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(workspacestanding.FieldSetupCompletedAt) {
+		fields = append(fields, workspacestanding.FieldSetupCompletedAt)
+	}
+	if m.FieldCleared(workspacestanding.FieldAbuseWarningNotifiedAt) {
+		fields = append(fields, workspacestanding.FieldAbuseWarningNotifiedAt)
+	}
+	if m.FieldCleared(workspacestanding.FieldAbuseFreezeNotifiedAt) {
+		fields = append(fields, workspacestanding.FieldAbuseFreezeNotifiedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *WorkspaceStandingMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *WorkspaceStandingMutation) ClearField(name string) error {
+	switch name {
+	case workspacestanding.FieldSetupCompletedAt:
+		m.ClearSetupCompletedAt()
+		return nil
+	case workspacestanding.FieldAbuseWarningNotifiedAt:
+		m.ClearAbuseWarningNotifiedAt()
+		return nil
+	case workspacestanding.FieldAbuseFreezeNotifiedAt:
+		m.ClearAbuseFreezeNotifiedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown WorkspaceStanding nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *WorkspaceStandingMutation) ResetField(name string) error {
+	switch name {
+	case workspacestanding.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case workspacestanding.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case workspacestanding.FieldWorkspaceID:
+		m.ResetWorkspaceID()
+		return nil
+	case workspacestanding.FieldFeedPosition:
+		m.ResetFeedPosition()
+		return nil
+	case workspacestanding.FieldSetupCompletedAt:
+		m.ResetSetupCompletedAt()
+		return nil
+	case workspacestanding.FieldAbuseWarningNotifiedAt:
+		m.ResetAbuseWarningNotifiedAt()
+		return nil
+	case workspacestanding.FieldAbuseFreezeNotifiedAt:
+		m.ResetAbuseFreezeNotifiedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown WorkspaceStanding field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *WorkspaceStandingMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.workspace != nil {
+		edges = append(edges, workspacestanding.EdgeWorkspace)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *WorkspaceStandingMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case workspacestanding.EdgeWorkspace:
+		if id := m.workspace; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *WorkspaceStandingMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *WorkspaceStandingMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *WorkspaceStandingMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedworkspace {
+		edges = append(edges, workspacestanding.EdgeWorkspace)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *WorkspaceStandingMutation) EdgeCleared(name string) bool {
+	switch name {
+	case workspacestanding.EdgeWorkspace:
+		return m.clearedworkspace
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *WorkspaceStandingMutation) ClearEdge(name string) error {
+	switch name {
+	case workspacestanding.EdgeWorkspace:
+		m.ClearWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown WorkspaceStanding unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *WorkspaceStandingMutation) ResetEdge(name string) error {
+	switch name {
+	case workspacestanding.EdgeWorkspace:
+		m.ResetWorkspace()
+		return nil
+	}
+	return fmt.Errorf("unknown WorkspaceStanding edge %s", name)
 }

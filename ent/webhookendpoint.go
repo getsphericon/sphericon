@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
-	"github.com/getsphericon/sphericon/internal/infra/webhook"
 )
 
 // WebhookEndpoint is the model entity for the WebhookEndpoint schema.
@@ -38,16 +38,6 @@ type WebhookEndpoint struct {
 	DisabledAt *time.Time `json:"disabled_at,omitempty"`
 	// HealthGeneration holds the value of the "health_generation" field.
 	HealthGeneration *int64 `json:"health_generation,omitempty"`
-	// ConsecutiveFailures holds the value of the "consecutive_failures" field.
-	ConsecutiveFailures *int `json:"consecutive_failures,omitempty"`
-	// FailingSince holds the value of the "failing_since" field.
-	FailingSince *time.Time `json:"failing_since,omitempty"`
-	// LastErrorKind holds the value of the "last_error_kind" field.
-	LastErrorKind *webhook.ErrorKind `json:"last_error_kind,omitempty"`
-	// LastErrorStatus holds the value of the "last_error_status" field.
-	LastErrorStatus *int `json:"last_error_status,omitempty"`
-	// LastFailureAt holds the value of the "last_failure_at" field.
-	LastFailureAt *time.Time `json:"last_failure_at,omitempty"`
 	// DisabledReason holds the value of the "disabled_reason" field.
 	DisabledReason *webhookendpoint.DisabledReason `json:"disabled_reason,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -60,9 +50,11 @@ type WebhookEndpoint struct {
 type WebhookEndpointEdges struct {
 	// Workspace holds the value of the workspace edge.
 	Workspace *Workspace `json:"workspace,omitempty"`
+	// Health holds the value of the health edge.
+	Health *WebhookEndpointHealth `json:"health,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -76,6 +68,17 @@ func (e WebhookEndpointEdges) WorkspaceOrErr() (*Workspace, error) {
 	return nil, &NotLoadedError{edge: "workspace"}
 }
 
+// HealthOrErr returns the Health value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e WebhookEndpointEdges) HealthOrErr() (*WebhookEndpointHealth, error) {
+	if e.Health != nil {
+		return e.Health, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: webhookendpointhealth.Label}
+	}
+	return nil, &NotLoadedError{edge: "health"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*WebhookEndpoint) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -83,11 +86,11 @@ func (*WebhookEndpoint) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case webhookendpoint.FieldEventTypes:
 			values[i] = new([]byte)
-		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldRevision, webhookendpoint.FieldHealthGeneration, webhookendpoint.FieldConsecutiveFailures, webhookendpoint.FieldLastErrorStatus:
+		case webhookendpoint.FieldID, webhookendpoint.FieldWorkspaceID, webhookendpoint.FieldRevision, webhookendpoint.FieldHealthGeneration:
 			values[i] = new(sql.NullInt64)
-		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldLastErrorKind, webhookendpoint.FieldDisabledReason:
+		case webhookendpoint.FieldURL, webhookendpoint.FieldSecretEncrypted, webhookendpoint.FieldDisabledReason:
 			values[i] = new(sql.NullString)
-		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt, webhookendpoint.FieldDisabledAt, webhookendpoint.FieldFailingSince, webhookendpoint.FieldLastFailureAt:
+		case webhookendpoint.FieldCreatedAt, webhookendpoint.FieldUpdatedAt, webhookendpoint.FieldDisabledAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -168,41 +171,6 @@ func (_m *WebhookEndpoint) assignValues(columns []string, values []any) error {
 				_m.HealthGeneration = new(int64)
 				*_m.HealthGeneration = value.Int64
 			}
-		case webhookendpoint.FieldConsecutiveFailures:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field consecutive_failures", values[i])
-			} else if value.Valid {
-				_m.ConsecutiveFailures = new(int)
-				*_m.ConsecutiveFailures = int(value.Int64)
-			}
-		case webhookendpoint.FieldFailingSince:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field failing_since", values[i])
-			} else if value.Valid {
-				_m.FailingSince = new(time.Time)
-				*_m.FailingSince = value.Time
-			}
-		case webhookendpoint.FieldLastErrorKind:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field last_error_kind", values[i])
-			} else if value.Valid {
-				_m.LastErrorKind = new(webhook.ErrorKind)
-				*_m.LastErrorKind = webhook.ErrorKind(value.String)
-			}
-		case webhookendpoint.FieldLastErrorStatus:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field last_error_status", values[i])
-			} else if value.Valid {
-				_m.LastErrorStatus = new(int)
-				*_m.LastErrorStatus = int(value.Int64)
-			}
-		case webhookendpoint.FieldLastFailureAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field last_failure_at", values[i])
-			} else if value.Valid {
-				_m.LastFailureAt = new(time.Time)
-				*_m.LastFailureAt = value.Time
-			}
 		case webhookendpoint.FieldDisabledReason:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field disabled_reason", values[i])
@@ -226,6 +194,11 @@ func (_m *WebhookEndpoint) Value(name string) (ent.Value, error) {
 // QueryWorkspace queries the "workspace" edge of the WebhookEndpoint entity.
 func (_m *WebhookEndpoint) QueryWorkspace() *WorkspaceQuery {
 	return NewWebhookEndpointClient(_m.config).QueryWorkspace(_m)
+}
+
+// QueryHealth queries the "health" edge of the WebhookEndpoint entity.
+func (_m *WebhookEndpoint) QueryHealth() *WebhookEndpointHealthQuery {
+	return NewWebhookEndpointClient(_m.config).QueryHealth(_m)
 }
 
 // Update returns a builder for updating this WebhookEndpoint.
@@ -279,31 +252,6 @@ func (_m *WebhookEndpoint) String() string {
 	if v := _m.HealthGeneration; v != nil {
 		builder.WriteString("health_generation=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.ConsecutiveFailures; v != nil {
-		builder.WriteString("consecutive_failures=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.FailingSince; v != nil {
-		builder.WriteString("failing_since=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	if v := _m.LastErrorKind; v != nil {
-		builder.WriteString("last_error_kind=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.LastErrorStatus; v != nil {
-		builder.WriteString("last_error_status=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.LastFailureAt; v != nil {
-		builder.WriteString("last_failure_at=")
-		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")
 	if v := _m.DisabledReason; v != nil {

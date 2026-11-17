@@ -846,12 +846,6 @@ func (m *IntegrationMutation) unchanged(ctx context.Context) (*Integration, bool
 	if v, ok := m.AddedMaxPerDay(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if v, ok := m.AddedProviderMaxPerSecond(); ok && v != 0 {
-		return nil, false, nil
-	}
-	if v, ok := m.AddedProviderMaxPerDay(); ok && v != 0 {
-		return nil, false, nil
-	}
 	// An update that names no column but the noise is a touch: a write of what an editor shows.
 	written := slices.Concat(m.Fields(), m.ClearedFields())
 	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
@@ -964,89 +958,6 @@ func (m *IntegrationMutation) unchanged(ctx context.Context) (*Integration, bool
 			return nil, false, nil
 		}
 	}
-	if v, ok := m.ProviderMaxPerSecond(); ok {
-		if row.ProviderMaxPerSecond == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.ProviderMaxPerSecond) {
-			return nil, false, nil
-		}
-	}
-	if m.ProviderMaxPerSecondCleared() {
-		if row.ProviderMaxPerSecond != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.ProviderMaxPerDay(); ok {
-		if row.ProviderMaxPerDay == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.ProviderMaxPerDay) {
-			return nil, false, nil
-		}
-	}
-	if m.ProviderMaxPerDayCleared() {
-		if row.ProviderMaxPerDay != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.ProviderEnforcement(); ok {
-		if row.ProviderEnforcement == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.ProviderEnforcement) {
-			return nil, false, nil
-		}
-	}
-	if m.ProviderEnforcementCleared() {
-		if row.ProviderEnforcement != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.ProviderSandbox(); ok {
-		if !reflect.DeepEqual(v, row.ProviderSandbox) {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.ProviderRefusedAt(); ok {
-		if row.ProviderRefusedAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.ProviderRefusedAt) {
-			return nil, false, nil
-		}
-	}
-	if m.ProviderRefusedAtCleared() {
-		if row.ProviderRefusedAt != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.ProviderQuotaCheckedAt(); ok {
-		if row.ProviderQuotaCheckedAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.ProviderQuotaCheckedAt) {
-			return nil, false, nil
-		}
-	}
-	if m.ProviderQuotaCheckedAtCleared() {
-		if row.ProviderQuotaCheckedAt != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.ProviderQuotaFailedAt(); ok {
-		if row.ProviderQuotaFailedAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.ProviderQuotaFailedAt) {
-			return nil, false, nil
-		}
-	}
-	if m.ProviderQuotaFailedAtCleared() {
-		if row.ProviderQuotaFailedAt != nil {
-			return nil, false, nil
-		}
-	}
 	return row, true, nil
 }
 
@@ -1143,12 +1054,6 @@ func (m *WebhookEndpointMutation) unchanged(ctx context.Context) (*WebhookEndpoi
 	if v, ok := m.AddedHealthGeneration(); ok && v != 0 {
 		return nil, false, nil
 	}
-	if v, ok := m.AddedConsecutiveFailures(); ok && v != 0 {
-		return nil, false, nil
-	}
-	if v, ok := m.AddedLastErrorStatus(); ok && v != 0 {
-		return nil, false, nil
-	}
 	// An update that names no column but the noise is a touch: a write of what an editor shows.
 	written := slices.Concat(m.Fields(), m.ClearedFields())
 	if !slices.ContainsFunc(written, func(c string) bool { return !revisionNoise(c) }) {
@@ -1210,71 +1115,6 @@ func (m *WebhookEndpointMutation) unchanged(ctx context.Context) (*WebhookEndpoi
 			return nil, false, nil
 		}
 	}
-	if v, ok := m.ConsecutiveFailures(); ok {
-		if row.ConsecutiveFailures == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.ConsecutiveFailures) {
-			return nil, false, nil
-		}
-	}
-	if m.ConsecutiveFailuresCleared() {
-		if row.ConsecutiveFailures != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.FailingSince(); ok {
-		if row.FailingSince == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.FailingSince) {
-			return nil, false, nil
-		}
-	}
-	if m.FailingSinceCleared() {
-		if row.FailingSince != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.LastErrorKind(); ok {
-		if row.LastErrorKind == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.LastErrorKind) {
-			return nil, false, nil
-		}
-	}
-	if m.LastErrorKindCleared() {
-		if row.LastErrorKind != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.LastErrorStatus(); ok {
-		if row.LastErrorStatus == nil {
-			return nil, false, nil
-		}
-		if !reflect.DeepEqual(v, *row.LastErrorStatus) {
-			return nil, false, nil
-		}
-	}
-	if m.LastErrorStatusCleared() {
-		if row.LastErrorStatus != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.LastFailureAt(); ok {
-		if row.LastFailureAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.LastFailureAt) {
-			return nil, false, nil
-		}
-	}
-	if m.LastFailureAtCleared() {
-		if row.LastFailureAt != nil {
-			return nil, false, nil
-		}
-	}
 	if v, ok := m.DisabledReason(); ok {
 		if row.DisabledReason == nil {
 			return nil, false, nil
@@ -1315,9 +1155,6 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 		return nil, false, nil
 	}
 	if v, ok := m.AddedSendCap(); ok && v != 0 {
-		return nil, false, nil
-	}
-	if v, ok := m.AddedFeedPosition(); ok && v != 0 {
 		return nil, false, nil
 	}
 	// An update that names no column but the noise is a touch: a write of what an editor shows.
@@ -1394,19 +1231,6 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 			return nil, false, nil
 		}
 	}
-	if v, ok := m.SetupCompletedAt(); ok {
-		if row.SetupCompletedAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.SetupCompletedAt) {
-			return nil, false, nil
-		}
-	}
-	if m.SetupCompletedAtCleared() {
-		if row.SetupCompletedAt != nil {
-			return nil, false, nil
-		}
-	}
 	if v, ok := m.ReportingCurrency(); ok {
 		if row.ReportingCurrency == nil {
 			return nil, false, nil
@@ -1453,11 +1277,6 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 	}
 	if m.SecondFactorRequiredAtCleared() {
 		if row.SecondFactorRequiredAt != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.FeedPosition(); ok {
-		if !reflect.DeepEqual(v, row.FeedPosition) {
 			return nil, false, nil
 		}
 	}
@@ -1541,32 +1360,6 @@ func (m *WorkspaceMutation) unchanged(ctx context.Context) (*Workspace, bool, er
 	}
 	if v, ok := m.AbuseExempt(); ok {
 		if !reflect.DeepEqual(v, row.AbuseExempt) {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.AbuseWarningNotifiedAt(); ok {
-		if row.AbuseWarningNotifiedAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.AbuseWarningNotifiedAt) {
-			return nil, false, nil
-		}
-	}
-	if m.AbuseWarningNotifiedAtCleared() {
-		if row.AbuseWarningNotifiedAt != nil {
-			return nil, false, nil
-		}
-	}
-	if v, ok := m.AbuseFreezeNotifiedAt(); ok {
-		if row.AbuseFreezeNotifiedAt == nil {
-			return nil, false, nil
-		}
-		if !sameTime(v, *row.AbuseFreezeNotifiedAt) {
-			return nil, false, nil
-		}
-	}
-	if m.AbuseFreezeNotifiedAtCleared() {
-		if row.AbuseFreezeNotifiedAt != nil {
 			return nil, false, nil
 		}
 	}

@@ -417,7 +417,7 @@ func decodeStaffWorkspacesClearSendCapResponse(resp *http.Response) (res *StaffS
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeStaffWorkspacesExemptResponse(resp *http.Response) (res *StaffExemptionChange, _ error) {
+func decodeStaffWorkspacesExemptResponse(resp *http.Response) (res *StaffWorkspaceChange, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -433,7 +433,7 @@ func decodeStaffWorkspacesExemptResponse(resp *http.Response) (res *StaffExempti
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response StaffExemptionChange
+			var response StaffWorkspaceChange
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -821,7 +821,7 @@ func decodeStaffWorkspacesSetSendCapResponse(resp *http.Response) (res *StaffSen
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeStaffWorkspacesSuspendResponse(resp *http.Response) (res *StaffSuspensionChange, _ error) {
+func decodeStaffWorkspacesSuspendResponse(resp *http.Response) (res *StaffWorkspaceChange, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -837,7 +837,7 @@ func decodeStaffWorkspacesSuspendResponse(resp *http.Response) (res *StaffSuspen
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response StaffSuspensionChange
+			var response StaffWorkspaceChange
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -922,7 +922,7 @@ func decodeStaffWorkspacesSuspendResponse(resp *http.Response) (res *StaffSuspen
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeStaffWorkspacesUnexemptResponse(resp *http.Response) (res *StaffExemptionChange, _ error) {
+func decodeStaffWorkspacesUnexemptResponse(resp *http.Response) (res *StaffWorkspaceChange, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -938,7 +938,7 @@ func decodeStaffWorkspacesUnexemptResponse(resp *http.Response) (res *StaffExemp
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response StaffExemptionChange
+			var response StaffWorkspaceChange
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err
@@ -1023,7 +1023,7 @@ func decodeStaffWorkspacesUnexemptResponse(resp *http.Response) (res *StaffExemp
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeStaffWorkspacesUnsuspendResponse(resp *http.Response) (res *StaffSuspensionChange, _ error) {
+func decodeStaffWorkspacesUnsuspendResponse(resp *http.Response) (res *StaffWorkspaceChange, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -1039,7 +1039,7 @@ func decodeStaffWorkspacesUnsuspendResponse(resp *http.Response) (res *StaffSusp
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response StaffSuspensionChange
+			var response StaffWorkspaceChange
 			if err := func() error {
 				if err := response.Decode(d); err != nil {
 					return err

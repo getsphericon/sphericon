@@ -10,7 +10,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"slices"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -63,14 +62,13 @@ func (c Clients) NewTx(drv dialect.Driver) *ent.Client {
 
 // Revision is the hook that moves a row's revision on every update of a type that has one (ADR
 // 0119, the manifest of kinds: ent.Kinds), on every client of the application, so no writer can
-// forget it: an editor's write names
-// the revision it was made on, and any other write in between makes it stale. An update that writes
-// Bookkeeping columns alone (ent.Bookkeeping) leaves it: no editor shows them, so a background job
-// that keeps them does not refuse a person's save. An update of one row that changes nothing
-// (ent.Unchanged, read by the row's id and the update's predicates) is not written at all: it
-// returns the row, and neither the revision nor updated_at moves. It runs outermost, so the hooks
-// after it see no write. A bulk update is always written: a state move is conditioned on the state
-// it leaves (ADR 0109), and an edit of one row goes by id.
+// forget it: an editor's write names the revision it was made on, and any other write in between
+// makes it stale. No write is exempt: state a job writes lives in a table of its own beside the row
+// (ADR 0168). An update of one row that changes nothing (ent.Unchanged, read by the row's id and the
+// update's predicates) is not written at all: it returns the row, and neither the revision nor
+// updated_at moves. It runs outermost, so the hooks after it see no write. A bulk update is always
+// written: a state move is conditioned on the state it leaves (ADR 0109), and an edit of one row goes
+// by id.
 func Revision(next ent.Mutator) ent.Mutator {
 	return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
 		if !ent.Kinds[m.Type()].Revised {
@@ -85,32 +83,11 @@ func Revision(next ent.Mutator) ent.Mutator {
 				return row, nil
 			}
 		}
-		if m.Op().Is(ent.OpUpdate|ent.OpUpdateOne) && !bookkeepingOnly(m) {
+		if m.Op().Is(ent.OpUpdate | ent.OpUpdateOne) {
 			if err := m.AddField(schema.RevisionColumn, int64(1)); err != nil {
 				return nil, fmt.Errorf("moving the revision of %s: %w", m.Type(), err)
 			}
 		}
 		return next.Mutate(ctx, m)
 	})
-}
-
-// bookkeepingOnly reports whether m writes at least one column, updated_at aside, and only
-// Bookkeeping ones. An update that writes no column (a touch of updated_at, as a Contact's Tag
-// change does) is a write of what an editor shows and moves the revision.
-func bookkeepingOnly(m ent.Mutation) bool {
-	kept := ent.Bookkeeping[m.Type()]
-	if kept == nil {
-		return false
-	}
-	written := 0
-	for _, column := range slices.Concat(m.Fields(), m.AddedFields(), m.ClearedFields()) {
-		if column == schema.UpdatedColumn || column == schema.RevisionColumn {
-			continue
-		}
-		if !kept[column] {
-			return false
-		}
-		written++
-	}
-	return written > 0
 }

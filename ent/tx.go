@@ -76,6 +76,8 @@ type Tx struct {
 	InstanceState *InstanceStateClient
 	// Integration is the client for interacting with the Integration builders.
 	Integration *IntegrationClient
+	// IntegrationProviderState is the client for interacting with the IntegrationProviderState builders.
+	IntegrationProviderState *IntegrationProviderStateClient
 	// Invitation is the client for interacting with the Invitation builders.
 	Invitation *InvitationClient
 	// JoinDomain is the client for interacting with the JoinDomain builders.
@@ -162,8 +164,12 @@ type Tx struct {
 	Visitor *VisitorClient
 	// WebhookEndpoint is the client for interacting with the WebhookEndpoint builders.
 	WebhookEndpoint *WebhookEndpointClient
+	// WebhookEndpointHealth is the client for interacting with the WebhookEndpointHealth builders.
+	WebhookEndpointHealth *WebhookEndpointHealthClient
 	// Workspace is the client for interacting with the Workspace builders.
 	Workspace *WorkspaceClient
+	// WorkspaceStanding is the client for interacting with the WorkspaceStanding builders.
+	WorkspaceStanding *WorkspaceStandingClient
 
 	// lazily loaded.
 	client     *Client
@@ -326,6 +332,7 @@ func (tx *Tx) init() {
 	tx.InstanceAuditEntry = NewInstanceAuditEntryClient(tx.config)
 	tx.InstanceState = NewInstanceStateClient(tx.config)
 	tx.Integration = NewIntegrationClient(tx.config)
+	tx.IntegrationProviderState = NewIntegrationProviderStateClient(tx.config)
 	tx.Invitation = NewInvitationClient(tx.config)
 	tx.JoinDomain = NewJoinDomainClient(tx.config)
 	tx.LegalDocumentDraft = NewLegalDocumentDraftClient(tx.config)
@@ -369,7 +376,9 @@ func (tx *Tx) init() {
 	tx.UserTombstone = NewUserTombstoneClient(tx.config)
 	tx.Visitor = NewVisitorClient(tx.config)
 	tx.WebhookEndpoint = NewWebhookEndpointClient(tx.config)
+	tx.WebhookEndpointHealth = NewWebhookEndpointHealthClient(tx.config)
 	tx.Workspace = NewWorkspaceClient(tx.config)
+	tx.WorkspaceStanding = NewWorkspaceStandingClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

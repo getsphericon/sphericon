@@ -2640,7 +2640,7 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 
 	var rawBody []byte
 
-	var response *SiteAuditEntryList
+	var response *AuditEntryList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -2705,7 +2705,7 @@ func (s *Server) handleSiteAuditListRequest(args [1]string, argsEscaped bool, w 
 		type (
 			Request  = struct{}
 			Params   = SiteAuditListParams
-			Response = *SiteAuditEntryList
+			Response = *AuditEntryList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

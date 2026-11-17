@@ -2,9 +2,9 @@ import { Badge } from '@mantine/core'
 import type { MantineSize } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { SiteBroadcastStatus } from '../../generated/site/types.gen.ts'
+import type { BroadcastStatus } from '../../generated/site/types.gen.ts'
 
-const STATUS_COLORS: Record<SiteBroadcastStatus, string> = {
+const STATUS_COLORS: Record<BroadcastStatus, string> = {
   draft: 'gray',
   scheduled: 'blue',
   sending: 'yellow',
@@ -17,7 +17,7 @@ export function BroadcastStatusBadge({
   status,
   size = 'md',
 }: {
-  status: SiteBroadcastStatus
+  status: BroadcastStatus
   size?: MantineSize
 }) {
   const { t } = useTranslation()

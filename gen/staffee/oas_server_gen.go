@@ -41,7 +41,7 @@ type Handler interface {
 	// Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/exempt
-	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffExemptionChange, error)
+	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffWorkspaceChange, error)
 	// StaffWorkspacesGet implements StaffWorkspaces_get operation.
 	//
 	// One Workspace's metadata, suspension state, rates and send volume.
@@ -68,20 +68,20 @@ type Handler interface {
 	// member. Idempotent: an already-suspended Workspace is left as it was.
 	//
 	// POST /workspaces/{workspaceId}/suspend
-	StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffSuspensionChange, error)
+	StaffWorkspacesSuspend(ctx context.Context, req *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffWorkspaceChange, error)
 	// StaffWorkspacesUnexempt implements StaffWorkspaces_unexempt operation.
 	//
 	// Police a Workspace by the abuse detector again. Audited. Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/unexempt
-	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffExemptionChange, error)
+	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffWorkspaceChange, error)
 	// StaffWorkspacesUnsuspend implements StaffWorkspaces_unsuspend operation.
 	//
 	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
 	// left as it was.
 	//
 	// POST /workspaces/{workspaceId}/unsuspend
-	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffSuspensionChange, error)
+	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffWorkspaceChange, error)
 	// NewError creates *ProblemDetailsStatusCode from error returned by handler.
 	//
 	// Used for common default response.
