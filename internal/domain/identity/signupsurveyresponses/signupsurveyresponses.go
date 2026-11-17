@@ -77,12 +77,14 @@ type Answers struct {
 // Module is the Sign-up survey of an Instance.
 type Module struct {
 	bus     *events.Bus
+	users   *users.Module
 	enabled bool
 }
 
-// New builds the module; enabled is the result of Enabled.
-func New(bus *events.Bus, enabled bool) *Module {
-	return &Module{bus: bus, enabled: enabled}
+// New builds the module; usersModule clears the User's survey marker, the users module's row, and
+// enabled is the result of Enabled.
+func New(bus *events.Bus, usersModule *users.Module, enabled bool) *Module {
+	return &Module{bus: bus, users: usersModule, enabled: enabled}
 }
 
 // Enabled is whether a public sign-up marks its User as owing the survey.
@@ -101,7 +103,7 @@ func (m *Module) Submit(ctx context.Context, userID int64, a Answers) error {
 		return err
 	}
 	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
-		cleared, err := users.ClearSurveyDueIn(ctx, tx, userID)
+		cleared, err := m.users.ClearSurveyDueIn(ctx, tx, userID)
 		if err != nil {
 			return err
 		}

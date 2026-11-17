@@ -624,9 +624,8 @@ func TestEveryEdgeOfTheStateLifecycle(t *testing.T) {
 // hostWorkspace is the Workspace a host is served for, 0 when it is served for none.
 func hostWorkspace(t *testing.T, m *trackingdomains.Module, host string) int64 {
 	t.Helper()
-	ws, ok, err := m.HostWorkspace(t.Context(), host)
+	ws, err := m.HostWorkspace(t.Context(), host)
 	require.NoError(t, err)
-	require.Equal(t, ok, ws != 0)
 	return ws
 }
 

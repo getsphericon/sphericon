@@ -34,15 +34,10 @@ type ProfileChange struct {
 // the Login budget. It returns nil when the password is the account's and its refusal otherwise (a
 // wrong password, or, while the throttle's delay runs, the delay even for a right password). The
 // login module is built over the Login throttle, which this module does not hold, so the
-// composition root hands it in (WithProver).
+// composition root hands it to New. Every step that asks for the current password takes it
+// (ProveIdentity, ChangeProfile, Requests.EmailChange).
 type Prover interface {
 	ProvePassword(ctx context.Context, in login.ProvePasswordInput) error
-}
-
-// WithProver gives the module the proof of a User's current password, which every step that asks
-// for it takes (ProveIdentity, ChangeProfile, Requests.EmailChange).
-func WithProver(p Prover) Option {
-	return func(a *Module) { a.prover = p }
 }
 
 // provePassword proves that password is u's current one (Prover).

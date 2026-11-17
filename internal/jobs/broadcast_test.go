@@ -388,7 +388,7 @@ func figuresOf(t *testing.T, env *testhelper.TestEnv, broadcastID int64) broadca
 	t.Helper()
 	ctx := context.Background()
 	b := env.DB.Broadcast.GetX(ctx, broadcastID)
-	got, err := broadcasts.StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), broadcastID)
+	got, err := testhelper.Module[*broadcasts.Module](env).StatsOf(ctx, env.DB.Scoped(b.WorkspaceID), broadcastID)
 	require.NoError(t, err)
 	return got[broadcastID]
 }

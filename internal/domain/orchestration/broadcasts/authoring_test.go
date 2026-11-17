@@ -40,7 +40,7 @@ func TestListIsNewestFirstAndWorkspaceScoped(t *testing.T) {
 	env := testhelper.Setup(t)
 	m := testhelper.Module[*broadcasts.Module](env)
 
-	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{}, broadcasts.OrderNewest)
+	page, err := m.List(context.Background(), env.DB.Scoped(fixtures.AcmeID), pagination.Params{Page: 1, PageSize: 100}, broadcasts.ListFilter{})
 	require.NoError(t, err)
 	require.Len(t, page.Items, page.TotalItems)
 	require.Greater(t, page.TotalItems, 2)
@@ -99,28 +99,28 @@ func TestSetSegment(t *testing.T) {
 	ctx := context.Background()
 	seg := int64(fixtures.SegmentProPlanID)
 
-	b, err := m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), &seg)
+	b, err := m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), SegmentID: &seg})
 	require.NoError(t, err)
 	require.NotNil(t, b.SegmentID)
 	assert.Equal(t, seg, *b.SegmentID)
 
-	b, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), nil)
+	b, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), SegmentID: nil})
 	require.NoError(t, err)
 	assert.Nil(t, b.SegmentID, "nil Segment means all contacts")
 
 	globexSeg := int64(fixtures.SegmentGlobexID)
-	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), &globexSeg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), SegmentID: &globexSeg})
 	require.ErrorIs(t, err, broadcasts.ErrSegmentNotFound, "another workspace's segment is not usable")
 
-	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), 987654), &globexSeg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), 987654, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), 987654), SegmentID: &globexSeg})
 	require.ErrorIs(t, err, broadcasts.ErrNotFound, "an unknown broadcast is reported before the segment")
 
-	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), &seg)
+	_, err = m.SetSegment(ctx, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastScheduledID), SegmentID: &seg})
 	require.ErrorIs(t, err, broadcasts.ErrNotDraft)
 
-	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), &seg)
+	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), SegmentID: &seg})
 	require.Error(t, err, "segment lookup failure")
-	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), nil)
+	_, err = m.SetSegment(canceled(), env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(t.Context(), t, env.DB.Scoped(fixtures.AcmeID), fixtures.BroadcastDraftID), SegmentID: nil})
 	assert.Error(t, err, "update failure")
 }
 
@@ -199,7 +199,7 @@ func TestAnotherWorkspacesBroadcastAndSegmentAreRefused(t *testing.T) {
 	_, err = m.Send(ctx, acme, fixtures.BroadcastGlobexID, testhelper.BroadcastRevisionIn(ctx, t, acme, fixtures.BroadcastGlobexID))
 	require.ErrorIs(t, err, broadcasts.ErrNotFound)
 
-	_, err = m.SetSegment(ctx, acme, fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, acme, fixtures.BroadcastDraftID), new(int64(fixtures.SegmentGlobexID)))
+	_, err = m.SetSegment(ctx, acme, fixtures.BroadcastDraftID, broadcasts.SetSegmentInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, acme, fixtures.BroadcastDraftID), SegmentID: new(int64(fixtures.SegmentGlobexID))})
 	assert.ErrorIs(t, err, broadcasts.ErrSegmentNotFound)
 }
 

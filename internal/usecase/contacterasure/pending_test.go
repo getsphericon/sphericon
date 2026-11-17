@@ -49,7 +49,7 @@ func TestAnErasureCancelsTheContactsUnsentBroadcastRecipients(t *testing.T) {
 	assert.Equal(t, broadcast.StatusSending, still.Status)
 	// The figures follow the recipient rows: one pending recipient removed from each Broadcast, so
 	// reports' rates do not divide by recipients that are gone.
-	figures, err := broadcasts.StatsOf(ctx, env.DB.Scoped(fixtures.InitechID), solo.ID, still.ID)
+	figures, err := testhelper.Module[*broadcasts.Module](env).StatsOf(ctx, env.DB.Scoped(fixtures.InitechID), solo.ID, still.ID)
 	require.NoError(t, err)
 	assert.Zero(t, figures[solo.ID].Recipients)
 	assert.Equal(t, 1, figures[still.ID].Recipients)

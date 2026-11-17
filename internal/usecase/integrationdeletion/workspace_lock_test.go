@@ -75,7 +75,7 @@ func newIntegrationRace(t *testing.T) integrationRace {
 			return deletion.Delete(ctx, s, fixtures.IntegrationAcmeGenericAID)
 		}},
 		schedule: testhelper.Writer{Name: "schedule", Run: func() error {
-			_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), time.Now().Add(time.Hour))
+			_, err := sends.Schedule(ctx, s, fixtures.BroadcastDraftID, broadcasts.ScheduleInput{Revision: testhelper.BroadcastRevisionIn(ctx, t, s, fixtures.BroadcastDraftID), ScheduledAt: time.Now().Add(time.Hour)})
 			return err
 		}},
 	}

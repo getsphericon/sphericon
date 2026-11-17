@@ -39,11 +39,15 @@ func (e *DeferredError) Error() string { return "send deferred: " + string(e.Cau
 // delivery state of its own: how its send ended is its Outbound message's (ADR 0015), and it is
 // pending until then. It holds no client: every call receives the Workspace-scoped client.
 type Delivery struct {
-	out *outboundmessages.Module
+	out   *outboundmessages.Module
+	sched Scheduler
 }
 
-// NewDelivery builds the delivery over the Outbound send module.
-func NewDelivery(out *outboundmessages.Module) *Delivery { return &Delivery{out: out} }
+// NewDelivery builds the delivery over the Outbound send module, whose clock it reads, and the
+// scheduler it hands a planned Broadcast's sends to.
+func NewDelivery(out *outboundmessages.Module, sched Scheduler) *Delivery {
+	return &Delivery{out: out, sched: sched}
+}
 
 // SendRecipient hands one recipient's email to Outbound send, then settles the Broadcast if
 // that was its last pending recipient. It is idempotent: a recipient already decided is left
@@ -71,7 +75,7 @@ func (d *Delivery) SendRecipient(ctx context.Context, s *ent.Scoped, recipientID
 			return err
 		}
 	}
-	return Finalize(ctx, s, rec.BroadcastID, d.out.Now())
+	return finalize(ctx, s, rec.BroadcastID, d.out.Now())
 }
 
 func (d *Delivery) deliver(ctx context.Context, s *ent.Scoped, rec *ent.BroadcastRecipient) error {
@@ -186,7 +190,7 @@ func (d *Delivery) giveUp(ctx context.Context, s *ent.Scoped, recipientID int64,
 	if err := d.fail(ctx, s, rec, cause); err != nil {
 		return err
 	}
-	return Finalize(ctx, s, rec.BroadcastID, d.out.Now())
+	return finalize(ctx, s, rec.BroadcastID, d.out.Now())
 }
 
 // setHold records why a Broadcast is held: the reason Outbound send held it for, a

@@ -35,8 +35,9 @@ type Caller struct {
 // Workspace only. ErrNothingToReset without an active or pending factor or a Passkey (nothing
 // changes).
 func (m *Module) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, caller Caller) error {
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		target, err := memberships.SecondFactorResetTarget(ctx, tx.Scoped(s.WorkspaceID()), caller.UserID, caller.Role, membershipID)
+	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		ts := tx.Scoped(s.WorkspaceID())
+		target, err := memberships.SecondFactorResetTarget(ctx, ts, caller.UserID, caller.Role, membershipID)
 		if err != nil {
 			return err
 		}
@@ -44,7 +45,7 @@ func (m *Module) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, c
 		if err != nil {
 			return err
 		}
-		return users.RecordActionOnUserIn(ctx, pub, caller.Actor, u, events.ActionUserSecondFactorReset, nil, s.WorkspaceID())
+		return m.users.RecordActionOnUserIn(ctx, ts, users.ActionOnUser{Actor: caller.Actor, User: u, Action: events.ActionUserSecondFactorReset})
 	})
 }
 
@@ -54,8 +55,8 @@ func (m *Module) Reset(ctx context.Context, s *ent.Scoped, membershipID int64, c
 // Membership in.
 func (m *Module) ResetByStaff(ctx context.Context, email, by string) error {
 	actor := events.Actor{Kind: events.ActorStaff, ID: by}
-	return m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		target, err := users.UserByEmailIn(ctx, tx, email)
+	return m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		target, err := m.users.UserByEmailIn(ctx, tx, email)
 		if err != nil {
 			return fmt.Errorf("user %q: %w", email, err)
 		}
@@ -63,7 +64,7 @@ func (m *Module) ResetByStaff(ctx context.Context, email, by string) error {
 		if err != nil {
 			return err
 		}
-		return users.RecordActionOnUser(ctx, tx, pub, actor, u, events.ActionUserSecondFactorReset, nil)
+		return m.users.RecordActionOnUser(ctx, tx, users.ActionOnUser{Actor: actor, User: u, Action: events.ActionUserSecondFactorReset})
 	})
 }
 
@@ -94,7 +95,7 @@ func (m *Module) resetIn(ctx context.Context, tx *ent.Client, userID int64) (*en
 	if stateOf(before.Factor) == factorNone && !held {
 		return nil, ErrNothingToReset
 	}
-	removed, err := remove(ctx, tx, before, factorReset)
+	removed, err := m.remove(ctx, tx, before, factorReset)
 	if err != nil {
 		return nil, err
 	}

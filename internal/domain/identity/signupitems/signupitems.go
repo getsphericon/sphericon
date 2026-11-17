@@ -131,9 +131,10 @@ type Module struct {
 }
 
 // AuditRecorder writes one entry of the Instance audit log (ADR 0070) on tx, the transaction of the
-// change: the Staff member staffID made the change action, with diff its fields' old and new values.
-// The log is a module of the Instance context, above this one, so the wiring hands its Record in.
-type AuditRecorder func(ctx context.Context, tx *ent.Client, staffID int64, action string, diff map[string]any) error
+// change: the Staff member entry.StaffMemberID made the change entry.Action, with entry.Diff its
+// fields' old and new values. The log is a module of the Instance context, above this one, so the
+// wiring hands its Record in.
+type AuditRecorder func(ctx context.Context, tx *ent.Client, entry *ent.InstanceAuditEntry) error
 
 // The changes of the Sign-up items the Instance audit log records (ADR 0062, ADR 0070). Each diff
 // names the item by its key: {to: key} for an added item, {from: key} for a deleted one, and
@@ -170,6 +171,12 @@ func New(client *ent.Client, bus *events.Bus, now func() time.Time, record Audit
 		panic("signupitems: the module needs the Instance clock and the Instance audit log")
 	}
 	return &Module{ent: client, bus: bus, now: now, record: record}
+}
+
+// audit records the change action the Staff member staffID made on tx, with diff its fields' old
+// and new values, in the Instance audit log.
+func (m *Module) audit(ctx context.Context, tx *ent.Client, staffID int64, action string, diff map[string]any) error {
+	return m.record(ctx, tx, &ent.InstanceAuditEntry{StaffMemberID: staffID, Action: action, Diff: diff})
 }
 
 // List is every Sign-up item that is not deleted, in the order of the sign-up form.
@@ -265,7 +272,7 @@ func (m *Module) Add(ctx context.Context, staffID int64, in Input) (Item, error)
 		if err != nil {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionAdd, map[string]any{
+		return m.audit(ctx, tx, staffID, ActionAdd, map[string]any{
 			signupitem.FieldKey:             events.Became(row.Key),
 			signupitem.FieldTitle:           events.Became(row.Title),
 			signupitem.FieldKind:            events.Became(string(row.Kind)),
@@ -451,7 +458,7 @@ func (m *Module) Update(ctx context.Context, staffID int64, u UpdateInput) (Item
 			return nil
 		}
 		diff[signupitem.FieldKey] = events.Change(was.Key, was.Key)
-		return m.record(ctx, tx, staffID, ActionChange, diff)
+		return m.audit(ctx, tx, staffID, ActionChange, diff)
 	})
 	if err != nil {
 		return Item{}, err
@@ -490,7 +497,7 @@ func (m *Module) Delete(ctx context.Context, staffID, id int64) error {
 		}); err != nil {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionDelete,
+		return m.audit(ctx, tx, staffID, ActionDelete,
 			map[string]any{signupitem.FieldKey: map[string]any{events.DiffFrom: row.Key}})
 	})
 	if !errors.Is(err, lifecycle.ErrInvalidTransition) {
@@ -533,7 +540,7 @@ func (m *Module) Reorder(ctx context.Context, staffID int64, ids []int64) ([]Ite
 		if err != nil || slices.Equal(before, after) {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionReorder,
+		return m.audit(ctx, tx, staffID, ActionReorder,
 			map[string]any{DiffOrder: events.Change(before, after)})
 	})
 	if err != nil {
@@ -662,7 +669,7 @@ func (m *Module) Publish(ctx context.Context, staffID int64, in PublishInput) (I
 		if err != nil {
 			return err
 		}
-		return m.record(ctx, tx, staffID, ActionPublish, map[string]any{
+		return m.audit(ctx, tx, staffID, ActionPublish, map[string]any{
 			signupitem.FieldKey: events.Change(row.Key, row.Key),
 			DiffVersion:         events.Became(label),
 		})

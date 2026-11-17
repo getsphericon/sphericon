@@ -32,15 +32,23 @@ func clearSurveyDue(ctx context.Context, tx *ent.Client, userID int64) error {
 // ClearSurveyDueIn removes the marker of the User userID inside tx while it is set, the step of a
 // submitted Sign-up survey (internal/domain/identity/signupsurveyresponses): of two racing submits one wins. It returns how
 // many rows it changed, 0 when the User owes no survey.
-func ClearSurveyDueIn(ctx context.Context, tx *ent.Client, userID int64) (int, error) {
+func (a *Module) ClearSurveyDueIn(ctx context.Context, tx *ent.Client, userID int64) (int, error) {
 	return tx.User.Update().
 		Where(user.ID(userID), user.SignupSurveyDueAtNotNil()).
 		ClearSignupSurveyDueAt().
 		Save(ctx)
 }
 
-// SetFeedPosition gives the Users which selects the service feed position (ADR 0062): the write of
-// internal/domain/identity/usertombstones's hook, which takes the position.
-func SetFeedPosition(ctx context.Context, client *ent.Client, position int64, which predicate.User) error {
-	return client.User.Update().Where(which).SetFeedPosition(position).Exec(ctx)
+// Feed is the users module's write of the service feed position of Users (ADR 0062), for
+// internal/domain/identity/usertombstones's hook: an ent hook holds no module, so it builds this
+// role, which needs no dependency, with NewFeed.
+type Feed struct{}
+
+// NewFeed builds the write of the service feed position of Users.
+func NewFeed() *Feed { return &Feed{} }
+
+// SetPosition gives the Users which selects the service feed position, on the client c of the
+// hook's transaction.
+func (*Feed) SetPosition(ctx context.Context, c *ent.Client, position int64, which predicate.User) error {
+	return c.User.Update().Where(which).SetFeedPosition(position).Exec(ctx)
 }

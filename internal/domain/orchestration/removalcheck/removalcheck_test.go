@@ -173,7 +173,7 @@ func TestATextStillToSendDoesNotHoldThePostalAddress(t *testing.T) {
 	env.LacunaTwilio(t)
 	s := env.DB.Scoped(fixtures.LacunaID)
 	revision := testhelper.BroadcastRevisionIn(t.Context(), t, s, fixtures.BroadcastLacunaSmsHelloID)
-	_, err := testhelper.Module[*broadcasts.Module](env).Schedule(t.Context(), s, fixtures.BroadcastLacunaSmsHelloID, revision, time.Now().Add(time.Hour))
+	_, err := testhelper.Module[*broadcasts.Module](env).Schedule(t.Context(), s, fixtures.BroadcastLacunaSmsHelloID, broadcasts.ScheduleInput{Revision: revision, ScheduledAt: time.Now().Add(time.Hour)})
 	require.NoError(t, err)
 
 	answer := underLock(t, env, fixtures.LacunaID, func(s *ent.WorkspaceLocked) error {

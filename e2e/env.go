@@ -205,7 +205,7 @@ func Boot() (*Env, func(), error) {
 		tokens:      tokens,
 		bus:         bus,
 
-		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New(), brandkits.Brands{})),
+		brandKit: brandkits.New(bus, emailtemplates.New(emaildoc.New(), brandkits.NewBrands())),
 		sessions: apiauth.NewSessions(a.Config.JWTSecret, a.Config.SessionTTL, a.Config.SecureCookies(), time.Now, a.Config.JWTVerifySecrets()...),
 	}, stop, nil
 }

@@ -108,7 +108,7 @@ func build(t *testing.T, env *testhelper.TestEnv, budget int, opts ...option) ri
 	t.Helper()
 	client, bus := env.DB, env.Bus
 	consents := testhelper.ConsentRecords(client, bus)
-	acc := users.New(client, bus, testhelper.Passwords(), consents, time.Now)
+	acc := users.New(client, bus, testhelper.Passwords(), consents, nil, time.Now)
 	attempts := throttle.NewAttempts(client, time.Now, throttle.WithRule(throttle.KindSignUp, throttle.ResetRule(budget)))
 	q := requests{env: env}
 	cfg := signup.SignUpConfig{

@@ -29,8 +29,8 @@ its unchecked removal, between opening it on the row and applying it (`tagdeleti
 readers of what may hold a row. Each owner keeps its readers in a subpackage `<module>use` (ADR
 0110's fence by place), which may import its owner and which the owner does not import: Definition
 use is `segmentsuse.Module.UsingTag` and `UnfitForCustomFieldType`, `automationsuse.UsingTag`,
-`rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.UsingTag` and
-`UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.LiveSends` and
+`rulesuse.UsingTag` and `UnfitForCustomFieldType` and `broadcastsuse.Module.UsingTag` and
+`UnfitForCustomFieldType`; the Live use that sends is `broadcastsuse.Module.LiveSends` and
 `automationsuse.LiveSends`, which return each send as a `liveuse.Send` (who sends, on which
 Channel, through which Integration by `messaging.Through`, from which From), so the Removal check
 and the send path agree on where work sends; a Sending domain's check reads the From an
@@ -69,7 +69,7 @@ the lock does not compile:
   which an Automation's Archive reads through `versioneddefinition.Definition.Archivable`;
 - the unchecked removals behind their check, opened on their row: `tagsunchecked.Module.DeletionIn`,
   `contactsunchecked.CustomFieldUpdateIn`, `integrationsunchecked.DeletionIn` and
-  `sendingdomainsunchecked.DeletionIn`. An Integration's deletion gives up its default in the
+  `sendingdomainsunchecked.Module.DeletionIn`. An Integration's deletion gives up its default in the
   statement that discards it (`schema.GivenUpOnDiscard`) and queues the release of a Telegram bot's
   webhook in the same transaction;
 - the writes that move a use: a version of a Versioned definition (`Definition.Write`, on Create

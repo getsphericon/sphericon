@@ -127,7 +127,6 @@ func (m *Module) SignInWithProvider(ctx context.Context, in ProviderSignInInput)
 		Invitation:          invite,
 		SurveyDue:           m.surveyDue(),
 		SignupItemsInEffect: asked,
-		Now:                 at,
 	})
 	if err != nil {
 		return nil, err
@@ -170,14 +169,14 @@ func (m *Module) linkIdentity(ctx context.Context, flow signinprovider.Flow, ses
 	if holder.SessionEpoch != session.Epoch {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonInvalidState}
 	}
-	linked, added, err := m.users.LinkIdentity(ctx, flow.LinkUserID, flow.Provider, subject)
+	link, err := m.users.LinkIdentity(ctx, users.LinkIdentityInput{UserID: flow.LinkUserID, Provider: flow.Provider, Subject: subject})
 	if errors.Is(err, users.ErrIdentityInUse) {
 		return nil, &users.SigninRefusedError{Reason: signinprovider.ReasonIdentityInUse}
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &ProviderSignInResult{Outcome: IdentityLinked, User: linked, Added: added, At: at}, nil
+	return &ProviderSignInResult{Outcome: IdentityLinked, User: link.User, Added: link.Added, At: at}, nil
 }
 
 // signInWithIdentity applies a provider's answer to a sign-in: it reads the facts, takes the one
@@ -225,11 +224,12 @@ func (m *Module) signInWithIdentity(ctx context.Context, in users.ProviderLogin)
 // signIn is signInWithIdentity without an Invitation.
 func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.ProviderSignin, error) {
 	for attempt := 0; ; attempt++ {
-		decision, known, holder, err := m.users.DecideSigninFor(ctx, in)
+		decided, err := m.users.DecideSigninFor(ctx, in)
 		if err != nil {
 			return nil, err
 		}
-		switch decision.Outcome {
+		known, holder := decided.Known, decided.Holder
+		switch decided.Decision.Outcome {
 		case users.SigninKnown:
 			return &users.ProviderSignin{User: known}, nil
 		case users.SigninCreate:
@@ -270,25 +270,24 @@ func (m *Module) signIn(ctx context.Context, in users.ProviderLogin) (*users.Pro
 			}
 			return &users.ProviderSignin{User: taken}, nil
 		default:
-			return nil, &users.SigninRefusedError{Reason: decision.Reason}
+			return nil, &users.SigninRefusedError{Reason: decided.Decision.Reason}
 		}
 	}
 }
 
 // linkToHolder links the provider's identity to the Verified User holderID who holds its email
-// (users.LinkToHolderIn). When that proof is the address's first, what was set up before it goes
-// in the same transaction (afterProofIn).
+// (users.Module.LinkToHolderIn). When that proof is the address's first, what was set up before it
+// goes in the same transaction (afterProofIn).
 func (m *Module) linkToHolder(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, int64, error) {
 	var linked *ent.User
 	var identityID int64
-	err := m.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		now := m.now()
-		u, id, firstProof, err := users.LinkToHolderIn(ctx, tx, pub, holderID, in, now)
+	err := m.bus.WithinTx(ctx, func(tx *ent.Client, _ events.Publisher) error {
+		link, err := m.users.LinkToHolderIn(ctx, tx, holderID, in)
 		if err != nil {
 			return err
 		}
-		linked, identityID = u, id
-		linked, err = m.afterProofIn(ctx, tx, u, firstProof)
+		identityID = link.IdentityID
+		linked, err = m.afterProofIn(ctx, tx, link.User, link.FirstProof)
 		return err
 	})
 	return linked, identityID, err
@@ -328,7 +327,7 @@ func lostRace(err error) bool {
 // provider proved the address, so no mail is sent. Its email is proven now.
 func (m *Module) createFromProvider(ctx context.Context, in users.ProviderLogin) (*ent.User, error) {
 	created, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.CreateProviderUserIn(ctx, tx, in, m.now())
+		return m.users.CreateProviderUserIn(ctx, tx, in)
 	})
 	return created, err
 }
@@ -340,7 +339,7 @@ func (m *Module) createFromProvider(ctx context.Context, in users.ProviderLogin)
 // User is no longer Unverified.
 func (m *Module) takeOver(ctx context.Context, holderID int64, in users.ProviderLogin) (*ent.User, error) {
 	taken, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
-		return users.TakeOverIn(ctx, tx, holderID, in, m.now())
+		return m.users.TakeOverIn(ctx, tx, holderID, in)
 	})
 	return taken, err
 }
@@ -370,13 +369,12 @@ func (m *Module) CompletePendingSignup(ctx context.Context, reference string, an
 	if err != nil {
 		return nil, err
 	}
-	surveyDue := m.surveyDue()
-	now := m.now()
+	in := users.CompletePendingSignupInput{ID: id, Consents: consents, SurveyDue: m.surveyDue()}
 	var taken *ent.PendingSignup
-	completed, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, pub events.Publisher) (*ent.User, error) {
-		usr, p, err := m.users.CompletePendingSignupIn(ctx, tx, pub, id, consents, surveyDue, now)
-		taken = p
-		return usr, err
+	completed, _, err := m.verified(ctx, provenNow, func(tx *ent.Client, _ events.Publisher) (*ent.User, error) {
+		done, err := m.users.CompletePendingSignupIn(ctx, tx, in)
+		taken = done.Pending
+		return done.User, err
 	})
 	if err != nil {
 		return nil, err

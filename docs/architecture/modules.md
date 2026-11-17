@@ -193,7 +193,7 @@ rule of an owner governs them any more; it only deletes, and only through the sc
 included, reads the table and changes it only through a function of its owner: the Workspace's
 standing (`workspaces.Module.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position of `workspaces.Feed`)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
-(`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
+(`users.Module.ClearSurveyDueIn`, `users.Feed.SetPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
 Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for
 `users`; a provider's refusal of an Integration (`integrations.RecordRefused`) for
 `outboundmessages`. A write through a generic helper counts where
@@ -240,6 +240,9 @@ where its dependencies come from and the shapes that recur under it; the Tags pa
   the bus transaction that scope (or a tx-bound `*ent.Client`, or a `*ent.WorkspaceLocked`) is bound
   to, and refuse one bound to none (`events.ErrNotInBusTx`): they never open a transaction. An
   operation that publishes therefore takes no `events.Publisher` or `events.Enqueuer` argument.
+  An Erasure's step takes no `events.QueuePurger` either: `Bus.PurgeJobsIn(ctx, s, key, ids)`
+  purges the scope's Workspace's jobs in the Erasure's transaction `s` is bound to, and refuses
+  any other (`events.ErrNotPurging`).
 - **A `<module>use` reader** exports one type, `Module`, built by `New`, whose methods are the
   questions another module asks of the owner's rows (`segmentsuse.Module.UsingTag` and
   `UnfitForCustomFieldType`). The module that asks holds it as a field its own constructor builds.

@@ -78,9 +78,12 @@ func get(ctx context.Context, s *ent.Scoped) (Kit, error) {
 // taking the Module.
 type Brands struct{}
 
+// NewBrands builds the reader of the brand.
+func NewBrands() *Brands { return &Brands{} }
+
 // Brand is the Workspace's Brand kit as the lint compares a message to it: nil while none is saved,
 // so there are no brand warnings.
-func (Brands) Brand(ctx context.Context, s *ent.Scoped) (*emailrender.Brand, error) {
+func (*Brands) Brand(ctx context.Context, s *ent.Scoped) (*emailrender.Brand, error) {
 	kit, err := get(ctx, s)
 	if err != nil {
 		return nil, err
@@ -232,7 +235,9 @@ func (m *Module) renderStarters(ctx context.Context, kit Kit) ([]renderedStarter
 func (m *Module) createStarters(ctx context.Context, s *ent.Scoped, starters []renderedStarter) ([]*ent.EmailTemplate, error) {
 	var made []*ent.EmailTemplate
 	for _, r := range starters {
-		tpl, err := m.templates.CreatePrepared(ctx, s, r.starter.Name, r.starter.Subject, r.starter.Doc, r.authored)
+		tpl, err := m.templates.CreatePrepared(ctx, s, emailtemplates.CreatePreparedInput{
+			Name: r.starter.Name, Subject: r.starter.Subject, Doc: r.starter.Doc, Authored: r.authored,
+		})
 		if err != nil {
 			return nil, err
 		}

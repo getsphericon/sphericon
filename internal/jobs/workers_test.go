@@ -495,13 +495,13 @@ func TestVerifySendingDomainWorker(t *testing.T) {
 	gone := dnstest.Resolver(t, nil).LookupTXT
 
 	// Verified domain whose DNS vanished: flips, owner is emailed.
-	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.Bus, nil, gone, time.Now))
+	w := jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, time.Now))
 	require.NoError(t, w.Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 	assert.Len(t, env.SystemMail.Messages(), 1)
 
 	// A failing alert never fails the verification.
 	env.SystemMail.SetErr(errors.New("smtp down"))
-	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.Bus, nil, gone, time.Now)).
+	require.NoError(t, jobs.NewVerifySendingDomainWorker(env.DB, sendingdomains.New(env.DB, env.Bus, nil, gone, time.Now)).
 		Work(ctx, job(jobs.VerifySendingDomainArgs{SendingDomainID: fixtures.SendingDomainVerifiedID})))
 
 	// Unknown domain id is an error.
@@ -513,7 +513,7 @@ func TestRecheckSendingDomainsWorkerFansOut(t *testing.T) {
 	total, err := e.DB.SendingDomain.Query().Where(sendingdomain.DiscardedAtIsNil()).Count(context.Background())
 	require.NoError(t, err)
 
-	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(e.DB).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
+	require.NoError(t, jobs.NewRecheckSendingDomainsWorker(sendingdomains.New(e.DB, e.Bus, nil, nil, time.Now)).Work(e.workCtx(), job(jobs.RecheckSendingDomainsArgs{})))
 
 	kinds := e.queued(t)
 	assert.Len(t, kinds, total)
@@ -610,7 +610,7 @@ func TestEvaluateTriggerRetryAfterTheFirstStepFailedToQueueLeavesAQueuedEnrollme
 func TestBroadcastWorkers(t *testing.T) {
 	e := newRiverEnv(t)
 	ctx := e.workCtx()
-	w := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
+	w := jobs.NewSendBroadcastWorker(e.DB, deliveryOf(newMod(e.TestEnv, resolvingTo(e.sender), time.Now)))
 	assert.Equal(t, 10*time.Minute, w.Timeout(nil))
 
 	// Fan-out: one recipient job per eligible contact.
@@ -625,7 +625,7 @@ func TestBroadcastWorkers(t *testing.T) {
 	require.Len(t, recs, len(kinds))
 
 	// Delivering every recipient finalizes the broadcast.
-	rw := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(e.sender), time.Now))
+	rw := jobs.NewSendRecipientWorker(e.DB, deliveryOf(newMod(e.TestEnv, resolvingTo(e.sender), time.Now)))
 	for _, r := range recs {
 		require.NoError(t, rw.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: r.ID, BroadcastID: fixtures.BroadcastDraftID})))
 	}
@@ -639,7 +639,7 @@ func TestBroadcastWorkers(t *testing.T) {
 
 	// A resolver failure is a plain error: river retries it, spending an attempt.
 	e.DB.Broadcast.UpdateOneID(fixtures.BroadcastProSegmentID).SetStatus(broadcast.StatusSending).ExecX(ctx)
-	failing := jobs.NewSendBroadcastWorker(e.DB, newMod(e.TestEnv, failingResolver(errors.New("no integration")), time.Now))
+	failing := jobs.NewSendBroadcastWorker(e.DB, deliveryOf(newMod(e.TestEnv, failingResolver(errors.New("no integration")), time.Now)))
 	err := failing.Work(ctx, job(broadcasts.SendArgs{BroadcastID: fixtures.BroadcastProSegmentID}))
 	require.Error(t, err)
 	var snooze *river.JobSnoozeError
@@ -657,7 +657,7 @@ func TestSendRecipientWorkerRecordsTerminalFailure(t *testing.T) {
 	ctx := e.workCtx()
 	ids := []int64{e.PlaceRecipient(ctx, fixtures.BroadcastSendingID, fixtures.ContactAliceID)}
 
-	failing := jobs.NewSendRecipientWorker(e.DB, newMod(e.TestEnv, resolvingTo(erroringSender{}), time.Now))
+	failing := jobs.NewSendRecipientWorker(e.DB, deliveryOf(newMod(e.TestEnv, resolvingTo(erroringSender{}), time.Now)))
 	// Not the last attempt: the error surfaces for retry, row stays pending.
 	err := failing.Work(ctx, job(jobs.SendRecipientArgs{RecipientID: ids[0], BroadcastID: fixtures.BroadcastSendingID}))
 	require.Error(t, err)
