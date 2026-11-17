@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
@@ -21,7 +20,7 @@ func (h *Handlers) SiteEventsList(ctx context.Context, params siteapi.SiteEvents
 		return nil, err
 	}
 
-	subjects, err := outboundmessages.SubjectsOf(ctx, scoped, page.Items)
+	subjects, err := h.outbound.SubjectsOf(ctx, scoped, page.Items)
 	if err != nil {
 		return nil, err
 	}

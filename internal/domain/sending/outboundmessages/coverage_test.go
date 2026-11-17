@@ -102,7 +102,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 
 	t.Run("sender cannot be resolved", func(t *testing.T) {
 		env := testhelper.Setup(t)
-		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: errors.New("vault down")}, nil, time.Now)
+		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: errors.New("vault down")}, nil, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		_, err := m.Send(context.Background(), env.DB.Scoped(fixtures.AcmeID), transactional("tx:nosender", "a@example.com"))
 		require.ErrorContains(t, err, "resolve sender")
 		assert.ErrorContains(t, err, "vault down")
@@ -112,7 +112,7 @@ func TestSendInfrastructureErrorsAreReturnedNotDecided(t *testing.T) {
 		env := testhelper.Setup(t)
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, time.Now)
+		m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), cancelingSenders{cancel: cancel, sender: env.CustomerMail}, nil, outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 		_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:domaindb", "a@example.com"))
 		assert.ErrorContains(t, err, "check sending domain")
 	})
@@ -186,6 +186,8 @@ func TestACoreOnlyInstanceIgnoresStaffHoldsButHonorsDeletionAndSuspension(t *tes
 		env.CoreHolds(),
 		senders{sender: env.CustomerMail},
 		messagetoken.New("test-secret", "http://local", time.Now),
+		outboundmessages.Deps{},
+		outboundmessages.Config{},
 		time.Now,
 	)
 	liftHold(t, env, time.Now().Add(time.Hour))
@@ -213,12 +215,12 @@ func TestWithLeaseControlsWhenAClaimCanBeTakenOver(t *testing.T) {
 	// A claim ten minutes old is stale under the default five-minute lease but live
 	// under an hour-long one.
 	env.ClaimOutbound(ctx, fixtures.AcmeID, fixtures.OutboundMessageStaleClaimID, time.Now().Add(-10*time.Minute))
-	_, err := newModule(env, time.Now, outboundmessages.WithLease(time.Hour)).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
+	_, err := configured(env, time.Now, outboundmessages.Config{Lease: time.Hour}).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 	require.ErrorIs(t, err, outboundmessages.ErrInProgress)
 	assert.Empty(t, env.CustomerMail.Messages())
 
 	// MarkFailed honours the same lease: it leaves a claim someone may still be working on.
-	require.NoError(t, newModule(env, time.Now, outboundmessages.WithLease(time.Hour)).MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), staleClaimKey, errors.New("gave up")))
+	require.NoError(t, configured(env, time.Now, outboundmessages.Config{Lease: time.Hour}).MarkFailed(ctx, env.DB.Scoped(fixtures.AcmeID), staleClaimKey, errors.New("gave up")))
 	assert.Equal(t, outboundmessage.StatusPending, byKey(t, env, staleClaimKey).Status)
 
 	res, err := newModule(env, time.Now).Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
@@ -625,7 +627,7 @@ func TestAStaleClaimTokenCannotWriteSent(t *testing.T) {
 		env.DB.OutboundMessage.Update().Where(outboundmessage.IdempotencyKey(req.Key)).
 			SetClaimedAt(time.Now().Add(-time.Hour)).ExecX(ctx)
 	}}
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: slow}, messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{sender: slow}, messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 
 	_, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), req)
 

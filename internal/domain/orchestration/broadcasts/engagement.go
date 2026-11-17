@@ -12,7 +12,7 @@ import (
 // The unsubscribe of a recipient keeps the earliest accepted observation, by a conditional
 // update, and reports whether the stamp changed. Repeated facts still count the recipient once.
 // Its opens and clicks
-// are the Outbound message's stamps (outboundmessages.StampOpened, ADR 0053).
+// are the Outbound message's stamps (outboundmessages.Module.StampOpened, ADR 0053).
 
 // RecordUnsubscribe attributes an opt-out to a received message. Its anonymous delivery and
 // recipient references survive Erasure; a missing, foreign or unsent message counts nothing.

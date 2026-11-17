@@ -18,11 +18,11 @@ import (
 // message id (ADR 0053), nil when there is none: the notice then stays at the level of the
 // address. Several messages with the same id (a provider that reuses ids) resolve to the
 // newest.
-func FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessageID string) (*ent.OutboundMessage, error) {
+func (m *Module) FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessageID string) (*ent.OutboundMessage, error) {
 	if providerMessageID == "" {
 		return nil, nil
 	}
-	m, err := s.OutboundMessage().Query().
+	msg, err := s.OutboundMessage().Query().
 		Where(outboundmessage.ProviderMessageID(providerMessageID), outboundmessage.ChannelEQ(channels.Email)).
 		Order(outboundmessage.ByID(sql.OrderDesc())).
 		First(ctx)
@@ -32,7 +32,7 @@ func FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessage
 	if err != nil {
 		return nil, fmt.Errorf("find message by provider id: %w", err)
 	}
-	return m, nil
+	return msg, nil
 }
 
 // FindTelegramMessage is the Outbound message a Telegram button press was made on, nil when none
@@ -41,16 +41,16 @@ func FindByProviderMessageID(ctx context.Context, s *ent.Scoped, providerMessage
 // message was accepted for) and the message id. A message that went to several chats of one
 // Contact is found through the first of them only; a press in another does not resolve and is
 // not attributed, but is still the opt-out.
-func FindTelegramMessage(ctx context.Context, s *ent.Scoped, integrationID int64, destination, providerMessageID string) (*ent.OutboundMessage, error) {
-	if providerMessageID == "" {
+func (m *Module) FindTelegramMessage(ctx context.Context, s *ent.Scoped, in FindTelegramMessageInput) (*ent.OutboundMessage, error) {
+	if in.ProviderMessageID == "" {
 		return nil, nil
 	}
-	m, err := s.OutboundMessage().Query().
+	msg, err := s.OutboundMessage().Query().
 		Where(
 			outboundmessage.ChannelEQ(channels.Telegram),
-			outboundmessage.IntegrationID(integrationID),
-			outboundmessage.Destination(destination),
-			outboundmessage.ProviderMessageID(providerMessageID),
+			outboundmessage.IntegrationID(in.IntegrationID),
+			outboundmessage.Destination(in.Destination),
+			outboundmessage.ProviderMessageID(in.ProviderMessageID),
 		).
 		Order(outboundmessage.ByID(sql.OrderDesc())).
 		First(ctx)
@@ -60,17 +60,25 @@ func FindTelegramMessage(ctx context.Context, s *ent.Scoped, integrationID int64
 	if err != nil {
 		return nil, fmt.Errorf("find telegram message: %w", err)
 	}
-	return m, nil
+	return msg, nil
+}
+
+// FindTelegramMessageInput names a Telegram message a button press was made on: the Integration
+// (the bot) the press came to, the user who pressed it and the message id in that user's chat.
+type FindTelegramMessageInput struct {
+	IntegrationID     int64
+	Destination       string
+	ProviderMessageID string
 }
 
 // FindSMSMessage is the Outbound message an SMS delivery report names, nil when none resolves: the
 // text with the provider's id (Twilio's SID) sent through the Integration the report came to. A SID
 // is unique only per provider account, so a report never reaches a text of another Integration.
-func FindSMSMessage(ctx context.Context, s *ent.Scoped, integrationID int64, providerMessageID string) (*ent.OutboundMessage, error) {
+func (m *Module) FindSMSMessage(ctx context.Context, s *ent.Scoped, integrationID int64, providerMessageID string) (*ent.OutboundMessage, error) {
 	if providerMessageID == "" {
 		return nil, nil
 	}
-	m, err := s.OutboundMessage().Query().
+	msg, err := s.OutboundMessage().Query().
 		Where(
 			outboundmessage.ChannelEQ(channels.SMS),
 			outboundmessage.IntegrationID(integrationID),
@@ -84,7 +92,7 @@ func FindSMSMessage(ctx context.Context, s *ent.Scoped, integrationID int64, pro
 	if err != nil {
 		return nil, fmt.Errorf("find sms message: %w", err)
 	}
-	return m, nil
+	return msg, nil
 }
 
 // Origin is the Broadcast or the Automation an Outbound message came from, 0 for none.
@@ -96,8 +104,8 @@ type Origin struct {
 // FindOrigin is the Origin of the Outbound message id, the zero Origin when the message is not the
 // scope's: an SMS unsubscribe link carries only the message, since its source is everything (ADR
 // 0077).
-func FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Origin, error) {
-	m, err := s.OutboundMessage().Query().Where(outboundmessage.ID(id)).
+func (m *Module) FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Origin, error) {
+	msg, err := s.OutboundMessage().Query().Where(outboundmessage.ID(id)).
 		Select(outboundmessage.FieldBroadcastID, outboundmessage.FieldAutomationID).
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -106,7 +114,7 @@ func FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Origin, error) {
 	if err != nil {
 		return Origin{}, fmt.Errorf("find the message's origin: %w", err)
 	}
-	return Origin{BroadcastID: lo.FromPtr(m.BroadcastID), AutomationID: lo.FromPtr(m.AutomationID)}, nil
+	return Origin{BroadcastID: lo.FromPtr(msg.BroadcastID), AutomationID: lo.FromPtr(msg.AutomationID)}, nil
 }
 
 // StampFinal sets a message's final delivery state, delivered or undelivered (ADR 0079). Only a
@@ -118,7 +126,8 @@ func FindOrigin(ctx context.Context, s *ent.Scoped, id int64) (Origin, error) {
 // The final report is one latch over the pair (ADR 0109): the write that sets either moment
 // matches only while both are null, and the table refuses a row with both
 // (outbound_messages_final_report_check).
-func StampFinal(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, code string, at time.Time) error {
+func (m *Module) StampFinal(ctx context.Context, s *ent.Scoped, id int64, in StampFinalInput) error {
+	result, code, at := in.Result, in.Code, in.At
 	switch result {
 	case ResultDelivered, ResultUndelivered:
 	case ResultBounced, ResultComplained:
@@ -145,6 +154,15 @@ func StampFinal(ctx context.Context, s *ent.Scoped, id int64, result DeliveryRes
 	return nil
 }
 
+// StampFinalInput is a message's final delivery report: its Result (delivered or undelivered),
+// the provider's error Code of an undelivered one, "" when it gave none, and the moment At it was
+// received.
+type StampFinalInput struct {
+	Result DeliveryResult
+	Code   string
+	At     time.Time
+}
+
 // DeliveryResult is one of the stamps of a message's delivery result.
 type DeliveryResult string
 
@@ -155,10 +173,10 @@ const (
 	ResultComplained  DeliveryResult = "complained"
 )
 
-// StampDelivery retains the earliest observed email result of each kind (ADR 0113), so
+// stampDelivery retains the earliest observed email result of each kind (ADR 0113), so
 // reversed consumer order and retries cannot change the report's meaning. SMS's mutually
 // exclusive final result still goes through StampFinal synchronously.
-func StampDelivery(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, at time.Time) error {
+func stampDelivery(ctx context.Context, s *ent.Scoped, id int64, result DeliveryResult, at time.Time) error {
 	u := s.OutboundMessage().Update()
 	switch result {
 	case ResultDelivered:

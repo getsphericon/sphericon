@@ -27,6 +27,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/broadcast"
+	"github.com/getsphericon/sphericon/internal/domain/sending/linkclick"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
@@ -90,13 +91,14 @@ type Module struct {
 	bus      *events.Bus
 	renderer *emaildoc.Renderer
 	out      *outboundmessages.Module
+	clicks   *linkclick.Module
 }
 
 // New builds the module. The bus runs a claim and its send job in one transaction; the renderer
 // builds a body from its document; out is Outbound send, whose Send route Schedule asks whether the
-// Broadcast can send and the progress estimate paces by.
-func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module) *Module {
-	return &Module{bus: bus, renderer: renderer, out: out}
+// Broadcast can send and the progress estimate paces by; clicks counts its Link clicks.
+func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Module, clicks *linkclick.Module) *Module {
+	return &Module{bus: bus, renderer: renderer, out: out, clicks: clicks}
 }
 
 // Send moves a draft or scheduled Broadcast to sending (dropping any schedule) and queues
@@ -106,7 +108,7 @@ func New(bus *events.Bus, renderer *emaildoc.Renderer, out *outboundmessages.Mod
 // so an email Broadcast of a Workspace with no postal address is refused with
 // outboundmessages.ErrPostalAddressRequired (ADR 0156); a Send route that cannot send holds the plan.
 func (m *Module) Send(ctx context.Context, s *ent.Scoped, id, revision int64) (*ent.Broadcast, error) {
-	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, requirePostalAddress)
+	return m.claim(ctx, s, id, revision, triggerSend, func(u *ent.BroadcastScopedUpdate) { u.ClearScheduledAt() }, nil, m.requirePostalAddress)
 }
 
 // Schedule moves a draft or scheduled Broadcast to scheduled at `when` and queues a delayed
@@ -150,7 +152,7 @@ type Scheduled struct {
 // address for an email's footer, its Send route cannot send, or its content breaks its Channel's
 // written-length rule.
 func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
-	if err := requirePostalAddress(ctx, ts, b); err != nil {
+	if err := m.requirePostalAddress(ctx, ts, b); err != nil {
 		return err
 	}
 	channel := b.Channel
@@ -167,8 +169,8 @@ func (m *Module) armable(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) 
 // requirePostalAddress refuses a claimed email Broadcast while its Workspace has no postal address,
 // which the marketing email footer carries (ADR 0156). It reads the Workspace in the claim's
 // transaction, under the Workspace lock a clearing of the address takes too.
-func requirePostalAddress(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
-	return outboundmessages.RequirePostalAddress(ctx, ts, b.Channel)
+func (m *Module) requirePostalAddress(ctx context.Context, ts *ent.Scoped, b *ent.Broadcast) error {
+	return m.out.RequirePostalAddress(ctx, ts, b.Channel)
 }
 
 // checkWritten is the Channel's written-length rule (ADR 0078), checked at Schedule on the content

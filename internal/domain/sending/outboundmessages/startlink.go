@@ -22,10 +22,6 @@ type StartLinks interface {
 	IssueStartLink(ctx context.Context, s *ent.Scoped, contactID int64, integrationID *int64) (bindings.StartLink, error)
 }
 
-// WithStartLinks gives the module the issuer of the Start tokens of {{ telegram_start_url }}.
-// Without it the tag renders empty.
-func WithStartLinks(l StartLinks) Option { return func(m *Module) { m.startLinks = l } }
-
 // startLinkBinding binds StartLinkTag for a message whose content is texts, or binds nothing when
 // none of them uses the tag: a token is issued only for content that carries it. The tag renders
 // empty when the Workspace has no enabled default Telegram Integration or the message has no

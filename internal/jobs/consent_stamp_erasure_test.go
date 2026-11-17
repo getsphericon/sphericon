@@ -28,7 +28,7 @@ func TestErasingAContactKeepsOnlyTheTimeOfTheStopsThatStand(t *testing.T) {
 	require.NoError(t, confirmations.RecordConfirmation(ctx, env.Bus, s, linktarget.Confirmation{
 		WorkspaceID: fixtures.AcmeID, ContactID: fixtures.ContactAliceID, Destination: address,
 	}, "", time.Now()))
-	_, err := unsubscriberecording.New(env.Bus, time.Now).Unsubscribe(ctx, s, address, eligibility.SourceBroadcasts)
+	_, err := unsubscriberecording.New(env.Bus, env.OutboundModule(), time.Now).Unsubscribe(ctx, s, address, eligibility.SourceBroadcasts)
 	require.NoError(t, err)
 
 	eraseContact(t, env, fixtures.ContactAliceID)

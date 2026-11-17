@@ -12,7 +12,7 @@ import (
 // recipient received, merge tags filled. An Event that names no message (events.OutboundMessageID),
 // or whose message kept no subject (sent before it was kept, or erased with the Contact), has no
 // entry.
-func SubjectsOf(ctx context.Context, s *ent.Scoped, evs []*ent.Event) (map[int64]string, error) {
+func (m *Module) SubjectsOf(ctx context.Context, s *ent.Scoped, evs []*ent.Event) (map[int64]string, error) {
 	ids := make([]int64, 0, len(evs))
 	for _, e := range evs {
 		if id, ok := events.OutboundMessageID(e); ok {

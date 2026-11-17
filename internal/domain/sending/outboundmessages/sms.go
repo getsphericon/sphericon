@@ -41,12 +41,6 @@ type HookURLs interface {
 	HookURL(row *ent.Integration) string
 }
 
-// WithSMSSenders gives the module the senders SMS messages go through and the hooks their delivery
-// reports are posted to. Without it the SMS Channel has no Integration that can send.
-func WithSMSSenders(senders SMSSenders, hooks HookURLs) Option {
-	return func(m *Module) { m.sms, m.hooks = senders, hooks }
-}
-
 // smsChannel is SMS's part of the Outbound send: the renderer of the text and the adapter over the
 // Integration's account. The Contact's phone, in E.164, is its Destination.
 type smsChannel struct{ m *Module }

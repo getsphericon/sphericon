@@ -27,9 +27,9 @@ func globexTestSend(env *testhelper.TestEnv, via senders, to string) (outboundme
 		testhelper.Module[*holds.Holds](env),
 		via,
 		messagetoken.New("test-secret", "http://local", time.Now),
+		outboundmessages.Deps{System: env.SystemMail, Users: users.New(env.DB, env.Bus, nil, nil, nil, time.Now)},
+		outboundmessages.Config{},
 		time.Now,
-		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)),
 	)
 	return m.SendTest(context.Background(), asJane(env, fixtures.GlobexID), outboundmessages.TestRequest{
 		To:      to,
@@ -90,11 +90,15 @@ func (spentBudget) TakeTestSend(context.Context, int64, int64) (ratelimit.Refusa
 // the Test send is not made.
 func TestTestSendFromTheSystemSenderPastItsCapIsRefusedWithAWait(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider},
-		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
-		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)),
-		outboundmessages.WithTestSendBudget(spentBudget{}))
+	m := outboundmessages.New(
+		env.Bus,
+		testhelper.Module[*holds.Holds](env),
+		senders{err: messaging.ErrNoProvider},
+		messagetoken.New("test-secret", "http://local", time.Now),
+		outboundmessages.Deps{System: env.SystemMail, Users: users.New(env.DB, env.Bus, nil, nil, nil, time.Now), TestBudget: spentBudget{}},
+		outboundmessages.Config{},
+		time.Now,
+	)
 
 	_, err := m.SendTest(t.Context(), asJane(env, fixtures.GlobexID), outboundmessages.TestRequest{
 		To: fixtures.OwnerJaneEmail, Content: outboundmessages.EmailContent{Subject: "[Test] Hi", Body: htmlBody},
@@ -112,10 +116,15 @@ func TestTestSendFromTheSystemSenderPastItsCapIsRefusedWithAWait(t *testing.T) {
 // sender: the Workspace's Sending-domain gate holds it.
 func TestTestSendOfATokenNeverGoesFromTheSystemSender(t *testing.T) {
 	env := testhelper.Setup(t)
-	m := outboundmessages.New(env.Bus, testhelper.Module[*holds.Holds](env), senders{err: messaging.ErrNoProvider},
-		messagetoken.New("test-secret", "http://local", time.Now), time.Now,
-		outboundmessages.WithSystemSender(env.SystemMail),
-		outboundmessages.WithUsers(users.New(env.DB, env.Bus, nil, nil, nil, time.Now)))
+	m := outboundmessages.New(
+		env.Bus,
+		testhelper.Module[*holds.Holds](env),
+		senders{err: messaging.ErrNoProvider},
+		messagetoken.New("test-secret", "http://local", time.Now),
+		outboundmessages.Deps{System: env.SystemMail, Users: users.New(env.DB, env.Bus, nil, nil, nil, time.Now)},
+		outboundmessages.Config{},
+		time.Now,
+	)
 	token := env.Bus.Act(env.DB.Scoped(fixtures.GlobexID), events.Actor{Kind: events.ActorAPIToken, ID: "1"})
 
 	res, err := m.SendTest(t.Context(), token, outboundmessages.TestRequest{

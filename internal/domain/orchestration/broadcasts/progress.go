@@ -76,11 +76,11 @@ func (m *Module) progressOf(ctx context.Context, s *ent.Scoped, b *ent.Broadcast
 		eta := now.Add(time.Duration(pending) * route.Interval())
 		p.EstimatedCompletion, p.LimitedBy = &eta, providerlimit.CauseProviderLimit
 	}
-	wait, capped, err := m.out.SendCapDrain(ctx, s, pending, now)
+	drain, err := m.out.SendCapDrain(ctx, s, pending)
 	if err != nil {
 		return nil, err
 	}
-	if eta := now.Add(wait); capped && wait > 0 && (p.EstimatedCompletion == nil || eta.After(*p.EstimatedCompletion)) {
+	if eta := now.Add(drain.Wait); drain.Capped && drain.Wait > 0 && (p.EstimatedCompletion == nil || eta.After(*p.EstimatedCompletion)) {
 		p.EstimatedCompletion, p.LimitedBy = &eta, providerlimit.CauseSendCap
 	}
 	return p, nil

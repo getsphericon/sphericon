@@ -13,7 +13,7 @@ import (
 // or counts a message twice. Machine observations are excluded before work is queued.
 
 // StampOpened retains the earliest observed human open.
-func StampOpened(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
+func (m *Module) StampOpened(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
 	n, err := s.OutboundMessage().Update().
 		Where(outboundmessage.ID(messageID), outboundmessage.Or(outboundmessage.OpenedAtIsNil(), outboundmessage.OpenedAtGT(at))).
 		SetOpenedAt(at).
@@ -22,7 +22,7 @@ func StampOpened(ctx context.Context, s *ent.Scoped, messageID int64, at time.Ti
 }
 
 // StampClicked retains the earliest observed human click.
-func StampClicked(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
+func (m *Module) StampClicked(ctx context.Context, s *ent.Scoped, messageID int64, at time.Time) (bool, error) {
 	n, err := s.OutboundMessage().Update().
 		Where(outboundmessage.ID(messageID), outboundmessage.Or(outboundmessage.ClickedAtIsNil(), outboundmessage.ClickedAtGT(at))).
 		SetClickedAt(at).

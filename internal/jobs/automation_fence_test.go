@@ -102,7 +102,7 @@ func (e *realEnv) queueThrough(t *testing.T, wrap func(events.JobQueue) events.J
 func (e *realEnv) stepper(t *testing.T, sender messaging.EmailSender) *automations.StepExecution {
 	t.Helper()
 	bus := e.bus(t)
-	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local", time.Now), time.Now)
+	mod := outboundmessages.New(bus, holds.New(func() bool { return true }, time.Now), resolvingTo(sender), messagetoken.New("test-secret", "http://local", time.Now), outboundmessages.Deps{}, outboundmessages.Config{}, time.Now)
 	return automations.NewStepExecution(bus, mod, e.fence, nil, nil, time.Now)
 }
 
