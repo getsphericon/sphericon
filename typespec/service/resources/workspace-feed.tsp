@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -38,18 +40,10 @@ model ServiceWorkspaceResource {
 }
 
 /** One page of the Workspace feed */
-model ServiceWorkspaceFeedPage {
-  /** Workspaces created or changed after the requested cursor, in change order */
-  items: ServiceWorkspaceResource[];
-
-  /** Pass it back as the cursor to read what follows this page. It is the requested
-   * cursor itself when the page is empty. Saving it is what advances the caller: the
-   * core keeps no position of its own. */
-  nextCursor: string;
-
-  /** Whether more entries follow this page right now */
-  hasMore: boolean;
-}
+model ServiceWorkspaceFeedPage is FeedPage<
+  ServiceWorkspaceResource,
+  "Workspaces created or changed after the requested cursor, in change order"
+>;
 
 @tag("Service Workspaces")
 @route("/workspaces/changes")
@@ -61,14 +55,5 @@ namespace ServiceWorkspaceFeed {
    * empty cursor starts from the beginning. */
   @get
   @requiresServiceScopes(#[ServiceScope.workspacesRead])
-  op list(
-    /** The `nextCursor` of a page the caller has saved; empty starts from the beginning */
-    @query cursor?: string,
-
-    /** Most entries on the page */
-    @query
-    @minValue(1)
-    @maxValue(200)
-    limit?: int32 = 100,
-  ): ServiceWorkspaceFeedPage | Problem;
+  op list(...FeedQuery): ServiceWorkspaceFeedPage | Problem;
 }

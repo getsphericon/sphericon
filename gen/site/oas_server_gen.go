@@ -89,7 +89,7 @@ type Handler interface {
 	// List the workspace's Audit log, newest first (Enterprise; owner and admin only).
 	//
 	// GET /workspaces/{workspaceId}/audit-entries
-	SiteAuditList(ctx context.Context, params SiteAuditListParams) (*SiteAuditEntryList, error)
+	SiteAuditList(ctx context.Context, params SiteAuditListParams) (*AuditEntryList, error)
 	// SiteAuditSetRetention implements SiteAudit_setRetention operation.
 	//
 	// Set or clear the Audit log retention window; recorded as an Audit entry (Enterprise; owner and admin

@@ -13,6 +13,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
 	"github.com/getsphericon/sphericon/internal/domain/sending/preset"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/infra/messaging/telegram"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
@@ -238,7 +239,7 @@ func (m *Module) editTelegram(ctx context.Context, row *ent.Integration, in Upda
 	was := holdsWebhook(row.Enabled, row.DiscardedAt)
 	will := holdsWebhook(*in.Enabled.Over(&row.Enabled), row.DiscardedAt)
 	connect := will && (tokenChanged || !was)
-	recheck := configGiven && row.ProviderRefusedAt != nil
+	recheck := configGiven && providerlimit.Refused(row) != nil
 
 	if tokenChanged || connect || recheck {
 		info, err := m.identify(ctx, next.Token)

@@ -45,7 +45,6 @@ func TestCheckFindsEveryProblem(t *testing.T) {
 		{"enumwithoutcheck", []string{"Unchecked.color enum-without-check", "Misnamed.shade enum-without-check"}},
 		{"givenupnotbool", []string{"Thing.label given-up-not-bool"}},
 		{"givenupwithoutdiscard", []string{"Thing.is_default given-up-without-discard"}},
-		{"bookkeepingwithoutrevision", []string{"Thing.polls bookkeeping-without-revision"}},
 		{"uncheckedrefreason", []string{"Thing.gone_id unchecked-ref-reason"}},
 		{"refwithoutkey", []string{"Thing.other_id ref-without-key"}},
 		{"refunknownentity", []string{"Thing.ghost_id ref-unknown-entity"}},

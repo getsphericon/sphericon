@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -59,7 +60,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/ent/workspacestanding"
 )
 
 // WorkspaceCreate is the builder for creating a Workspace entity.
@@ -200,20 +203,6 @@ func (_c *WorkspaceCreate) SetNillableTimezone(v *string) *WorkspaceCreate {
 	return _c
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (_c *WorkspaceCreate) SetSetupCompletedAt(v time.Time) *WorkspaceCreate {
-	_c.mutation.SetSetupCompletedAt(v)
-	return _c
-}
-
-// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceCreate {
-	if v != nil {
-		_c.SetSetupCompletedAt(*v)
-	}
-	return _c
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (_c *WorkspaceCreate) SetReportingCurrency(v string) *WorkspaceCreate {
 	_c.mutation.SetReportingCurrency(v)
@@ -280,20 +269,6 @@ func (_c *WorkspaceCreate) SetSecondFactorRequiredAt(v time.Time) *WorkspaceCrea
 func (_c *WorkspaceCreate) SetNillableSecondFactorRequiredAt(v *time.Time) *WorkspaceCreate {
 	if v != nil {
 		_c.SetSecondFactorRequiredAt(*v)
-	}
-	return _c
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (_c *WorkspaceCreate) SetFeedPosition(v int64) *WorkspaceCreate {
-	_c.mutation.SetFeedPosition(v)
-	return _c
-}
-
-// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableFeedPosition(v *int64) *WorkspaceCreate {
-	if v != nil {
-		_c.SetFeedPosition(*v)
 	}
 	return _c
 }
@@ -392,34 +367,6 @@ func (_c *WorkspaceCreate) SetAbuseExempt(v bool) *WorkspaceCreate {
 func (_c *WorkspaceCreate) SetNillableAbuseExempt(v *bool) *WorkspaceCreate {
 	if v != nil {
 		_c.SetAbuseExempt(*v)
-	}
-	return _c
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (_c *WorkspaceCreate) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceCreate {
-	_c.mutation.SetAbuseWarningNotifiedAt(v)
-	return _c
-}
-
-// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceCreate {
-	if v != nil {
-		_c.SetAbuseWarningNotifiedAt(*v)
-	}
-	return _c
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (_c *WorkspaceCreate) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceCreate {
-	_c.mutation.SetAbuseFreezeNotifiedAt(v)
-	return _c
-}
-
-// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
-func (_c *WorkspaceCreate) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceCreate {
-	if v != nil {
-		_c.SetAbuseFreezeNotifiedAt(*v)
 	}
 	return _c
 }
@@ -1150,6 +1097,55 @@ func (_c *WorkspaceCreate) AddUsages(v ...*Usage) *WorkspaceCreate {
 	return _c.AddUsageIDs(ids...)
 }
 
+// AddIntegrationProviderStateIDs adds the "integration_provider_states" edge to the IntegrationProviderState entity by IDs.
+func (_c *WorkspaceCreate) AddIntegrationProviderStateIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddIntegrationProviderStateIDs(ids...)
+	return _c
+}
+
+// AddIntegrationProviderStates adds the "integration_provider_states" edges to the IntegrationProviderState entity.
+func (_c *WorkspaceCreate) AddIntegrationProviderStates(v ...*IntegrationProviderState) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddIntegrationProviderStateIDs(ids...)
+}
+
+// AddWebhookEndpointHealthIDs adds the "webhook_endpoint_healths" edge to the WebhookEndpointHealth entity by IDs.
+func (_c *WorkspaceCreate) AddWebhookEndpointHealthIDs(ids ...int64) *WorkspaceCreate {
+	_c.mutation.AddWebhookEndpointHealthIDs(ids...)
+	return _c
+}
+
+// AddWebhookEndpointHealths adds the "webhook_endpoint_healths" edges to the WebhookEndpointHealth entity.
+func (_c *WorkspaceCreate) AddWebhookEndpointHealths(v ...*WebhookEndpointHealth) *WorkspaceCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddWebhookEndpointHealthIDs(ids...)
+}
+
+// SetStandingID sets the "standing" edge to the WorkspaceStanding entity by ID.
+func (_c *WorkspaceCreate) SetStandingID(id int64) *WorkspaceCreate {
+	_c.mutation.SetStandingID(id)
+	return _c
+}
+
+// SetNillableStandingID sets the "standing" edge to the WorkspaceStanding entity by ID if the given value is not nil.
+func (_c *WorkspaceCreate) SetNillableStandingID(id *int64) *WorkspaceCreate {
+	if id != nil {
+		_c = _c.SetStandingID(*id)
+	}
+	return _c
+}
+
+// SetStanding sets the "standing" edge to the WorkspaceStanding entity.
+func (_c *WorkspaceCreate) SetStanding(v *WorkspaceStanding) *WorkspaceCreate {
+	return _c.SetStandingID(v.ID)
+}
+
 // Mutation returns the WorkspaceMutation object of the builder.
 func (_c *WorkspaceCreate) Mutation() *WorkspaceMutation {
 	return _c.mutation
@@ -1212,10 +1208,6 @@ func (_c *WorkspaceCreate) defaults() {
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
 		v := workspace.DefaultDomainJoinEnabled
 		_c.mutation.SetDomainJoinEnabled(v)
-	}
-	if _, ok := _c.mutation.FeedPosition(); !ok {
-		v := workspace.DefaultFeedPosition
-		_c.mutation.SetFeedPosition(v)
 	}
 	if _, ok := _c.mutation.AbuseExempt(); !ok {
 		v := workspace.DefaultAbuseExempt
@@ -1291,9 +1283,6 @@ func (_c *WorkspaceCreate) check() error {
 	}
 	if _, ok := _c.mutation.DomainJoinEnabled(); !ok {
 		return &ValidationError{Name: "domain_join_enabled", err: errors.New(`ent: missing required field "Workspace.domain_join_enabled"`)}
-	}
-	if _, ok := _c.mutation.FeedPosition(); !ok {
-		return &ValidationError{Name: "feed_position", err: errors.New(`ent: missing required field "Workspace.feed_position"`)}
 	}
 	if v, ok := _c.mutation.SuspendedByKind(); ok {
 		if err := workspace.SuspendedByKindValidator(v); err != nil {
@@ -1380,10 +1369,6 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		_spec.SetField(workspace.FieldTimezone, field.TypeString, value)
 		_node.Timezone = &value
 	}
-	if value, ok := _c.mutation.SetupCompletedAt(); ok {
-		_spec.SetField(workspace.FieldSetupCompletedAt, field.TypeTime, value)
-		_node.SetupCompletedAt = &value
-	}
 	if value, ok := _c.mutation.ReportingCurrency(); ok {
 		_spec.SetField(workspace.FieldReportingCurrency, field.TypeString, value)
 		_node.ReportingCurrency = &value
@@ -1403,10 +1388,6 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SecondFactorRequiredAt(); ok {
 		_spec.SetField(workspace.FieldSecondFactorRequiredAt, field.TypeTime, value)
 		_node.SecondFactorRequiredAt = &value
-	}
-	if value, ok := _c.mutation.FeedPosition(); ok {
-		_spec.SetField(workspace.FieldFeedPosition, field.TypeInt64, value)
-		_node.FeedPosition = value
 	}
 	if value, ok := _c.mutation.ErasedAt(); ok {
 		_spec.SetField(workspace.FieldErasedAt, field.TypeTime, value)
@@ -1435,14 +1416,6 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AbuseExempt(); ok {
 		_spec.SetField(workspace.FieldAbuseExempt, field.TypeBool, value)
 		_node.AbuseExempt = value
-	}
-	if value, ok := _c.mutation.AbuseWarningNotifiedAt(); ok {
-		_spec.SetField(workspace.FieldAbuseWarningNotifiedAt, field.TypeTime, value)
-		_node.AbuseWarningNotifiedAt = &value
-	}
-	if value, ok := _c.mutation.AbuseFreezeNotifiedAt(); ok {
-		_spec.SetField(workspace.FieldAbuseFreezeNotifiedAt, field.TypeTime, value)
-		_node.AbuseFreezeNotifiedAt = &value
 	}
 	if nodes := _c.mutation.ContactsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -2212,6 +2185,54 @@ func (_c *WorkspaceCreate) createSpec() (*Workspace, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.IntegrationProviderStatesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.IntegrationProviderStatesTable,
+			Columns: []string{workspace.IntegrationProviderStatesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(integrationproviderstate.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.WebhookEndpointHealthsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   workspace.WebhookEndpointHealthsTable,
+			Columns: []string{workspace.WebhookEndpointHealthsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(webhookendpointhealth.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.StandingIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   workspace.StandingTable,
+			Columns: []string{workspace.StandingColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(workspacestanding.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -2408,24 +2429,6 @@ func (u *WorkspaceUpsert) ClearTimezone() *WorkspaceUpsert {
 	return u
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (u *WorkspaceUpsert) SetSetupCompletedAt(v time.Time) *WorkspaceUpsert {
-	u.Set(workspace.FieldSetupCompletedAt, v)
-	return u
-}
-
-// UpdateSetupCompletedAt sets the "setup_completed_at" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateSetupCompletedAt() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldSetupCompletedAt)
-	return u
-}
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (u *WorkspaceUpsert) ClearSetupCompletedAt() *WorkspaceUpsert {
-	u.SetNull(workspace.FieldSetupCompletedAt)
-	return u
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (u *WorkspaceUpsert) SetReportingCurrency(v string) *WorkspaceUpsert {
 	u.Set(workspace.FieldReportingCurrency, v)
@@ -2513,24 +2516,6 @@ func (u *WorkspaceUpsert) UpdateSecondFactorRequiredAt() *WorkspaceUpsert {
 // ClearSecondFactorRequiredAt clears the value of the "second_factor_required_at" field.
 func (u *WorkspaceUpsert) ClearSecondFactorRequiredAt() *WorkspaceUpsert {
 	u.SetNull(workspace.FieldSecondFactorRequiredAt)
-	return u
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (u *WorkspaceUpsert) SetFeedPosition(v int64) *WorkspaceUpsert {
-	u.Set(workspace.FieldFeedPosition, v)
-	return u
-}
-
-// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateFeedPosition() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldFeedPosition)
-	return u
-}
-
-// AddFeedPosition adds v to the "feed_position" field.
-func (u *WorkspaceUpsert) AddFeedPosition(v int64) *WorkspaceUpsert {
-	u.Add(workspace.FieldFeedPosition, v)
 	return u
 }
 
@@ -2651,42 +2636,6 @@ func (u *WorkspaceUpsert) SetAbuseExempt(v bool) *WorkspaceUpsert {
 // UpdateAbuseExempt sets the "abuse_exempt" field to the value that was provided on create.
 func (u *WorkspaceUpsert) UpdateAbuseExempt() *WorkspaceUpsert {
 	u.SetExcluded(workspace.FieldAbuseExempt)
-	return u
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (u *WorkspaceUpsert) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpsert {
-	u.Set(workspace.FieldAbuseWarningNotifiedAt, v)
-	return u
-}
-
-// UpdateAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateAbuseWarningNotifiedAt() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldAbuseWarningNotifiedAt)
-	return u
-}
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (u *WorkspaceUpsert) ClearAbuseWarningNotifiedAt() *WorkspaceUpsert {
-	u.SetNull(workspace.FieldAbuseWarningNotifiedAt)
-	return u
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (u *WorkspaceUpsert) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpsert {
-	u.Set(workspace.FieldAbuseFreezeNotifiedAt, v)
-	return u
-}
-
-// UpdateAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field to the value that was provided on create.
-func (u *WorkspaceUpsert) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsert {
-	u.SetExcluded(workspace.FieldAbuseFreezeNotifiedAt)
-	return u
-}
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (u *WorkspaceUpsert) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsert {
-	u.SetNull(workspace.FieldAbuseFreezeNotifiedAt)
 	return u
 }
 
@@ -2912,27 +2861,6 @@ func (u *WorkspaceUpsertOne) ClearTimezone() *WorkspaceUpsertOne {
 	})
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (u *WorkspaceUpsertOne) SetSetupCompletedAt(v time.Time) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSetupCompletedAt(v)
-	})
-}
-
-// UpdateSetupCompletedAt sets the "setup_completed_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateSetupCompletedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSetupCompletedAt()
-	})
-}
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (u *WorkspaceUpsertOne) ClearSetupCompletedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearSetupCompletedAt()
-	})
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (u *WorkspaceUpsertOne) SetReportingCurrency(v string) *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
@@ -3035,27 +2963,6 @@ func (u *WorkspaceUpsertOne) UpdateSecondFactorRequiredAt() *WorkspaceUpsertOne 
 func (u *WorkspaceUpsertOne) ClearSecondFactorRequiredAt() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSecondFactorRequiredAt()
-	})
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (u *WorkspaceUpsertOne) SetFeedPosition(v int64) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetFeedPosition(v)
-	})
-}
-
-// AddFeedPosition adds v to the "feed_position" field.
-func (u *WorkspaceUpsertOne) AddFeedPosition(v int64) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.AddFeedPosition(v)
-	})
-}
-
-// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateFeedPosition() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateFeedPosition()
 	})
 }
 
@@ -3196,48 +3103,6 @@ func (u *WorkspaceUpsertOne) SetAbuseExempt(v bool) *WorkspaceUpsertOne {
 func (u *WorkspaceUpsertOne) UpdateAbuseExempt() *WorkspaceUpsertOne {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateAbuseExempt()
-	})
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (u *WorkspaceUpsertOne) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetAbuseWarningNotifiedAt(v)
-	})
-}
-
-// UpdateAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateAbuseWarningNotifiedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateAbuseWarningNotifiedAt()
-	})
-}
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (u *WorkspaceUpsertOne) ClearAbuseWarningNotifiedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearAbuseWarningNotifiedAt()
-	})
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (u *WorkspaceUpsertOne) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetAbuseFreezeNotifiedAt(v)
-	})
-}
-
-// UpdateAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertOne) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateAbuseFreezeNotifiedAt()
-	})
-}
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (u *WorkspaceUpsertOne) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsertOne {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearAbuseFreezeNotifiedAt()
 	})
 }
 
@@ -3629,27 +3494,6 @@ func (u *WorkspaceUpsertBulk) ClearTimezone() *WorkspaceUpsertBulk {
 	})
 }
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (u *WorkspaceUpsertBulk) SetSetupCompletedAt(v time.Time) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetSetupCompletedAt(v)
-	})
-}
-
-// UpdateSetupCompletedAt sets the "setup_completed_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateSetupCompletedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateSetupCompletedAt()
-	})
-}
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (u *WorkspaceUpsertBulk) ClearSetupCompletedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearSetupCompletedAt()
-	})
-}
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (u *WorkspaceUpsertBulk) SetReportingCurrency(v string) *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
@@ -3752,27 +3596,6 @@ func (u *WorkspaceUpsertBulk) UpdateSecondFactorRequiredAt() *WorkspaceUpsertBul
 func (u *WorkspaceUpsertBulk) ClearSecondFactorRequiredAt() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.ClearSecondFactorRequiredAt()
-	})
-}
-
-// SetFeedPosition sets the "feed_position" field.
-func (u *WorkspaceUpsertBulk) SetFeedPosition(v int64) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetFeedPosition(v)
-	})
-}
-
-// AddFeedPosition adds v to the "feed_position" field.
-func (u *WorkspaceUpsertBulk) AddFeedPosition(v int64) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.AddFeedPosition(v)
-	})
-}
-
-// UpdateFeedPosition sets the "feed_position" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateFeedPosition() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateFeedPosition()
 	})
 }
 
@@ -3913,48 +3736,6 @@ func (u *WorkspaceUpsertBulk) SetAbuseExempt(v bool) *WorkspaceUpsertBulk {
 func (u *WorkspaceUpsertBulk) UpdateAbuseExempt() *WorkspaceUpsertBulk {
 	return u.Update(func(s *WorkspaceUpsert) {
 		s.UpdateAbuseExempt()
-	})
-}
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (u *WorkspaceUpsertBulk) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetAbuseWarningNotifiedAt(v)
-	})
-}
-
-// UpdateAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateAbuseWarningNotifiedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateAbuseWarningNotifiedAt()
-	})
-}
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (u *WorkspaceUpsertBulk) ClearAbuseWarningNotifiedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearAbuseWarningNotifiedAt()
-	})
-}
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (u *WorkspaceUpsertBulk) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.SetAbuseFreezeNotifiedAt(v)
-	})
-}
-
-// UpdateAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field to the value that was provided on create.
-func (u *WorkspaceUpsertBulk) UpdateAbuseFreezeNotifiedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.UpdateAbuseFreezeNotifiedAt()
-	})
-}
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (u *WorkspaceUpsertBulk) ClearAbuseFreezeNotifiedAt() *WorkspaceUpsertBulk {
-	return u.Update(func(s *WorkspaceUpsert) {
-		s.ClearAbuseFreezeNotifiedAt()
 	})
 }
 

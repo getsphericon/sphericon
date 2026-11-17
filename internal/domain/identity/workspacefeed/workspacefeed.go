@@ -23,7 +23,6 @@ import (
 
 	entclient "github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/membership"
-	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/domain/identity/memberships"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/infra/postgres"
@@ -216,11 +215,11 @@ func touch(ctx context.Context, c *entclient.Client, workspaceIDs ...int64) erro
 	}
 	// The lock keeps the position unique: no other transaction can take the maximum
 	// between this read and the update.
-	top, err := c.Workspace.Query().Aggregate(entclient.Max(workspace.FieldFeedPosition)).Int(ctx)
+	top, err := workspaces.TopFeedPosition(ctx, c)
 	if err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
-	if err := workspaces.SetFeedPosition(ctx, c, int64(top)+1, workspaceIDs...); err != nil {
+	if err := workspaces.SetFeedPosition(ctx, c, top+1, workspaceIDs...); err != nil {
 		return fmt.Errorf("workspace feed position: %w", err)
 	}
 	return nil

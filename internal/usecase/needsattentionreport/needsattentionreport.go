@@ -227,7 +227,7 @@ func domainsLost(ctx context.Context, s *ent.Scoped, _ time.Time) ([]Item, error
 // integrations reads the standing of every enabled Integration as the provider last reported
 // it, and whether it sent its Provider limit over the last 24 hours.
 func (m *UseCase) integrations(ctx context.Context, s *ent.Scoped, now time.Time) ([]Item, error) {
-	integs, err := s.Integration().Query().Where(integration.Enabled(true)).All(ctx)
+	integs, err := s.Integration().Query().Where(integration.Enabled(true)).WithProviderState().All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -239,8 +239,8 @@ func (m *UseCase) integrations(ctx context.Context, s *ent.Scoped, now time.Time
 	for _, integ := range integs {
 		subject := &Subject{ID: integ.ID, Name: integ.Name}
 		eff := providerlimit.EffectiveOf(integ)
-		if integ.ProviderRefusedAt != nil {
-			items = append(items, Item{Kind: KindIntegrationProviderRefused, Count: 1, Subject: subject, Since: integ.ProviderRefusedAt})
+		if refused := providerlimit.Refused(integ); refused != nil {
+			items = append(items, Item{Kind: KindIntegrationProviderRefused, Count: 1, Subject: subject, Since: refused})
 		}
 		switch eff.Enforcement {
 		case providers.EnforcementShutdown:

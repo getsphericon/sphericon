@@ -1,3 +1,6 @@
+import "../../common/rates.tsp";
+import "../../common/abuse.tsp";
+
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
@@ -115,39 +118,6 @@ model SiteAnalyticsPoint {
   clicked: int32;
 }
 
-/** The metric of a Sending domain that is over a warning limit of the abuse detector */
-enum SiteAbuseMetric {
-  complaint,
-  bounce,
-}
-
-/** A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
- * over the warning limit but under the freeze limit. Computed live from the trailing
- * 24 hours since any clearance, never stored. */
-model SiteAbuseWarning {
-  /** The Sending domain over the limit */
-  domain: string;
-
-  /** Which rate is over */
-  metric: SiteAbuseMetric;
-
-  /** The rate, 0–1 */
-  rate: float64;
-}
-
-/** A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,
- * with no display floor: the rate is null only when the denominator is zero. */
-model SiteRate {
-  /** Events counted against the rate */
-  numerator: int32;
-
-  /** The population the rate is over */
-  denominator: int32;
-
-  /** numerator / denominator, null when the denominator is zero, never reported as 0 */
-  rate: float64 | null;
-}
-
 /** The Complaint and Bounce rates of one Sending domain over a window */
 model SiteSendingDomainRates {
   /** Sending domain id */
@@ -157,10 +127,10 @@ model SiteSendingDomainRates {
   domain: string;
 
   /** Complaints over delivered mail; the rate is null when nothing was delivered in the window */
-  complaintRate: SiteRate;
+  complaintRate: RateTriple;
 
   /** Hard bounces over sent */
-  bounceRate: SiteRate;
+  bounceRate: RateTriple;
 }
 
 /** The Sending domains' deliverability over a window: one entry per domain that had sends or

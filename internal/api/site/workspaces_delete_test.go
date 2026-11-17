@@ -200,7 +200,7 @@ func TestDeleteAndRestoreAreAuditEntries(t *testing.T) {
 	for _, action := range []string{events.ActionWorkspaceDelete, events.ActionWorkspaceRestore} {
 		got := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, action)
 		require.Len(t, got, 1, action)
-		assert.Equal(t, siteapi.SiteAuditActorKindUser, got[0].Actor.Kind)
+		assert.Equal(t, siteapi.AuditActorKindUser, got[0].Actor.Kind)
 		assert.Equal(t, "Acme", got[0].Target.Name.Value)
 	}
 }

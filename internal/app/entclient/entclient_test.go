@@ -11,14 +11,15 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/emailtemplate"
+	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// An update moves the revision unless it writes Bookkeeping columns alone (ADR 0119): a delivery
-// that records a failure leaves an endpoint's editor able to save, and a write of anything a person
-// edits, alone or with them, makes it stale.
-func TestAnUpdateOfBookkeepingColumnsAloneLeavesTheRevision(t *testing.T) {
+// Every update of an edited row that changes something moves its revision (ADR 0119, ADR 0168): no
+// column is exempt, whoever writes it, so the delivery worker's turn-off of an endpoint makes an
+// open editor stale as an owner's edit does.
+func TestEveryUpdateThatChangesSomethingMovesTheRevision(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	id := int64(fixtures.WebhookCodebasicsID)
@@ -28,17 +29,14 @@ func TestAnUpdateOfBookkeepingColumnsAloneLeavesTheRevision(t *testing.T) {
 	}
 	before := revision()
 
-	env.DB.WebhookEndpoint.UpdateOneID(id).AddConsecutiveFailures(1).SetLastFailureAt(time.Now()).ExecX(ctx)
-	assert.Equal(t, before, revision(), "a failed delivery's record alone")
-
-	env.DB.WebhookEndpoint.UpdateOneID(id).ClearConsecutiveFailures().ClearLastFailureAt().ExecX(ctx)
-	assert.Equal(t, before, revision(), "a successful delivery's clear alone")
-
 	env.DB.WebhookEndpoint.UpdateOneID(id).SetURL("https://hooks.example.com/renamed").ExecX(ctx)
 	assert.Equal(t, before+1, revision(), "a column an editor sends")
 
-	env.DB.WebhookEndpoint.UpdateOneID(id).AddHealthGeneration(1).SetLastFailureAt(time.Now()).ExecX(ctx)
-	assert.Equal(t, before+2, revision(), "an added column an editor's write moves, with a bookkeeping one")
+	env.DB.WebhookEndpoint.UpdateOneID(id).AddHealthGeneration(1).ExecX(ctx)
+	assert.Equal(t, before+2, revision(), "a column no editor sends")
+
+	env.DB.WebhookEndpoint.UpdateOneID(id).SetDisabledAt(time.Now()).SetDisabledReason(webhookendpoint.DisabledReasonGone).ExecX(ctx)
+	assert.Equal(t, before+3, revision(), "a job's write")
 }
 
 // An update that writes no column but updated_at (a Contact's Tag change touches the Contact) is a
@@ -102,20 +100,20 @@ func TestWhatAnUnchangedWriteIs(t *testing.T) {
 		{
 			name: "a time with nanoseconds",
 			prepare: func(ctx context.Context, env *testhelper.TestEnv) {
-				env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSetupCompletedAt(moment).ExecX(ctx)
+				env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSecondFactorRequiredAt(moment).ExecX(ctx)
 			},
 			write: func(ctx context.Context, env *testhelper.TestEnv) error {
-				return env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSetupCompletedAt(moment.Add(100 * time.Nanosecond)).Exec(ctx)
+				return env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSecondFactorRequiredAt(moment.Add(100 * time.Nanosecond)).Exec(ctx)
 			},
 			unchanged: true,
 		},
 		{
 			name: "a time a microsecond later",
 			prepare: func(ctx context.Context, env *testhelper.TestEnv) {
-				env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSetupCompletedAt(moment).ExecX(ctx)
+				env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSecondFactorRequiredAt(moment).ExecX(ctx)
 			},
 			write: func(ctx context.Context, env *testhelper.TestEnv) error {
-				return env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSetupCompletedAt(moment.Add(time.Microsecond)).Exec(ctx)
+				return env.DB.Workspace.UpdateOneID(fixtures.AcmeID).SetSecondFactorRequiredAt(moment.Add(time.Microsecond)).Exec(ctx)
 			},
 		},
 		{

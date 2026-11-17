@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -60,7 +61,7 @@ func TestAnActiveAutomationWhoseFromDomainIsNotVerifiedCannotSend(t *testing.T) 
 
 func TestAnActiveAutomationWhoseProviderStoppedTheAccountCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+	require.NoError(t, env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
 		SetProviderEnforcement(providers.EnforcementShutdown).Exec(t.Context()))
 
 	items := itemsOf(t, env, fixtures.AcmeID)
@@ -101,7 +102,7 @@ func TestAnEmailStepOnlyInTheDraftMakesNoItem(t *testing.T) {
 // The default is stopped too, so the suspension is what leaves the item out.
 func TestASuspendedWorkspaceShowsNoAutomationThatCannotSend(t *testing.T) {
 	env := testhelper.Setup(t)
-	require.NoError(t, env.DB.Scoped(fixtures.AcmeID).Integration().UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+	require.NoError(t, env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
 		SetProviderEnforcement(providers.EnforcementShutdown).Exec(t.Context()))
 	suspended, err := suspension.NewSuspender(env.Bus, time.Now).Suspend(t.Context(), fixtures.AcmeID, suspension.SuspendInput{By: suspension.System, Reason: "abuse"})
 	require.NoError(t, err)

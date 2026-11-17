@@ -1,6 +1,15 @@
-// The Broadcast write bodies and its content: /site and /api take and show the same.
+// The Broadcast write bodies, its content and status: /site and /api take and show the same.
 
 namespace Sphericon;
+
+/** Broadcast lifecycle status */
+enum BroadcastStatus {
+  draft,
+  scheduled,
+  sending,
+  sent,
+  failed,
+}
 
 /** The Channel a Broadcast sends on, fixed when it is created (ADR 0080) */
 enum BroadcastChannel {

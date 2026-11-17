@@ -41,14 +41,15 @@ extern dec rateLimited(
 );
 
 /**
- * What every operation of the surface declares, checked at compile. `scopes`: its scopes, `#[]`
- * for none. `workspacePermissions`: an operation with `workspaceId` in its path declares its
- * Permissions, `#[]` for any member, and no other operation declares Permissions or
- * `@allowedWhileWithheld`.
+ * What every operation of the surface declares, checked at compile, one or more rules. `scopes`:
+ * its scopes, `#[]` for none. `workspacePermissions`: an operation with `workspaceId` in its path
+ * declares its Permissions, `#[]` for any member, and no other operation declares Permissions or
+ * `@allowedWhileWithheld`. `problem`: it returns its success type `| Problem`, the one `default`
+ * response every refusal and failure is answered with (ADR 0103).
  */
 extern dec everyOperationDeclares(
   target: Reflection.Namespace,
-  what: valueof "scopes" | "workspacePermissions"
+  ...rules: valueof ("scopes" | "workspacePermissions" | "problem")[]
 );
 
 /**

@@ -296,38 +296,6 @@ func (x *WorkspaceScopedUpdateOne) ClearTimezone() *WorkspaceScopedUpdateOne {
 
 const RoleOf_WorkspaceScopedUpdateOne_ClearTimezone = RoleStep
 
-// SetSetupCompletedAt sets the "setup_completed_at" field.
-func (x *WorkspaceScopedUpdateOne) SetSetupCompletedAt(v time.Time) *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetSetupCompletedAt(v) })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetSetupCompletedAt = RoleStep
-
-const SetsState_WorkspaceScopedUpdateOne_SetSetupCompletedAt = "SetupCompletedAt"
-
-// SetNillableSetupCompletedAt sets the "setup_completed_at" field if the given value is not nil.
-func (x *WorkspaceScopedUpdateOne) SetNillableSetupCompletedAt(v *time.Time) *WorkspaceScopedUpdateOne {
-	if v != nil {
-		x.SetSetupCompletedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetNillableSetupCompletedAt = RoleStep
-
-const SetsState_WorkspaceScopedUpdateOne_SetNillableSetupCompletedAt = "SetupCompletedAt"
-
-// ClearSetupCompletedAt clears the value of the "setup_completed_at" field.
-func (x *WorkspaceScopedUpdateOne) ClearSetupCompletedAt() *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearSetupCompletedAt() })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_ClearSetupCompletedAt = RoleStep
-
-const ClearsState_WorkspaceScopedUpdateOne_ClearSetupCompletedAt = "SetupCompletedAt"
-
 // SetReportingCurrency sets the "reporting_currency" field.
 func (x *WorkspaceScopedUpdateOne) SetReportingCurrency(v string) *WorkspaceScopedUpdateOne {
 	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetReportingCurrency(v) })
@@ -457,32 +425,6 @@ func (x *WorkspaceScopedUpdateOne) ClearSecondFactorRequiredAt() *WorkspaceScope
 }
 
 const RoleOf_WorkspaceScopedUpdateOne_ClearSecondFactorRequiredAt = RoleStep
-
-// SetFeedPosition sets the "feed_position" field.
-func (x *WorkspaceScopedUpdateOne) SetFeedPosition(v int64) *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetFeedPosition(v) })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetFeedPosition = RoleStep
-
-// SetNillableFeedPosition sets the "feed_position" field if the given value is not nil.
-func (x *WorkspaceScopedUpdateOne) SetNillableFeedPosition(v *int64) *WorkspaceScopedUpdateOne {
-	if v != nil {
-		x.SetFeedPosition(*v)
-	}
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetNillableFeedPosition = RoleStep
-
-// AddFeedPosition adds value to the "feed_position" field.
-func (x *WorkspaceScopedUpdateOne) AddFeedPosition(v int64) *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.AddFeedPosition(v) })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_AddFeedPosition = RoleStep
 
 // SetErasedAt sets the "erased_at" field.
 func (x *WorkspaceScopedUpdateOne) SetErasedAt(v time.Time) *WorkspaceScopedUpdateOne {
@@ -669,58 +611,6 @@ func (x *WorkspaceScopedUpdateOne) SetNillableAbuseExempt(v *bool) *WorkspaceSco
 }
 
 const RoleOf_WorkspaceScopedUpdateOne_SetNillableAbuseExempt = RoleStep
-
-// SetAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field.
-func (x *WorkspaceScopedUpdateOne) SetAbuseWarningNotifiedAt(v time.Time) *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetAbuseWarningNotifiedAt(v) })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetAbuseWarningNotifiedAt = RoleStep
-
-// SetNillableAbuseWarningNotifiedAt sets the "abuse_warning_notified_at" field if the given value is not nil.
-func (x *WorkspaceScopedUpdateOne) SetNillableAbuseWarningNotifiedAt(v *time.Time) *WorkspaceScopedUpdateOne {
-	if v != nil {
-		x.SetAbuseWarningNotifiedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetNillableAbuseWarningNotifiedAt = RoleStep
-
-// ClearAbuseWarningNotifiedAt clears the value of the "abuse_warning_notified_at" field.
-func (x *WorkspaceScopedUpdateOne) ClearAbuseWarningNotifiedAt() *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearAbuseWarningNotifiedAt() })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_ClearAbuseWarningNotifiedAt = RoleStep
-
-// SetAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field.
-func (x *WorkspaceScopedUpdateOne) SetAbuseFreezeNotifiedAt(v time.Time) *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.SetAbuseFreezeNotifiedAt(v) })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetAbuseFreezeNotifiedAt = RoleStep
-
-// SetNillableAbuseFreezeNotifiedAt sets the "abuse_freeze_notified_at" field if the given value is not nil.
-func (x *WorkspaceScopedUpdateOne) SetNillableAbuseFreezeNotifiedAt(v *time.Time) *WorkspaceScopedUpdateOne {
-	if v != nil {
-		x.SetAbuseFreezeNotifiedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_SetNillableAbuseFreezeNotifiedAt = RoleStep
-
-// ClearAbuseFreezeNotifiedAt clears the value of the "abuse_freeze_notified_at" field.
-func (x *WorkspaceScopedUpdateOne) ClearAbuseFreezeNotifiedAt() *WorkspaceScopedUpdateOne {
-	x.set = append(x.set, func(b *WorkspaceUpdateOne) { b.ClearAbuseFreezeNotifiedAt() })
-	return x
-}
-
-const RoleOf_WorkspaceScopedUpdateOne_ClearAbuseFreezeNotifiedAt = RoleStep
 
 // Save updates the Workspace, recorded as its workspace.update Audit entry when its audited fields change.
 func (x *WorkspaceScopedUpdateOne) Save(ctx context.Context) (*Workspace, error) {

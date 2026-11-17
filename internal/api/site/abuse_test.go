@@ -53,7 +53,7 @@ func TestTheDashboardShowsTheWarningTierLive(t *testing.T) {
 	assert.Equal(t, siteapi.SiteAttentionSeverityDegraded, item.Severity)
 	abuse := item.Abuse.Value
 	assert.Equal(t, held.Abuse.Domain, abuse.Domain)
-	assert.Equal(t, siteapi.SiteAbuseMetricBounce, abuse.Metric)
+	assert.Equal(t, siteapi.AbuseMetricBounce, abuse.Metric)
 	assert.InDelta(t, held.Abuse.Rate, abuse.Rate, 1e-9)
 }
 

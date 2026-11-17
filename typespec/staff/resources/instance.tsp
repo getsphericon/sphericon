@@ -1,3 +1,5 @@
+import "../../common/cursor-pages.tsp";
+
 using TypeSpec.Http;
 
 namespace Sphericon;
@@ -111,12 +113,8 @@ model StaffInstanceAuditEntryResource {
 }
 
 /** A page of the Instance audit log, newest first */
-model StaffInstanceAuditEntryList {
-  items: StaffInstanceAuditEntryResource[];
-
-  /** Pass as `cursor` for the next page; absent on the last page */
-  nextCursor?: string | null;
-}
+model StaffInstanceAuditEntryList
+  is CursorPage<StaffInstanceAuditEntryResource>;
 
 /** Switch the Telemetry report on or off */
 model StaffInstanceTelemetryInput {
@@ -173,14 +171,5 @@ namespace StaffInstance {
    * Instance's own settings */
   @get
   @route("/audit-entries")
-  op listAuditEntries(
-    /** Cursor from a previous page */
-    @query cursor?: string,
-
-    /** Page size */
-    @query
-    @minValue(1)
-    @maxValue(100)
-    limit?: int32 = 25,
-  ): StaffInstanceAuditEntryList | Problem;
+  op listAuditEntries(...CursorQuery): StaffInstanceAuditEntryList | Problem;
 }

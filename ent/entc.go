@@ -34,8 +34,8 @@ func main() {
 		gen.FeatureVersionedMigration,
 	}
 	// The check runs on the graph being generated; when it passes, the hook adds ent/template
-	// (the scoped client of ADR 0017, the manifest of kinds, the state forms, the bookkeeping
-	// columns) with the classification's funcs.
+	// (the scoped client of ADR 0017, the manifest of kinds, the state forms) with the
+	// classification's funcs.
 	cfg.Hooks = []gen.Hook{entgen.Hook("template")}
 	if err := entc.Generate("./schema", cfg); err != nil {
 		log.Fatal("running ent codegen: ", err)

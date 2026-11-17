@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
@@ -352,7 +353,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	m := newModule(env, time.Now)
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).
+	env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).
 		SetProviderEnforcement(providers.EnforcementShutdown).ExecX(ctx)
 
 	res, err := m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
@@ -361,7 +362,7 @@ func TestStoppedProviderAccountIsHeldUntilItSendsAgain(t *testing.T) {
 	assert.Equal(t, holdreason.ProviderStopped, res.Hold)
 	assert.Empty(t, env.CustomerMail.Messages(), "nothing is handed to a stopped account")
 
-	env.DB.Integration.UpdateOneID(fixtures.IntegrationAcmeDefaultID).ClearProviderEnforcement().ExecX(ctx)
+	env.DB.IntegrationProviderState.Update().Where(integrationproviderstate.IntegrationID(fixtures.IntegrationAcmeDefaultID)).ClearProviderEnforcement().ExecX(ctx)
 	res, err = m.Send(ctx, env.DB.Scoped(fixtures.AcmeID), transactional("tx:stopped", "a@example.com"))
 	require.NoError(t, err)
 	assert.Equal(t, outboundmessages.Sent, res.Outcome, "the same Request goes out once the account sends again")

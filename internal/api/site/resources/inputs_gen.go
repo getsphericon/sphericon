@@ -258,25 +258,25 @@ func (c *InputsImpl) BroadcastCreate(source *site.CreateBroadcastInput) (broadca
 	}
 	return broadcastsCreateInput, nil
 }
-func (c *InputsImpl) BroadcastStatus(source site.SiteBroadcastStatus) broadcast.Status {
+func (c *InputsImpl) BroadcastStatus(source site.BroadcastStatus) broadcast.Status {
 	var broadcastStatus broadcast.Status
 	switch source {
-	case site.SiteBroadcastStatusDraft:
+	case site.BroadcastStatusDraft:
 		broadcastStatus = broadcast.StatusDraft
-	case site.SiteBroadcastStatusFailed:
+	case site.BroadcastStatusFailed:
 		broadcastStatus = broadcast.StatusFailed
-	case site.SiteBroadcastStatusScheduled:
+	case site.BroadcastStatusScheduled:
 		broadcastStatus = broadcast.StatusScheduled
-	case site.SiteBroadcastStatusSending:
+	case site.BroadcastStatusSending:
 		broadcastStatus = broadcast.StatusSending
-	case site.SiteBroadcastStatusSent:
+	case site.BroadcastStatusSent:
 		broadcastStatus = broadcast.StatusSent
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return broadcastStatus
 }
-func (c *InputsImpl) BroadcastStatuses(source []site.SiteBroadcastStatus) []broadcast.Status {
+func (c *InputsImpl) BroadcastStatuses(source []site.BroadcastStatus) []broadcast.Status {
 	var broadcastStatusList []broadcast.Status
 	if source != nil {
 		broadcastStatusList = make([]broadcast.Status, len(source))
@@ -739,76 +739,76 @@ func (c *InputsImpl) SignupAnswers(source []site.SiteSignupItemAnswer) []consent
 	}
 	return consentrecordsAnswerList
 }
-func (c *InputsImpl) SignupCompanySize(source site.SiteSignupCompanySize) signupsurveyresponse.CompanySize {
+func (c *InputsImpl) SignupCompanySize(source site.SignupCompanySize) signupsurveyresponse.CompanySize {
 	var signupsurveyresponseCompanySize signupsurveyresponse.CompanySize
 	switch source {
-	case site.SiteSignupCompanySize1:
+	case site.SignupCompanySize1:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize1
-	case site.SiteSignupCompanySize1000Plus:
+	case site.SignupCompanySize1000Plus:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize1000Plus
-	case site.SiteSignupCompanySize1150:
+	case site.SignupCompanySize1150:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize1150
-	case site.SiteSignupCompanySize2011000:
+	case site.SignupCompanySize2011000:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize2011000
-	case site.SiteSignupCompanySize210:
+	case site.SignupCompanySize210:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize210
-	case site.SiteSignupCompanySize51200:
+	case site.SignupCompanySize51200:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySize51200
-	case site.SiteSignupCompanySizeOther:
+	case site.SignupCompanySizeOther:
 		signupsurveyresponseCompanySize = signupsurveyresponse.CompanySizeOther
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return signupsurveyresponseCompanySize
 }
-func (c *InputsImpl) SignupGoal(source site.SiteSignupGoal) signupsurveyresponse.MainGoal {
+func (c *InputsImpl) SignupGoal(source site.SignupGoal) signupsurveyresponse.MainGoal {
 	var signupsurveyresponseMainGoal signupsurveyresponse.MainGoal
 	switch source {
-	case site.SiteSignupGoalAutomations:
+	case site.SignupGoalAutomations:
 		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalAutomations
-	case site.SiteSignupGoalBroadcasts:
+	case site.SignupGoalBroadcasts:
 		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalBroadcasts
-	case site.SiteSignupGoalMigrating:
+	case site.SignupGoalMigrating:
 		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalMigrating
-	case site.SiteSignupGoalOther:
+	case site.SignupGoalOther:
 		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalOther
-	case site.SiteSignupGoalTracking:
+	case site.SignupGoalTracking:
 		signupsurveyresponseMainGoal = signupsurveyresponse.MainGoalTracking
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return signupsurveyresponseMainGoal
 }
-func (c *InputsImpl) SignupRole(source site.SiteSignupRole) signupsurveyresponse.Role {
+func (c *InputsImpl) SignupRole(source site.SignupRole) signupsurveyresponse.Role {
 	var signupsurveyresponseRole signupsurveyresponse.Role
 	switch source {
-	case site.SiteSignupRoleDeveloper:
+	case site.SignupRoleDeveloper:
 		signupsurveyresponseRole = signupsurveyresponse.RoleDeveloper
-	case site.SiteSignupRoleFounder:
+	case site.SignupRoleFounder:
 		signupsurveyresponseRole = signupsurveyresponse.RoleFounder
-	case site.SiteSignupRoleMarketer:
+	case site.SignupRoleMarketer:
 		signupsurveyresponseRole = signupsurveyresponse.RoleMarketer
-	case site.SiteSignupRoleOther:
+	case site.SignupRoleOther:
 		signupsurveyresponseRole = signupsurveyresponse.RoleOther
-	case site.SiteSignupRoleProduct:
+	case site.SignupRoleProduct:
 		signupsurveyresponseRole = signupsurveyresponse.RoleProduct
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
 	return signupsurveyresponseRole
 }
-func (c *InputsImpl) SignupSource(source site.SiteSignupSource) signupsurveyresponse.HeardFrom {
+func (c *InputsImpl) SignupSource(source site.SignupSource) signupsurveyresponse.HeardFrom {
 	var signupsurveyresponseHeardFrom signupsurveyresponse.HeardFrom
 	switch source {
-	case site.SiteSignupSourceGithub:
+	case site.SignupSourceGithub:
 		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromGithub
-	case site.SiteSignupSourceOther:
+	case site.SignupSourceOther:
 		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromOther
-	case site.SiteSignupSourceRecommendation:
+	case site.SignupSourceRecommendation:
 		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromRecommendation
-	case site.SiteSignupSourceSearch:
+	case site.SignupSourceSearch:
 		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromSearch
-	case site.SiteSignupSourceSocial:
+	case site.SignupSourceSocial:
 		signupsurveyresponseHeardFrom = signupsurveyresponse.HeardFromSocial
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))

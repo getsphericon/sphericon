@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/providerlimiter"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
@@ -53,20 +54,6 @@ type Integration struct {
 	MaxPerSecond *int `json:"max_per_second,omitempty"`
 	// MaxPerDay holds the value of the "max_per_day" field.
 	MaxPerDay *int `json:"max_per_day,omitempty"`
-	// ProviderMaxPerSecond holds the value of the "provider_max_per_second" field.
-	ProviderMaxPerSecond *int `json:"provider_max_per_second,omitempty"`
-	// ProviderMaxPerDay holds the value of the "provider_max_per_day" field.
-	ProviderMaxPerDay *int `json:"provider_max_per_day,omitempty"`
-	// ProviderEnforcement holds the value of the "provider_enforcement" field.
-	ProviderEnforcement *providers.Enforcement `json:"provider_enforcement,omitempty"`
-	// ProviderSandbox holds the value of the "provider_sandbox" field.
-	ProviderSandbox bool `json:"provider_sandbox,omitempty"`
-	// ProviderRefusedAt holds the value of the "provider_refused_at" field.
-	ProviderRefusedAt *time.Time `json:"provider_refused_at,omitempty"`
-	// ProviderQuotaCheckedAt holds the value of the "provider_quota_checked_at" field.
-	ProviderQuotaCheckedAt *time.Time `json:"provider_quota_checked_at,omitempty"`
-	// ProviderQuotaFailedAt holds the value of the "provider_quota_failed_at" field.
-	ProviderQuotaFailedAt *time.Time `json:"provider_quota_failed_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the IntegrationQuery when eager-loading is set.
 	Edges        IntegrationEdges `json:"edges"`
@@ -79,6 +66,8 @@ type IntegrationEdges struct {
 	Workspace *Workspace `json:"workspace,omitempty"`
 	// ProviderLimiter holds the value of the provider_limiter edge.
 	ProviderLimiter *ProviderLimiter `json:"provider_limiter,omitempty"`
+	// ProviderState holds the value of the provider_state edge.
+	ProviderState *IntegrationProviderState `json:"provider_state,omitempty"`
 	// CapturedMessages holds the value of the captured_messages edge.
 	CapturedMessages []*CapturedMessage `json:"captured_messages,omitempty"`
 	// Bindings holds the value of the bindings edge.
@@ -87,7 +76,7 @@ type IntegrationEdges struct {
 	StartTokens []*StartToken `json:"start_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // WorkspaceOrErr returns the Workspace value or an error if the edge
@@ -112,10 +101,21 @@ func (e IntegrationEdges) ProviderLimiterOrErr() (*ProviderLimiter, error) {
 	return nil, &NotLoadedError{edge: "provider_limiter"}
 }
 
+// ProviderStateOrErr returns the ProviderState value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e IntegrationEdges) ProviderStateOrErr() (*IntegrationProviderState, error) {
+	if e.ProviderState != nil {
+		return e.ProviderState, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: integrationproviderstate.Label}
+	}
+	return nil, &NotLoadedError{edge: "provider_state"}
+}
+
 // CapturedMessagesOrErr returns the CapturedMessages value or an error if the edge
 // was not loaded in eager-loading.
 func (e IntegrationEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.CapturedMessages, nil
 	}
 	return nil, &NotLoadedError{edge: "captured_messages"}
@@ -124,7 +124,7 @@ func (e IntegrationEdges) CapturedMessagesOrErr() ([]*CapturedMessage, error) {
 // BindingsOrErr returns the Bindings value or an error if the edge
 // was not loaded in eager-loading.
 func (e IntegrationEdges) BindingsOrErr() ([]*Binding, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Bindings, nil
 	}
 	return nil, &NotLoadedError{edge: "bindings"}
@@ -133,7 +133,7 @@ func (e IntegrationEdges) BindingsOrErr() ([]*Binding, error) {
 // StartTokensOrErr returns the StartTokens value or an error if the edge
 // was not loaded in eager-loading.
 func (e IntegrationEdges) StartTokensOrErr() ([]*StartToken, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.StartTokens, nil
 	}
 	return nil, &NotLoadedError{edge: "start_tokens"}
@@ -144,13 +144,13 @@ func (*Integration) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case integration.FieldEnabled, integration.FieldIsDefault, integration.FieldProviderSandbox:
+		case integration.FieldEnabled, integration.FieldIsDefault:
 			values[i] = new(sql.NullBool)
-		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldRevision, integration.FieldMaxPerSecond, integration.FieldMaxPerDay, integration.FieldProviderMaxPerSecond, integration.FieldProviderMaxPerDay:
+		case integration.FieldID, integration.FieldWorkspaceID, integration.FieldRevision, integration.FieldMaxPerSecond, integration.FieldMaxPerDay:
 			values[i] = new(sql.NullInt64)
-		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey, integration.FieldProviderEnforcement:
+		case integration.FieldName, integration.FieldChannel, integration.FieldProvider, integration.FieldConfigEncrypted, integration.FieldPreset, integration.FieldParamsEncrypted, integration.FieldIngestKey:
 			values[i] = new(sql.NullString)
-		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt, integration.FieldProviderRefusedAt, integration.FieldProviderQuotaCheckedAt, integration.FieldProviderQuotaFailedAt:
+		case integration.FieldCreatedAt, integration.FieldUpdatedAt, integration.FieldDiscardedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -273,54 +273,6 @@ func (_m *Integration) assignValues(columns []string, values []any) error {
 				_m.MaxPerDay = new(int)
 				*_m.MaxPerDay = int(value.Int64)
 			}
-		case integration.FieldProviderMaxPerSecond:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_max_per_second", values[i])
-			} else if value.Valid {
-				_m.ProviderMaxPerSecond = new(int)
-				*_m.ProviderMaxPerSecond = int(value.Int64)
-			}
-		case integration.FieldProviderMaxPerDay:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_max_per_day", values[i])
-			} else if value.Valid {
-				_m.ProviderMaxPerDay = new(int)
-				*_m.ProviderMaxPerDay = int(value.Int64)
-			}
-		case integration.FieldProviderEnforcement:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_enforcement", values[i])
-			} else if value.Valid {
-				_m.ProviderEnforcement = new(providers.Enforcement)
-				*_m.ProviderEnforcement = providers.Enforcement(value.String)
-			}
-		case integration.FieldProviderSandbox:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_sandbox", values[i])
-			} else if value.Valid {
-				_m.ProviderSandbox = value.Bool
-			}
-		case integration.FieldProviderRefusedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_refused_at", values[i])
-			} else if value.Valid {
-				_m.ProviderRefusedAt = new(time.Time)
-				*_m.ProviderRefusedAt = value.Time
-			}
-		case integration.FieldProviderQuotaCheckedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_quota_checked_at", values[i])
-			} else if value.Valid {
-				_m.ProviderQuotaCheckedAt = new(time.Time)
-				*_m.ProviderQuotaCheckedAt = value.Time
-			}
-		case integration.FieldProviderQuotaFailedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_quota_failed_at", values[i])
-			} else if value.Valid {
-				_m.ProviderQuotaFailedAt = new(time.Time)
-				*_m.ProviderQuotaFailedAt = value.Time
-			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -342,6 +294,11 @@ func (_m *Integration) QueryWorkspace() *WorkspaceQuery {
 // QueryProviderLimiter queries the "provider_limiter" edge of the Integration entity.
 func (_m *Integration) QueryProviderLimiter() *ProviderLimiterQuery {
 	return NewIntegrationClient(_m.config).QueryProviderLimiter(_m)
+}
+
+// QueryProviderState queries the "provider_state" edge of the Integration entity.
+func (_m *Integration) QueryProviderState() *IntegrationProviderStateQuery {
+	return NewIntegrationClient(_m.config).QueryProviderState(_m)
 }
 
 // QueryCapturedMessages queries the "captured_messages" edge of the Integration entity.
@@ -434,39 +391,6 @@ func (_m *Integration) String() string {
 	if v := _m.MaxPerDay; v != nil {
 		builder.WriteString("max_per_day=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.ProviderMaxPerSecond; v != nil {
-		builder.WriteString("provider_max_per_second=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.ProviderMaxPerDay; v != nil {
-		builder.WriteString("provider_max_per_day=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	if v := _m.ProviderEnforcement; v != nil {
-		builder.WriteString("provider_enforcement=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("provider_sandbox=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ProviderSandbox))
-	builder.WriteString(", ")
-	if v := _m.ProviderRefusedAt; v != nil {
-		builder.WriteString("provider_refused_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	if v := _m.ProviderQuotaCheckedAt; v != nil {
-		builder.WriteString("provider_quota_checked_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	if v := _m.ProviderQuotaFailedAt; v != nil {
-		builder.WriteString("provider_quota_failed_at=")
-		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteByte(')')
 	return builder.String()

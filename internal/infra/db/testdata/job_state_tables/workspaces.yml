@@ -1,0 +1,20 @@
+# Workspaces of the schema before the state jobs write moved beside the rows (ADR 0168): one with
+# a feed position, a completed Setup checklist and abuse notices, one with none of them.
+- id: 1
+  revision: 3
+  name: Acme
+  public_id: AcmeWs01
+  collect_key: omck_test_acme_collect_key
+  feed_position: 7
+  setup_completed_at: '2026-01-02 00:00:00'
+  abuse_warning_notified_at: '2026-01-03 00:00:00'
+  abuse_freeze_notified_at: '2026-01-04 00:00:00'
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
+- id: 2
+  revision: 1
+  name: Globex
+  public_id: GlobxWs2
+  collect_key: omck_test_globex_collect_key
+  created_at: '2026-01-01 00:00:00'
+  updated_at: '2026-01-01 00:00:00'
