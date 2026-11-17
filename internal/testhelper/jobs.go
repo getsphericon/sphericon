@@ -240,12 +240,12 @@ func (env *TestEnv) claimBroadcast(t *testing.T, b *ent.Broadcast) {
 
 // CancelPendingFor runs an owner's CancelPending for a Contact of the Initech Workspace the
 // way Erasure does, inside a purging transaction.
-func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(context.Context, *ent.Scoped, int64, events.QueuePurger) error) error {
+func (env *TestEnv) CancelPendingFor(t *testing.T, contactID int64, cancel func(context.Context, *ent.Scoped, int64) error) error {
 	t.Helper()
 	ctx := t.Context()
 	s := env.DB.Scoped(fixtures.InitechID)
-	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, pub events.PurgingPublisher) error {
-		return cancel(ctx, ts, contactID, pub)
+	return env.Bus.WithinScopedPurgeTx(ctx, s, func(ts *ent.Scoped, _ events.PurgingPublisher) error {
+		return cancel(ctx, ts, contactID)
 	})
 }
 

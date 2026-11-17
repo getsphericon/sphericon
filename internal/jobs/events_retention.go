@@ -37,9 +37,9 @@ type PruneEventsWorker struct {
 }
 
 // NewPruneEventsWorker builds the prune of analytical Events older than retention (0 disables it),
-// by the Instance clock now; the Rules module prunes its Firings by the same window.
-func NewPruneEventsWorker(client *ent.Client, rules *rules.Module, retention time.Duration, now func() time.Time) *PruneEventsWorker {
-	return &PruneEventsWorker{ent: client, rules: rules, retention: retention, now: now}
+// by the Instance clock now; firings, the Rules module, prunes its Firings by the same window.
+func NewPruneEventsWorker(client *ent.Client, firings *rules.Module, retention time.Duration, now func() time.Time) *PruneEventsWorker {
+	return &PruneEventsWorker{ent: client, rules: firings, retention: retention, now: now}
 }
 
 func (w *PruneEventsWorker) Work(ctx context.Context, _ *river.Job[PruneEventsArgs]) error {
