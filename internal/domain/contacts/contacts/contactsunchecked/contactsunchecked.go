@@ -25,7 +25,7 @@ type Module struct {
 }
 
 // New builds the unchecked operations over the contacts module they read a Custom field through.
-func New(contacts *contacts.Module) *Module { return &Module{contacts: contacts} }
+func New(people *contacts.Module) *Module { return &Module{contacts: people} }
 
 // CustomFieldUpdate is the plan of the edit of one Custom field, its name and its type, opened on
 // its row under the Workspace's lock (ADR 0108) so that the use case runs the Removal check of a

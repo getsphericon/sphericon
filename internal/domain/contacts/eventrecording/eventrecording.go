@@ -42,8 +42,8 @@ type LivePolicy struct {
 
 // New builds the module over the domain-event bus (transactional publish) and the contacts module
 // an Event's Contact is resolved through, by the Workspace-scoped client each call receives.
-func New(bus *events.Bus, contacts *contacts.Module, live LivePolicy) *Module {
-	return &Module{bus: bus, contacts: contacts, live: live}
+func New(bus *events.Bus, people *contacts.Module, live LivePolicy) *Module {
+	return &Module{bus: bus, contacts: people, live: live}
 }
 
 // Input is one customer Event to record. Action and Properties are the customer's

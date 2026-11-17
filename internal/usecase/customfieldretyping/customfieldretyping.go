@@ -29,8 +29,8 @@ type UseCase struct {
 
 // New builds the Custom field retyping use case over the Removal check and the contacts module
 // whose unchecked edit of a Custom field it builds.
-func New(bus *events.Bus, check *removalcheck.Module, contacts *contacts.Module) *UseCase {
-	return &UseCase{bus: bus, check: check, edits: contactsunchecked.New(contacts)}
+func New(bus *events.Bus, check *removalcheck.Module, people *contacts.Module) *UseCase {
+	return &UseCase{bus: bus, check: check, edits: contactsunchecked.New(people)}
 }
 
 // Update renames a Custom field or changes its type, an audited change (ADR 0022). A type change

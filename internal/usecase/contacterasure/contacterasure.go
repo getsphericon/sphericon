@@ -175,11 +175,11 @@ type UseCase struct {
 // New builds the Contact erasure use case over the bus whose transaction every erasure runs in and
 // the contacts module whose unchecked removal of the Contact row it builds; now is the Instance
 // clock a Broadcast left with nothing pending settles by.
-func New(bus *events.Bus, contacts *contacts.Module, now func() time.Time) *UseCase {
+func New(bus *events.Bus, people *contacts.Module, now func() time.Time) *UseCase {
 	return &UseCase{
 		bus: bus, now: now,
 		locks:    contactlock.New(),
-		contacts: contactsunchecked.New(contacts),
+		contacts: contactsunchecked.New(people),
 		visitors: visitorsunchecked.New(),
 		stamps:   consentstampsunchecked.New(),
 	}
