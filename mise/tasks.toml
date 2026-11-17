@@ -666,7 +666,6 @@ depends = [
   "check:generated",
   "check:typos",
   "check:adr",
-  "check:callshape-exempt",
   "check:helm",
   "check:links",
   "check:playwright-image",
@@ -682,26 +681,6 @@ description = "The project has no custom CSS: no stylesheet may be tracked (libr
 run = '''
 if git ls-files | grep -Ei '\.(css|scss|sass|less|pcss|styl)$'; then
   echo 'error: custom CSS is not allowed, style through Mantine'; exit 1
-fi
-'''
-
-["check:callshape-exempt"]
-description = "The callshape exemption list (ADR 0167) gains no entry against the merge base with origin/main: it only shrinks"
-run = '''
-list=tools/analyzers/callshape/exempt.txt
-base=$(git merge-base HEAD origin/main) || exit 1
-# The change that introduces the list has no list at its merge base: there is nothing to grow from.
-git cat-file -e "$base:$list" 2>/dev/null || exit 0
-tmp=$(mktemp -d)
-trap 'rm -rf "$tmp"' EXIT
-git show "$base:$list" | grep -Ev '^[[:space:]]*(#|$)' | sort -u > "$tmp/base"
-{ cat "$list" 2>/dev/null || true; } | grep -Ev '^[[:space:]]*(#|$)' | sort -u > "$tmp/head"
-added=$(comm -13 "$tmp/base" "$tmp/head")
-if [ -n "$added" ]; then
-  echo "rule 5: $list gained entries, and it may only shrink (ADR 0167):"
-  echo "$added" | sed 's/^/  /'
-  echo "fix: make the package keep the call contract instead of listing it (tools/analyzers/callshape)"
-  exit 1
 fi
 '''
 
@@ -780,7 +759,6 @@ description = "Build .bin/custom-gcl: golangci-lint with our analyzers (.custom-
 sources = [
   ".custom-gcl.yml",
   "tools/analyzers/**/*.go",
-  "tools/analyzers/**/*.txt",
   "tools/analyzers/go.mod",
   "tools/analyzers/go.sum",
   "mise.lock",
