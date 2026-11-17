@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1592]
 ---
 
 # A frequency cap counts each Destination a message is claimed for, after Send-eligibility

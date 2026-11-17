@@ -1,6 +1,6 @@
 ---
 status: accepted
-build: none
+build: [1592]
 ---
 
 # Marketing SMS waits for the Workspace's sending window in the recipient's time
