@@ -43,9 +43,11 @@ import (
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/ent/outboundmessage"
 	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
 	"github.com/getsphericon/sphericon/internal/domain/sending/messagetoken"
@@ -326,7 +328,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		bots: deps.Bots, sms: deps.SMS, hooks: deps.Hooks, trackingHosts: deps.TrackingHosts,
 		system: deps.System, testBudget: deps.TestBudget, users: deps.Users, startLinks: deps.StartLinks,
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
-		eligibility: eligibility.New(), contacts: contacts.New(bus, tags.New(), nil, now),
+		eligibility: eligibility.New(), contacts: contacts.New(bus, tags.New(), confirmations.New(bus, unsubscribes.New(), now), nil),
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}
 	return m

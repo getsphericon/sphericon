@@ -836,7 +836,7 @@ var audiencePackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
 		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
-			do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*confirmations.Module](i), do.MustInvoke[addresscheck.Resolver](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
 		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil

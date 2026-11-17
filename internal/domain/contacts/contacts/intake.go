@@ -9,7 +9,6 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/contact"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
-	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/addresscheck"
 	"github.com/getsphericon/sphericon/internal/kernel/batch"
@@ -136,7 +135,6 @@ func (m *Module) confirmSMS(ctx context.Context, s *ent.Scoped, res Result, ev *
 		return nil
 	}
 	number := lo.CoalesceOrEmpty(lo.FromPtr(res.Phone), lo.FromPtr(res.Contact.Phone))
-	// The module's own bus, which opened the row's transaction, publishes the Confirmation's proof.
-	_, err := confirmations.New(m.bus, unsubscribes.New(), m.now).ConfirmContactSMSIn(ctx, s, number, *ev)
+	_, err := m.confirmations.ConfirmContactSMSIn(ctx, s, number, *ev)
 	return err
 }

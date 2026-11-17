@@ -10,9 +10,11 @@ import (
 	"github.com/riverqueue/river"
 
 	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -83,7 +85,7 @@ type StepExecution struct {
 // to time a wait.
 func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
 	return &StepExecution{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now,
-		contacts: contacts.New(bus, tags.New(), nil, now)}
+		contacts: contacts.New(bus, tags.New(), confirmations.New(bus, unsubscribes.New(), now), nil)}
 }
 
 // OnEventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
