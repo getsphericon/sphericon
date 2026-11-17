@@ -12,6 +12,7 @@ import (
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/sending/outboundmessages"
 	"github.com/getsphericon/sphericon/internal/infra/events"
@@ -61,7 +62,7 @@ func (RunHTTPStepArgs) InsertOpts() river.InsertOpts {
 // transaction, and the Enrollments an Event or a Rule starts are made with the job of their first
 // step. It is this module's, beside the Enrollment's lifecycle it moves, and composes only modules
 // below orchestration: a tag step's change of the Contact's Tags is the Contacts module's
-// (contacts.ApplyTagIn, RemoveTagIn) and a send step is one Outbound send. It holds no raw database
+// (contacts.Module.ApplyTagIn, RemoveTagIn) and a send step is one Outbound send. It holds no raw database
 // client: a job adapter loads the Enrollment's row, builds the Workspace scope from it (the job
 // entry point of ADR 0017) and passes the scope in.
 type StepExecution struct {
@@ -71,6 +72,8 @@ type StepExecution struct {
 	cipher *secrets.Cipher
 	client webhook.Doer
 	now    func() time.Time
+	// contacts changes a Contact's Tags for a tag step, in the transaction of the step's move.
+	contacts *contacts.Module
 }
 
 // NewStepExecution builds the Step execution. The bus runs a move and the job that follows it in
@@ -79,7 +82,8 @@ type StepExecution struct {
 // client makes its call; now is the Instance clock, read to honour an Enrollment's resume time and
 // to time a wait.
 func NewStepExecution(bus *events.Bus, out *outboundmessages.Module, fence Fencer, cipher *secrets.Cipher, client webhook.Doer, now func() time.Time) *StepExecution {
-	return &StepExecution{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now}
+	return &StepExecution{bus: bus, out: out, fence: fence, cipher: cipher, client: client, now: now,
+		contacts: contacts.New(bus, tags.New(), nil, now)}
 }
 
 // OnEventInput is an Event of a Contact handed to the Automations: the Contact, the Event, and the
@@ -235,13 +239,13 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 		// the order an exit takes them (lockContact, #811). The move comes before
 		// the change, so a step that lost a race tags nothing, and the change commits with it.
 		// The change is the `system` actor's (ADR 0022): a Tag the step creates is audited.
-		return m.advance(ctx, s, run.ID, step, stepMove{contactID: run.ContactID, with: func(ts *ent.Scoped, pub events.Publisher) error {
+		return m.advance(ctx, s, run.ID, step, stepMove{contactID: run.ContactID, with: func(ts *ent.Scoped, _ events.Publisher) error {
 			sys := m.out.AsSystem(ts)
 			if st.Type == automationstep.ApplyTag {
-				_, err := contacts.ApplyTagIn(ctx, sys, pub, run.ContactID, st.Tag)
+				_, err := m.contacts.ApplyTagIn(ctx, sys, run.ContactID, st.Tag)
 				return err
 			}
-			return contacts.RemoveTagIn(ctx, sys, pub, run.ContactID, st.Tag)
+			return m.contacts.RemoveTagIn(ctx, sys, run.ContactID, st.Tag)
 		}})
 
 	case automationstep.HTTP:

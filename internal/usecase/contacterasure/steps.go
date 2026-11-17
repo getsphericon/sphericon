@@ -62,7 +62,7 @@ func (u *UseCase) eraseConsentStamps(ctx context.Context, s *ent.Scoped, t *Targ
 			optOut, err := u.unsubs.SMSOptOut(ctx, s, number)
 			return optOut != nil, err
 		}
-		if err := consentstampsunchecked.Erase(ctx, s, channels.SMS, number, standing); err != nil {
+		if err := u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channels.SMS, Destination: number, Standing: standing}); err != nil {
 			return err
 		}
 	}
@@ -79,7 +79,7 @@ func (u *UseCase) eraseStampsOf(ctx context.Context, s *ent.Scoped, channel chan
 		}
 		return err == nil, err
 	}
-	return consentstampsunchecked.Erase(ctx, s, channel, destination, standing)
+	return u.stamps.Erase(ctx, s, consentstampsunchecked.EraseInput{Channel: channel, Destination: destination, Standing: standing})
 }
 
 // anonymizeDelivery turns the subject's delivery records into anonymous rows: they keep

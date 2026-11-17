@@ -14,18 +14,27 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 )
 
-// Deletion is the discard of one Sending domain, opened on its row under the Workspace's lock
-// (ADR 0108) so that the use case runs the Removal check (its Live use) between opening and
-// applying it, on the domain the deletion read.
+// Module is the sendingdomains module's unchecked removal: it opens a Deletion on the Sending
+// domain's row and applies it once the use case's check has passed (docs/architecture/modules.md,
+// the unchecked operations).
+type Module struct {
+	now func() time.Time
+}
+
+// New builds the unchecked removal; now is the Instance clock a discard is stamped by.
+func New(now func() time.Time) *Module { return &Module{now: now} }
+
+// Deletion is the plan of the discard of one Sending domain: the row DeletionIn read under the
+// Workspace's lock (ADR 0108), so that the use case runs the Removal check (its Live use) between
+// opening and applying it, on the domain the deletion read.
 type Deletion struct {
-	l   *ent.WorkspaceLocked
 	row *ent.SendingDomain
 }
 
 // DeletionIn opens the deletion of the Sending domain with the id in the transaction l holds the
 // Workspace's lock in. An unknown id is sendingdomains.ErrNotFound; a deleted domain opens a
 // deletion that is Done.
-func DeletionIn(ctx context.Context, l *ent.WorkspaceLocked, id int64) (*Deletion, error) {
+func (m *Module) DeletionIn(ctx context.Context, l *ent.WorkspaceLocked, id int64) (*Deletion, error) {
 	row, err := l.SendingDomain().Get(ctx, id)
 	if ent.IsNotFound(err) {
 		return nil, sendingdomains.ErrNotFound
@@ -33,7 +42,7 @@ func DeletionIn(ctx context.Context, l *ent.WorkspaceLocked, id int64) (*Deletio
 	if err != nil {
 		return nil, err
 	}
-	return &Deletion{l: l, row: row}, nil
+	return &Deletion{row: row}, nil
 }
 
 // Domain is the domain the Sending domain is, which the Removal check looks for in the From of
@@ -44,12 +53,13 @@ func (d *Deletion) Domain() string { return d.row.Domain }
 // there is no Live use to check.
 func (d *Deletion) Done() bool { return d.row.DiscardedAt != nil }
 
-// Apply discards the Sending domain for good at `at` (ADR 0049), without asking whether work
-// still sends from it: that is the use case's Removal check, run under the same lock before. The
-// record of mail sent from it stays. A deletion that is Done writes nothing.
-func (d *Deletion) Apply(ctx context.Context, at time.Time) error {
+// ApplyDeletion discards the Sending domain d was opened on for good, now (ADR 0049), without
+// asking whether work still sends from it: that is the use case's Removal check, run before in the
+// transaction l holds the lock in, the one d was opened in. The record of mail sent from it stays.
+// A deletion that is Done writes nothing.
+func (m *Module) ApplyDeletion(ctx context.Context, l *ent.WorkspaceLocked, d *Deletion) error {
 	if d.Done() {
 		return nil
 	}
-	return d.l.SendingDomain().Discard(ctx, d.row.ID, at)
+	return l.SendingDomain().Discard(ctx, d.row.ID, m.now())
 }

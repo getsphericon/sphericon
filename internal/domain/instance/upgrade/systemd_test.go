@@ -50,7 +50,7 @@ exec "$@"
 
 func (s setup) restartOpts(version string) upgrade.Options {
 	o := s.opts(version)
-	sd := upgrade.Systemd{Service: "sphericon"}
+	sd := upgrade.NewSystemd("sphericon")
 	o.Run, o.PostSwap = sd.Run, sd.PostSwap
 	return o
 }
@@ -67,7 +67,7 @@ func TestRestartMigratesInATransientUnitWithTheServicesUserAndEnvironmentThenRes
 	state := fakeSystemd(t, "active", s.target)
 	release(t, s.dir, "0.2.0", "", false)
 
-	got, err := drain(upgrade.Step(t.Context(), s.restartOpts("")))
+	got, err := drain(upgrader.Step(t.Context(), s.restartOpts("")))
 
 	require.NoError(t, err)
 	assert.Equal(t, "ran\n", s.read(t, "migrated"))
@@ -85,7 +85,7 @@ func TestRestartFailedMigrationLeavesTheOldBinaryServingAndNothingRestarted(t *t
 	state := fakeSystemd(t, "active", s.target)
 	release(t, s.dir, "0.2.0", "", true)
 
-	_, err := drain(upgrade.Step(t.Context(), s.restartOpts("")))
+	_, err := drain(upgrader.Step(t.Context(), s.restartOpts("")))
 
 	require.Error(t, err)
 	assert.Equal(t, "old binary", s.read(t, "sphericon"))
@@ -97,7 +97,7 @@ func TestRestartFailsWhenTheServiceDoesNotBecomeActive(t *testing.T) {
 	fakeSystemd(t, "failed", s.target)
 	release(t, s.dir, "0.2.0", "", false)
 
-	_, err := drain(upgrade.Step(t.Context(), s.restartOpts("")))
+	_, err := drain(upgrader.Step(t.Context(), s.restartOpts("")))
 
 	require.ErrorContains(t, err, "sphericon is failed")
 	assert.FileExists(t, filepath.Join(s.install, "sphericon.old"))

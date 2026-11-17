@@ -30,13 +30,17 @@ type Module struct {
 	bus *events.Bus
 	// unsubs is the opt-outs a START lifts and the SMS consent of a phone reads.
 	unsubs *unsubscribes.Module
+	// stamps orders the consent observations of a Destination (ADR 0154), and locks holds the
+	// Contact a Confirmation names.
+	stamps *consentstamps.Module
+	locks  *contactlock.Module
 	now    func() time.Time
 }
 
 // New builds the confirmations module over the bus whose transactions its operations join, the
 // opt-outs and the Instance clock, which dates a consent given now.
 func New(bus *events.Bus, unsubs *unsubscribes.Module, now func() time.Time) *Module {
-	return &Module{bus: bus, unsubs: unsubs, now: now}
+	return &Module{bus: bus, unsubs: unsubs, stamps: consentstamps.New(), locks: contactlock.New(), now: now}
 }
 
 // strength ranks how a Confirmation was obtained, the strongest highest (ADR 0077): the person
@@ -104,7 +108,7 @@ var _ = db.Declare(
 // then time.
 func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Confirmation, error) {
 	key := stampKey(g.channel, g.destination)
-	if _, err := consentstamps.Hold(ctx, s, key); err != nil {
+	if _, err := m.stamps.Hold(ctx, s, key); err != nil {
 		return nil, err
 	}
 	standing, err := s.Confirmation().Query().Where(
@@ -119,7 +123,7 @@ func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Con
 	case !Stronger(g.provenance, standing.Provenance):
 		return standing, nil
 	}
-	admitted, err := consentstamps.Admit(ctx, s, key, consentstamps.Confirmation, g.at, false)
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: key, Fact: consentstamps.Confirmation, Occurred: g.at})
 	switch {
 	case err != nil:
 		return nil, err
@@ -136,7 +140,7 @@ func (m *Module) recordIn(ctx context.Context, s *ent.Scoped, g grant) (*ent.Con
 	}
 	// The Contact may be gone by now (erased between the send and the click): the Confirmation is
 	// keyed by its destination and is recorded unlinked.
-	if g.contactID, err = contactlock.Referenced(ctx, s, g.contactID); err != nil {
+	if g.contactID, err = m.locks.Referenced(ctx, s, g.contactID); err != nil {
 		return nil, fmt.Errorf("lock the confirmation's contact: %w", err)
 	}
 	create := s.Confirmation().Create().
@@ -221,7 +225,9 @@ type WithdrawInput struct {
 // ("confirmed at T1, left at T2"). A withdrawal older than the Confirmation standing withdraws
 // nothing (ADR 0154). Run it inside the transaction s is bound to.
 func (m *Module) Withdraw(ctx context.Context, s *ent.Scoped, in WithdrawInput) error {
-	admitted, err := consentstamps.Admit(ctx, s, stampKey(in.Channel, in.Destination), consentstamps.Confirmation, in.At, true)
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{
+		Key: stampKey(in.Channel, in.Destination), Fact: consentstamps.Confirmation, Occurred: in.At, Refusal: true,
+	})
 	if err != nil || !admitted {
 		return err
 	}

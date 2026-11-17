@@ -37,10 +37,15 @@ var (
 )
 
 // Module records, lifts and reads the opt-outs of a Workspace.
-type Module struct{}
+type Module struct {
+	// stamps orders the consent observations of a Destination (ADR 0154), and locks holds the
+	// Contact an opt-out names.
+	stamps *consentstamps.Module
+	locks  *contactlock.Module
+}
 
 // New builds the opt-outs module.
-func New() *Module { return &Module{} }
+func New() *Module { return &Module{stamps: consentstamps.New(), locks: contactlock.New()} }
 
 // Destination is raw as the opt-outs of channel store it, or its refusal: an address in its Email
 // case that is one bare address (validation.Email), a phone number in E.164 (SMSNumber), or a
@@ -132,7 +137,7 @@ func (m *Module) Add(ctx context.Context, s *ent.Scoped, o OptOut) (Change, erro
 	}
 	o.Destination = dest
 	k := consentstamps.Key{Channel: o.Channel, Destination: dest, Source: o.Source}
-	admitted, err := consentstamps.Admit(ctx, s, k, consentstamps.OptOut, o.At, true)
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: o.At, Refusal: true})
 	if err != nil || !admitted {
 		return Change{Superseded: err == nil}, err
 	}
@@ -140,7 +145,7 @@ func (m *Module) Add(ctx context.Context, s *ent.Scoped, o OptOut) (Change, erro
 		SetChannel(o.Channel).
 		SetDestination(o.Destination).
 		SetSendingSource(o.Source)
-	contactID, err := contactlock.Referenced(ctx, s, o.ContactID)
+	contactID, err := m.locks.Referenced(ctx, s, o.ContactID)
 	if err != nil {
 		return Change{}, fmt.Errorf("lock the opt-out's contact: %w", err)
 	}
@@ -204,7 +209,7 @@ type AddSMSInput struct {
 // opt-out state is superseded, as Add's.
 func (m *Module) AddSMS(ctx context.Context, s *ent.Scoped, in AddSMSInput) (Change, error) {
 	number := in.Number
-	admitted, err := consentstamps.Admit(ctx, s, smsKey(number), consentstamps.OptOut, in.At, true)
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: smsKey(number), Fact: consentstamps.OptOut, Occurred: in.At, Refusal: true})
 	if err != nil || !admitted {
 		return Change{Superseded: err == nil}, err
 	}
@@ -247,7 +252,7 @@ func smsKey(number string) consentstamps.Key {
 // It reports false and lifts nothing for a START older than the number's opt-out state: the
 // person stopped after it (ADR 0154).
 func (m *Module) LiftSMS(ctx context.Context, s *ent.Scoped, number string, at consentstamps.Occurrence) (bool, error) {
-	admitted, err := consentstamps.Admit(ctx, s, smsKey(number), consentstamps.OptOut, at, false)
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: smsKey(number), Fact: consentstamps.OptOut, Occurred: at})
 	if err != nil || !admitted {
 		return false, err
 	}
@@ -300,7 +305,7 @@ func smsEverything(number string) []predicate.Unsubscribe {
 // reports false and lifts nothing for a return older than the user's opt-out state (ADR 0154).
 func (m *Module) LiftTelegram(ctx context.Context, s *ent.Scoped, destination string, at consentstamps.Occurrence) (bool, error) {
 	k := consentstamps.Key{Channel: channels.Telegram, Destination: destination, Source: eligibility.SourceEverything}
-	admitted, err := consentstamps.Admit(ctx, s, k, consentstamps.OptOut, at, false)
+	admitted, err := m.stamps.Admit(ctx, s, consentstamps.Observation{Key: k, Fact: consentstamps.OptOut, Occurred: at})
 	if err != nil || !admitted {
 		return false, err
 	}

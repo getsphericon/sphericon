@@ -97,7 +97,7 @@ func (m *Module) SendTransactional(ctx context.Context, s *ent.Scoped, req Trans
 
 	// The Contact this destination resolves to, when one exists (transactional mail may go to
 	// an address with no Contact); the send fact attaches to it.
-	contactID, err := contacts.ResolveID(ctx, s, "", &dest, nil)
+	contactID, err := m.contacts.ResolveID(ctx, s, contacts.AliasKeys{Email: &dest})
 	if err != nil {
 		return TransactionalResult{}, err
 	}

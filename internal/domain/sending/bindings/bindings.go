@@ -58,13 +58,15 @@ var tokenPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
 // Module issues start links and lists Bindings.
 type Module struct {
-	integ *integrations.Module
-	now   func() time.Time
+	integ    *integrations.Module
+	visitors *visitors.Module
+	now      func() time.Time
 }
 
-// New builds the module; now is the clock a token's expiry is counted from.
-func New(integ *integrations.Module, now func() time.Time) *Module {
-	return &Module{integ: integ, now: now}
+// New builds the module over the Visitors a start link of a Visitor binds to; now is the clock a
+// token's expiry is counted from.
+func New(integ *integrations.Module, visits *visitors.Module, now func() time.Time) *Module {
+	return &Module{integ: integ, visitors: visits, now: now}
 }
 
 // StartLink is a start link and when it lapses.
@@ -93,7 +95,7 @@ func (m *Module) IssueStartLink(ctx context.Context, s *ent.Scoped, contactID in
 // hands it over (ADR 0171).
 // ErrNoIntegration and ErrBotOff when there is no bot to link to.
 func (m *Module) IssueVisitorStartLink(ctx context.Context, s *ent.Scoped, visitorID string) (StartLink, error) {
-	vis, err := visitors.EnsureIn(ctx, s, visitorID, m.now())
+	vis, err := m.visitors.EnsureIn(ctx, s, visitorID)
 	if err != nil {
 		return StartLink{}, err
 	}
@@ -244,7 +246,7 @@ func Redeem(ctx context.Context, s *ent.Scoped, pub events.Publisher, bot *ent.I
 	if own.contactID != nil {
 		// The owner's row is locked first, as every write about a Contact does (contactlock), so
 		// an Erasure of it and this bind are ordered.
-		if _, err := contactlock.Lock(ctx, s, *own.contactID); err != nil {
+		if _, err := contactlock.New().Lock(ctx, s, *own.contactID); err != nil {
 			if ent.IsNotFound(err) {
 				return nil
 			}

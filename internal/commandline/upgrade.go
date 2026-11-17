@@ -14,7 +14,7 @@ import (
 // exists; the command exits 10 on it (ADR 0034).
 var ErrNewerRelease = errors.New("a newer release is available")
 
-// WriteUpgrade prints each Progress of `sphericon upgrade` as it comes (upgrade.Run), and
+// WriteUpgrade prints each Progress of `sphericon upgrade` as it comes (upgrade.Upgrader.Run), and
 // returns the error the Upgrade ended with, or ErrNewerRelease after a check that found one.
 func WriteUpgrade(w io.Writer, progress iter.Seq2[upgrade.Progress, error]) error {
 	newer := false

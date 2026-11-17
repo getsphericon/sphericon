@@ -39,14 +39,15 @@ func (e *DeferredError) Error() string { return "send deferred: " + string(e.Cau
 // delivery state of its own: how its send ended is its Outbound message's (ADR 0015), and it is
 // pending until then. It holds no client: every call receives the Workspace-scoped client.
 type Delivery struct {
-	out   *outboundmessages.Module
-	sched Scheduler
+	out       *outboundmessages.Module
+	sched     Scheduler
+	audiences audiences
 }
 
 // NewDelivery builds the delivery over the Outbound send module, whose clock it reads, and the
 // scheduler it hands a planned Broadcast's sends to.
 func NewDelivery(out *outboundmessages.Module, sched Scheduler) *Delivery {
-	return &Delivery{out: out, sched: sched}
+	return &Delivery{out: out, sched: sched, audiences: newAudiences(out)}
 }
 
 // SendRecipient hands one recipient's email to Outbound send, then settles the Broadcast if

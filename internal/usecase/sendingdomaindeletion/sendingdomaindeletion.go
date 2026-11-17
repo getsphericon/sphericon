@@ -3,8 +3,9 @@
 // sendingdomains module will still send email from an address on it (ADR 0099); deleting it runs
 // the Removal check (internal/domain/orchestration/removalcheck), which refuses with a
 // *liveuse.Error naming the work if any sends from it. The rest is the module's unchecked removal,
-// sendingdomainsunchecked.Deletion, which only a use case may import (ADR 0110) and which keeps
-// every rule of the domain's own row (ADR 0145): the use case locks, opens it, checks and applies.
+// sendingdomainsunchecked.Module, which only a use case may import (ADR 0110) and which keeps every
+// rule of the domain's own row (ADR 0145): the use case locks, opens the deletion, checks and
+// applies it.
 package sendingdomaindeletion
 
 import (
@@ -20,15 +21,15 @@ import (
 // UseCase deletes a Sending domain. Every call receives the Workspace-scoped client (ADR 0017)
 // built by the entry point; the use case opens the transaction the modules it calls join.
 type UseCase struct {
-	bus   *events.Bus
-	check *removalcheck.Module
-	now   func() time.Time
+	bus       *events.Bus
+	check     *removalcheck.Module
+	unchecked *sendingdomainsunchecked.Module
 }
 
 // New builds the Sending domain deletion use case over the Removal check; now is the Instance
-// clock.
+// clock, which the unchecked removal it builds stamps the discard by.
 func New(bus *events.Bus, check *removalcheck.Module, now func() time.Time) *UseCase {
-	return &UseCase{bus: bus, check: check, now: now}
+	return &UseCase{bus: bus, check: check, unchecked: sendingdomainsunchecked.New(now)}
 }
 
 // Delete discards a Sending domain for good (ADR 0049): it leaves the lists and is never
@@ -42,13 +43,13 @@ func New(bus *events.Bus, check *removalcheck.Module, now func() time.Time) *Use
 // check and the discard hold the Workspace's lock (ADR 0099), so no work becomes live between them.
 func (u *UseCase) Delete(ctx context.Context, s *ent.Scoped, id int64) error {
 	return u.bus.WithinWorkspaceLockTx(ctx, s, func(wl *ent.WorkspaceLocked, _ events.Publisher) error {
-		deletion, err := sendingdomainsunchecked.DeletionIn(ctx, wl, id)
+		deletion, err := u.unchecked.DeletionIn(ctx, wl, id)
 		if err != nil || deletion.Done() {
 			return err
 		}
 		if err := u.check.SendingDomain(ctx, wl, deletion.Domain()); err != nil {
 			return err
 		}
-		return deletion.Apply(ctx, u.now())
+		return u.unchecked.ApplyDeletion(ctx, wl, deletion)
 	})
 }

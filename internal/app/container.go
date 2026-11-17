@@ -48,6 +48,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/suppressions"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/tags"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/unsubscribes"
+	"github.com/getsphericon/sphericon/internal/domain/contacts/visitors"
 	"github.com/getsphericon/sphericon/internal/domain/content/brandkits"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/accountlink"
@@ -416,9 +417,14 @@ var staffPackage = do.Package(
 		}
 		return staffmembers.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*secrets.Cipher](i), members), nil
 	}),
+	// The Instance audit log (ADR 0070), over the raw client: the Staff member's changes of the
+	// Instance's own settings and of the Sign-up items.
+	do.Lazy(func(i do.Injector) (*instanceauditentries.Log, error) {
+		return instanceauditentries.New(do.MustInvoke[*ent.Client](i)), nil
+	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
-		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), instanceauditentries.Record), nil
+		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), do.MustInvoke[*instanceauditentries.Log](i).Record), nil
 	}),
 	// The Users' Consent records on those items (ADR 0062).
 	do.Lazy(func(i do.Injector) (*consentrecords.Module, error) {
@@ -585,6 +591,7 @@ var jobsPackage = do.Package(
 			Passkeys:          do.MustInvoke[*passkeys.Module](i),
 			Orders:            do.MustInvoke[*orders.Module](i),
 			Suppressions:      do.MustInvoke[*suppressions.Module](i),
+			Contacts:          do.MustInvoke[*contacts.Module](i),
 			CapturedMessages:  do.MustInvoke[*capturedmessages.Module](i),
 			Deletion:          do.MustInvoke[*workspacedeletion.UseCase](i),
 			MessageRetention:  do.MustInvoke[*messageretention.UseCase](i),
@@ -763,16 +770,17 @@ var identityPackage = do.Package(
 		cfg := do.MustInvoke[*config.Config](i)
 		lapsedAt, _ := do.MustInvoke[*licensekey.License](i).LapsedAt()
 		version := string(do.MustInvoke[Version](i))
-		source, err := upgrade.NewGitHubAt(cfg.GitHubAPIURL)
+		endpoint, err := upgrade.NewGitHubEndpoint(cfg.GitHubAPIURL)
 		if err != nil {
 			return nil, err
 		}
+		source := upgrade.NewGitHub(endpoint)
 		receiver, err := telemetryapi.NewClient(cfg.TelemetryReceiverURL)
 		if err != nil {
 			return nil, err
 		}
 		return instancestates.New(do.MustInvoke[*ent.Client](i), instancestates.EnvironmentOf(cfg, version, lapsedAt), do.MustInvoke[Clock](i),
-			do.MustInvoke[*suspension.DefaultSendCap](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
+			do.MustInvoke[*suspension.DefaultSendCap](i), do.MustInvoke[*instanceauditentries.Log](i), source, telemetryHost(cfg, version, lapsedAt), receiver, slog.Default()), nil
 	}),
 	// The Login throttle and the mail budgets of an address (ADR 0025), over the raw client.
 	do.Lazy(func(i do.Injector) (*throttle.Attempts, error) {
@@ -827,12 +835,15 @@ var audiencePackage = do.Package(
 		return segments.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacts.Module, error) {
-		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i),
-			contacts.WithMailResolver(do.MustInvoke[addresscheck.Resolver](i))), nil
+		return contacts.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*tags.Module](i),
+			do.MustInvoke[addresscheck.Resolver](i), do.MustInvoke[Clock](i)), nil
+	}),
+	do.Lazy(func(i do.Injector) (*visitors.Module, error) {
+		return visitors.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*contacterasure.UseCase, error) {
 		return contacterasure.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*broadcasts.Module](i),
-			do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
+			do.MustInvoke[*contacts.Module](i), do.MustInvoke[*unsubscribes.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	// The consent of the Destinations: the opt-outs, the Suppressions, the Confirmations and the
 	// Channel stops, which write their rows (ADR 0102).
@@ -858,10 +869,10 @@ var audiencePackage = do.Package(
 		return integrationdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*bindings.Module, error) {
-		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[Clock](i)), nil
+		return bindings.New(do.MustInvoke[*integrations.Module](i), do.MustInvoke[*visitors.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomains.Module, error) {
-		return sendingdomains.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
+		return sendingdomains.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[domainname.TXTLookup](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*sendingdomaindeletion.UseCase, error) {
 		return sendingdomaindeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[Clock](i)), nil
@@ -883,7 +894,7 @@ var contentPackage = do.Package(
 		return emaildoc.New(), nil
 	}),
 	do.Lazy(func(i do.Injector) (*emailtemplates.Module, error) {
-		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i), brandkits.Brands{}), nil
+		return emailtemplates.New(do.MustInvoke[*emaildoc.Renderer](i), brandkits.NewBrands()), nil
 	}),
 	// The views answer a save with its lint, for the surfaces whose contract shows it.
 	do.Lazy(func(i do.Injector) (*emailtemplates.Views, error) {
@@ -899,15 +910,15 @@ var contentPackage = do.Package(
 		return tagdeletion.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[*tags.Module](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*customfieldretyping.UseCase, error) {
-		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i)), nil
+		return customfieldretyping.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*removalcheck.Module](i), do.MustInvoke[*contacts.Module](i)), nil
 	}),
 	// The Identity secret and the check of an Identity token (ADR 0171).
 	do.Lazy(func(i do.Injector) (*identitytokens.Module, error) {
 		return identitytokens.New(do.MustInvoke[*secrets.Cipher](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*visitoridentification.UseCase, error) {
-		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*identitytokens.Module](i),
-			do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
+		return visitoridentification.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), do.MustInvoke[*visitors.Module](i),
+			do.MustInvoke[*identitytokens.Module](i), do.MustInvoke[*bindings.Module](i), do.MustInvoke[Clock](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*unsubscriberecording.UseCase, error) {
 		return unsubscriberecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*outboundmessages.Module](i),
@@ -956,7 +967,7 @@ var contentPackage = do.Package(
 	}),
 	do.Lazy(func(i do.Injector) (*eventrecording.Module, error) {
 		policy := eventrecording.LivePolicy{Window: do.MustInvoke[*config.Config](i).EventLiveWindow, Now: do.MustInvoke[Clock](i)}
-		return eventrecording.New(do.MustInvoke[*events.Bus](i), policy), nil
+		return eventrecording.New(do.MustInvoke[*events.Bus](i), do.MustInvoke[*contacts.Module](i), policy), nil
 	}),
 	do.Lazy(func(i do.Injector) (*setupchecklist.Module, error) {
 		return setupchecklist.New(do.MustInvoke[*workspaces.Module](i), do.MustInvoke[Clock](i)), nil
@@ -1121,8 +1132,7 @@ var surfacesPackage = do.Package(
 	}),
 	// The handlers of the Collect API, over the Visitor identification use case (ADR 0111).
 	do.Lazy(func(i do.Injector) (*apicollect.Handlers, error) {
-		return apicollect.NewHandlers(do.MustInvoke[*events.Bus](i), do.MustInvoke[*visitoridentification.UseCase](i),
-			do.MustInvoke[Clock](i)), nil
+		return apicollect.NewHandlers(do.MustInvoke[*visitors.Module](i), do.MustInvoke[*visitoridentification.UseCase](i)), nil
 	}),
 	do.Lazy(func(i do.Injector) (*hooksHandler, error) {
 		return &hooksHandler{apihooks.New(do.MustInvoke[*callbackinterpretation.Module](i))}, nil

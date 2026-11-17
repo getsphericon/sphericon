@@ -4,8 +4,8 @@
 // whatever the License key. Nothing in it belongs to a Workspace, so it holds the raw ent client,
 // and Workspace deletion never touches it.
 //
-// A change is recorded with Record, on the transaction client of the change itself, so the setting
-// and its entry commit together or not at all. Each Instance-level Staff change names its action
+// A change is recorded with Log.Record, on the transaction client of the change itself, so the
+// setting and its entry commit together or not at all. Each Instance-level Staff change names its action
 // here.
 package instanceauditentries
 
@@ -25,20 +25,29 @@ import (
 const ActionDefaultSendCapChange = "instance.default_send_cap_change"
 
 // Actions is every action the log records, which the Staff contract declares: its own, and those
-// a module below the Instance names and records through Record handed to it (the Sign-up items).
+// a module below the Instance names and records through Log.Record handed to it (the Sign-up items).
 var Actions = append([]string{ActionDefaultSendCapChange}, signupitems.AuditActions...)
 
-// Record writes one entry: the Staff member staffMemberID made the change action, with diff the
-// old and the new value of each changed field (events.Change, events.ChangeOf). tx is the transaction client of the
-// change, so a rolled-back change leaves no entry.
-func Record(ctx context.Context, tx *ent.Client, staffMemberID int64, action string, diff map[string]any) error {
+// Log is the Instance audit log, read over the raw client.
+type Log struct {
+	client *ent.Client
+}
+
+// New builds the log over the raw client it reads the entries through.
+func New(client *ent.Client) *Log { return &Log{client: client} }
+
+// Record writes one entry: the Staff member entry.StaffMemberID made the change entry.Action, with
+// entry.Diff the old and the new value of each changed field (events.Change, events.ChangeOf); the
+// log sets the rest. tx is the transaction client of the change, so a rolled-back change leaves no
+// entry.
+func (l *Log) Record(ctx context.Context, tx *ent.Client, entry *ent.InstanceAuditEntry) error {
 	err := tx.InstanceAuditEntry.Create().
-		SetStaffMemberID(staffMemberID).
-		SetAction(action).
-		SetDiff(diff).
+		SetStaffMemberID(entry.StaffMemberID).
+		SetAction(entry.Action).
+		SetDiff(entry.Diff).
 		Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("record %s: %w", action, err)
+		return fmt.Errorf("record %s: %w", entry.Action, err)
 	}
 	return nil
 }
@@ -52,12 +61,12 @@ type Page struct {
 // Entries is a page of the log, newest first, each with the Staff member who made it: at most
 // limit entries older than the one cursor names ("" starts from the newest). A cursor is the
 // Audit log's (auditlog.Cursor): one the log never handed out is auditlog.ErrBadCursor.
-func Entries(ctx context.Context, client *ent.Client, cursor string, limit int) (Page, error) {
+func (l *Log) Entries(ctx context.Context, cursor string, limit int) (Page, error) {
 	after, err := auditlog.Cursor(cursor)
 	if err != nil {
 		return Page{}, err
 	}
-	q := client.InstanceAuditEntry.Query().
+	q := l.client.InstanceAuditEntry.Query().
 		WithStaffMember().
 		Order(ent.Desc(instanceauditentry.FieldID)).
 		Limit(limit + 1)

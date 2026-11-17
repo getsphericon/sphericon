@@ -92,7 +92,7 @@ func (m *Module) intake(ctx context.Context, s *ent.Scoped, src contact.Source, 
 			return err
 		}
 		var err error
-		res, err = importIn(ctx, ts, pub, src, in.UpsertInput)
+		res, err = m.importIn(ctx, ts, src, in.UpsertInput)
 		if err != nil {
 			return err
 		}

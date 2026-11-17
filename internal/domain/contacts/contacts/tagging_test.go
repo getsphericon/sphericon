@@ -107,8 +107,8 @@ func TestSetMakesTheNamedTagsTheContactsCompleteSet(t *testing.T) {
 	m := tags.New()
 	ctx := context.Background()
 	set := func(contactID int64, names []string) error {
-		return env.Bus.WithinScopedTx(ctx, acme, func(ts *ent.Scoped, pub events.Publisher) error {
-			return contacts.SetTagsIn(ctx, ts, pub, contactID, names)
+		return env.Bus.WithinScopedTx(ctx, acme, func(ts *ent.Scoped, _ events.Publisher) error {
+			return testhelper.Module[*contacts.Module](env).SetTagsIn(ctx, ts, contactID, names)
 		})
 	}
 
