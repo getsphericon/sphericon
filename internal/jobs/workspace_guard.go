@@ -9,7 +9,6 @@ import (
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 
-	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
@@ -51,7 +50,7 @@ func (*workspaceNamed) InsertMany(ctx context.Context, params []*rivertype.JobIn
 type erasedWorkspace struct {
 	river.MiddlewareDefaults
 
-	client *ent.Client
+	workspaces *workspaces.Module
 }
 
 var _ rivertype.WorkerMiddleware = (*erasedWorkspace)(nil)
@@ -61,7 +60,7 @@ func (m *erasedWorkspace) Work(ctx context.Context, job *rivertype.JobRow, doInn
 	if err := json.Unmarshal(job.EncodedArgs, &named); err != nil || named.WorkspaceID == 0 {
 		return doInner(ctx) // a job of the Instance; args that do not decode fail in the worker
 	}
-	erased, err := workspaces.Erased(ctx, m.client, named.WorkspaceID)
+	erased, err := m.workspaces.Erased(ctx, named.WorkspaceID)
 	if err != nil {
 		return err
 	}

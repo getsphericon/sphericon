@@ -72,8 +72,8 @@ Workspace view (`internal/usecase/workspaceview`), the operations of the Workspa
 through `memberships.CreateWorkspaceIn`, which writes it with its Owner Membership, the Send cap it
 starts with (`suspension.DefaultSendCap.StartingIn`, ADR 0067, ADR 0146) and its `workspace.create`
 Audit entry, moves a deleted one back through
-`workspacesunchecked.RestoreIn`, and renames one or changes its postal address through
-`workspacesunchecked.EditIn`, which it applies after the Removal check under the Workspace lock when
+`workspacesunchecked.Module.RestoreIn`, and renames one or changes its postal address through
+`workspacesunchecked.Module.EditIn`, which it applies (`ApplyEdit`) after the Removal check under the Workspace lock when
 the edit takes away an address that marketing email still to send needs (ADR 0156); and User deletion
 (`internal/usecase/userdeletion`), which proves who asks (the password through `login`'s `Prove`,
 or the Login throttle and the deletion link, then the Second factor code through
@@ -112,7 +112,7 @@ applied, ADR 0145), User deletion's removals
 (`membershipsunchecked.LeaveDoomedWorkspaceIn`, which lets the only Owner of a Workspace in its
 deletion window leave, and the User row, `usersunchecked.Deletion`, opened on its row like the
 Removal writes), the restore and the tombstone of a Workspace's deletion cycle
-(`workspacesunchecked.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
+(`workspacesunchecked.Module.RestoreIn` and `TombstoneIn`; the erase deletes a Workspace's rows itself, ADR
 0110, so no owner's removal of them has a name) and each owner's step of a Contact's Erasure (`visitorsunchecked.EraseSubject`, `eventsunchecked.EraseSubject` of
 the bus, `suppressionsunchecked.EraseContact` and the others
 `internal/usecase/contacterasure`

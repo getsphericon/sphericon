@@ -23,6 +23,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signup"
 	"github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -90,6 +91,8 @@ import (
 // goverter:extend entityIDIn
 // goverter:extend maxPerSecondPtrIn
 // goverter:extend maxPerDayPtrIn
+// goverter:extend currencyCodePtrIn
+// goverter:extend attributionWindowDaysPtrIn
 // goverter:extend integrationConfigIn
 // goverter:extend integrationConfigPatch
 // goverter:extend int32ToInt
@@ -141,6 +144,7 @@ type Inputs interface {
 	WorkspaceUpdate(source *siteapi.SiteUpdateWorkspaceInput) workspaceview.UpdateInput
 	// goverter:map Timezone Zone
 	TimezoneSet(source *siteapi.SiteWorkspaceTimezoneInput) workspaceview.SetTimezoneInput
+	RevenueSettingsSet(source *siteapi.SiteUpdateRevenueSettingsInput) workspaces.SetRevenueSettingsInput
 	// Switching the requirement on: the caller sets Required.
 	// goverter:map Revision | revisionPtrIn
 	// goverter:ignore Required
@@ -330,14 +334,16 @@ func nilEntityIDPtrIn(o siteapi.OptNilEntityId) *int64                { return c
 
 // requiredNilEntityIDPtrIn is a field the body must carry whose null is a choice of its own (a
 // Broadcast's audience, null for all contacts): nil for null, else the id.
-func requiredNilEntityIDPtrIn(o siteapi.NilEntityId) *int64 { return convert.Int64Ptr(o) }
-func boolIn(o siteapi.OptBool) bool                         { return o.Or(false) }
-func boolPtrIn(o siteapi.OptBool) *bool                     { return convert.Ptr(o) }
-func int32In(o siteapi.OptInt32) int                        { return int(o.Or(0)) }
-func entityIDIn(o siteapi.OptEntityId) int64                { return int64(o.Or(0)) }
-func maxPerSecondPtrIn(o siteapi.OptNilMaxPerSecond) *int   { return intPtr(o) }
-func maxPerDayPtrIn(o siteapi.OptNilMaxPerDay) *int         { return intPtr(o) }
-func int32ToInt(v int32) int                                { return int(v) }
+func requiredNilEntityIDPtrIn(o siteapi.NilEntityId) *int64              { return convert.Int64Ptr(o) }
+func boolIn(o siteapi.OptBool) bool                                      { return o.Or(false) }
+func boolPtrIn(o siteapi.OptBool) *bool                                  { return convert.Ptr(o) }
+func int32In(o siteapi.OptInt32) int                                     { return int(o.Or(0)) }
+func entityIDIn(o siteapi.OptEntityId) int64                             { return int64(o.Or(0)) }
+func maxPerSecondPtrIn(o siteapi.OptNilMaxPerSecond) *int                { return intPtr(o) }
+func maxPerDayPtrIn(o siteapi.OptNilMaxPerDay) *int                      { return intPtr(o) }
+func currencyCodePtrIn(o siteapi.OptCurrencyCode) *string                { return convert.StringPtr(o) }
+func attributionWindowDaysPtrIn(o siteapi.OptAttributionWindowDays) *int { return intPtr(o) }
+func int32ToInt(v int32) int                                             { return int(v) }
 
 // listPtrIn is a list an update replaces: an omitted list (nil) keeps the stored one.
 func listPtrIn(list []string) *[]string {

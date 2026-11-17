@@ -17,24 +17,35 @@ import (
 // The unique constraints of the Workspaces (ADR 0106): no client can break them.
 var _ = db.Declare(
 	db.Fault("workspaces_public_id_key",
-		"a Workspace is inserted ON CONFLICT (public_id) DO NOTHING, and a taken id is drawn again (CreateIn)"),
+		"a Workspace is inserted ON CONFLICT (public_id) DO NOTHING, and a taken id is drawn again (Creation.CreateIn)"),
 	db.Fault("workspaces_collect_key_key", "the collect key is drawn at random (credentials.GenerateCollectKey)"),
-	db.Fault("workspace_standing_workspace_id_key", "a standing is written ON CONFLICT (workspace_id), by CreateIn and the feed"),
+	db.Fault("workspace_standing_workspace_id_key", "a standing is written ON CONFLICT (workspace_id), by Creation.CreateIn and the feed"),
 )
 
 // errPublicIDsTaken is a generator of Workspace ids that drew only taken ones, publicIDAttempts in
 // a row: one taken id is rare already (workspaceid.New), so the generator is broken.
 var errPublicIDsTaken = errors.New("workspaces: every workspace id drawn is taken")
 
-// publicIDAttempts is how many Workspace ids CreateIn draws before it gives up.
+// publicIDAttempts is how many Workspace ids Creation.CreateIn draws before it gives up.
 const publicIDAttempts = 3
 
-// CreateIn writes a new Workspace named name in tx, with a Workspace id newPublicID draws (again
+// Creation writes a new Workspace, its role of its own: it draws the Workspace id from a
+// generator of its own (workspaceid.New), which nothing else of the module needs.
+type Creation struct {
+	newPublicID func() string
+}
+
+// NewCreation builds the creation that draws each Workspace id from newPublicID.
+func NewCreation(newPublicID func() string) *Creation {
+	return &Creation{newPublicID: newPublicID}
+}
+
+// CreateIn writes a new Workspace named name in tx, with a Workspace id the creation draws (again
 // when the one drawn is taken, a fault after publicIDAttempts draws), a fresh collect key and the
 // Send cap it starts with (ADR 0067; nil for none), and its standing beside it (ADR 0168). Only the creation of a Workspace with its Owner
 // calls it (memberships.CreateWorkspaceIn): a Workspace is reached through its Memberships, so one
 // without its Owner is unreachable.
-func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func() string, sendCap *int) (*ent.Workspace, error) {
+func (c *Creation) CreateIn(ctx context.Context, tx *ent.Client, name string, sendCap *int) (*ent.Workspace, error) {
 	name, err := validation.Name(name)
 	if err != nil {
 		return nil, err
@@ -46,7 +57,7 @@ func CreateIn(ctx context.Context, tx *ent.Client, name string, newPublicID func
 	for range publicIDAttempts {
 		id, err := tx.Workspace.Create().
 			SetName(name).
-			SetPublicID(newPublicID()).
+			SetPublicID(c.newPublicID()).
 			SetCollectKey(collectKey).
 			SetNillableSendCap(sendCap).
 			OnConflict(entsql.ConflictColumns(workspace.FieldPublicID)).

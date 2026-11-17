@@ -7,7 +7,6 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
-	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces/workspacesunchecked"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -35,7 +34,7 @@ type RestoreInput struct {
 // not exposed to anyone else. A
 // Workspace past its window or already erased is ErrNotRestorable (a
 // lifecycle.ErrInvalidTransition). Recorded as `workspace.restore` in the same transaction. The
-// restore's move is the module's unchecked operation (workspacesunchecked.RestoreIn, ADR 0110): it
+// restore's move is the module's unchecked operation (workspacesunchecked.Module.RestoreIn, ADR 0110): it
 // needs a Membership that holds the delete Permission, which the lookup here checks.
 func (u *UseCase) Restore(ctx context.Context, in RestoreInput) (View, error) {
 	// An erased Workspace has no Memberships left (the erase removes them), so the lookup
@@ -46,7 +45,7 @@ func (u *UseCase) Restore(ctx context.Context, in RestoreInput) (View, error) {
 		return View{}, err
 	}
 	err = u.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		ws, err := workspacesunchecked.RestoreIn(ctx, tx, workspaceID, u.now())
+		ws, err := u.unchecked.RestoreIn(ctx, tx, workspaceID)
 		if errors.Is(err, lifecycle.ErrInvalidTransition) {
 			return fmt.Errorf("%w: %w", ErrNotRestorable, err)
 		}

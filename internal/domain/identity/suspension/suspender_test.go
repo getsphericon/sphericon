@@ -2,7 +2,6 @@ package suspension_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +17,7 @@ import (
 // once, and a second suspension keeps the first reason.
 func TestSuspendAndUnsuspendAWorkspaceByItsID(t *testing.T) {
 	env := testhelper.Setup(t)
-	suspender := suspension.NewSuspender(env.Bus, time.Now)
+	suspender := testhelper.Module[*suspension.Suspender](env)
 	ctx := t.Context()
 
 	changed, err := suspender.SuspendByPublicID(ctx, fixtures.KramericaPublicID, suspension.SuspendInput{By: suspension.StaffMember("op-42"), Reason: "complaint rate"})
@@ -49,7 +48,7 @@ func TestSuspendAndUnsuspendAWorkspaceByItsID(t *testing.T) {
 
 func TestSuspendAndUnsuspendByIDRejectBadInput(t *testing.T) {
 	env := testhelper.Setup(t)
-	suspender := suspension.NewSuspender(env.Bus, time.Now)
+	suspender := testhelper.Module[*suspension.Suspender](env)
 	ctx := t.Context()
 
 	_, err := suspender.SuspendByPublicID(ctx, "NoSuchId", suspension.SuspendInput{By: suspension.CLI, Reason: "why"})

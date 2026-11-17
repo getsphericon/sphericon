@@ -34,7 +34,7 @@ var ErrCreatorUnverified = validation.Unverified("memberships: the creator's ema
 // startingCap says it starts with, its creator as its Owner (source creator, ADR 0043), and records
 // `workspace.create` in its Audit log, the creator its actor: a Workspace is reached through its
 // Memberships, so it is never created without its Owner. The name is held to the name rule
-// (workspaces.CreateIn). An Unverified creator is ErrCreatorUnverified (ADR 0030) and nothing is
+// (workspaces.Creation.CreateIn). An Unverified creator is ErrCreatorUnverified (ADR 0030) and nothing is
 // written.
 func CreateWorkspaceIn(ctx context.Context, tx *ent.Client, pub events.Publisher, startingCap StartingSendCap, creator *ent.User, name string) (*ent.Workspace, error) {
 	if creator.EmailVerifiedAt == nil {
@@ -44,7 +44,7 @@ func CreateWorkspaceIn(ctx context.Context, tx *ent.Client, pub events.Publisher
 	if err != nil {
 		return nil, err
 	}
-	ws, err := workspaces.CreateIn(ctx, tx, name, workspaceid.New, sendCap)
+	ws, err := workspaces.NewCreation(workspaceid.New).CreateIn(ctx, tx, name, sendCap)
 	if err != nil {
 		return nil, err
 	}

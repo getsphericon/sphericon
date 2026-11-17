@@ -45,21 +45,20 @@ func (s Steps) allDone() bool {
 
 // Recorder keeps the moment a Workspace's checklist is first found complete
 // (internal/domain/identity/workspaces): it reads the moment, nil before, and stamps it once,
-// returning the moment the Workspace holds.
+// returning the moment the Workspace holds, which the recorder's clock dates.
 type Recorder interface {
 	SetupCompletedAt(ctx context.Context, s *ent.Scoped) (*time.Time, error)
-	MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error)
+	MarkSetupComplete(ctx context.Context, s *ent.Scoped) (time.Time, error)
 }
 
-// Module reads checklists on the Instance clock.
+// Module reads checklists and has the recorder stamp the first complete one.
 type Module struct {
-	now      func() time.Time
 	recorder Recorder
 }
 
-// New builds the module; now is the Instance clock.
-func New(recorder Recorder, now func() time.Time) *Module {
-	return &Module{now: now, recorder: recorder}
+// New builds the module over the recorder of the moment.
+func New(recorder Recorder) *Module {
+	return &Module{recorder: recorder}
 }
 
 // Read computes the checklist of the Workspace behind s. The read that first finds every step
@@ -75,7 +74,7 @@ func (m *Module) Read(ctx context.Context, s *ent.Scoped) (Checklist, error) {
 	if c.CompletedAt != nil || !c.Steps.allDone() {
 		return c, nil
 	}
-	at, err := m.recorder.MarkSetupComplete(ctx, s, m.now())
+	at, err := m.recorder.MarkSetupComplete(ctx, s)
 	if err != nil {
 		return Checklist{}, err
 	}

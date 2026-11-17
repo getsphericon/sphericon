@@ -29,6 +29,7 @@ import (
 	staffeeapi "github.com/getsphericon/sphericon/gen/staffee"
 	"github.com/getsphericon/sphericon/internal/domain/identity/staffmembers"
 	"github.com/getsphericon/sphericon/internal/domain/identity/suspension"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/insights/abusewarning"
 	"github.com/getsphericon/sphericon/internal/domain/sending/holds"
 	"github.com/getsphericon/sphericon/internal/domain/sending/reputation"
@@ -74,6 +75,7 @@ type Edition struct {
 	staffSessions *staffmembers.Sessions
 	bus           *events.Bus
 	suspend       *suspension.Suspender
+	workspaces    *workspaces.Module
 	now           func() time.Time
 }
 
@@ -91,6 +93,9 @@ type Deps struct {
 	StaffSessions *staffmembers.Sessions
 	// Suspender suspends a Workspace (ADR 0007).
 	Suspender *suspension.Suspender
+	// Workspaces reads a Workspace by its id and writes the abuse detector's markers on its
+	// standing (ADR 0168).
+	Workspaces *workspaces.Module
 	// Reputation computes a Workspace's rates, which the console shows and the abuse detector
 	// judges.
 	Reputation *reputation.Module
@@ -108,16 +113,17 @@ func New(deps Deps, staffCfg workspaceoversight.Config) (*Edition, error) {
 	auditLog := auditentries.NewLog(deps.Client, lic, deps.Bus)
 	usage := usages.New(deps.Client, lic, now)
 	e := &Edition{
-		lic:      lic,
-		client:   deps.Client,
-		bus:      deps.Bus,
-		suspend:  deps.Suspender,
-		now:      now,
-		Audit:    auditLog,
-		Erasures: erasures.New(deps.Client, lic, deps.Cipher, now),
-		Usage:    usage,
-		Export:   &ExportStreams{lic: lic},
-		Staff:    workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Reputation, staffCfg),
+		lic:        lic,
+		client:     deps.Client,
+		bus:        deps.Bus,
+		suspend:    deps.Suspender,
+		workspaces: deps.Workspaces,
+		now:        now,
+		Audit:      auditLog,
+		Erasures:   erasures.New(deps.Client, lic, deps.Cipher, now),
+		Usage:      usage,
+		Export:     &ExportStreams{lic: lic},
+		Staff:      workspaceoversight.New(deps.Client, deps.Bus, lic, auditLog, usage, deps.Suspender, deps.Workspaces, deps.Reputation, staffCfg),
 
 		ServiceCredentials: servicecredentials.New(deps.Client, lic, now),
 	}
@@ -189,7 +195,7 @@ func (e *Edition) LicenseLapsedAt() (time.Time, bool) { return e.lic.LapsedAt() 
 // a Workspace's standing. It suspends through the core Suspender and tells owners through
 // the system (platform) sender. Unlicensed it does nothing.
 func (e *Edition) Abuse() *abusedetector.Detector {
-	return abusedetector.NewDetector(e.client, e.bus, e.Staff.Watch(), e.suspend)
+	return abusedetector.NewDetector(e.client, e.bus, e.Staff.Watch(), e.suspend, e.workspaces)
 }
 
 // AbuseWatch is the read side of the detector for /site: the Workspace's warning, none

@@ -25,6 +25,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/passkeys"
 	"github.com/getsphericon/sphericon/internal/domain/identity/secondfactors"
 	"github.com/getsphericon/sphericon/internal/domain/identity/users"
+	"github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
 	"github.com/getsphericon/sphericon/internal/domain/instance/instancestates"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -97,6 +98,8 @@ type Deps struct {
 	// CapturedMessages prunes the Captured messages past the Test inbox's retention (ADR 0058).
 	CapturedMessages *capturedmessages.Module
 	Deletion         *workspacedeletion.UseCase
+	// Workspaces tells the job runner that a job's Workspace is erased (WorkerConfig).
+	Workspaces *workspaces.Module
 	// MessageRetention deletes old Outbound messages, keeping their figures (ADR 0143).
 	MessageRetention *messageretention.UseCase
 	// SendingDomains, JoinDomains and TrackingDomains re-check the published DNS of the domains
@@ -133,6 +136,9 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	now := deps.Clock
 	if now == nil {
 		return nil, errors.New("jobs: Deps.Clock is required: the workers read the Instance clock")
+	}
+	if deps.Workspaces == nil {
+		return nil, errors.New("jobs: Deps.Workspaces is required: the job runner cancels a job of an erased Workspace")
 	}
 	workers := river.NewWorkers()
 	river.AddWorker(workers, NewSendBroadcastWorker(entClient, mod))
@@ -192,7 +198,7 @@ func NewClient(driver *riverdatabasesql.Driver, deps Deps, ext ...jobextension.E
 	river.AddWorker(workers, NewWebhookEventWorker(entClient, dispatcher))
 
 	logger := slog.Default()
-	cfg := newRiverConfig(entClient, workers, logger, extraPeriodic...)
+	cfg := newRiverConfig(deps.Workspaces, workers, logger, extraPeriodic...)
 	if driver.SupportsListener() {
 		// A notification brings every new job at once; the poll only catches one that was missed
 		// (the listener reconnecting), so it can be slow.
@@ -254,10 +260,10 @@ func BaseConfig() *river.Config {
 
 // WorkerConfig is BaseConfig for a client that works jobs, the worker client and the one a test
 // works a job with: it also cancels a job of an erased Workspace before its worker runs
-// (erasedWorkspace), reading the Workspace over client.
-func WorkerConfig(client *ent.Client) *river.Config {
+// (erasedWorkspace), which the Workspaces tell it.
+func WorkerConfig(ws *workspaces.Module) *river.Config {
 	cfg := BaseConfig()
-	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{client: client}, &RefusalsEnd{})
+	cfg.Middleware = append(cfg.Middleware, &erasedWorkspace{workspaces: ws}, &RefusalsEnd{})
 	return cfg
 }
 
@@ -275,8 +281,8 @@ func Queues() map[string]river.QueueConfig {
 
 // newRiverConfig builds the river config; extra are the Edition's periodic jobs, added to
 // core's.
-func newRiverConfig(client *ent.Client, workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
-	cfg := WorkerConfig(client)
+func newRiverConfig(ws *workspaces.Module, workers *river.Workers, logger *slog.Logger, extra ...*river.PeriodicJob) *river.Config {
+	cfg := WorkerConfig(ws)
 	cfg.CompletedJobRetentionPeriod = completedJobRetention
 	cfg.CancelledJobRetentionPeriod = cancelledJobRetention
 	cfg.DiscardedJobRetentionPeriod = discardedJobRetention

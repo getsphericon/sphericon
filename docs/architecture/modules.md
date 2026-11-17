@@ -191,7 +191,7 @@ Workspace-owned table is the Workspace erase (`internal/usecase/workspacedeletio
 deletes the rows of a Workspace past its deletion window itself, through the scoped client, since no
 rule of an owner governs them any more; it only deletes, and only through the scoped wrappers. Any other package, a use case
 included, reads the table and changes it only through a function of its owner: the Workspace's
-standing (`workspaces.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position)
+standing (`workspaces.Module.SuspendIn`, `SetSendCapIn`, the abuse notice markers, the feed position of `workspaces.Feed`)
 for `suspension`, `ee/domain/insights/abusedetector` and `workspacefeed`; the User's survey marker and feed position
 (`users.ClearSurveyDueIn`, `SetFeedPosition`) for `signupsurveyresponses` and `usertombstones`; a Membership an
 Invitation or a Join domain admits (`memberships.AddInvitedIn`, `AddByDomainIn`, `SetRoleIn`) for

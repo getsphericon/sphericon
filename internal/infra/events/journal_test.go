@@ -150,7 +150,7 @@ func TestJournalPublicationAndFinalWorkspacePurgeCannotLeaveLateHistory(t *testi
 				if err := purger.PurgeWorkspaceJobs(ctx, fixtures.AcmeID); err != nil {
 					return err
 				}
-				_, err := workspacesunchecked.TombstoneIn(ctx, tx, fixtures.AcmeID, now)
+				_, err := workspacesunchecked.New(func() time.Time { return now }).TombstoneIn(ctx, tx, fixtures.AcmeID)
 				return err
 			})
 		},

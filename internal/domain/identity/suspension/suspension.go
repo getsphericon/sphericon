@@ -89,14 +89,13 @@ func (s *Suspender) suspend(ctx context.Context, target workspaceTarget, in Susp
 	if utf8.RuneCountInString(reason) < bounds.SuspensionReasonMinLength {
 		return false, ErrReasonRequired
 	}
-	at := s.now()
 	changed := false
 	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		workspaceID, err := target(ctx, tx)
 		if err != nil {
 			return err
 		}
-		moved, err := workspaces.SuspendIn(ctx, tx, workspaceID, by.Kind, nilIfEmpty(by.ID), reason, at)
+		moved, err := s.workspaces.SuspendIn(ctx, tx, workspaceID, workspaces.SuspendInput{Kind: by.Kind, ByID: nilIfEmpty(by.ID), Reason: reason})
 		if err != nil || !moved {
 			return err
 		}
@@ -115,14 +114,13 @@ func (s *Suspender) unsuspend(ctx context.Context, target workspaceTarget, by Ac
 	if err := by.validate(); err != nil {
 		return false, err
 	}
-	at := s.now()
 	changed := false
 	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
 		workspaceID, err := target(ctx, tx)
 		if err != nil {
 			return err
 		}
-		moved, err := workspaces.UnsuspendIn(ctx, tx, workspaceID, at)
+		moved, err := s.workspaces.UnsuspendIn(ctx, tx, workspaceID)
 		if err != nil || !moved {
 			return err
 		}
@@ -142,9 +140,9 @@ func byKey(workspaceID int64) workspaceTarget {
 }
 
 // byPublicID is the Workspace with this Workspace id (ADR 0043), the address an operator types.
-func byPublicID(publicID string) workspaceTarget {
+func (s *Suspender) byPublicID(publicID string) workspaceTarget {
 	return func(ctx context.Context, tx *ent.Client) (int64, error) {
-		return workspaces.IDByPublicIDIn(ctx, tx, publicID)
+		return s.workspaces.IDByPublicIDIn(ctx, tx, publicID)
 	}
 }
 
@@ -168,7 +166,7 @@ func (s *Suspender) SetAbuseExempt(ctx context.Context, workspaceID int64, in Se
 	}
 	changed := false
 	err := s.bus.WithinTx(ctx, func(tx *ent.Client, pub events.Publisher) error {
-		n, err := workspaces.SetAbuseExemptIn(ctx, tx, workspaceID, exempt)
+		n, err := s.workspaces.SetAbuseExemptIn(ctx, tx, workspaceID, exempt)
 		if err != nil || n == 0 {
 			return err
 		}
@@ -212,7 +210,7 @@ func (s *Suspender) SetSendCap(ctx context.Context, workspaceID int64, in SetSen
 		if !differs {
 			return nil
 		}
-		if err := workspaces.SetSendCapIn(ctx, tx, workspaceID, sendCap); err != nil {
+		if err := s.workspaces.SetSendCapIn(ctx, tx, workspaceID, sendCap); err != nil {
 			return err
 		}
 		changed = true
