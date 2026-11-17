@@ -27,7 +27,7 @@ func TestARefusalOfReplacedCredentialsDoesNotHoldTheIntegration(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, editSMTP(env, id, integrations.SMTPConfig{Host: "smtp.acme.test", Port: 587, Username: "u", Password: "new", From: "a@acme.test"}))
 
-	err = integrations.NewProviderStanding(time.Now).RecordRefused(t.Context(), s, sentWith)
+	err = integrations.NewStanding(time.Now).RecordRefused(t.Context(), s, sentWith)
 
 	require.NoError(t, err)
 	after, err := s.Integration().QueryWithDiscarded().Where(integration.ID(id)).WithProviderState().Only(t.Context())
@@ -42,7 +42,7 @@ func TestASaveOfNewCredentialsLiftsTheRefusal(t *testing.T) {
 	id := int64(fixtures.IntegrationAcmeDefaultID)
 	sentWith, err := s.Integration().QueryWithDiscarded().Where(integration.ID(id)).WithProviderState().Only(t.Context())
 	require.NoError(t, err)
-	require.NoError(t, integrations.NewProviderStanding(time.Now).RecordRefused(t.Context(), s, sentWith))
+	require.NoError(t, integrations.NewStanding(time.Now).RecordRefused(t.Context(), s, sentWith))
 	held, err := s.Integration().QueryWithDiscarded().Where(integration.ID(id)).WithProviderState().Only(t.Context())
 	require.NoError(t, err)
 	require.NotNil(t, held.Edges.ProviderState.ProviderRefusedAt, "the refusal of the current credentials holds the Integration")
@@ -72,7 +72,7 @@ func TestARefusalBehindASaveOfNewCredentialsHoldsNothing(t *testing.T) {
 	})
 
 	errs := env.QueueBehind(t, release, testhelper.Writer{Name: "refusal", Run: func() error {
-		return integrations.NewProviderStanding(time.Now).RecordRefused(t.Context(), s, sentWith)
+		return integrations.NewStanding(time.Now).RecordRefused(t.Context(), s, sentWith)
 	}})
 
 	require.NoError(t, errs["refusal"])

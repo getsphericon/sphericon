@@ -253,7 +253,7 @@ type Module struct {
 	limits  *providerlimit.Module
 	// standing records the provider's refusal of an Integration's credentials; chats unbinds a
 	// chat Telegram no longer reaches. Both publish or write in the send's transaction.
-	standing *integrations.ProviderStanding
+	standing *integrations.Standing
 	chats    *bindings.Chats
 	// system is the Instance's System sender; nil on an Instance with no outbound mail.
 	system messaging.EmailSender
@@ -335,7 +335,7 @@ func New(bus *events.Bus, hs *holds.Holds, senders Senders, tracker *messagetoke
 		system: deps.System, testBudget: deps.TestBudget, users: deps.Users, startLinks: deps.StartLinks,
 		sendCaps: cfg.SendCaps, lease: cmp.Or(cfg.Lease, DefaultLease), now: now,
 		buckets: providerlimit.NewBuckets(bus.WithinAuditTx, now), limits: providerlimit.New(now),
-		standing: integrations.NewProviderStanding(now), chats: bindings.NewChats(bus, now),
+		standing: integrations.NewStanding(now), chats: bindings.NewChats(bus, now),
 		eligibility: eligibility.New(), contacts: contacts.New(bus, tags.New(), nil, now),
 	}
 	m.channels = map[channels.Channel]channel{channels.Email: emailChannel{m: m}, channels.Telegram: telegramChannel{m: m}, channels.SMS: smsChannel{m: m}}

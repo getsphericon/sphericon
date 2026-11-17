@@ -76,12 +76,16 @@ func New(integ *integrations.Module, visits *visitors.Module, now func() time.Ti
 // from Module: it publishes, and it reads no Integration's config.
 type Chats struct {
 	bus *events.Bus
-	now func() time.Time
+	// locks takes the owner Contact's row lock before a redemption binds the chat to it.
+	locks *contactlock.Module
+	now   func() time.Time
 }
 
 // NewChats builds the chats' side of the Bindings over the bus their events are published on; now
 // is the clock a Binding is dated and a Start token is spent and lapses by.
-func NewChats(bus *events.Bus, now func() time.Time) *Chats { return &Chats{bus: bus, now: now} }
+func NewChats(bus *events.Bus, now func() time.Time) *Chats {
+	return &Chats{bus: bus, locks: contactlock.New(), now: now}
+}
 
 // StartLink is a start link and when it lapses.
 type StartLink struct {
@@ -261,7 +265,7 @@ func (c *Chats) Redeem(ctx context.Context, s *ent.Scoped, bot *ent.Integration,
 	if own.contactID != nil {
 		// The owner's row is locked first, as every write about a Contact does (contactlock), so
 		// an Erasure of it and this bind are ordered.
-		if _, err := contactlock.New().Lock(ctx, s, *own.contactID); err != nil {
+		if _, err := c.locks.Lock(ctx, s, *own.contactID); err != nil {
 			if ent.IsNotFound(err) {
 				return nil
 			}

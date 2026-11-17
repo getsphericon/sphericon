@@ -170,23 +170,23 @@ func wroteState(n int, err error) error {
 	return err
 }
 
-// ProviderStanding records what a send learns of the provider's standing on an Integration, beside
+// Standing records what a send learns of the provider's standing on an Integration, beside
 // it in its provider state (ADR 0168): the role of Outbound send, which holds the clock and no
 // Integrations module.
-type ProviderStanding struct {
+type Standing struct {
 	now func() time.Time
 }
 
-// NewProviderStanding builds the role; now is the clock a refusal is dated by.
-func NewProviderStanding(now func() time.Time) *ProviderStanding {
-	return &ProviderStanding{now: now}
+// NewStanding builds the role; now is the clock a refusal is dated by.
+func NewStanding(now func() time.Time) *Standing {
+	return &Standing{now: now}
 }
 
 // RecordRefused stores, at the clock, that the provider refused the credentials integ was read
 // with (provider_refused_at), which holds the Integration's Send route: Outbound send records it.
 // The refusal is of those credentials only: one that lands after a save replaced them, or after
 // another send recorded it, changes nothing.
-func (p *ProviderStanding) RecordRefused(ctx context.Context, s *ent.Scoped, integ *ent.Integration) error {
+func (p *Standing) RecordRefused(ctx context.Context, s *ent.Scoped, integ *ent.Integration) error {
 	at := p.now()
 	err := refusalMachine(lifecycle.Storage[refusal]{
 		Read: func(context.Context) (refusal, error) { return refusalOf(integ), nil },
