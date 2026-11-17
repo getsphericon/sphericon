@@ -9,8 +9,7 @@ or `AGENTS.md`.
 ## Enforcement
 
 - A check is turned on at once and the violations it finds are fixed, with no baseline of known
-  violations. The one exception is the domain tier's call contract (rule 5, ADR 0167), which ratchets
-  in over an exemption list that may only shrink.
+  violations.
 - A rule that needs Go types is checked by an analyzer of our own; one that needs only syntax, by an
   ast-grep rule. Which rules have a check, and how to add one, is in "Project checks" of
   `CODING_STANDARDS.md`: this file does not list them.

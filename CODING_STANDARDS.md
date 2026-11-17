@@ -48,9 +48,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `rule <n>: <what is wrong>; fix: <what to do instead>`. Build it with `rule.Message(n, what, fix)`
   (`tools/analyzers/rule`), never by hand.
 - **A check is on at once.** Run it over the repository and fix every finding in the same change; there
-  is no baseline of known violations and no ignore list. The one exception is the domain tier's call
-  contract (ADR 0167): `callshape` ratchets in over `tools/analyzers/callshape/exempt.txt`, a list that
-  may only shrink and goes when it is empty (Rule 5 below).
+  is no baseline of known violations and no ignore list.
 - **Rule 1, `handmapper`.** A function that takes an ent entity and returns a type of a `gen/*` package
   must map through a goverter converter (it calls a `...Converter`/`...ConverterImpl` method, directly or
   through a package function that does) or be registered in the converter (`goverter:extend`, or named in
@@ -169,12 +167,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   a parameter of the constructor, a third or an optional argument goes into a typed `XInput`, two
   values into a named result struct, and what became of a batch's items into `batch.Result`
   (`internal/kernel/batch`); an unchecked subpackage, a plan and its apply, and a `<module>use`
-  reader take the shapes of docs/architecture/modules.md (Shapes under the call contract). A domain
-  package that does not keep the contract yet is listed in
-  `tools/analyzers/callshape/exempt.txt`, which may only shrink: the analyzer reports nothing in a
-  listed package until it keeps the contract and then reports the entry, its test refuses an entry
-  that names no package of the domain tier, and `mise run check:callshape-exempt` (part of
-  `check:lint`) refuses an entry the merge base with `origin/main` lacks. An `io.Writer` is `nowriter`'s.
+  reader take the shapes of docs/architecture/modules.md (Shapes under the call contract). An
+  `io.Writer` is `nowriter`'s.
 - **Rule 5, `nowriter`.** The domain and the use case tiers write to no `io.Writer` (ADR 0104, ADR 0111).
   In a package under `internal/domain`, `ee/domain`, `internal/usecase` or `ee/usecase` (test files are
   not read) the analyzer refuses an `io.Writer` parameter of a function, a method, a function literal or

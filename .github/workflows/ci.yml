@@ -59,7 +59,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .bin/custom-gcl
-          key: custom-gcl-${{ runner.os }}-${{ hashFiles('.custom-gcl.yml', 'tools/analyzers/**/*.go', 'tools/analyzers/**/*.txt', 'tools/analyzers/go.mod', 'tools/analyzers/go.sum', 'mise.lock') }}
+          key: custom-gcl-${{ runner.os }}-${{ hashFiles('.custom-gcl.yml', 'tools/analyzers/**/*.go', 'tools/analyzers/go.mod', 'tools/analyzers/go.sum', 'mise.lock') }}
 
       - name: Mark the restored binary fresh
         if: steps.custom-gcl.outputs.cache-hit == 'true'
