@@ -27,6 +27,7 @@ import (
 	"golang.org/x/tools/go/cfg"
 	"golang.org/x/tools/go/types/typeutil"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
@@ -44,13 +45,12 @@ const fix = "move the composition into the domain module that owns its rule, or 
 // cost is what a path of a function calls: the most operations along one path, and whether an
 // operation runs in a loop.
 type cost struct {
-	n    int
 	ops  []string
 	loop bool
 }
 
 func (c cost) plus(d cost) cost {
-	return cost{n: c.n + d.n, ops: append(slices.Clip(c.ops), d.ops...), loop: c.loop || d.loop}
+	return cost{ops: append(slices.Clip(c.ops), d.ops...), loop: c.loop || d.loop}
 }
 
 // max is the costlier path; a loop over an operation outweighs any count.
@@ -61,7 +61,7 @@ func (c cost) max(d cost) cost {
 		}
 		return d
 	}
-	if d.n > c.n {
+	if len(d.ops) > len(c.ops) {
 		return d
 	}
 	return c
@@ -71,9 +71,8 @@ type checker struct {
 	pass  *analysis.Pass
 	cfgs  *ctrlflow.CFGs
 	decls map[*types.Func]*ast.FuncDecl
-	// costs memoizes a declared function's cost; busy marks one being costed, so recursion ends.
+	// costs memoizes a declared function's cost; one being costed holds a zero cost, so recursion ends.
 	costs map[*ast.FuncDecl]cost
-	busy  map[*ast.FuncDecl]bool
 	// err is the first function ctrlflow built no graph for; the run fails with it.
 	err error
 }
@@ -93,11 +92,10 @@ func run(pass *analysis.Pass) (any, error) {
 		cfgs:  cfgs,
 		decls: map[*types.Func]*ast.FuncDecl{},
 		costs: map[*ast.FuncDecl]cost{},
-		busy:  map[*ast.FuncDecl]bool{},
 	}
 	var files []*ast.File
 	for _, file := range pass.Files {
-		if strings.HasSuffix(pass.Fset.Position(file.Pos()).Filename, "_test.go") {
+		if analysisx.InTestFile(pass, file.Pos()) {
 			continue
 		}
 		files = append(files, file)
@@ -129,9 +127,9 @@ func (c *checker) report(pos token.Pos, name string, k cost) {
 	ops := strings.Join(slices.Compact(slices.Sorted(slices.Values(k.ops))), ", ")
 	switch {
 	case k.loop:
-		c.pass.Reportf(pos, "%s", rule.Message(5, fmt.Sprintf("%s calls an operation of the core in a loop (%s)", name, ops), fix))
-	case k.n > 1:
-		c.pass.Reportf(pos, "%s", rule.Message(5, fmt.Sprintf("%s calls %d operations of the core (%s)", name, k.n, ops), fix))
+		rule.Report(c.pass, pos, 5, fmt.Sprintf("%s calls an operation of the core in a loop (%s)", name, ops), fix)
+	case len(k.ops) > 1:
+		rule.Report(c.pass, pos, 5, fmt.Sprintf("%s calls %d operations of the core (%s)", name, len(k.ops), ops), fix)
 	}
 }
 
@@ -140,12 +138,8 @@ func (c *checker) declCost(fn *ast.FuncDecl) cost {
 	if k, ok := c.costs[fn]; ok {
 		return k
 	}
-	if c.busy[fn] {
-		return cost{}
-	}
-	c.busy[fn] = true
+	c.costs[fn] = cost{}
 	k := c.graphCost(fn.Pos(), c.cfgs.FuncDecl(fn))
-	delete(c.busy, fn)
 	c.costs[fn] = k
 	return k
 }
@@ -170,7 +164,7 @@ func (c *checker) graphCost(pos token.Pos, g *cfg.CFG) cost {
 		for _, b := range comp {
 			own = own.plus(c.blockCost(b))
 		}
-		if own.n > 0 && cyclic(comp, of, i) {
+		if len(own.ops) > 0 && cyclic(comp, of, i) {
 			own.loop = true
 		}
 		var next cost
@@ -209,8 +203,8 @@ func (c *checker) callCost(call *ast.CallExpr) cost {
 	if f == nil || f.Pkg() == nil {
 		return cost{}
 	}
-	if tier.IsCore(f.Pkg().Path()) && takesContext(f) {
-		return cost{n: 1, ops: []string{name(f)}}
+	if tier.IsCore(f.Pkg().Path()) && analysisx.TakesContext(f.Signature()) {
+		return cost{ops: []string{name(f)}}
 	}
 	if fn, ok := c.decls[f]; ok {
 		return c.declCost(fn)
@@ -267,21 +261,6 @@ func cyclic(comp []*cfg.Block, of map[*cfg.Block]int, i int) bool {
 		return true
 	}
 	return slices.ContainsFunc(comp[0].Succs, func(s *cfg.Block) bool { return of[s] == i })
-}
-
-// takesContext holds for a function with a context.Context parameter.
-func takesContext(f *types.Func) bool {
-	sig, ok := f.Type().(*types.Signature)
-	if !ok {
-		return false
-	}
-	for v := range sig.Params().Variables() {
-		if named, ok := types.Unalias(v.Type()).(*types.Named); ok && named.Obj().Pkg() != nil &&
-			named.Obj().Pkg().Path() == "context" && named.Obj().Name() == "Context" {
-			return true
-		}
-	}
-	return false
 }
 
 // name is the operation as the report shows it: package.Func or package.Type.Method.

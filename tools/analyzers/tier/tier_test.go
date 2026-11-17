@@ -69,13 +69,23 @@ func TestTheTiersAgreeWithEasementLayers(t *testing.T) {
 	assert.Empty(t, missingRoots(cfg), "roots the tiers name that no component of layers holds")
 }
 
-// rowTiers is the tier of each root of each component in a row of layers.
-func rowTiers(cfg easement, row names) []tier.Tier {
-	var tiers []tier.Tier
+// rowRoots are the roots of the components in a row of layers.
+func rowRoots(cfg easement, row names) []string {
+	var roots []string
 	for _, name := range row {
 		for _, in := range cfg.Components[name].In {
-			tiers = append(tiers, tier.Of(tier.Module+globRoot(in)))
+			roots = append(roots, globRoot(in))
 		}
+	}
+	return roots
+}
+
+// rowTiers is the tier of each root of each component in a row of layers.
+func rowTiers(cfg easement, row names) []tier.Tier {
+	roots := rowRoots(cfg, row)
+	tiers := make([]tier.Tier, 0, len(roots))
+	for _, root := range roots {
+		tiers = append(tiers, tier.Of(tier.Module+root))
 	}
 	return tiers
 }
@@ -121,13 +131,9 @@ func rowDisagreements(cfg easement) []string {
 }
 
 func missingRoots(cfg easement) []string {
-	var roots []string
+	roots := make([]string, 0, len(cfg.Layers))
 	for _, row := range cfg.Layers {
-		for _, name := range row {
-			for _, in := range cfg.Components[name].In {
-				roots = append(roots, globRoot(in))
-			}
-		}
+		roots = append(roots, rowRoots(cfg, row)...)
 	}
 	var missing []string
 	for _, tr := range []tier.Tier{tier.Wiring, tier.Driver, tier.UseCase, tier.Domain} {

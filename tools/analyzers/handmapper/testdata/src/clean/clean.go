@@ -1,8 +1,8 @@
 package clean
 
 import (
-	"example/ent"
-	"example/gen/site"
+	"github.com/getsphericon/sphericon/ent"
+	"github.com/getsphericon/sphericon/gen/site"
 )
 
 // Converter maps ent rows to resources.

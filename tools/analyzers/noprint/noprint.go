@@ -5,7 +5,6 @@
 package noprint
 
 import (
-	"fmt"
 	"go/ast"
 	"go/types"
 
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
 )
 
@@ -25,9 +25,9 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
 	for call := range inspector.All[*ast.CallExpr](insp) {
 		id, ok := call.Fun.(*ast.Ident)
@@ -38,9 +38,9 @@ func run(pass *analysis.Pass) (any, error) {
 		if !ok || (b.Name() != "print" && b.Name() != "println") {
 			continue
 		}
-		pass.Reportf(call.Pos(), "%s", rule.Message(0,
+		rule.Report(pass, call.Pos(), 0,
 			"the builtin "+b.Name()+" writes to stderr past the logger",
-			"log through log/slog"))
+			"log through log/slog")
 	}
 	return nil, nil
 }

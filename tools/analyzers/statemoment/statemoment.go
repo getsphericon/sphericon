@@ -21,21 +21,21 @@ package statemoment
 import (
 	"fmt"
 	"go/ast"
-	"go/constant"
 	"go/types"
 	"slices"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
-	"golang.org/x/tools/go/ast/inspector"
 
+	"github.com/getsphericon/sphericon/tools/analyzers/analysisx"
 	"github.com/getsphericon/sphericon/tools/analyzers/entx"
 	"github.com/getsphericon/sphericon/tools/analyzers/rule"
+	"github.com/getsphericon/sphericon/tools/analyzers/tier"
 )
 
 // lifecyclePath is the package of the machine and latch primitives.
-const lifecyclePath = "github.com/getsphericon/sphericon/internal/kernel/lifecycle"
+const lifecyclePath = tier.Module + "internal/kernel/lifecycle"
 
 const (
 	formMachine = "machine"
@@ -60,12 +60,12 @@ type write struct {
 }
 
 func run(pass *analysis.Pass) (any, error) {
-	insp, ok := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
-	if !ok {
-		return nil, fmt.Errorf("%s: the inspect analyzer gave no *inspector.Inspector", pass.Analyzer.Name)
-	}
-	if unread(pass.Pkg.Path()) {
+	if tier.IsTestOrGenerated(pass.Pkg.Path()) {
 		return nil, nil
+	}
+	insp, err := analysisx.Inspector(pass)
+	if err != nil {
+		return nil, err
 	}
 	fenced := map[*ast.FuncDecl]map[types.Object]bool{}
 	insp.WithStack([]ast.Node{(*ast.SelectorExpr)(nil)}, func(n ast.Node, push bool, stack []ast.Node) bool {
@@ -73,11 +73,11 @@ func run(pass *analysis.Pass) (any, error) {
 			return true
 		}
 		sel, isSel := n.(*ast.SelectorExpr)
-		if !isSel || strings.HasSuffix(pass.Fset.Position(sel.Pos()).Filename, "_test.go") {
+		if !isSel {
 			return true
 		}
 		w, ok := declaredWrite(pass, sel)
-		if !ok {
+		if !ok || analysisx.InTestFile(pass, sel.Pos()) {
 			return true
 		}
 		switch w.form {
@@ -91,52 +91,35 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil
 }
 
-// unreadRoots are the packages, under the module, whose writes are not checked.
-var unreadRoots = []string{"ent", "internal/testhelper", "e2e"}
-
-func unread(path string) bool {
-	const module = "github.com/getsphericon/sphericon/"
-	rel, ok := strings.CutPrefix(path, module)
-	if !ok {
-		return false
-	}
-	for _, root := range unreadRoots {
-		if rel == root || strings.HasPrefix(rel, root+"/") {
-			return true
-		}
-	}
-	return false
-}
-
 func checkLatch(pass *analysis.Pass, sel *ast.SelectorExpr, w write, stack []ast.Node) {
 	if w.clears {
-		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(7,
+		rule.Report(pass, sel.Sel.Pos(), 7,
 			fmt.Sprintf("%s clears the latch %s.%s, and a latch is never cleared", w.method, w.entity, w.field),
-			"a fact recorded once stays recorded: a new fact is a new row, or the field is a machine (schema.Machine)"))
+			"a fact recorded once stays recorded: a new fact is a new row, or the field is a machine (schema.Machine)")
 		return
 	}
 	closure := enclosing(pass, stack, isLatchClosure)
 	if closure == nil {
-		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(7,
+		rule.Report(pass, sel.Sel.Pos(), 7,
 			fmt.Sprintf("%s writes the latch %s.%s outside lifecycle.Latch", w.method, w.entity, w.field),
-			fmt.Sprintf("write it inside lifecycle.Latch(ctx, func(ctx) (bool, error) {...}), conditioned on %sIsNil()", w.field)))
+			fmt.Sprintf("write it inside lifecycle.Latch(ctx, func(ctx) (bool, error) {...}), conditioned on %sIsNil()", w.field))
 		return
 	}
 	if !callsPredicate(pass, closure.Body, w.field+"IsNil") {
-		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(7,
+		rule.Report(pass, sel.Sel.Pos(), 7,
 			fmt.Sprintf("%s writes the latch %s.%s without %sIsNil() in its condition", w.method, w.entity, w.field, w.field),
-			fmt.Sprintf("add %sIsNil() to the update's Where, so a second write misses and lifecycle.Latch answers ErrInvalidTransition", w.field)))
+			fmt.Sprintf("add %sIsNil() to the update's Where, so a second write misses and lifecycle.Latch answers ErrInvalidTransition", w.field))
 	}
 }
 
 func checkMachine(pass *analysis.Pass, sel *ast.SelectorExpr, w write, stack []ast.Node, fenced map[*ast.FuncDecl]map[types.Object]bool) {
 	if enclosing(pass, stack, isStorageWrite) == nil {
-		pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(7,
+		rule.Report(pass, sel.Sel.Pos(), 7,
 			fmt.Sprintf("%s writes the machine field %s.%s outside a lifecycle.Storage Write", w.method, w.entity, w.field),
-			"fire a trigger on the entity's machine (lifecycle.New); the compare-and-swap Write of its lifecycle.Storage{...} is the one place the column is set"))
+			"fire a trigger on the entity's machine (lifecycle.New); the compare-and-swap Write of its lifecycle.Storage{...} is the one place the column is set")
 		return
 	}
-	if chainHasWhere(sel.X) {
+	if chainHasWhere(pass.TypesInfo, sel.X) {
 		return
 	}
 	if decl := enclosingDecl(stack); decl != nil {
@@ -149,9 +132,9 @@ func checkMachine(pass *analysis.Pass, sel *ast.SelectorExpr, w write, stack []a
 			return
 		}
 	}
-	pass.Reportf(sel.Sel.Pos(), "%s", rule.Message(7,
+	rule.Report(pass, sel.Sel.Pos(), 7,
 		fmt.Sprintf("%s writes the machine field %s.%s without a condition on the state it leaves", w.method, w.entity, w.field),
-		"add .Where(...) on the state the move leaves, so the write lands only while the row is still in it"))
+		"add .Where(...) on the state the move leaves, so the write lands only while the row is still in it")
 }
 
 // declaredWrite reports whether sel names a writing method of an update or upsert builder whose field
@@ -166,20 +149,11 @@ func declaredWrite(pass *analysis.Pass, sel *ast.SelectorExpr) (write, bool) {
 		return write{}, false
 	}
 	entity := entx.EntityOf(named)
-	form := stateForm(named.Obj().Pkg(), entity, field)
+	form := entx.StateForm(named.Obj().Pkg(), entity, field)
 	if form == "" {
 		return write{}, false
 	}
 	return write{method: sel.Sel.Name, clears: clears, field: field, entity: entity, form: form}, true
-}
-
-// stateForm reads the generated ent.StateForm<Entity><Field>, or "" when the field is no machine or latch.
-func stateForm(pkg *types.Package, entity, field string) string {
-	c, ok := pkg.Scope().Lookup("StateForm" + entity + field).(*types.Const)
-	if !ok || c.Val().Kind() != constant.String {
-		return ""
-	}
-	return constant.StringVal(c.Val())
 }
 
 // enclosing returns the innermost function literal on the stack that ok accepts, given its parent nodes.
@@ -209,7 +183,7 @@ func isStorageWrite(pass *analysis.Pass, _ *ast.FuncLit, parents []ast.Node) boo
 	if !ok {
 		return false
 	}
-	return isLifecycle(pass.TypesInfo.TypeOf(lit), "Storage")
+	return analysisx.IsNamed(pass.TypesInfo.TypeOf(lit), lifecyclePath, "Storage")
 }
 
 // isLatchClosure reports whether lit is an argument of a call to lifecycle.Latch.
@@ -218,38 +192,7 @@ func isLatchClosure(pass *analysis.Pass, lit *ast.FuncLit, parents []ast.Node) b
 		return false
 	}
 	call, ok := parents[len(parents)-1].(*ast.CallExpr)
-	if !ok || !isLifecycleFunc(pass, call.Fun, "Latch") {
-		return false
-	}
-	for _, arg := range call.Args {
-		if arg == lit {
-			return true
-		}
-	}
-	return false
-}
-
-func isLifecycle(t types.Type, name string) bool {
-	named, ok := types.Unalias(t).(*types.Named)
-	if !ok {
-		return false
-	}
-	obj := named.Obj()
-	return obj.Pkg() != nil && obj.Pkg().Path() == lifecyclePath && obj.Name() == name
-}
-
-func isLifecycleFunc(pass *analysis.Pass, fun ast.Expr, name string) bool {
-	var id *ast.Ident
-	switch f := fun.(type) {
-	case *ast.SelectorExpr:
-		id = f.Sel
-	case *ast.Ident:
-		id = f
-	default:
-		return false
-	}
-	fn, ok := pass.TypesInfo.Uses[id].(*types.Func)
-	return ok && fn.Pkg() != nil && fn.Pkg().Path() == lifecyclePath && fn.Name() == name
+	return ok && analysisx.Calls(pass.TypesInfo, call, lifecyclePath, "Latch") && slices.Contains(call.Args, ast.Expr(lit))
 }
 
 // callsPredicate reports whether body calls a function of an entity package of ent with the name.
@@ -278,7 +221,7 @@ func enclosingDecl(stack []ast.Node) *ast.FuncDecl {
 	return nil
 }
 
-// fencedRoots collects the variables a Where is called on anywhere in the function body, and those
+// fencedRoots collects the variables a builder's Where is called on anywhere in the function body, and those
 // assigned a builder whose chain carries one.
 func fencedRoots(pass *analysis.Pass, body *ast.BlockStmt) map[types.Object]bool {
 	fenced := map[types.Object]bool{}
@@ -288,7 +231,7 @@ func fencedRoots(pass *analysis.Pass, body *ast.BlockStmt) map[types.Object]bool
 	ast.Inspect(body, func(n ast.Node) bool {
 		if assign, ok := n.(*ast.AssignStmt); ok && len(assign.Lhs) == len(assign.Rhs) {
 			for i, rhs := range assign.Rhs {
-				if id, ok := assign.Lhs[i].(*ast.Ident); ok && chainHasWhere(rhs) {
+				if id, ok := assign.Lhs[i].(*ast.Ident); ok && chainHasWhere(pass.TypesInfo, rhs) {
 					if obj := pass.TypesInfo.ObjectOf(id); obj != nil {
 						fenced[obj] = true
 					}
@@ -299,7 +242,7 @@ func fencedRoots(pass *analysis.Pass, body *ast.BlockStmt) map[types.Object]bool
 		if !ok {
 			return true
 		}
-		if sel, ok := call.Fun.(*ast.SelectorExpr); ok && sel.Sel.Name == "Where" {
+		if sel, ok := call.Fun.(*ast.SelectorExpr); ok && isWhere(pass.TypesInfo, sel) {
 			if root := rootObject(pass, sel.X); root != nil {
 				fenced[root] = true
 			}
@@ -309,8 +252,17 @@ func fencedRoots(pass *analysis.Pass, body *ast.BlockStmt) map[types.Object]bool
 	return fenced
 }
 
-// chainHasWhere reports whether a call named Where sits in the receiver chain.
-func chainHasWhere(e ast.Expr) bool {
+// isWhere reports whether sel names the Where of a type of the ent package: a builder's condition.
+func isWhere(info *types.Info, sel *ast.SelectorExpr) bool {
+	if sel.Sel.Name != "Where" {
+		return false
+	}
+	_, _, ok := entx.Method(info, sel)
+	return ok
+}
+
+// chainHasWhere reports whether a builder's Where sits in the receiver chain.
+func chainHasWhere(info *types.Info, e ast.Expr) bool {
 	for {
 		call, ok := e.(*ast.CallExpr)
 		if !ok {
@@ -320,7 +272,7 @@ func chainHasWhere(e ast.Expr) bool {
 		if !ok {
 			return false
 		}
-		if sel.Sel.Name == "Where" {
+		if isWhere(info, sel) {
 			return true
 		}
 		e = sel.X

@@ -39,3 +39,9 @@ func reads(ctx context.Context, s *ent.Scoped, t *ent.Tag) error {
 func tx(ctx context.Context, s *ent.Scoped, bus *events.Bus) error {
 	return bus.WithinScopedTx(ctx, s, func(*ent.Scoped) error { return nil }) // want `^rule 5: a handler opens a transaction \(WithinScopedTx on the events bus\)`
 }
+
+// A transaction is told by its callback, not by its name.
+func txByType(ctx context.Context, bus *events.Bus) error {
+	_ = bus.WithinBudget(ctx, func(int) error { return nil })
+	return bus.InTx(ctx, func(*ent.Client) error { return nil }) // want `^rule 5: a handler opens a transaction \(InTx on the events bus\)`
+}

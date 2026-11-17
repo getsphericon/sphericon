@@ -9,7 +9,8 @@ import (
 )
 
 func TestHandmapper(t *testing.T) {
+	const m = "github.com/getsphericon/sphericon/"
 	analysistest.Run(t, analysistest.TestData(), handmapper.Analyzer, "bad", "clean",
-		"example/internal/api/site", "example/internal/api/site/resources", "example/internal/api/external",
-		"example/internal/api/staff", "example/ee/api/staff", "example/internal/automations", "example/internal/server")
+		m+"internal/api/site", m+"internal/api/site/resources", m+"internal/api/external",
+		m+"internal/api/staff", m+"ee/api/staff", m+"internal/domain/automations", m+"internal/server")
 }

@@ -19,24 +19,28 @@ func Given(fset *token.FileSet, stack []ast.Node, marker string) bool {
 	if !isFile {
 		return false
 	}
-	lines := map[int]bool{fset.Position(stack[len(stack)-1].Pos()).Line: true}
+	line := fset.Position(stack[len(stack)-1].Pos()).Line
+	stmtLine := line
 	for _, node := range slices.Backward(stack) {
 		if stmt, ok := node.(ast.Stmt); ok {
-			lines[fset.Position(stmt.Pos()).Line] = true
+			stmtLine = fset.Position(stmt.Pos()).Line
 			break
 		}
 	}
 	for _, cg := range file.Comments {
-		_, why, found := strings.Cut(cg.Text(), marker)
-		if !found || strings.TrimSpace(why) == "" {
+		start, end := fset.Position(cg.Pos()).Line, fset.Position(cg.End()).Line
+		if !covers(start, end, line) && !covers(start, end, stmtLine) {
 			continue
 		}
-		start, end := fset.Position(cg.Pos()).Line, fset.Position(cg.End()).Line
-		for l := range lines {
-			if end == l-1 || (start <= l && l <= end) {
-				return true
-			}
+		if _, why, found := strings.Cut(cg.Text(), marker); found && strings.TrimSpace(why) != "" {
+			return true
 		}
 	}
 	return false
+}
+
+// covers reports whether a comment from line start to line end stands on line l or ends on the line
+// above it.
+func covers(start, end, l int) bool {
+	return end == l-1 || (start <= l && l <= end)
 }

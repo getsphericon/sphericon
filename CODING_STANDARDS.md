@@ -62,7 +62,7 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `Converter` method (a list method for a slice), with a value the row does not hold as a `goverter:map ... | helper`
   or a `goverter:context` argument.
   The input direction is checked too: a struct literal of a module input (a struct named `...Input` of a package
-  under `internal/`) in a handler package (`/site`, `/api`, `/staff`, and the Enterprise `/staff` and `/service` in
+  of the domain or the use case tier, `tier.IsCore`) in a handler package (`/site`, `/api`, `/staff`, and the Enterprise `/staff` and `/service` in
   `ee/api/staff`) is a finding. Add a method to the surface's `Inputs` (`resources/inputs.go`; `ServiceInputs` for the service
   API) and call it; a field the request does not carry (the actor) is a `goverter:ignore` with
   its reason, assigned by the handler after the call, and a value of the request outside the mapped part (a
@@ -111,10 +111,11 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   the change: a call of `RecordAudit` on any other receiver is a finding. Package `events` calls it
   unqualified for the generated wrappers; `ent/` and `gen/` are not read.
 - **Rule 7, a state is moved by a conditional write.** Each state-shaped field in `ent/schema` carries `schema.Machine()`, `schema.Latch()` or `schema.Attribute(reason)`, a `schema.State` (`ent/schema/state.go`, ADR 0109); the generation (`internal/entgen`) fails on a `_at` field, a `status` or `state` enum or a bool without one. It generates the machine and latch fields into `ent/stateform.go`, with the methods of the update and upsert builders that set or clear each (`SetsState_<Type>_<Method>`, `ClearsState_<Type>_<Method>`, the manifest of roles), and the analyzer `statemoment` reads them, never a method's name: a machine field is set or cleared only inside the `Write` of a `lifecycle.Storage{...}` literal, with a `.Where(...)` on the state it leaves (a machine constructor takes the `lifecycle.Storage` from its caller, as `newMachine` of `secondfactors` does), and a latch only inside the closure passed to `lifecycle.Latch`, conditioned on `<Field>IsNil()`, and never cleared. A lost race is `lifecycle.ErrInvalidTransition`, which the caller handles. Creation, the generated `ent` package and test code (the harness included) are not checked.
-- **Rule 10, `testwrites`.** A call to an ent `Create` or `CreateBulk` builder (the raw client, a transaction's client
-  or a scoped wrapper) in a `_test.go` file, `e2e/` included (the lint run sets the `e2e` tag), needs
+- **Rule 10, `testwrites`.** A call that starts a create through ent (`Create`, `CreateBulk`, `MapCreateBulk` of the
+  raw client, a transaction's client or a scoped wrapper: a method the manifest of roles gives the role Start
+  and that returns a create builder) in a `_test.go` file, `e2e/` included (the lint run sets the `e2e` tag), needs
   `// test writes: <why the write is the operation under test>` on the line above its statement or trailing on
-  its line; an empty reason is still a finding, there is no baseline file, and `*_gen_test.go` mocks are skipped.
+  its line; an empty reason is still a finding, there is no baseline file, and generated files (moq's mocks) are skipped.
   What counts as the operation under test is rule 10; any other test takes its rows from `fixtures/`
   (add a row, `internal/AGENTS.md`). The test harness (`internal/testhelper`) is read like a test: a
   helper that creates a row for every test that calls it is setup the fixtures should hold, so it names
@@ -138,7 +139,8 @@ Two kinds of check run in `mise run check`, chosen by what the rule needs (`docs
   `oauth`, `tracking`, `hooks`, `tlsask` and `ee/api`) do not read through ent either: a method whose role
   starts a read (a `Get`, a `Query…` method, the scoped client's `Workspace`) there is a finding, and the read is a function of the
   module that owns the entity; the other entry points may read. Nor does a handler there open a transaction
-  (a `Within…` method of the events bus): the module it calls does. The wiring, the router in
+  (a method of the events bus whose callback is handed the transaction's client or a scope on it, the
+  `Within…` methods): the module it calls does. The wiring, the router in
   `internal/server` included, is no entry point. The helpers the analyzers share about the generated
   package are in `tools/analyzers/entx`, which reads the manifest of roles the generator declares in
   `ent` (what each type is and the entity it belongs to, the role of each method, the state field an
