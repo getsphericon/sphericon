@@ -343,7 +343,7 @@ components:
         cli,
         wiring,
       ]
-    because: a use case is called by a driver (an API surface, MCP, a job, a command) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
+    because: a use case is called by a driver (an API surface, a job, a command; MCP reaches one only through the external API's handler, which it is given) and built by the wiring; no domain module imports one, and no use case imports another (ADR 0102)
 
   # The domain tier (ADR 0102) is internal/domain/<context>/<module>, the contexts ordered from
   # the bottom: identity -> contacts -> content -> sending -> orchestration -> insights -> instance.
