@@ -1,5 +1,4 @@
 using TypeSpec.Http;
-using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
@@ -41,7 +40,6 @@ enum TelemetryIntegrationKind {
  * text, licence key or exact number, and nothing that identifies a Workspace or a person. A new
  * field is a change to this schema and to its documentation in the same commit.
  */
-@extension("additionalProperties", false)
 model TelemetryReport {
   /** The version of this schema the report was built against. */
   @minValue(1)

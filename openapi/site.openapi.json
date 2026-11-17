@@ -3159,31 +3159,31 @@
             }
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.from"
+            "$ref": "#/components/parameters/AuditFilter.from"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.to"
+            "$ref": "#/components/parameters/AuditFilter.to"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.actorKind"
+            "$ref": "#/components/parameters/AuditFilter.actorKind"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.actorId"
+            "$ref": "#/components/parameters/AuditFilter.actorId"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.action"
+            "$ref": "#/components/parameters/AuditFilter.action"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.targetType"
+            "$ref": "#/components/parameters/AuditFilter.targetType"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.targetId"
+            "$ref": "#/components/parameters/AuditFilter.targetId"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.ip"
+            "$ref": "#/components/parameters/AuditFilter.ip"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.requestId"
+            "$ref": "#/components/parameters/AuditFilter.requestId"
           },
           {
             "name": "cursor",
@@ -3216,7 +3216,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SiteAuditEntryList"
+                  "$ref": "#/components/schemas/AuditEntryList"
                 }
               }
             }
@@ -3250,31 +3250,31 @@
             }
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.from"
+            "$ref": "#/components/parameters/AuditFilter.from"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.to"
+            "$ref": "#/components/parameters/AuditFilter.to"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.actorKind"
+            "$ref": "#/components/parameters/AuditFilter.actorKind"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.actorId"
+            "$ref": "#/components/parameters/AuditFilter.actorId"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.action"
+            "$ref": "#/components/parameters/AuditFilter.action"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.targetType"
+            "$ref": "#/components/parameters/AuditFilter.targetType"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.targetId"
+            "$ref": "#/components/parameters/AuditFilter.targetId"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.ip"
+            "$ref": "#/components/parameters/AuditFilter.ip"
           },
           {
-            "$ref": "#/components/parameters/SiteAuditFilter.requestId"
+            "$ref": "#/components/parameters/AuditFilter.requestId"
           }
         ],
         "responses": {
@@ -9813,6 +9813,96 @@
         },
         "explode": false
       },
+      "AuditFilter.action": {
+        "name": "action",
+        "in": "query",
+        "required": false,
+        "description": "Only entries with exactly this action",
+        "schema": {
+          "$ref": "#/components/schemas/AuditAction"
+        },
+        "explode": false
+      },
+      "AuditFilter.actorId": {
+        "name": "actorId",
+        "in": "query",
+        "required": false,
+        "description": "Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "AuditFilter.actorKind": {
+        "name": "actorKind",
+        "in": "query",
+        "required": false,
+        "description": "Only entries by this kind of actor",
+        "schema": {
+          "$ref": "#/components/schemas/AuditActorKind"
+        },
+        "explode": false
+      },
+      "AuditFilter.from": {
+        "name": "from",
+        "in": "query",
+        "required": false,
+        "description": "Only entries at or after this time",
+        "schema": {
+          "$ref": "#/components/schemas/Timestamp"
+        },
+        "explode": false
+      },
+      "AuditFilter.ip": {
+        "name": "ip",
+        "in": "query",
+        "required": false,
+        "description": "Only entries from this client address",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "AuditFilter.requestId": {
+        "name": "requestId",
+        "in": "query",
+        "required": false,
+        "description": "Only entries made under this request id",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "AuditFilter.targetId": {
+        "name": "targetId",
+        "in": "query",
+        "required": false,
+        "description": "Only entries about the target with this id",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "AuditFilter.targetType": {
+        "name": "targetType",
+        "in": "query",
+        "required": false,
+        "description": "Only entries about this target type, e.g. integration",
+        "schema": {
+          "type": "string"
+        },
+        "explode": false
+      },
+      "AuditFilter.to": {
+        "name": "to",
+        "in": "query",
+        "required": false,
+        "description": "Only entries strictly before this time",
+        "schema": {
+          "$ref": "#/components/schemas/Timestamp"
+        },
+        "explode": false
+      },
       "PageQuery.page": {
         "name": "page",
         "in": "query",
@@ -9866,96 +9956,6 @@
         "schema": {
           "$ref": "#/components/schemas/WorkspaceId"
         }
-      },
-      "SiteAuditFilter.action": {
-        "name": "action",
-        "in": "query",
-        "required": false,
-        "description": "Only entries with exactly this action",
-        "schema": {
-          "$ref": "#/components/schemas/AuditAction"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.actorId": {
-        "name": "actorId",
-        "in": "query",
-        "required": false,
-        "description": "Only entries by the actor with this id (a User id or an API token id); ignored for the staff member kind",
-        "schema": {
-          "type": "string"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.actorKind": {
-        "name": "actorKind",
-        "in": "query",
-        "required": false,
-        "description": "Only entries by this kind of actor",
-        "schema": {
-          "$ref": "#/components/schemas/SiteAuditActorKind"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.from": {
-        "name": "from",
-        "in": "query",
-        "required": false,
-        "description": "Only entries at or after this time",
-        "schema": {
-          "$ref": "#/components/schemas/Timestamp"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.ip": {
-        "name": "ip",
-        "in": "query",
-        "required": false,
-        "description": "Only entries from this client address",
-        "schema": {
-          "type": "string"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.requestId": {
-        "name": "requestId",
-        "in": "query",
-        "required": false,
-        "description": "Only entries made under this request id",
-        "schema": {
-          "type": "string"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.targetId": {
-        "name": "targetId",
-        "in": "query",
-        "required": false,
-        "description": "Only entries about the target with this id",
-        "schema": {
-          "type": "string"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.targetType": {
-        "name": "targetType",
-        "in": "query",
-        "required": false,
-        "description": "Only entries about this target type, e.g. integration",
-        "schema": {
-          "type": "string"
-        },
-        "explode": false
-      },
-      "SiteAuditFilter.to": {
-        "name": "to",
-        "in": "query",
-        "required": false,
-        "description": "Only entries strictly before this time",
-        "schema": {
-          "$ref": "#/components/schemas/Timestamp"
-        },
-        "explode": false
       },
       "SiteAutomationResourceKey.id": {
         "name": "id",
@@ -10099,7 +10099,7 @@
         "schema": {
           "type": "array",
           "items": {
-            "$ref": "#/components/schemas/SiteBroadcastStatus"
+            "$ref": "#/components/schemas/BroadcastStatus"
           }
         }
       },
@@ -10541,6 +10541,35 @@
       }
     },
     "schemas": {
+      "AbuseMetric": {
+        "type": "string",
+        "enum": ["complaint", "bounce"],
+        "description": "The metric of a Sending domain that is over a warning limit of the abuse detector"
+      },
+      "AbuseWarning": {
+        "type": "object",
+        "required": ["domain", "metric", "rate"],
+        "properties": {
+          "domain": {
+            "type": "string",
+            "description": "The Sending domain over the limit"
+          },
+          "metric": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AbuseMetric"
+              }
+            ],
+            "description": "Which rate is over"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "description": "The rate, 0–1"
+          }
+        },
+        "description": "A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is\nover the warning limit but under the freeze limit. Computed live from the trailing\n24 hours since any clearance, never stored."
+      },
       "ApiTokenScope": {
         "type": "string",
         "enum": [
@@ -10703,6 +10732,147 @@
         ],
         "description": "What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its\nown, or the create, update or delete of an audited object"
       },
+      "AuditActor": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditActorKind"
+              }
+            ],
+            "description": "The kind of actor; a staff member is shown to the customer as \"Sphericon staff\""
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The actor's id (a User id or an API token id); absent for the system"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Display name snapshot taken when the entry was written"
+          }
+        },
+        "description": "The actor of an Audit entry"
+      },
+      "AuditActorKind": {
+        "type": "string",
+        "enum": ["user", "api_token", "staff", "system"],
+        "description": "Who performed an audited change"
+      },
+      "AuditEntryList": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEntryResource"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `cursor` for the next page; absent on the last page"
+          }
+        },
+        "description": "A page of Audit entries, newest first"
+      },
+      "AuditEntryResource": {
+        "type": "object",
+        "required": ["id", "occurredAt", "actor", "action", "target"],
+        "properties": {
+          "id": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            ],
+            "description": "Unique identifier"
+          },
+          "occurredAt": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Timestamp"
+              }
+            ],
+            "description": "When the change happened"
+          },
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditActor"
+              }
+            ],
+            "description": "Who did it"
+          },
+          "action": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditAction"
+              }
+            ],
+            "description": "What was done"
+          },
+          "target": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditTarget"
+              }
+            ],
+            "description": "What it was done to"
+          },
+          "diff": {
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/JsonObject"
+              }
+            ],
+            "nullable": true,
+            "description": "Before/after of the changed fields; secrets appear as changed only"
+          },
+          "requestId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Request id of the change"
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client address of the change"
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true,
+            "description": "Client user agent of the change"
+          }
+        },
+        "description": "One immutable Audit entry (Enterprise)"
+      },
+      "AuditTarget": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Entity type, e.g. membership"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The target's id"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Name snapshot taken when the entry was written; absent for a Contact"
+          }
+        },
+        "description": "What an audited change was done to"
+      },
       "BroadcastChannel": {
         "type": "string",
         "enum": ["email", "telegram", "sms"],
@@ -10753,6 +10923,11 @@
           }
         },
         "description": "What a Broadcast says, in the shape of its Channel, discriminated by `channel` (ADR 0078)"
+      },
+      "BroadcastStatus": {
+        "type": "string",
+        "enum": ["draft", "scheduled", "sending", "sent", "failed"],
+        "description": "Broadcast lifecycle status"
       },
       "ConfirmationProvenance": {
         "type": "string",
@@ -12329,6 +12504,29 @@
         },
         "description": "RFC 7807 Problem Details"
       },
+      "RateTriple": {
+        "type": "object",
+        "required": ["numerator", "denominator", "rate"],
+        "properties": {
+          "numerator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Events counted against the rate"
+          },
+          "denominator": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The population the rate is over"
+          },
+          "rate": {
+            "type": "number",
+            "format": "double",
+            "nullable": true,
+            "description": "numerator / denominator, null when the denominator is zero, never reported as 0"
+          }
+        },
+        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no\ndisplay floor: the rate is null only when the denominator is zero, an undefined rate never\nbeing reported as 0."
+      },
       "RegionalFormat": {
         "type": "string",
         "maxLength": 35,
@@ -12479,6 +12677,16 @@
           }
         ]
       },
+      "SignupCompanySize": {
+        "type": "string",
+        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
+        "description": "How many people work at the User's company (second question)"
+      },
+      "SignupGoal": {
+        "type": "string",
+        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
+        "description": "What the User mainly wants to do with the product (third question)"
+      },
       "SignupItemKey": {
         "type": "string",
         "minLength": 1,
@@ -12497,34 +12705,15 @@
         "maxLength": 200,
         "description": "A Sign-up item's title: what the sign-up form shows"
       },
-      "SiteAbuseMetric": {
+      "SignupRole": {
         "type": "string",
-        "enum": ["complaint", "bounce"],
-        "description": "The metric of a Sending domain that is over a warning limit of the abuse detector"
+        "enum": ["founder", "marketer", "developer", "product", "other"],
+        "description": "What the User does (Sign-up survey, first question)"
       },
-      "SiteAbuseWarning": {
-        "type": "object",
-        "required": ["domain", "metric", "rate"],
-        "properties": {
-          "domain": {
-            "type": "string",
-            "description": "The Sending domain over the limit"
-          },
-          "metric": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteAbuseMetric"
-              }
-            ],
-            "description": "Which rate is over"
-          },
-          "rate": {
-            "type": "number",
-            "format": "double",
-            "description": "The rate, 0–1"
-          }
-        },
-        "description": "A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is\nover the warning limit but under the freeze limit. Computed live from the trailing\n24 hours since any clearance, never stored."
+      "SignupSource": {
+        "type": "string",
+        "enum": ["search", "github", "social", "recommendation", "other"],
+        "description": "Where the User heard about the product (fourth question, optional)"
       },
       "SiteAcceptInvitationInput": {
         "type": "object",
@@ -13302,7 +13491,7 @@
             "type": "object",
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteAbuseWarning"
+                "$ref": "#/components/schemas/AbuseWarning"
               }
             ],
             "nullable": true,
@@ -13380,126 +13569,6 @@
         },
         "description": "The object a Needs attention item is about"
       },
-      "SiteAuditActor": {
-        "type": "object",
-        "required": ["kind"],
-        "properties": {
-          "kind": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteAuditActorKind"
-              }
-            ],
-            "description": "The kind of actor; a staff member is shown to the customer as \"Sphericon staff\""
-          },
-          "id": {
-            "type": "string",
-            "nullable": true,
-            "description": "The actor's id (a User id or an API token id); absent for the system"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true,
-            "description": "Display name snapshot taken when the entry was written"
-          }
-        },
-        "description": "The actor of an Audit entry"
-      },
-      "SiteAuditActorKind": {
-        "type": "string",
-        "enum": ["user", "api_token", "staff", "system"],
-        "description": "Who performed an audited change"
-      },
-      "SiteAuditEntryList": {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SiteAuditEntryResource"
-            }
-          },
-          "nextCursor": {
-            "type": "string",
-            "nullable": true,
-            "description": "Pass as `cursor` for the next page; absent on the last page"
-          }
-        },
-        "description": "A page of Audit entries, newest first"
-      },
-      "SiteAuditEntryResource": {
-        "type": "object",
-        "required": ["id", "occurredAt", "actor", "action", "target"],
-        "properties": {
-          "id": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/EntityId"
-              }
-            ],
-            "description": "Unique identifier"
-          },
-          "occurredAt": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/Timestamp"
-              }
-            ],
-            "description": "When the change happened"
-          },
-          "actor": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteAuditActor"
-              }
-            ],
-            "description": "Who did it"
-          },
-          "action": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/AuditAction"
-              }
-            ],
-            "description": "What was done"
-          },
-          "target": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/SiteAuditTarget"
-              }
-            ],
-            "description": "What it was done to"
-          },
-          "diff": {
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/JsonObject"
-              }
-            ],
-            "nullable": true,
-            "description": "Before/after of the changed fields; secrets appear as changed only"
-          },
-          "requestId": {
-            "type": "string",
-            "nullable": true,
-            "description": "Request id of the change"
-          },
-          "ip": {
-            "type": "string",
-            "nullable": true,
-            "description": "Client address of the change"
-          },
-          "userAgent": {
-            "type": "string",
-            "nullable": true,
-            "description": "Client user agent of the change"
-          }
-        },
-        "description": "One immutable Audit entry (Enterprise)"
-      },
       "SiteAuditFacets": {
         "type": "object",
         "required": ["actors", "actions", "targetTypes"],
@@ -13507,7 +13576,7 @@
           "actors": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/SiteAuditActor"
+              "$ref": "#/components/schemas/AuditActor"
             },
             "description": "Every actor with an entry in the log, by kind, then name, then id; one id-less staff member stands for the platform staff, and each actor carries its latest name snapshot"
           },
@@ -13578,27 +13647,6 @@
         },
         "description": "How long the Audit log is kept; the Enterprise advanced-retention control",
         "additionalProperties": false
-      },
-      "SiteAuditTarget": {
-        "type": "object",
-        "required": ["type"],
-        "properties": {
-          "type": {
-            "type": "string",
-            "description": "Entity type, e.g. membership"
-          },
-          "id": {
-            "type": "string",
-            "nullable": true,
-            "description": "The target's id"
-          },
-          "name": {
-            "type": "string",
-            "nullable": true,
-            "description": "Name snapshot taken when the entry was written; absent for a Contact"
-          }
-        },
-        "description": "What an audited change was done to"
       },
       "SiteAutomationHttpErrorKind": {
         "type": "string",
@@ -14527,7 +14575,7 @@
           "status": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteBroadcastStatus"
+                "$ref": "#/components/schemas/BroadcastStatus"
               }
             ],
             "description": "Lifecycle status"
@@ -14770,11 +14818,6 @@
           }
         },
         "description": "Delivery figures of a broadcast, derived from its recipients and their messages, per Channel\n(ADR 0080): every Channel reports recipients, sent, skipped, failed, pending, clicked and\nunsubscribed. A figure the broadcast's Channel does not report is null, never zero: Telegram\nreports no delivered, opened, bounced or complained count and so no delivery or open rate; SMS\nreports delivered and undelivered, and no opened, bounced or complained count, delivery or open\nrate; only SMS reports undelivered."
-      },
-      "SiteBroadcastStatus": {
-        "type": "string",
-        "enum": ["draft", "scheduled", "sending", "sent", "failed"],
-        "description": "Broadcast lifecycle status"
       },
       "SiteBroadcastsOrder": {
         "type": "string",
@@ -18142,29 +18185,6 @@
         ],
         "description": "A reason to look at an Integration's Provider limit"
       },
-      "SiteRate": {
-        "type": "object",
-        "required": ["numerator", "denominator", "rate"],
-        "properties": {
-          "numerator": {
-            "type": "integer",
-            "format": "int32",
-            "description": "Events counted against the rate"
-          },
-          "denominator": {
-            "type": "integer",
-            "format": "int32",
-            "description": "The population the rate is over"
-          },
-          "rate": {
-            "type": "number",
-            "format": "double",
-            "nullable": true,
-            "description": "numerator / denominator, null when the denominator is zero, never reported as 0"
-          }
-        },
-        "description": "A rate as the (numerator, denominator, rate) triple (ADR 0011). The core shows it as it is,\nwith no display floor: the rate is null only when the denominator is zero."
-      },
       "SiteRecoveryCodes": {
         "type": "object",
         "required": ["codes"],
@@ -18969,7 +18989,7 @@
           "complaintRate": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteRate"
+                "$ref": "#/components/schemas/RateTriple"
               }
             ],
             "description": "Complaints over delivered mail; the rate is null when nothing was delivered in the window"
@@ -18977,7 +18997,7 @@
           "bounceRate": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteRate"
+                "$ref": "#/components/schemas/RateTriple"
               }
             ],
             "description": "Hard bounces over sent"
@@ -19347,16 +19367,6 @@
         },
         "description": "The Sign-in providers this Instance has configured. Empty on an Instance that\nconfigured none, which leaves the login and sign-up pages as they are."
       },
-      "SiteSignupCompanySize": {
-        "type": "string",
-        "enum": ["1", "2_10", "11_50", "51_200", "201_1000", "1000_plus", "other"],
-        "description": "How many people work at the User's company (second question)"
-      },
-      "SiteSignupGoal": {
-        "type": "string",
-        "enum": ["broadcasts", "automations", "tracking", "migrating", "other"],
-        "description": "What the User mainly wants to do with the product (third question)"
-      },
       "SiteSignupItem": {
         "type": "object",
         "required": ["key", "title", "kind", "version"],
@@ -19418,16 +19428,6 @@
         },
         "description": "The Sign-up items in effect, in the order of the sign-up form"
       },
-      "SiteSignupRole": {
-        "type": "string",
-        "enum": ["founder", "marketer", "developer", "product", "other"],
-        "description": "What the User does (Sign-up survey, first question)"
-      },
-      "SiteSignupSource": {
-        "type": "string",
-        "enum": ["search", "github", "social", "recommendation", "other"],
-        "description": "Where the User heard about the product (fourth question, optional)"
-      },
       "SiteSignupSurveyInput": {
         "type": "object",
         "required": ["role", "companySize", "mainGoal"],
@@ -19435,7 +19435,7 @@
           "role": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSignupRole"
+                "$ref": "#/components/schemas/SignupRole"
               }
             ],
             "description": "What the User does"
@@ -19448,7 +19448,7 @@
           "companySize": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSignupCompanySize"
+                "$ref": "#/components/schemas/SignupCompanySize"
               }
             ],
             "description": "How many people work at the User's company"
@@ -19461,7 +19461,7 @@
           "mainGoal": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSignupGoal"
+                "$ref": "#/components/schemas/SignupGoal"
               }
             ],
             "description": "What the User mainly wants to do with the product"
@@ -19474,7 +19474,7 @@
           "heardFrom": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/SiteSignupSource"
+                "$ref": "#/components/schemas/SignupSource"
               }
             ],
             "description": "Where the User heard about the product"
@@ -20786,7 +20786,7 @@
                 "$ref": "#/components/schemas/Revision"
               }
             ],
-            "description": "The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. Its bookkeeping (the service feed's position, the abuse detector's notices, the Setup checklist's completion) does not move it"
+            "description": "The revision of the Workspace this answer shows (ADR 0119): a change of its settings names it. What the service keeps about it for itself (the service feed's position, the abuse detector's notices, the Setup checklist's completion) lives beside it (ADR 0168) and does not move it"
           }
         },
         "description": "Workspace the current user belongs to"

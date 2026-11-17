@@ -207,9 +207,9 @@ func TestAWriteUnderACredentialIsAttributedToItsNameInTheAuditLog(t *testing.T) 
 	res, err := h.env.SiteActor(t, fixtures.OwnerJohnEmail).SiteAuditList(t.Context(), siteapi.SiteAuditListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	customerPage := res
-	attributed := lo.Filter(customerPage.Items, func(e siteapi.SiteAuditEntryResource, _ int) bool { return e.Target.Name.Value == "attributed-tag" })
+	attributed := lo.Filter(customerPage.Items, func(e siteapi.AuditEntryResource, _ int) bool { return e.Target.Name.Value == "attributed-tag" })
 	for _, e := range attributed {
-		assert.Equal(t, siteapi.SiteAuditActorKindStaff, e.Actor.Kind)
+		assert.Equal(t, siteapi.AuditActorKindStaff, e.Actor.Kind)
 		assert.Equal(t, events.StaffLabel, e.Actor.Name.Value)
 		assert.False(t, e.Actor.ID.IsSet() && e.Actor.ID.Value != "")
 	}

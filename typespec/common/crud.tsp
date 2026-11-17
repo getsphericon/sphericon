@@ -68,14 +68,17 @@ interface WorkspaceCrudKept<
  * Workspace-scoped CRUD of a resource that is archived instead of deleted (ADR 0100): no
  * delete, an `archived` list filter, and `archive` / `unarchive` operations. Archive is
  * refused with 409 while live work uses the resource, and an update of an archived resource
- * with 409 until it is unarchived.
+ * with 409 until it is unarchived. A `ListFilter` of more filters declares `archived` itself:
+ * a query parameter is named in the OpenAPI after the model that declares it, so a filter that
+ * spread `ArchivedFilter` would share its parameter and its doc.
  */
 interface WorkspaceCrudArchivable<
   Resource extends {},
   CreateInput,
   UpdateInput,
   ReadPermissions extends valueof Permission[],
-  WritePermissions extends valueof Permission[]
+  WritePermissions extends valueof Permission[],
+  ListFilter extends ArchivedFilter = ArchivedFilter
 >
   extends WorkspaceCrudKept<
       Resource,
@@ -83,7 +86,7 @@ interface WorkspaceCrudArchivable<
       UpdateInput,
       ReadPermissions,
       WritePermissions,
-      ArchivedFilter
+      ListFilter
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")
@@ -185,13 +188,15 @@ interface ExternalCrudKept<
 
 /** Flat external CRUD of a resource that is archived instead of deleted (ADR 0100).
  * Archiving and restoring need `WriteScope`; an update of an archived resource is refused with
- * 409 until it is unarchived. */
+ * 409 until it is unarchived. A `ListFilter` declares `archived` itself, as in
+ * WorkspaceCrudArchivable. */
 interface ExternalCrudArchivable<
   Resource extends {},
   CreateInput,
   UpdateInput,
   ReadScope extends valueof ApiTokenScope,
-  WriteScope extends valueof ApiTokenScope
+  WriteScope extends valueof ApiTokenScope,
+  ListFilter extends ArchivedFilter = ArchivedFilter
 >
   extends ExternalCrudKept<
       Resource,
@@ -199,7 +204,7 @@ interface ExternalCrudArchivable<
       UpdateInput,
       ReadScope,
       WriteScope,
-      ArchivedFilter
+      ListFilter
     > {
   /** Archive a resource: it leaves the list and new work, keeps its history, and can be restored. Refused with 409 while live work uses it. */
   @action("archive")

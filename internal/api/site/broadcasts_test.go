@@ -31,7 +31,7 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	res := created
 	assert.Equal(t, "Spring sale", res.Name)
 	assert.Equal(t, "Big news", testhelper.SiteEmailOf(res).Subject)
-	assert.Equal(t, siteapi.SiteBroadcastStatusDraft, res.Status)
+	assert.Equal(t, siteapi.BroadcastStatusDraft, res.Status)
 	assert.Equal(t, int32(0), res.Stats.RecipientsTotal)
 
 	// Fetch the created broadcast back by id (selection by key).
@@ -55,14 +55,14 @@ func TestSiteBroadcastsCRUD(t *testing.T) {
 	}, siteapi.SiteBroadcastsScheduleParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	schedRes := sched
-	assert.Equal(t, siteapi.SiteBroadcastStatusScheduled, schedRes.Status)
+	assert.Equal(t, siteapi.BroadcastStatusScheduled, schedRes.Status)
 	assert.True(t, schedRes.ScheduledAt.Set)
 
 	// Send moves it into the sending state.
 	sent, err := c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	sentRes := sent
-	assert.Equal(t, siteapi.SiteBroadcastStatusSending, sentRes.Status)
+	assert.Equal(t, siteapi.BroadcastStatusSending, sentRes.Status)
 
 	// Sending an already-sending broadcast is rejected with 422.
 	_, err = c.SiteBroadcastsSend(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.BroadcastRevision(ctx, t, int64(res.ID)))}, siteapi.SiteBroadcastsSendParams{WorkspaceId: workspaceID, ID: res.ID})

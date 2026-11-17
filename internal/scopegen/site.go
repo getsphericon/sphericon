@@ -23,8 +23,14 @@ const (
 
 // SitePermissions is the /site operation-to-access map (ADR 0061). An operation whose path has a
 // workspaceId declares the Permissions it needs (an empty list: any member); one without
-// declares none and is not marked as allowed while withheld. Any operation may be marked as
-// allowed while an acceptance is pending.
+// declares none. Any operation may be marked as allowed while an acceptance is pending, and an
+// operation of a Workspace as allowed while withheld.
+//
+// `tsp compile` refuses a missing or misplaced declaration first (`@everyOperationDeclares`,
+// typespec/lib). The row keeps the two checks whose absence would open an operation, as the last
+// guard on the document: a Workspace's operation without Permissions would admit any member, and
+// Permissions on an operation of no Workspace would go unenforced. A withheld mark there is left
+// out of the row, which the Two-factor requirement does not apply to anyway.
 var SitePermissions = Table{
 	Spec:    siteSpec,
 	Out:     "internal/api/site/access_gen.go",
@@ -63,9 +69,6 @@ func siteAccess(op Operation) (string, error) {
 	if !op.HasPathParam(workspaceParam) {
 		if declared {
 			return "", fmt.Errorf("%s declares %s but has no %s in its path: only an operation of a Workspace declares Permissions", op, permissionsExtension, workspaceParam)
-		}
-		if withheld {
-			return "", fmt.Errorf("%s declares %s but has no %s in its path: only an operation of a Workspace is withheld", op, withheldExtension, workspaceParam)
 		}
 	} else {
 		if !declared {

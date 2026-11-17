@@ -205,10 +205,10 @@ func TestJoinDomainsDomainMovesWhenTheHoldersRecordIsGone(t *testing.T) {
 
 	handedOver := entriesNamed(t, env, fixtures.OwnerJohnEmail, fixtures.AcmePublicID, "join_domain.update")
 	require.NotEmpty(t, handedOver)
-	assert.Equal(t, siteapi.SiteAuditActorKindSystem, handedOver[0].Actor.Kind, "the move is recorded under the system actor")
+	assert.Equal(t, siteapi.AuditActorKindSystem, handedOver[0].Actor.Kind, "the move is recorded under the system actor")
 	gained := entriesNamed(t, env, fixtures.OwnerJaneEmail, fixtures.GlobexPublicID, "join_domain.update")
 	require.NotEmpty(t, gained)
-	assert.Equal(t, siteapi.SiteAuditActorKindUser, gained[0].Actor.Kind)
+	assert.Equal(t, siteapi.AuditActorKindUser, gained[0].Actor.Kind)
 
 	msgs := env.SystemMail.Messages()
 	require.Len(t, msgs, 1, "the previous Owners are told, and only they")

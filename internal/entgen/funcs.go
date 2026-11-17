@@ -101,7 +101,6 @@ func (s *Schema) Funcs() template.FuncMap {
 		"discardClears": func(n *gen.Type) []*gen.Field {
 			return s.fieldsOf(n, func(a *fieldAnnotations) bool { return a.givenUp })
 		},
-		"bookkeeping": s.bookkeeping,
 		// scopedFieldRefs lists the annotated plain fields of n that hold a reference.
 		"scopedFieldRefs": func(n *gen.Type) []ScopedRef { return s.entities[n].refs },
 		"scopedRefTarget": s.scopedRefTarget,
@@ -233,19 +232,6 @@ func (s *Schema) stateForm(f *gen.Field) string {
 		return ""
 	}
 	return string(st.Form)
-}
-
-// bookkeeping lists the columns of n that schema.Bookkeeping marks (ADR 0119).
-func (s *Schema) bookkeeping(n *gen.Type) []string {
-	kept := s.fieldsOf(n, func(a *fieldAnnotations) bool { return a.bookkeeping })
-	if len(kept) == 0 {
-		return nil
-	}
-	out := make([]string, 0, len(kept))
-	for _, f := range kept {
-		out = append(out, f.StorageKey())
-	}
-	return out
 }
 
 // scopedRefTarget returns the Workspace-owned entity a field references (an edge field or an

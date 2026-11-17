@@ -63,7 +63,7 @@ type Invoker interface {
 	// Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/exempt
-	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffExemptionChange, error)
+	StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffWorkspaceChange, error)
 	// StaffWorkspacesGet invokes StaffWorkspaces_get operation.
 	//
 	// One Workspace's metadata, suspension state, rates and send volume.
@@ -90,20 +90,20 @@ type Invoker interface {
 	// member. Idempotent: an already-suspended Workspace is left as it was.
 	//
 	// POST /workspaces/{workspaceId}/suspend
-	StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffSuspensionChange, error)
+	StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffWorkspaceChange, error)
 	// StaffWorkspacesUnexempt invokes StaffWorkspaces_unexempt operation.
 	//
 	// Police a Workspace by the abuse detector again. Audited. Idempotent.
 	//
 	// POST /workspaces/{workspaceId}/unexempt
-	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffExemptionChange, error)
+	StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffWorkspaceChange, error)
 	// StaffWorkspacesUnsuspend invokes StaffWorkspaces_unsuspend operation.
 	//
 	// Lift a Workspace's suspension; held sends resume. Idempotent: a Workspace that is not suspended is
 	// left as it was.
 	//
 	// POST /workspaces/{workspaceId}/unsuspend
-	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffSuspensionChange, error)
+	StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffWorkspaceChange, error)
 }
 
 // Client implements OAS client.
@@ -711,12 +711,12 @@ func (c *Client) sendStaffWorkspacesClearSendCap(ctx context.Context, params Sta
 // Idempotent.
 //
 // POST /workspaces/{workspaceId}/exempt
-func (c *Client) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffExemptionChange, error) {
+func (c *Client) StaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (*StaffWorkspaceChange, error) {
 	res, err := c.sendStaffWorkspacesExempt(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (res *StaffExemptionChange, err error) {
+func (c *Client) sendStaffWorkspacesExempt(ctx context.Context, params StaffWorkspacesExemptParams) (res *StaffWorkspaceChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_exempt"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1306,12 +1306,12 @@ func (c *Client) sendStaffWorkspacesSetSendCap(ctx context.Context, request *Sta
 // member. Idempotent: an already-suspended Workspace is left as it was.
 //
 // POST /workspaces/{workspaceId}/suspend
-func (c *Client) StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffSuspensionChange, error) {
+func (c *Client) StaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (*StaffWorkspaceChange, error) {
 	res, err := c.sendStaffWorkspacesSuspend(ctx, request, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (res *StaffSuspensionChange, err error) {
+func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffSuspendInput, params StaffWorkspacesSuspendParams) (res *StaffWorkspaceChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_suspend"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1444,12 +1444,12 @@ func (c *Client) sendStaffWorkspacesSuspend(ctx context.Context, request *StaffS
 // Police a Workspace by the abuse detector again. Audited. Idempotent.
 //
 // POST /workspaces/{workspaceId}/unexempt
-func (c *Client) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffExemptionChange, error) {
+func (c *Client) StaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (*StaffWorkspaceChange, error) {
 	res, err := c.sendStaffWorkspacesUnexempt(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (res *StaffExemptionChange, err error) {
+func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWorkspacesUnexemptParams) (res *StaffWorkspaceChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_unexempt"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -1580,12 +1580,12 @@ func (c *Client) sendStaffWorkspacesUnexempt(ctx context.Context, params StaffWo
 // left as it was.
 //
 // POST /workspaces/{workspaceId}/unsuspend
-func (c *Client) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffSuspensionChange, error) {
+func (c *Client) StaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (*StaffWorkspaceChange, error) {
 	res, err := c.sendStaffWorkspacesUnsuspend(ctx, params)
 	return res, err
 }
 
-func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (res *StaffSuspensionChange, err error) {
+func (c *Client) sendStaffWorkspacesUnsuspend(ctx context.Context, params StaffWorkspacesUnsuspendParams) (res *StaffWorkspaceChange, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("StaffWorkspaces_unsuspend"),
 		semconv.HTTPRequestMethodKey.String("POST"),

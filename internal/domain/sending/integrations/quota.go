@@ -13,6 +13,9 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
+	"github.com/getsphericon/sphericon/ent/predicate"
+	"github.com/getsphericon/sphericon/internal/domain/sending/providerlimit"
 	"github.com/getsphericon/sphericon/internal/infra/messaging"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/lifecycle"
@@ -29,16 +32,26 @@ const quotaTimeout = 15 * time.Second
 // SES reports a quota; SMTP has none. A deleted Integration is not kept working (ADR 0099): nobody
 // sends with its credential. The read crosses Workspaces, so it takes the job's raw client.
 func DueForQuotaRefresh(ctx context.Context, client *ent.Client, limit int) ([]*ent.Integration, error) {
-	return client.Integration.Query().
-		Where(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil()).
-		Order(integration.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst())).
+	// The moment of the last check is the Integration's provider state (ADR 0168): the read orders
+	// the states and names each one's Integration.
+	states, err := client.IntegrationProviderState.Query().
+		Where(integrationproviderstate.HasIntegrationWith(integration.ProviderEQ(providers.SES), integration.DiscardedAtIsNil())).
+		Order(integrationproviderstate.ByProviderQuotaCheckedAt(sql.OrderAsc(), sql.OrderNullsFirst()), integrationproviderstate.ByID()).
 		Limit(limit).
-		Select(integration.FieldID, integration.FieldWorkspaceID).
+		Select(integrationproviderstate.FieldIntegrationID, integrationproviderstate.FieldWorkspaceID).
 		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*ent.Integration, len(states))
+	for i, s := range states {
+		out[i] = &ent.Integration{ID: s.IntegrationID, WorkspaceID: s.WorkspaceID}
+	}
+	return out, nil
 }
 
 // RefreshQuota asks the Integration's provider for its send quota and the account's
-// standing and stores the answer on the Integration's row (ADR 0067): providerlimit.EffectiveOf
+// standing and stores the answer beside the Integration, in its provider state (ADR 0067, ADR 0168): providerlimit.EffectiveOf
 // folds the quota into the ceiling by the minimum rule, and a stopped account holds the
 // Integration's sends. It runs after the Integration is saved and hourly from the periodic job,
 // because SES quotas grow as an account matures and an account is stopped and resumed without
@@ -94,7 +107,7 @@ func (m *Module) quotaReader(integ *ent.Integration) (reader messaging.QuotaRead
 // checked, and the moment the lookup first failed, which a second failure keeps. The last known
 // provider values and standing stay.
 func recordQuotaUnavailable(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
-	if err := s.Integration().UpdateOneID(id).SetProviderQuotaCheckedAt(at).Exec(ctx); err != nil {
+	if err := wroteState(stateOf(s, id).SetProviderQuotaCheckedAt(at).Save(ctx)); err != nil {
 		return err
 	}
 	return markQuotaFailed(ctx, s, id, at)
@@ -103,7 +116,7 @@ func recordQuotaUnavailable(ctx context.Context, s *ent.Scoped, id int64, at tim
 // recordQuota stores the quota and standing the provider reported for the Integration id, with
 // the moment it was checked, and ends a recorded failure.
 func recordQuota(ctx context.Context, s *ent.Scoped, id int64, quota messaging.Quota, at time.Time) error {
-	upd := s.Integration().UpdateOneID(id).SetProviderQuotaCheckedAt(at)
+	upd := stateOf(s, id).SetProviderQuotaCheckedAt(at)
 	upd.SetNillableProviderMaxPerSecond(quota.PerSecond).
 		SetNillableProviderMaxPerDay(quota.PerDay)
 	if quota.PerSecond == nil {
@@ -118,7 +131,7 @@ func recordQuota(ctx context.Context, s *ent.Scoped, id int64, quota messaging.Q
 		upd.SetProviderEnforcement(quota.Enforcement)
 	}
 	upd.SetProviderSandbox(quota.Sandbox)
-	if err := upd.Exec(ctx); err != nil {
+	if err := wroteState(upd.Save(ctx)); err != nil {
 		return err
 	}
 	return clearQuotaFailed(ctx, s, id)
@@ -127,8 +140,8 @@ func recordQuota(ctx context.Context, s *ent.Scoped, id int64, quota messaging.Q
 // markQuotaFailed records the moment the lookup first failed: it writes only while no failure is
 // recorded, so a second failed lookup keeps the first moment.
 func markQuotaFailed(ctx context.Context, s *ent.Scoped, id int64, at time.Time) error {
-	_, err := s.Integration().Update().
-		Where(integration.ID(id), integration.ProviderQuotaFailedAtIsNil()).
+	_, err := stateOf(s, id).
+		Where(integrationproviderstate.ProviderQuotaFailedAtIsNil()).
 		SetProviderQuotaFailedAt(at).
 		Save(ctx)
 	return err
@@ -136,24 +149,37 @@ func markQuotaFailed(ctx context.Context, s *ent.Scoped, id int64, at time.Time)
 
 // clearQuotaFailed ends a failure after a successful lookup; it writes only while one is recorded.
 func clearQuotaFailed(ctx context.Context, s *ent.Scoped, id int64) error {
-	_, err := s.Integration().Update().
-		Where(integration.ID(id), integration.ProviderQuotaFailedAtNotNil()).
+	_, err := stateOf(s, id).
+		Where(integrationproviderstate.ProviderQuotaFailedAtNotNil()).
 		ClearProviderQuotaFailedAt().
 		Save(ctx)
 	return err
 }
 
+// stateOf is the update of the provider state of the Integration id (ADR 0168).
+func stateOf(s *ent.Scoped, id int64) *ent.IntegrationProviderStateScopedUpdate {
+	return s.IntegrationProviderState().Update().Where(integrationproviderstate.IntegrationID(id))
+}
+
+// wroteState is the error of an unconditional write of one Integration's provider state: one that
+// found no row is one, since every Integration has its row.
+func wroteState(n int, err error) error {
+	if err == nil && n != 1 {
+		return fmt.Errorf("integrations: the write of a provider state found %d rows, not 1", n)
+	}
+	return err
+}
+
 // RecordRefused stores, at, that the provider refused the credentials integ was read with
-// (ProviderRefusedAt), which holds the Integration's Send route: Outbound send records it. The
+// (provider_refused_at), which holds the Integration's Send route: Outbound send records it. The
 // refusal is of those credentials only: one that lands after a save replaced them, or after another
 // send recorded it, changes nothing.
 func RecordRefused(ctx context.Context, s *ent.Scoped, integ *ent.Integration, at time.Time) error {
 	err := refusalMachine(lifecycle.Storage[refusal]{
 		Read: func(context.Context) (refusal, error) { return refusalOf(integ), nil },
 		Write: func(ctx context.Context, _, _ refusal) (bool, error) {
-			n, err := s.Integration().Update().
-				Where(integration.ID(integ.ID), integration.ConfigEncrypted(integ.ConfigEncrypted),
-					integration.ProviderRefusedAtIsNil()).
+			n, err := stateOf(s, integ.ID).
+				Where(append(judged(integ), integrationproviderstate.ProviderRefusedAtIsNil())...).
 				SetProviderRefusedAt(at).
 				Save(ctx)
 			return n == 1, err
@@ -172,14 +198,32 @@ func renewCredentials(ctx context.Context, s *ent.Scoped, saved *ent.Integration
 	return refusalMachine(lifecycle.Storage[refusal]{
 		Read: func(context.Context) (refusal, error) { return refusalOf(saved), nil },
 		Write: func(ctx context.Context, _, _ refusal) (bool, error) {
-			n, err := s.Integration().Update().
-				Where(integration.ID(saved.ID), integration.ConfigEncrypted(saved.ConfigEncrypted),
-					integration.ProviderRefusedAtNotNil()).
+			n, err := stateOf(s, saved.ID).
+				Where(heldWith(saved), integrationproviderstate.ProviderRefusedAtNotNil()).
 				ClearProviderRefusedAt().
 				Save(ctx)
 			return n == 1, err
 		},
 	}).FireCtx(ctx, triggerRenew)
+}
+
+// judged matches the provider state of integ as the send that the provider refused read it: still
+// in the moment it was read in, and of an Integration that still holds the credentials it was read
+// with. A save of new credentials writes the state in its transaction (renewState), so a refusal of
+// the credentials it replaced misses, whether the save committed before it or waits for it on the
+// state's row. So does a refusal that lands after any other write of the state: the next send
+// refused records it.
+func judged(integ *ent.Integration) []predicate.IntegrationProviderState {
+	return []predicate.IntegrationProviderState{
+		integrationproviderstate.UpdatedAtEQ(providerlimit.StateOf(integ).UpdatedAt),
+		heldWith(integ),
+	}
+}
+
+// heldWith matches the provider state of an Integration that still holds the credentials integ was
+// read with.
+func heldWith(integ *ent.Integration) predicate.IntegrationProviderState {
+	return integrationproviderstate.HasIntegrationWith(integration.ConfigEncrypted(integ.ConfigEncrypted))
 }
 
 // refusal is the provider's standing of an Integration's credentials, kept as provider_refused_at:
@@ -203,7 +247,7 @@ const (
 )
 
 func refusalOf(integ *ent.Integration) refusal {
-	if integ.ProviderRefusedAt != nil {
+	if providerlimit.Refused(integ) != nil {
 		return refusalRefused
 	}
 	return refusalAccepted

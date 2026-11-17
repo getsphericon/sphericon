@@ -35,6 +35,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/hold"
 	"github.com/getsphericon/sphericon/ent/identitysecret"
 	"github.com/getsphericon/sphericon/ent/integration"
+	"github.com/getsphericon/sphericon/ent/integrationproviderstate"
 	"github.com/getsphericon/sphericon/ent/invitation"
 	"github.com/getsphericon/sphericon/ent/joindomain"
 	"github.com/getsphericon/sphericon/ent/membership"
@@ -61,6 +62,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/ent/visitor"
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
+	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
@@ -526,6 +528,22 @@ func (s *Scoped) verifyIntegration(ctx context.Context, ids []int64) error {
 	return nil
 }
 
+// verifyIntegrationProviderState fails with ErrNotInWorkspace unless every id is a IntegrationProviderState of the Workspace.
+func (s *Scoped) verifyIntegrationProviderState(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.IntegrationProviderState.Query().Where(s.inIntegrationProviderState(integrationproviderstate.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("IntegrationProviderState: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
 // verifyInvitation fails with ErrNotInWorkspace unless every id is a Invitation of the Workspace.
 func (s *Scoped) verifyInvitation(ctx context.Context, ids []int64) error {
 	ids = uniqueIDs(ids)
@@ -906,6 +924,22 @@ func (s *Scoped) verifyWebhookEndpoint(ctx context.Context, ids []int64) error {
 	}
 	if n != len(ids) {
 		return fmt.Errorf("WebhookEndpoint: %w", ErrNotInWorkspace)
+	}
+	return nil
+}
+
+// verifyWebhookEndpointHealth fails with ErrNotInWorkspace unless every id is a WebhookEndpointHealth of the Workspace.
+func (s *Scoped) verifyWebhookEndpointHealth(ctx context.Context, ids []int64) error {
+	ids = uniqueIDs(ids)
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := s.c.WebhookEndpointHealth.Query().Where(s.inWebhookEndpointHealth(webhookendpointhealth.IDIn(ids...))...).Count(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("WebhookEndpointHealth: %w", ErrNotInWorkspace)
 	}
 	return nil
 }
@@ -30672,6 +30706,15 @@ func (s *Scoped) checkIntegration(ctx context.Context, ms ...*IntegrationMutatio
 	{
 		var ids []int64
 		for _, m := range ms {
+			ids = append(ids, m.ProviderStateIDs()...)
+		}
+		if err := s.verifyIntegrationProviderState(ctx, ids); err != nil {
+			return fmt.Errorf("provider_state: %w", err)
+		}
+	}
+	{
+		var ids []int64
+		for _, m := range ms {
 			ids = append(ids, m.CapturedMessagesIDs()...)
 		}
 		if err := s.verifyCapturedMessage(ctx, ids); err != nil {
@@ -31033,132 +31076,6 @@ func (x *IntegrationScopedCreate) SetNillableMaxPerDay(v *int) *IntegrationScope
 
 const RoleOf_IntegrationScopedCreate_SetNillableMaxPerDay = RoleStep
 
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (x *IntegrationScopedCreate) SetProviderMaxPerSecond(v int) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderMaxPerSecond(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderMaxPerSecond = RoleStep
-
-// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderMaxPerSecond(v *int) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderMaxPerSecond(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderMaxPerSecond = RoleStep
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (x *IntegrationScopedCreate) SetProviderMaxPerDay(v int) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderMaxPerDay(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderMaxPerDay = RoleStep
-
-// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderMaxPerDay(v *int) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderMaxPerDay(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderMaxPerDay = RoleStep
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (x *IntegrationScopedCreate) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderEnforcement(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderEnforcement = RoleStep
-
-// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderEnforcement(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderEnforcement = RoleStep
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (x *IntegrationScopedCreate) SetProviderSandbox(v bool) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderSandbox(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderSandbox = RoleStep
-
-// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderSandbox(v *bool) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderSandbox(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderSandbox = RoleStep
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (x *IntegrationScopedCreate) SetProviderRefusedAt(v time.Time) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderRefusedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderRefusedAt = RoleStep
-
-// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderRefusedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderRefusedAt = RoleStep
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (x *IntegrationScopedCreate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderQuotaCheckedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderQuotaCheckedAt = RoleStep
-
-// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderQuotaCheckedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderQuotaCheckedAt = RoleStep
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (x *IntegrationScopedCreate) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedCreate {
-	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderQuotaFailedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetProviderQuotaFailedAt = RoleStep
-
-// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
-func (x *IntegrationScopedCreate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedCreate {
-	if v != nil {
-		x.SetProviderQuotaFailedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedCreate_SetNillableProviderQuotaFailedAt = RoleStep
-
 // SetProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID.
 func (x *IntegrationScopedCreate) SetProviderLimiterID(id int64) *IntegrationScopedCreate {
 	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderLimiterID(id) })
@@ -31184,6 +31101,32 @@ func (x *IntegrationScopedCreate) SetProviderLimiter(v *ProviderLimiter) *Integr
 }
 
 const RoleOf_IntegrationScopedCreate_SetProviderLimiter = RoleStep
+
+// SetProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID.
+func (x *IntegrationScopedCreate) SetProviderStateID(id int64) *IntegrationScopedCreate {
+	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderStateID(id) })
+	return x
+}
+
+const RoleOf_IntegrationScopedCreate_SetProviderStateID = RoleStep
+
+// SetNillableProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID if the given value is not nil.
+func (x *IntegrationScopedCreate) SetNillableProviderStateID(id *int64) *IntegrationScopedCreate {
+	if id != nil {
+		x.SetProviderStateID(*id)
+	}
+	return x
+}
+
+const RoleOf_IntegrationScopedCreate_SetNillableProviderStateID = RoleStep
+
+// SetProviderState sets the "provider_state" edge to the IntegrationProviderState entity.
+func (x *IntegrationScopedCreate) SetProviderState(v *IntegrationProviderState) *IntegrationScopedCreate {
+	x.set = append(x.set, func(b *IntegrationCreate) { b.SetProviderState(v) })
+	return x
+}
+
+const RoleOf_IntegrationScopedCreate_SetProviderState = RoleStep
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
 func (x *IntegrationScopedCreate) AddCapturedMessageIDs(ids ...int64) *IntegrationScopedCreate {
@@ -31643,188 +31586,6 @@ func (u *IntegrationScopedUpsert) ClearMaxPerDay() *IntegrationScopedUpsert {
 }
 
 const RoleOf_IntegrationScopedUpsert_ClearMaxPerDay = RoleStep
-
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (u *IntegrationScopedUpsert) SetProviderMaxPerSecond(v int) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderMaxPerSecond, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderMaxPerSecond = RoleStep
-
-// AddProviderMaxPerSecond adds v to the "provider_max_per_second" field.
-func (u *IntegrationScopedUpsert) AddProviderMaxPerSecond(v int) *IntegrationScopedUpsert {
-	u.u.Add(integration.FieldProviderMaxPerSecond, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_AddProviderMaxPerSecond = RoleStep
-
-// UpdateProviderMaxPerSecond sets the "provider_max_per_second" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderMaxPerSecond() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderMaxPerSecond)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderMaxPerSecond = RoleStep
-
-// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
-func (u *IntegrationScopedUpsert) ClearProviderMaxPerSecond() *IntegrationScopedUpsert {
-	u.u.SetNull(integration.FieldProviderMaxPerSecond)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_ClearProviderMaxPerSecond = RoleStep
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (u *IntegrationScopedUpsert) SetProviderMaxPerDay(v int) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderMaxPerDay, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderMaxPerDay = RoleStep
-
-// AddProviderMaxPerDay adds v to the "provider_max_per_day" field.
-func (u *IntegrationScopedUpsert) AddProviderMaxPerDay(v int) *IntegrationScopedUpsert {
-	u.u.Add(integration.FieldProviderMaxPerDay, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_AddProviderMaxPerDay = RoleStep
-
-// UpdateProviderMaxPerDay sets the "provider_max_per_day" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderMaxPerDay() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderMaxPerDay)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderMaxPerDay = RoleStep
-
-// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
-func (u *IntegrationScopedUpsert) ClearProviderMaxPerDay() *IntegrationScopedUpsert {
-	u.u.SetNull(integration.FieldProviderMaxPerDay)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_ClearProviderMaxPerDay = RoleStep
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (u *IntegrationScopedUpsert) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderEnforcement, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderEnforcement = RoleStep
-
-// UpdateProviderEnforcement sets the "provider_enforcement" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderEnforcement() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderEnforcement)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderEnforcement = RoleStep
-
-// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
-func (u *IntegrationScopedUpsert) ClearProviderEnforcement() *IntegrationScopedUpsert {
-	u.u.SetNull(integration.FieldProviderEnforcement)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_ClearProviderEnforcement = RoleStep
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (u *IntegrationScopedUpsert) SetProviderSandbox(v bool) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderSandbox, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderSandbox = RoleStep
-
-// UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderSandbox() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderSandbox)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderSandbox = RoleStep
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (u *IntegrationScopedUpsert) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderRefusedAt, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderRefusedAt = RoleStep
-
-const SetsState_IntegrationScopedUpsert_SetProviderRefusedAt = "ProviderRefusedAt"
-
-// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderRefusedAt() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderRefusedAt)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderRefusedAt = RoleStep
-
-const SetsState_IntegrationScopedUpsert_UpdateProviderRefusedAt = "ProviderRefusedAt"
-
-// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
-func (u *IntegrationScopedUpsert) ClearProviderRefusedAt() *IntegrationScopedUpsert {
-	u.u.SetNull(integration.FieldProviderRefusedAt)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_ClearProviderRefusedAt = RoleStep
-
-const ClearsState_IntegrationScopedUpsert_ClearProviderRefusedAt = "ProviderRefusedAt"
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (u *IntegrationScopedUpsert) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderQuotaCheckedAt, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderQuotaCheckedAt = RoleStep
-
-// UpdateProviderQuotaCheckedAt sets the "provider_quota_checked_at" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderQuotaCheckedAt() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderQuotaCheckedAt)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderQuotaCheckedAt = RoleStep
-
-// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
-func (u *IntegrationScopedUpsert) ClearProviderQuotaCheckedAt() *IntegrationScopedUpsert {
-	u.u.SetNull(integration.FieldProviderQuotaCheckedAt)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_ClearProviderQuotaCheckedAt = RoleStep
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (u *IntegrationScopedUpsert) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpsert {
-	u.u.Set(integration.FieldProviderQuotaFailedAt, v)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_SetProviderQuotaFailedAt = RoleStep
-
-// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
-func (u *IntegrationScopedUpsert) UpdateProviderQuotaFailedAt() *IntegrationScopedUpsert {
-	u.u.SetExcluded(integration.FieldProviderQuotaFailedAt)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_UpdateProviderQuotaFailedAt = RoleStep
-
-// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
-func (u *IntegrationScopedUpsert) ClearProviderQuotaFailedAt() *IntegrationScopedUpsert {
-	u.u.SetNull(integration.FieldProviderQuotaFailedAt)
-	return u
-}
-
-const RoleOf_IntegrationScopedUpsert_ClearProviderQuotaFailedAt = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -32412,202 +32173,6 @@ func (x *IntegrationScopedUpdateOne) ClearMaxPerDay() *IntegrationScopedUpdateOn
 
 const RoleOf_IntegrationScopedUpdateOne_ClearMaxPerDay = RoleStep
 
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (x *IntegrationScopedUpdateOne) SetProviderMaxPerSecond(v int) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderMaxPerSecond(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderMaxPerSecond = RoleStep
-
-// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderMaxPerSecond(v *int) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderMaxPerSecond(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderMaxPerSecond = RoleStep
-
-// AddProviderMaxPerSecond adds value to the "provider_max_per_second" field.
-func (x *IntegrationScopedUpdateOne) AddProviderMaxPerSecond(v int) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.AddProviderMaxPerSecond(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_AddProviderMaxPerSecond = RoleStep
-
-// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
-func (x *IntegrationScopedUpdateOne) ClearProviderMaxPerSecond() *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderMaxPerSecond() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_ClearProviderMaxPerSecond = RoleStep
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (x *IntegrationScopedUpdateOne) SetProviderMaxPerDay(v int) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderMaxPerDay(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderMaxPerDay = RoleStep
-
-// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderMaxPerDay(v *int) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderMaxPerDay(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderMaxPerDay = RoleStep
-
-// AddProviderMaxPerDay adds value to the "provider_max_per_day" field.
-func (x *IntegrationScopedUpdateOne) AddProviderMaxPerDay(v int) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.AddProviderMaxPerDay(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_AddProviderMaxPerDay = RoleStep
-
-// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
-func (x *IntegrationScopedUpdateOne) ClearProviderMaxPerDay() *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderMaxPerDay() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_ClearProviderMaxPerDay = RoleStep
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (x *IntegrationScopedUpdateOne) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderEnforcement(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderEnforcement = RoleStep
-
-// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderEnforcement(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderEnforcement = RoleStep
-
-// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
-func (x *IntegrationScopedUpdateOne) ClearProviderEnforcement() *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderEnforcement() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_ClearProviderEnforcement = RoleStep
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (x *IntegrationScopedUpdateOne) SetProviderSandbox(v bool) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderSandbox(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderSandbox = RoleStep
-
-// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderSandbox(v *bool) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderSandbox(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderSandbox = RoleStep
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (x *IntegrationScopedUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderRefusedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderRefusedAt = RoleStep
-
-const SetsState_IntegrationScopedUpdateOne_SetProviderRefusedAt = "ProviderRefusedAt"
-
-// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderRefusedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderRefusedAt = RoleStep
-
-const SetsState_IntegrationScopedUpdateOne_SetNillableProviderRefusedAt = "ProviderRefusedAt"
-
-// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
-func (x *IntegrationScopedUpdateOne) ClearProviderRefusedAt() *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderRefusedAt() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_ClearProviderRefusedAt = RoleStep
-
-const ClearsState_IntegrationScopedUpdateOne_ClearProviderRefusedAt = "ProviderRefusedAt"
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (x *IntegrationScopedUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderQuotaCheckedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderQuotaCheckedAt = RoleStep
-
-// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderQuotaCheckedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderQuotaCheckedAt = RoleStep
-
-// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
-func (x *IntegrationScopedUpdateOne) ClearProviderQuotaCheckedAt() *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderQuotaCheckedAt() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_ClearProviderQuotaCheckedAt = RoleStep
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (x *IntegrationScopedUpdateOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderQuotaFailedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetProviderQuotaFailedAt = RoleStep
-
-// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
-func (x *IntegrationScopedUpdateOne) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedUpdateOne {
-	if v != nil {
-		x.SetProviderQuotaFailedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderQuotaFailedAt = RoleStep
-
-// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
-func (x *IntegrationScopedUpdateOne) ClearProviderQuotaFailedAt() *IntegrationScopedUpdateOne {
-	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderQuotaFailedAt() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdateOne_ClearProviderQuotaFailedAt = RoleStep
-
 // SetProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID.
 func (x *IntegrationScopedUpdateOne) SetProviderLimiterID(id int64) *IntegrationScopedUpdateOne {
 	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderLimiterID(id) })
@@ -32641,6 +32206,40 @@ func (x *IntegrationScopedUpdateOne) ClearProviderLimiter() *IntegrationScopedUp
 }
 
 const RoleOf_IntegrationScopedUpdateOne_ClearProviderLimiter = RoleStep
+
+// SetProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID.
+func (x *IntegrationScopedUpdateOne) SetProviderStateID(id int64) *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderStateID(id) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_SetProviderStateID = RoleStep
+
+// SetNillableProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID if the given value is not nil.
+func (x *IntegrationScopedUpdateOne) SetNillableProviderStateID(id *int64) *IntegrationScopedUpdateOne {
+	if id != nil {
+		x.SetProviderStateID(*id)
+	}
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_SetNillableProviderStateID = RoleStep
+
+// SetProviderState sets the "provider_state" edge to the IntegrationProviderState entity.
+func (x *IntegrationScopedUpdateOne) SetProviderState(v *IntegrationProviderState) *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.SetProviderState(v) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_SetProviderState = RoleStep
+
+// ClearProviderState clears the "provider_state" edge to the IntegrationProviderState entity.
+func (x *IntegrationScopedUpdateOne) ClearProviderState() *IntegrationScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationUpdateOne) { b.ClearProviderState() })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdateOne_ClearProviderState = RoleStep
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
 func (x *IntegrationScopedUpdateOne) AddCapturedMessageIDs(ids ...int64) *IntegrationScopedUpdateOne {
@@ -33140,202 +32739,6 @@ func (x *IntegrationScopedUpdate) ClearMaxPerDay() *IntegrationScopedUpdate {
 
 const RoleOf_IntegrationScopedUpdate_ClearMaxPerDay = RoleStep
 
-// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
-func (x *IntegrationScopedUpdate) SetProviderMaxPerSecond(v int) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderMaxPerSecond(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderMaxPerSecond = RoleStep
-
-// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderMaxPerSecond(v *int) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderMaxPerSecond(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderMaxPerSecond = RoleStep
-
-// AddProviderMaxPerSecond adds value to the "provider_max_per_second" field.
-func (x *IntegrationScopedUpdate) AddProviderMaxPerSecond(v int) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.AddProviderMaxPerSecond(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_AddProviderMaxPerSecond = RoleStep
-
-// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
-func (x *IntegrationScopedUpdate) ClearProviderMaxPerSecond() *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderMaxPerSecond() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_ClearProviderMaxPerSecond = RoleStep
-
-// SetProviderMaxPerDay sets the "provider_max_per_day" field.
-func (x *IntegrationScopedUpdate) SetProviderMaxPerDay(v int) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderMaxPerDay(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderMaxPerDay = RoleStep
-
-// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderMaxPerDay(v *int) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderMaxPerDay(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderMaxPerDay = RoleStep
-
-// AddProviderMaxPerDay adds value to the "provider_max_per_day" field.
-func (x *IntegrationScopedUpdate) AddProviderMaxPerDay(v int) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.AddProviderMaxPerDay(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_AddProviderMaxPerDay = RoleStep
-
-// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
-func (x *IntegrationScopedUpdate) ClearProviderMaxPerDay() *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderMaxPerDay() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_ClearProviderMaxPerDay = RoleStep
-
-// SetProviderEnforcement sets the "provider_enforcement" field.
-func (x *IntegrationScopedUpdate) SetProviderEnforcement(v providers.Enforcement) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderEnforcement(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderEnforcement = RoleStep
-
-// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderEnforcement(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderEnforcement = RoleStep
-
-// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
-func (x *IntegrationScopedUpdate) ClearProviderEnforcement() *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderEnforcement() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_ClearProviderEnforcement = RoleStep
-
-// SetProviderSandbox sets the "provider_sandbox" field.
-func (x *IntegrationScopedUpdate) SetProviderSandbox(v bool) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderSandbox(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderSandbox = RoleStep
-
-// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderSandbox(v *bool) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderSandbox(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderSandbox = RoleStep
-
-// SetProviderRefusedAt sets the "provider_refused_at" field.
-func (x *IntegrationScopedUpdate) SetProviderRefusedAt(v time.Time) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderRefusedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderRefusedAt = RoleStep
-
-const SetsState_IntegrationScopedUpdate_SetProviderRefusedAt = "ProviderRefusedAt"
-
-// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderRefusedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderRefusedAt = RoleStep
-
-const SetsState_IntegrationScopedUpdate_SetNillableProviderRefusedAt = "ProviderRefusedAt"
-
-// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
-func (x *IntegrationScopedUpdate) ClearProviderRefusedAt() *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderRefusedAt() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_ClearProviderRefusedAt = RoleStep
-
-const ClearsState_IntegrationScopedUpdate_ClearProviderRefusedAt = "ProviderRefusedAt"
-
-// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
-func (x *IntegrationScopedUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderQuotaCheckedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderQuotaCheckedAt = RoleStep
-
-// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderQuotaCheckedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderQuotaCheckedAt = RoleStep
-
-// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
-func (x *IntegrationScopedUpdate) ClearProviderQuotaCheckedAt() *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderQuotaCheckedAt() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_ClearProviderQuotaCheckedAt = RoleStep
-
-// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
-func (x *IntegrationScopedUpdate) SetProviderQuotaFailedAt(v time.Time) *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderQuotaFailedAt(v) })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetProviderQuotaFailedAt = RoleStep
-
-// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
-func (x *IntegrationScopedUpdate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationScopedUpdate {
-	if v != nil {
-		x.SetProviderQuotaFailedAt(*v)
-	}
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_SetNillableProviderQuotaFailedAt = RoleStep
-
-// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
-func (x *IntegrationScopedUpdate) ClearProviderQuotaFailedAt() *IntegrationScopedUpdate {
-	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderQuotaFailedAt() })
-	return x
-}
-
-const RoleOf_IntegrationScopedUpdate_ClearProviderQuotaFailedAt = RoleStep
-
 // SetProviderLimiterID sets the "provider_limiter" edge to the ProviderLimiter entity by ID.
 func (x *IntegrationScopedUpdate) SetProviderLimiterID(id int64) *IntegrationScopedUpdate {
 	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderLimiterID(id) })
@@ -33369,6 +32772,40 @@ func (x *IntegrationScopedUpdate) ClearProviderLimiter() *IntegrationScopedUpdat
 }
 
 const RoleOf_IntegrationScopedUpdate_ClearProviderLimiter = RoleStep
+
+// SetProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID.
+func (x *IntegrationScopedUpdate) SetProviderStateID(id int64) *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderStateID(id) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_SetProviderStateID = RoleStep
+
+// SetNillableProviderStateID sets the "provider_state" edge to the IntegrationProviderState entity by ID if the given value is not nil.
+func (x *IntegrationScopedUpdate) SetNillableProviderStateID(id *int64) *IntegrationScopedUpdate {
+	if id != nil {
+		x.SetProviderStateID(*id)
+	}
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_SetNillableProviderStateID = RoleStep
+
+// SetProviderState sets the "provider_state" edge to the IntegrationProviderState entity.
+func (x *IntegrationScopedUpdate) SetProviderState(v *IntegrationProviderState) *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.SetProviderState(v) })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_SetProviderState = RoleStep
+
+// ClearProviderState clears the "provider_state" edge to the IntegrationProviderState entity.
+func (x *IntegrationScopedUpdate) ClearProviderState() *IntegrationScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationUpdate) { b.ClearProviderState() })
+	return x
+}
+
+const RoleOf_IntegrationScopedUpdate_ClearProviderState = RoleStep
 
 // AddCapturedMessageIDs adds the "captured_messages" edge to the CapturedMessage entity by IDs.
 func (x *IntegrationScopedUpdate) AddCapturedMessageIDs(ids ...int64) *IntegrationScopedUpdate {
@@ -33531,6 +32968,1392 @@ const (
 	RoleOf_IntegrationScopedUpdate_Modify = RoleStep
 	RoleOf_IntegrationScopedUpdate_Save   = RoleStep
 	RoleOf_IntegrationScopedUpdate_Exec   = RoleStep
+)
+
+// IntegrationProviderStateScoped reaches IntegrationProviderState entities of one Workspace.
+type IntegrationProviderStateScoped struct{ s *Scoped }
+
+// IntegrationProviderState returns the IntegrationProviderState entities of the Workspace.
+func (s *Scoped) IntegrationProviderState() *IntegrationProviderStateScoped {
+	return &IntegrationProviderStateScoped{s: s}
+}
+
+const (
+	TypeOf_IntegrationProviderStateScoped             = TypeWrapper
+	EntityOf_IntegrationProviderStateScoped           = "IntegrationProviderState"
+	RoleOf_Scoped_IntegrationProviderState            = RoleNone
+	RoleOf_IntegrationProviderStateScoped_Query       = RoleRead
+	RoleOf_IntegrationProviderStateScoped_Get         = RoleRead
+	RoleOf_IntegrationProviderStateScoped_DeleteOneID = RoleStart
+	RoleOf_IntegrationProviderStateScoped_UpdateOneID = RoleStart
+	RoleOf_IntegrationProviderStateScoped_Delete      = RoleStart
+	RoleOf_IntegrationProviderStateScoped_Create      = RoleStart
+	RoleOf_IntegrationProviderStateScoped_CreateBulk  = RoleStart
+	RoleOf_IntegrationProviderStateScoped_Update      = RoleStart
+)
+
+// inIntegrationProviderState confines predicates of IntegrationProviderState rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inIntegrationProviderState(ps ...predicate.IntegrationProviderState) []predicate.IntegrationProviderState {
+	return append([]predicate.IntegrationProviderState{integrationproviderstate.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a IntegrationProviderState query already confined to the Workspace.
+func (t *IntegrationProviderStateScoped) Query() *IntegrationProviderStateQuery {
+	return t.s.c.IntegrationProviderState.Query().Where(t.s.inIntegrationProviderState()...)
+}
+
+// Get returns the IntegrationProviderState with the id; a row of another Workspace is not found.
+func (t *IntegrationProviderStateScoped) Get(ctx context.Context, id int64) (*IntegrationProviderState, error) {
+	return t.Query().Where(integrationproviderstate.ID(id)).Only(ctx)
+}
+
+// writeIntegrationProviderState runs a write of IntegrationProviderState rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeIntegrationProviderState(ctx context.Context, verb string, where []predicate.IntegrationProviderState, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkIntegrationProviderState verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkIntegrationProviderState(ctx context.Context, ms ...*IntegrationProviderStateMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.IntegrationIDs()...)
+		}
+		if err := s.verifyIntegration(ctx, ids); err != nil {
+			return fmt.Errorf("integration: %w", err)
+		}
+	}
+	return nil
+}
+
+// IntegrationProviderStateScopedDeleteOne deletes one IntegrationProviderState: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type IntegrationProviderStateScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.IntegrationProviderState
+}
+
+// DeleteOneID deletes the IntegrationProviderState with the id; a row of another Workspace is not found.
+func (t *IntegrationProviderStateScoped) DeleteOneID(id int64) *IntegrationProviderStateScopedDeleteOne {
+	return &IntegrationProviderStateScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *IntegrationProviderStateScopedDeleteOne) Where(ps ...predicate.IntegrationProviderState) *IntegrationProviderStateScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedDeleteOne       = TypeScopedDelete
+	EntityOf_IntegrationProviderStateScopedDeleteOne     = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedDeleteOne_Where = RoleStep
+	RoleOf_IntegrationProviderStateScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *IntegrationProviderStateScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inIntegrationProviderState(x.where...)
+	return x.s.writeIntegrationProviderState(ctx, "delete", append([]predicate.IntegrationProviderState{integrationproviderstate.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.IntegrationProviderState.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// IntegrationProviderStateScopedDelete deletes the IntegrationProviderState rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type IntegrationProviderStateScopedDelete struct {
+	s     *Scoped
+	where []predicate.IntegrationProviderState
+}
+
+// Delete deletes the IntegrationProviderState entities of the Workspace that match the predicates.
+func (t *IntegrationProviderStateScoped) Delete() *IntegrationProviderStateScopedDelete {
+	return &IntegrationProviderStateScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *IntegrationProviderStateScopedDelete) Where(ps ...predicate.IntegrationProviderState) *IntegrationProviderStateScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedDelete       = TypeScopedDelete
+	EntityOf_IntegrationProviderStateScopedDelete     = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedDelete_Where = RoleStep
+	RoleOf_IntegrationProviderStateScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *IntegrationProviderStateScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inIntegrationProviderState(x.where...)
+	var n int
+	err := x.s.writeIntegrationProviderState(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.IntegrationProviderState.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// IntegrationProviderStateScopedCreate creates a IntegrationProviderState of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type IntegrationProviderStateScopedCreate struct {
+	s   *Scoped
+	set []func(*IntegrationProviderStateCreate)
+}
+
+// Create starts a IntegrationProviderState in the Workspace.
+func (t *IntegrationProviderStateScoped) Create() *IntegrationProviderStateScopedCreate {
+	return &IntegrationProviderStateScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *IntegrationProviderStateScopedCreate) raw(s *Scoped) *IntegrationProviderStateCreate {
+	b := s.c.IntegrationProviderState.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *IntegrationProviderStateScopedCreate) build(ctx context.Context, s *Scoped) (*IntegrationProviderStateCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkIntegrationProviderState(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *IntegrationProviderStateScopedCreate) SetCreatedAt(v time.Time) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableCreatedAt(v *time.Time) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *IntegrationProviderStateScopedCreate) SetUpdatedAt(v time.Time) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableUpdatedAt(v *time.Time) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetIntegrationID sets the "integration_id" field.
+func (x *IntegrationProviderStateScopedCreate) SetIntegrationID(v int64) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetIntegrationID(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetIntegrationID = RoleStep
+
+// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderMaxPerSecond(v int) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderMaxPerSecond(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderMaxPerSecond = RoleStep
+
+// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderMaxPerSecond(v *int) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderMaxPerSecond(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderMaxPerSecond = RoleStep
+
+// SetProviderMaxPerDay sets the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderMaxPerDay(v int) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderMaxPerDay(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderMaxPerDay = RoleStep
+
+// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderMaxPerDay(v *int) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderMaxPerDay(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderMaxPerDay = RoleStep
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderEnforcement(v providers.Enforcement) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderEnforcement(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderEnforcement = RoleStep
+
+// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderEnforcement(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderEnforcement = RoleStep
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderSandbox(v bool) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderSandbox(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderSandbox = RoleStep
+
+// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderSandbox(v *bool) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderSandbox(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderSandbox = RoleStep
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderRefusedAt(v time.Time) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderRefusedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderRefusedAt = RoleStep
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderRefusedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderRefusedAt = RoleStep
+
+// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderQuotaCheckedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderQuotaCheckedAt = RoleStep
+
+// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderQuotaCheckedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderQuotaCheckedAt = RoleStep
+
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationProviderStateScopedCreate) SetProviderQuotaFailedAt(v time.Time) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetProviderQuotaFailedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetProviderQuotaFailedAt = RoleStep
+
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedCreate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationProviderStateScopedCreate {
+	if v != nil {
+		x.SetProviderQuotaFailedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetNillableProviderQuotaFailedAt = RoleStep
+
+// SetIntegration sets the "integration" edge to the Integration entity.
+func (x *IntegrationProviderStateScopedCreate) SetIntegration(v *Integration) *IntegrationProviderStateScopedCreate {
+	x.set = append(x.set, func(b *IntegrationProviderStateCreate) { b.SetIntegration(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedCreate_SetIntegration = RoleStep
+
+const (
+	TypeOf_IntegrationProviderStateScopedCreate                        = TypeScopedCreate
+	EntityOf_IntegrationProviderStateScopedCreate                      = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedCreate_Save                   = RoleStep
+	RoleOf_IntegrationProviderStateScopedCreate_Exec                   = RoleStep
+	RoleOf_IntegrationProviderStateScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_IntegrationProviderStateScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the IntegrationProviderState.
+func (x *IntegrationProviderStateScopedCreate) Save(ctx context.Context) (*IntegrationProviderState, error) {
+	var created *IntegrationProviderState
+	err := x.s.writeIntegrationProviderState(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *IntegrationProviderStateScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// IntegrationProviderStateScopedCreateBulk creates several IntegrationProviderState entities of one Workspace at once.
+type IntegrationProviderStateScopedCreateBulk struct {
+	s  *Scoped
+	xs []*IntegrationProviderStateScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *IntegrationProviderStateScoped) CreateBulk(xs ...*IntegrationProviderStateScopedCreate) *IntegrationProviderStateScopedCreateBulk {
+	return &IntegrationProviderStateScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *IntegrationProviderStateScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("IntegrationProviderState: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *IntegrationProviderStateScopedCreateBulk) build(ctx context.Context, s *Scoped) (*IntegrationProviderStateCreateBulk, error) {
+	builders := make([]*IntegrationProviderStateCreate, len(b.xs))
+	ms := make([]*IntegrationProviderStateMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkIntegrationProviderState(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.IntegrationProviderState.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the IntegrationProviderState entities.
+func (b *IntegrationProviderStateScopedCreateBulk) Save(ctx context.Context) ([]*IntegrationProviderState, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*IntegrationProviderState
+	err := b.s.writeIntegrationProviderState(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *IntegrationProviderStateScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_IntegrationProviderStateScopedCreateBulk                 = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedCreateBulk_Save              = RoleStep
+	RoleOf_IntegrationProviderStateScopedCreateBulk_Exec              = RoleStep
+	RoleOf_IntegrationProviderStateScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// IntegrationProviderStateScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type IntegrationProviderStateScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_IntegrationProviderStateScopedUpsert   = TypeScopedUpsert
+	EntityOf_IntegrationProviderStateScopedUpsert = "IntegrationProviderState"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *IntegrationProviderStateScopedUpsert) SetUpdatedAt(v time.Time) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateUpdatedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderMaxPerSecond(v int) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderMaxPerSecond, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderMaxPerSecond = RoleStep
+
+// AddProviderMaxPerSecond adds v to the "provider_max_per_second" field.
+func (u *IntegrationProviderStateScopedUpsert) AddProviderMaxPerSecond(v int) *IntegrationProviderStateScopedUpsert {
+	u.u.Add(integrationproviderstate.FieldProviderMaxPerSecond, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_AddProviderMaxPerSecond = RoleStep
+
+// UpdateProviderMaxPerSecond sets the "provider_max_per_second" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderMaxPerSecond() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderMaxPerSecond)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderMaxPerSecond = RoleStep
+
+// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
+func (u *IntegrationProviderStateScopedUpsert) ClearProviderMaxPerSecond() *IntegrationProviderStateScopedUpsert {
+	u.u.SetNull(integrationproviderstate.FieldProviderMaxPerSecond)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_ClearProviderMaxPerSecond = RoleStep
+
+// SetProviderMaxPerDay sets the "provider_max_per_day" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderMaxPerDay(v int) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderMaxPerDay, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderMaxPerDay = RoleStep
+
+// AddProviderMaxPerDay adds v to the "provider_max_per_day" field.
+func (u *IntegrationProviderStateScopedUpsert) AddProviderMaxPerDay(v int) *IntegrationProviderStateScopedUpsert {
+	u.u.Add(integrationproviderstate.FieldProviderMaxPerDay, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_AddProviderMaxPerDay = RoleStep
+
+// UpdateProviderMaxPerDay sets the "provider_max_per_day" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderMaxPerDay() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderMaxPerDay)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderMaxPerDay = RoleStep
+
+// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
+func (u *IntegrationProviderStateScopedUpsert) ClearProviderMaxPerDay() *IntegrationProviderStateScopedUpsert {
+	u.u.SetNull(integrationproviderstate.FieldProviderMaxPerDay)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_ClearProviderMaxPerDay = RoleStep
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderEnforcement(v providers.Enforcement) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderEnforcement, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderEnforcement = RoleStep
+
+// UpdateProviderEnforcement sets the "provider_enforcement" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderEnforcement() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderEnforcement)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderEnforcement = RoleStep
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (u *IntegrationProviderStateScopedUpsert) ClearProviderEnforcement() *IntegrationProviderStateScopedUpsert {
+	u.u.SetNull(integrationproviderstate.FieldProviderEnforcement)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_ClearProviderEnforcement = RoleStep
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderSandbox(v bool) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderSandbox, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderSandbox = RoleStep
+
+// UpdateProviderSandbox sets the "provider_sandbox" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderSandbox() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderSandbox)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderSandbox = RoleStep
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderRefusedAt(v time.Time) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderRefusedAt, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderRefusedAt = RoleStep
+
+const SetsState_IntegrationProviderStateScopedUpsert_SetProviderRefusedAt = "ProviderRefusedAt"
+
+// UpdateProviderRefusedAt sets the "provider_refused_at" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderRefusedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderRefusedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderRefusedAt = RoleStep
+
+const SetsState_IntegrationProviderStateScopedUpsert_UpdateProviderRefusedAt = "ProviderRefusedAt"
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (u *IntegrationProviderStateScopedUpsert) ClearProviderRefusedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetNull(integrationproviderstate.FieldProviderRefusedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_ClearProviderRefusedAt = RoleStep
+
+const ClearsState_IntegrationProviderStateScopedUpsert_ClearProviderRefusedAt = "ProviderRefusedAt"
+
+// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderQuotaCheckedAt(v time.Time) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderQuotaCheckedAt, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderQuotaCheckedAt = RoleStep
+
+// UpdateProviderQuotaCheckedAt sets the "provider_quota_checked_at" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderQuotaCheckedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderQuotaCheckedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderQuotaCheckedAt = RoleStep
+
+// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
+func (u *IntegrationProviderStateScopedUpsert) ClearProviderQuotaCheckedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetNull(integrationproviderstate.FieldProviderQuotaCheckedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_ClearProviderQuotaCheckedAt = RoleStep
+
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (u *IntegrationProviderStateScopedUpsert) SetProviderQuotaFailedAt(v time.Time) *IntegrationProviderStateScopedUpsert {
+	u.u.Set(integrationproviderstate.FieldProviderQuotaFailedAt, v)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_SetProviderQuotaFailedAt = RoleStep
+
+// UpdateProviderQuotaFailedAt sets the "provider_quota_failed_at" field to the value that was provided on create.
+func (u *IntegrationProviderStateScopedUpsert) UpdateProviderQuotaFailedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetExcluded(integrationproviderstate.FieldProviderQuotaFailedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_UpdateProviderQuotaFailedAt = RoleStep
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (u *IntegrationProviderStateScopedUpsert) ClearProviderQuotaFailedAt() *IntegrationProviderStateScopedUpsert {
+	u.u.SetNull(integrationproviderstate.FieldProviderQuotaFailedAt)
+	return u
+}
+
+const RoleOf_IntegrationProviderStateScopedUpsert_ClearProviderQuotaFailedAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *IntegrationProviderStateScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(integrationproviderstate.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// IntegrationProviderStateScopedUpsertOne is the "upsert" of one IntegrationProviderState: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type IntegrationProviderStateScopedUpsertOne struct {
+	x        *IntegrationProviderStateScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*IntegrationProviderStateUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_IntegrationProviderStateScopedUpsertOne               = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertOne_Update          = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertOne_Exec            = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *IntegrationProviderStateScopedCreate) OnConflictColumns(columns ...string) *IntegrationProviderStateScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *IntegrationProviderStateScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *IntegrationProviderStateScopedUpsertOne {
+	return &IntegrationProviderStateScopedUpsertOne{x: x, conflict: (&IntegrationProviderStateScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *IntegrationProviderStateScopedUpsertOne) UpdateNewValues() *IntegrationProviderStateScopedUpsertOne {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *IntegrationProviderStateScopedUpsertOne) Ignore() *IntegrationProviderStateScopedUpsertOne {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *IntegrationProviderStateScopedUpsertOne) DoNothing() *IntegrationProviderStateScopedUpsertOne {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *IntegrationProviderStateScopedUpsertOne) Update(set func(*IntegrationProviderStateScopedUpsert)) *IntegrationProviderStateScopedUpsertOne {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertOne) {
+		r.Update(func(s *IntegrationProviderStateUpsert) { set(&IntegrationProviderStateScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *IntegrationProviderStateScopedUpsertOne) build(ctx context.Context, s *Scoped) (*IntegrationProviderStateUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *IntegrationProviderStateScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *IntegrationProviderStateScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeIntegrationProviderState(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// IntegrationProviderStateScopedUpsertBulk is the "upsert" of several IntegrationProviderState entities.
+type IntegrationProviderStateScopedUpsertBulk struct {
+	b       *IntegrationProviderStateScopedCreateBulk
+	t       *IntegrationProviderStateScoped
+	columns []string
+	set     []func(*IntegrationProviderStateUpsertBulk)
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_IntegrationProviderStateScopedUpsertBulk               = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertBulk_Update          = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *IntegrationProviderStateScopedCreateBulk) OnConflictColumns(columns ...string) *IntegrationProviderStateScopedUpsertBulk {
+	return &IntegrationProviderStateScopedUpsertBulk{b: b, t: &IntegrationProviderStateScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *IntegrationProviderStateScopedUpsertBulk) UpdateNewValues() *IntegrationProviderStateScopedUpsertBulk {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *IntegrationProviderStateScopedUpsertBulk) Ignore() *IntegrationProviderStateScopedUpsertBulk {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *IntegrationProviderStateScopedUpsertBulk) DoNothing() *IntegrationProviderStateScopedUpsertBulk {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *IntegrationProviderStateScopedUpsertBulk) Update(set func(*IntegrationProviderStateScopedUpsert)) *IntegrationProviderStateScopedUpsertBulk {
+	u.set = append(u.set, func(r *IntegrationProviderStateUpsertBulk) {
+		r.Update(func(s *IntegrationProviderStateUpsert) { set(&IntegrationProviderStateScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *IntegrationProviderStateScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeIntegrationProviderState(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// IntegrationProviderStateScopedUpdateOne updates one IntegrationProviderState. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type IntegrationProviderStateScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.IntegrationProviderState
+	set   []func(*IntegrationProviderStateUpdateOne)
+}
+
+// UpdateOneID updates the IntegrationProviderState with the id; a row of another Workspace is not found.
+func (t *IntegrationProviderStateScoped) UpdateOneID(id int64) *IntegrationProviderStateScopedUpdateOne {
+	return &IntegrationProviderStateScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *IntegrationProviderStateScopedUpdateOne) Where(ps ...predicate.IntegrationProviderState) *IntegrationProviderStateScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetUpdatedAt(v time.Time) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderMaxPerSecond(v int) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderMaxPerSecond(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderMaxPerSecond = RoleStep
+
+// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderMaxPerSecond(v *int) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderMaxPerSecond(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderMaxPerSecond = RoleStep
+
+// AddProviderMaxPerSecond adds value to the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedUpdateOne) AddProviderMaxPerSecond(v int) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.AddProviderMaxPerSecond(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_AddProviderMaxPerSecond = RoleStep
+
+// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedUpdateOne) ClearProviderMaxPerSecond() *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.ClearProviderMaxPerSecond() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_ClearProviderMaxPerSecond = RoleStep
+
+// SetProviderMaxPerDay sets the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderMaxPerDay(v int) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderMaxPerDay(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderMaxPerDay = RoleStep
+
+// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderMaxPerDay(v *int) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderMaxPerDay(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderMaxPerDay = RoleStep
+
+// AddProviderMaxPerDay adds value to the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedUpdateOne) AddProviderMaxPerDay(v int) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.AddProviderMaxPerDay(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_AddProviderMaxPerDay = RoleStep
+
+// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedUpdateOne) ClearProviderMaxPerDay() *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.ClearProviderMaxPerDay() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_ClearProviderMaxPerDay = RoleStep
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderEnforcement(v providers.Enforcement) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderEnforcement(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderEnforcement = RoleStep
+
+// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderEnforcement(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderEnforcement = RoleStep
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (x *IntegrationProviderStateScopedUpdateOne) ClearProviderEnforcement() *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.ClearProviderEnforcement() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_ClearProviderEnforcement = RoleStep
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderSandbox(v bool) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderSandbox(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderSandbox = RoleStep
+
+// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderSandbox(v *bool) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderSandbox(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderSandbox = RoleStep
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderRefusedAt(v time.Time) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderRefusedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderRefusedAt = RoleStep
+
+const SetsState_IntegrationProviderStateScopedUpdateOne_SetProviderRefusedAt = "ProviderRefusedAt"
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderRefusedAt(v *time.Time) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderRefusedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderRefusedAt = RoleStep
+
+const SetsState_IntegrationProviderStateScopedUpdateOne_SetNillableProviderRefusedAt = "ProviderRefusedAt"
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) ClearProviderRefusedAt() *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.ClearProviderRefusedAt() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_ClearProviderRefusedAt = RoleStep
+
+const ClearsState_IntegrationProviderStateScopedUpdateOne_ClearProviderRefusedAt = "ProviderRefusedAt"
+
+// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderQuotaCheckedAt(v time.Time) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderQuotaCheckedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderQuotaCheckedAt = RoleStep
+
+// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderQuotaCheckedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderQuotaCheckedAt = RoleStep
+
+// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) ClearProviderQuotaCheckedAt() *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.ClearProviderQuotaCheckedAt() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_ClearProviderQuotaCheckedAt = RoleStep
+
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) SetProviderQuotaFailedAt(v time.Time) *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.SetProviderQuotaFailedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetProviderQuotaFailedAt = RoleStep
+
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdateOne) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationProviderStateScopedUpdateOne {
+	if v != nil {
+		x.SetProviderQuotaFailedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_SetNillableProviderQuotaFailedAt = RoleStep
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (x *IntegrationProviderStateScopedUpdateOne) ClearProviderQuotaFailedAt() *IntegrationProviderStateScopedUpdateOne {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdateOne) { b.ClearProviderQuotaFailedAt() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdateOne_ClearProviderQuotaFailedAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the IntegrationProviderState.
+func (x *IntegrationProviderStateScopedUpdateOne) Save(ctx context.Context) (*IntegrationProviderState, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *IntegrationProviderStateScopedUpdateOne) build(ctx context.Context, s *Scoped) (*IntegrationProviderStateUpdateOne, error) {
+	b := s.c.IntegrationProviderState.UpdateOneID(x.id).Where(s.inIntegrationProviderState(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkIntegrationProviderState(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *IntegrationProviderStateScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*IntegrationProviderState, error) {
+	where := x.s.inIntegrationProviderState(x.where...)
+	var updated *IntegrationProviderState
+	err := x.s.writeIntegrationProviderState(ctx, verb, append([]predicate.IntegrationProviderState{integrationproviderstate.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *IntegrationProviderStateScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_IntegrationProviderStateScopedUpdateOne     = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedUpdateOne_Where = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpdateOne_Save  = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpdateOne_Exec  = RoleStep
+)
+
+// IntegrationProviderStateScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type IntegrationProviderStateScopedUpdate struct {
+	s     *Scoped
+	where []predicate.IntegrationProviderState
+	set   []func(*IntegrationProviderStateUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the IntegrationProviderState entities of the Workspace that match the predicates.
+func (t *IntegrationProviderStateScoped) Update() *IntegrationProviderStateScopedUpdate {
+	return &IntegrationProviderStateScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *IntegrationProviderStateScopedUpdate) Where(ps ...predicate.IntegrationProviderState) *IntegrationProviderStateScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *IntegrationProviderStateScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *IntegrationProviderStateScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(integrationproviderstate.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *IntegrationProviderStateUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *IntegrationProviderStateScopedUpdate) SetUpdatedAt(v time.Time) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetProviderMaxPerSecond sets the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderMaxPerSecond(v int) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderMaxPerSecond(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderMaxPerSecond = RoleStep
+
+// SetNillableProviderMaxPerSecond sets the "provider_max_per_second" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderMaxPerSecond(v *int) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderMaxPerSecond(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderMaxPerSecond = RoleStep
+
+// AddProviderMaxPerSecond adds value to the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedUpdate) AddProviderMaxPerSecond(v int) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.AddProviderMaxPerSecond(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_AddProviderMaxPerSecond = RoleStep
+
+// ClearProviderMaxPerSecond clears the value of the "provider_max_per_second" field.
+func (x *IntegrationProviderStateScopedUpdate) ClearProviderMaxPerSecond() *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.ClearProviderMaxPerSecond() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_ClearProviderMaxPerSecond = RoleStep
+
+// SetProviderMaxPerDay sets the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderMaxPerDay(v int) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderMaxPerDay(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderMaxPerDay = RoleStep
+
+// SetNillableProviderMaxPerDay sets the "provider_max_per_day" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderMaxPerDay(v *int) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderMaxPerDay(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderMaxPerDay = RoleStep
+
+// AddProviderMaxPerDay adds value to the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedUpdate) AddProviderMaxPerDay(v int) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.AddProviderMaxPerDay(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_AddProviderMaxPerDay = RoleStep
+
+// ClearProviderMaxPerDay clears the value of the "provider_max_per_day" field.
+func (x *IntegrationProviderStateScopedUpdate) ClearProviderMaxPerDay() *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.ClearProviderMaxPerDay() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_ClearProviderMaxPerDay = RoleStep
+
+// SetProviderEnforcement sets the "provider_enforcement" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderEnforcement(v providers.Enforcement) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderEnforcement(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderEnforcement = RoleStep
+
+// SetNillableProviderEnforcement sets the "provider_enforcement" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderEnforcement(v *providers.Enforcement) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderEnforcement(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderEnforcement = RoleStep
+
+// ClearProviderEnforcement clears the value of the "provider_enforcement" field.
+func (x *IntegrationProviderStateScopedUpdate) ClearProviderEnforcement() *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.ClearProviderEnforcement() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_ClearProviderEnforcement = RoleStep
+
+// SetProviderSandbox sets the "provider_sandbox" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderSandbox(v bool) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderSandbox(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderSandbox = RoleStep
+
+// SetNillableProviderSandbox sets the "provider_sandbox" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderSandbox(v *bool) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderSandbox(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderSandbox = RoleStep
+
+// SetProviderRefusedAt sets the "provider_refused_at" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderRefusedAt(v time.Time) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderRefusedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderRefusedAt = RoleStep
+
+const SetsState_IntegrationProviderStateScopedUpdate_SetProviderRefusedAt = "ProviderRefusedAt"
+
+// SetNillableProviderRefusedAt sets the "provider_refused_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderRefusedAt(v *time.Time) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderRefusedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderRefusedAt = RoleStep
+
+const SetsState_IntegrationProviderStateScopedUpdate_SetNillableProviderRefusedAt = "ProviderRefusedAt"
+
+// ClearProviderRefusedAt clears the value of the "provider_refused_at" field.
+func (x *IntegrationProviderStateScopedUpdate) ClearProviderRefusedAt() *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.ClearProviderRefusedAt() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_ClearProviderRefusedAt = RoleStep
+
+const ClearsState_IntegrationProviderStateScopedUpdate_ClearProviderRefusedAt = "ProviderRefusedAt"
+
+// SetProviderQuotaCheckedAt sets the "provider_quota_checked_at" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderQuotaCheckedAt(v time.Time) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderQuotaCheckedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderQuotaCheckedAt = RoleStep
+
+// SetNillableProviderQuotaCheckedAt sets the "provider_quota_checked_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderQuotaCheckedAt(v *time.Time) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderQuotaCheckedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderQuotaCheckedAt = RoleStep
+
+// ClearProviderQuotaCheckedAt clears the value of the "provider_quota_checked_at" field.
+func (x *IntegrationProviderStateScopedUpdate) ClearProviderQuotaCheckedAt() *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.ClearProviderQuotaCheckedAt() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_ClearProviderQuotaCheckedAt = RoleStep
+
+// SetProviderQuotaFailedAt sets the "provider_quota_failed_at" field.
+func (x *IntegrationProviderStateScopedUpdate) SetProviderQuotaFailedAt(v time.Time) *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.SetProviderQuotaFailedAt(v) })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetProviderQuotaFailedAt = RoleStep
+
+// SetNillableProviderQuotaFailedAt sets the "provider_quota_failed_at" field if the given value is not nil.
+func (x *IntegrationProviderStateScopedUpdate) SetNillableProviderQuotaFailedAt(v *time.Time) *IntegrationProviderStateScopedUpdate {
+	if v != nil {
+		x.SetProviderQuotaFailedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_SetNillableProviderQuotaFailedAt = RoleStep
+
+// ClearProviderQuotaFailedAt clears the value of the "provider_quota_failed_at" field.
+func (x *IntegrationProviderStateScopedUpdate) ClearProviderQuotaFailedAt() *IntegrationProviderStateScopedUpdate {
+	x.set = append(x.set, func(b *IntegrationProviderStateUpdate) { b.ClearProviderQuotaFailedAt() })
+	return x
+}
+
+const RoleOf_IntegrationProviderStateScopedUpdate_ClearProviderQuotaFailedAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *IntegrationProviderStateScopedUpdate) build(ctx context.Context, s *Scoped) (*IntegrationProviderStateUpdate, error) {
+	b := s.c.IntegrationProviderState.Update().Where(s.inIntegrationProviderState(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkIntegrationProviderState(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *IntegrationProviderStateScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inIntegrationProviderState(x.where...)
+	var n int
+	err := x.s.writeIntegrationProviderState(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *IntegrationProviderStateScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_IntegrationProviderStateScopedUpdate        = TypeScopedUpdate
+	EntityOf_IntegrationProviderStateScopedUpdate      = "IntegrationProviderState"
+	RoleOf_IntegrationProviderStateScopedUpdate_Where  = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpdate_Modify = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpdate_Save   = RoleStep
+	RoleOf_IntegrationProviderStateScopedUpdate_Exec   = RoleStep
 )
 
 // InvitationScoped reaches Invitation entities of one Workspace.
@@ -60933,6 +61756,15 @@ func (s *Scoped) writeWebhookEndpoint(ctx context.Context, verb string, where []
 // checkWebhookEndpoint verifies every reference the mutations set against the Workspace of s, one query per
 // reference for all of them.
 func (s *Scoped) checkWebhookEndpoint(ctx context.Context, ms ...*WebhookEndpointMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.HealthIDs()...)
+		}
+		if err := s.verifyWebhookEndpointHealth(ctx, ids); err != nil {
+			return fmt.Errorf("health: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -61152,96 +61984,6 @@ func (x *WebhookEndpointScopedCreate) SetNillableHealthGeneration(v *int64) *Web
 
 const RoleOf_WebhookEndpointScopedCreate_SetNillableHealthGeneration = RoleStep
 
-// SetConsecutiveFailures sets the "consecutive_failures" field.
-func (x *WebhookEndpointScopedCreate) SetConsecutiveFailures(v int) *WebhookEndpointScopedCreate {
-	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetConsecutiveFailures(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetConsecutiveFailures = RoleStep
-
-// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointScopedCreate {
-	if v != nil {
-		x.SetConsecutiveFailures(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetNillableConsecutiveFailures = RoleStep
-
-// SetFailingSince sets the "failing_since" field.
-func (x *WebhookEndpointScopedCreate) SetFailingSince(v time.Time) *WebhookEndpointScopedCreate {
-	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetFailingSince(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetFailingSince = RoleStep
-
-// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableFailingSince(v *time.Time) *WebhookEndpointScopedCreate {
-	if v != nil {
-		x.SetFailingSince(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetNillableFailingSince = RoleStep
-
-// SetLastErrorKind sets the "last_error_kind" field.
-func (x *WebhookEndpointScopedCreate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedCreate {
-	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetLastErrorKind(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetLastErrorKind = RoleStep
-
-// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointScopedCreate {
-	if v != nil {
-		x.SetLastErrorKind(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetNillableLastErrorKind = RoleStep
-
-// SetLastErrorStatus sets the "last_error_status" field.
-func (x *WebhookEndpointScopedCreate) SetLastErrorStatus(v int) *WebhookEndpointScopedCreate {
-	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetLastErrorStatus(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetLastErrorStatus = RoleStep
-
-// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableLastErrorStatus(v *int) *WebhookEndpointScopedCreate {
-	if v != nil {
-		x.SetLastErrorStatus(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetNillableLastErrorStatus = RoleStep
-
-// SetLastFailureAt sets the "last_failure_at" field.
-func (x *WebhookEndpointScopedCreate) SetLastFailureAt(v time.Time) *WebhookEndpointScopedCreate {
-	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetLastFailureAt(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetLastFailureAt = RoleStep
-
-// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
-func (x *WebhookEndpointScopedCreate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointScopedCreate {
-	if v != nil {
-		x.SetLastFailureAt(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedCreate_SetNillableLastFailureAt = RoleStep
-
 // SetDisabledReason sets the "disabled_reason" field.
 func (x *WebhookEndpointScopedCreate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedCreate {
 	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetDisabledReason(v) })
@@ -61259,6 +62001,32 @@ func (x *WebhookEndpointScopedCreate) SetNillableDisabledReason(v *webhookendpoi
 }
 
 const RoleOf_WebhookEndpointScopedCreate_SetNillableDisabledReason = RoleStep
+
+// SetHealthID sets the "health" edge to the WebhookEndpointHealth entity by ID.
+func (x *WebhookEndpointScopedCreate) SetHealthID(id int64) *WebhookEndpointScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetHealthID(id) })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedCreate_SetHealthID = RoleStep
+
+// SetNillableHealthID sets the "health" edge to the WebhookEndpointHealth entity by ID if the given value is not nil.
+func (x *WebhookEndpointScopedCreate) SetNillableHealthID(id *int64) *WebhookEndpointScopedCreate {
+	if id != nil {
+		x.SetHealthID(*id)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedCreate_SetNillableHealthID = RoleStep
+
+// SetHealth sets the "health" edge to the WebhookEndpointHealth entity.
+func (x *WebhookEndpointScopedCreate) SetHealth(v *WebhookEndpointHealth) *WebhookEndpointScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointCreate) { b.SetHealth(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedCreate_SetHealth = RoleStep
 
 const (
 	TypeOf_WebhookEndpointScopedCreate                        = TypeScopedCreate
@@ -61534,142 +62302,6 @@ func (u *WebhookEndpointScopedUpsert) ClearHealthGeneration() *WebhookEndpointSc
 }
 
 const RoleOf_WebhookEndpointScopedUpsert_ClearHealthGeneration = RoleStep
-
-// SetConsecutiveFailures sets the "consecutive_failures" field.
-func (u *WebhookEndpointScopedUpsert) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpsert {
-	u.u.Set(webhookendpoint.FieldConsecutiveFailures, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_SetConsecutiveFailures = RoleStep
-
-// AddConsecutiveFailures adds v to the "consecutive_failures" field.
-func (u *WebhookEndpointScopedUpsert) AddConsecutiveFailures(v int) *WebhookEndpointScopedUpsert {
-	u.u.Add(webhookendpoint.FieldConsecutiveFailures, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_AddConsecutiveFailures = RoleStep
-
-// UpdateConsecutiveFailures sets the "consecutive_failures" field to the value that was provided on create.
-func (u *WebhookEndpointScopedUpsert) UpdateConsecutiveFailures() *WebhookEndpointScopedUpsert {
-	u.u.SetExcluded(webhookendpoint.FieldConsecutiveFailures)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_UpdateConsecutiveFailures = RoleStep
-
-// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
-func (u *WebhookEndpointScopedUpsert) ClearConsecutiveFailures() *WebhookEndpointScopedUpsert {
-	u.u.SetNull(webhookendpoint.FieldConsecutiveFailures)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_ClearConsecutiveFailures = RoleStep
-
-// SetFailingSince sets the "failing_since" field.
-func (u *WebhookEndpointScopedUpsert) SetFailingSince(v time.Time) *WebhookEndpointScopedUpsert {
-	u.u.Set(webhookendpoint.FieldFailingSince, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_SetFailingSince = RoleStep
-
-// UpdateFailingSince sets the "failing_since" field to the value that was provided on create.
-func (u *WebhookEndpointScopedUpsert) UpdateFailingSince() *WebhookEndpointScopedUpsert {
-	u.u.SetExcluded(webhookendpoint.FieldFailingSince)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_UpdateFailingSince = RoleStep
-
-// ClearFailingSince clears the value of the "failing_since" field.
-func (u *WebhookEndpointScopedUpsert) ClearFailingSince() *WebhookEndpointScopedUpsert {
-	u.u.SetNull(webhookendpoint.FieldFailingSince)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_ClearFailingSince = RoleStep
-
-// SetLastErrorKind sets the "last_error_kind" field.
-func (u *WebhookEndpointScopedUpsert) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedUpsert {
-	u.u.Set(webhookendpoint.FieldLastErrorKind, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_SetLastErrorKind = RoleStep
-
-// UpdateLastErrorKind sets the "last_error_kind" field to the value that was provided on create.
-func (u *WebhookEndpointScopedUpsert) UpdateLastErrorKind() *WebhookEndpointScopedUpsert {
-	u.u.SetExcluded(webhookendpoint.FieldLastErrorKind)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_UpdateLastErrorKind = RoleStep
-
-// ClearLastErrorKind clears the value of the "last_error_kind" field.
-func (u *WebhookEndpointScopedUpsert) ClearLastErrorKind() *WebhookEndpointScopedUpsert {
-	u.u.SetNull(webhookendpoint.FieldLastErrorKind)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_ClearLastErrorKind = RoleStep
-
-// SetLastErrorStatus sets the "last_error_status" field.
-func (u *WebhookEndpointScopedUpsert) SetLastErrorStatus(v int) *WebhookEndpointScopedUpsert {
-	u.u.Set(webhookendpoint.FieldLastErrorStatus, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_SetLastErrorStatus = RoleStep
-
-// AddLastErrorStatus adds v to the "last_error_status" field.
-func (u *WebhookEndpointScopedUpsert) AddLastErrorStatus(v int) *WebhookEndpointScopedUpsert {
-	u.u.Add(webhookendpoint.FieldLastErrorStatus, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_AddLastErrorStatus = RoleStep
-
-// UpdateLastErrorStatus sets the "last_error_status" field to the value that was provided on create.
-func (u *WebhookEndpointScopedUpsert) UpdateLastErrorStatus() *WebhookEndpointScopedUpsert {
-	u.u.SetExcluded(webhookendpoint.FieldLastErrorStatus)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_UpdateLastErrorStatus = RoleStep
-
-// ClearLastErrorStatus clears the value of the "last_error_status" field.
-func (u *WebhookEndpointScopedUpsert) ClearLastErrorStatus() *WebhookEndpointScopedUpsert {
-	u.u.SetNull(webhookendpoint.FieldLastErrorStatus)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_ClearLastErrorStatus = RoleStep
-
-// SetLastFailureAt sets the "last_failure_at" field.
-func (u *WebhookEndpointScopedUpsert) SetLastFailureAt(v time.Time) *WebhookEndpointScopedUpsert {
-	u.u.Set(webhookendpoint.FieldLastFailureAt, v)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_SetLastFailureAt = RoleStep
-
-// UpdateLastFailureAt sets the "last_failure_at" field to the value that was provided on create.
-func (u *WebhookEndpointScopedUpsert) UpdateLastFailureAt() *WebhookEndpointScopedUpsert {
-	u.u.SetExcluded(webhookendpoint.FieldLastFailureAt)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_UpdateLastFailureAt = RoleStep
-
-// ClearLastFailureAt clears the value of the "last_failure_at" field.
-func (u *WebhookEndpointScopedUpsert) ClearLastFailureAt() *WebhookEndpointScopedUpsert {
-	u.u.SetNull(webhookendpoint.FieldLastFailureAt)
-	return u
-}
-
-const RoleOf_WebhookEndpointScopedUpsert_ClearLastFailureAt = RoleStep
 
 // SetDisabledReason sets the "disabled_reason" field.
 func (u *WebhookEndpointScopedUpsert) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpsert {
@@ -62129,152 +62761,6 @@ func (x *WebhookEndpointScopedUpdateOne) ClearHealthGeneration() *WebhookEndpoin
 
 const RoleOf_WebhookEndpointScopedUpdateOne_ClearHealthGeneration = RoleStep
 
-// SetConsecutiveFailures sets the "consecutive_failures" field.
-func (x *WebhookEndpointScopedUpdateOne) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetConsecutiveFailures(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetConsecutiveFailures = RoleStep
-
-// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableConsecutiveFailures(v *int) *WebhookEndpointScopedUpdateOne {
-	if v != nil {
-		x.SetConsecutiveFailures(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableConsecutiveFailures = RoleStep
-
-// AddConsecutiveFailures adds value to the "consecutive_failures" field.
-func (x *WebhookEndpointScopedUpdateOne) AddConsecutiveFailures(v int) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.AddConsecutiveFailures(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_AddConsecutiveFailures = RoleStep
-
-// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
-func (x *WebhookEndpointScopedUpdateOne) ClearConsecutiveFailures() *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.ClearConsecutiveFailures() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_ClearConsecutiveFailures = RoleStep
-
-// SetFailingSince sets the "failing_since" field.
-func (x *WebhookEndpointScopedUpdateOne) SetFailingSince(v time.Time) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetFailingSince(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetFailingSince = RoleStep
-
-// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableFailingSince(v *time.Time) *WebhookEndpointScopedUpdateOne {
-	if v != nil {
-		x.SetFailingSince(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableFailingSince = RoleStep
-
-// ClearFailingSince clears the value of the "failing_since" field.
-func (x *WebhookEndpointScopedUpdateOne) ClearFailingSince() *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.ClearFailingSince() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_ClearFailingSince = RoleStep
-
-// SetLastErrorKind sets the "last_error_kind" field.
-func (x *WebhookEndpointScopedUpdateOne) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetLastErrorKind(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetLastErrorKind = RoleStep
-
-// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointScopedUpdateOne {
-	if v != nil {
-		x.SetLastErrorKind(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableLastErrorKind = RoleStep
-
-// ClearLastErrorKind clears the value of the "last_error_kind" field.
-func (x *WebhookEndpointScopedUpdateOne) ClearLastErrorKind() *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.ClearLastErrorKind() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_ClearLastErrorKind = RoleStep
-
-// SetLastErrorStatus sets the "last_error_status" field.
-func (x *WebhookEndpointScopedUpdateOne) SetLastErrorStatus(v int) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetLastErrorStatus(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetLastErrorStatus = RoleStep
-
-// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableLastErrorStatus(v *int) *WebhookEndpointScopedUpdateOne {
-	if v != nil {
-		x.SetLastErrorStatus(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableLastErrorStatus = RoleStep
-
-// AddLastErrorStatus adds value to the "last_error_status" field.
-func (x *WebhookEndpointScopedUpdateOne) AddLastErrorStatus(v int) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.AddLastErrorStatus(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_AddLastErrorStatus = RoleStep
-
-// ClearLastErrorStatus clears the value of the "last_error_status" field.
-func (x *WebhookEndpointScopedUpdateOne) ClearLastErrorStatus() *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.ClearLastErrorStatus() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_ClearLastErrorStatus = RoleStep
-
-// SetLastFailureAt sets the "last_failure_at" field.
-func (x *WebhookEndpointScopedUpdateOne) SetLastFailureAt(v time.Time) *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetLastFailureAt(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetLastFailureAt = RoleStep
-
-// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdateOne) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointScopedUpdateOne {
-	if v != nil {
-		x.SetLastFailureAt(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableLastFailureAt = RoleStep
-
-// ClearLastFailureAt clears the value of the "last_failure_at" field.
-func (x *WebhookEndpointScopedUpdateOne) ClearLastFailureAt() *WebhookEndpointScopedUpdateOne {
-	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.ClearLastFailureAt() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdateOne_ClearLastFailureAt = RoleStep
-
 // SetDisabledReason sets the "disabled_reason" field.
 func (x *WebhookEndpointScopedUpdateOne) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdateOne {
 	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetDisabledReason(v) })
@@ -62300,6 +62786,40 @@ func (x *WebhookEndpointScopedUpdateOne) ClearDisabledReason() *WebhookEndpointS
 }
 
 const RoleOf_WebhookEndpointScopedUpdateOne_ClearDisabledReason = RoleStep
+
+// SetHealthID sets the "health" edge to the WebhookEndpointHealth entity by ID.
+func (x *WebhookEndpointScopedUpdateOne) SetHealthID(id int64) *WebhookEndpointScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetHealthID(id) })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdateOne_SetHealthID = RoleStep
+
+// SetNillableHealthID sets the "health" edge to the WebhookEndpointHealth entity by ID if the given value is not nil.
+func (x *WebhookEndpointScopedUpdateOne) SetNillableHealthID(id *int64) *WebhookEndpointScopedUpdateOne {
+	if id != nil {
+		x.SetHealthID(*id)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdateOne_SetNillableHealthID = RoleStep
+
+// SetHealth sets the "health" edge to the WebhookEndpointHealth entity.
+func (x *WebhookEndpointScopedUpdateOne) SetHealth(v *WebhookEndpointHealth) *WebhookEndpointScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.SetHealth(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdateOne_SetHealth = RoleStep
+
+// ClearHealth clears the "health" edge to the WebhookEndpointHealth entity.
+func (x *WebhookEndpointScopedUpdateOne) ClearHealth() *WebhookEndpointScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointUpdateOne) { b.ClearHealth() })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdateOne_ClearHealth = RoleStep
 
 // Save verifies the references against the Workspace, then updates the WebhookEndpoint.
 func (x *WebhookEndpointScopedUpdateOne) Save(ctx context.Context) (*WebhookEndpoint, error) {
@@ -62527,152 +63047,6 @@ func (x *WebhookEndpointScopedUpdate) ClearHealthGeneration() *WebhookEndpointSc
 
 const RoleOf_WebhookEndpointScopedUpdate_ClearHealthGeneration = RoleStep
 
-// SetConsecutiveFailures sets the "consecutive_failures" field.
-func (x *WebhookEndpointScopedUpdate) SetConsecutiveFailures(v int) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetConsecutiveFailures(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetConsecutiveFailures = RoleStep
-
-// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointScopedUpdate {
-	if v != nil {
-		x.SetConsecutiveFailures(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetNillableConsecutiveFailures = RoleStep
-
-// AddConsecutiveFailures adds value to the "consecutive_failures" field.
-func (x *WebhookEndpointScopedUpdate) AddConsecutiveFailures(v int) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.AddConsecutiveFailures(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_AddConsecutiveFailures = RoleStep
-
-// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
-func (x *WebhookEndpointScopedUpdate) ClearConsecutiveFailures() *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.ClearConsecutiveFailures() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_ClearConsecutiveFailures = RoleStep
-
-// SetFailingSince sets the "failing_since" field.
-func (x *WebhookEndpointScopedUpdate) SetFailingSince(v time.Time) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetFailingSince(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetFailingSince = RoleStep
-
-// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableFailingSince(v *time.Time) *WebhookEndpointScopedUpdate {
-	if v != nil {
-		x.SetFailingSince(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetNillableFailingSince = RoleStep
-
-// ClearFailingSince clears the value of the "failing_since" field.
-func (x *WebhookEndpointScopedUpdate) ClearFailingSince() *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.ClearFailingSince() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_ClearFailingSince = RoleStep
-
-// SetLastErrorKind sets the "last_error_kind" field.
-func (x *WebhookEndpointScopedUpdate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetLastErrorKind(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetLastErrorKind = RoleStep
-
-// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointScopedUpdate {
-	if v != nil {
-		x.SetLastErrorKind(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetNillableLastErrorKind = RoleStep
-
-// ClearLastErrorKind clears the value of the "last_error_kind" field.
-func (x *WebhookEndpointScopedUpdate) ClearLastErrorKind() *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.ClearLastErrorKind() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_ClearLastErrorKind = RoleStep
-
-// SetLastErrorStatus sets the "last_error_status" field.
-func (x *WebhookEndpointScopedUpdate) SetLastErrorStatus(v int) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetLastErrorStatus(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetLastErrorStatus = RoleStep
-
-// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableLastErrorStatus(v *int) *WebhookEndpointScopedUpdate {
-	if v != nil {
-		x.SetLastErrorStatus(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetNillableLastErrorStatus = RoleStep
-
-// AddLastErrorStatus adds value to the "last_error_status" field.
-func (x *WebhookEndpointScopedUpdate) AddLastErrorStatus(v int) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.AddLastErrorStatus(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_AddLastErrorStatus = RoleStep
-
-// ClearLastErrorStatus clears the value of the "last_error_status" field.
-func (x *WebhookEndpointScopedUpdate) ClearLastErrorStatus() *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.ClearLastErrorStatus() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_ClearLastErrorStatus = RoleStep
-
-// SetLastFailureAt sets the "last_failure_at" field.
-func (x *WebhookEndpointScopedUpdate) SetLastFailureAt(v time.Time) *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetLastFailureAt(v) })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetLastFailureAt = RoleStep
-
-// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
-func (x *WebhookEndpointScopedUpdate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointScopedUpdate {
-	if v != nil {
-		x.SetLastFailureAt(*v)
-	}
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_SetNillableLastFailureAt = RoleStep
-
-// ClearLastFailureAt clears the value of the "last_failure_at" field.
-func (x *WebhookEndpointScopedUpdate) ClearLastFailureAt() *WebhookEndpointScopedUpdate {
-	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.ClearLastFailureAt() })
-	return x
-}
-
-const RoleOf_WebhookEndpointScopedUpdate_ClearLastFailureAt = RoleStep
-
 // SetDisabledReason sets the "disabled_reason" field.
 func (x *WebhookEndpointScopedUpdate) SetDisabledReason(v webhookendpoint.DisabledReason) *WebhookEndpointScopedUpdate {
 	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetDisabledReason(v) })
@@ -62698,6 +63072,40 @@ func (x *WebhookEndpointScopedUpdate) ClearDisabledReason() *WebhookEndpointScop
 }
 
 const RoleOf_WebhookEndpointScopedUpdate_ClearDisabledReason = RoleStep
+
+// SetHealthID sets the "health" edge to the WebhookEndpointHealth entity by ID.
+func (x *WebhookEndpointScopedUpdate) SetHealthID(id int64) *WebhookEndpointScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetHealthID(id) })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdate_SetHealthID = RoleStep
+
+// SetNillableHealthID sets the "health" edge to the WebhookEndpointHealth entity by ID if the given value is not nil.
+func (x *WebhookEndpointScopedUpdate) SetNillableHealthID(id *int64) *WebhookEndpointScopedUpdate {
+	if id != nil {
+		x.SetHealthID(*id)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdate_SetNillableHealthID = RoleStep
+
+// SetHealth sets the "health" edge to the WebhookEndpointHealth entity.
+func (x *WebhookEndpointScopedUpdate) SetHealth(v *WebhookEndpointHealth) *WebhookEndpointScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.SetHealth(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdate_SetHealth = RoleStep
+
+// ClearHealth clears the "health" edge to the WebhookEndpointHealth entity.
+func (x *WebhookEndpointScopedUpdate) ClearHealth() *WebhookEndpointScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointUpdate) { b.ClearHealth() })
+	return x
+}
+
+const RoleOf_WebhookEndpointScopedUpdate_ClearHealth = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *WebhookEndpointScopedUpdate) build(ctx context.Context, s *Scoped) (*WebhookEndpointUpdate, error) {
@@ -62740,4 +63148,1208 @@ const (
 	RoleOf_WebhookEndpointScopedUpdate_Modify = RoleStep
 	RoleOf_WebhookEndpointScopedUpdate_Save   = RoleStep
 	RoleOf_WebhookEndpointScopedUpdate_Exec   = RoleStep
+)
+
+// WebhookEndpointHealthScoped reaches WebhookEndpointHealth entities of one Workspace.
+type WebhookEndpointHealthScoped struct{ s *Scoped }
+
+// WebhookEndpointHealth returns the WebhookEndpointHealth entities of the Workspace.
+func (s *Scoped) WebhookEndpointHealth() *WebhookEndpointHealthScoped {
+	return &WebhookEndpointHealthScoped{s: s}
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScoped             = TypeWrapper
+	EntityOf_WebhookEndpointHealthScoped           = "WebhookEndpointHealth"
+	RoleOf_Scoped_WebhookEndpointHealth            = RoleNone
+	RoleOf_WebhookEndpointHealthScoped_Query       = RoleRead
+	RoleOf_WebhookEndpointHealthScoped_Get         = RoleRead
+	RoleOf_WebhookEndpointHealthScoped_DeleteOneID = RoleStart
+	RoleOf_WebhookEndpointHealthScoped_UpdateOneID = RoleStart
+	RoleOf_WebhookEndpointHealthScoped_Delete      = RoleStart
+	RoleOf_WebhookEndpointHealthScoped_Create      = RoleStart
+	RoleOf_WebhookEndpointHealthScoped_CreateBulk  = RoleStart
+	RoleOf_WebhookEndpointHealthScoped_Update      = RoleStart
+)
+
+// inWebhookEndpointHealth confines predicates of WebhookEndpointHealth rows to the Workspace of s: every read and write of
+// them goes through it.
+func (s *Scoped) inWebhookEndpointHealth(ps ...predicate.WebhookEndpointHealth) []predicate.WebhookEndpointHealth {
+	return append([]predicate.WebhookEndpointHealth{webhookendpointhealth.WorkspaceID(s.ws)}, ps...)
+}
+
+// Query returns a WebhookEndpointHealth query already confined to the Workspace.
+func (t *WebhookEndpointHealthScoped) Query() *WebhookEndpointHealthQuery {
+	return t.s.c.WebhookEndpointHealth.Query().Where(t.s.inWebhookEndpointHealth()...)
+}
+
+// Get returns the WebhookEndpointHealth with the id; a row of another Workspace is not found.
+func (t *WebhookEndpointHealthScoped) Get(ctx context.Context, id int64) (*WebhookEndpointHealth, error) {
+	return t.Query().Where(webhookendpointhealth.ID(id)).Only(ctx)
+}
+
+// writeWebhookEndpointHealth runs a write of WebhookEndpointHealth rows: run builds it on the client of the scope it is
+// given and executes it, and reaches no other client. The
+// entity is not audited, so run gets the scope itself.
+func (s *Scoped) writeWebhookEndpointHealth(ctx context.Context, verb string, where []predicate.WebhookEndpointHealth, unchanged unchangedRows, run func(s *Scoped) ([]int64, error)) error {
+	_, _, _ = verb, where, unchanged
+	_, err := run(s)
+	return err
+}
+
+// checkWebhookEndpointHealth verifies every reference the mutations set against the Workspace of s, one query per
+// reference for all of them.
+func (s *Scoped) checkWebhookEndpointHealth(ctx context.Context, ms ...*WebhookEndpointHealthMutation) error {
+	{
+		var ids []int64
+		for _, m := range ms {
+			ids = append(ids, m.WebhookEndpointIDs()...)
+		}
+		if err := s.verifyWebhookEndpoint(ctx, ids); err != nil {
+			return fmt.Errorf("webhook_endpoint: %w", err)
+		}
+	}
+	return nil
+}
+
+// WebhookEndpointHealthScopedDeleteOne deletes one WebhookEndpointHealth: it keeps the row's id and its fences, and builds the
+// ent delete on the client the delete runs on.
+type WebhookEndpointHealthScopedDeleteOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.WebhookEndpointHealth
+}
+
+// DeleteOneID deletes the WebhookEndpointHealth with the id; a row of another Workspace is not found.
+func (t *WebhookEndpointHealthScoped) DeleteOneID(id int64) *WebhookEndpointHealthScopedDeleteOne {
+	return &WebhookEndpointHealthScopedDeleteOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *WebhookEndpointHealthScopedDeleteOne) Where(ps ...predicate.WebhookEndpointHealth) *WebhookEndpointHealthScopedDeleteOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedDeleteOne       = TypeScopedDelete
+	EntityOf_WebhookEndpointHealthScopedDeleteOne     = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedDeleteOne_Where = RoleStep
+	RoleOf_WebhookEndpointHealthScopedDeleteOne_Exec  = RoleStep
+)
+
+// Exec deletes the row; a missing row is a NotFoundError.
+func (x *WebhookEndpointHealthScopedDeleteOne) Exec(ctx context.Context) error {
+	where := x.s.inWebhookEndpointHealth(x.where...)
+	return x.s.writeWebhookEndpointHealth(ctx, "delete", append([]predicate.WebhookEndpointHealth{webhookendpointhealth.ID(x.id)}, where...), skipUnchanged, func(s *Scoped) ([]int64, error) {
+		return nil, s.c.WebhookEndpointHealth.DeleteOneID(x.id).Where(where...).Exec(ctx)
+	})
+}
+
+// WebhookEndpointHealthScopedDelete deletes the WebhookEndpointHealth rows of one Workspace that match its predicates, which it
+// keeps until the delete is built on the client it runs on.
+type WebhookEndpointHealthScopedDelete struct {
+	s     *Scoped
+	where []predicate.WebhookEndpointHealth
+}
+
+// Delete deletes the WebhookEndpointHealth entities of the Workspace that match the predicates.
+func (t *WebhookEndpointHealthScoped) Delete() *WebhookEndpointHealthScopedDelete {
+	return &WebhookEndpointHealthScopedDelete{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *WebhookEndpointHealthScopedDelete) Where(ps ...predicate.WebhookEndpointHealth) *WebhookEndpointHealthScopedDelete {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedDelete       = TypeScopedDelete
+	EntityOf_WebhookEndpointHealthScopedDelete     = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedDelete_Where = RoleStep
+	RoleOf_WebhookEndpointHealthScopedDelete_Exec  = RoleStep
+)
+
+// Exec deletes the rows and returns how many were deleted.
+func (x *WebhookEndpointHealthScopedDelete) Exec(ctx context.Context) (int, error) {
+	where := x.s.inWebhookEndpointHealth(x.where...)
+	var n int
+	err := x.s.writeWebhookEndpointHealth(ctx, "delete", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		var err error
+		n, err = s.c.WebhookEndpointHealth.Delete().Where(where...).Exec(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// ---------------------------------------------------------------- create
+
+// WebhookEndpointHealthScopedCreate creates a WebhookEndpointHealth of one Workspace. It has no way to name a Workspace: it
+// keeps what its setters set and builds the ent create, in its Workspace, on the client the create
+// runs on.
+type WebhookEndpointHealthScopedCreate struct {
+	s   *Scoped
+	set []func(*WebhookEndpointHealthCreate)
+}
+
+// Create starts a WebhookEndpointHealth in the Workspace.
+func (t *WebhookEndpointHealthScoped) Create() *WebhookEndpointHealthScopedCreate {
+	return &WebhookEndpointHealthScopedCreate{s: t.s}
+}
+
+// raw makes the ent create on the client of s, in its Workspace, its references not yet verified
+// (a bulk create verifies all of its creates' at once).
+func (x *WebhookEndpointHealthScopedCreate) raw(s *Scoped) *WebhookEndpointHealthCreate {
+	b := s.c.WebhookEndpointHealth.Create().SetWorkspaceID(s.ws)
+	for _, set := range x.set {
+		set(b)
+	}
+	return b
+}
+
+// build makes the ent create on the client of s and verifies its references.
+func (x *WebhookEndpointHealthScopedCreate) build(ctx context.Context, s *Scoped) (*WebhookEndpointHealthCreate, error) {
+	b := x.raw(s)
+	return written(b, s.checkWebhookEndpointHealth(ctx, b.Mutation()))
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (x *WebhookEndpointHealthScopedCreate) SetCreatedAt(v time.Time) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetCreatedAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetCreatedAt = RoleStep
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableCreatedAt(v *time.Time) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetCreatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableCreatedAt = RoleStep
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *WebhookEndpointHealthScopedCreate) SetUpdatedAt(v time.Time) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetUpdatedAt = RoleStep
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableUpdatedAt(v *time.Time) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetUpdatedAt(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableUpdatedAt = RoleStep
+
+// SetWebhookEndpointID sets the "webhook_endpoint_id" field.
+func (x *WebhookEndpointHealthScopedCreate) SetWebhookEndpointID(v int64) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetWebhookEndpointID(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetWebhookEndpointID = RoleStep
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedCreate) SetConsecutiveFailures(v int) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetConsecutiveFailures(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetConsecutiveFailures = RoleStep
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetConsecutiveFailures(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableConsecutiveFailures = RoleStep
+
+// SetFailingSince sets the "failing_since" field.
+func (x *WebhookEndpointHealthScopedCreate) SetFailingSince(v time.Time) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetFailingSince(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetFailingSince = RoleStep
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableFailingSince(v *time.Time) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetFailingSince(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableFailingSince = RoleStep
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (x *WebhookEndpointHealthScopedCreate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetLastErrorKind(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetLastErrorKind = RoleStep
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetLastErrorKind(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableLastErrorKind = RoleStep
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedCreate) SetLastErrorStatus(v int) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetLastErrorStatus(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetLastErrorStatus = RoleStep
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableLastErrorStatus(v *int) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetLastErrorStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableLastErrorStatus = RoleStep
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (x *WebhookEndpointHealthScopedCreate) SetLastFailureAt(v time.Time) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetLastFailureAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetLastFailureAt = RoleStep
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedCreate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointHealthScopedCreate {
+	if v != nil {
+		x.SetLastFailureAt(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetNillableLastFailureAt = RoleStep
+
+// SetWebhookEndpoint sets the "webhook_endpoint" edge to the WebhookEndpoint entity.
+func (x *WebhookEndpointHealthScopedCreate) SetWebhookEndpoint(v *WebhookEndpoint) *WebhookEndpointHealthScopedCreate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthCreate) { b.SetWebhookEndpoint(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedCreate_SetWebhookEndpoint = RoleStep
+
+const (
+	TypeOf_WebhookEndpointHealthScopedCreate                        = TypeScopedCreate
+	EntityOf_WebhookEndpointHealthScopedCreate                      = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedCreate_Save                   = RoleStep
+	RoleOf_WebhookEndpointHealthScopedCreate_Exec                   = RoleStep
+	RoleOf_WebhookEndpointHealthScopedCreate_OnConflictColumns      = RoleStart
+	RoleOf_WebhookEndpointHealthScopedCreate_OnConflictColumnsWhere = RoleStart
+)
+
+// Save verifies the references against the Workspace, then creates the WebhookEndpointHealth.
+func (x *WebhookEndpointHealthScopedCreate) Save(ctx context.Context) (*WebhookEndpointHealth, error) {
+	var created *WebhookEndpointHealth
+	err := x.s.writeWebhookEndpointHealth(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = b.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *WebhookEndpointHealthScopedCreate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+// ---------------------------------------------------------------- create bulk
+
+// WebhookEndpointHealthScopedCreateBulk creates several WebhookEndpointHealth entities of one Workspace at once.
+type WebhookEndpointHealthScopedCreateBulk struct {
+	s  *Scoped
+	xs []*WebhookEndpointHealthScopedCreate
+}
+
+// CreateBulk batches creates started on this Workspace.
+func (t *WebhookEndpointHealthScoped) CreateBulk(xs ...*WebhookEndpointHealthScopedCreate) *WebhookEndpointHealthScopedCreateBulk {
+	return &WebhookEndpointHealthScopedCreateBulk{s: t.s, xs: xs}
+}
+
+// refuseForeign refuses a create started on another Workspace's scope.
+func (b *WebhookEndpointHealthScopedCreateBulk) refuseForeign() error {
+	for _, x := range b.xs {
+		if x.s.ws != b.s.ws {
+			return fmt.Errorf("WebhookEndpointHealth: builder of another scope: %w", ErrNotInWorkspace)
+		}
+	}
+	return nil
+}
+
+// build makes the ent bulk create on the client of s, every create of it in the Workspace, and
+// verifies the references of all of them, one query per reference rather than one per row.
+func (b *WebhookEndpointHealthScopedCreateBulk) build(ctx context.Context, s *Scoped) (*WebhookEndpointHealthCreateBulk, error) {
+	builders := make([]*WebhookEndpointHealthCreate, len(b.xs))
+	ms := make([]*WebhookEndpointHealthMutation, len(b.xs))
+	for i, x := range b.xs {
+		builders[i] = x.raw(s)
+		ms[i] = builders[i].Mutation()
+	}
+	if err := s.checkWebhookEndpointHealth(ctx, ms...); err != nil {
+		return nil, err
+	}
+	return s.c.WebhookEndpointHealth.CreateBulk(builders...), nil
+}
+
+// Save verifies every builder's references, then creates the WebhookEndpointHealth entities.
+func (b *WebhookEndpointHealthScopedCreateBulk) Save(ctx context.Context) ([]*WebhookEndpointHealth, error) {
+	if err := b.refuseForeign(); err != nil {
+		return nil, err
+	}
+	var created []*WebhookEndpointHealth
+	err := b.s.writeWebhookEndpointHealth(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if created, err = raw.Save(ctx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+	return written(created, err)
+}
+
+// Exec is like Save, discarding the entities.
+func (b *WebhookEndpointHealthScopedCreateBulk) Exec(ctx context.Context) error {
+	_, err := b.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedCreateBulk                   = TypeScopedCreate
+	EntityOf_WebhookEndpointHealthScopedCreateBulk                 = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedCreateBulk_Save              = RoleStep
+	RoleOf_WebhookEndpointHealthScopedCreateBulk_Exec              = RoleStep
+	RoleOf_WebhookEndpointHealthScopedCreateBulk_OnConflictColumns = RoleStart
+)
+
+// ---------------------------------------------------------------- upsert
+
+// WebhookEndpointHealthScopedUpsert is the "ON CONFLICT ... DO UPDATE" setter. It cannot move a row to
+// another Workspace or point a reference at a value that was not verified on create.
+type WebhookEndpointHealthScopedUpsert struct{ u *sql.UpdateSet }
+
+const (
+	TypeOf_WebhookEndpointHealthScopedUpsert   = TypeScopedUpsert
+	EntityOf_WebhookEndpointHealthScopedUpsert = "WebhookEndpointHealth"
+)
+
+// SetUpdatedAt sets the "updated_at" field.
+func (u *WebhookEndpointHealthScopedUpsert) SetUpdatedAt(v time.Time) *WebhookEndpointHealthScopedUpsert {
+	u.u.Set(webhookendpointhealth.FieldUpdatedAt, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_SetUpdatedAt = RoleStep
+
+// UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
+func (u *WebhookEndpointHealthScopedUpsert) UpdateUpdatedAt() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetExcluded(webhookendpointhealth.FieldUpdatedAt)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_UpdateUpdatedAt = RoleStep
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (u *WebhookEndpointHealthScopedUpsert) SetConsecutiveFailures(v int) *WebhookEndpointHealthScopedUpsert {
+	u.u.Set(webhookendpointhealth.FieldConsecutiveFailures, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_SetConsecutiveFailures = RoleStep
+
+// AddConsecutiveFailures adds v to the "consecutive_failures" field.
+func (u *WebhookEndpointHealthScopedUpsert) AddConsecutiveFailures(v int) *WebhookEndpointHealthScopedUpsert {
+	u.u.Add(webhookendpointhealth.FieldConsecutiveFailures, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_AddConsecutiveFailures = RoleStep
+
+// UpdateConsecutiveFailures sets the "consecutive_failures" field to the value that was provided on create.
+func (u *WebhookEndpointHealthScopedUpsert) UpdateConsecutiveFailures() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetExcluded(webhookendpointhealth.FieldConsecutiveFailures)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_UpdateConsecutiveFailures = RoleStep
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (u *WebhookEndpointHealthScopedUpsert) ClearConsecutiveFailures() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetNull(webhookendpointhealth.FieldConsecutiveFailures)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_ClearConsecutiveFailures = RoleStep
+
+// SetFailingSince sets the "failing_since" field.
+func (u *WebhookEndpointHealthScopedUpsert) SetFailingSince(v time.Time) *WebhookEndpointHealthScopedUpsert {
+	u.u.Set(webhookendpointhealth.FieldFailingSince, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_SetFailingSince = RoleStep
+
+// UpdateFailingSince sets the "failing_since" field to the value that was provided on create.
+func (u *WebhookEndpointHealthScopedUpsert) UpdateFailingSince() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetExcluded(webhookendpointhealth.FieldFailingSince)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_UpdateFailingSince = RoleStep
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (u *WebhookEndpointHealthScopedUpsert) ClearFailingSince() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetNull(webhookendpointhealth.FieldFailingSince)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_ClearFailingSince = RoleStep
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (u *WebhookEndpointHealthScopedUpsert) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointHealthScopedUpsert {
+	u.u.Set(webhookendpointhealth.FieldLastErrorKind, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_SetLastErrorKind = RoleStep
+
+// UpdateLastErrorKind sets the "last_error_kind" field to the value that was provided on create.
+func (u *WebhookEndpointHealthScopedUpsert) UpdateLastErrorKind() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetExcluded(webhookendpointhealth.FieldLastErrorKind)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_UpdateLastErrorKind = RoleStep
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (u *WebhookEndpointHealthScopedUpsert) ClearLastErrorKind() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetNull(webhookendpointhealth.FieldLastErrorKind)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_ClearLastErrorKind = RoleStep
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (u *WebhookEndpointHealthScopedUpsert) SetLastErrorStatus(v int) *WebhookEndpointHealthScopedUpsert {
+	u.u.Set(webhookendpointhealth.FieldLastErrorStatus, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_SetLastErrorStatus = RoleStep
+
+// AddLastErrorStatus adds v to the "last_error_status" field.
+func (u *WebhookEndpointHealthScopedUpsert) AddLastErrorStatus(v int) *WebhookEndpointHealthScopedUpsert {
+	u.u.Add(webhookendpointhealth.FieldLastErrorStatus, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_AddLastErrorStatus = RoleStep
+
+// UpdateLastErrorStatus sets the "last_error_status" field to the value that was provided on create.
+func (u *WebhookEndpointHealthScopedUpsert) UpdateLastErrorStatus() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetExcluded(webhookendpointhealth.FieldLastErrorStatus)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_UpdateLastErrorStatus = RoleStep
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (u *WebhookEndpointHealthScopedUpsert) ClearLastErrorStatus() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetNull(webhookendpointhealth.FieldLastErrorStatus)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_ClearLastErrorStatus = RoleStep
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (u *WebhookEndpointHealthScopedUpsert) SetLastFailureAt(v time.Time) *WebhookEndpointHealthScopedUpsert {
+	u.u.Set(webhookendpointhealth.FieldLastFailureAt, v)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_SetLastFailureAt = RoleStep
+
+// UpdateLastFailureAt sets the "last_failure_at" field to the value that was provided on create.
+func (u *WebhookEndpointHealthScopedUpsert) UpdateLastFailureAt() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetExcluded(webhookendpointhealth.FieldLastFailureAt)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_UpdateLastFailureAt = RoleStep
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (u *WebhookEndpointHealthScopedUpsert) ClearLastFailureAt() *WebhookEndpointHealthScopedUpsert {
+	u.u.SetNull(webhookendpointhealth.FieldLastFailureAt)
+	return u
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpsert_ClearLastFailureAt = RoleStep
+
+// conflictOptions confines the DO UPDATE part to rows of the Workspace.
+// target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
+func (t *WebhookEndpointHealthScoped) conflictOptions(columns []string, target *sql.Predicate) []sql.ConflictOption {
+	opts := []sql.ConflictOption{
+		sql.ConflictColumns(columns...),
+		sql.UpdateWhere(sql.EQ(webhookendpointhealth.FieldWorkspaceID, t.s.ws)),
+	}
+	if target != nil {
+		opts = append(opts, sql.ConflictWhere(target))
+	}
+	return opts
+}
+
+// WebhookEndpointHealthScopedUpsertOne is the "upsert" of one WebhookEndpointHealth: the create it was started on, which a setter
+// called later still changes, and what to do on a conflict.
+type WebhookEndpointHealthScopedUpsertOne struct {
+	x        *WebhookEndpointHealthScopedCreate
+	conflict []sql.ConflictOption
+	set      []func(*WebhookEndpointHealthUpsertOne)
+	// doNothing: the conflict action is DO NOTHING (the only upsert an audited entity allows).
+	doNothing bool
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedUpsertOne                 = TypeScopedUpsert
+	EntityOf_WebhookEndpointHealthScopedUpsertOne               = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedUpsertOne_UpdateNewValues = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertOne_Ignore          = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertOne_DoNothing       = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertOne_Update          = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertOne_Exec            = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertOne_ID              = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (x *WebhookEndpointHealthScopedCreate) OnConflictColumns(columns ...string) *WebhookEndpointHealthScopedUpsertOne {
+	return x.OnConflictColumnsWhere(nil, columns...)
+}
+
+// OnConflictColumnsWhere is OnConflictColumns for a partial unique index: target is the
+// index's predicate, which Postgres needs to infer the index from the columns.
+func (x *WebhookEndpointHealthScopedCreate) OnConflictColumnsWhere(target *sql.Predicate, columns ...string) *WebhookEndpointHealthScopedUpsertOne {
+	return &WebhookEndpointHealthScopedUpsertOne{x: x, conflict: (&WebhookEndpointHealthScoped{s: x.s}).conflictOptions(columns, target)}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *WebhookEndpointHealthScopedUpsertOne) UpdateNewValues() *WebhookEndpointHealthScopedUpsertOne {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertOne) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *WebhookEndpointHealthScopedUpsertOne) Ignore() *WebhookEndpointHealthScopedUpsertOne {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertOne) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *WebhookEndpointHealthScopedUpsertOne) DoNothing() *WebhookEndpointHealthScopedUpsertOne {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertOne) { r.DoNothing() })
+	u.doNothing = true
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *WebhookEndpointHealthScopedUpsertOne) Update(set func(*WebhookEndpointHealthScopedUpsert)) *WebhookEndpointHealthScopedUpsertOne {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertOne) {
+		r.Update(func(s *WebhookEndpointHealthUpsert) { set(&WebhookEndpointHealthScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// build makes the ent upsert on the client of s and verifies the create's references.
+func (u *WebhookEndpointHealthScopedUpsertOne) build(ctx context.Context, s *Scoped) (*WebhookEndpointHealthUpsertOne, error) {
+	b, err := u.x.build(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	r := b.OnConflict(u.conflict...)
+	for _, set := range u.set {
+		set(r)
+	}
+	return r, nil
+}
+
+// Exec verifies the references, then executes the upsert.
+func (u *WebhookEndpointHealthScopedUpsertOne) Exec(ctx context.Context) error {
+	_, err := u.ID(ctx)
+	return err
+}
+
+// ID is like Exec, returning the inserted or updated id.
+func (u *WebhookEndpointHealthScopedUpsertOne) ID(ctx context.Context) (int64, error) {
+	var id int64
+	err := u.x.s.writeWebhookEndpointHealth(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		r, err := u.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		if id, err = r.ID(ctx); err != nil {
+			return nil, err
+		}
+		return []int64{id}, nil
+	})
+	return written(id, err)
+}
+
+// WebhookEndpointHealthScopedUpsertBulk is the "upsert" of several WebhookEndpointHealth entities.
+type WebhookEndpointHealthScopedUpsertBulk struct {
+	b       *WebhookEndpointHealthScopedCreateBulk
+	t       *WebhookEndpointHealthScoped
+	columns []string
+	set     []func(*WebhookEndpointHealthUpsertBulk)
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedUpsertBulk                 = TypeScopedUpsert
+	EntityOf_WebhookEndpointHealthScopedUpsertBulk               = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedUpsertBulk_UpdateNewValues = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertBulk_Ignore          = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertBulk_DoNothing       = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertBulk_Update          = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpsertBulk_Exec            = RoleStep
+)
+
+// OnConflictColumns configures the columns as conflict target. A conflicting row of
+// another Workspace is never updated.
+func (b *WebhookEndpointHealthScopedCreateBulk) OnConflictColumns(columns ...string) *WebhookEndpointHealthScopedUpsertBulk {
+	return &WebhookEndpointHealthScopedUpsertBulk{b: b, t: &WebhookEndpointHealthScoped{s: b.s}, columns: columns}
+}
+
+// UpdateNewValues updates the mutable fields using the new values set on create.
+func (u *WebhookEndpointHealthScopedUpsertBulk) UpdateNewValues() *WebhookEndpointHealthScopedUpsertBulk {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertBulk) { r.UpdateNewValues() })
+	return u
+}
+
+// Ignore sets each column to itself in case of conflict.
+func (u *WebhookEndpointHealthScopedUpsertBulk) Ignore() *WebhookEndpointHealthScopedUpsertBulk {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertBulk) { r.Ignore() })
+	return u
+}
+
+// DoNothing configures the conflict_action to `DO NOTHING`.
+func (u *WebhookEndpointHealthScopedUpsertBulk) DoNothing() *WebhookEndpointHealthScopedUpsertBulk {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertBulk) { r.DoNothing() })
+	return u
+}
+
+// Update overrides fields' `UPDATE` values.
+func (u *WebhookEndpointHealthScopedUpsertBulk) Update(set func(*WebhookEndpointHealthScopedUpsert)) *WebhookEndpointHealthScopedUpsertBulk {
+	u.set = append(u.set, func(r *WebhookEndpointHealthUpsertBulk) {
+		r.Update(func(s *WebhookEndpointHealthUpsert) { set(&WebhookEndpointHealthScopedUpsert{u: s.UpdateSet}) })
+	})
+	return u
+}
+
+// Exec verifies every builder's references, then executes the upsert.
+func (u *WebhookEndpointHealthScopedUpsertBulk) Exec(ctx context.Context) error {
+	if err := u.b.refuseForeign(); err != nil {
+		return err
+	}
+	return u.b.s.writeWebhookEndpointHealth(ctx, "create", nil, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		raw, err := u.b.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		r := raw.OnConflict(u.t.conflictOptions(u.columns, nil)...)
+		for _, set := range u.set {
+			set(r)
+		}
+		return nil, r.Exec(ctx)
+	})
+}
+
+// ---------------------------------------------------------------- update
+
+// WebhookEndpointHealthScopedUpdateOne updates one WebhookEndpointHealth. It has no way to move the row to another Workspace: it
+// keeps the row's id, its fences and what its setters set, and builds the ent update on the client
+// the update runs on.
+type WebhookEndpointHealthScopedUpdateOne struct {
+	s     *Scoped
+	id    int64
+	where []predicate.WebhookEndpointHealth
+	set   []func(*WebhookEndpointHealthUpdateOne)
+}
+
+// UpdateOneID updates the WebhookEndpointHealth with the id; a row of another Workspace is not found.
+func (t *WebhookEndpointHealthScoped) UpdateOneID(id int64) *WebhookEndpointHealthScopedUpdateOne {
+	return &WebhookEndpointHealthScopedUpdateOne{s: t.s, id: id}
+}
+
+// Where appends predicates the row must also match (fencing).
+func (x *WebhookEndpointHealthScopedUpdateOne) Where(ps ...predicate.WebhookEndpointHealth) *WebhookEndpointHealthScopedUpdateOne {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetUpdatedAt(v time.Time) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetUpdatedAt = RoleStep
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetConsecutiveFailures(v int) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.SetConsecutiveFailures(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetConsecutiveFailures = RoleStep
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetNillableConsecutiveFailures(v *int) *WebhookEndpointHealthScopedUpdateOne {
+	if v != nil {
+		x.SetConsecutiveFailures(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetNillableConsecutiveFailures = RoleStep
+
+// AddConsecutiveFailures adds value to the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) AddConsecutiveFailures(v int) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.AddConsecutiveFailures(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_AddConsecutiveFailures = RoleStep
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) ClearConsecutiveFailures() *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.ClearConsecutiveFailures() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_ClearConsecutiveFailures = RoleStep
+
+// SetFailingSince sets the "failing_since" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetFailingSince(v time.Time) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.SetFailingSince(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetFailingSince = RoleStep
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetNillableFailingSince(v *time.Time) *WebhookEndpointHealthScopedUpdateOne {
+	if v != nil {
+		x.SetFailingSince(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetNillableFailingSince = RoleStep
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) ClearFailingSince() *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.ClearFailingSince() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_ClearFailingSince = RoleStep
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.SetLastErrorKind(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetLastErrorKind = RoleStep
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointHealthScopedUpdateOne {
+	if v != nil {
+		x.SetLastErrorKind(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetNillableLastErrorKind = RoleStep
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) ClearLastErrorKind() *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.ClearLastErrorKind() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_ClearLastErrorKind = RoleStep
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetLastErrorStatus(v int) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.SetLastErrorStatus(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetLastErrorStatus = RoleStep
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetNillableLastErrorStatus(v *int) *WebhookEndpointHealthScopedUpdateOne {
+	if v != nil {
+		x.SetLastErrorStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetNillableLastErrorStatus = RoleStep
+
+// AddLastErrorStatus adds value to the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) AddLastErrorStatus(v int) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.AddLastErrorStatus(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_AddLastErrorStatus = RoleStep
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) ClearLastErrorStatus() *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.ClearLastErrorStatus() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_ClearLastErrorStatus = RoleStep
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetLastFailureAt(v time.Time) *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.SetLastFailureAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetLastFailureAt = RoleStep
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdateOne) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointHealthScopedUpdateOne {
+	if v != nil {
+		x.SetLastFailureAt(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_SetNillableLastFailureAt = RoleStep
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (x *WebhookEndpointHealthScopedUpdateOne) ClearLastFailureAt() *WebhookEndpointHealthScopedUpdateOne {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdateOne) { b.ClearLastFailureAt() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdateOne_ClearLastFailureAt = RoleStep
+
+// Save verifies the references against the Workspace, then updates the WebhookEndpointHealth.
+func (x *WebhookEndpointHealthScopedUpdateOne) Save(ctx context.Context) (*WebhookEndpointHealth, error) {
+	return x.save(ctx, "update", skipUnchanged)
+}
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *WebhookEndpointHealthScopedUpdateOne) build(ctx context.Context, s *Scoped) (*WebhookEndpointHealthUpdateOne, error) {
+	b := s.c.WebhookEndpointHealth.UpdateOneID(x.id).Where(s.inWebhookEndpointHealth(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkWebhookEndpointHealth(ctx, b.Mutation()))
+}
+
+// save is Save under a verb, doing with an unchanged row what unchanged says.
+func (x *WebhookEndpointHealthScopedUpdateOne) save(ctx context.Context, verb string, unchanged unchangedRows) (*WebhookEndpointHealth, error) {
+	where := x.s.inWebhookEndpointHealth(x.where...)
+	var updated *WebhookEndpointHealth
+	err := x.s.writeWebhookEndpointHealth(ctx, verb, append([]predicate.WebhookEndpointHealth{webhookendpointhealth.ID(x.id)}, where...), unchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		updated, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(updated, err)
+}
+
+// Exec is like Save, discarding the entity.
+func (x *WebhookEndpointHealthScopedUpdateOne) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedUpdateOne       = TypeScopedUpdate
+	EntityOf_WebhookEndpointHealthScopedUpdateOne     = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedUpdateOne_Where = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpdateOne_Save  = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpdateOne_Exec  = RoleStep
+)
+
+// WebhookEndpointHealthScopedUpdate is a conditional bulk update of one Workspace: it keeps its predicates and
+// what its setters and modifiers set, and builds the ent update on the client the update runs on.
+type WebhookEndpointHealthScopedUpdate struct {
+	s     *Scoped
+	where []predicate.WebhookEndpointHealth
+	set   []func(*WebhookEndpointHealthUpdate)
+	// modErr is set when a Modify modifier tried to assign workspace_id.
+	modErr error
+}
+
+// Update updates the WebhookEndpointHealth entities of the Workspace that match the predicates.
+func (t *WebhookEndpointHealthScoped) Update() *WebhookEndpointHealthScopedUpdate {
+	return &WebhookEndpointHealthScopedUpdate{s: t.s}
+}
+
+// Where appends predicates the rows must match.
+func (x *WebhookEndpointHealthScopedUpdate) Where(ps ...predicate.WebhookEndpointHealth) *WebhookEndpointHealthScopedUpdate {
+	x.where = append(x.where, ps...)
+	return x
+}
+
+// Modify adds a statement modifier for computed assignments the typed setters cannot
+// express (SET col = LEAST(col + ..., ...)). A modifier gets assignment-only access
+// (ScopedAssign), so it cannot widen the Workspace predicate; an assignment to
+// workspace_id is refused: each modifier is probed against a scratch statement here, and
+// Save fails with ErrWorkspaceAssign.
+func (x *WebhookEndpointHealthScopedUpdate) Modify(modifiers ...func(a *ScopedAssign)) *WebhookEndpointHealthScopedUpdate {
+	for _, m := range modifiers {
+		probe := &ScopedAssign{u: sql.Update(webhookendpointhealth.Table)}
+		m(probe)
+		if probe.workspace {
+			x.modErr = ErrWorkspaceAssign
+		}
+		x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) {
+			b.Modify(func(u *sql.UpdateBuilder) { m(&ScopedAssign{u: u}) })
+		})
+	}
+	return x
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (x *WebhookEndpointHealthScopedUpdate) SetUpdatedAt(v time.Time) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.SetUpdatedAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetUpdatedAt = RoleStep
+
+// SetConsecutiveFailures sets the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedUpdate) SetConsecutiveFailures(v int) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.SetConsecutiveFailures(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetConsecutiveFailures = RoleStep
+
+// SetNillableConsecutiveFailures sets the "consecutive_failures" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdate) SetNillableConsecutiveFailures(v *int) *WebhookEndpointHealthScopedUpdate {
+	if v != nil {
+		x.SetConsecutiveFailures(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetNillableConsecutiveFailures = RoleStep
+
+// AddConsecutiveFailures adds value to the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedUpdate) AddConsecutiveFailures(v int) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.AddConsecutiveFailures(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_AddConsecutiveFailures = RoleStep
+
+// ClearConsecutiveFailures clears the value of the "consecutive_failures" field.
+func (x *WebhookEndpointHealthScopedUpdate) ClearConsecutiveFailures() *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.ClearConsecutiveFailures() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_ClearConsecutiveFailures = RoleStep
+
+// SetFailingSince sets the "failing_since" field.
+func (x *WebhookEndpointHealthScopedUpdate) SetFailingSince(v time.Time) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.SetFailingSince(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetFailingSince = RoleStep
+
+// SetNillableFailingSince sets the "failing_since" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdate) SetNillableFailingSince(v *time.Time) *WebhookEndpointHealthScopedUpdate {
+	if v != nil {
+		x.SetFailingSince(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetNillableFailingSince = RoleStep
+
+// ClearFailingSince clears the value of the "failing_since" field.
+func (x *WebhookEndpointHealthScopedUpdate) ClearFailingSince() *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.ClearFailingSince() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_ClearFailingSince = RoleStep
+
+// SetLastErrorKind sets the "last_error_kind" field.
+func (x *WebhookEndpointHealthScopedUpdate) SetLastErrorKind(v webhook.ErrorKind) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.SetLastErrorKind(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetLastErrorKind = RoleStep
+
+// SetNillableLastErrorKind sets the "last_error_kind" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdate) SetNillableLastErrorKind(v *webhook.ErrorKind) *WebhookEndpointHealthScopedUpdate {
+	if v != nil {
+		x.SetLastErrorKind(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetNillableLastErrorKind = RoleStep
+
+// ClearLastErrorKind clears the value of the "last_error_kind" field.
+func (x *WebhookEndpointHealthScopedUpdate) ClearLastErrorKind() *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.ClearLastErrorKind() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_ClearLastErrorKind = RoleStep
+
+// SetLastErrorStatus sets the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedUpdate) SetLastErrorStatus(v int) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.SetLastErrorStatus(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetLastErrorStatus = RoleStep
+
+// SetNillableLastErrorStatus sets the "last_error_status" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdate) SetNillableLastErrorStatus(v *int) *WebhookEndpointHealthScopedUpdate {
+	if v != nil {
+		x.SetLastErrorStatus(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetNillableLastErrorStatus = RoleStep
+
+// AddLastErrorStatus adds value to the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedUpdate) AddLastErrorStatus(v int) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.AddLastErrorStatus(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_AddLastErrorStatus = RoleStep
+
+// ClearLastErrorStatus clears the value of the "last_error_status" field.
+func (x *WebhookEndpointHealthScopedUpdate) ClearLastErrorStatus() *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.ClearLastErrorStatus() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_ClearLastErrorStatus = RoleStep
+
+// SetLastFailureAt sets the "last_failure_at" field.
+func (x *WebhookEndpointHealthScopedUpdate) SetLastFailureAt(v time.Time) *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.SetLastFailureAt(v) })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetLastFailureAt = RoleStep
+
+// SetNillableLastFailureAt sets the "last_failure_at" field if the given value is not nil.
+func (x *WebhookEndpointHealthScopedUpdate) SetNillableLastFailureAt(v *time.Time) *WebhookEndpointHealthScopedUpdate {
+	if v != nil {
+		x.SetLastFailureAt(*v)
+	}
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_SetNillableLastFailureAt = RoleStep
+
+// ClearLastFailureAt clears the value of the "last_failure_at" field.
+func (x *WebhookEndpointHealthScopedUpdate) ClearLastFailureAt() *WebhookEndpointHealthScopedUpdate {
+	x.set = append(x.set, func(b *WebhookEndpointHealthUpdate) { b.ClearLastFailureAt() })
+	return x
+}
+
+const RoleOf_WebhookEndpointHealthScopedUpdate_ClearLastFailureAt = RoleStep
+
+// build makes the ent update on the client of s and verifies the references it sets.
+func (x *WebhookEndpointHealthScopedUpdate) build(ctx context.Context, s *Scoped) (*WebhookEndpointHealthUpdate, error) {
+	b := s.c.WebhookEndpointHealth.Update().Where(s.inWebhookEndpointHealth(x.where...)...)
+	for _, set := range x.set {
+		set(b)
+	}
+	return written(b, s.checkWebhookEndpointHealth(ctx, b.Mutation()))
+}
+
+// Save verifies the references against the Workspace, then updates the rows and
+// returns how many changed.
+func (x *WebhookEndpointHealthScopedUpdate) Save(ctx context.Context) (int, error) {
+	if x.modErr != nil {
+		return 0, x.modErr
+	}
+	where := x.s.inWebhookEndpointHealth(x.where...)
+	var n int
+	err := x.s.writeWebhookEndpointHealth(ctx, "update", where, skipUnchanged, func(s *Scoped) ([]int64, error) {
+		b, err := x.build(ctx, s)
+		if err != nil {
+			return nil, err
+		}
+		n, err = b.Save(ctx)
+		return nil, err
+	})
+	return written(n, err)
+}
+
+// Exec is like Save, discarding the count.
+func (x *WebhookEndpointHealthScopedUpdate) Exec(ctx context.Context) error {
+	_, err := x.Save(ctx)
+	return err
+}
+
+const (
+	TypeOf_WebhookEndpointHealthScopedUpdate        = TypeScopedUpdate
+	EntityOf_WebhookEndpointHealthScopedUpdate      = "WebhookEndpointHealth"
+	RoleOf_WebhookEndpointHealthScopedUpdate_Where  = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpdate_Modify = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpdate_Save   = RoleStep
+	RoleOf_WebhookEndpointHealthScopedUpdate_Exec   = RoleStep
 )

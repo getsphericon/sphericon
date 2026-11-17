@@ -43,9 +43,11 @@ func (s Steps) allDone() bool {
 	return s.Integration == Done && s.SendingDomain == Done && s.Contact == Done && s.SentEmail == Done
 }
 
-// Recorder stamps the moment a Workspace's checklist is first found complete, once, and returns the
-// moment the Workspace holds (internal/domain/identity/workspaces).
+// Recorder keeps the moment a Workspace's checklist is first found complete
+// (internal/domain/identity/workspaces): it reads the moment, nil before, and stamps it once,
+// returning the moment the Workspace holds.
 type Recorder interface {
+	SetupCompletedAt(ctx context.Context, s *ent.Scoped) (*time.Time, error)
 	MarkSetupComplete(ctx context.Context, s *ent.Scoped, now time.Time) (time.Time, error)
 }
 
@@ -67,11 +69,9 @@ func (m *Module) Read(ctx context.Context, s *ent.Scoped) (Checklist, error) {
 	if err != nil {
 		return Checklist{}, err
 	}
-	ws, err := s.Workspace(ctx)
-	if err != nil {
+	if c.CompletedAt, err = m.recorder.SetupCompletedAt(ctx, s); err != nil {
 		return Checklist{}, err
 	}
-	c.CompletedAt = ws.SetupCompletedAt
 	if c.CompletedAt != nil || !c.Steps.allDone() {
 		return c, nil
 	}

@@ -37,8 +37,6 @@ const (
 	FieldRetentionDays = "retention_days"
 	// FieldTimezone holds the string denoting the timezone field in the database.
 	FieldTimezone = "timezone"
-	// FieldSetupCompletedAt holds the string denoting the setup_completed_at field in the database.
-	FieldSetupCompletedAt = "setup_completed_at"
 	// FieldReportingCurrency holds the string denoting the reporting_currency field in the database.
 	FieldReportingCurrency = "reporting_currency"
 	// FieldAttributionWindowDays holds the string denoting the attribution_window_days field in the database.
@@ -49,8 +47,6 @@ const (
 	FieldDomainJoinEnabled = "domain_join_enabled"
 	// FieldSecondFactorRequiredAt holds the string denoting the second_factor_required_at field in the database.
 	FieldSecondFactorRequiredAt = "second_factor_required_at"
-	// FieldFeedPosition holds the string denoting the feed_position field in the database.
-	FieldFeedPosition = "feed_position"
 	// FieldErasedAt holds the string denoting the erased_at field in the database.
 	FieldErasedAt = "erased_at"
 	// FieldSuspendedAt holds the string denoting the suspended_at field in the database.
@@ -65,10 +61,6 @@ const (
 	FieldClearedAt = "cleared_at"
 	// FieldAbuseExempt holds the string denoting the abuse_exempt field in the database.
 	FieldAbuseExempt = "abuse_exempt"
-	// FieldAbuseWarningNotifiedAt holds the string denoting the abuse_warning_notified_at field in the database.
-	FieldAbuseWarningNotifiedAt = "abuse_warning_notified_at"
-	// FieldAbuseFreezeNotifiedAt holds the string denoting the abuse_freeze_notified_at field in the database.
-	FieldAbuseFreezeNotifiedAt = "abuse_freeze_notified_at"
 	// EdgeContacts holds the string denoting the contacts edge name in mutations.
 	EdgeContacts = "contacts"
 	// EdgeCustomFields holds the string denoting the custom_fields edge name in mutations.
@@ -167,6 +159,12 @@ const (
 	EdgeErasures = "erasures"
 	// EdgeUsages holds the string denoting the usages edge name in mutations.
 	EdgeUsages = "usages"
+	// EdgeIntegrationProviderStates holds the string denoting the integration_provider_states edge name in mutations.
+	EdgeIntegrationProviderStates = "integration_provider_states"
+	// EdgeWebhookEndpointHealths holds the string denoting the webhook_endpoint_healths edge name in mutations.
+	EdgeWebhookEndpointHealths = "webhook_endpoint_healths"
+	// EdgeStanding holds the string denoting the standing edge name in mutations.
+	EdgeStanding = "standing"
 	// Table holds the table name of the workspace in the database.
 	Table = "workspaces"
 	// ContactsTable is the table that holds the contacts relation/edge.
@@ -512,6 +510,27 @@ const (
 	UsagesInverseTable = "usages"
 	// UsagesColumn is the table column denoting the usages relation/edge.
 	UsagesColumn = "workspace_id"
+	// IntegrationProviderStatesTable is the table that holds the integration_provider_states relation/edge.
+	IntegrationProviderStatesTable = "integration_provider_state"
+	// IntegrationProviderStatesInverseTable is the table name for the IntegrationProviderState entity.
+	// It exists in this package in order to avoid circular dependency with the "integrationproviderstate" package.
+	IntegrationProviderStatesInverseTable = "integration_provider_state"
+	// IntegrationProviderStatesColumn is the table column denoting the integration_provider_states relation/edge.
+	IntegrationProviderStatesColumn = "workspace_id"
+	// WebhookEndpointHealthsTable is the table that holds the webhook_endpoint_healths relation/edge.
+	WebhookEndpointHealthsTable = "webhook_endpoint_health"
+	// WebhookEndpointHealthsInverseTable is the table name for the WebhookEndpointHealth entity.
+	// It exists in this package in order to avoid circular dependency with the "webhookendpointhealth" package.
+	WebhookEndpointHealthsInverseTable = "webhook_endpoint_health"
+	// WebhookEndpointHealthsColumn is the table column denoting the webhook_endpoint_healths relation/edge.
+	WebhookEndpointHealthsColumn = "workspace_id"
+	// StandingTable is the table that holds the standing relation/edge.
+	StandingTable = "workspace_standing"
+	// StandingInverseTable is the table name for the WorkspaceStanding entity.
+	// It exists in this package in order to avoid circular dependency with the "workspacestanding" package.
+	StandingInverseTable = "workspace_standing"
+	// StandingColumn is the table column denoting the standing relation/edge.
+	StandingColumn = "workspace_id"
 )
 
 // Columns holds all SQL columns for workspace fields.
@@ -528,13 +547,11 @@ var Columns = []string{
 	FieldPostalAddress,
 	FieldRetentionDays,
 	FieldTimezone,
-	FieldSetupCompletedAt,
 	FieldReportingCurrency,
 	FieldAttributionWindowDays,
 	FieldSendCap,
 	FieldDomainJoinEnabled,
 	FieldSecondFactorRequiredAt,
-	FieldFeedPosition,
 	FieldErasedAt,
 	FieldSuspendedAt,
 	FieldSuspendedByKind,
@@ -542,8 +559,6 @@ var Columns = []string{
 	FieldSuspensionReason,
 	FieldClearedAt,
 	FieldAbuseExempt,
-	FieldAbuseWarningNotifiedAt,
-	FieldAbuseFreezeNotifiedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -589,8 +604,6 @@ var (
 	SendCapValidator func(int) error
 	// DefaultDomainJoinEnabled holds the default value on creation for the "domain_join_enabled" field.
 	DefaultDomainJoinEnabled bool
-	// DefaultFeedPosition holds the default value on creation for the "feed_position" field.
-	DefaultFeedPosition int64
 	// DefaultAbuseExempt holds the default value on creation for the "abuse_exempt" field.
 	DefaultAbuseExempt bool
 )
@@ -682,11 +695,6 @@ func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
 }
 
-// BySetupCompletedAt orders the results by the setup_completed_at field.
-func BySetupCompletedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSetupCompletedAt, opts...).ToFunc()
-}
-
 // ByReportingCurrency orders the results by the reporting_currency field.
 func ByReportingCurrency(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReportingCurrency, opts...).ToFunc()
@@ -710,11 +718,6 @@ func ByDomainJoinEnabled(opts ...sql.OrderTermOption) OrderOption {
 // BySecondFactorRequiredAt orders the results by the second_factor_required_at field.
 func BySecondFactorRequiredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSecondFactorRequiredAt, opts...).ToFunc()
-}
-
-// ByFeedPosition orders the results by the feed_position field.
-func ByFeedPosition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldFeedPosition, opts...).ToFunc()
 }
 
 // ByErasedAt orders the results by the erased_at field.
@@ -750,16 +753,6 @@ func ByClearedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByAbuseExempt orders the results by the abuse_exempt field.
 func ByAbuseExempt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAbuseExempt, opts...).ToFunc()
-}
-
-// ByAbuseWarningNotifiedAt orders the results by the abuse_warning_notified_at field.
-func ByAbuseWarningNotifiedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAbuseWarningNotifiedAt, opts...).ToFunc()
-}
-
-// ByAbuseFreezeNotifiedAt orders the results by the abuse_freeze_notified_at field.
-func ByAbuseFreezeNotifiedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAbuseFreezeNotifiedAt, opts...).ToFunc()
 }
 
 // ByContactsCount orders the results by contacts count.
@@ -1447,6 +1440,41 @@ func ByUsages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newUsagesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByIntegrationProviderStatesCount orders the results by integration_provider_states count.
+func ByIntegrationProviderStatesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newIntegrationProviderStatesStep(), opts...)
+	}
+}
+
+// ByIntegrationProviderStates orders the results by integration_provider_states terms.
+func ByIntegrationProviderStates(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newIntegrationProviderStatesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByWebhookEndpointHealthsCount orders the results by webhook_endpoint_healths count.
+func ByWebhookEndpointHealthsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newWebhookEndpointHealthsStep(), opts...)
+	}
+}
+
+// ByWebhookEndpointHealths orders the results by webhook_endpoint_healths terms.
+func ByWebhookEndpointHealths(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newWebhookEndpointHealthsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByStandingField orders the results by standing field.
+func ByStandingField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newStandingStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newContactsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -1788,5 +1816,26 @@ func newUsagesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UsagesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, UsagesTable, UsagesColumn),
+	)
+}
+func newIntegrationProviderStatesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(IntegrationProviderStatesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, IntegrationProviderStatesTable, IntegrationProviderStatesColumn),
+	)
+}
+func newWebhookEndpointHealthsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(WebhookEndpointHealthsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, WebhookEndpointHealthsTable, WebhookEndpointHealthsColumn),
+	)
+}
+func newStandingStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(StandingInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, StandingTable, StandingColumn),
 	)
 }

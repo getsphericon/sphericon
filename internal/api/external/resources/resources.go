@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 
 	"github.com/go-faster/jx"
@@ -761,15 +762,16 @@ func auditDiff(d map[string]jx.Raw) externalapi.OptNilJsonObject {
 
 // webhookFailure is the endpoint's failure state; it is absent while the endpoint is healthy.
 func webhookFailure(c Converter, e ent.WebhookEndpoint) externalapi.OptWebhookFailure {
-	if e.ConsecutiveFailures == nil || e.FailingSince == nil || e.LastFailureAt == nil || e.LastErrorKind == nil {
+	h := webhookendpoints.HealthOf(&e)
+	if h.ConsecutiveFailures == nil || h.FailingSince == nil || h.LastFailureAt == nil || h.LastErrorKind == nil {
 		return externalapi.OptWebhookFailure{}
 	}
 	return externalapi.NewOptWebhookFailure(externalapi.WebhookFailure{
-		ConsecutiveFailures: narrow.Int32(*e.ConsecutiveFailures),
-		Since:               externalapi.Timestamp(*e.FailingSince),
-		LastFailureAt:       externalapi.Timestamp(*e.LastFailureAt),
-		Kind:                c.WebhookErrorKindToResource(*e.LastErrorKind),
-		Status:              optInt32(e.LastErrorStatus),
+		ConsecutiveFailures: narrow.Int32(*h.ConsecutiveFailures),
+		Since:               externalapi.Timestamp(*h.FailingSince),
+		LastFailureAt:       externalapi.Timestamp(*h.LastFailureAt),
+		Kind:                c.WebhookErrorKindToResource(*h.LastErrorKind),
+		Status:              optInt32(h.LastErrorStatus),
 	})
 }
 

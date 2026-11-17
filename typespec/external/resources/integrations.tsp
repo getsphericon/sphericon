@@ -144,62 +144,18 @@ model IntegrationResource {
 
 /**
  * A deleted integration is discarded, not removed physically (ADR 0049): its sent mail keeps the
- * channel it went through. Not built on ExternalCrud: its delete answers 409 while live work uses it.
+ * channel it went through. Its delete answers 409 while live work uses it.
  */
 @tag("Integrations")
-interface Integrations {
-  /** List integrations with pagination */
-  @listsResource(IntegrationResource)
-  @get
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.integrationsRead])
-  list(...ResourceCollectionParameters<IntegrationResource>, ...PageQuery):
-    | Page<IntegrationResource>
-    | Problem;
-
-  /** Create an integration */
-  @createsResource(IntegrationResource)
-  @post
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.integrationsWrite])
-  create(
-    ...ResourceCollectionParameters<IntegrationResource>,
-    @body body: CreateIntegrationInput,
-  ):
-    | {
-        @statusCode statusCode: 201;
-        @body body: IntegrationResource;
-      }
-    | Problem;
-
-  /** Get an integration by ID, deleted or not */
-  @readsResource(IntegrationResource)
-  @get
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.integrationsRead])
-  get(...ResourceParameters<IntegrationResource>):
-    | IntegrationResource
-    | Problem;
-
-  /** Update an integration; a deleted one is read-only and answers 404 */
-  @updatesResource(IntegrationResource)
-  @put
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.integrationsWrite])
-  update(
-    ...ResourceParameters<IntegrationResource>,
-    @body body: UpdateIntegrationInput,
-  ): IntegrationResource | Problem;
-
-  /** Delete an integration for good: it leaves the list, gives up the default and is never restored; what it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort. */
-  @deletesResource(IntegrationResource)
-  @delete
-  @autoRoute
-  @requiresScopes(#[ApiTokenScope.integrationsWrite])
-  delete(...ResourceParameters<IntegrationResource>):
-    | NoContentResponse
-    | Problem;
-
+interface Integrations
+  extends ExternalCrud<
+      IntegrationResource,
+      CreateIntegrationInput,
+      UpdateIntegrationInput,
+      ApiTokenScope.integrationsRead,
+      ApiTokenScope.integrationsWrite,
+      ApiTokenScope.integrationsWrite
+    > {
   /** Replace the Integration's hook key: the old hook URL stops working at once and the new one must be pasted into the provider; an enabled Telegram integration's webhook follows it (Telegram's refusal is a 422); a deleted integration answers 404. Needs a person: hidden from MCP. */
   @action("regenerate-key")
   @autoRoute
@@ -208,6 +164,18 @@ interface Integrations {
     | IntegrationResource
     | Problem;
 }
+
+@@doc(Integrations.list, "List integrations with pagination");
+@@doc(Integrations.create, "Create an integration");
+@@doc(Integrations.get, "Get an integration by ID, deleted or not");
+@@doc(
+  Integrations.update,
+  "Update an integration; a deleted one is read-only and answers 404"
+);
+@@doc(
+  Integrations.delete,
+  "Delete an integration for good: it leaves the list, gives up the default and is never restored; what it sent keeps its history. Refused with 409 while a scheduled or sending broadcast, or an active email automation through the default, uses it (`usedBy` names them). A Telegram integration's webhook is removed, best effort."
+);
 
 // --- Presets (ADR 0037) ---
 //

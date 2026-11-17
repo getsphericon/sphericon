@@ -76,26 +76,30 @@ func TestSiteWorkspaceSaveThatChangesNothingKeepsTheRevision(t *testing.T) {
 	assert.EqualValues(t, before.Revision, saved.Revision)
 }
 
-// What the service keeps for itself on the Workspace row (schema.Bookkeeping) is written without
-// moving the revision: a new Owner takes the service feed position, and the abuse detector stamps its
-// warning. A settings form open meanwhile still saves.
-func TestSiteWorkspaceBookkeepingLeavesTheRevision(t *testing.T) {
+// What the service keeps about a Workspace for itself lives beside it (ADR 0168): a new Owner takes
+// the service feed position and the abuse detector stamps its warning without touching the
+// Workspace's row, so a settings form open meanwhile still saves.
+func TestSiteWorkspaceStandingLeavesTheWorkspace(t *testing.T) {
 	env := testhelper.Setup(t)
+	ctx := context.Background()
 	owner := env.SiteActor(t, fixtures.OwnerJohnEmail)
-	before := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
+	before := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
+	standing := env.DB.Workspace.QueryStanding(before).OnlyX(ctx)
 
-	_, err := owner.SiteMembershipsUpdate(context.Background(),
+	_, err := owner.SiteMembershipsUpdate(ctx,
 		&siteapi.SiteUpdateMembershipInput{Role: siteapi.SiteMembershipRoleOwner},
 		siteapi.SiteMembershipsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: idStr(fixtures.AcmeAdminMembershipID)})
 	require.NoError(t, err)
 	env.PerformEnqueuedJobs(t, testhelper.EditionJobs...)
-	require.NoError(t, workspaces.MarkAbuseWarned(context.Background(), env.DB, fixtures.AcmeID, time.Now()))
+	require.NoError(t, workspaces.MarkAbuseWarned(ctx, env.DB, fixtures.AcmeID, time.Now()))
 
-	after := env.DB.Workspace.GetX(context.Background(), fixtures.AcmeID)
-	require.Greater(t, after.FeedPosition, before.FeedPosition, "the new Owner took a feed position")
-	require.NotNil(t, after.AbuseWarningNotifiedAt)
+	after := env.DB.Workspace.GetX(ctx, fixtures.AcmeID)
+	moved := env.DB.Workspace.QueryStanding(after).OnlyX(ctx)
+	require.Greater(t, moved.FeedPosition, standing.FeedPosition, "the new Owner took a feed position")
+	require.NotNil(t, moved.AbuseWarningNotifiedAt)
+	assert.Equal(t, before.UpdatedAt, after.UpdatedAt, "the Workspace's row is left as it was")
 	assert.Equal(t, before.Revision, after.Revision)
-	_, err = owner.SiteWorkspacesSetTimezone(context.Background(), &siteapi.SiteWorkspaceTimezoneInput{
+	_, err = owner.SiteWorkspacesSetTimezone(ctx, &siteapi.SiteWorkspaceTimezoneInput{
 		Revision: siteapi.Revision(before.Revision), Timezone: "Europe/Berlin",
 	}, siteapi.SiteWorkspacesSetTimezoneParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)

@@ -1,6 +1,6 @@
 // Package goverterenum holds the enum transformer our goverter build adds (cmd/goverter): the
 // converters match enum members by value, because ent, the modules and the ogen contracts name
-// the same value differently (broadcast.StatusSent, siteapi.SiteBroadcastStatusSent).
+// the same value differently (broadcast.StatusSent, siteapi.BroadcastStatusSent).
 package goverterenum
 
 import (

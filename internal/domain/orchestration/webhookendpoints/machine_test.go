@@ -19,6 +19,9 @@ import (
 // The machine's decisions are pure; database tests exercise its conditional writer separately.
 func applyHealth(t *rapid.T, before *ent.WebhookEndpoint, change webhookendpoints.HealthChange) webhookendpoints.HealthState {
 	t.Helper()
+	if before.Edges.Health == nil {
+		before.Edges.Health = &ent.WebhookEndpointHealth{} // a healthy run
+	}
 	var stored webhookendpoints.HealthState
 	machine := webhookendpoints.HealthMachine(before, change, lifecycle.Storage[webhookendpoints.HealthState]{Write: func(_ context.Context, _, to webhookendpoints.HealthState) (bool, error) {
 		stored = to
@@ -29,8 +32,12 @@ func applyHealth(t *rapid.T, before *ent.WebhookEndpoint, change webhookendpoint
 	return stored
 }
 
+func healthyEndpoint() *ent.WebhookEndpoint {
+	return &ent.WebhookEndpoint{Edges: ent.WebhookEndpointEdges{Health: &ent.WebhookEndpointHealth{}}}
+}
+
 func failingEndpoint(count int, began time.Time) *ent.WebhookEndpoint {
-	return &ent.WebhookEndpoint{ConsecutiveFailures: &count, FailingSince: &began}
+	return &ent.WebhookEndpoint{Edges: ent.WebhookEndpointEdges{Health: &ent.WebhookEndpointHealth{ConsecutiveFailures: &count, FailingSince: &began}}}
 }
 
 func TestPersistentFailureNeedsBothTheCountAndWindow(t *testing.T) {
@@ -110,8 +117,8 @@ func TestInternalHealthChangesStillRequireTheConditionalWrite(t *testing.T) {
 		before *ent.WebhookEndpoint
 		change webhookendpoints.HealthChange
 	}{
-		{"healthy success", &ent.WebhookEndpoint{}, webhookendpoints.HealthChange{Trigger: webhookendpoints.Succeed}},
-		{"owner reset", &ent.WebhookEndpoint{}, webhookendpoints.HealthChange{Trigger: webhookendpoints.Enable}},
+		{"healthy success", healthyEndpoint(), webhookendpoints.HealthChange{Trigger: webhookendpoints.Succeed}},
+		{"owner reset", healthyEndpoint(), webhookendpoints.HealthChange{Trigger: webhookendpoints.Enable}},
 		{"another failure", failingEndpoint(1, now), webhookendpoints.HealthChange{Trigger: webhookendpoints.Fail,
 			Failure: &webhook.DeliveryError{Kind: webhook.KindHTTPStatus, Status: http.StatusServiceUnavailable}, At: now}},
 	} {

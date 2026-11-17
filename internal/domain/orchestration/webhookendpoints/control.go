@@ -19,7 +19,7 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 	var saved *ent.WebhookEndpoint
 	err := retryHealth(ctx, func() error {
 		return m.bus.WithinScopedTx(ctx, s, func(ts *ent.Scoped, _ events.Publisher) error {
-			before, err := ts.WebhookEndpoint().Get(ctx, id)
+			before, err := withHealth(ctx, ts, id)
 			if err != nil {
 				return err
 			}
@@ -33,14 +33,23 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 				in.URL.ApplySet(u.SetURL)
 				in.EventTypes.ApplySet(u.SetEventTypes)
 				if enabled {
-					clearFailures(u)
 					u.ClearDisabledAt().ClearDisabledReason().AddHealthGeneration(1)
 				} else if before.DisabledAt == nil {
 					u.Where(webhookendpoint.DisabledAtIsNil()).
 						SetDisabledAt(change.At).SetDisabledReason(webhookendpoint.DisabledReasonOwner)
 				}
-				saved, err = u.Save(ctx)
-				return err == nil, err
+				if saved, err = u.Save(ctx); err != nil {
+					return false, err
+				}
+				if enabled {
+					// An enable starts a new run: the failures of the one before it go.
+					h := atRun(ts, before)
+					clearFailures(h)
+					if err := swapRun(ctx, h); err != nil {
+						return false, err
+					}
+				}
+				return true, nil
 			}})
 			return machine.FireCtx(ctx, change.Trigger)
 		})
@@ -48,5 +57,5 @@ func (m *Module) updateHealth(ctx context.Context, s *ent.Scoped, id int64, in U
 	if err != nil {
 		return Endpoint{}, missing(err)
 	}
-	return m.open(saved)
+	return m.open(ctx, s, saved)
 }

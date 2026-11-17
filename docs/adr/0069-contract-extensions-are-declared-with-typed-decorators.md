@@ -25,11 +25,14 @@ operation would have exposed it as an MCP tool.
 - **The OpenAPI documents do not change.** A decorator writes the extension a raw `@extension`
   wrote, so ogen, openapi-ts, `cmd/scopegen` and `internal/mcpserver` read what they read before,
   and stay the one path from the contract to Go (no emitter writes Go from TypeSpec).
-- **What each surface must declare is checked at `tsp compile`.** A surface names its rule with
+- **What each surface must declare is checked at `tsp compile`.** A surface names its rules with
   `@everyOperationDeclares`: every /api and /service operation declares its scopes; on /site an
   operation with `workspaceId` in its path declares its Permissions, and no other operation
-  declares Permissions or `@allowedWhileWithheld`. `cmd/scopegen` keeps its checks as the last
-  guard on the OpenAPI document.
+  declares Permissions or `@allowedWhileWithheld`; every operation of a surface whose server is
+  generated here returns `| Problem` ([[0103-every-error-is-the-default-problem-response]]).
+  `cmd/scopegen` keeps, as the last guard on the OpenAPI document, the checks without which a row
+  of its tables would open an operation: a missing scope or Permission, and Permissions on a /site
+  operation of no Workspace.
 - **A raw `@extension` of one of these keys fails compilation**, so the old form cannot come back
   past its decorator.
 - **The decorators live in the repository** (`typespec/lib`, imported by path), not in a package:

@@ -4,6 +4,22 @@
 import * as z from 'zod';
 
 /**
+ * The metric of a Sending domain that is over a warning limit of the abuse detector
+ */
+export const zAbuseMetric = z.enum(['complaint', 'bounce']);
+
+/**
+ * A Sending domain in the warning tier of the abuse detector (ADR 0026): its rate is
+ * over the warning limit but under the freeze limit. Computed live from the trailing
+ * 24 hours since any clearance, never stored.
+ */
+export const zAbuseWarning = z.object({
+  domain: z.string(),
+  metric: zAbuseMetric,
+  rate: z.number()
+});
+
+/**
  * What an Audit entry says was done, as `<entity>.<verb>`: an action the server records on its
  * own, or the create, update or delete of an audited object
  */
@@ -98,6 +114,15 @@ export const zAuditAction = z.enum([
   'webhook_endpoint.update',
   'webhook_endpoint.delete'
 ]);
+
+/**
+ * What an audited change was done to
+ */
+export const zAuditTarget = z.object({
+  type: z.string(),
+  id: z.exactOptional(z.string().nullable()),
+  name: z.exactOptional(z.string().nullable())
+});
 
 /**
  * An ISO 3166-1 alpha-2 country code, upper case (`US`, `DE`)
@@ -199,18 +224,50 @@ export const zRevisionInput = z.object({
 });
 
 /**
- * Which metric of a Sending domain breached the abuse detector's warning limit
+ * How many people work at the User's company (second question)
  */
-export const zStaffAbuseMetric = z.enum(['complaint', 'bounce']);
+export const zSignupCompanySize = z.enum([
+  '1',
+  '2_10',
+  '11_50',
+  '51_200',
+  '201_1000',
+  '1000_plus',
+  'other'
+]);
 
 /**
- * A Sending domain in the warning tier (ADR 0026), by the detector's own computation
+ * What the User mainly wants to do with the product (third question)
  */
-export const zStaffAbuseWarning = z.object({
-  domain: z.string(),
-  metric: zStaffAbuseMetric,
-  rate: z.number()
-});
+export const zSignupGoal = z.enum([
+  'broadcasts',
+  'automations',
+  'tracking',
+  'migrating',
+  'other'
+]);
+
+/**
+ * What the User does (Sign-up survey, first question)
+ */
+export const zSignupRole = z.enum([
+  'founder',
+  'marketer',
+  'developer',
+  'product',
+  'other'
+]);
+
+/**
+ * Where the User heard about the product (fourth question, optional)
+ */
+export const zSignupSource = z.enum([
+  'search',
+  'github',
+  'social',
+  'recommendation',
+  'other'
+]);
 
 /**
  * Who performed an audited change, as the Workspace's own team sees it
@@ -228,15 +285,6 @@ export const zStaffAuditActorKind = z.enum([
  */
 export const zStaffAuditActor = z.object({
   kind: zStaffAuditActorKind,
-  id: z.exactOptional(z.string().nullable()),
-  name: z.exactOptional(z.string().nullable())
-});
-
-/**
- * What an audited change was done to
- */
-export const zStaffAuditTarget = z.object({
-  type: z.string(),
   id: z.exactOptional(z.string().nullable()),
   name: z.exactOptional(z.string().nullable())
 });
@@ -297,42 +345,18 @@ export const zStaffSendCapInput = z.strictObject({
 });
 
 /**
- * How many people work at the User's company (second question)
- */
-export const zStaffSignupCompanySize = z.enum([
-  '1',
-  '2_10',
-  '11_50',
-  '51_200',
-  '201_1000',
-  '1000_plus',
-  'other'
-]);
-
-/**
  * How many Users chose a company size
  */
 export const zStaffSignupCompanySizeCount = z.object({
-  choice: zStaffSignupCompanySize,
+  choice: zSignupCompanySize,
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
-
-/**
- * What the User mainly wants to do with the product (third question)
- */
-export const zStaffSignupGoal = z.enum([
-  'broadcasts',
-  'automations',
-  'tracking',
-  'migrating',
-  'other'
-]);
 
 /**
  * How many Users chose a main goal
  */
 export const zStaffSignupGoalCount = z.object({
-  choice: zStaffSignupGoal,
+  choice: zSignupGoal,
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
@@ -345,40 +369,18 @@ export const zStaffSignupOtherTextCount = z.object({
 });
 
 /**
- * What the User does (Sign-up survey, first question)
- */
-export const zStaffSignupRole = z.enum([
-  'founder',
-  'marketer',
-  'developer',
-  'product',
-  'other'
-]);
-
-/**
  * How many Users chose a role
  */
 export const zStaffSignupRoleCount = z.object({
-  choice: zStaffSignupRole,
+  choice: zSignupRole,
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
-
-/**
- * Where the User heard about the product (fourth question, optional)
- */
-export const zStaffSignupSource = z.enum([
-  'search',
-  'github',
-  'social',
-  'recommendation',
-  'other'
-]);
 
 /**
  * How many Users chose a source
  */
 export const zStaffSignupSourceCount = z.object({
-  choice: zStaffSignupSource,
+  choice: zSignupSource,
   count: z.int().min(-2147483648, { error: 'Invalid value: Expected int32 to be >= -2147483648' }).max(2147483647, { error: 'Invalid value: Expected int32 to be <= 2147483647' })
 });
 
@@ -444,7 +446,7 @@ export const zStaffAbuse = z.object({
   clearedAt: z.exactOptional(zTimestamp.nullable()),
   warningNotifiedAt: z.exactOptional(zTimestamp.nullable()),
   freezeNotifiedAt: z.exactOptional(zTimestamp.nullable()),
-  warning: z.exactOptional(zStaffAbuseWarning.nullable())
+  warning: z.exactOptional(zAbuseWarning.nullable())
 });
 
 /**
@@ -455,7 +457,7 @@ export const zStaffAuditEntryResource = z.object({
   occurredAt: zTimestamp,
   actor: zStaffAuditActor,
   action: zAuditAction,
-  target: zStaffAuditTarget,
+  target: zAuditTarget,
   diff: z.exactOptional(zJsonObject.nullable()),
   requestId: z.exactOptional(z.string().nullable()),
   ip: z.exactOptional(z.string().nullable()),
@@ -488,13 +490,13 @@ export const zStaffHold = z.object({
  */
 export const zStaffSignupSurveyResponseResource = z.object({
   userId: zEntityId,
-  role: zStaffSignupRole,
+  role: zSignupRole,
   roleOtherText: z.exactOptional(z.string().nullable()),
-  companySize: zStaffSignupCompanySize,
+  companySize: zSignupCompanySize,
   companySizeOtherText: z.exactOptional(z.string().nullable()),
-  mainGoal: zStaffSignupGoal,
+  mainGoal: zSignupGoal,
   mainGoalOtherText: z.exactOptional(z.string().nullable()),
-  heardFrom: z.exactOptional(zStaffSignupSource.nullable()),
+  heardFrom: z.exactOptional(zSignupSource.nullable()),
   heardFromOtherText: z.exactOptional(z.string().nullable()),
   answeredAt: zTimestamp
 });
@@ -598,20 +600,11 @@ export const zStaffWorkspaceResource = z.object({
 });
 
 /**
- * The outcome of an exempt or un-exempt: the Workspace as it now stands, and whether
- * anything changed
+ * The outcome of a suspend, unsuspend, exempt or un-exempt: the Workspace as it now stands,
+ * and whether anything changed (suspending a suspended Workspace and unsuspending an active
+ * one change nothing, nor does exempting an exempt one).
  */
-export const zStaffExemptionChange = z.object({
-  changed: z.boolean(),
-  workspace: zStaffWorkspaceResource
-});
-
-/**
- * The outcome of a suspend or unsuspend: the Workspace as it now stands, and whether
- * anything changed (suspending a suspended Workspace and unsuspending an active one
- * change nothing).
- */
-export const zStaffSuspensionChange = z.object({
+export const zStaffWorkspaceChange = z.object({
   changed: z.boolean(),
   workspace: zStaffWorkspaceResource
 });
@@ -699,7 +692,7 @@ export const zStaffWorkspacesExemptPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesExemptResponse = zStaffExemptionChange;
+export const zStaffWorkspacesExemptResponse = zStaffWorkspaceChange;
 
 export const zStaffWorkspacesClearSendCapPath = z.object({
   workspaceId: zWorkspaceId
@@ -730,7 +723,7 @@ export const zStaffWorkspacesSuspendPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesSuspendResponse = zStaffSuspensionChange;
+export const zStaffWorkspacesSuspendResponse = zStaffWorkspaceChange;
 
 export const zStaffWorkspacesUnexemptPath = z.object({
   workspaceId: zWorkspaceId
@@ -739,7 +732,7 @@ export const zStaffWorkspacesUnexemptPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesUnexemptResponse = zStaffExemptionChange;
+export const zStaffWorkspacesUnexemptResponse = zStaffWorkspaceChange;
 
 export const zStaffWorkspacesUnsuspendPath = z.object({
   workspaceId: zWorkspaceId
@@ -748,4 +741,4 @@ export const zStaffWorkspacesUnsuspendPath = z.object({
 /**
  * The request has succeeded.
  */
-export const zStaffWorkspacesUnsuspendResponse = zStaffSuspensionChange;
+export const zStaffWorkspacesUnsuspendResponse = zStaffWorkspaceChange;
