@@ -15,6 +15,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -65,7 +66,7 @@ type Broadcast struct {
 	// SegmentID holds the value of the "segment_id" field.
 	SegmentID *int64 `json:"segment_id,omitempty"`
 	// Condition holds the value of the "condition" field.
-	Condition *string `json:"condition,omitempty"`
+	Condition *conditiontree.Group `json:"condition,omitempty"`
 	// IntegrationID holds the value of the "integration_id" field.
 	IntegrationID *int64 `json:"integration_id,omitempty"`
 	// Status holds the value of the "status" field.
@@ -161,13 +162,13 @@ func (*Broadcast) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case broadcast.FieldButtons, broadcast.FieldDoc:
+		case broadcast.FieldButtons, broadcast.FieldDoc, broadcast.FieldCondition:
 			values[i] = new([]byte)
 		case broadcast.FieldLinkPreview, broadcast.FieldLinkTracking:
 			values[i] = new(sql.NullBool)
 		case broadcast.FieldID, broadcast.FieldWorkspaceID, broadcast.FieldRevision, broadcast.FieldSegmentID, broadcast.FieldIntegrationID:
 			values[i] = new(sql.NullInt64)
-		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldText, broadcast.FieldImageURL, broadcast.FieldUnsubscribeButton, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldCondition, broadcast.FieldStatus, broadcast.FieldHoldReason:
+		case broadcast.FieldName, broadcast.FieldChannel, broadcast.FieldSubject, broadcast.FieldFromName, broadcast.FieldFromEmail, broadcast.FieldText, broadcast.FieldImageURL, broadcast.FieldUnsubscribeButton, broadcast.FieldBody, broadcast.FieldEditorVersion, broadcast.FieldStatus, broadcast.FieldHoldReason:
 			values[i] = new(sql.NullString)
 		case broadcast.FieldCreatedAt, broadcast.FieldUpdatedAt, broadcast.FieldArchivedAt, broadcast.FieldScheduledAt, broadcast.FieldSentAt, broadcast.FieldFailedAt, broadcast.FieldCancelledAt, broadcast.FieldLastScheduledAt:
 			values[i] = new(sql.NullTime)
@@ -327,11 +328,12 @@ func (_m *Broadcast) assignValues(columns []string, values []any) error {
 				*_m.SegmentID = value.Int64
 			}
 		case broadcast.FieldCondition:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field condition", values[i])
-			} else if value.Valid {
-				_m.Condition = new(string)
-				*_m.Condition = value.String
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Condition); err != nil {
+					return fmt.Errorf("unmarshal field condition: %w", err)
+				}
 			}
 		case broadcast.FieldIntegrationID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -529,10 +531,8 @@ func (_m *Broadcast) String() string {
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
-	if v := _m.Condition; v != nil {
-		builder.WriteString("condition=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString("condition=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Condition))
 	builder.WriteString(", ")
 	if v := _m.IntegrationID; v != nil {
 		builder.WriteString("integration_id=")

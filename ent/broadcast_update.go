@@ -20,6 +20,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/predicate"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -358,16 +359,8 @@ func (_u *BroadcastUpdate) ClearSegmentID() *BroadcastUpdate {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *BroadcastUpdate) SetCondition(v string) *BroadcastUpdate {
+func (_u *BroadcastUpdate) SetCondition(v *conditiontree.Group) *BroadcastUpdate {
 	_u.mutation.SetCondition(v)
-	return _u
-}
-
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *BroadcastUpdate) SetNillableCondition(v *string) *BroadcastUpdate {
-	if v != nil {
-		_u.SetCondition(*v)
-	}
 	return _u
 }
 
@@ -818,10 +811,10 @@ func (_u *BroadcastUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
 	}
 	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(broadcast.FieldCondition, field.TypeString, value)
+		_spec.SetField(broadcast.FieldCondition, field.TypeJSON, value)
 	}
 	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(broadcast.FieldCondition, field.TypeString)
+		_spec.ClearField(broadcast.FieldCondition, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)
@@ -1381,16 +1374,8 @@ func (_u *BroadcastUpdateOne) ClearSegmentID() *BroadcastUpdateOne {
 }
 
 // SetCondition sets the "condition" field.
-func (_u *BroadcastUpdateOne) SetCondition(v string) *BroadcastUpdateOne {
+func (_u *BroadcastUpdateOne) SetCondition(v *conditiontree.Group) *BroadcastUpdateOne {
 	_u.mutation.SetCondition(v)
-	return _u
-}
-
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_u *BroadcastUpdateOne) SetNillableCondition(v *string) *BroadcastUpdateOne {
-	if v != nil {
-		_u.SetCondition(*v)
-	}
 	return _u
 }
 
@@ -1871,10 +1856,10 @@ func (_u *BroadcastUpdateOne) sqlSave(ctx context.Context) (_node *Broadcast, er
 		_spec.ClearField(broadcast.FieldEditorVersion, field.TypeString)
 	}
 	if value, ok := _u.mutation.Condition(); ok {
-		_spec.SetField(broadcast.FieldCondition, field.TypeString, value)
+		_spec.SetField(broadcast.FieldCondition, field.TypeJSON, value)
 	}
 	if _u.mutation.ConditionCleared() {
-		_spec.ClearField(broadcast.FieldCondition, field.TypeString)
+		_spec.ClearField(broadcast.FieldCondition, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(broadcast.FieldStatus, field.TypeEnum, value)

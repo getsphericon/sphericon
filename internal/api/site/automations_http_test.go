@@ -13,7 +13,6 @@ import (
 	"github.com/getsphericon/sphericon/internal/fixtures"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
-	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
@@ -55,8 +54,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 	upd := updated
 	assert.True(t, upd.Draft.Value.Steps[0].HasSecret.Or(false))
 
-	steps, err := automationstep.Decode(testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID)))
-	require.NoError(t, err)
+	steps := testhelper.LatestSteps(ctx, t, env.DB, int64(res.ID))
 	stored := httpcall.Spec{URL: steps[0].URL, Headers: steps[0].Headers, Secret: steps[0].Secret}
 	opened, err := httpcall.Open(env.Cipher, stored)
 	require.NoError(t, err)
@@ -80,8 +78,7 @@ func TestSiteHTTPStepIsMaskedOnReadKeptOnEditAndAbsentFromTheAuditLog(t *testing
 // sealedValues returns the ciphertext of the first step's URL, secret and header values.
 func sealedValues(t *testing.T, env *testhelper.TestEnv, id int64) []string {
 	t.Helper()
-	steps, err := automationstep.Decode(testhelper.LatestSteps(context.Background(), t, env.DB, id))
-	require.NoError(t, err)
+	steps := testhelper.LatestSteps(context.Background(), t, env.DB, id)
 	out := make([]string, 0, 2+len(steps[0].Headers))
 	out = append(out, steps[0].URL, steps[0].Secret)
 	for _, h := range steps[0].Headers {

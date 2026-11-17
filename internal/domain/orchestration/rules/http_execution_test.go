@@ -2,7 +2,6 @@ package rules_test
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -105,12 +104,9 @@ func TestHTTPExecutionRejectsAnInvalidRenderedBody(t *testing.T) {
 	env := testhelper.Setup(t)
 	f := env.DB.RuleFiring.GetX(t.Context(), fixtures.RuleFiringHTTPPendingID)
 	version := env.DB.RuleVersion.GetX(t.Context(), fixtures.RuleHTTPExecutionVersionID)
-	actions, err := rules.DecodeActions(version.Actions)
-	require.NoError(t, err)
+	actions := version.Actions
 	actions[0].Body = `{"n":{{ event.properties.n | default: 0 }}}`
-	storedActions, err := json.Marshal(actions)
-	require.NoError(t, err)
-	err = env.DB.RuleVersion.UpdateOneID(version.ID).SetActions(string(storedActions)).Exec(t.Context())
+	err := env.DB.RuleVersion.UpdateOneID(version.ID).SetActions(actions).Exec(t.Context())
 	require.NoError(t, err)
 
 	decision, err := rules.New(env.Cipher, env.Bus, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(context.Background(), env.DB.Scoped(fixtures.AcmeID), rules.ExecuteHTTPInput{FiringID: f.ID, Index: 0, Attempt: executionAttempt()})

@@ -35,9 +35,11 @@ import (
 	"github.com/getsphericon/sphericon/internal/infra/httpcall"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
 	"github.com/getsphericon/sphericon/internal/kernel/bounds"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/i18n"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
+	"github.com/getsphericon/sphericon/internal/kernel/jsonvalue"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
@@ -152,8 +154,8 @@ func New(cipher *secrets.Cipher, bus *events.Bus, client webhook.Doer, now func(
 type CreateInput struct {
 	Name          string
 	TriggerEvents []string
-	// Condition is the encoded tree; nil or empty means every Contact.
-	Condition *string
+	// Condition is the tree; nil is the empty group, which matches every Contact.
+	Condition *conditiontree.Group
 	Actions   []ruleaction.Action
 }
 
@@ -165,37 +167,26 @@ type UpdateInput struct {
 	Revision      int64
 	Name          *string
 	TriggerEvents *[]string
-	Condition     *string
+	Condition     *conditiontree.Group
 	Actions       *[]ruleaction.Action
 }
 
-// definition is the content of a Rule version as stored: its Trigger events, its encoded Condition
-// (nil for every Contact) and its encoded Actions.
+// definition is the content of a Rule version as stored: its Trigger events, its Condition and its
+// Actions.
 type definition struct {
 	triggers  []string
-	condition *string
-	actions   string
+	condition conditiontree.Group
+	actions   []ruleaction.Action
 }
 
+// equal compares the documents by value (ADR 0169): a Condition spelled with its keys in another
+// order is the same Condition.
 func (d definition) equal(o definition) bool {
-	return slices.Equal(d.triggers, o.triggers) && lo.FromPtr(d.condition) == lo.FromPtr(o.condition) && d.actions == o.actions
+	return slices.Equal(d.triggers, o.triggers) && jsonvalue.Same(d.condition, o.condition) && jsonvalue.Same(d.actions, o.actions)
 }
 
 func definitionOf(v *ent.RuleVersion) definition {
-	return definition{triggers: Triggers(v), condition: normalCondition(v.Condition), actions: v.Actions}
-}
-
-// normalCondition is the Condition as a version keeps it: one that matches every Contact (none,
-// or an empty group, which the editor always sends) is nil, so saving it unchanged is no change.
-func normalCondition(cond *string) *string {
-	if cond == nil {
-		return nil
-	}
-	g, err := condition.Parse(*cond)
-	if err == nil && len(g.Rules) == 0 && !g.Not {
-		return nil
-	}
-	return cond
+	return definition{triggers: Triggers(v), condition: v.Condition, actions: v.Actions}
 }
 
 // Create validates and stores an inactive Rule whose definition is its draft, version 1.
@@ -272,14 +263,10 @@ func (versioned) Editable(r *ent.Rule) error {
 // validates what it changes. An http Action that names one of the base's Actions by ID keeps the
 // secrets it does not resend.
 func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion, in UpdateInput) (definition, error) {
-	var def definition
+	def := definition{condition: conditiontree.Empty(), actions: []ruleaction.Action{}}
 	var stored []ruleaction.Action
 	if base != nil {
-		def = definitionOf(base)
-		var err error
-		if stored, err = DecodeActions(base.Actions); err != nil {
-			return definition{}, err
-		}
+		def, stored = definitionOf(base), base.Actions
 	}
 	if in.TriggerEvents != nil {
 		triggers, err := cleanTriggers(*in.TriggerEvents)
@@ -289,20 +276,20 @@ func (m *Module) merge(ctx context.Context, s *ent.Scoped, base *ent.RuleVersion
 		def.triggers = triggers
 	}
 	if in.Condition != nil {
-		if err := m.validateCondition(ctx, s, in.Condition); err != nil {
+		if err := m.validateCondition(ctx, s, *in.Condition); err != nil {
 			return definition{}, err
 		}
-		def.condition = normalCondition(in.Condition)
+		def.condition = *in.Condition
 	}
 	if in.Actions != nil {
-		encoded, err := m.encodeActions(*in.Actions, stored)
+		actions, err := m.storedActions(*in.Actions, stored)
 		if err != nil {
 			return definition{}, err
 		}
 		if err := requireAutomations(ctx, s, *in.Actions); err != nil {
 			return definition{}, err
 		}
-		def.actions = encoded
+		def.actions = actions
 	}
 	return def, nil
 }
@@ -321,7 +308,7 @@ func saveVersion(ctx context.Context, l *ent.WorkspaceLocked, ruleID int64, numb
 	v, err := l.RuleVersion().Create().
 		SetRuleID(ruleID).
 		SetVersion(number).
-		SetNillableCondition(def.condition).
+		SetCondition(def.condition).
 		SetActions(def.actions).
 		Save(ctx)
 	if err != nil {
@@ -333,13 +320,7 @@ func saveVersion(ctx context.Context, l *ent.WorkspaceLocked, ruleID int64, numb
 // rewrite replaces the definition of a draft in place, under the Workspace lock as saveVersion: no
 // Firing ever stands on a draft.
 func rewrite(ctx context.Context, l *ent.WorkspaceLocked, draft *ent.RuleVersion, def definition) error {
-	update := l.RuleVersion().UpdateOneID(draft.ID).SetActions(def.actions)
-	if def.condition == nil {
-		update.ClearCondition()
-	} else {
-		update.SetCondition(*def.condition)
-	}
-	if err := update.Exec(ctx); err != nil {
+	if err := l.RuleVersion().UpdateOneID(draft.ID).SetCondition(def.condition).SetActions(def.actions).Exec(ctx); err != nil {
 		return err
 	}
 	if _, err := l.RuleVersionTrigger().Delete().Where(ruleversiontrigger.VersionID(draft.ID)).Exec(ctx); err != nil {
@@ -400,14 +381,10 @@ func (m *Module) Publish(ctx context.Context, s *ent.Scoped, id, revision int64)
 // publishable refuses a version that cannot run: one with no Actions, or with an enroll Action
 // whose Automation is gone.
 func publishable(ctx context.Context, s *ent.Scoped, v *ent.RuleVersion) error {
-	actions, err := DecodeActions(v.Actions)
-	if err != nil {
-		return err
-	}
-	if len(actions) == 0 {
+	if len(v.Actions) == 0 {
 		return ErrInvalid.With("a Rule needs at least one Action to be published")
 	}
-	return requireAutomations(ctx, s, actions)
+	return requireAutomations(ctx, s, v.Actions)
 }
 
 // Revert drops the Rule's draft: its live version is again the latest (ADR 0065). It is
@@ -439,15 +416,6 @@ func Triggers(v *ent.RuleVersion) []string {
 
 // byAction orders a version's Trigger events so a read is stable.
 func byAction(q *ent.RuleVersionTriggerQuery) { q.Order(ent.Asc(ruleversiontrigger.FieldID)) }
-
-// DecodeActions parses a stored Actions array, JSON (rule_versions_actions_check).
-func DecodeActions(stored string) ([]ruleaction.Action, error) {
-	var actions []ruleaction.Action
-	if err := json.Unmarshal([]byte(stored), &actions); err != nil {
-		return nil, err
-	}
-	return actions, nil
-}
 
 // DecodeResults parses a Firing's stored results.
 func DecodeResults(stored string) ([]Result, error) {
@@ -482,25 +450,23 @@ func saveTriggers(ctx context.Context, s *ent.Scoped, versionID int64, actions [
 // validateCondition checks a Condition as a Segment's is checked: it parses, and every leaf names
 // a Contact attribute, a Tag, an Event action or a custom field the Workspace has. A Rule's
 // Condition may also test the triggering Event's properties ("trigger:<key>", any key).
-func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond *string) error {
-	if cond == nil || *cond == "" {
-		return nil
+func (m *Module) validateCondition(ctx context.Context, s *ent.Scoped, cond conditiontree.Group) error {
+	size := cond.Size()
+	if size > MaxConditionNodes {
+		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, size))
 	}
-	if g, err := condition.Parse(*cond); err == nil && g.Size() > MaxConditionNodes {
-		return ErrInvalid.With(fmt.Sprintf("a Condition has at most %d groups and rules, this one has %d", MaxConditionNodes, g.Size()))
-	}
-	if _, err := m.conditions.RulePredicate(ctx, s, *cond, nil); err != nil {
+	if _, err := m.conditions.RulePredicate(ctx, s, cond, nil); err != nil {
 		return ErrInvalid.With(err.Error())
 	}
 	return nil
 }
 
-// encodeActions validates the Actions and returns the stored JSON, dropping the fields that do
+// storedActions validates the Actions and returns them as stored, dropping the fields that do
 // not belong to each type. stored are the Rule's Actions as saved now (none for a new Rule): an
 // http Action that names one of them by ID keeps the secrets it does not resend.
-func (m *Module) encodeActions(actions, stored []ruleaction.Action) (string, error) {
+func (m *Module) storedActions(actions, stored []ruleaction.Action) ([]ruleaction.Action, error) {
 	if len(actions) > MaxActions {
-		return "", ErrInvalid.With(fmt.Sprintf("a Rule runs at most %d Actions, this one has %d", MaxActions, len(actions)))
+		return nil, ErrInvalid.With(fmt.Sprintf("a Rule runs at most %d Actions, this one has %d", MaxActions, len(actions)))
 	}
 	prev := map[string]ruleaction.Action{}
 	for i := range stored {
@@ -517,36 +483,35 @@ func (m *Module) encodeActions(actions, stored []ruleaction.Action) (string, err
 		case ruleaction.ApplyTag, ruleaction.RemoveTag:
 			tag := strings.TrimSpace(a.Tag)
 			if tag == "" {
-				return "", ErrInvalid.With(fmt.Sprintf("action %d: a tag action needs a tag", i+1))
+				return nil, ErrInvalid.With(fmt.Sprintf("action %d: a tag action needs a tag", i+1))
 			}
 			out = append(out, ruleaction.Action{Type: a.Type, Tag: tag})
 		case ruleaction.Enroll:
 			if a.AutomationID <= 0 {
-				return "", ErrInvalid.With(fmt.Sprintf("action %d: an enroll action needs an automation", i+1))
+				return nil, ErrInvalid.With(fmt.Sprintf("action %d: an enroll action needs an automation", i+1))
 			}
 			out = append(out, ruleaction.Action{Type: a.Type, AutomationID: a.AutomationID})
 		case ruleaction.HTTP:
 			if len(seen) >= MaxHTTPActionsPerRule {
-				return "", ErrInvalid.With(fmt.Sprintf("a Rule has at most %d http Actions", MaxHTTPActionsPerRule))
+				return nil, ErrInvalid.With(fmt.Sprintf("a Rule has at most %d http Actions", MaxHTTPActionsPerRule))
 			}
 			sealed, err := m.sealHTTP(*a, prev)
 			if bad, ok := errors.AsType[httpcall.InvalidError](err); ok {
-				return "", ErrInvalid.With(fmt.Sprintf("action %d: %s", i+1, bad))
+				return nil, ErrInvalid.With(fmt.Sprintf("action %d: %s", i+1, bad))
 			}
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			if seen[sealed.ID] {
-				return "", ErrInvalid.With(fmt.Sprintf("action %d: duplicate http Action id", i+1))
+				return nil, ErrInvalid.With(fmt.Sprintf("action %d: duplicate http Action id", i+1))
 			}
 			seen[sealed.ID] = true
 			out = append(out, sealed)
 		default:
-			return "", ErrInvalid.With(fmt.Sprintf("action %d: unknown action type %q", i+1, a.Type))
+			return nil, ErrInvalid.With(fmt.Sprintf("action %d: unknown action type %q", i+1, a.Type))
 		}
 	}
-	b, err := json.Marshal(out)
-	return string(b), err
+	return out, nil
 }
 
 // sealHTTP turns an http Action being saved into its stored form. An Action that names a stored
@@ -653,18 +618,15 @@ func (m *Module) Evaluate(ctx context.Context, s *ent.Scoped, ev Event) ([]int64
 // holds evaluates a version's Condition for the Contact against its current data. A Condition
 // that no longer compiles (a custom field it named has since been deleted) holds for nobody:
 // retrying cannot fix it, and the other Rules must still run.
-func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond *string, ev Event) (bool, error) {
-	match := contact.ID(ev.ContactID)
-	if cond != nil && *cond != "" {
-		pred, err := m.conditions.RulePredicate(ctx, s, *cond, ev.Properties)
-		if errors.Is(err, condition.ErrStorage) {
-			return false, err
-		}
-		if err != nil {
-			return false, nil
-		}
-		match = contact.And(match, pred)
+func (m *Module) holds(ctx context.Context, s *ent.Scoped, cond conditiontree.Group, ev Event) (bool, error) {
+	pred, err := m.conditions.RulePredicate(ctx, s, cond, ev.Properties)
+	if errors.Is(err, condition.ErrStorage) {
+		return false, err
 	}
+	if err != nil {
+		return false, nil
+	}
+	match := contact.And(contact.ID(ev.ContactID), pred)
 	return s.Contact().Query().Where(match).Exist(ctx)
 }
 
@@ -862,11 +824,7 @@ func (m *Module) ActiveEnrollingInto(ctx context.Context, l *ent.WorkspaceLocked
 	}
 	var using []*ent.Rule
 	for _, r := range active {
-		actions, err := DecodeActions(r.Edges.LiveVersion.Actions)
-		if err != nil {
-			return nil, err
-		}
-		if slices.ContainsFunc(actions, func(a ruleaction.Action) bool { return a.EnrollsInto(automationID) }) {
+		if slices.ContainsFunc(r.Edges.LiveVersion.Actions, func(a ruleaction.Action) bool { return a.EnrollsInto(automationID) }) {
 			using = append(using, r)
 		}
 	}
@@ -880,11 +838,7 @@ func (m *Module) FiringActions(ctx context.Context, s *ent.Scoped, f *ent.RuleFi
 	if err != nil {
 		return nil, fmt.Errorf("firing %d version: %w", f.ID, err)
 	}
-	actions, err := DecodeActions(v.Actions)
-	if err != nil {
-		return nil, fmt.Errorf("firing %d actions: %w", f.ID, err)
-	}
-	return actions, nil
+	return v.Actions, nil
 }
 
 // pendingHTTP is the Firing's Actions, and whether the one at index is an http Action that still

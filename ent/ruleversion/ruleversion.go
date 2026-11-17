@@ -7,6 +7,8 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 const (
@@ -99,8 +101,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	VersionValidator func(int) error
+	// DefaultCondition holds the default value on creation for the "condition" field.
+	DefaultCondition conditiontree.Group
 	// DefaultActions holds the default value on creation for the "actions" field.
-	DefaultActions string
+	DefaultActions []ruleaction.Action
 )
 
 // OrderOption defines the ordering options for the RuleVersion queries.
@@ -134,16 +138,6 @@ func ByRuleID(opts ...sql.OrderTermOption) OrderOption {
 // ByVersion orders the results by the version field.
 func ByVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVersion, opts...).ToFunc()
-}
-
-// ByCondition orders the results by the condition field.
-func ByCondition(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCondition, opts...).ToFunc()
-}
-
-// ByActions orders the results by the actions field.
-func ByActions(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldActions, opts...).ToFunc()
 }
 
 // ByWorkspaceField orders the results by workspace field.

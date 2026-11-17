@@ -298,7 +298,7 @@ func TestRuleRefusesADateLeafOnATriggerProperty(t *testing.T) {
 	env := testhelper.Setup(t)
 	s := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.New(time.Now).RulePredicate(context.Background(), s, encode(t, opsGroup(dateWithin("trigger:at", 7))), nil)
+	_, err := condition.New(time.Now).RulePredicate(context.Background(), s, opsGroup(dateWithin("trigger:at", 7)), nil)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "takes a custom field of type datetime")

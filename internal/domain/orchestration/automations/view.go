@@ -43,13 +43,8 @@ type HeaderName struct {
 	Name string
 }
 
-// Views decodes a stored definition into the views of its steps. A definition that does not
-// decode shows no steps rather than an error.
-func Views(definition string) []StepView {
-	stored, err := automationstep.Decode(definition)
-	if err != nil {
-		return nil
-	}
+// Views are the views of a version's steps.
+func Views(stored []automationstep.Step) []StepView {
 	views := make([]StepView, 0, len(stored))
 	for i := range stored {
 		views = append(views, viewOf(&stored[i]))

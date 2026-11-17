@@ -93,9 +93,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -7372,7 +7375,8 @@ type AutomationVersionMutation struct {
 	updated_at        *time.Time
 	version           *int
 	addversion        *int
-	steps             *string
+	steps             *[]automationstep.Step
+	appendsteps       []automationstep.Step
 	trigger_event     *string
 	exit_events       *[]string
 	appendexit_events []string
@@ -7695,12 +7699,13 @@ func (m *AutomationVersionMutation) ResetVersion() {
 }
 
 // SetSteps sets the "steps" field.
-func (m *AutomationVersionMutation) SetSteps(s string) {
-	m.steps = &s
+func (m *AutomationVersionMutation) SetSteps(a []automationstep.Step) {
+	m.steps = &a
+	m.appendsteps = nil
 }
 
 // Steps returns the value of the "steps" field in the mutation.
-func (m *AutomationVersionMutation) Steps() (r string, exists bool) {
+func (m *AutomationVersionMutation) Steps() (r []automationstep.Step, exists bool) {
 	v := m.steps
 	if v == nil {
 		return
@@ -7711,7 +7716,7 @@ func (m *AutomationVersionMutation) Steps() (r string, exists bool) {
 // OldSteps returns the old "steps" field's value of the AutomationVersion entity.
 // If the AutomationVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AutomationVersionMutation) OldSteps(ctx context.Context) (v string, err error) {
+func (m *AutomationVersionMutation) OldSteps(ctx context.Context) (v []automationstep.Step, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSteps is only allowed on UpdateOne operations")
 	}
@@ -7725,9 +7730,23 @@ func (m *AutomationVersionMutation) OldSteps(ctx context.Context) (v string, err
 	return oldValue.Steps, nil
 }
 
+// AppendSteps adds a to the "steps" field.
+func (m *AutomationVersionMutation) AppendSteps(a []automationstep.Step) {
+	m.appendsteps = append(m.appendsteps, a...)
+}
+
+// AppendedSteps returns the list of values that were appended to the "steps" field in this mutation.
+func (m *AutomationVersionMutation) AppendedSteps() ([]automationstep.Step, bool) {
+	if len(m.appendsteps) == 0 {
+		return nil, false
+	}
+	return m.appendsteps, true
+}
+
 // ResetSteps resets all changes to the "steps" field.
 func (m *AutomationVersionMutation) ResetSteps() {
 	m.steps = nil
+	m.appendsteps = nil
 }
 
 // SetTriggerEvent sets the "trigger_event" field.
@@ -8134,7 +8153,7 @@ func (m *AutomationVersionMutation) SetField(name string, value ent.Value) error
 		m.SetVersion(v)
 		return nil
 	case automationversion.FieldSteps:
-		v, ok := value.(string)
+		v, ok := value.([]automationstep.Step)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -10569,7 +10588,7 @@ type BroadcastMutation struct {
 	doc                *json.RawMessage
 	appenddoc          json.RawMessage
 	editor_version     *string
-	condition          *string
+	condition          **conditiontree.Group
 	status             *broadcast.Status
 	scheduled_at       *time.Time
 	sent_at            *time.Time
@@ -11628,12 +11647,12 @@ func (m *BroadcastMutation) ResetSegmentID() {
 }
 
 // SetCondition sets the "condition" field.
-func (m *BroadcastMutation) SetCondition(s string) {
-	m.condition = &s
+func (m *BroadcastMutation) SetCondition(c *conditiontree.Group) {
+	m.condition = &c
 }
 
 // Condition returns the value of the "condition" field in the mutation.
-func (m *BroadcastMutation) Condition() (r string, exists bool) {
+func (m *BroadcastMutation) Condition() (r *conditiontree.Group, exists bool) {
 	v := m.condition
 	if v == nil {
 		return
@@ -11644,7 +11663,7 @@ func (m *BroadcastMutation) Condition() (r string, exists bool) {
 // OldCondition returns the old "condition" field's value of the Broadcast entity.
 // If the Broadcast object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BroadcastMutation) OldCondition(ctx context.Context) (v *string, err error) {
+func (m *BroadcastMutation) OldCondition(ctx context.Context) (v *conditiontree.Group, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
@@ -12649,7 +12668,7 @@ func (m *BroadcastMutation) SetField(name string, value ent.Value) error {
 		m.SetSegmentID(v)
 		return nil
 	case broadcast.FieldCondition:
-		v, ok := value.(string)
+		v, ok := value.(*conditiontree.Group)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -53862,8 +53881,9 @@ type RuleVersionMutation struct {
 	updated_at       *time.Time
 	version          *int
 	addversion       *int
-	condition        *string
-	actions          *string
+	condition        *conditiontree.Group
+	actions          *[]ruleaction.Action
+	appendactions    []ruleaction.Action
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -54185,12 +54205,12 @@ func (m *RuleVersionMutation) ResetVersion() {
 }
 
 // SetCondition sets the "condition" field.
-func (m *RuleVersionMutation) SetCondition(s string) {
-	m.condition = &s
+func (m *RuleVersionMutation) SetCondition(c conditiontree.Group) {
+	m.condition = &c
 }
 
 // Condition returns the value of the "condition" field in the mutation.
-func (m *RuleVersionMutation) Condition() (r string, exists bool) {
+func (m *RuleVersionMutation) Condition() (r conditiontree.Group, exists bool) {
 	v := m.condition
 	if v == nil {
 		return
@@ -54201,7 +54221,7 @@ func (m *RuleVersionMutation) Condition() (r string, exists bool) {
 // OldCondition returns the old "condition" field's value of the RuleVersion entity.
 // If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleVersionMutation) OldCondition(ctx context.Context) (v *string, err error) {
+func (m *RuleVersionMutation) OldCondition(ctx context.Context) (v conditiontree.Group, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
@@ -54215,31 +54235,19 @@ func (m *RuleVersionMutation) OldCondition(ctx context.Context) (v *string, err 
 	return oldValue.Condition, nil
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (m *RuleVersionMutation) ClearCondition() {
-	m.condition = nil
-	m.clearedFields[ruleversion.FieldCondition] = struct{}{}
-}
-
-// ConditionCleared returns if the "condition" field was cleared in this mutation.
-func (m *RuleVersionMutation) ConditionCleared() bool {
-	_, ok := m.clearedFields[ruleversion.FieldCondition]
-	return ok
-}
-
 // ResetCondition resets all changes to the "condition" field.
 func (m *RuleVersionMutation) ResetCondition() {
 	m.condition = nil
-	delete(m.clearedFields, ruleversion.FieldCondition)
 }
 
 // SetActions sets the "actions" field.
-func (m *RuleVersionMutation) SetActions(s string) {
-	m.actions = &s
+func (m *RuleVersionMutation) SetActions(r []ruleaction.Action) {
+	m.actions = &r
+	m.appendactions = nil
 }
 
 // Actions returns the value of the "actions" field in the mutation.
-func (m *RuleVersionMutation) Actions() (r string, exists bool) {
+func (m *RuleVersionMutation) Actions() (r []ruleaction.Action, exists bool) {
 	v := m.actions
 	if v == nil {
 		return
@@ -54250,7 +54258,7 @@ func (m *RuleVersionMutation) Actions() (r string, exists bool) {
 // OldActions returns the old "actions" field's value of the RuleVersion entity.
 // If the RuleVersion object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RuleVersionMutation) OldActions(ctx context.Context) (v string, err error) {
+func (m *RuleVersionMutation) OldActions(ctx context.Context) (v []ruleaction.Action, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldActions is only allowed on UpdateOne operations")
 	}
@@ -54264,9 +54272,23 @@ func (m *RuleVersionMutation) OldActions(ctx context.Context) (v string, err err
 	return oldValue.Actions, nil
 }
 
+// AppendActions adds r to the "actions" field.
+func (m *RuleVersionMutation) AppendActions(r []ruleaction.Action) {
+	m.appendactions = append(m.appendactions, r...)
+}
+
+// AppendedActions returns the list of values that were appended to the "actions" field in this mutation.
+func (m *RuleVersionMutation) AppendedActions() ([]ruleaction.Action, bool) {
+	if len(m.appendactions) == 0 {
+		return nil, false
+	}
+	return m.appendactions, true
+}
+
 // ResetActions resets all changes to the "actions" field.
 func (m *RuleVersionMutation) ResetActions() {
 	m.actions = nil
+	m.appendactions = nil
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -54577,14 +54599,14 @@ func (m *RuleVersionMutation) SetField(name string, value ent.Value) error {
 		m.SetVersion(v)
 		return nil
 	case ruleversion.FieldCondition:
-		v, ok := value.(string)
+		v, ok := value.(conditiontree.Group)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCondition(v)
 		return nil
 	case ruleversion.FieldActions:
-		v, ok := value.(string)
+		v, ok := value.([]ruleaction.Action)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -54634,11 +54656,7 @@ func (m *RuleVersionMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *RuleVersionMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(ruleversion.FieldCondition) {
-		fields = append(fields, ruleversion.FieldCondition)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -54651,11 +54669,6 @@ func (m *RuleVersionMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *RuleVersionMutation) ClearField(name string) error {
-	switch name {
-	case ruleversion.FieldCondition:
-		m.ClearCondition()
-		return nil
-	}
 	return fmt.Errorf("unknown RuleVersion nullable field %s", name)
 }
 
@@ -56847,7 +56860,7 @@ type SegmentMutation struct {
 	revision         *int64
 	addrevision      *int64
 	name             *string
-	condition        *string
+	condition        *conditiontree.Group
 	clearedFields    map[string]struct{}
 	workspace        *int64
 	clearedworkspace bool
@@ -57210,12 +57223,12 @@ func (m *SegmentMutation) ResetName() {
 }
 
 // SetCondition sets the "condition" field.
-func (m *SegmentMutation) SetCondition(s string) {
-	m.condition = &s
+func (m *SegmentMutation) SetCondition(c conditiontree.Group) {
+	m.condition = &c
 }
 
 // Condition returns the value of the "condition" field in the mutation.
-func (m *SegmentMutation) Condition() (r string, exists bool) {
+func (m *SegmentMutation) Condition() (r conditiontree.Group, exists bool) {
 	v := m.condition
 	if v == nil {
 		return
@@ -57226,7 +57239,7 @@ func (m *SegmentMutation) Condition() (r string, exists bool) {
 // OldCondition returns the old "condition" field's value of the Segment entity.
 // If the Segment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *SegmentMutation) OldCondition(ctx context.Context) (v *string, err error) {
+func (m *SegmentMutation) OldCondition(ctx context.Context) (v conditiontree.Group, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCondition is only allowed on UpdateOne operations")
 	}
@@ -57240,22 +57253,9 @@ func (m *SegmentMutation) OldCondition(ctx context.Context) (v *string, err erro
 	return oldValue.Condition, nil
 }
 
-// ClearCondition clears the value of the "condition" field.
-func (m *SegmentMutation) ClearCondition() {
-	m.condition = nil
-	m.clearedFields[segment.FieldCondition] = struct{}{}
-}
-
-// ConditionCleared returns if the "condition" field was cleared in this mutation.
-func (m *SegmentMutation) ConditionCleared() bool {
-	_, ok := m.clearedFields[segment.FieldCondition]
-	return ok
-}
-
 // ResetCondition resets all changes to the "condition" field.
 func (m *SegmentMutation) ResetCondition() {
 	m.condition = nil
-	delete(m.clearedFields, segment.FieldCondition)
 }
 
 // ClearWorkspace clears the "workspace" edge to the Workspace entity.
@@ -57438,7 +57438,7 @@ func (m *SegmentMutation) SetField(name string, value ent.Value) error {
 		m.SetName(v)
 		return nil
 	case segment.FieldCondition:
-		v, ok := value.(string)
+		v, ok := value.(conditiontree.Group)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -57492,9 +57492,6 @@ func (m *SegmentMutation) ClearedFields() []string {
 	if m.FieldCleared(segment.FieldArchivedAt) {
 		fields = append(fields, segment.FieldArchivedAt)
 	}
-	if m.FieldCleared(segment.FieldCondition) {
-		fields = append(fields, segment.FieldCondition)
-	}
 	return fields
 }
 
@@ -57511,9 +57508,6 @@ func (m *SegmentMutation) ClearField(name string) error {
 	switch name {
 	case segment.FieldArchivedAt:
 		m.ClearArchivedAt()
-		return nil
-	case segment.FieldCondition:
-		m.ClearCondition()
 		return nil
 	}
 	return fmt.Errorf("unknown Segment nullable field %s", name)

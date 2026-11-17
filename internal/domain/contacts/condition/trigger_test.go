@@ -2,7 +2,6 @@ package condition_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -23,7 +22,7 @@ import (
 // Contact.
 func triggerMatches(t require.TestingT, s *ent.Scoped, g conditiontree.Group, props map[string]any, id int64) bool {
 	ctx := context.Background()
-	p, err := condition.New(time.Now).RulePredicate(ctx, s, encode(t, g), props)
+	p, err := condition.New(time.Now).RulePredicate(ctx, s, g, props)
 	require.NoError(t, err)
 	ok, err := s.Contact().Query().Where(contact.ID(id), p).Exist(ctx)
 	require.NoError(t, err)
@@ -122,17 +121,16 @@ func TestTriggerLeafIsValidOnlyInARule(t *testing.T) {
 	_, err := condition.New(time.Now).Compile(ctx, s, g)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "only in a Rule")
-	require.Error(t, validate(t, env, encode(t, g)))
 
 	// Any key is valid on save: nothing says which properties an Event will carry.
-	_, err = condition.New(time.Now).RulePredicate(ctx, s, encode(t, g), nil)
+	_, err = condition.New(time.Now).RulePredicate(ctx, s, g, nil)
 	require.NoError(t, err)
 
 	for name, bad := range map[string]condition.Leaf{
 		"no key":           rule("trigger:", "eq", "x"),
 		"unknown operator": rule("trigger:k", "atLeast", "x"),
 	} {
-		_, err = condition.New(time.Now).RulePredicate(ctx, s, encode(t, opsGroup(bad)), nil)
+		_, err = condition.New(time.Now).RulePredicate(ctx, s, opsGroup(bad), nil)
 		require.Error(t, err, name)
 	}
 }
@@ -143,10 +141,4 @@ func property(v *string) any {
 		return nil
 	}
 	return *v
-}
-
-func encode(t require.TestingT, g conditiontree.Group) string {
-	b, err := json.Marshal(g)
-	require.NoError(t, err)
-	return string(b)
 }

@@ -5,8 +5,6 @@ package resources
 
 import (
 	"fmt"
-	"time"
-
 	ent "github.com/getsphericon/sphericon/ent"
 	automation "github.com/getsphericon/sphericon/ent/automation"
 	automationrun "github.com/getsphericon/sphericon/ent/automationrun"
@@ -55,12 +53,13 @@ import (
 	holdreason "github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	pagination "github.com/getsphericon/sphericon/internal/kernel/pagination"
 	providers "github.com/getsphericon/sphericon/internal/kernel/providers"
-	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	smsrender "github.com/getsphericon/sphericon/internal/kernel/smsrender"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	tokenscope "github.com/getsphericon/sphericon/internal/kernel/tokenscope"
 	analyticsreport "github.com/getsphericon/sphericon/internal/usecase/analyticsreport"
 	needsattentionreport "github.com/getsphericon/sphericon/internal/usecase/needsattentionreport"
+	"time"
 )
 
 type ConverterImpl struct{}

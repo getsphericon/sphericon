@@ -11,13 +11,13 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-// The database refuses an Automation version whose steps are no JSON array, whatever code writes
-// them (automation_versions_steps_check).
+// The database refuses an Automation version whose steps are no JSON array, as a nil list encodes
+// to null, whatever code writes them (automation_versions_steps_check).
 func TestTheDatabaseRefusesStepsThatAreNoJSONArray(t *testing.T) {
 	env := testhelper.Setup(t)
 
 	// test writes: the refused update is the operation under test.
-	err := env.DB.Scoped(fixtures.AcmeID).AutomationVersion().Update().SetSteps(`{"type":"wait"}`).Exec(t.Context())
+	err := env.DB.Scoped(fixtures.AcmeID).AutomationVersion().Update().SetSteps(nil).Exec(t.Context())
 	require.Error(t, err)
 	assert.True(t, ent.IsConstraintError(err), "a constraint refuses it: %v", err)
 }

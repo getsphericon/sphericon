@@ -130,8 +130,9 @@ rule of its own. Each module that owns a table with stored secrets (`integration
 `webhookendpoints`, `sendingdomains`, `secondfactors`, `staffmembers`, `automations`, `rules`, and
 the Enterprise Edition's) hands over its columns as `secrets.Sweep` values (`SecretSweeps`), which
 the wiring builds on the raw client in a fixed order and binds to the cipher
-(`app.SecretReencryption`), and the cipher sweeps them by id and compare-and-swap
-(`secrets.Cipher.Reencrypt`); the command prints the report (`internal/commandline`, whose tests run
+(`app.SecretReencryption`), and the cipher sweeps them by id (`secrets.Cipher.Reencrypt`): a
+compare-and-swap of the text, or for a version of a Rule or an Automation a write on its owner's
+revision that reads the version again when an edit took it (`secrets.Guarded`, ADR 0169); the command prints the report (`internal/commandline`, whose tests run
 the owners' sweeps under a rotated key). A sweep only stores the value it read again under the primary key, so no check guards it
 and it is no unchecked operation.
 A use case need not guard a removal: an operation whose subject's owner would have to call a

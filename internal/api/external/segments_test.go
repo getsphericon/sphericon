@@ -105,7 +105,7 @@ func TestExternalSegmentsPreview(t *testing.T) {
 	c := env.ExternalScoped(t, apitokens.ScopeSegmentsRead)
 
 	const def = `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`
-	want, err := testhelper.Module[*segments.Module](env).Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(def)})
+	want, err := testhelper.Module[*segments.Module](env).Preview(ctx, env.DB.Scoped(fixtures.AcmeID), segments.PreviewInput{Condition: new(testhelper.Condition(t, def))})
 	require.NoError(t, err)
 	res, err := c.SegmentsPreview(ctx, &externalapi.PreviewSegmentInput{Condition: externalapi.NewOptConditionGroupInput(testhelper.ExternalRuleGroup(t, def))})
 	require.NoError(t, err)

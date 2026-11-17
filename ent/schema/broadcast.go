@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/schema/index"
 
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
@@ -107,11 +108,10 @@ func (Broadcast) Fields() []ent.Field {
 		// The Segment's Condition, copied when the Broadcast leaves draft (schedule, send) and
 		// dropped when it returns to draft (ADR 0065): the plan resolves Recipients from it, so a
 		// later edit of the Segment changes nothing for an armed Broadcast, and segment_id stays
-		// as provenance. Nil on a draft and on a Broadcast to all contacts; "" is a Segment with
-		// no rules yet.
-		field.String("condition").
-			Optional().
-			Nillable(),
+		// as provenance. Nil on a draft and on a Broadcast to all contacts (ADR 0149); jsonb (ADR
+		// 0169).
+		field.JSON("condition", &conditiontree.Group{}).
+			Optional(),
 		// The Integration of the Broadcast's Channel it sends through; nil means that Channel's
 		// default.
 		field.Int64("integration_id").

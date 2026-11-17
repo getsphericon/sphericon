@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 )
 
 const (
@@ -97,7 +98,7 @@ var (
 	// VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	VersionValidator func(int) error
 	// DefaultSteps holds the default value on creation for the "steps" field.
-	DefaultSteps string
+	DefaultSteps []automationstep.Step
 	// DefaultExitEvents holds the default value on creation for the "exit_events" field.
 	DefaultExitEvents []string
 )
@@ -133,11 +134,6 @@ func ByAutomationID(opts ...sql.OrderTermOption) OrderOption {
 // ByVersion orders the results by the version field.
 func ByVersion(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldVersion, opts...).ToFunc()
-}
-
-// BySteps orders the results by the steps field.
-func BySteps(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSteps, opts...).ToFunc()
 }
 
 // ByTriggerEvent orders the results by the trigger_event field.

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -1026,10 +1027,10 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) siteapi.NilA
 	return siteapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
 }
 
-// automationSteps decodes the stored definition (the executor's JSON format) into the typed steps
-// DTO, through the automations module's masked view of each step.
-func automationSteps(c Converter, definition string) []siteapi.AutomationStep {
-	return c.AutomationStepsToResources(automations.Views(definition))
+// automationSteps maps a version's steps into the typed steps DTO, through the automations module's
+// masked view of each step.
+func automationSteps(c Converter, steps []automationstep.Step) []siteapi.AutomationStep {
+	return c.AutomationStepsToResources(automations.Views(steps))
 }
 
 func optBool(v *bool) siteapi.OptBool {
@@ -1040,14 +1041,11 @@ func optEditorDocument(doc json.RawMessage) siteapi.OptEditorDocument {
 	return convert.OptObject[siteapi.OptEditorDocument](convert.DocObject[siteapi.EditorDocument](doc))
 }
 
-// segmentCondition decodes the stored rule group into the typed DTO. A segment with no
-// definition (or one that no longer decodes) reads as having none.
-func segmentCondition(def *string) siteapi.OptConditionGroup {
-	if def == nil || *def == "" {
-		return siteapi.OptConditionGroup{}
-	}
+// segmentCondition maps a Condition into the typed DTO. One that no longer decodes as the contract's
+// tree reads as having none.
+func segmentCondition(g conditiontree.Group) siteapi.OptConditionGroup {
 	var group siteapi.ConditionGroup
-	if err := condition.Decode(*def, &group); err != nil {
+	if err := condition.ToDTO(g, &group); err != nil {
 		return siteapi.OptConditionGroup{}
 	}
 	return siteapi.NewOptConditionGroup(group)
@@ -1238,15 +1236,8 @@ func optNonEmpty(s string) siteapi.OptString {
 	return convert.OptNonZero[siteapi.OptString](s)
 }
 
-// ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
-// decode (only ever written by the module itself) yields none, and is logged: a converter has
-// no way to fail a response, and nobody reading the page can act on it.
-func ruleActions(c Converter, stored string) []siteapi.RuleAction {
-	actions, err := rules.DecodeActions(stored)
-	if err != nil {
-		slog.Error("rule: stored actions cannot be decoded", "error", err)
-		return nil
-	}
+// ruleActions maps a Rule's Actions into the typed DTO, an http Action's secrets masked.
+func ruleActions(c Converter, actions []ruleaction.Action) []siteapi.RuleAction {
 	return lo.Map(actions, func(a ruleaction.Action, _ int) siteapi.RuleAction {
 		out := siteapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == ruleaction.Enroll {

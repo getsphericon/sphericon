@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
 	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/systemevent"
@@ -71,10 +72,10 @@ func automationVersionOrNull(c Converter, v *ent.AutomationVersion) externalapi.
 	return externalapi.NewNilAutomationVersion(c.AutomationVersionToResource(v))
 }
 
-// automationSteps decodes the stored definition (the executor's JSON format) into the typed steps
-// DTO, through the automations module's masked view of each step.
-func automationSteps(c Converter, definition string) []externalapi.AutomationStep {
-	return c.AutomationStepsToResources(automations.Views(definition))
+// automationSteps maps a version's steps into the typed steps DTO, through the automations module's
+// masked view of each step.
+func automationSteps(c Converter, steps []automationstep.Step) []externalapi.AutomationStep {
+	return c.AutomationStepsToResources(automations.Views(steps))
 }
 
 func optBool(v *bool) externalapi.OptBool {
@@ -704,14 +705,11 @@ func optNilTimestamp(v *time.Time) externalapi.OptNilTimestamp {
 	return convert.Opt[externalapi.OptNilTimestamp]((*externalapi.Timestamp)(v))
 }
 
-// segmentCondition decodes the stored rule group into the typed DTO. A segment with no
-// definition (or one that no longer decodes) reads as having none.
-func segmentCondition(def *string) externalapi.OptConditionGroup {
-	if def == nil || *def == "" {
-		return externalapi.OptConditionGroup{}
-	}
+// segmentCondition maps a Condition into the typed DTO. One that no longer decodes as the contract's
+// tree reads as having none.
+func segmentCondition(g conditiontree.Group) externalapi.OptConditionGroup {
 	var group externalapi.ConditionGroup
-	if err := condition.Decode(*def, &group); err != nil {
+	if err := condition.ToDTO(g, &group); err != nil {
 		return externalapi.OptConditionGroup{}
 	}
 	return externalapi.NewOptConditionGroup(group)
@@ -844,12 +842,7 @@ func optNonEmpty(s string) externalapi.OptString {
 // ruleActions decodes a Rule's stored Actions into the typed DTO. Stored text the module cannot
 // decode (only ever written by the module itself) yields none, and is logged: a converter has
 // no way to fail a response, and no caller can act on it.
-func ruleActions(c Converter, stored string) []externalapi.RuleAction {
-	actions, err := rules.DecodeActions(stored)
-	if err != nil {
-		slog.Error("rule: stored actions cannot be decoded", "error", err)
-		return nil
-	}
+func ruleActions(c Converter, actions []ruleaction.Action) []externalapi.RuleAction {
 	return lo.Map(actions, func(a ruleaction.Action, _ int) externalapi.RuleAction {
 		out := externalapi.RuleAction{Type: c.RuleActionTypeToResource(a.Type), Tag: optNonEmpty(a.Tag)}
 		if a.Type == ruleaction.Enroll {

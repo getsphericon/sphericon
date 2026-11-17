@@ -5,7 +5,6 @@ package resources
 
 import (
 	"fmt"
-
 	external "github.com/getsphericon/sphericon/gen/external"
 	confirmations "github.com/getsphericon/sphericon/internal/domain/contacts/confirmations"
 	contacts "github.com/getsphericon/sphericon/internal/domain/contacts/contacts"
@@ -23,8 +22,8 @@ import (
 	sendingdomains "github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	automationstep "github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	channels "github.com/getsphericon/sphericon/internal/kernel/channels"
-	"github.com/getsphericon/sphericon/internal/kernel/httpheader"
-	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
+	httpheader "github.com/getsphericon/sphericon/internal/kernel/httpheader"
+	ruleaction "github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	telegramrender "github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 	unsubscriberecording "github.com/getsphericon/sphericon/internal/usecase/unsubscriberecording"
 )
@@ -103,7 +102,7 @@ func (c *InputsImpl) AutomationStep(source external.AutomationStepInput) automat
 	if source.Headers != nil {
 		automationstepStep.Headers = make([]httpheader.Header, len(source.Headers))
 		for j := 0; j < len(source.Headers); j++ {
-			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[j])
+			automationstepStep.Headers[j] = c.externalapiAutomationHttpHeaderInputToHttpheaderHeader(source.Headers[j])
 		}
 	}
 	automationstepStep.Secret = stringIn(source.Secret)
@@ -443,30 +442,30 @@ func (c *InputsImpl) OptOut(source *external.CreateUnsubscribeInput) unsubscribe
 	return unsubscriberecordingOptOutInput
 }
 func (c *InputsImpl) RuleActionType(source external.RuleActionType) ruleaction.Type {
-	var rulesActionType ruleaction.Type
+	var ruleactionType ruleaction.Type
 	switch source {
 	case external.RuleActionTypeApplyTag:
-		rulesActionType = ruleaction.ApplyTag
+		ruleactionType = ruleaction.ApplyTag
 	case external.RuleActionTypeEnrollAutomation:
-		rulesActionType = ruleaction.Enroll
+		ruleactionType = ruleaction.Enroll
 	case external.RuleActionTypeHTTP:
-		rulesActionType = ruleaction.HTTP
+		ruleactionType = ruleaction.HTTP
 	case external.RuleActionTypeRemoveTag:
-		rulesActionType = ruleaction.RemoveTag
+		ruleactionType = ruleaction.RemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return rulesActionType
+	return ruleactionType
 }
 func (c *InputsImpl) RuleActions(source []external.RuleActionInput) []ruleaction.Action {
-	var rulesActionList []ruleaction.Action
+	var ruleactionActionList []ruleaction.Action
 	if source != nil {
-		rulesActionList = make([]ruleaction.Action, len(source))
+		ruleactionActionList = make([]ruleaction.Action, len(source))
 		for i := 0; i < len(source); i++ {
-			rulesActionList[i] = c.externalapiRuleActionInputToRulesAction(source[i])
+			ruleactionActionList[i] = c.externalapiRuleActionInputToRuleactionAction(source[i])
 		}
 	}
-	return rulesActionList
+	return ruleactionActionList
 }
 func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateInput, error) {
 	var rulesCreateInput rules.CreateInput
@@ -478,11 +477,11 @@ func (c *InputsImpl) RuleCreate(source *external.CreateRuleInput) (rules.CreateI
 				rulesCreateInput.TriggerEvents[i] = (*source).TriggerEvents[i]
 			}
 		}
-		pString, err := conditionIn((*source).Condition)
+		pConditiontreeGroup, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesCreateInput, err
 		}
-		rulesCreateInput.Condition = pString
+		rulesCreateInput.Condition = pConditiontreeGroup
 		rulesCreateInput.Actions = c.RuleActions((*source).Actions)
 	}
 	return rulesCreateInput, nil
@@ -493,11 +492,11 @@ func (c *InputsImpl) RuleUpdate(source *external.UpdateRuleInput) (rules.UpdateI
 		rulesUpdateInput.Revision = revisionIn((*source).Revision)
 		rulesUpdateInput.Name = namePtrIn((*source).Name)
 		rulesUpdateInput.TriggerEvents = listPtrIn((*source).TriggerEvents)
-		pString, err := conditionIn((*source).Condition)
+		pConditiontreeGroup, err := conditionIn((*source).Condition)
 		if err != nil {
 			return rulesUpdateInput, err
 		}
-		rulesUpdateInput.Condition = pString
+		rulesUpdateInput.Condition = pConditiontreeGroup
 		rulesUpdateInput.Actions = ruleActionsPtrIn(c, (*source).Actions)
 	}
 	return rulesUpdateInput, nil
@@ -506,22 +505,22 @@ func (c *InputsImpl) SegmentCreate(source *external.CreateSegmentInput) (segment
 	var segmentsCreateInput segments.CreateInput
 	if source != nil {
 		segmentsCreateInput.Name = nameIn((*source).Name)
-		pString, err := createSegmentCondition((*source).Condition)
+		pConditiontreeGroup, err := createSegmentCondition((*source).Condition)
 		if err != nil {
 			return segmentsCreateInput, err
 		}
-		segmentsCreateInput.Condition = pString
+		segmentsCreateInput.Condition = pConditiontreeGroup
 	}
 	return segmentsCreateInput, nil
 }
 func (c *InputsImpl) SegmentPreview(source *external.PreviewSegmentInput) (segments.PreviewInput, error) {
 	var segmentsPreviewInput segments.PreviewInput
 	if source != nil {
-		pString, err := conditionIn((*source).Condition)
+		pConditiontreeGroup, err := conditionIn((*source).Condition)
 		if err != nil {
 			return segmentsPreviewInput, err
 		}
-		segmentsPreviewInput.Condition = pString
+		segmentsPreviewInput.Condition = pConditiontreeGroup
 		segmentsPreviewInput.Channel = broadcastChannelPtrIn(c, (*source).Channel)
 		segmentsPreviewInput.IntegrationID = nilEntityIDPtrIn((*source).IntegrationId)
 	}
@@ -659,11 +658,11 @@ func (c *InputsImpl) WebhookUpdate(source *external.UpdateWebhookInput) webhooke
 	}
 	return webhookendpointsUpdateInput
 }
-func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpcallHeader(source external.AutomationHttpHeaderInput) httpheader.Header {
-	var httpcallHeader httpheader.Header
-	httpcallHeader.Name = source.Name
-	httpcallHeader.Value = stringIn(source.Value)
-	return httpcallHeader
+func (c *InputsImpl) externalapiAutomationHttpHeaderInputToHttpheaderHeader(source external.AutomationHttpHeaderInput) httpheader.Header {
+	var httpheaderHeader httpheader.Header
+	httpheaderHeader.Name = source.Name
+	httpheaderHeader.Value = stringIn(source.Value)
+	return httpheaderHeader
 }
 func (c *InputsImpl) externalapiCreateConfirmationInputToConfirmationsEvidence(source external.CreateConfirmationInput) confirmations.Evidence {
 	var confirmationsEvidence confirmations.Evidence
@@ -672,23 +671,23 @@ func (c *InputsImpl) externalapiCreateConfirmationInputToConfirmationsEvidence(s
 	confirmationsEvidence.Brand = source.Brand
 	return confirmationsEvidence
 }
-func (c *InputsImpl) externalapiRuleActionInputToRulesAction(source external.RuleActionInput) ruleaction.Action {
-	var rulesAction ruleaction.Action
-	rulesAction.Type = c.RuleActionType(source.Type)
-	rulesAction.Tag = stringIn(source.Tag)
-	rulesAction.AutomationID = entityIDIn(source.AutomationId)
-	rulesAction.ID = stringIn(source.ID)
-	rulesAction.URL = stringIn(source.URL)
+func (c *InputsImpl) externalapiRuleActionInputToRuleactionAction(source external.RuleActionInput) ruleaction.Action {
+	var ruleactionAction ruleaction.Action
+	ruleactionAction.Type = c.RuleActionType(source.Type)
+	ruleactionAction.Tag = stringIn(source.Tag)
+	ruleactionAction.AutomationID = entityIDIn(source.AutomationId)
+	ruleactionAction.ID = stringIn(source.ID)
+	ruleactionAction.URL = stringIn(source.URL)
 	if source.Headers != nil {
-		rulesAction.Headers = make([]httpheader.Header, len(source.Headers))
+		ruleactionAction.Headers = make([]httpheader.Header, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			rulesAction.Headers[i] = c.externalapiAutomationHttpHeaderInputToHttpcallHeader(source.Headers[i])
+			ruleactionAction.Headers[i] = c.externalapiAutomationHttpHeaderInputToHttpheaderHeader(source.Headers[i])
 		}
 	}
-	rulesAction.Body = stringIn(source.Body)
-	rulesAction.Secret = stringIn(source.Secret)
-	rulesAction.ClearSecret = boolIn(source.ClearSecret)
-	return rulesAction
+	ruleactionAction.Body = stringIn(source.Body)
+	ruleactionAction.Secret = stringIn(source.Secret)
+	ruleactionAction.ClearSecret = boolIn(source.ClearSecret)
+	return ruleactionAction
 }
 func (c *InputsImpl) externalapiUpdateContactInputToContactsCore(source external.UpdateContactInput) contacts.Core {
 	var contactsCore contacts.Core

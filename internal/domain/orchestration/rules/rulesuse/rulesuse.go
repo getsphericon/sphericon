@@ -38,8 +38,7 @@ func (m *Module) UnfitForCustomFieldType(ctx context.Context, l *ent.WorkspaceLo
 	}
 	return lo.Filter(kept, func(r *ent.Rule, _ int) bool {
 		return lo.SomeBy(versions(r), func(v *ent.RuleVersion) bool {
-			g, err := condition.Parse(lo.FromPtr(v.Condition))
-			return err == nil && !condition.FitsCustomFieldType(g, key, t)
+			return !condition.FitsCustomFieldType(v.Condition, key, t)
 		})
 	}), nil
 }
@@ -55,11 +54,7 @@ func (m *Module) UsingTag(ctx context.Context, l *ent.WorkspaceLocked, name stri
 	var using []*ent.Rule
 	for _, r := range kept {
 		for _, v := range versions(r) {
-			names, err := namesTag(v, name)
-			if err != nil {
-				return nil, err
-			}
-			if names {
+			if namesTag(v, name) {
 				using = append(using, r)
 				break
 			}
@@ -81,17 +76,7 @@ func versions(r *ent.Rule) []*ent.RuleVersion {
 }
 
 // namesTag reports whether the version names the Tag in its Condition or in a tag Action.
-func namesTag(v *ent.RuleVersion, name string) (bool, error) {
-	g, err := condition.Parse(lo.FromPtr(v.Condition))
-	if err != nil {
-		return false, err
-	}
-	if condition.NamesTag(g, name) {
-		return true, nil
-	}
-	actions, err := rules.DecodeActions(v.Actions)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(actions, func(a ruleaction.Action) bool { return a.NamesTag(name) }), nil
+func namesTag(v *ent.RuleVersion, name string) bool {
+	return condition.NamesTag(v.Condition, name) ||
+		slices.ContainsFunc(v.Actions, func(a ruleaction.Action) bool { return a.NamesTag(name) })
 }

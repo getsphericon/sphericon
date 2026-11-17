@@ -145,9 +145,7 @@ func TestRotateReencryptAndRetireLeaveEveryStoredSecretReadable(t *testing.T) {
 	require.NoError(t, err)
 	var sealedFields int
 	for _, row := range rows {
-		steps, err := automationstep.Decode(row.Steps)
-		require.NoError(t, err)
-		httpSteps := lo.Filter(steps, func(s automationstep.Step, _ int) bool { return s.Type == automationstep.HTTP })
+		httpSteps := lo.Filter(row.Steps, func(s automationstep.Step, _ int) bool { return s.Type == automationstep.HTTP })
 		for _, s := range httpSteps {
 			fields := make([]string, 0, 2+len(s.Headers))
 			fields = append(fields, s.URL, s.Secret)
@@ -204,9 +202,7 @@ func TestReencryptCoversEveryVersionOfADeletedRule(t *testing.T) {
 	require.Len(t, versions, 3)
 	var opened []httpcall.Opened
 	for _, v := range versions {
-		actions, err := rules.DecodeActions(v.Actions)
-		require.NoError(t, err)
-		for _, a := range actions {
+		for _, a := range v.Actions {
 			o, err := opener.OpenHTTP(a)
 			require.NoError(t, err, "rule version %d http Action %s", v.ID, a.ID)
 			opened = append(opened, o)

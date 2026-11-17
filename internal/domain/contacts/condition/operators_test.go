@@ -81,9 +81,7 @@ func TestCustomFieldMustBeInTheWorkspaceCatalogue(t *testing.T) {
 		"declared by another Workspace":  fixtures.CustomFieldGlobexKey,
 		"injection that nobody declared": "x' IS NOT NULL AND (SELECT count(*) FROM users)>0 AND 'a",
 	} {
-		def, err := json.Marshal(opsGroup(rule("custom:"+key, "eq", "a")))
-		require.NoError(t, err)
-		_, err = condition.New(time.Now).ContactPredicate(context.Background(), ws, string(def))
+		_, err := condition.New(time.Now).Compile(context.Background(), ws, opsGroup(rule("custom:"+key, "eq", "a")))
 		require.Error(t, err, name)
 		assert.Contains(t, err.Error(), "unknown custom field", name)
 	}
@@ -186,19 +184,18 @@ func TestCompileRefusesMalformedEntries(t *testing.T) {
 	assert.Contains(t, err.Error(), "rule 0: rule 0: unknown field")
 }
 
-func TestContactPredicateRefusesInvalidConditions(t *testing.T) {
+func TestCompileRefusesInvalidConditions(t *testing.T) {
 	env := testhelper.Setup(t)
 	ctx := context.Background()
 	ws := env.DB.Scoped(fixtures.AcmeID)
 
-	_, err := condition.New(time.Now).ContactPredicate(ctx, ws, "{not json")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid condition")
-
-	_, err = condition.New(time.Now).ContactPredicate(ctx, ws, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)
+	_, err := condition.New(time.Now).Compile(ctx, ws, testhelper.Condition(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
 	require.Error(t, err)
 
-	p, err := condition.New(time.Now).ContactPredicate(ctx, ws, "")
+	_, err = condition.New(time.Now).Compile(ctx, ws, conditiontree.Group{})
+	require.Error(t, err, "a document that is no group")
+
+	p, err := condition.New(time.Now).Compile(ctx, ws, conditiontree.Empty())
 	require.NoError(t, err)
-	assert.NotNil(t, p, "a blank definition matches everyone")
+	assert.NotNil(t, p, "the empty group matches everyone")
 }

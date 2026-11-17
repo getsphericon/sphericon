@@ -24,7 +24,7 @@ import (
 // validate compiles a condition for the Acme Workspace.
 func validate(t *testing.T, env *testhelper.TestEnv, def string) error {
 	t.Helper()
-	_, err := condition.New(time.Now).ContactPredicate(context.Background(), env.DB.Scoped(fixtures.AcmeID), def)
+	_, err := condition.New(time.Now).Compile(context.Background(), env.DB.Scoped(fixtures.AcmeID), testhelper.Condition(t, def))
 	return err
 }
 
@@ -187,12 +187,8 @@ func TestTagConditions(t *testing.T) {
 	assert.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"tag","operator":"eq","value":"vip"}]}`))
 }
 
-func TestParseAndValidate(t *testing.T) {
+func TestValidate(t *testing.T) {
 	env := testhelper.Setup(t)
-	g, err := condition.Parse("")
-	require.NoError(t, err)
-	assert.Equal(t, conditiontree.And, g.Combinator)
-
 	require.NoError(t, validate(t, env, `{"kind":"group","combinator":"or","rules":[{"kind":"rule","field":"email","operator":"contains","value":"x"}]}`))
 
 	// nested group
@@ -202,8 +198,8 @@ func TestParseAndValidate(t *testing.T) {
 	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))
 	// unsupported operator
 	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"email","operator":"weird","value":"x"}]}`))
-	// malformed JSON
-	assert.Error(t, validate(t, env, `{not json`))
+	// an entry that is no node
+	require.Error(t, validate(t, env, `{"kind":"group","combinator":"and","rules":["email"]}`))
 }
 
 // Fixtures: Liam (100) has a Binding of his own, Emma (101) only one of her phone Visitor's, Alice (1)

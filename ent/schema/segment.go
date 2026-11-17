@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 type Segment struct {
@@ -31,8 +32,10 @@ func (Segment) Fields() []ent.Field {
 			Immutable(),
 		field.String(NameColumn).
 			NotEmpty(),
-		field.String("condition").
-			Optional().
-			Nillable(),
+		// The Condition (conditiontree.Group), jsonb (ADR 0169); the empty group, with no tests,
+		// matches every Contact.
+		field.JSON("condition", conditiontree.Group{}).
+			Default(conditiontree.Empty()).
+			Annotations(entsql.Default(emptyConditionSQL)),
 	}
 }

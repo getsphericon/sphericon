@@ -324,7 +324,7 @@ func (e *Broadcast) auditFields() map[string]any {
 		"doc":                e.Doc,
 		"editor_version":     derefAudit(e.EditorVersion),
 		"segment_id":         auditKeyPtr(e.SegmentID),
-		"condition":          derefAudit(e.Condition),
+		"condition":          e.Condition,
 		"integration_id":     auditKeyPtr(e.IntegrationID),
 		"status":             e.Status,
 		"scheduled_at":       derefAudit(e.ScheduledAt),
@@ -702,7 +702,7 @@ func (e *Segment) auditFields() map[string]any {
 	return map[string]any{
 		"archived_at": derefAudit(e.ArchivedAt),
 		"name":        e.Name,
-		"condition":   derefAudit(e.Condition),
+		"condition":   e.Condition,
 	}
 }
 

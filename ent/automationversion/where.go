@@ -80,11 +80,6 @@ func Version(v int) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldVersion, v))
 }
 
-// Steps applies equality check predicate on the "steps" field. It's identical to StepsEQ.
-func Steps(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldSteps, v))
-}
-
 // TriggerEvent applies equality check predicate on the "trigger_event" field. It's identical to TriggerEventEQ.
 func TriggerEvent(v string) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldEQ(FieldTriggerEvent, v))
@@ -253,71 +248,6 @@ func VersionLT(v int) predicate.AutomationVersion {
 // VersionLTE applies the LTE predicate on the "version" field.
 func VersionLTE(v int) predicate.AutomationVersion {
 	return predicate.AutomationVersion(sql.FieldLTE(FieldVersion, v))
-}
-
-// StepsEQ applies the EQ predicate on the "steps" field.
-func StepsEQ(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEQ(FieldSteps, v))
-}
-
-// StepsNEQ applies the NEQ predicate on the "steps" field.
-func StepsNEQ(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNEQ(FieldSteps, v))
-}
-
-// StepsIn applies the In predicate on the "steps" field.
-func StepsIn(vs ...string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldIn(FieldSteps, vs...))
-}
-
-// StepsNotIn applies the NotIn predicate on the "steps" field.
-func StepsNotIn(vs ...string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldNotIn(FieldSteps, vs...))
-}
-
-// StepsGT applies the GT predicate on the "steps" field.
-func StepsGT(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldGT(FieldSteps, v))
-}
-
-// StepsGTE applies the GTE predicate on the "steps" field.
-func StepsGTE(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldGTE(FieldSteps, v))
-}
-
-// StepsLT applies the LT predicate on the "steps" field.
-func StepsLT(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldLT(FieldSteps, v))
-}
-
-// StepsLTE applies the LTE predicate on the "steps" field.
-func StepsLTE(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldLTE(FieldSteps, v))
-}
-
-// StepsContains applies the Contains predicate on the "steps" field.
-func StepsContains(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldContains(FieldSteps, v))
-}
-
-// StepsHasPrefix applies the HasPrefix predicate on the "steps" field.
-func StepsHasPrefix(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldHasPrefix(FieldSteps, v))
-}
-
-// StepsHasSuffix applies the HasSuffix predicate on the "steps" field.
-func StepsHasSuffix(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldHasSuffix(FieldSteps, v))
-}
-
-// StepsEqualFold applies the EqualFold predicate on the "steps" field.
-func StepsEqualFold(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldEqualFold(FieldSteps, v))
-}
-
-// StepsContainsFold applies the ContainsFold predicate on the "steps" field.
-func StepsContainsFold(v string) predicate.AutomationVersion {
-	return predicate.AutomationVersion(sql.FieldContainsFold(FieldSteps, v))
 }
 
 // TriggerEventEQ applies the EQ predicate on the "trigger_event" field.

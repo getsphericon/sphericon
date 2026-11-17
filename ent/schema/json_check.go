@@ -1,17 +1,25 @@
 package schema
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
 
-// jsonCheck is the CHECK that a column holding a document the app decodes is JSON of the form
-// given ("ARRAY", "OBJECT"), so the database refuses text that no decoder reads. A NULL passes.
-// The column stays text, holding the document as the app wrote it: an empty Condition is ”, which
-// jsonb cannot hold, and an audited change compares the stored text with the written one.
-func jsonCheck(column, form string) string {
-	return fmt.Sprintf("%s IS JSON %s", column, form)
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/samber/lo"
+)
+
+// jsonCheck is the CHECK that a jsonb column holding a document the app decodes is of the JSON type
+// given ("array", "object"), so the database refuses a document that no decoder reads (ADR 0169). A
+// NULL passes.
+func jsonCheck(column, jsonType string) string {
+	return fmt.Sprintf("jsonb_typeof(%s) = '%s'", column, jsonType)
 }
 
-// conditionCheck is jsonCheck for a Condition (internal/domain/contacts/condition), a JSON
-// group, which may also be ”: an empty Condition, matching every Contact.
+// conditionCheck is jsonCheck for a Condition (conditiontree.Group), a JSON object.
 func conditionCheck(column string) string {
-	return fmt.Sprintf("%s = '' OR %s", column, jsonCheck(column, "OBJECT"))
+	return jsonCheck(column, "object")
 }
+
+// emptyConditionSQL is the empty Condition (conditiontree.Empty) as the default a column gives a
+// row written without one: the group with no tests, which matches every Contact.
+var emptyConditionSQL = string(lo.Must(json.Marshal(conditiontree.Empty())))

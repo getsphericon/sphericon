@@ -89,10 +89,7 @@ func (m *Module) DryRun(ctx context.Context, s *ent.Scoped, ruleID, eventID int6
 	if !holds {
 		return DryRun{Outcome: ConditionNotMet}, nil
 	}
-	actions, err := DecodeActions(v.Actions)
-	if err != nil {
-		return DryRun{}, err
-	}
+	actions := v.Actions
 	planned := make([]PlannedAction, 0, len(actions))
 	for i := range actions {
 		a := &actions[i]

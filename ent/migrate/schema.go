@@ -334,7 +334,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
-		{Name: "steps", Type: field.TypeString, Default: "[]"},
+		{Name: "steps", Type: field.TypeJSON, Default: "[]"},
 		{Name: "trigger_event", Type: field.TypeString},
 		{Name: "exit_events", Type: field.TypeJSON, Default: "[]"},
 		{Name: "goal_event", Type: field.TypeString, Nullable: true},
@@ -500,7 +500,7 @@ var (
 		{Name: "body", Type: field.TypeString, Nullable: true},
 		{Name: "doc", Type: field.TypeJSON, Nullable: true},
 		{Name: "editor_version", Type: field.TypeString, Nullable: true},
-		{Name: "condition", Type: field.TypeString, Nullable: true},
+		{Name: "condition", Type: field.TypeJSON, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"draft", "scheduled", "sending", "sent", "failed", "cancelled"}, Default: "draft"},
 		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true},
 		{Name: "sent_at", Type: field.TypeTime, Nullable: true},
@@ -2396,8 +2396,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "updated_at", Type: field.TypeTime, Default: "CURRENT_TIMESTAMP"},
 		{Name: "version", Type: field.TypeInt},
-		{Name: "condition", Type: field.TypeString, Nullable: true},
-		{Name: "actions", Type: field.TypeString, Default: "[]"},
+		{Name: "condition", Type: field.TypeJSON, Default: "{\"kind\":\"group\",\"combinator\":\"and\",\"rules\":[]}"},
+		{Name: "actions", Type: field.TypeJSON, Default: "[]"},
 		{Name: "rule_id", Type: field.TypeInt64},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
@@ -2521,7 +2521,7 @@ var (
 		{Name: "archived_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revision", Type: field.TypeInt64},
 		{Name: "name", Type: field.TypeString},
-		{Name: "condition", Type: field.TypeString, Nullable: true},
+		{Name: "condition", Type: field.TypeJSON, Default: "{\"kind\":\"group\",\"combinator\":\"and\",\"rules\":[]}"},
 		{Name: "workspace_id", Type: field.TypeInt64},
 	}
 	// SegmentsTable holds the schema information for the "segments" table.
@@ -3465,7 +3465,7 @@ func init() {
 		Table: "automation_versions",
 	}
 	AutomationVersionsTable.Annotation.Checks = map[string]string{
-		"automation_versions_steps_check": "steps IS JSON ARRAY",
+		"automation_versions_steps_check": "jsonb_typeof(steps) = 'array'",
 	}
 	BindingsTable.ForeignKeys[0].RefTable = ContactsTable
 	BindingsTable.ForeignKeys[1].RefTable = IntegrationsTable
@@ -3491,7 +3491,7 @@ func init() {
 	BroadcastsTable.Annotation.Checks = map[string]string{
 		"broadcasts_cancelled_at_check": "status <> 'cancelled' OR cancelled_at IS NOT NULL",
 		"broadcasts_channel_check":      "channel IN ('email', 'telegram', 'sms')",
-		"broadcasts_condition_check":    "condition = '' OR condition IS JSON OBJECT",
+		"broadcasts_condition_check":    "jsonb_typeof(condition) = 'object'",
 		"broadcasts_content_check":      "(channel = 'email' AND subject IS NOT NULL AND body IS NOT NULL AND text IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL) OR (channel = 'telegram' AND text IS NOT NULL AND buttons IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL) OR (channel = 'sms' AND text IS NOT NULL AND subject IS NULL AND body IS NULL AND from_name IS NULL AND from_email IS NULL AND doc IS NULL AND editor_version IS NULL AND buttons IS NULL AND image_url IS NULL AND unsubscribe_button IS NULL)",
 		"broadcasts_failed_at_check":    "status <> 'failed' OR failed_at IS NOT NULL",
 		"broadcasts_hold_reason_check":  "hold_reason IN ('workspace_suspended', 'workspace_pending_deletion', 'staff_hold', 'no_integration', 'unverified_domain', 'provider_stopped', 'provider_refused')",
@@ -3775,8 +3775,8 @@ func init() {
 		Table: "rule_versions",
 	}
 	RuleVersionsTable.Annotation.Checks = map[string]string{
-		"rule_versions_actions_check":   "actions IS JSON ARRAY",
-		"rule_versions_condition_check": "condition = '' OR condition IS JSON OBJECT",
+		"rule_versions_actions_check":   "jsonb_typeof(actions) = 'array'",
+		"rule_versions_condition_check": "jsonb_typeof(condition) = 'object'",
 	}
 	RuleVersionTriggersTable.ForeignKeys[0].RefTable = RuleVersionsTable
 	RuleVersionTriggersTable.ForeignKeys[1].RefTable = WorkspacesTable
@@ -3795,7 +3795,7 @@ func init() {
 		Table: "segments",
 	}
 	SegmentsTable.Annotation.Checks = map[string]string{
-		"segments_condition_check": "condition = '' OR condition IS JSON OBJECT",
+		"segments_condition_check": "jsonb_typeof(condition) = 'object'",
 	}
 	SendCapLimitersTable.ForeignKeys[0].RefTable = WorkspacesTable
 	SendCapLimitersTable.Annotation = &entsql.Annotation{

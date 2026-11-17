@@ -90,21 +90,8 @@ type Step struct {
 // step turned it off.
 func (s *Step) TracksLinks() bool { return s.LinkTracking == nil || *s.LinkTracking }
 
-// Decode parses a stored definition, a JSON array (automation_versions_steps_check).
-func Decode(definition string) ([]Step, error) {
-	var steps []Step
-	if err := json.Unmarshal([]byte(definition), &steps); err != nil {
-		return nil, err
-	}
-	return steps, nil
-}
-
-// SendsEmail reports whether a stored definition contains an email Step. A definition with
-// no email Step has no email sending dependency; an unreadable definition cannot establish that.
-func SendsEmail(definition string) (bool, error) {
-	steps, err := Decode(definition)
-	if err != nil {
-		return false, err
-	}
-	return slices.ContainsFunc(steps, func(step Step) bool { return step.Type == Email }), nil
+// SendsEmail reports whether the steps contain an email Step: steps with none have no email
+// sending dependency.
+func SendsEmail(steps []Step) bool {
+	return slices.ContainsFunc(steps, func(step Step) bool { return step.Type == Email })
 }

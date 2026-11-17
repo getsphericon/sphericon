@@ -83,6 +83,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/ent/workspace"
 	"github.com/getsphericon/sphericon/ent/workspacestanding"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -299,7 +302,7 @@ func init() {
 	// automationversionDescSteps is the schema descriptor for steps field.
 	automationversionDescSteps := automationversionFields[1].Descriptor()
 	// automationversion.DefaultSteps holds the default value on creation for the steps field.
-	automationversion.DefaultSteps = automationversionDescSteps.Default.(string)
+	automationversion.DefaultSteps = automationversionDescSteps.Default.([]automationstep.Step)
 	// automationversionDescExitEvents is the schema descriptor for exit_events field.
 	automationversionDescExitEvents := automationversionFields[3].Descriptor()
 	// automationversion.DefaultExitEvents holds the default value on creation for the exit_events field.
@@ -1422,10 +1425,14 @@ func init() {
 	ruleversionDescVersion := ruleversionMixinFields2[1].Descriptor()
 	// ruleversion.VersionValidator is a validator for the "version" field. It is called by the builders before save.
 	ruleversion.VersionValidator = ruleversionDescVersion.Validators[0].(func(int) error)
+	// ruleversionDescCondition is the schema descriptor for condition field.
+	ruleversionDescCondition := ruleversionFields[1].Descriptor()
+	// ruleversion.DefaultCondition holds the default value on creation for the condition field.
+	ruleversion.DefaultCondition = ruleversionDescCondition.Default.(conditiontree.Group)
 	// ruleversionDescActions is the schema descriptor for actions field.
 	ruleversionDescActions := ruleversionFields[2].Descriptor()
 	// ruleversion.DefaultActions holds the default value on creation for the actions field.
-	ruleversion.DefaultActions = ruleversionDescActions.Default.(string)
+	ruleversion.DefaultActions = ruleversionDescActions.Default.([]ruleaction.Action)
 	ruleversiontriggerMixin := schema.RuleVersionTrigger{}.Mixin()
 	ruleversiontriggerMixinFields0 := ruleversiontriggerMixin[0].Fields()
 	_ = ruleversiontriggerMixinFields0
@@ -1510,6 +1517,10 @@ func init() {
 	segmentDescName := segmentFields[1].Descriptor()
 	// segment.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	segment.NameValidator = segmentDescName.Validators[0].(func(string) error)
+	// segmentDescCondition is the schema descriptor for condition field.
+	segmentDescCondition := segmentFields[2].Descriptor()
+	// segment.DefaultCondition holds the default value on creation for the condition field.
+	segment.DefaultCondition = segmentDescCondition.Default.(conditiontree.Group)
 	sendcaplimiterMixin := schema.SendCapLimiter{}.Mixin()
 	sendcaplimiterMixinFields0 := sendcaplimiterMixin[0].Fields()
 	_ = sendcaplimiterMixinFields0

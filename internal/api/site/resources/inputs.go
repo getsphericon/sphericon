@@ -36,6 +36,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/convert"
 	"github.com/getsphericon/sphericon/internal/kernel/pagination"
 	"github.com/getsphericon/sphericon/internal/kernel/patch"
@@ -434,10 +435,9 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]ruleaction
 	return &out
 }
 
-// conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
-// it is absent.
-func conditionIn(o siteapi.OptConditionGroupInput) (*string, error) {
-	return condition.EncodeOptional(o)
+// conditionIn is a Condition the request may leave out; nil when it is absent.
+func conditionIn(o siteapi.OptConditionGroupInput) (*conditiontree.Group, error) {
+	return condition.FromOptionalDTO(o)
 }
 
 // documentIn is the editor document of a write as the JSON the modules render; nil when the
@@ -591,18 +591,18 @@ func sortDirectionIn(c Inputs, o siteapi.OptSortDirection) pagination.Direction 
 	return c.SortDirection(v)
 }
 
-func createSegmentCondition(g siteapi.ConditionGroupInput) (*string, error) {
-	def, err := condition.Encode(&g)
+func createSegmentCondition(g siteapi.ConditionGroupInput) (*conditiontree.Group, error) {
+	def, err := condition.FromDTO(&g)
 	if err != nil {
 		return nil, err
 	}
 	return &def, nil
 }
 
-func segmentConditionPatch(o siteapi.OptConditionGroupInput) (patch.Field[string], error) {
-	def, err := condition.EncodeOptional(o)
+func segmentConditionPatch(o siteapi.OptConditionGroupInput) (patch.Field[conditiontree.Group], error) {
+	def, err := condition.FromOptionalDTO(o)
 	if err != nil {
-		return patch.Field[string]{}, err
+		return patch.Field[conditiontree.Group]{}, err
 	}
 	return patch.FromPtr(def), nil
 }

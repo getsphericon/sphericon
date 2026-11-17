@@ -44,10 +44,7 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	steps, err := automationstep.Decode(version.Steps)
-	if err != nil {
-		return m.failHTTP(ctx, s, run.ID, failure{Kind: automationrun.FailureKindInvalidBody}, httpcall.Execution{Cancel: err})
-	}
+	steps := version.Steps
 	if step < 0 || step >= len(steps) || steps[step].Type != automationstep.HTTP {
 		return httpcall.Execution{}, nil
 	}

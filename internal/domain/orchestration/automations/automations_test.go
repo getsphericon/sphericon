@@ -19,35 +19,31 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func TestEncodeKeepsOnlyTheFieldsOfEachStepType(t *testing.T) {
-	def, err := automations.Encode([]automationstep.Step{
+func TestStoredStepsKeepOnlyTheFieldsOfEachStepType(t *testing.T) {
+	def := automations.StoredSteps([]automationstep.Step{
 		{Type: automationstep.Email, Subject: "Hi", Body: "b", Seconds: 9, Tag: "stray"},
 		{Type: automationstep.Wait, Seconds: 30, Subject: "stray"},
 		{Type: automationstep.ApplyTag, Tag: "  vip ", Body: "stray"},
 		{Type: automationstep.RemoveTag, Tag: "old"},
 		{Subject: "untyped steps are emails"},
 	})
-	require.NoError(t, err)
 	assert.JSONEq(t, `[
 		{"type":"email","subject":"Hi","body":"b"},
 		{"type":"wait","seconds":30},
 		{"type":"apply_tag","tag":"vip"},
 		{"type":"remove_tag","tag":"old"},
 		{"type":"email","subject":"untyped steps are emails"}
-	]`, def)
+	]`, testhelper.Document(t, def))
 
-	empty, err := automations.Encode(nil)
-	require.NoError(t, err)
-	assert.Equal(t, "[]", empty)
+	assert.Equal(t, []automationstep.Step{}, automations.StoredSteps(nil), "no steps are an empty list, never null")
 }
 
 // An email step's body is stored as it was written (ADR 0118).
-func TestEncodeStoresAnEmailStepBodyAsWritten(t *testing.T) {
-	def, err := automations.Encode([]automationstep.Step{
+func TestStoredStepsKeepAnEmailStepBodyAsWritten(t *testing.T) {
+	def := automations.StoredSteps([]automationstep.Step{
 		{Type: automationstep.Email, Subject: "Hi", Body: `<p onclick="track()">Hi {{ first_name }}</p><form action="https://example.com/s"></form>`},
 	})
-	require.NoError(t, err)
-	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p onclick=\"track()\">Hi {{ first_name }}</p><form action=\"https://example.com/s\"></form>"}]`, def)
+	assert.JSONEq(t, `[{"type":"email","subject":"Hi","body":"<p onclick=\"track()\">Hi {{ first_name }}</p><form action=\"https://example.com/s\"></form>"}]`, testhelper.Document(t, def))
 }
 
 func TestCreateStoresAnInactiveAutomationWithEncodedSteps(t *testing.T) {

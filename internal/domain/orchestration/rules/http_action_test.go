@@ -31,8 +31,7 @@ func newHTTPRule(t *testing.T, env *testhelper.TestEnv, m *rules.Module) (id int
 		}},
 	})
 	require.NoError(t, err)
-	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
-	require.NoError(t, err)
+	stored := draftOf(t, r).Actions
 	require.Len(t, stored, 1)
 	return r.ID, stored[0].ID
 }
@@ -46,10 +45,9 @@ func TestAnHTTPActionIsStoredSealed(t *testing.T) {
 	r, err := m.Get(context.Background(), env.DB.Scoped(fixtures.AcmeID), id)
 	require.NoError(t, err)
 	for _, secret := range []string{hookURL, "hooks.example.com", "hunter2", testSigner} {
-		assert.NotContains(t, draftOf(t, r).Actions, secret, "the stored Actions hold only ciphertext")
+		assert.NotContains(t, testhelper.Document(t, draftOf(t, r).Actions), secret, "the stored Actions hold only ciphertext")
 	}
-	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
-	require.NoError(t, err)
+	stored := draftOf(t, r).Actions
 	opened, err := m.OpenHTTP(stored[0])
 	require.NoError(t, err)
 	assert.Equal(t, hookURL, opened.URL)
@@ -81,8 +79,7 @@ func TestEditingAnHTTPActionKeepsWhatIsNotResent(t *testing.T) {
 	}}})
 
 	require.NoError(t, err)
-	stored, err := rules.DecodeActions(draftOf(t, r).Actions)
-	require.NoError(t, err)
+	stored := draftOf(t, r).Actions
 	require.Len(t, stored, 1)
 	assert.Equal(t, actionID, stored[0].ID)
 	opened, err := m.OpenHTTP(stored[0])

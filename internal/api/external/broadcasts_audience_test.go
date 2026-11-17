@@ -228,7 +228,7 @@ func TestExternalScheduleRefusesAnAudienceItCannotCount(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.ExternalScoped(t, audienceScopes...)
 	broken := `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`
-	require.NoError(t, env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition(broken).Exec(t.Context()))
+	require.NoError(t, env.DB.Segment.UpdateOneID(fixtures.SegmentProPlanID).SetCondition(testhelper.Condition(t, broken)).Exec(t.Context()))
 	id := entityIDString(fixtures.BroadcastProSegmentID)
 	read, err := c.BroadcastsGet(t.Context(), externalapi.BroadcastsGetParams{ID: id})
 	require.NoError(t, err)

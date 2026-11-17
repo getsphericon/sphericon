@@ -1,7 +1,7 @@
 # The Rule versions of rules.yml (ADR 0065): version 1 of every Rule has the id of its Rule. A
 # Rule ever published runs its version 1 (live); a Rule never published has it as its draft.
-# The Trigger events are in rule_version_triggers.yml. Actions are stored JSON: ent writes the
-# same text.
+# The Trigger events are in rule_version_triggers.yml. Actions and the Condition are jsonb (ADR
+# 0169); a version without a Condition holds the empty group, the column's default.
 - id: 100 # fixture: RuleTagClickedLiveVersion
   rule_id: 100
   version: 1
@@ -178,6 +178,14 @@
   rule_id: 7300
   version: 1
   actions: '[]'
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+
+- id: 7310 # fixture: RuleSealedDraftVersion
+  rule_id: 7310
+  version: 1
+  actions: '[{"type":"http","id":"01J00000000000000000000001","url":"{{ encrypt "https://hooks.example.com/sealed" }}","body":"{\"v\":1}"}]'
   workspace_id: 1
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'

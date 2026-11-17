@@ -684,8 +684,8 @@ func ScopedEntities() []*ScopedEntity {
 				if src.SegmentID != nil {
 					b.SetSegmentID(remap("Segment", *src.SegmentID))
 				}
-				if src.Condition != nil {
-					b.SetCondition(*src.Condition)
+				if !reflect.ValueOf(src.Condition).IsZero() {
+					b.SetCondition(src.Condition)
 				}
 				if src.IntegrationID != nil {
 					b.SetIntegrationID(remap("Integration", *src.IntegrationID))
@@ -2364,9 +2364,7 @@ func ScopedEntities() []*ScopedEntity {
 				b := s.RuleVersion().Create()
 				b.SetRuleID(remap("Rule", src.RuleID))
 				b.SetVersion(src.Version)
-				if src.Condition != nil {
-					b.SetCondition(*src.Condition)
-				}
+				b.SetCondition(src.Condition)
 				b.SetActions(src.Actions)
 				created, err := b.Save(ctx)
 				if err != nil {
@@ -2477,9 +2475,7 @@ func ScopedEntities() []*ScopedEntity {
 				}
 				b.SetRevision(src.Revision)
 				b.SetName(src.Name)
-				if src.Condition != nil {
-					b.SetCondition(*src.Condition)
-				}
+				b.SetCondition(src.Condition)
 				created, err := b.Save(ctx)
 				if err != nil {
 					return 0, err

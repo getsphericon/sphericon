@@ -64,9 +64,12 @@ import (
 	"github.com/getsphericon/sphericon/ent/webhookendpoint"
 	"github.com/getsphericon/sphericon/ent/webhookendpointhealth"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/automationstep"
 	"github.com/getsphericon/sphericon/internal/kernel/channels"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 	"github.com/getsphericon/sphericon/internal/kernel/holdreason"
 	"github.com/getsphericon/sphericon/internal/kernel/providers"
+	"github.com/getsphericon/sphericon/internal/kernel/ruleaction"
 	"github.com/getsphericon/sphericon/internal/kernel/telegramrender"
 )
 
@@ -7979,22 +7982,12 @@ func (x *AutomationVersionScopedCreate) SetVersion(v int) *AutomationVersionScop
 const RoleOf_AutomationVersionScopedCreate_SetVersion = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedCreate) SetSteps(v string) *AutomationVersionScopedCreate {
+func (x *AutomationVersionScopedCreate) SetSteps(v []automationstep.Step) *AutomationVersionScopedCreate {
 	x.set = append(x.set, func(b *AutomationVersionCreate) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedCreate_SetSteps = RoleStep
-
-// SetNillableSteps sets the "steps" field if the given value is not nil.
-func (x *AutomationVersionScopedCreate) SetNillableSteps(v *string) *AutomationVersionScopedCreate {
-	if v != nil {
-		x.SetSteps(*v)
-	}
-	return x
-}
-
-const RoleOf_AutomationVersionScopedCreate_SetNillableSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedCreate) SetTriggerEvent(v string) *AutomationVersionScopedCreate {
@@ -8192,7 +8185,7 @@ func (u *AutomationVersionScopedUpsert) UpdateAutomationID() *AutomationVersionS
 const RoleOf_AutomationVersionScopedUpsert_UpdateAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (u *AutomationVersionScopedUpsert) SetSteps(v string) *AutomationVersionScopedUpsert {
+func (u *AutomationVersionScopedUpsert) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpsert {
 	u.u.Set(automationversion.FieldSteps, v)
 	return u
 }
@@ -8489,22 +8482,20 @@ func (x *AutomationVersionScopedUpdateOne) SetNillableAutomationID(v *int64) *Au
 const RoleOf_AutomationVersionScopedUpdateOne_SetNillableAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedUpdateOne) SetSteps(v string) *AutomationVersionScopedUpdateOne {
+func (x *AutomationVersionScopedUpdateOne) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedUpdateOne_SetSteps = RoleStep
 
-// SetNillableSteps sets the "steps" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdateOne) SetNillableSteps(v *string) *AutomationVersionScopedUpdateOne {
-	if v != nil {
-		x.SetSteps(*v)
-	}
+// AppendSteps appends value to the "steps" field.
+func (x *AutomationVersionScopedUpdateOne) AppendSteps(v []automationstep.Step) *AutomationVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *AutomationVersionUpdateOne) { b.AppendSteps(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdateOne_SetNillableSteps = RoleStep
+const RoleOf_AutomationVersionScopedUpdateOne_AppendSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedUpdateOne) SetTriggerEvent(v string) *AutomationVersionScopedUpdateOne {
@@ -8732,22 +8723,20 @@ func (x *AutomationVersionScopedUpdate) SetNillableAutomationID(v *int64) *Autom
 const RoleOf_AutomationVersionScopedUpdate_SetNillableAutomationID = RoleStep
 
 // SetSteps sets the "steps" field.
-func (x *AutomationVersionScopedUpdate) SetSteps(v string) *AutomationVersionScopedUpdate {
+func (x *AutomationVersionScopedUpdate) SetSteps(v []automationstep.Step) *AutomationVersionScopedUpdate {
 	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.SetSteps(v) })
 	return x
 }
 
 const RoleOf_AutomationVersionScopedUpdate_SetSteps = RoleStep
 
-// SetNillableSteps sets the "steps" field if the given value is not nil.
-func (x *AutomationVersionScopedUpdate) SetNillableSteps(v *string) *AutomationVersionScopedUpdate {
-	if v != nil {
-		x.SetSteps(*v)
-	}
+// AppendSteps appends value to the "steps" field.
+func (x *AutomationVersionScopedUpdate) AppendSteps(v []automationstep.Step) *AutomationVersionScopedUpdate {
+	x.set = append(x.set, func(b *AutomationVersionUpdate) { b.AppendSteps(v) })
 	return x
 }
 
-const RoleOf_AutomationVersionScopedUpdate_SetNillableSteps = RoleStep
+const RoleOf_AutomationVersionScopedUpdate_AppendSteps = RoleStep
 
 // SetTriggerEvent sets the "trigger_event" field.
 func (x *AutomationVersionScopedUpdate) SetTriggerEvent(v string) *AutomationVersionScopedUpdate {
@@ -12021,22 +12010,12 @@ func (x *BroadcastScopedCreate) SetNillableSegmentID(v *int64) *BroadcastScopedC
 const RoleOf_BroadcastScopedCreate_SetNillableSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *BroadcastScopedCreate) SetCondition(v string) *BroadcastScopedCreate {
+func (x *BroadcastScopedCreate) SetCondition(v *conditiontree.Group) *BroadcastScopedCreate {
 	x.set = append(x.set, func(b *BroadcastCreate) { b.SetCondition(v) })
 	return x
 }
 
 const RoleOf_BroadcastScopedCreate_SetCondition = RoleStep
-
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *BroadcastScopedCreate) SetNillableCondition(v *string) *BroadcastScopedCreate {
-	if v != nil {
-		x.SetCondition(*v)
-	}
-	return x
-}
-
-const RoleOf_BroadcastScopedCreate_SetNillableCondition = RoleStep
 
 // SetIntegrationID sets the "integration_id" field.
 func (x *BroadcastScopedCreate) SetIntegrationID(v int64) *BroadcastScopedCreate {
@@ -12722,7 +12701,7 @@ func (u *BroadcastScopedUpsert) ClearSegmentID() *BroadcastScopedUpsert {
 const RoleOf_BroadcastScopedUpsert_ClearSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (u *BroadcastScopedUpsert) SetCondition(v string) *BroadcastScopedUpsert {
+func (u *BroadcastScopedUpsert) SetCondition(v *conditiontree.Group) *BroadcastScopedUpsert {
 	u.u.Set(broadcast.FieldCondition, v)
 	return u
 }
@@ -13602,22 +13581,12 @@ func (x *BroadcastScopedUpdateOne) ClearSegmentID() *BroadcastScopedUpdateOne {
 const RoleOf_BroadcastScopedUpdateOne_ClearSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *BroadcastScopedUpdateOne) SetCondition(v string) *BroadcastScopedUpdateOne {
+func (x *BroadcastScopedUpdateOne) SetCondition(v *conditiontree.Group) *BroadcastScopedUpdateOne {
 	x.set = append(x.set, func(b *BroadcastUpdateOne) { b.SetCondition(v) })
 	return x
 }
 
 const RoleOf_BroadcastScopedUpdateOne_SetCondition = RoleStep
-
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *BroadcastScopedUpdateOne) SetNillableCondition(v *string) *BroadcastScopedUpdateOne {
-	if v != nil {
-		x.SetCondition(*v)
-	}
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdateOne_SetNillableCondition = RoleStep
 
 // ClearCondition clears the value of the "condition" field.
 func (x *BroadcastScopedUpdateOne) ClearCondition() *BroadcastScopedUpdateOne {
@@ -14412,22 +14381,12 @@ func (x *BroadcastScopedUpdate) ClearSegmentID() *BroadcastScopedUpdate {
 const RoleOf_BroadcastScopedUpdate_ClearSegmentID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *BroadcastScopedUpdate) SetCondition(v string) *BroadcastScopedUpdate {
+func (x *BroadcastScopedUpdate) SetCondition(v *conditiontree.Group) *BroadcastScopedUpdate {
 	x.set = append(x.set, func(b *BroadcastUpdate) { b.SetCondition(v) })
 	return x
 }
 
 const RoleOf_BroadcastScopedUpdate_SetCondition = RoleStep
-
-// SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *BroadcastScopedUpdate) SetNillableCondition(v *string) *BroadcastScopedUpdate {
-	if v != nil {
-		x.SetCondition(*v)
-	}
-	return x
-}
-
-const RoleOf_BroadcastScopedUpdate_SetNillableCondition = RoleStep
 
 // ClearCondition clears the value of the "condition" field.
 func (x *BroadcastScopedUpdate) ClearCondition() *BroadcastScopedUpdate {
@@ -48571,7 +48530,7 @@ func (x *RuleVersionScopedCreate) SetVersion(v int) *RuleVersionScopedCreate {
 const RoleOf_RuleVersionScopedCreate_SetVersion = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *RuleVersionScopedCreate) SetCondition(v string) *RuleVersionScopedCreate {
+func (x *RuleVersionScopedCreate) SetCondition(v conditiontree.Group) *RuleVersionScopedCreate {
 	x.set = append(x.set, func(b *RuleVersionCreate) { b.SetCondition(v) })
 	return x
 }
@@ -48579,7 +48538,7 @@ func (x *RuleVersionScopedCreate) SetCondition(v string) *RuleVersionScopedCreat
 const RoleOf_RuleVersionScopedCreate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleVersionScopedCreate) SetNillableCondition(v *string) *RuleVersionScopedCreate {
+func (x *RuleVersionScopedCreate) SetNillableCondition(v *conditiontree.Group) *RuleVersionScopedCreate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -48589,22 +48548,12 @@ func (x *RuleVersionScopedCreate) SetNillableCondition(v *string) *RuleVersionSc
 const RoleOf_RuleVersionScopedCreate_SetNillableCondition = RoleStep
 
 // SetActions sets the "actions" field.
-func (x *RuleVersionScopedCreate) SetActions(v string) *RuleVersionScopedCreate {
+func (x *RuleVersionScopedCreate) SetActions(v []ruleaction.Action) *RuleVersionScopedCreate {
 	x.set = append(x.set, func(b *RuleVersionCreate) { b.SetActions(v) })
 	return x
 }
 
 const RoleOf_RuleVersionScopedCreate_SetActions = RoleStep
-
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleVersionScopedCreate) SetNillableActions(v *string) *RuleVersionScopedCreate {
-	if v != nil {
-		x.SetActions(*v)
-	}
-	return x
-}
-
-const RoleOf_RuleVersionScopedCreate_SetNillableActions = RoleStep
 
 // SetRule sets the "rule" edge to the Rule entity.
 func (x *RuleVersionScopedCreate) SetRule(v *Rule) *RuleVersionScopedCreate {
@@ -48784,7 +48733,7 @@ func (u *RuleVersionScopedUpsert) UpdateRuleID() *RuleVersionScopedUpsert {
 const RoleOf_RuleVersionScopedUpsert_UpdateRuleID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (u *RuleVersionScopedUpsert) SetCondition(v string) *RuleVersionScopedUpsert {
+func (u *RuleVersionScopedUpsert) SetCondition(v conditiontree.Group) *RuleVersionScopedUpsert {
 	u.u.Set(ruleversion.FieldCondition, v)
 	return u
 }
@@ -48799,16 +48748,8 @@ func (u *RuleVersionScopedUpsert) UpdateCondition() *RuleVersionScopedUpsert {
 
 const RoleOf_RuleVersionScopedUpsert_UpdateCondition = RoleStep
 
-// ClearCondition clears the value of the "condition" field.
-func (u *RuleVersionScopedUpsert) ClearCondition() *RuleVersionScopedUpsert {
-	u.u.SetNull(ruleversion.FieldCondition)
-	return u
-}
-
-const RoleOf_RuleVersionScopedUpsert_ClearCondition = RoleStep
-
 // SetActions sets the "actions" field.
-func (u *RuleVersionScopedUpsert) SetActions(v string) *RuleVersionScopedUpsert {
+func (u *RuleVersionScopedUpsert) SetActions(v []ruleaction.Action) *RuleVersionScopedUpsert {
 	u.u.Set(ruleversion.FieldActions, v)
 	return u
 }
@@ -49049,7 +48990,7 @@ func (x *RuleVersionScopedUpdateOne) SetNillableRuleID(v *int64) *RuleVersionSco
 const RoleOf_RuleVersionScopedUpdateOne_SetNillableRuleID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *RuleVersionScopedUpdateOne) SetCondition(v string) *RuleVersionScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetCondition(v conditiontree.Group) *RuleVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *RuleVersionUpdateOne) { b.SetCondition(v) })
 	return x
 }
@@ -49057,7 +48998,7 @@ func (x *RuleVersionScopedUpdateOne) SetCondition(v string) *RuleVersionScopedUp
 const RoleOf_RuleVersionScopedUpdateOne_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleVersionScopedUpdateOne) SetNillableCondition(v *string) *RuleVersionScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetNillableCondition(v *conditiontree.Group) *RuleVersionScopedUpdateOne {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -49066,31 +49007,21 @@ func (x *RuleVersionScopedUpdateOne) SetNillableCondition(v *string) *RuleVersio
 
 const RoleOf_RuleVersionScopedUpdateOne_SetNillableCondition = RoleStep
 
-// ClearCondition clears the value of the "condition" field.
-func (x *RuleVersionScopedUpdateOne) ClearCondition() *RuleVersionScopedUpdateOne {
-	x.set = append(x.set, func(b *RuleVersionUpdateOne) { b.ClearCondition() })
-	return x
-}
-
-const RoleOf_RuleVersionScopedUpdateOne_ClearCondition = RoleStep
-
 // SetActions sets the "actions" field.
-func (x *RuleVersionScopedUpdateOne) SetActions(v string) *RuleVersionScopedUpdateOne {
+func (x *RuleVersionScopedUpdateOne) SetActions(v []ruleaction.Action) *RuleVersionScopedUpdateOne {
 	x.set = append(x.set, func(b *RuleVersionUpdateOne) { b.SetActions(v) })
 	return x
 }
 
 const RoleOf_RuleVersionScopedUpdateOne_SetActions = RoleStep
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleVersionScopedUpdateOne) SetNillableActions(v *string) *RuleVersionScopedUpdateOne {
-	if v != nil {
-		x.SetActions(*v)
-	}
+// AppendActions appends value to the "actions" field.
+func (x *RuleVersionScopedUpdateOne) AppendActions(v []ruleaction.Action) *RuleVersionScopedUpdateOne {
+	x.set = append(x.set, func(b *RuleVersionUpdateOne) { b.AppendActions(v) })
 	return x
 }
 
-const RoleOf_RuleVersionScopedUpdateOne_SetNillableActions = RoleStep
+const RoleOf_RuleVersionScopedUpdateOne_AppendActions = RoleStep
 
 // SetRule sets the "rule" edge to the Rule entity.
 func (x *RuleVersionScopedUpdateOne) SetRule(v *Rule) *RuleVersionScopedUpdateOne {
@@ -49298,7 +49229,7 @@ func (x *RuleVersionScopedUpdate) SetNillableRuleID(v *int64) *RuleVersionScoped
 const RoleOf_RuleVersionScopedUpdate_SetNillableRuleID = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *RuleVersionScopedUpdate) SetCondition(v string) *RuleVersionScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetCondition(v conditiontree.Group) *RuleVersionScopedUpdate {
 	x.set = append(x.set, func(b *RuleVersionUpdate) { b.SetCondition(v) })
 	return x
 }
@@ -49306,7 +49237,7 @@ func (x *RuleVersionScopedUpdate) SetCondition(v string) *RuleVersionScopedUpdat
 const RoleOf_RuleVersionScopedUpdate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *RuleVersionScopedUpdate) SetNillableCondition(v *string) *RuleVersionScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetNillableCondition(v *conditiontree.Group) *RuleVersionScopedUpdate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -49315,31 +49246,21 @@ func (x *RuleVersionScopedUpdate) SetNillableCondition(v *string) *RuleVersionSc
 
 const RoleOf_RuleVersionScopedUpdate_SetNillableCondition = RoleStep
 
-// ClearCondition clears the value of the "condition" field.
-func (x *RuleVersionScopedUpdate) ClearCondition() *RuleVersionScopedUpdate {
-	x.set = append(x.set, func(b *RuleVersionUpdate) { b.ClearCondition() })
-	return x
-}
-
-const RoleOf_RuleVersionScopedUpdate_ClearCondition = RoleStep
-
 // SetActions sets the "actions" field.
-func (x *RuleVersionScopedUpdate) SetActions(v string) *RuleVersionScopedUpdate {
+func (x *RuleVersionScopedUpdate) SetActions(v []ruleaction.Action) *RuleVersionScopedUpdate {
 	x.set = append(x.set, func(b *RuleVersionUpdate) { b.SetActions(v) })
 	return x
 }
 
 const RoleOf_RuleVersionScopedUpdate_SetActions = RoleStep
 
-// SetNillableActions sets the "actions" field if the given value is not nil.
-func (x *RuleVersionScopedUpdate) SetNillableActions(v *string) *RuleVersionScopedUpdate {
-	if v != nil {
-		x.SetActions(*v)
-	}
+// AppendActions appends value to the "actions" field.
+func (x *RuleVersionScopedUpdate) AppendActions(v []ruleaction.Action) *RuleVersionScopedUpdate {
+	x.set = append(x.set, func(b *RuleVersionUpdate) { b.AppendActions(v) })
 	return x
 }
 
-const RoleOf_RuleVersionScopedUpdate_SetNillableActions = RoleStep
+const RoleOf_RuleVersionScopedUpdate_AppendActions = RoleStep
 
 // SetRule sets the "rule" edge to the Rule entity.
 func (x *RuleVersionScopedUpdate) SetRule(v *Rule) *RuleVersionScopedUpdate {
@@ -50624,7 +50545,7 @@ func (x *SegmentScopedCreate) SetName(v string) *SegmentScopedCreate {
 const RoleOf_SegmentScopedCreate_SetName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *SegmentScopedCreate) SetCondition(v string) *SegmentScopedCreate {
+func (x *SegmentScopedCreate) SetCondition(v conditiontree.Group) *SegmentScopedCreate {
 	x.set = append(x.set, func(b *SegmentCreate) { b.SetCondition(v) })
 	return x
 }
@@ -50632,7 +50553,7 @@ func (x *SegmentScopedCreate) SetCondition(v string) *SegmentScopedCreate {
 const RoleOf_SegmentScopedCreate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *SegmentScopedCreate) SetNillableCondition(v *string) *SegmentScopedCreate {
+func (x *SegmentScopedCreate) SetNillableCondition(v *conditiontree.Group) *SegmentScopedCreate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -50845,7 +50766,7 @@ func (u *SegmentScopedUpsert) UpdateName() *SegmentScopedUpsert {
 const RoleOf_SegmentScopedUpsert_UpdateName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (u *SegmentScopedUpsert) SetCondition(v string) *SegmentScopedUpsert {
+func (u *SegmentScopedUpsert) SetCondition(v conditiontree.Group) *SegmentScopedUpsert {
 	u.u.Set(segment.FieldCondition, v)
 	return u
 }
@@ -50859,14 +50780,6 @@ func (u *SegmentScopedUpsert) UpdateCondition() *SegmentScopedUpsert {
 }
 
 const RoleOf_SegmentScopedUpsert_UpdateCondition = RoleStep
-
-// ClearCondition clears the value of the "condition" field.
-func (u *SegmentScopedUpsert) ClearCondition() *SegmentScopedUpsert {
-	u.u.SetNull(segment.FieldCondition)
-	return u
-}
-
-const RoleOf_SegmentScopedUpsert_ClearCondition = RoleStep
 
 // conflictOptions confines the DO UPDATE part to rows of the Workspace.
 // target, when not nil, is the predicate of a partial unique index the conflict is inferred from.
@@ -51227,7 +51140,7 @@ func (x *SegmentScopedUpdateOne) SetNillableName(v *string) *SegmentScopedUpdate
 const RoleOf_SegmentScopedUpdateOne_SetNillableName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *SegmentScopedUpdateOne) SetCondition(v string) *SegmentScopedUpdateOne {
+func (x *SegmentScopedUpdateOne) SetCondition(v conditiontree.Group) *SegmentScopedUpdateOne {
 	x.set = append(x.set, func(b *SegmentUpdateOne) { b.SetCondition(v) })
 	return x
 }
@@ -51235,7 +51148,7 @@ func (x *SegmentScopedUpdateOne) SetCondition(v string) *SegmentScopedUpdateOne 
 const RoleOf_SegmentScopedUpdateOne_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *SegmentScopedUpdateOne) SetNillableCondition(v *string) *SegmentScopedUpdateOne {
+func (x *SegmentScopedUpdateOne) SetNillableCondition(v *conditiontree.Group) *SegmentScopedUpdateOne {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -51243,14 +51156,6 @@ func (x *SegmentScopedUpdateOne) SetNillableCondition(v *string) *SegmentScopedU
 }
 
 const RoleOf_SegmentScopedUpdateOne_SetNillableCondition = RoleStep
-
-// ClearCondition clears the value of the "condition" field.
-func (x *SegmentScopedUpdateOne) ClearCondition() *SegmentScopedUpdateOne {
-	x.set = append(x.set, func(b *SegmentUpdateOne) { b.ClearCondition() })
-	return x
-}
-
-const RoleOf_SegmentScopedUpdateOne_ClearCondition = RoleStep
 
 // Save verifies the references against the Workspace, then updates the Segment.
 func (x *SegmentScopedUpdateOne) Save(ctx context.Context) (*Segment, error) {
@@ -51403,7 +51308,7 @@ func (x *SegmentScopedUpdate) SetNillableName(v *string) *SegmentScopedUpdate {
 const RoleOf_SegmentScopedUpdate_SetNillableName = RoleStep
 
 // SetCondition sets the "condition" field.
-func (x *SegmentScopedUpdate) SetCondition(v string) *SegmentScopedUpdate {
+func (x *SegmentScopedUpdate) SetCondition(v conditiontree.Group) *SegmentScopedUpdate {
 	x.set = append(x.set, func(b *SegmentUpdate) { b.SetCondition(v) })
 	return x
 }
@@ -51411,7 +51316,7 @@ func (x *SegmentScopedUpdate) SetCondition(v string) *SegmentScopedUpdate {
 const RoleOf_SegmentScopedUpdate_SetCondition = RoleStep
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (x *SegmentScopedUpdate) SetNillableCondition(v *string) *SegmentScopedUpdate {
+func (x *SegmentScopedUpdate) SetNillableCondition(v *conditiontree.Group) *SegmentScopedUpdate {
 	if v != nil {
 		x.SetCondition(*v)
 	}
@@ -51419,14 +51324,6 @@ func (x *SegmentScopedUpdate) SetNillableCondition(v *string) *SegmentScopedUpda
 }
 
 const RoleOf_SegmentScopedUpdate_SetNillableCondition = RoleStep
-
-// ClearCondition clears the value of the "condition" field.
-func (x *SegmentScopedUpdate) ClearCondition() *SegmentScopedUpdate {
-	x.set = append(x.set, func(b *SegmentUpdate) { b.ClearCondition() })
-	return x
-}
-
-const RoleOf_SegmentScopedUpdate_ClearCondition = RoleStep
 
 // build makes the ent update on the client of s and verifies the references it sets.
 func (x *SegmentScopedUpdate) build(ctx context.Context, s *Scoped) (*SegmentUpdate, error) {

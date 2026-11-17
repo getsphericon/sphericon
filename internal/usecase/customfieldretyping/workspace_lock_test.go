@@ -50,14 +50,14 @@ func newRetypeRace(t *testing.T) *retypeRace {
 		return err
 	}}
 	r.saveSegment = testhelper.Writer{Name: "save", Run: func() error {
-		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Has it lately", Condition: new(dateHasIt)})
+		seg, err := segs.Create(ctx, s, segments.CreateInput{Name: "Has it lately", Condition: new(testhelper.Condition(t, dateHasIt))})
 		if seg != nil {
 			*r.savedID = seg.ID
 		}
 		return err
 	}}
 	r.saveRule = testhelper.Writer{Name: "save", Run: func() error {
-		rl, err := ruleset.Create(ctx, s, rules.CreateInput{Name: "Has it lately", TriggerEvents: []string{"x"}, Condition: new(dateHasIt)})
+		rl, err := ruleset.Create(ctx, s, rules.CreateInput{Name: "Has it lately", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, dateHasIt))})
 		if rl != nil {
 			*r.savedID = rl.ID
 		}

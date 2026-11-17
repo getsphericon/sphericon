@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/getsphericon/sphericon/ent/segment"
 	"github.com/getsphericon/sphericon/ent/workspace"
+	"github.com/getsphericon/sphericon/internal/kernel/conditiontree"
 )
 
 // SegmentCreate is the builder for creating a Segment entity.
@@ -92,13 +93,13 @@ func (_c *SegmentCreate) SetName(v string) *SegmentCreate {
 }
 
 // SetCondition sets the "condition" field.
-func (_c *SegmentCreate) SetCondition(v string) *SegmentCreate {
+func (_c *SegmentCreate) SetCondition(v conditiontree.Group) *SegmentCreate {
 	_c.mutation.SetCondition(v)
 	return _c
 }
 
 // SetNillableCondition sets the "condition" field if the given value is not nil.
-func (_c *SegmentCreate) SetNillableCondition(v *string) *SegmentCreate {
+func (_c *SegmentCreate) SetNillableCondition(v *conditiontree.Group) *SegmentCreate {
 	if v != nil {
 		_c.SetCondition(*v)
 	}
@@ -163,6 +164,10 @@ func (_c *SegmentCreate) defaults() {
 		v := segment.DefaultRevision()
 		_c.mutation.SetRevision(v)
 	}
+	if _, ok := _c.mutation.Condition(); !ok {
+		v := segment.DefaultCondition
+		_c.mutation.SetCondition(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -191,6 +196,9 @@ func (_c *SegmentCreate) check() error {
 		if err := segment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Segment.name": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Condition(); !ok {
+		return &ValidationError{Name: "condition", err: errors.New(`ent: missing required field "Segment.condition"`)}
 	}
 	if len(_c.mutation.WorkspaceIDs()) == 0 {
 		return &ValidationError{Name: "workspace", err: errors.New(`ent: missing required edge "Segment.workspace"`)}
@@ -249,8 +257,8 @@ func (_c *SegmentCreate) createSpec() (*Segment, *sqlgraph.CreateSpec) {
 		_node.Name = value
 	}
 	if value, ok := _c.mutation.Condition(); ok {
-		_spec.SetField(segment.FieldCondition, field.TypeString, value)
-		_node.Condition = &value
+		_spec.SetField(segment.FieldCondition, field.TypeJSON, value)
+		_node.Condition = value
 	}
 	if nodes := _c.mutation.WorkspaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -394,7 +402,7 @@ func (u *SegmentUpsert) UpdateName() *SegmentUpsert {
 }
 
 // SetCondition sets the "condition" field.
-func (u *SegmentUpsert) SetCondition(v string) *SegmentUpsert {
+func (u *SegmentUpsert) SetCondition(v conditiontree.Group) *SegmentUpsert {
 	u.Set(segment.FieldCondition, v)
 	return u
 }
@@ -402,12 +410,6 @@ func (u *SegmentUpsert) SetCondition(v string) *SegmentUpsert {
 // UpdateCondition sets the "condition" field to the value that was provided on create.
 func (u *SegmentUpsert) UpdateCondition() *SegmentUpsert {
 	u.SetExcluded(segment.FieldCondition)
-	return u
-}
-
-// ClearCondition clears the value of the "condition" field.
-func (u *SegmentUpsert) ClearCondition() *SegmentUpsert {
-	u.SetNull(segment.FieldCondition)
 	return u
 }
 
@@ -547,7 +549,7 @@ func (u *SegmentUpsertOne) UpdateName() *SegmentUpsertOne {
 }
 
 // SetCondition sets the "condition" field.
-func (u *SegmentUpsertOne) SetCondition(v string) *SegmentUpsertOne {
+func (u *SegmentUpsertOne) SetCondition(v conditiontree.Group) *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
 		s.SetCondition(v)
 	})
@@ -557,13 +559,6 @@ func (u *SegmentUpsertOne) SetCondition(v string) *SegmentUpsertOne {
 func (u *SegmentUpsertOne) UpdateCondition() *SegmentUpsertOne {
 	return u.Update(func(s *SegmentUpsert) {
 		s.UpdateCondition()
-	})
-}
-
-// ClearCondition clears the value of the "condition" field.
-func (u *SegmentUpsertOne) ClearCondition() *SegmentUpsertOne {
-	return u.Update(func(s *SegmentUpsert) {
-		s.ClearCondition()
 	})
 }
 
@@ -869,7 +864,7 @@ func (u *SegmentUpsertBulk) UpdateName() *SegmentUpsertBulk {
 }
 
 // SetCondition sets the "condition" field.
-func (u *SegmentUpsertBulk) SetCondition(v string) *SegmentUpsertBulk {
+func (u *SegmentUpsertBulk) SetCondition(v conditiontree.Group) *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
 		s.SetCondition(v)
 	})
@@ -879,13 +874,6 @@ func (u *SegmentUpsertBulk) SetCondition(v string) *SegmentUpsertBulk {
 func (u *SegmentUpsertBulk) UpdateCondition() *SegmentUpsertBulk {
 	return u.Update(func(s *SegmentUpsert) {
 		s.UpdateCondition()
-	})
-}
-
-// ClearCondition clears the value of the "condition" field.
-func (u *SegmentUpsertBulk) ClearCondition() *SegmentUpsertBulk {
-	return u.Update(func(s *SegmentUpsert) {
-		s.ClearCondition()
 	})
 }
 

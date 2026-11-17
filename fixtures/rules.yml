@@ -213,6 +213,17 @@
   created_at: '{{daysAgo 2}}'
   updated_at: '{{daysAgo 2}}'
 
+# A Rule never published whose draft holds an http Action: an edit rewrites that draft in place,
+# so a secret rotation that meets the edit must not write back what it read (ADR 0169).
+- id: 7310 # fixture: RuleSealedDraft
+  revision: 1
+  name: Sealed draft
+  status: inactive
+  draft_version_id: 7310
+  workspace_id: 1
+  created_at: '{{daysAgo 2}}'
+  updated_at: '{{daysAgo 2}}'
+
 # Tags a Contact whose Enrollment completed (automation.completed).
 - id: 7400 # fixture: RuleEnrollmentCompleted
   revision: 1

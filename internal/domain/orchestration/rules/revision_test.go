@@ -22,13 +22,13 @@ func TestASaveOfARuleOnARevisionAlreadyMovedPastIsRefused(t *testing.T) {
 	read := env.RuleRevision(ctx, t, fixtures.RuleVipOnlyID)
 	first, second := conditionOf(2), conditionOf(3)
 
-	saved, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: &first})
+	saved, err := m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: new(testhelper.Condition(t, first))})
 	require.NoError(t, err)
-	_, err = m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: &second})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleVipOnlyID, rules.UpdateInput{Revision: read, Condition: new(testhelper.Condition(t, second))})
 
 	require.ErrorIs(t, err, rules.ErrRevisionChanged)
 	stored, err := m.Get(ctx, acme(env), fixtures.RuleVipOnlyID)
 	require.NoError(t, err)
-	assert.JSONEq(t, first, *draftOf(t, stored).Condition)
+	assert.JSONEq(t, first, testhelper.Document(t, draftOf(t, stored).Condition))
 	assert.Equal(t, saved.Revision, stored.Revision)
 }

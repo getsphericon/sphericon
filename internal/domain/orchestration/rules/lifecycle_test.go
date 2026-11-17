@@ -228,15 +228,15 @@ func TestARuleRefusesAConditionLargerThanTheCap(t *testing.T) {
 	m := rules.New(env.Cipher, env.Bus, nil, time.Now)
 	big := conditionOf(rules.MaxConditionNodes)
 
-	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: &big})
+	_, err := m.Create(ctx, acme(env), rules.CreateInput{Name: "big", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, big))})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 	assert.Contains(t, err.Error(), "Condition")
 
-	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: &big})
+	_, err = m.Update(ctx, acme(env), fixtures.RuleInactiveID, rules.UpdateInput{Revision: testhelper.RuleRevisionIn(ctx, t, acme(env), fixtures.RuleInactiveID), Condition: new(testhelper.Condition(t, big))})
 	require.ErrorIs(t, err, rules.ErrInvalid)
 
 	fits := conditionOf(rules.MaxConditionNodes - 1)
-	_, err = m.Create(ctx, acme(env), rules.CreateInput{Name: "fits", TriggerEvents: []string{"x"}, Condition: &fits})
+	_, err = m.Create(ctx, acme(env), rules.CreateInput{Name: "fits", TriggerEvents: []string{"x"}, Condition: new(testhelper.Condition(t, fits))})
 	require.NoError(t, err)
 }
 

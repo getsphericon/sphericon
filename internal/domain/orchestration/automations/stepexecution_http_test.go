@@ -2,7 +2,6 @@ package automations_test
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -168,12 +167,9 @@ func TestHTTPExecutionCancelsAnInvalidRenderedBody(t *testing.T) {
 	s := env.DB.Scoped(fixtures.AcmeID)
 	version, err := s.AutomationVersion().Get(t.Context(), fixtures.AutomationHTTPExecutionVersionID)
 	require.NoError(t, err)
-	steps, err := automationstep.Decode(version.Steps)
-	require.NoError(t, err)
+	steps := version.Steps
 	steps[0].Body = `{"n": {{ first_name | default: 1 }}}`
-	stored, err := json.Marshal(steps)
-	require.NoError(t, err)
-	err = s.AutomationVersion().UpdateOneID(version.ID).SetSteps(string(stored)).Exec(t.Context())
+	err = s.AutomationVersion().UpdateOneID(version.ID).SetSteps(steps).Exec(t.Context())
 	require.NoError(t, err)
 	runID := int64(fixtures.AutomationRunHTTPPendingID)
 
@@ -302,28 +298,6 @@ func TestHTTPExecutionIgnoresErasedWork(t *testing.T) {
 	assert.Equal(t, httpcall.Execution{}, decision)
 	_, err = s.AutomationRun().Get(t.Context(), runID)
 	assert.True(t, ent.IsNotFound(err))
-	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
-	assert.Empty(t, queued)
-}
-
-func TestHTTPExecutionCancelsADamagedStoredDefinition(t *testing.T) {
-	env := testhelper.Setup(t)
-	runID := int64(fixtures.AutomationRunHTTPPendingID)
-	s := env.DB.Scoped(fixtures.AcmeID)
-	err := s.AutomationVersion().UpdateOneID(fixtures.AutomationHTTPExecutionVersionID).SetSteps(`[{"type":7}]`).Exec(t.Context()) // JSON, as the database requires, but no Step
-	require.NoError(t, err)
-
-	decision, err := automations.NewStepExecution(env.Bus, env.OutboundModule(), testhelper.Module[*contacts.Module](env), noFence, env.Cipher, httpResponse{status: http.StatusOK}, executionNow).ExecuteHTTP(t.Context(), s, automations.ExecuteHTTPInput{RunID: runID, Step: 0, Attempt: executionAttempt()})
-
-	require.NoError(t, err)
-	require.Error(t, decision.Cancel)
-	require.NoError(t, decision.Retry)
-	assert.Zero(t, decision.Wait)
-	run, err := s.AutomationRun().Get(t.Context(), runID)
-	require.NoError(t, err)
-	assert.Equal(t, automationrun.StatusFailed, run.Status)
-	require.NotNil(t, run.FailureKind)
-	assert.Equal(t, automationrun.FailureKindInvalidBody, *run.FailureKind)
 	queued := env.JobsOf(t, automations.RunStepArgs{}.Kind())
 	assert.Empty(t, queued)
 }
