@@ -548,8 +548,9 @@ Confirmation, its truth is an Event of its Channel (`email.engagement_tracking_g
 `email.engagement_tracking_denied`, and so on) with a derived row beside it. Where none is
 recorded, the Workspace's **Engagement tracking default** decides. A message to a Destination that
 is not tracked goes out without the open pixel and with its links as written, and nothing is
-recorded of it later, even after an open or a click. A `denied` also takes back the opens and clicks
-already recorded of that Destination's messages. Carries **provenance**: `page` (the person, on
+recorded of it later, even after an open or a click. A `denied` also withdraws the tracking of that
+Destination's earlier messages and takes back the opens and clicks already recorded of them, with
+the credit an Order took from such a click. Carries **provenance**: `page` (the person, on
 the page a message to that Destination links to), `manual` (a member of the Workspace), `imported`
 (the API or an import) or `onsite_form` (a checkbox of an On-site form, with the email consent of
 the same filling). A `denied` applies from any of them; a standing `denied` gives way only to the
@@ -570,7 +571,8 @@ _Avoid_: Consent event (an Event is one record of it), opt-out message, consent 
 **Engagement tracking default**:
 The Workspace's choice for a Destination with no Engagement tracking consent: `track` (until the
 Workspace changes it) or `dont_track`, for the Workspaces whose regulators require consent before
-an open is measured.
+an open is measured. Turning it to `dont_track` withdraws the tracking of the messages already sent
+to every Destination with no `granted`, and keeps what was recorded of them.
 _Avoid_: Tracking mode, privacy mode
 
 ### Sending
@@ -708,7 +710,8 @@ requirement switched off) is not sent. Each Notice is sent and retried on its ow
 **Outbound message**:
 The durable record of one Outbound send — which surface and which of its records it belongs to,
 the Sending source (none for Transactional), the Sending domain, the provider's message id, whether
-it went out tracked, the outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
+it went out tracked and whether its tracking was withdrawn since (it then counts as untracked, for
+good), the outcome, and the lasting delivery and human engagement figures. Human opens, clicks and email
 delivery results keep the earliest time the Instance observed each kind, independently of the
 order in which observations are handled; machine engagement contributes nothing. Those figures
 may lag behind the recorded Events, but accepted observations survive the Contact's Erasure as
@@ -1293,7 +1296,7 @@ _Avoid_: Dashboard (that is the page), metrics, Telemetry report (that is the In
 The open, click and click-to-open ratios of the analytics reports over a chosen window (7, 30 or 90 **Report days**).
 A **send cohort**: the denominator is the tracked Broadcast and Automation Outbound messages sent in
 the window (a Transactional one is left out, and so is one sent untracked for want of
-**Engagement tracking consent**, which the reports count beside the rates; each message counts once,
+**Engagement tracking consent** or whose tracking was withdrawn since, which the reports count beside the rates; each message counts once,
 not each person), and opens
 and clicks, the stamps on those messages, are counted among that same cohort, so opened never
 exceeds sent and the rates stay within [0, 1]. Not the **Complaint rate** or **Bounce rate**: those are deliverability flow rates per

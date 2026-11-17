@@ -44,23 +44,38 @@ after the component it governs; "storage" read as data retention.
 - **The Workspace's Engagement tracking default** (`track` or `dont_track`) decides for a
   Destination with no fact. It is `track` until the Workspace changes it; the core picks no default
   by country, as it ships no legal text (ADR 0062).
-- **The decision is made at render and stamped on the Outbound message** as `tracked`. An untracked
-  message has no pixel and keeps its links as written; its unsubscribe and confirmation links and
-  the `List-Unsubscribe` header stay, since they are not tracking. A retry reuses the stamp. A
+- **The decision is made at render and stamped on the Outbound message** as `tracked`: whether it
+  went out with the pixel or its links tracked, a fact that never changes. The surface must track and
+  the Destination consent: an SMS whose author kept its links as written goes out untracked too. An
+  untracked message has no pixel and keeps its links as written; its unsubscribe and confirmation
+  links and the `List-Unsubscribe` header stay, since they are not tracking. A retry renders tracked
+  only when the attempt before it did and the message's tracking was not withdrawn since. A
   Transactional send's `track` (ADR 0053) is a request, not an override: consent wins.
-- **It is checked again when an open or a click arrives.** If the Destination's effective consent is
-  no longer to track (a `denied` recorded since, or a default turned to `dont_track`), nothing is
-  recorded: no Event, no stamp. The answer does not change: the pixel is served and the link
-  redirects. A message whose Destination was erased resolves to no consent and records nothing.
-- **A refusal reaches back.** When a `denied` is recorded, the Destination's earlier messages lose
-  their `tracked` stamp and the opens and clicks recorded of them are deleted, their Events and
-  their stamps alike: what was collected under a consent now withdrawn is not kept, and those
-  messages leave the rates with their engagement. The CNIL allows aggregate figures, but a stamp on
-  a message is not one.
-- **A default turned to `dont_track` reaches forward only.** The messages of every Destination
-  without a `granted` lose their `tracked` stamp from then on, so they leave the rates, but what was
-  recorded before stays: whether it was collected lawfully is the Workspace's question, and the
-  Workspace made the change.
+- **Tracking withdrawn is a second fact of the message**, recorded once and never cleared, when a
+  refusal or a default reaches it (below). A message counts as tracked while it went out tracked and
+  its tracking was not withdrawn; nothing gives a withdrawn message its tracking back, neither a
+  later `granted` nor a default turned back to `track`, so a message whose opens were deleted never
+  returns to the rates as one that was never opened.
+- **It is checked again when an open or a click arrives**, against the message's withdrawal and
+  the effective consent now of the Destination the message went to, which the recorded Event names,
+  not the Contact's current address. If the message's tracking was withdrawn or the Destination's
+  effective consent is no longer to track (a `denied` recorded since, or a default turned to
+  `dont_track` whose withdrawal has not reached the message yet), nothing is recorded: no Event, no
+  stamp. The answer does not change: the pixel is served and the link redirects. A message whose
+  Destination was erased resolves to no consent and records nothing.
+- **A refusal reaches back.** When a `denied` is recorded, the tracking of the Destination's earlier
+  messages is withdrawn and the opens and clicks recorded of them are deleted, their Events and
+  their stamps alike, and so is the credit an Order took from such a click (ADR 0083): what was
+  collected under a consent now withdrawn is not kept, and those messages leave the rates with their
+  engagement. The CNIL allows aggregate figures, but a stamp on a message is not one. What was
+  already done on them stays: an Automation the Event triggered, a path a Branch took, a Winner it
+  picked, a message sent since. An Event kept on an Enrollment as `awaited.<name>` (ADR 0124) is
+  deleted with the rest, and a later Step reads it as absent.
+- **A default turned to `dont_track` withdraws, but deletes nothing.** The tracking of every message
+  already sent to a Destination without a `granted` is withdrawn, in the background, and the
+  messages rendered from then on go out untracked, so they leave the rates; what was recorded before
+  stays: whether it was collected lawfully is the Workspace's question, and the Workspace made the
+  change. A default turned back to `track` applies to the messages rendered from then on.
 - **Who sets it, by provenance:**
   - `page`: the person, on a public page reached from a message to that Destination;
   - `manual`: a member of the Workspace, on the Contact card;
@@ -96,10 +111,12 @@ after the component it governs; "storage" read as data retention.
 
 ## Consequences
 
-- A migration adds the per-Destination row, the Workspace setting and `tracked` on
-  `outbound_messages` (add-only, ADR 0033). The email renderer's `Track` becomes "the surface tracks
-  and the Destination consents"; SMS and Telegram set their `NoLinkTracking` from the same answer,
-  which Telegram's renderer has to learn.
+- A migration adds the per-Destination row, the Workspace setting, and `tracked` and the time its
+  tracking was withdrawn on `outbound_messages` (add-only, ADR 0033). The email renderer's `Track`
+  becomes "the surface tracks and the Destination consents"; SMS and Telegram set their
+  `NoLinkTracking` from the same answer, which Telegram's renderer has to learn.
+- Its observations are ordered as every other consent fact's (ADR 0154), on the Destination's
+  `everything` stamp, as a Confirmation's are: it has no Sending source.
 - Engagement recording (`outboundmessages/engagement`) resolves the message's Destination and its
   effective consent before it accepts an observation, so ADR 0113's projections never see a refused
   one. A `denied` removes the opens and clicks ADR 0113 keeps on the messages of that Destination,
@@ -107,11 +124,19 @@ after the component it governs; "storage" read as data retention.
 - An Automation trigger on `email.opened` or `email.clicked` never fires for an untracked message. For
   a future branch on "opened", an untracked message's open is unknown, not absent: the branch must
   route it on purpose.
-- Revenue attribution by click (ADR 0083) has nothing to credit for a Destination that refused.
+- Revenue attribution by click (ADR 0083) has nothing to credit for a Destination that refused, and
+  an Order credited from one of its clicks before the refusal loses that credit.
 - The API and the import gain the field with its provenance; the On-site form editor gains the
   checkbox; the confirmation link carries the form's grant.
 
 ## Considered options
+
+- **One `tracked` stamp, cleared when tracking is withdrawn.** It would forget what went out, and a
+  stamp a later grant could set again would bring back to the rates a message whose opens were
+  deleted, as one never opened.
+- **A default turned to `dont_track` that reaches only the messages rendered after it.** The
+  messages already in mailboxes would stop recording and stay in the cohort, so the rates would fall
+  for no change in the mail.
 
 - **Two attributes on the Contact, opens and clicks, each with a source and a date** (Notifuse does
   this). A Contact attribute does not survive Erasure and re-import, cannot differ between two
