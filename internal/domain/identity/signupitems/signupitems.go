@@ -131,10 +131,17 @@ type Module struct {
 }
 
 // AuditRecorder writes one entry of the Instance audit log (ADR 0070) on tx, the transaction of the
-// change: the Staff member entry.StaffMemberID made the change entry.Action, with entry.Diff its
-// fields' old and new values. The log is a module of the Instance context, above this one, so the
-// wiring hands its Record in.
-type AuditRecorder func(ctx context.Context, tx *ent.Client, entry *ent.InstanceAuditEntry) error
+// change. The log is a module of the Instance context, above this one, so the wiring hands in its
+// RecordSignupItem.
+type AuditRecorder func(ctx context.Context, tx *ent.Client, entry AuditEntry) error
+
+// AuditEntry is one entry of the Instance audit log: the Staff member StaffMemberID made the change
+// Action, with Diff its fields' old and new values.
+type AuditEntry struct {
+	StaffMemberID int64
+	Action        string
+	Diff          map[string]any
+}
 
 // The changes of the Sign-up items the Instance audit log records (ADR 0062, ADR 0070). Each diff
 // names the item by its key: {to: key} for an added item, {from: key} for a deleted one, and
@@ -176,7 +183,7 @@ func New(client *ent.Client, bus *events.Bus, now func() time.Time, record Audit
 // audit records the change action the Staff member staffID made on tx, with diff its fields' old
 // and new values, in the Instance audit log.
 func (m *Module) audit(ctx context.Context, tx *ent.Client, staffID int64, action string, diff map[string]any) error {
-	return m.record(ctx, tx, &ent.InstanceAuditEntry{StaffMemberID: staffID, Action: action, Diff: diff})
+	return m.record(ctx, tx, AuditEntry{StaffMemberID: staffID, Action: action, Diff: diff})
 }
 
 // List is every Sign-up item that is not deleted, in the order of the sign-up form.

@@ -25,6 +25,7 @@ import (
 	signupsurveyresponses "github.com/getsphericon/sphericon/internal/domain/identity/signupsurveyresponses"
 	users "github.com/getsphericon/sphericon/internal/domain/identity/users"
 	workspaces "github.com/getsphericon/sphericon/internal/domain/identity/workspaces"
+	dataexport "github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	automations "github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	automationstep "github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	broadcasts "github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -371,6 +372,12 @@ func (c *InputsImpl) ContactCreate(source *site.SiteCreateContactInput) contacts
 		}
 	}
 	return contactsCreateInput
+}
+func (c *InputsImpl) ContactExport(source site.SiteContactsExportParams) dataexport.OpenInput {
+	var dataexportOpenInput dataexport.OpenInput
+	dataexportOpenInput.ID = entityIDPtrIn(source.ID)
+	dataexportOpenInput.Email = emailPtrIn(source.Email)
+	return dataexportOpenInput
 }
 func (c *InputsImpl) ContactUpdate(source *site.SiteUpdateContactInput) contacts.UpdateInput {
 	var contactsUpdateInput contacts.UpdateInput

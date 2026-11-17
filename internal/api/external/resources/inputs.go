@@ -14,6 +14,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/contacts/segments"
 	"github.com/getsphericon/sphericon/internal/domain/content/emailtemplates"
 	"github.com/getsphericon/sphericon/internal/domain/identity/apitokens"
+	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automations"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/automationstep"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
@@ -63,6 +64,8 @@ import (
 // goverter:extend stringIn
 // goverter:extend emailIn
 // goverter:extend stringPtrIn
+// goverter:extend emailPtrIn
+// goverter:extend entityIDPtrIn
 // goverter:extend nilStringPtrIn
 // goverter:extend nilEmailPtrIn
 // goverter:extend nilTimeZonePtrIn
@@ -125,6 +128,8 @@ type Inputs interface {
 	BroadcastSetSegment(source *externalapi.SetBroadcastSegmentInput) broadcasts.SetSegmentInput
 	// goverter:map AutomationId AutomationID
 	EnrollmentsFilter(source externalapi.EnrollmentsListParams) automations.EnrollmentsFilter
+	// The Contact a Data export names by its id or its email.
+	ContactExport(source externalapi.ContactsExportParams) dataexport.OpenInput
 
 	WebhookCreate(source *externalapi.CreateWebhookInput) webhookendpoints.CreateInput
 	WebhookUpdate(source *externalapi.UpdateWebhookInput) webhookendpoints.UpdateInput
@@ -264,6 +269,8 @@ func listPatch(list []string) patch.Field[[]string]                       { retu
 func stringIn(o externalapi.OptString) string                             { return o.Or("") }
 func emailIn(o externalapi.OptEmailAddress) string                        { return string(o.Or("")) }
 func stringPtrIn(o externalapi.OptString) *string                         { return convert.Ptr(o) }
+func emailPtrIn(o externalapi.OptEmailAddress) *string                    { return convert.StringPtr(o) }
+func entityIDPtrIn(o externalapi.OptEntityId) *int64                      { return convert.Int64Ptr(o) }
 func nilStringPtrIn(o externalapi.OptNilString) *string                   { return convert.Ptr(o) }
 func nilEmailPtrIn(o externalapi.OptNilEmailAddress) *string              { return convert.StringPtr(o) }
 func nilTimeZonePtrIn(o externalapi.OptNilTimeZoneName) *string           { return convert.StringPtr(o) }

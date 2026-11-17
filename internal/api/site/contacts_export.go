@@ -4,7 +4,6 @@ import (
 	"context"
 
 	siteapi "github.com/getsphericon/sphericon/gen/site"
-	"github.com/getsphericon/sphericon/internal/domain/insights/dataexport"
 	"github.com/getsphericon/sphericon/internal/kernel/seqreader"
 )
 
@@ -13,11 +12,7 @@ import (
 func (h *Handlers) SiteContactsExport(ctx context.Context, params siteapi.SiteContactsExportParams) (siteapi.SiteContactsExportRes, error) {
 	scoped := workspaceScope(ctx)
 
-	var contactID *int64
-	if v, ok := params.ID.Get(); ok {
-		contactID = new(int64(v))
-	}
-	d, err := h.exports.Open(ctx, scoped, contactID, dataexport.Ref(params.Email.Get()))
+	d, err := h.exports.Open(ctx, scoped, inputs.ContactExport(params))
 	if err != nil {
 		return nil, err
 	}

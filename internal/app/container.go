@@ -432,7 +432,7 @@ var staffPackage = do.Package(
 	}),
 	// The Sign-up items and their Legal documents (ADR 0062), on every Instance.
 	do.Lazy(func(i do.Injector) (*signupitems.Module, error) {
-		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), do.MustInvoke[*instanceauditentries.Log](i).Record), nil
+		return signupitems.New(do.MustInvoke[*ent.Client](i), do.MustInvoke[*events.Bus](i), do.MustInvoke[Clock](i), do.MustInvoke[*instanceauditentries.Log](i).RecordSignupItem), nil
 	}),
 	// The Users' Consent records on those items (ADR 0062).
 	do.Lazy(func(i do.Injector) (*consentrecords.Module, error) {
