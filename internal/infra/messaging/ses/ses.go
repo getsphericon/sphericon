@@ -16,10 +16,12 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"slices"
 	"time"
 
 	"github.com/aws/smithy-go"
+	"github.com/samber/lo"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
@@ -45,6 +47,13 @@ type Config struct {
 	// Endpoint targets an SES-compatible API (e.g. Yandex Cloud Postbox) instead
 	// of AWS. Empty ⇒ AWS default endpoint for Region. Not a secret.
 	Endpoint string `json:"endpoint,omitempty"`
+	// ConfigurationSet is the SES configuration set every send through the Integration names
+	// (ConfigurationSetName), how a customer routes it to a dedicated IP pool; empty names none,
+	// and the account's default pool sends.
+	ConfigurationSet string `json:"configurationSet,omitempty"`
+	// ConfigurationSetMissing records that SES said, when the Integration was last saved, that it
+	// has no configuration set of that name (ConfigurationSetMissing); sends name it anyway.
+	ConfigurationSetMissing bool `json:"configurationSetMissing,omitempty"`
 }
 
 // requestTimeout bounds one SES API call made through the SSRF-hardened client.
@@ -82,8 +91,21 @@ func validate(raw []byte) error {
 	case cfg.From == "":
 		return errors.New("ses: from is required")
 	}
-	return validEndpoint(cfg.Endpoint)
+	if err := validEndpoint(cfg.Endpoint); err != nil {
+		return err
+	}
+	if cfg.ConfigurationSet != "" && !configurationSetName.MatchString(cfg.ConfigurationSet) {
+		return ErrConfigurationSet
+	}
+	return nil
 }
+
+// configurationSetName is SES's rule for the name of a configuration set: up to 64 letters,
+// digits, hyphens and underscores.
+var configurationSetName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// ErrConfigurationSet is a configuration set name SES would not take.
+var ErrConfigurationSet = errors.New("ses: configurationSet must be up to 64 letters, digits, hyphens or underscores")
 
 // validEndpoint accepts no endpoint (AWS) or an absolute https URL with a host. Which
 // addresses it may reach is decided when the request dials, not here.
@@ -140,6 +162,8 @@ func (s *sender) Send(ctx context.Context, msg messaging.EmailMessage) (messagin
 		FromEmailAddress: aws.String(msg.From),
 		Destination:      &types.Destination{ToAddresses: []string{msg.To}},
 		Content:          &types.EmailContent{Raw: &types.RawMessage{Data: wire.Bytes}},
+		// A nil name sends through the account's default pool.
+		ConfigurationSetName: lo.EmptyableToPtr(s.cfg.ConfigurationSet),
 	})
 	if err != nil {
 		// Only the daily quota needs wording: SES uses the same code for it and
@@ -199,6 +223,25 @@ func (s *sender) SendQuota(ctx context.Context) (messaging.Quota, error) {
 		quota.PerDay = quotaValue(out.SendQuota.Max24HourSend)
 	}
 	return quota, nil
+}
+
+// ConfigurationSetMissing asks SES for the configuration set the Integration names
+// (GetConfigurationSet): only SES's NotFoundException is a missing set (see
+// messaging.ConfigurationSetChecker). An Integration that names none asks nothing.
+func (s *sender) ConfigurationSetMissing(ctx context.Context) (bool, error) {
+	if s.cfg.ConfigurationSet == "" {
+		return false, nil
+	}
+	_, err := s.client().GetConfigurationSet(ctx, &sesv2.GetConfigurationSetInput{
+		ConfigurationSetName: aws.String(s.cfg.ConfigurationSet),
+	})
+	if _, ok := errors.AsType[*types.NotFoundException](err); ok {
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("ses: get configuration set: %w", err)
+	}
+	return false, nil
 }
 
 // enforcement maps SES's EnforcementStatus; HEALTHY, a missing status and one SES may add

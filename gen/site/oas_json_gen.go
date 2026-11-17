@@ -13797,6 +13797,12 @@ func (s IntegrationConfigInputSum) encodeFields(e *jx.Encoder) {
 					s.Endpoint.Encode(e)
 				}
 			}
+			{
+				if s.ConfigurationSet.Set {
+					e.FieldStart("configurationSet")
+					s.ConfigurationSet.Encode(e)
+				}
+			}
 		}
 	case InboxConfigInputIntegrationConfigInputSum:
 		e.FieldStart("kind")
@@ -13998,6 +14004,16 @@ func (s IntegrationConfigSum) encodeFields(e *jx.Encoder) {
 					e.FieldStart("accessKeyIdLast4")
 					s.AccessKeyIdLast4.Encode(e)
 				}
+			}
+			{
+				if s.ConfigurationSet.Set {
+					e.FieldStart("configurationSet")
+					s.ConfigurationSet.Encode(e)
+				}
+			}
+			{
+				e.FieldStart("configurationSetMissing")
+				e.Bool(s.ConfigurationSetMissing)
 			}
 		}
 	case InboxConfigIntegrationConfigSum:
@@ -21866,15 +21882,27 @@ func (s *SesConfig) encodeFields(e *jx.Encoder) {
 			s.AccessKeyIdLast4.Encode(e)
 		}
 	}
+	{
+		if s.ConfigurationSet.Set {
+			e.FieldStart("configurationSet")
+			s.ConfigurationSet.Encode(e)
+		}
+	}
+	{
+		e.FieldStart("configurationSetMissing")
+		e.Bool(s.ConfigurationSetMissing)
+	}
 }
 
-var jsonFieldsNameOfSesConfig = [6]string{
+var jsonFieldsNameOfSesConfig = [8]string{
 	0: "kind",
 	1: "region",
 	2: "from",
 	3: "fromName",
 	4: "endpoint",
 	5: "accessKeyIdLast4",
+	6: "configurationSet",
+	7: "configurationSetMissing",
 }
 
 // Decode decodes SesConfig from json.
@@ -21948,6 +21976,28 @@ func (s *SesConfig) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"accessKeyIdLast4\"")
 			}
+		case "configurationSet":
+			if err := func() error {
+				s.ConfigurationSet.Reset()
+				if err := s.ConfigurationSet.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"configurationSet\"")
+			}
+		case "configurationSetMissing":
+			requiredBitSet[0] |= 1 << 7
+			if err := func() error {
+				v, err := d.Bool()
+				s.ConfigurationSetMissing = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"configurationSetMissing\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -21958,7 +22008,7 @@ func (s *SesConfig) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000111,
+		0b10000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.
@@ -22045,9 +22095,15 @@ func (s *SesConfigInput) encodeFields(e *jx.Encoder) {
 			s.Endpoint.Encode(e)
 		}
 	}
+	{
+		if s.ConfigurationSet.Set {
+			e.FieldStart("configurationSet")
+			s.ConfigurationSet.Encode(e)
+		}
+	}
 }
 
-var jsonFieldsNameOfSesConfigInput = [7]string{
+var jsonFieldsNameOfSesConfigInput = [8]string{
 	0: "kind",
 	1: "region",
 	2: "accessKeyId",
@@ -22055,6 +22111,7 @@ var jsonFieldsNameOfSesConfigInput = [7]string{
 	4: "from",
 	5: "fromName",
 	6: "endpoint",
+	7: "configurationSet",
 }
 
 // Decode decodes SesConfigInput from json.
@@ -22141,6 +22198,16 @@ func (s *SesConfigInput) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"endpoint\"")
+			}
+		case "configurationSet":
+			if err := func() error {
+				s.ConfigurationSet.Reset()
+				if err := s.ConfigurationSet.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"configurationSet\"")
 			}
 		default:
 			return errors.Errorf("unexpected field %q", k)

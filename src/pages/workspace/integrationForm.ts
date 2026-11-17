@@ -29,6 +29,7 @@ export interface IntegrationFormValues extends ProviderLimitValues {
   accessKeyId: string
   secretAccessKey: string
   endpoint: string
+  configurationSet: string
   from: string
   fromName: string
   token: string
@@ -51,6 +52,7 @@ export const INITIAL_VALUES: IntegrationFormValues = {
   accessKeyId: '',
   secretAccessKey: '',
   endpoint: '',
+  configurationSet: '',
   from: '',
   fromName: '',
   token: '',
@@ -82,6 +84,7 @@ export function storedValues(integration: SiteIntegrationResource): IntegrationF
         ...values,
         region: config.region,
         endpoint: config.endpoint ?? '',
+        configurationSet: config.configurationSet ?? '',
         from: config.from,
         fromName: config.fromName ?? '',
       }
@@ -122,6 +125,7 @@ export function buildConfig(values: IntegrationFormValues): IntegrationConfigInp
       accessKeyId: values.accessKeyId.trim(),
       secretAccessKey: values.secretAccessKey,
       endpoint: values.endpoint.trim() || null,
+      configurationSet: values.configurationSet.trim() || null,
       from: values.from.trim(),
       fromName: values.fromName.trim() || null,
     }

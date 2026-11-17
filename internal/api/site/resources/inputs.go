@@ -435,6 +435,7 @@ func integrationConfigIn(in siteapi.IntegrationConfigInput) (integrations.Config
 		return integrations.ConfigInput{SES: &integrations.SESConfig{
 			Region: c.Region, AccessKeyID: c.AccessKeyId, SecretAccessKey: c.SecretAccessKey,
 			From: string(c.From), FromName: c.FromName.Or(""), Endpoint: c.Endpoint.Or(""),
+			ConfigurationSet: c.ConfigurationSet.Or(""),
 		}}, nil
 	case siteapi.InboxConfigInputIntegrationConfigInputSum:
 		return integrations.ConfigInput{Inbox: &integrations.InboxConfig{}}, nil

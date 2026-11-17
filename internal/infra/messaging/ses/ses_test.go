@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -282,6 +283,11 @@ func TestDescriptorValidate(t *testing.T) {
 		"http endpoint":  {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"http://attacker.example"}`, "endpoint must be an https URL"},
 		"no host":        {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"https://"}`, "endpoint must be an https URL"},
 		"bare host":      {`{"region":"r","accessKeyId":"k","from":"a@b.com","endpoint":"attacker.example"}`, "endpoint must be an https URL"},
+		"set":            {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"marketing_2-eu"}`, ""},
+		"longest set":    {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"` + strings.Repeat("s", 64) + `"}`, ""},
+		"set too long":   {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"` + strings.Repeat("s", 65) + `"}`, "configurationSet"},
+		"set with space": {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"my set"}`, "configurationSet"},
+		"set with dot":   {`{"region":"r","accessKeyId":"k","from":"a@b.com","configurationSet":"my.set"}`, "configurationSet"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -445,4 +451,74 @@ func TestSendPutsTheConfiguredReplyToOnTheMessage(t *testing.T) {
 
 	mime := api.rawMessage(t)
 	assert.Contains(t, string(mime), "Reply-To: <help@acme.com>")
+}
+
+// buildWithSet is the sender of an Integration that names the configuration set set; empty names
+// none.
+func buildWithSet(t *testing.T, endpoint, set string) messaging.EmailSender {
+	t.Helper()
+	raw := fmt.Sprintf(`{"region":"eu-west-1","accessKeyId":"AKIATEST","secretAccessKey":"shh","from":"noreply@acme.com","endpoint":%q,"configurationSet":%q}`, endpoint, set)
+	built, err := ses.NewDescriptor(http.DefaultClient).Build([]byte(raw), messaging.Deps{})
+	require.NoError(t, err)
+	return built.(messaging.EmailSender)
+}
+
+// A customer routes an Integration's mail to their dedicated IPs through a configuration set:
+// every send names it, and an Integration without one names none (the account's default pool).
+func TestSendNamesTheConfigurationSet(t *testing.T) {
+	msg := messaging.EmailMessage{To: "rcpt@example.com", Subject: "s", Text: "x"}
+
+	t.Run("an Integration with a set names it", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, okBody)
+		_, err := buildWithSet(t, api.srv.URL, "marketing").Send(t.Context(), msg)
+		require.NoError(t, err)
+		assert.Equal(t, "marketing", api.body["ConfigurationSetName"])
+	})
+
+	t.Run("an Integration without one names none", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, okBody)
+		_, err := buildWithSet(t, api.srv.URL, "").Send(t.Context(), msg)
+		require.NoError(t, err)
+		assert.NotContains(t, api.body, "ConfigurationSetName")
+	})
+}
+
+func setChecker(t *testing.T, endpoint, set string) messaging.ConfigurationSetChecker {
+	t.Helper()
+	checker, ok := messaging.AsConfigurationSetChecker(buildWithSet(t, endpoint, set))
+	require.True(t, ok, "the SES sender can tell whether its configuration set exists")
+	return checker
+}
+
+// Saving an Integration asks SES whether its configuration set exists: only SES's own "not
+// found" is a missing set, and any other failure is no answer.
+func TestConfigurationSetMissing(t *testing.T) {
+	t.Run("a set SES does not have is missing", func(t *testing.T) {
+		api := newSESAPIWithErrorType(t, http.StatusNotFound, "NotFoundException", `{"message":"Configuration set <marketing> does not exist."}`)
+		missing, err := setChecker(t, api.srv.URL, "marketing").ConfigurationSetMissing(t.Context())
+		require.NoError(t, err)
+		assert.True(t, missing)
+		assert.Equal(t, "/v2/email/configuration-sets/marketing", api.path)
+	})
+
+	t.Run("a set SES has is not missing", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, `{"ConfigurationSetName":"marketing"}`)
+		missing, err := setChecker(t, api.srv.URL, "marketing").ConfigurationSetMissing(t.Context())
+		require.NoError(t, err)
+		assert.False(t, missing)
+	})
+
+	t.Run("a denied check is no answer", func(t *testing.T) {
+		api := newSESAPIWithErrorType(t, http.StatusForbidden, "AccessDeniedException", `{"message":"not authorized to perform ses:GetConfigurationSet"}`)
+		_, err := setChecker(t, api.srv.URL, "marketing").ConfigurationSetMissing(t.Context())
+		assert.ErrorContains(t, err, "ses: get configuration set")
+	})
+
+	t.Run("an Integration without a set asks nothing", func(t *testing.T) {
+		api := newSESAPI(t, http.StatusOK, okBody)
+		missing, err := setChecker(t, api.srv.URL, "").ConfigurationSetMissing(t.Context())
+		require.NoError(t, err)
+		assert.False(t, missing)
+		assert.Zero(t, api.hits)
+	})
 }

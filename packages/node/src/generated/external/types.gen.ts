@@ -4654,6 +4654,14 @@ export type SesConfig = {
    * Last 4 chars of the access key id, for recognition
    */
   accessKeyIdLast4?: string | null;
+  /**
+   * The SES configuration set every send names; empty when sends go through the account's default pool
+   */
+  configurationSet?: string | null;
+  /**
+   * True when SES said, at the last save, that it has no configuration set of that name: SES refuses every message that names it, and a refused message is not sent again, until the set exists. False when no set is named or SES did not answer
+   */
+  configurationSetMissing: boolean;
 };
 
 /**
@@ -4670,6 +4678,10 @@ export type SesConfigInput = {
    * Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS
    */
   endpoint?: string | null;
+  /**
+   * The SES configuration set every send through the Integration names, to route it to a dedicated IP pool: up to 64 letters, digits, hyphens and underscores. Omit or null to send through the account's default pool; an update that omits it clears it. Saving asks SES whether the set exists, best effort: an unknown set saves with `configurationSetMissing` and is never refused
+   */
+  configurationSet?: string | null;
 };
 
 /**
