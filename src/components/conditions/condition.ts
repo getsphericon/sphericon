@@ -3,27 +3,27 @@ import type { RuleGroupType, RuleType } from 'react-querybuilder'
 import * as z from 'zod'
 
 import {
-  SiteConditionCombinator,
-  SiteConditionDateOperator,
-  SiteConditionEventOperator,
-  SiteConditionNumberOperator,
-  SiteConditionOperator,
+  ConditionCombinator,
+  ConditionDateOperator,
+  ConditionEventOperator,
+  ConditionNumberOperator,
+  ConditionOperator,
 } from '../../generated/site/types.gen.ts'
 import type {
-  SiteConditionDateLeaf,
-  SiteConditionDateWithinLeaf,
-  SiteConditionEventLeaf,
-  SiteConditionGroup,
-  SiteConditionLeaf,
-  SiteConditionNumberLeaf,
+  ConditionDateLeaf,
+  ConditionDateWithinLeaf,
+  ConditionEventLeaf,
+  ConditionGroup,
+  ConditionLeaf,
+  ConditionNumberLeaf,
 } from '../../generated/site/types.gen.ts'
-import { zSiteConditionEventLeaf, zSiteConditionGroup } from '../../generated/site/zod.gen.ts'
+import { zConditionEventLeaf, zConditionGroup } from '../../generated/site/zod.gen.ts'
 import { dayOf, nextDay, startOfDay } from '../../utils/datetime.ts'
 
 // A Segment is always a rule: the empty group matches every contact.
-export const emptyGroup: SiteConditionGroup = {
+export const emptyGroup: ConditionGroup = {
   kind: 'group',
-  combinator: SiteConditionCombinator.AND,
+  combinator: ConditionCombinator.AND,
   rules: [],
 }
 
@@ -33,14 +33,14 @@ export const emptyGroup: SiteConditionGroup = {
 export const eventFieldPrefix = 'event:'
 export const eventPresets = { performed: 'performed', notPerformed: 'notPerformed' } as const
 
-const presetBounds = new Map<string, Pick<SiteConditionEventLeaf, 'operator' | 'times'>>([
-  [eventPresets.performed, { operator: SiteConditionEventOperator.AT_LEAST, times: 1 }],
-  [eventPresets.notPerformed, { operator: SiteConditionEventOperator.AT_MOST, times: 0 }],
+const presetBounds = new Map<string, Pick<ConditionEventLeaf, 'operator' | 'times'>>([
+  [eventPresets.performed, { operator: ConditionEventOperator.AT_LEAST, times: 1 }],
+  [eventPresets.notPerformed, { operator: ConditionEventOperator.AT_MOST, times: 0 }],
 ])
 
 // The builder rule's value of an event field: the count and the window, each blank until it is
 // typed. A value that does not fit is read as neither.
-const zEventCount = zSiteConditionEventLeaf.pick({ times: true, withinDays: true }).partial()
+const zEventCount = zConditionEventLeaf.pick({ times: true, withinDays: true }).partial()
 type EventCount = z.infer<typeof zEventCount>
 
 export function eventCount(value: unknown): EventCount {
@@ -56,8 +56,8 @@ export function eventCountOf(times?: number, withinDays?: number): EventCount {
   }
 }
 
-const eventOperatorByName = new Map<string, SiteConditionEventOperator>(
-  Object.values(SiteConditionEventOperator).map((operator) => [operator, operator]),
+const eventOperatorByName = new Map<string, ConditionEventOperator>(
+  Object.values(ConditionEventOperator).map((operator) => [operator, operator]),
 )
 
 // isCountOperator tells the builder's atLeast and atMost, which take a count, from the presets.
@@ -65,7 +65,7 @@ export function isCountOperator(operator: string): boolean {
   return eventOperatorByName.has(operator)
 }
 
-function presetOf(leaf: SiteConditionEventLeaf): string | undefined {
+function presetOf(leaf: ConditionEventLeaf): string | undefined {
   const preset = [...presetBounds].find(
     ([, bound]) => bound.operator === leaf.operator && bound.times === leaf.times,
   )
@@ -73,7 +73,7 @@ function presetOf(leaf: SiteConditionEventLeaf): string | undefined {
 }
 
 // A loaded leaf that is a preset's count shows as the preset, whose value is the window alone.
-function toEventRule(leaf: SiteConditionEventLeaf): RuleType {
+function toEventRule(leaf: ConditionEventLeaf): RuleType {
   const preset = presetOf(leaf)
   return {
     field: `${eventFieldPrefix}${leaf.action}`,
@@ -90,7 +90,7 @@ export const dateWithinOperator = 'within'
 // discriminator and types operators and combinators. toQuery loads a Condition into the builder
 // once; the builder keeps its own state from then on, and toDraft reads it back. timeZone is the
 // User time zone the days of before and after are read in (ADR 0068), undefined for the browser's.
-export function toQuery(group: SiteConditionGroup, timeZone?: string): RuleGroupType {
+export function toQuery(group: ConditionGroup, timeZone?: string): RuleGroupType {
   return {
     combinator: group.combinator,
     ...(group.not === undefined ? {} : { not: group.not }),
@@ -120,55 +120,54 @@ export function toQuery(group: SiteConditionGroup, timeZone?: string): RuleGroup
 // API's before is strictly earlier than `at` and its after at or later, so the two split time there.
 const zDay = z.iso.date()
 
-function momentOfSide(operator: SiteConditionDateOperator, value: unknown, timeZone?: string) {
+function momentOfSide(operator: ConditionDateOperator, value: unknown, timeZone?: string) {
   const day = zDay.safeParse(value)
   if (!day.success) {
     return undefined
   }
-  const from = operator === SiteConditionDateOperator.AFTER ? nextDay(day.data) : day.data
+  const from = operator === ConditionDateOperator.AFTER ? nextDay(day.data) : day.data
   return startOfDay(from, timeZone)
 }
 
 // The day a loaded leaf shows: the one `at` starts for before, the one it ends for after.
-function dayOfSide(leaf: SiteConditionDateLeaf, timeZone?: string): string {
+function dayOfSide(leaf: ConditionDateLeaf, timeZone?: string): string {
   const at = Date.parse(leaf.at)
   if (Number.isNaN(at)) {
     return ''
   }
-  const lastOfDay = leaf.operator === SiteConditionDateOperator.AFTER ? at - 1 : at
+  const lastOfDay = leaf.operator === ConditionDateOperator.AFTER ? at - 1 : at
   return dayOf(lastOfDay, timeZone)
 }
 
 // A Condition as the builder holds it: an event count, a number, a day or a window the user has not
 // typed yet stays blank, and is never filled with a default. toCondition tells a complete draft
 // from one still being edited.
-type EventLeafDraft = Omit<SiteConditionEventLeaf, 'times'> &
-  Partial<Pick<SiteConditionEventLeaf, 'times'>>
-type NumberLeafDraft = Omit<SiteConditionNumberLeaf, 'value'> &
-  Partial<Pick<SiteConditionNumberLeaf, 'value'>>
-type DateLeafDraft = Omit<SiteConditionDateLeaf, 'at'> & Partial<Pick<SiteConditionDateLeaf, 'at'>>
-type DateWithinLeafDraft = Omit<SiteConditionDateWithinLeaf, 'withinDays'> &
-  Partial<Pick<SiteConditionDateWithinLeaf, 'withinDays'>>
+type EventLeafDraft = Omit<ConditionEventLeaf, 'times'> & Partial<Pick<ConditionEventLeaf, 'times'>>
+type NumberLeafDraft = Omit<ConditionNumberLeaf, 'value'> &
+  Partial<Pick<ConditionNumberLeaf, 'value'>>
+type DateLeafDraft = Omit<ConditionDateLeaf, 'at'> & Partial<Pick<ConditionDateLeaf, 'at'>>
+type DateWithinLeafDraft = Omit<ConditionDateWithinLeaf, 'withinDays'> &
+  Partial<Pick<ConditionDateWithinLeaf, 'withinDays'>>
 type NodeDraft =
-  | SiteConditionLeaf
+  | ConditionLeaf
   | EventLeafDraft
   | NumberLeafDraft
   | DateLeafDraft
   | DateWithinLeafDraft
   | ConditionDraft
-export type ConditionDraft = Omit<SiteConditionGroup, 'rules'> & { rules: NodeDraft[] }
+export type ConditionDraft = Omit<ConditionGroup, 'rules'> & { rules: NodeDraft[] }
 
-const operatorByName = new Map<string, SiteConditionOperator>(
-  Object.values(SiteConditionOperator).map((operator) => [operator, operator]),
+const operatorByName = new Map<string, ConditionOperator>(
+  Object.values(ConditionOperator).map((operator) => [operator, operator]),
 )
-const numberOperatorByName = new Map<string, SiteConditionNumberOperator>(
-  Object.values(SiteConditionNumberOperator).map((operator) => [operator, operator]),
+const numberOperatorByName = new Map<string, ConditionNumberOperator>(
+  Object.values(ConditionNumberOperator).map((operator) => [operator, operator]),
 )
-const dateOperatorByName = new Map<string, SiteConditionDateOperator>(
-  Object.values(SiteConditionDateOperator).map((operator) => [operator, operator]),
+const dateOperatorByName = new Map<string, ConditionDateOperator>(
+  Object.values(ConditionDateOperator).map((operator) => [operator, operator]),
 )
-const combinatorByName = new Map<string, SiteConditionCombinator>(
-  Object.values(SiteConditionCombinator).map((combinator) => [combinator, combinator]),
+const combinatorByName = new Map<string, ConditionCombinator>(
+  Object.values(ConditionCombinator).map((combinator) => [combinator, combinator]),
 )
 
 // numberOf reads a builder value as a number: a number input gives one, a value kept from a text
@@ -256,7 +255,7 @@ function toLeaf(rule: RuleType, timeZone?: string): NodeDraft[] {
 export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft {
   return {
     kind: 'group',
-    combinator: combinatorByName.get(query.combinator) ?? SiteConditionCombinator.AND,
+    combinator: combinatorByName.get(query.combinator) ?? ConditionCombinator.AND,
     ...(query.not === undefined ? {} : { not: query.not }),
     rules: query.rules.flatMap((node): NodeDraft[] => {
       if (typeof node === 'string') {
@@ -272,7 +271,7 @@ export function toDraft(query: RuleGroupType, timeZone?: string): ConditionDraft
 
 // toCondition is the draft as the API's Condition, or undefined while a count, a number, a day or
 // a window is blank: the generated schema decides.
-export function toCondition(draft: ConditionDraft): SiteConditionGroup | undefined {
-  const parsed = zSiteConditionGroup.safeParse(draft)
+export function toCondition(draft: ConditionDraft): ConditionGroup | undefined {
+  const parsed = zConditionGroup.safeParse(draft)
   return parsed.success ? parsed.data : undefined
 }

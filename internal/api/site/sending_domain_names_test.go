@@ -19,7 +19,7 @@ func TestSiteSendingDomainsCreateNormalizesAndValidatesNames(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
-	create := func(domain string) (*siteapi.SiteSendingDomainResource, error) {
+	create := func(domain string) (*siteapi.SendingDomainResource, error) {
 		return c.SiteSendingDomainsCreate(ctx, &siteapi.CreateSendingDomainInput{Domain: domain},
 			siteapi.SiteSendingDomainsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	}

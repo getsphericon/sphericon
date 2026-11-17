@@ -9,7 +9,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import type {
   Permission,
-  SiteBrandKitResource,
+  BrandKitResource,
   SiteWorkspaceResource,
 } from '../../generated/site/types.gen.ts'
 import { Route as brandKitRoute } from '../../routes/workspaces/$workspaceId/brand-kit.tsx'
@@ -44,7 +44,7 @@ const renderPage = async (permissions: Permission[]) => {
   return renderWithRouter(<BrandKitPage />, routeMount(brandKitRoute, { workspaceId: 'AcmeWs01' }))
 }
 
-const KIT: SiteBrandKitResource = {
+const KIT: BrandKitResource = {
   saved: true,
   accentColor: hex('ff5500'),
   textColor: hex('102030'),
@@ -59,7 +59,7 @@ const KIT: SiteBrandKitResource = {
   revision: 2,
 }
 
-const UNSAVED: SiteBrandKitResource = {
+const UNSAVED: BrandKitResource = {
   ...KIT,
   saved: false,
   accentColor: hex('2563eb'),

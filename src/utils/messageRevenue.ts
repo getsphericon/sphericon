@@ -1,9 +1,9 @@
-import type { SiteMessageRevenue } from '../generated/site/types.gen.ts'
+import type { MessageRevenue } from '../generated/site/types.gen.ts'
 import { formatMoney } from './money.ts'
 
 // The net revenue credited to a Broadcast or an Automation, formatted in the Reporting currency.
 // Null while the currency is unset: there is no figure to show then, not a zero.
-export function formatMessageRevenue(revenue: SiteMessageRevenue, locale: string): string | null {
+export function formatMessageRevenue(revenue: MessageRevenue, locale: string): string | null {
   if (revenue.reportingCurrency === null) {
     return null
   }
@@ -14,7 +14,7 @@ export function formatMessageRevenue(revenue: SiteMessageRevenue, locale: string
 // while the Reporting currency is unset (or the row has no revenue), so a table never shows a zero
 // it did not count.
 export function messageRevenueCells(
-  revenue: SiteMessageRevenue | undefined,
+  revenue: MessageRevenue | undefined,
   locale: string,
 ): {
   orders: number | '-'

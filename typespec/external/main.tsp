@@ -29,6 +29,17 @@ import "../common/telegram-content.tsp";
 import "../common/telegram-start-links.tsp";
 import "../common/templates.tsp";
 import "../common/webhooks.tsp";
+// Before the resources: an enum first checked through a template of another file loses its doc.
+import "../common/automations.tsp";
+import "../common/brand-kit.tsp";
+import "../common/captured-messages.tsp";
+import "../common/custom-fields.tsp";
+import "../common/engagement.tsp";
+import "../common/enrollments.tsp";
+import "../common/rules.tsp";
+import "../common/segments.tsp";
+import "../common/suppressions.tsp";
+import "../common/workspaces.tsp";
 import "./resources/contacts.tsp";
 import "./resources/segments.tsp";
 import "./resources/tags.tsp";

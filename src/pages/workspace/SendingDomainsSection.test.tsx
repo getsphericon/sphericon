@@ -7,7 +7,7 @@ import {
   handleSiteSendingDomainsList,
   handleSiteSendingDomainsVerify,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import type { SendingDomainResource } from '../../generated/site/types.gen.ts'
 import { page, testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -16,7 +16,7 @@ import { SendingDomainsSection } from './SendingDomainsSection.tsx'
 
 const WORKSPACE_ID = 'TestWs01'
 
-function domain(over: Partial<SiteSendingDomainResource> = {}): SiteSendingDomainResource {
+function domain(over: Partial<SendingDomainResource> = {}): SendingDomainResource {
   return {
     id: testId(1),
     domain: 'mail.acme.com',
@@ -31,8 +31,7 @@ function domain(over: Partial<SiteSendingDomainResource> = {}): SiteSendingDomai
   }
 }
 
-const list = (items: SiteSendingDomainResource[]) =>
-  handleSiteSendingDomainsList({ body: page(items) })
+const list = (items: SendingDomainResource[]) => handleSiteSendingDomainsList({ body: page(items) })
 
 test('shows pending and verified domains', async () => {
   worker.use(list([domain(), domain({ id: testId(2), domain: 'ok.acme.com', verified: true })]))

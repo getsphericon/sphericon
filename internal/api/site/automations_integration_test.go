@@ -15,9 +15,9 @@ import (
 )
 
 // siteEmailStepVia is an email step through the Integration id names; an unset one is the default.
-func siteEmailStepVia(id siteapi.OptNilEntityId) siteapi.SiteAutomationStepInput {
-	return siteapi.SiteAutomationStepInput{
-		Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"),
+func siteEmailStepVia(id siteapi.OptNilEntityId) siteapi.AutomationStepInput {
+	return siteapi.AutomationStepInput{
+		Type: siteapi.AutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"),
 		Body: siteapi.NewOptString("<p>Hi</p>"), IntegrationId: id,
 	}
 }
@@ -32,18 +32,18 @@ func TestSiteAutomationStepsNameTheirIntegration(t *testing.T) {
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 	mailgun := siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationAcmeMailgunID))
 
-	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
+	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Onboarding", TriggerEvent: "signup",
-		Steps: []siteapi.SiteAutomationStepInput{siteEmailStepVia(mailgun), siteEmailStepVia(siteapi.OptNilEntityId{})},
+		Steps: []siteapi.AutomationStepInput{siteEmailStepVia(mailgun), siteEmailStepVia(siteapi.OptNilEntityId{})},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
 	params := siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID}
-	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), Name: siteapi.NewOptName("Renamed")}, params)
+	renamed, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))), Name: siteapi.NewOptName("Renamed")}, params)
 	require.NoError(t, err)
 	kept := renamed
-	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))),
-		Steps: []siteapi.SiteAutomationStepInput{siteEmailStepVia(siteapi.OptNilEntityId{})},
+	rewritten, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(params.ID))),
+		Steps: []siteapi.AutomationStepInput{siteEmailStepVia(siteapi.OptNilEntityId{})},
 	}, params)
 	require.NoError(t, err)
 	back := rewritten
@@ -62,12 +62,12 @@ func TestSiteAutomationsRefuseAStepsUnknownIntegration(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
-	steps := []siteapi.SiteAutomationStepInput{siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)))} // another Workspace's
+	steps := []siteapi.AutomationStepInput{siteEmailStepVia(siteapi.NewOptNilEntityId(idStr(fixtures.IntegrationGlobexID)))} // another Workspace's
 	draftBefore := env.DB.AutomationVersion.GetX(ctx, fixtures.AutomationWelcomeSeriesDraftVersionID).Steps
 
-	_, create := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
+	_, create := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: "signup", Steps: steps},
 		siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
-	_, update := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWelcomeSeriesID)))), Steps: steps},
+	_, update := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(idStr(fixtures.AutomationWelcomeSeriesID)))), Steps: steps},
 		siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: idStr(fixtures.AutomationWelcomeSeriesID)})
 
 	testhelper.SiteRefusal(t, create, http.StatusUnprocessableEntity)

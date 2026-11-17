@@ -9,7 +9,7 @@ import {
   handleSiteIntegrationsList,
   handleSiteWorkspacesList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, SiteAutomationStep } from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { emailIntegration, TIMESTAMPS, testId, workspace } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -22,11 +22,11 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   automationId: testId(5),
 })
 
-const FIRST: SiteAutomationStep = { type: 'email', subject: 'Hi', body: '<p>Hi</p>' }
-const SECOND: SiteAutomationStep = { type: 'email', subject: 'Bye', body: '<p>Bye</p>' }
+const FIRST: AutomationStep = { type: 'email', subject: 'Hi', body: '<p>Hi</p>' }
+const SECOND: AutomationStep = { type: 'email', subject: 'Bye', body: '<p>Bye</p>' }
 
 // The automation as stored with these steps in its draft.
-function storedWith(steps: SiteAutomationStep[]): SiteAutomationResource {
+function storedWith(steps: AutomationStep[]): SiteAutomationResource {
   return {
     id: testId(5),
     name: 'Welcome flow',
@@ -55,8 +55,8 @@ function flowNode(index: number) {
 
 // Renders the editor over the stored steps, recording the body of every save, which the server
 // stores and answers with.
-async function editing(steps: SiteAutomationStep[]) {
-  const bodies: { steps?: SiteAutomationStep[] }[] = []
+async function editing(steps: AutomationStep[]) {
+  const bodies: { steps?: AutomationStep[] }[] = []
   let stored = storedWith(steps)
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),

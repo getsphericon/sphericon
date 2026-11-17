@@ -179,7 +179,7 @@ func encodeSiteAuthVerifyEmailRequest(
 }
 
 func encodeSiteAutomationsCreateRequest(
-	req *SiteCreateAutomationInput,
+	req *CreateAutomationInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -193,7 +193,7 @@ func encodeSiteAutomationsCreateRequest(
 }
 
 func encodeSiteAutomationsDryRunHttpStepRequest(
-	req *SiteDryRunHttpStepInput,
+	req *DryRunHttpStepInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -235,7 +235,7 @@ func encodeSiteAutomationsRevertRequest(
 }
 
 func encodeSiteAutomationsUpdateRequest(
-	req *SiteUpdateAutomationInput,
+	req *UpdateAutomationInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -361,7 +361,7 @@ func encodeSiteContactsUpdateRequest(
 }
 
 func encodeSiteCustomFieldsUpdateRequest(
-	req *SiteUpdateCustomFieldInput,
+	req *UpdateCustomFieldInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -585,7 +585,7 @@ func encodeSitePublicInvitationsAcceptRequest(
 }
 
 func encodeSiteRulesCreateRequest(
-	req *SiteCreateRuleInput,
+	req *CreateRuleInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -599,7 +599,7 @@ func encodeSiteRulesCreateRequest(
 }
 
 func encodeSiteRulesDryRunRequest(
-	req *SiteDryRunRuleInput,
+	req *DryRunRuleInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -641,7 +641,7 @@ func encodeSiteRulesRevertRequest(
 }
 
 func encodeSiteRulesUpdateRequest(
-	req *SiteUpdateRuleInput,
+	req *UpdateRuleInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -711,7 +711,7 @@ func encodeSiteSecondFactorStartEnrollmentRequest(
 }
 
 func encodeSiteSegmentsCreateRequest(
-	req *SiteCreateSegmentInput,
+	req *CreateSegmentInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -739,7 +739,7 @@ func encodeSiteSegmentsPreviewRequest(
 }
 
 func encodeSiteSegmentsUpdateRequest(
-	req *SiteUpdateSegmentInput,
+	req *UpdateSegmentInput,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

@@ -69,15 +69,15 @@ func TestSiteTelegramConnectsABot(t *testing.T) {
 
 	row, token := connectedTelegram(t, env, c)
 
-	cfg, ok := row.Config.OneOf.GetSiteTelegramConfig()
+	cfg, ok := row.Config.OneOf.GetTelegramConfig()
 	require.Truef(t, ok, "config is telegram, got %v", row.Config.OneOf.Type)
 	assert.Equal(t, acmeBotUsername, cfg.Username)
 	assert.Equal(t, int64(acmeBotID), cfg.BotId)
-	assert.Equal(t, siteapi.SiteIntegrationChannelTelegram, row.Channel)
-	assert.Equal(t, siteapi.SiteIntegrationProviderTelegram, row.Provider)
+	assert.Equal(t, siteapi.IntegrationChannelTelegram, row.Channel)
+	assert.Equal(t, siteapi.IntegrationProviderTelegram, row.Provider)
 	assert.Equal(t, "telegram", row.Preset.Or(""))
 	assert.Equal(t, siteapi.NewNilInt32(30), row.ProviderLimit.PerSecond.Limit)
-	assert.Equal(t, siteapi.NewNilSiteProviderLimitSource(siteapi.SiteProviderLimitSourceProvider), row.ProviderLimit.PerSecond.Source)
+	assert.Equal(t, siteapi.NewNilProviderLimitSource(siteapi.ProviderLimitSourceProvider), row.ProviderLimit.PerSecond.Source)
 	assert.True(t, row.ProviderLimit.PerDay.Limit.Null, "no 24-hour value")
 
 	calls := env.Telegram.Requests()
@@ -124,7 +124,7 @@ func TestSiteTelegramRefusesWhatTelegramRefuses(t *testing.T) {
 	list, err := c.SiteIntegrationsList(context.Background(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	bots := lo.FilterMap(list, func(row siteapi.SiteIntegrationResource, _ int) (int64, bool) {
-		return int64(row.ID), row.Provider == siteapi.SiteIntegrationProviderTelegram
+		return int64(row.ID), row.Provider == siteapi.IntegrationProviderTelegram
 	})
 	assert.ElementsMatch(t, []int64{fixtures.IntegrationAcmeTelegramID, fixtures.IntegrationAcmeSecondTelegramID}, bots,
 		"a refused connect saved nothing: only the fixture bots are there")

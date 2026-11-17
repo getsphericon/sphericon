@@ -11,7 +11,7 @@ import {
 } from '../../generated/site/msw.gen.ts'
 import { siteAutomationsGet } from '../../generated/site/sdk.gen.ts'
 import type { SiteAutomationResource } from '../../generated/site/types.gen.ts'
-import { zSiteUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
+import { zUpdateAutomationInput } from '../../generated/site/zod.gen.ts'
 import { testId } from '../../test/payloads.ts'
 import { problem } from '../../test/problem.ts'
 import { worker } from '../../test/worker.ts'
@@ -81,7 +81,7 @@ function httpServer() {
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = zSiteUpdateAutomationInput.parse(await request.json())
+      const body = zUpdateAutomationInput.parse(await request.json())
       const step = body.steps?.[0]
       if (step?.type !== 'http') {
         return problem(422, 'Expected an HTTP step')
@@ -121,7 +121,7 @@ test('one in-flight Save excludes other writes and acknowledges only its capture
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(stored)),
     handleSiteAutomationsUpdate(async ({ request }) => {
-      const body = zSiteUpdateAutomationInput.parse(await request.json())
+      const body = zUpdateAutomationInput.parse(await request.json())
       received.resolve(undefined)
       await release.promise
       stored = { ...RESOURCE, name: body.name ?? RESOURCE.name }

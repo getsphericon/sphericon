@@ -44,7 +44,7 @@ func TestOperatorsAgreeOnTheContactSideAndTheEventSide(t *testing.T) {
 
 	rapid.Check(t, func(rt *rapid.T) {
 		field := rapid.SampledFrom([]string{"first_name", "phone"}).Draw(rt, "field")
-		op := rapid.SampledFrom([]string{string(siteapi.SiteConditionOperatorEq), string(siteapi.SiteConditionOperatorNeq), string(siteapi.SiteConditionOperatorContains), string(siteapi.SiteConditionOperatorBeginsWith), string(siteapi.SiteConditionOperatorNull), string(siteapi.SiteConditionOperatorNotNull)}).Draw(rt, "operator")
+		op := rapid.SampledFrom([]string{string(siteapi.ConditionOperatorEq), string(siteapi.ConditionOperatorNeq), string(siteapi.ConditionOperatorContains), string(siteapi.ConditionOperatorBeginsWith), string(siteapi.ConditionOperatorNull), string(siteapi.ConditionOperatorNotNull)}).Draw(rt, "operator")
 		want := rapid.SampledFrom([]string{"Anna", "anna", "ELL", "an", "", "zzz"}).Draw(rt, "operand")
 		c := rapid.SampledFrom(contacts).Draw(rt, "contact")
 		have := property(attribute[field](c))
@@ -74,7 +74,7 @@ func TestTriggerLeafIsFalseForAMissingKeyOrAnotherType(t *testing.T) {
 
 	rapid.Check(t, func(rt *rapid.T) {
 		// Operators that need a string; null is tested separately.
-		op := rapid.SampledFrom([]string{string(siteapi.SiteConditionOperatorEq), string(siteapi.SiteConditionOperatorNeq), string(siteapi.SiteConditionOperatorContains), string(siteapi.SiteConditionOperatorBeginsWith), string(siteapi.SiteConditionOperatorNotNull)}).Draw(rt, "operator")
+		op := rapid.SampledFrom([]string{string(siteapi.ConditionOperatorEq), string(siteapi.ConditionOperatorNeq), string(siteapi.ConditionOperatorContains), string(siteapi.ConditionOperatorBeginsWith), string(siteapi.ConditionOperatorNotNull)}).Draw(rt, "operator")
 		props := rapid.SampledFrom(notStrings).Draw(rt, "props")
 
 		holds := triggerMatches(rt, s, opsGroup(rule("trigger:amount", op, "10")), props, fixtures.ContactAliceID)

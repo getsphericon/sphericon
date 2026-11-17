@@ -19,38 +19,38 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	ctx := context.Background()
 	workspaceID := siteapi.WorkspaceId(fixtures.AcmePublicID)
 
-	created, err := c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
+	created, err := c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name:         "Welcome series",
 		TriggerEvent: systemevent.ContactCreated,
-		Steps: []siteapi.SiteAutomationStepInput{
-			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
-			{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
+		Steps: []siteapi.AutomationStepInput{
+			{Type: siteapi.AutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p></p>")},
+			{Type: siteapi.AutomationStepTypeWait, Seconds: siteapi.NewOptInt32(3600)},
 		},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	require.NoError(t, err)
 	res := created
 	assert.Equal(t, "Welcome series", res.Name)
-	assert.Equal(t, siteapi.SiteAutomationStatusInactive, res.Status)
+	assert.Equal(t, siteapi.AutomationStatusInactive, res.Status)
 	assert.Equal(t, systemevent.ContactCreated, res.Draft.Value.TriggerEvent)
 
 	// Steps round-trip through the typed contract (stored as the executor's JSON
 	// string, decoded back into the typed DTO).
 	require.Len(t, res.Draft.Value.Steps, 2)
-	assert.Equal(t, siteapi.SiteAutomationStepTypeEmail, res.Draft.Value.Steps[0].Type)
+	assert.Equal(t, siteapi.AutomationStepTypeEmail, res.Draft.Value.Steps[0].Type)
 	assert.Equal(t, "Hi", res.Draft.Value.Steps[0].Subject.Or(""))
-	assert.Equal(t, siteapi.SiteAutomationStepTypeWait, res.Draft.Value.Steps[1].Type)
+	assert.Equal(t, siteapi.AutomationStepTypeWait, res.Draft.Value.Steps[1].Type)
 	assert.Equal(t, int32(3600), res.Draft.Value.Steps[1].Seconds.Or(0))
 
 	// Publish / deactivate flip the status.
 	act, err := c.SiteAutomationsPublish(ctx, &siteapi.RevisionInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID)))}, siteapi.SiteAutomationsPublishParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	actRes := act
-	assert.Equal(t, siteapi.SiteAutomationStatusActive, actRes.Status)
+	assert.Equal(t, siteapi.AutomationStatusActive, actRes.Status)
 
 	deact, err := c.SiteAutomationsDeactivate(ctx, siteapi.SiteAutomationsDeactivateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)
 	deactRes := deact
-	assert.Equal(t, siteapi.SiteAutomationStatusInactive, deactRes.Status)
+	assert.Equal(t, siteapi.AutomationStatusInactive, deactRes.Status)
 
 	// Fetch the created automation back by id (selection by key).
 	got, err := c.SiteAutomationsGet(ctx, siteapi.SiteAutomationsGetParams{WorkspaceId: workspaceID, ID: res.ID})
@@ -59,7 +59,7 @@ func TestSiteAutomationsCRUDPublishAndDeactivate(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update renames.
-	upd, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
+	upd, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(res.ID))),
 		Name: siteapi.NewOptName("Onboarding"),
 	}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: workspaceID, ID: res.ID})
 	require.NoError(t, err)

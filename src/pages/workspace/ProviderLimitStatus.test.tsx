@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest'
 
-import type { SiteProviderLimitStatus } from '../../generated/site/types.gen.ts'
+import type { ProviderLimitStatus as ProviderLimitStatusValue } from '../../generated/site/types.gen.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { ProviderLimitStatus } from './ProviderLimitStatus.tsx'
 
-const status = (over: Partial<SiteProviderLimitStatus>): SiteProviderLimitStatus => ({
+const status = (over: Partial<ProviderLimitStatusValue>): ProviderLimitStatusValue => ({
   perSecond: { limit: null, source: null },
   perDay: { limit: null, source: null },
   sentLast24h: 0,

@@ -49,7 +49,7 @@ func TestSiteScheduleAnswersTheRecipientsAtThatMoment(t *testing.T) {
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 	env.SuppressDestination(ctx, fixtures.ContactLiamEmail)
 	preview, err := c.SiteSegmentsPreview(ctx, &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t,
+		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t,
 			`{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"pro"}]}`)),
 		Channel: siteapi.NewOptBroadcastChannel(siteapi.BroadcastChannelEmail),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.AcmePublicID})

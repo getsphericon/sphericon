@@ -25,7 +25,7 @@ import {
   siteSendingDomainsDeleteMutation,
   siteSendingDomainsListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import type { SiteSendingDomainResource } from '../../generated/site/types.gen.ts'
+import type { SendingDomainResource } from '../../generated/site/types.gen.ts'
 import { useDeleteResource } from '../../hooks/useDeleteResource.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { useVerifySendingDomain } from '../../hooks/useVerifySendingDomain.ts'
@@ -56,7 +56,7 @@ function SendingDomainsTable({
   onCloseRecords: () => void
   verifying: boolean
   onVerify: (id: string) => void
-  onDelete: (record: SiteSendingDomainResource) => void
+  onDelete: (record: SendingDomainResource) => void
 }) {
   const { t } = useTranslation()
   const records = useSuspenseQuery(siteSendingDomainsListOptions({ path: { workspaceId } })).data

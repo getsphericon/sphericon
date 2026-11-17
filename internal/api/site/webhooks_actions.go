@@ -21,18 +21,18 @@ func (h *Handlers) SiteWebhooksRegenerateSecret(ctx context.Context, params site
 
 // SiteWebhooksTest sends a sample event to the endpoint and returns what the receiver
 // answered, at once.
-func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhookInput, params siteapi.SiteWebhooksTestParams) (*siteapi.SiteWebhookTestResult, error) {
+func (h *Handlers) SiteWebhooksTest(ctx context.Context, req *siteapi.TestWebhookInput, params siteapi.SiteWebhooksTestParams) (*siteapi.WebhookTestResult, error) {
 	scoped := workspaceScope(ctx)
 	res, err := h.webhooks.TestSend(ctx, scoped, int64(params.ID), req.EventType)
 	if err != nil {
 		return nil, err
 	}
-	out := siteapi.SiteWebhookTestResult{Delivered: res.Delivered}
+	out := siteapi.WebhookTestResult{Delivered: res.Delivered}
 	if res.Status != 0 {
 		out.Status = siteapi.NewOptInt32(narrow.Int32(res.Status))
 	}
 	if res.Kind != "" {
-		out.Kind = siteapi.NewOptSiteWebhookErrorKind(mapper.WebhookErrorKindToResource(res.Kind))
+		out.Kind = siteapi.NewOptWebhookErrorKind(mapper.WebhookErrorKindToResource(res.Kind))
 	}
 	return &out, nil
 }

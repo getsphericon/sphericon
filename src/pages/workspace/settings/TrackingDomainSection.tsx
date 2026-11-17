@@ -26,8 +26,8 @@ import {
   siteTrackingDomainsVerifyMutation,
 } from '../../../generated/site/@tanstack/react-query.gen.ts'
 import type {
-  SiteTrackingDomainResource,
-  SiteTrackingState,
+  TrackingDomainResource,
+  TrackingState as TrackingStateValue,
   SiteWorkspaceResource,
 } from '../../../generated/site/types.gen.ts'
 import { zSetTrackingDomainInput } from '../../../generated/site/zod.gen.ts'
@@ -36,16 +36,16 @@ import { useResourceMutation } from '../../../hooks/useResourceMutation.ts'
 import { trimmed, useSchemaForm } from '../../../resources/schemaForm.ts'
 import { can } from '../../../utils/permissions.ts'
 
-const stateColor: Record<SiteTrackingState, string> = {
+const stateColor: Record<TrackingStateValue, string> = {
   pending: 'gray',
   dns_verified: 'yellow',
   serving: 'teal',
 }
 
 // TrackingState shows where a host's verification stands and, when something holds it back, why.
-function TrackingState({ domain }: { domain: SiteTrackingDomainResource }) {
+function TrackingState({ domain }: { domain: TrackingDomainResource }) {
   const { t } = useTranslation()
-  const labels: Record<SiteTrackingState, string> = {
+  const labels: Record<TrackingStateValue, string> = {
     pending: t(($) => $.settings.trackingDomain.state.pending),
     dns_verified: t(($) => $.settings.trackingDomain.state.dnsVerified),
     serving: t(($) => $.settings.trackingDomain.state.serving),
@@ -60,7 +60,7 @@ function TrackingState({ domain }: { domain: SiteTrackingDomainResource }) {
   )
 }
 
-function HostTakenNote({ domain }: { domain: SiteTrackingDomainResource }) {
+function HostTakenNote({ domain }: { domain: TrackingDomainResource }) {
   const { t } = useTranslation()
   return domain.reason === 'host_taken' ? (
     <Text c="red" size="xs">
@@ -116,7 +116,7 @@ function DnsRecord({ type, host, value }: { type: string; host: string; value: s
 
 // DnsRecords are the two records to publish at the DNS provider of the host and keep (ADR 0173): the
 // CNAME at the edge, and the TXT that shows the host is this Workspace's.
-function DnsRecords({ domain }: { domain: SiteTrackingDomainResource }) {
+function DnsRecords({ domain }: { domain: TrackingDomainResource }) {
   const { t } = useTranslation()
   return (
     <Stack gap={4}>
@@ -204,7 +204,7 @@ function TrackingDomains({ workspaceId, canManage }: { workspaceId: string; canM
   })
   const verifyingId = verifyMutation.isPending ? verifyMutation.variables.path.id : null
   const remove = (id: string) => removeMutation.mutate({ path: { workspaceId, id } })
-  const verifyButton = (domain: SiteTrackingDomainResource) => (
+  const verifyButton = (domain: TrackingDomainResource) => (
     <Button
       size="xs"
       loading={verifyingId === domain.id}
@@ -216,7 +216,7 @@ function TrackingDomains({ workspaceId, canManage }: { workspaceId: string; canM
 
   // A current host that served (and is still verified) is retired, so the links sent on it keep
   // working; one that never served is deleted. A pending replacement takes its place either way.
-  const onRemoveCurrent = (domain: SiteTrackingDomainResource) => {
+  const onRemoveCurrent = (domain: TrackingDomainResource) => {
     const retires = Boolean(domain.servedAt) && domain.state !== 'pending'
     const outcome = retires
       ? t(($) => $.settings.trackingDomain.removeRetires, {
@@ -234,7 +234,7 @@ function TrackingDomains({ workspaceId, canManage }: { workspaceId: string; canM
       onConfirm: () => remove(domain.id),
     })
   }
-  const onForget = (domain: SiteTrackingDomainResource) => {
+  const onForget = (domain: TrackingDomainResource) => {
     confirm({
       title: t(($) => $.settings.trackingDomain.forgetTitle),
       description: t(($) => $.settings.trackingDomain.forgetDescription, { host: domain.host }),

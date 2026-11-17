@@ -1,3 +1,7 @@
+// The Contact export document and its downloads: /site and /api answer with the same.
+
+using TypeSpec.Http;
+
 namespace Sphericon;
 
 /** How the contact first came to exist */
@@ -312,4 +316,18 @@ model ContactExportDocument {
 
   /** The contact's recipient rows in broadcasts */
   broadcastRecipients: ContactExportBroadcastRecipient[];
+}
+
+/** Attachment download of everything held about one contact (subject access, GDPR Art. 15/20): the ContactExportDocument JSON, streamed */
+model ContactExportDownload {
+  @header contentType: "application/octet-stream";
+  @header("Content-Disposition") contentDisposition: string;
+  @body body: bytes;
+}
+
+/** The same download described by its document type, for typed clients */
+model ContactExportTypedDownload {
+  @header contentType: "application/json";
+  @header("Content-Disposition") contentDisposition: string;
+  @body body: ContactExportDocument;
 }

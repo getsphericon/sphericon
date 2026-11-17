@@ -19,7 +19,7 @@ import (
 // reread reads an Integration's Provider limit back once the quota reads the saves queued have
 // run: discovery runs as a job after the save, so the save's own response does not carry its
 // result.
-func reread(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client, id siteapi.EntityId) siteapi.SiteProviderLimitStatus {
+func reread(t *testing.T, env *testhelper.TestEnv, c *siteapi.Client, id siteapi.EntityId) siteapi.ProviderLimitStatus {
 	t.Helper()
 	env.PerformEnqueuedJobs(t, integrations.RefreshQuotaArgs{})
 	got, err := c.SiteIntegrationsGet(context.Background(), siteapi.SiteIntegrationsGetParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
@@ -46,9 +46,9 @@ func TestSiteIntegrationsSaveDiscoversTheSESQuota(t *testing.T) {
 	status := reread(t, env, c, created.ID)
 
 	assert.Equal(t, int32(14), status.PerSecond.Limit.Or(0))
-	assert.Equal(t, siteapi.SiteProviderLimitSourceProvider, status.PerSecond.Source.Or(""))
+	assert.Equal(t, siteapi.ProviderLimitSourceProvider, status.PerSecond.Source.Or(""))
 	assert.Equal(t, int32(1000), status.PerDay.Limit.Or(0), "a manual value below the provider's wins")
-	assert.Equal(t, siteapi.SiteProviderLimitSourceManual, status.PerDay.Source.Or(""))
+	assert.Equal(t, siteapi.ProviderLimitSourceManual, status.PerDay.Source.Or(""))
 	assert.Empty(t, status.Warnings)
 }
 
@@ -68,8 +68,8 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	require.NoError(t, err)
 	res := created
 	status := reread(t, env, c, res.ID)
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
-		siteapi.SiteProviderLimitWarningUnlimited, siteapi.SiteProviderLimitWarningProviderQuotaUnavailable,
+	assert.Equal(t, []siteapi.ProviderLimitWarning{
+		siteapi.ProviderLimitWarningUnlimited, siteapi.ProviderLimitWarningProviderQuotaUnavailable,
 	}, status.Warnings)
 	assert.True(t, status.PerSecond.Limit.Null)
 
@@ -81,7 +81,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	require.NoError(t, err)
 	status = reread(t, env, c, res.ID)
 	assert.Equal(t, int32(5), status.PerSecond.Limit.Or(0))
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable},
+	assert.Equal(t, []siteapi.ProviderLimitWarning{siteapi.ProviderLimitWarningProviderQuotaUnavailable},
 		status.Warnings, "one ceiling is enough to stop the unlimited warning; the quota warning stays")
 
 	// The permission is granted and the Integration is saved again: the warning clears.
@@ -96,7 +96,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	assert.Empty(t, status.Warnings)
 	assert.Equal(t, int32(5), status.PerSecond.Limit.Or(0), "manual 5 is below the provider's 14")
 	assert.Equal(t, int32(50000), status.PerDay.Limit.Or(0))
-	assert.Equal(t, siteapi.SiteProviderLimitSourceProvider, status.PerDay.Source.Or(""))
+	assert.Equal(t, siteapi.ProviderLimitSourceProvider, status.PerDay.Source.Or(""))
 
 	// A later failed lookup keeps the last known provider values and only warns.
 	env.SES.SetQuotaErr(errors.New("timeout"))
@@ -105,7 +105,7 @@ func TestSiteIntegrationsFailedQuotaLookupWarnsAndLaterSuccessClearsIt(t *testin
 	require.NoError(t, err)
 	status = reread(t, env, c, res.ID)
 	assert.Equal(t, int32(50000), status.PerDay.Limit.Or(0), "a blip must not lift a ceiling that was known")
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable}, status.Warnings)
+	assert.Equal(t, []siteapi.ProviderLimitWarning{siteapi.ProviderLimitWarningProviderQuotaUnavailable}, status.Warnings)
 }
 
 // The read also brings the account's standing (ADR 0067): a stopped account, probation and
@@ -123,8 +123,8 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 
 	id := created.ID
 	status := reread(t, env, c, id)
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{
-		siteapi.SiteProviderLimitWarningProviderStopped, siteapi.SiteProviderLimitWarningProviderSandbox,
+	assert.Equal(t, []siteapi.ProviderLimitWarning{
+		siteapi.ProviderLimitWarningProviderStopped, siteapi.ProviderLimitWarningProviderSandbox,
 	}, status.Warnings)
 
 	// New credentials may name another account: what the old ones read goes with them, so a
@@ -134,7 +134,7 @@ func TestSiteIntegrationsReportTheProviderAccountStanding(t *testing.T) {
 		Config: siteapi.NewOptIntegrationConfigInput(sesInput("eu-west-1", "AKIA5678", "other")),
 	}, siteapi.SiteIntegrationsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: id})
 	require.NoError(t, err)
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningProviderQuotaUnavailable},
+	assert.Equal(t, []siteapi.ProviderLimitWarning{siteapi.ProviderLimitWarningProviderQuotaUnavailable},
 		reread(t, env, c, id).Warnings)
 }
 
@@ -148,6 +148,6 @@ func TestSiteIntegrationsSMTPSaveDoesNotLookUpAQuota(t *testing.T) {
 		Name: "SMTP", Config: smtpInput("smtp.example.com", "pw"),
 	}, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
-	assert.Equal(t, []siteapi.SiteProviderLimitWarning{siteapi.SiteProviderLimitWarningUnlimited},
+	assert.Equal(t, []siteapi.ProviderLimitWarning{siteapi.ProviderLimitWarningUnlimited},
 		created.ProviderLimit.Warnings)
 }

@@ -1,14 +1,14 @@
 import { Stack, Table, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 
-import type { SiteLinkClicks } from '../generated/site/types.gen.ts'
+import type { LinkClicks } from '../generated/site/types.gen.ts'
 import { useFormat } from '../hooks/useFormat.ts'
 
 /**
  * The clicked links of a Broadcast or an Automation, with how often each was. Renders nothing
  * while no click is recorded: the figures above stay the report.
  */
-export function LinkClickTable({ links }: { links: SiteLinkClicks[] }) {
+export function LinkClickTable({ links }: { links: LinkClicks[] }) {
   const { t } = useTranslation()
   const { formatNumber } = useFormat()
 

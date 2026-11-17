@@ -3,7 +3,7 @@ import type { PaletteItem, UISchema, WBIcon } from '@workflowbuilder/sdk'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SiteAutomationStepType, SystemEventAction } from '../../generated/site/types.gen.ts'
+import { AutomationStepType, SystemEventAction } from '../../generated/site/types.gen.ts'
 import {
   CONTACT_CHANGE_ACTIONS,
   EMAIL_ENGAGEMENT_ACTIONS,
@@ -19,7 +19,7 @@ import { SMS_TEXT_FORMAT } from './smsFormat.ts'
 import { TELEGRAM_TEXT_FORMAT } from './telegramFormat.ts'
 import { EXIT_EVENTS_FORMAT, GOAL_EVENT_FORMAT, TRIGGER_EVENT_FORMAT } from './triggerFormat.ts'
 
-// The palette `type` of a Step's node is its SiteAutomationStepType, stored on `node.data.type`
+// The palette `type` of a Step's node is its AutomationStepType, stored on `node.data.type`
 // and read by the graph ↔ definition converters to tell the steps apart.
 // The Trigger is not a Step: it is the canvas's start node and is saved as the automation's
 // trigger event, never in the steps.
@@ -98,7 +98,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: SiteAutomationStepType.EMAIL,
+        type: AutomationStepType.EMAIL,
         icon: EMAIL_NODE_ICON,
         label: t(($) => $.automations.stepEmail),
         description: t(($) => $.automations.emailNodeDescription),
@@ -155,7 +155,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: SiteAutomationStepType.TELEGRAM,
+        type: AutomationStepType.TELEGRAM,
         icon: TELEGRAM_NODE_ICON,
         label: t(($) => $.automations.stepTelegram),
         description: t(($) => $.automations.telegramNodeDescription),
@@ -209,7 +209,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: SiteAutomationStepType.SMS,
+        type: AutomationStepType.SMS,
         icon: SMS_NODE_ICON,
         label: t(($) => $.automations.stepSms),
         description: t(($) => $.automations.smsNodeDescription),
@@ -258,7 +258,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: SiteAutomationStepType.WAIT,
+        type: AutomationStepType.WAIT,
         icon: WAIT_NODE_ICON,
         label: t(($) => $.automations.stepWait),
         description: t(($) => $.automations.waitNodeDescription),
@@ -289,7 +289,7 @@ export function useAutomationNodeTypes(): PaletteItem[] {
         } satisfies UISchema,
       },
       {
-        type: SiteAutomationStepType.HTTP,
+        type: AutomationStepType.HTTP,
         icon: HTTP_NODE_ICON,
         label: t(($) => $.automations.stepHttp),
         description: t(($) => $.automations.httpNodeDescription),
@@ -351,12 +351,12 @@ export function useAutomationNodeTypes(): PaletteItem[] {
       },
       ...[
         {
-          type: SiteAutomationStepType.APPLY_TAG,
+          type: AutomationStepType.APPLY_TAG,
           label: t(($) => $.automations.stepApplyTag),
           description: t(($) => $.automations.applyTagNodeDescription),
         },
         {
-          type: SiteAutomationStepType.REMOVE_TAG,
+          type: AutomationStepType.REMOVE_TAG,
           label: t(($) => $.automations.stepRemoveTag),
           description: t(($) => $.automations.removeTagNodeDescription),
         },

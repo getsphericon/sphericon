@@ -39,7 +39,7 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	assert.Equal(t, "Active subscribers", seededRes.Name)
 
 	// Create scopes the segment to the workspace and returns the resource.
-	res, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{
+	res, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{
 		Name:      "VIP customers",
 		Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"custom:plan","operator":"eq","value":"vip"}]}`),
 	}, siteapi.SiteSegmentsCreateParams{WorkspaceId: fixtures.AcmePublicID})
@@ -52,7 +52,7 @@ func TestSiteSegmentsScopedToWorkspace(t *testing.T) {
 	assert.Equal(t, res.ID, gotRes.ID)
 
 	// Update changes mutable fields.
-	updRes, err := c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{
+	updRes, err := c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{
 		Revision: res.Revision,
 		Name:     siteapi.NewOptName("VIP renamed"),
 	}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: fixtures.AcmePublicID, ID: res.ID})

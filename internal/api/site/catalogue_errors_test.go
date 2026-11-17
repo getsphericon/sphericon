@@ -25,14 +25,14 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	missing := idStr(99999)
 
 	t.Run("create", func(t *testing.T) {
-		in := &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated}
+		in := &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated}
 		_, err := c.SiteAutomationsCreate(ctx, in, siteapi.SiteAutomationsCreateParams{WorkspaceId: foreign})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 
 		before, err := env.DB.Automation.Query().Count(ctx)
 		require.NoError(t, err)
-		bad := &siteapi.SiteCreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated, Steps: []siteapi.SiteAutomationStepInput{
-			{Type: siteapi.SiteAutomationStepTypeApplyTag},
+		bad := &siteapi.CreateAutomationInput{Name: "x", TriggerEvent: systemevent.ContactCreated, Steps: []siteapi.AutomationStepInput{
+			{Type: siteapi.AutomationStepTypeApplyTag},
 		}}
 		_, err = c.SiteAutomationsCreate(ctx, bad, siteapi.SiteAutomationsCreateParams{WorkspaceId: acme})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity, "a tag step without a tag is invalid")
@@ -57,21 +57,21 @@ func TestSiteAutomationsErrorBranches(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
-		rename := &siteapi.SiteUpdateAutomationInput{Revision: 1, Name: siteapi.NewOptName("Renamed")}
+		rename := &siteapi.UpdateAutomationInput{Revision: 1, Name: siteapi.NewOptName("Renamed")}
 		_, err := c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: foreign, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
 		_, err = c.SiteAutomationsUpdate(ctx, rename, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: missing})
 		testhelper.SiteRefusal(t, err, http.StatusNotFound)
-		_, err = c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))), Steps: []siteapi.SiteAutomationStepInput{
-			{Type: siteapi.SiteAutomationStepTypeRemoveTag},
+		_, err = c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))), Steps: []siteapi.AutomationStepInput{
+			{Type: siteapi.AutomationStepTypeRemoveTag},
 		}}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: known})
 		testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 		// Valid step edit round-trips.
-		r5, err := c.SiteAutomationsUpdate(ctx, &siteapi.SiteUpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))),
+		r5, err := c.SiteAutomationsUpdate(ctx, &siteapi.UpdateAutomationInput{Revision: siteapi.Revision(env.AutomationRevision(ctx, t, int64(known))),
 			Name: siteapi.NewOptName("Renamed"),
-			Steps: []siteapi.SiteAutomationStepInput{
-				{Type: siteapi.SiteAutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
+			Steps: []siteapi.AutomationStepInput{
+				{Type: siteapi.AutomationStepTypeWait, Seconds: siteapi.NewOptInt32(60)},
 			},
 		}, siteapi.SiteAutomationsUpdateParams{WorkspaceId: acme, ID: known})
 		require.NoError(t, err)
@@ -111,9 +111,9 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	known := idStr(fixtures.SegmentProPlanID)
 	missing := idStr(99999)
 
-	_, err := c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: foreign})
+	_, err := c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "x", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: foreign})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteSegmentsCreate(ctx, &siteapi.SiteCreateSegmentInput{Name: "x", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: acme})
+	_, err = c.SiteSegmentsCreate(ctx, &siteapi.CreateSegmentInput{Name: "x", Condition: testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`)}, siteapi.SiteSegmentsCreateParams{WorkspaceId: acme})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
 	_, err = c.SiteSegmentsGet(ctx, siteapi.SiteSegmentsGetParams{WorkspaceId: foreign, ID: known})
@@ -125,12 +125,12 @@ func TestSiteSegmentsErrorBranches(t *testing.T) {
 	got := g4
 	assert.Equal(t, fixtures.SegmentProPlanName, got.Name)
 
-	rename := &siteapi.SiteUpdateSegmentInput{Revision: g4.Revision, Name: siteapi.NewOptName("Renamed")}
+	rename := &siteapi.UpdateSegmentInput{Revision: g4.Revision, Name: siteapi.NewOptName("Renamed")}
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: foreign, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: missing})
 	testhelper.SiteRefusal(t, err, http.StatusNotFound)
-	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.SiteUpdateSegmentInput{Revision: g4.Revision, Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
+	_, err = c.SiteSegmentsUpdate(ctx, &siteapi.UpdateSegmentInput{Revision: g4.Revision, Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[{"kind":"rule","field":"nope","operator":"eq","value":"x"}]}`))}, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 	_, err = c.SiteSegmentsUpdate(ctx, rename, siteapi.SiteSegmentsUpdateParams{WorkspaceId: acme, ID: known})
 	require.NoError(t, err)

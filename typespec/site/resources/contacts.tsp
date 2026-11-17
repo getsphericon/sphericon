@@ -88,20 +88,6 @@ model SiteUpdateContactInput {
   tags?: string[];
 }
 
-/** Attachment download of everything held about one contact (subject access, GDPR Art. 15/20): the ContactExportDocument JSON, streamed */
-model SiteContactExportDownload {
-  @header contentType: "application/octet-stream";
-  @header("Content-Disposition") contentDisposition: string;
-  @body body: bytes;
-}
-
-/** The same download described by its document type, for typed clients */
-model SiteContactExportTypedDownload {
-  @header contentType: "application/json";
-  @header("Content-Disposition") contentDisposition: string;
-  @body body: ContactExportDocument;
-}
-
 /** What a Workspace holds for one email address, as counts only (a Privacy request lookup). Nothing held is all zeros and `contactHeld: false`. */
 model SiteContactHoldings {
   /** Whether a Contact holds the address */
@@ -161,7 +147,7 @@ interface SiteContacts
 
     /** The contact's email address */
     @query email?: EmailAddress,
-  ): SiteContactExportDownload | SiteContactExportTypedDownload | Problem;
+  ): ContactExportDownload | ContactExportTypedDownload | Problem;
 
   /**
    * Look up what the Workspace holds for one email address (a Privacy request):

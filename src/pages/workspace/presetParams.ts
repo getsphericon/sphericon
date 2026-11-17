@@ -2,7 +2,7 @@ import type { ErrorSchema, RJSFSchema, UiSchema } from '@rjsf/utils'
 import { omitBy } from 'es-toolkit'
 import * as z from 'zod'
 
-import type { SitePresetResource } from '../../generated/site/types.gen.ts'
+import type { PresetResource } from '../../generated/site/types.gen.ts'
 import { getFieldErrors } from '../../utils/apiErrors.ts'
 
 // The Preset params as the form holds them: each param by name.
@@ -12,7 +12,7 @@ const propertiesSchema = z.record(z.string(), z.record(z.string(), z.unknown()))
 
 // The names of a Preset's params, each with whether it is a secret (`writeOnly`, ADR 0037): a
 // secret is stored encrypted and never shown again.
-function paramsOf(preset: SitePresetResource): { name: string; secret: boolean }[] {
+function paramsOf(preset: PresetResource): { name: string; secret: boolean }[] {
   const parsed = propertiesSchema.safeParse(preset.paramsSchema.properties)
   if (!parsed.success) {
     return []
@@ -24,7 +24,7 @@ function paramsOf(preset: SitePresetResource): { name: string; secret: boolean }
 }
 
 // The names of a Preset's secrets.
-function secretsOf(preset: SitePresetResource): Set<string> {
+function secretsOf(preset: PresetResource): Set<string> {
   return new Set(
     paramsOf(preset)
       .filter((p) => p.secret)
@@ -33,7 +33,7 @@ function secretsOf(preset: SitePresetResource): Set<string> {
 }
 
 // The secrets that have a stored value: the server names one by its mask, never its value.
-export function savedSecrets(preset: SitePresetResource, params: PresetParams): Set<string> {
+export function savedSecrets(preset: PresetResource, params: PresetParams): Set<string> {
   return new Set(
     paramsOf(preset)
       .filter(
@@ -53,14 +53,14 @@ export function unmasked(params: PresetParams): PresetParams {
 }
 
 // The form's starting values: the stored params without the secrets, which are never filled in.
-export function formValues(preset: SitePresetResource, params: PresetParams): PresetParams {
+export function formValues(preset: PresetResource, params: PresetParams): PresetParams {
   const secrets = secretsOf(preset)
   return omitBy(params, (_value, name) => secrets.has(name))
 }
 
 // The schema the form validates by: the Preset's own, except that a secret with a stored value is
 // not required, since a blank one keeps it.
-export function formSchema(preset: SitePresetResource, saved: Set<string>): RJSFSchema {
+export function formSchema(preset: PresetResource, saved: Set<string>): RJSFSchema {
   const required = z.array(z.string()).safeParse(preset.paramsSchema.required)
   return {
     ...preset.paramsSchema,
@@ -71,7 +71,7 @@ export function formSchema(preset: SitePresetResource, saved: Set<string>): RJSF
 // The form's look: a secret is a password field, never pre-filled; with a stored value it says a
 // blank keeps it and a new one starts a rotation.
 export function formUi(
-  preset: SitePresetResource,
+  preset: PresetResource,
   saved: Set<string>,
   texts: { keep: string; rotates: string },
 ): UiSchema {
@@ -88,7 +88,7 @@ export function formUi(
 }
 
 // The params to save: a blank secret is left out, so the stored one is kept.
-export function paramsToSave(preset: SitePresetResource, values: PresetParams): PresetParams {
+export function paramsToSave(preset: PresetResource, values: PresetParams): PresetParams {
   const secrets = secretsOf(preset)
   return omitBy(values, (value, name) => secrets.has(name) && (value === undefined || value === ''))
 }

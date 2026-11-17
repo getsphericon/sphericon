@@ -342,161 +342,161 @@ func (c *ConverterImpl) AuditTargetToResource(source auditlog.View) site.AuditTa
 	siteapiAuditTarget.Name = optNilString(source.TargetName)
 	return siteapiAuditTarget
 }
-func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.HeaderName) site.SiteAutomationHttpHeader {
-	var siteapiSiteAutomationHttpHeader site.SiteAutomationHttpHeader
-	siteapiSiteAutomationHttpHeader.Name = source.Name
-	// siteapiSiteAutomationHttpHeader.Value: ignore
-	return siteapiSiteAutomationHttpHeader
+func (c *ConverterImpl) AutomationHttpHeaderToResource(source automations.HeaderName) site.AutomationHttpHeader {
+	var siteapiAutomationHttpHeader site.AutomationHttpHeader
+	siteapiAutomationHttpHeader.Name = source.Name
+	// siteapiAutomationHttpHeader.Value: ignore
+	return siteapiAutomationHttpHeader
 }
-func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.SiteAutomationPeriodResults {
-	var siteapiSiteAutomationPeriodResults site.SiteAutomationPeriodResults
-	siteapiSiteAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
-	siteapiSiteAutomationPeriodResults.Completed = count(source.ResultCounts.Completed)
-	siteapiSiteAutomationPeriodResults.GoalReached = count(source.ResultCounts.GoalReached)
-	siteapiSiteAutomationPeriodResults.Exited = count(source.ResultCounts.Exited)
-	siteapiSiteAutomationPeriodResults.Failed = count(source.ResultCounts.Failed)
-	siteapiSiteAutomationPeriodResults.From = source.From
-	siteapiSiteAutomationPeriodResults.To = source.To
-	siteapiSiteAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
-	siteapiSiteAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
-	return siteapiSiteAutomationPeriodResults
+func (c *ConverterImpl) AutomationPeriodResultsToResource(source automations.PeriodResults) site.AutomationPeriodResults {
+	var siteapiAutomationPeriodResults site.AutomationPeriodResults
+	siteapiAutomationPeriodResults.Entered = count(source.ResultCounts.Entered)
+	siteapiAutomationPeriodResults.Completed = count(source.ResultCounts.Completed)
+	siteapiAutomationPeriodResults.GoalReached = count(source.ResultCounts.GoalReached)
+	siteapiAutomationPeriodResults.Exited = count(source.ResultCounts.Exited)
+	siteapiAutomationPeriodResults.Failed = count(source.ResultCounts.Failed)
+	siteapiAutomationPeriodResults.From = source.From
+	siteapiAutomationPeriodResults.To = source.To
+	siteapiAutomationPeriodResults.AverageDurationSeconds = durationSeconds(source.AverageDuration)
+	siteapiAutomationPeriodResults.Revenue = c.MessageRevenueToResource(source.Revenue)
+	return siteapiAutomationPeriodResults
 }
-func (c *ConverterImpl) AutomationReportPeriodToResource(source automations.ReportPeriod) site.SiteAutomationReportPeriod {
-	var siteapiSiteAutomationReportPeriod site.SiteAutomationReportPeriod
+func (c *ConverterImpl) AutomationReportPeriodToResource(source automations.ReportPeriod) site.AutomationReportPeriod {
+	var siteapiAutomationReportPeriod site.AutomationReportPeriod
 	switch source {
 	case automations.ReportPeriod14Days:
-		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod14d
+		siteapiAutomationReportPeriod = site.AutomationReportPeriod14d
 	case automations.ReportPeriod30Days:
-		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod30d
+		siteapiAutomationReportPeriod = site.AutomationReportPeriod30d
 	case automations.ReportPeriod7Days:
-		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod7d
+		siteapiAutomationReportPeriod = site.AutomationReportPeriod7d
 	case automations.ReportPeriod90Days:
-		siteapiSiteAutomationReportPeriod = site.SiteAutomationReportPeriod90d
+		siteapiAutomationReportPeriod = site.AutomationReportPeriod90d
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteAutomationReportPeriod
+	return siteapiAutomationReportPeriod
 }
-func (c *ConverterImpl) AutomationReportToResource(source automations.Report) site.SiteAutomationReport {
-	var siteapiSiteAutomationReport site.SiteAutomationReport
-	siteapiSiteAutomationReport.Opens = count(source.Opens)
-	siteapiSiteAutomationReport.Clicks = count(source.Clicks)
-	siteapiSiteAutomationReport.Delivered = count(source.Delivered)
-	siteapiSiteAutomationReport.Bounced = count(source.Bounced)
-	siteapiSiteAutomationReport.Complained = count(source.Complained)
-	siteapiSiteAutomationReport.Captured = count(source.Captured)
-	siteapiSiteAutomationReport.Revenue = c.MessageRevenueToResource(source.Revenue)
-	siteapiSiteAutomationReport.Links = c.LinkClicksToResource(source.Links)
-	siteapiSiteAutomationReport.Results = c.AutomationResultsToResource(source.Results)
+func (c *ConverterImpl) AutomationReportToResource(source automations.Report) site.AutomationReport {
+	var siteapiAutomationReport site.AutomationReport
+	siteapiAutomationReport.Opens = count(source.Opens)
+	siteapiAutomationReport.Clicks = count(source.Clicks)
+	siteapiAutomationReport.Delivered = count(source.Delivered)
+	siteapiAutomationReport.Bounced = count(source.Bounced)
+	siteapiAutomationReport.Complained = count(source.Complained)
+	siteapiAutomationReport.Captured = count(source.Captured)
+	siteapiAutomationReport.Revenue = c.MessageRevenueToResource(source.Revenue)
+	siteapiAutomationReport.Links = c.LinkClicksToResource(source.Links)
+	siteapiAutomationReport.Results = c.AutomationResultsToResource(source.Results)
 	if source.Steps != nil {
-		siteapiSiteAutomationReport.Steps = make([]site.SiteAutomationStepFigures, len(source.Steps))
+		siteapiAutomationReport.Steps = make([]site.AutomationStepFigures, len(source.Steps))
 		for i := 0; i < len(source.Steps); i++ {
-			siteapiSiteAutomationReport.Steps[i] = c.automationsStepFiguresToSiteapiSiteAutomationStepFigures(source.Steps[i])
+			siteapiAutomationReport.Steps[i] = c.automationsStepFiguresToSiteapiAutomationStepFigures(source.Steps[i])
 		}
 	}
-	return siteapiSiteAutomationReport
+	return siteapiAutomationReport
 }
-func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.SiteAutomationResultsPoint {
-	var siteapiSiteAutomationResultsPoint site.SiteAutomationResultsPoint
-	siteapiSiteAutomationResultsPoint.Entered = count(source.ResultCounts.Entered)
-	siteapiSiteAutomationResultsPoint.Completed = count(source.ResultCounts.Completed)
-	siteapiSiteAutomationResultsPoint.GoalReached = count(source.ResultCounts.GoalReached)
-	siteapiSiteAutomationResultsPoint.Exited = count(source.ResultCounts.Exited)
-	siteapiSiteAutomationResultsPoint.Failed = count(source.ResultCounts.Failed)
-	siteapiSiteAutomationResultsPoint.Date = source.Date
-	return siteapiSiteAutomationResultsPoint
+func (c *ConverterImpl) AutomationResultsPointToResource(source automations.ResultsPoint) site.AutomationResultsPoint {
+	var siteapiAutomationResultsPoint site.AutomationResultsPoint
+	siteapiAutomationResultsPoint.Entered = count(source.ResultCounts.Entered)
+	siteapiAutomationResultsPoint.Completed = count(source.ResultCounts.Completed)
+	siteapiAutomationResultsPoint.GoalReached = count(source.ResultCounts.GoalReached)
+	siteapiAutomationResultsPoint.Exited = count(source.ResultCounts.Exited)
+	siteapiAutomationResultsPoint.Failed = count(source.ResultCounts.Failed)
+	siteapiAutomationResultsPoint.Date = source.Date
+	return siteapiAutomationResultsPoint
 }
-func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) site.SiteAutomationResults {
-	var siteapiSiteAutomationResults site.SiteAutomationResults
-	siteapiSiteAutomationResults.Period = c.AutomationReportPeriodToResource(source.Period)
-	siteapiSiteAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
-	siteapiSiteAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
+func (c *ConverterImpl) AutomationResultsToResource(source automations.Results) site.AutomationResults {
+	var siteapiAutomationResults site.AutomationResults
+	siteapiAutomationResults.Period = c.AutomationReportPeriodToResource(source.Period)
+	siteapiAutomationResults.Current = c.AutomationPeriodResultsToResource(source.Current)
+	siteapiAutomationResults.Previous = c.AutomationPeriodResultsToResource(source.Previous)
 	if source.Series != nil {
-		siteapiSiteAutomationResults.Series = make([]site.SiteAutomationResultsPoint, len(source.Series))
+		siteapiAutomationResults.Series = make([]site.AutomationResultsPoint, len(source.Series))
 		for i := 0; i < len(source.Series); i++ {
-			siteapiSiteAutomationResults.Series[i] = c.AutomationResultsPointToResource(source.Series[i])
+			siteapiAutomationResults.Series[i] = c.AutomationResultsPointToResource(source.Series[i])
 		}
 	}
-	return siteapiSiteAutomationResults
+	return siteapiAutomationResults
 }
-func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) site.SiteAutomationStatus {
-	var siteapiSiteAutomationStatus site.SiteAutomationStatus
+func (c *ConverterImpl) AutomationStatusToResource(source automation.Status) site.AutomationStatus {
+	var siteapiAutomationStatus site.AutomationStatus
 	switch source {
 	case automation.DefaultStatus:
-		siteapiSiteAutomationStatus = site.SiteAutomationStatusInactive
+		siteapiAutomationStatus = site.AutomationStatusInactive
 	case automation.StatusActive:
-		siteapiSiteAutomationStatus = site.SiteAutomationStatusActive
-	// Skipped StatusInactive(inactive) -> SiteAutomationStatusInactive(inactive) because it duplicates DefaultStatus(inactive) -> SiteAutomationStatusInactive(inactive)
+		siteapiAutomationStatus = site.AutomationStatusActive
+	// Skipped StatusInactive(inactive) -> AutomationStatusInactive(inactive) because it duplicates DefaultStatus(inactive) -> AutomationStatusInactive(inactive)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteAutomationStatus
+	return siteapiAutomationStatus
 }
-func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) site.SiteAutomationStep {
-	var siteapiSiteAutomationStep site.SiteAutomationStep
-	siteapiSiteAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
-	siteapiSiteAutomationStep.Subject = optString(source.Subject)
-	siteapiSiteAutomationStep.Body = optString(source.Body)
-	siteapiSiteAutomationStep.Doc = optEditorDocument(source.Doc)
-	siteapiSiteAutomationStep.EditorVersion = optString(source.EditorVersion)
-	siteapiSiteAutomationStep.Seconds = optInt32(source.Seconds)
-	siteapiSiteAutomationStep.Tag = optString(source.Tag)
-	siteapiSiteAutomationStep.ID = optString(source.ID)
-	// siteapiSiteAutomationStep.URL: ignore
+func (c *ConverterImpl) AutomationStepToResource(source automations.StepView) site.AutomationStep {
+	var siteapiAutomationStep site.AutomationStep
+	siteapiAutomationStep.Type = c.AutomationStepTypeToResource(source.Type)
+	siteapiAutomationStep.Subject = optString(source.Subject)
+	siteapiAutomationStep.Body = optString(source.Body)
+	siteapiAutomationStep.Doc = optEditorDocument(source.Doc)
+	siteapiAutomationStep.EditorVersion = optString(source.EditorVersion)
+	siteapiAutomationStep.Seconds = optInt32(source.Seconds)
+	siteapiAutomationStep.Tag = optString(source.Tag)
+	siteapiAutomationStep.ID = optString(source.ID)
+	// siteapiAutomationStep.URL: ignore
 	if source.Headers != nil {
-		siteapiSiteAutomationStep.Headers = make([]site.SiteAutomationHttpHeader, len(source.Headers))
+		siteapiAutomationStep.Headers = make([]site.AutomationHttpHeader, len(source.Headers))
 		for i := 0; i < len(source.Headers); i++ {
-			siteapiSiteAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
+			siteapiAutomationStep.Headers[i] = c.AutomationHttpHeaderToResource(source.Headers[i])
 		}
 	}
-	// siteapiSiteAutomationStep.Secret: ignore
-	// siteapiSiteAutomationStep.ClearSecret: ignore
-	siteapiSiteAutomationStep.HasSecret = optBool(source.HasSecret)
-	siteapiSiteAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
-	siteapiSiteAutomationStep.Text = optString(source.Text)
-	siteapiSiteAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
-	siteapiSiteAutomationStep.ImageUrl = optString(source.ImageURL)
+	// siteapiAutomationStep.Secret: ignore
+	// siteapiAutomationStep.ClearSecret: ignore
+	siteapiAutomationStep.HasSecret = optBool(source.HasSecret)
+	siteapiAutomationStep.IntegrationId = optNilEntityID(source.IntegrationID)
+	siteapiAutomationStep.Text = optString(source.Text)
+	siteapiAutomationStep.UnsubscribeButton = optString(source.UnsubscribeButton)
+	siteapiAutomationStep.ImageUrl = optString(source.ImageURL)
 	if source.Buttons != nil {
-		siteapiSiteAutomationStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
+		siteapiAutomationStep.Buttons = make([]site.TelegramButton, len(source.Buttons))
 		for j := 0; j < len(source.Buttons); j++ {
-			siteapiSiteAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
+			siteapiAutomationStep.Buttons[j] = c.TelegramButtonToResource(source.Buttons[j])
 		}
 	}
-	siteapiSiteAutomationStep.LinkPreview = optBool(source.LinkPreview)
-	siteapiSiteAutomationStep.LinkTracking = optBool(source.LinkTracking)
-	return siteapiSiteAutomationStep
+	siteapiAutomationStep.LinkPreview = optBool(source.LinkPreview)
+	siteapiAutomationStep.LinkTracking = optBool(source.LinkTracking)
+	return siteapiAutomationStep
 }
-func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) site.SiteAutomationStepType {
-	var siteapiSiteAutomationStepType site.SiteAutomationStepType
+func (c *ConverterImpl) AutomationStepTypeToResource(source automationstep.Kind) site.AutomationStepType {
+	var siteapiAutomationStepType site.AutomationStepType
 	switch source {
 	case automationstep.ApplyTag:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeApplyTag
+		siteapiAutomationStepType = site.AutomationStepTypeApplyTag
 	case automationstep.Email:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeEmail
+		siteapiAutomationStepType = site.AutomationStepTypeEmail
 	case automationstep.HTTP:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeHTTP
+		siteapiAutomationStepType = site.AutomationStepTypeHTTP
 	case automationstep.RemoveTag:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeRemoveTag
+		siteapiAutomationStepType = site.AutomationStepTypeRemoveTag
 	case automationstep.SMS:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeSMS
+		siteapiAutomationStepType = site.AutomationStepTypeSMS
 	case automationstep.Telegram:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeTelegram
+		siteapiAutomationStepType = site.AutomationStepTypeTelegram
 	case automationstep.Wait:
-		siteapiSiteAutomationStepType = site.SiteAutomationStepTypeWait
+		siteapiAutomationStepType = site.AutomationStepTypeWait
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteAutomationStepType
+	return siteapiAutomationStepType
 }
-func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []site.SiteAutomationStep {
-	var siteapiSiteAutomationStepList []site.SiteAutomationStep
+func (c *ConverterImpl) AutomationStepsToResources(source []automations.StepView) []site.AutomationStep {
+	var siteapiAutomationStepList []site.AutomationStep
 	if source != nil {
-		siteapiSiteAutomationStepList = make([]site.SiteAutomationStep, len(source))
+		siteapiAutomationStepList = make([]site.AutomationStep, len(source))
 		for i := 0; i < len(source); i++ {
-			siteapiSiteAutomationStepList[i] = c.AutomationStepToResource(source[i])
+			siteapiAutomationStepList[i] = c.AutomationStepToResource(source[i])
 		}
 	}
-	return siteapiSiteAutomationStepList
+	return siteapiAutomationStepList
 }
 func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
@@ -514,21 +514,21 @@ func (c *ConverterImpl) AutomationToResource(source *ent.Automation) site.SiteAu
 	}
 	return siteapiSiteAutomationResource
 }
-func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) site.SiteAutomationVersion {
-	var siteapiSiteAutomationVersion site.SiteAutomationVersion
+func (c *ConverterImpl) AutomationVersionToResource(source *ent.AutomationVersion) site.AutomationVersion {
+	var siteapiAutomationVersion site.AutomationVersion
 	if source != nil {
-		siteapiSiteAutomationVersion.Number = count((*source).Version)
-		siteapiSiteAutomationVersion.TriggerEvent = (*source).TriggerEvent
+		siteapiAutomationVersion.Number = count((*source).Version)
+		siteapiAutomationVersion.TriggerEvent = (*source).TriggerEvent
 		if (*source).ExitEvents != nil {
-			siteapiSiteAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
+			siteapiAutomationVersion.ExitEvents = make([]string, len((*source).ExitEvents))
 			for i := 0; i < len((*source).ExitEvents); i++ {
-				siteapiSiteAutomationVersion.ExitEvents[i] = (*source).ExitEvents[i]
+				siteapiAutomationVersion.ExitEvents[i] = (*source).ExitEvents[i]
 			}
 		}
-		siteapiSiteAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
-		siteapiSiteAutomationVersion.Steps = automationSteps(c, (*source).Steps)
+		siteapiAutomationVersion.GoalEvent = nilString((*source).GoalEvent)
+		siteapiAutomationVersion.Steps = automationSteps(c, (*source).Steps)
 	}
-	return siteapiSiteAutomationVersion
+	return siteapiAutomationVersion
 }
 func (c *ConverterImpl) AutomationWithRevenueToResource(source automations.WithRevenue) site.SiteAutomationResource {
 	var siteapiSiteAutomationResource site.SiteAutomationResource
@@ -622,21 +622,21 @@ func (c *ConverterImpl) BindingsToResources(source []bindings.Chat) []site.SiteB
 	}
 	return siteapiSiteBindingResourceList
 }
-func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.SiteBrandKitResource {
-	var siteapiSiteBrandKitResource site.SiteBrandKitResource
-	siteapiSiteBrandKitResource.Saved = source.Saved
-	siteapiSiteBrandKitResource.AccentColor = source.AccentColor
-	siteapiSiteBrandKitResource.TextColor = source.TextColor
-	siteapiSiteBrandKitResource.BackgroundColor = source.BackgroundColor
-	siteapiSiteBrandKitResource.HeadingFont = source.HeadingFont
-	siteapiSiteBrandKitResource.BodyFont = source.BodyFont
-	siteapiSiteBrandKitResource.LogoUrl = source.LogoURL
-	siteapiSiteBrandKitResource.ButtonTextColor = source.ButtonTextColor
-	siteapiSiteBrandKitResource.ButtonRadius = count(source.ButtonRadius)
-	siteapiSiteBrandKitResource.FooterText = source.FooterText
-	siteapiSiteBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
-	siteapiSiteBrandKitResource.Revision = revision(source.Revision)
-	return siteapiSiteBrandKitResource
+func (c *ConverterImpl) BrandKitToResource(source brandkits.Kit) site.BrandKitResource {
+	var siteapiBrandKitResource site.BrandKitResource
+	siteapiBrandKitResource.Saved = source.Saved
+	siteapiBrandKitResource.AccentColor = source.AccentColor
+	siteapiBrandKitResource.TextColor = source.TextColor
+	siteapiBrandKitResource.BackgroundColor = source.BackgroundColor
+	siteapiBrandKitResource.HeadingFont = source.HeadingFont
+	siteapiBrandKitResource.BodyFont = source.BodyFont
+	siteapiBrandKitResource.LogoUrl = source.LogoURL
+	siteapiBrandKitResource.ButtonTextColor = source.ButtonTextColor
+	siteapiBrandKitResource.ButtonRadius = count(source.ButtonRadius)
+	siteapiBrandKitResource.FooterText = source.FooterText
+	siteapiBrandKitResource.UpdatedAt = brandKitUpdatedAt(source)
+	siteapiBrandKitResource.Revision = revision(source.Revision)
+	return siteapiBrandKitResource
 }
 func (c *ConverterImpl) BroadcastChannelToResource(source channels.Channel) site.BroadcastChannel {
 	var siteapiBroadcastChannel site.BroadcastChannel
@@ -761,21 +761,21 @@ func (c *ConverterImpl) BroadcastsListPage(source pagination.Page[site.SiteBroad
 	siteapiSiteBroadcastsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteBroadcastsListOK
 }
-func (c *ConverterImpl) CapturedMessageSurfaceToResource(source capturedmessage.Surface) site.SiteCapturedMessageSurface {
-	var siteapiSiteCapturedMessageSurface site.SiteCapturedMessageSurface
+func (c *ConverterImpl) CapturedMessageSurfaceToResource(source capturedmessage.Surface) site.CapturedMessageSurface {
+	var siteapiCapturedMessageSurface site.CapturedMessageSurface
 	switch source {
 	case capturedmessage.SurfaceAutomation:
-		siteapiSiteCapturedMessageSurface = site.SiteCapturedMessageSurfaceAutomation
+		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceAutomation
 	case capturedmessage.SurfaceBroadcast:
-		siteapiSiteCapturedMessageSurface = site.SiteCapturedMessageSurfaceBroadcast
+		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceBroadcast
 	case capturedmessage.SurfaceTest:
-		siteapiSiteCapturedMessageSurface = site.SiteCapturedMessageSurfaceTest
+		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceTest
 	case capturedmessage.SurfaceTransactional:
-		siteapiSiteCapturedMessageSurface = site.SiteCapturedMessageSurfaceTransactional
+		siteapiCapturedMessageSurface = site.CapturedMessageSurfaceTransactional
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteCapturedMessageSurface
+	return siteapiCapturedMessageSurface
 }
 func (c *ConverterImpl) CapturedMessageToResource(source *ent.CapturedMessage) site.SiteCapturedMessageResource {
 	var siteapiSiteCapturedMessageResource site.SiteCapturedMessageResource
@@ -842,12 +842,12 @@ func (c *ConverterImpl) CapturedMessagesToSummaries(source []*ent.CapturedMessag
 	}
 	return siteapiSiteCapturedMessageSummaryList
 }
-func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) site.SiteCnameRecord {
-	var siteapiSiteCnameRecord site.SiteCnameRecord
-	siteapiSiteCnameRecord.Type = cnameRecordType(source)
-	siteapiSiteCnameRecord.Host = source.Host
-	siteapiSiteCnameRecord.Target = source.Target
-	return siteapiSiteCnameRecord
+func (c *ConverterImpl) CnameRecordToResource(source trackingdomains.Record) site.CnameRecord {
+	var siteapiCnameRecord site.CnameRecord
+	siteapiCnameRecord.Type = cnameRecordType(source)
+	siteapiCnameRecord.Host = source.Host
+	siteapiCnameRecord.Target = source.Target
+	return siteapiCnameRecord
 }
 func (c *ConverterImpl) ConfirmationProvenanceToResource(source confirmation.Provenance) site.ConfirmationProvenance {
 	var siteapiConfirmationProvenance site.ConfirmationProvenance
@@ -1013,22 +1013,22 @@ func (c *ConverterImpl) CustomFieldToResource(source *ent.CustomField) site.Site
 	}
 	return siteapiSiteCustomFieldResource
 }
-func (c *ConverterImpl) CustomFieldTypeToResource(source customfield.Type) site.SiteCustomFieldType {
-	var siteapiSiteCustomFieldType site.SiteCustomFieldType
+func (c *ConverterImpl) CustomFieldTypeToResource(source customfield.Type) site.CustomFieldType {
+	var siteapiCustomFieldType site.CustomFieldType
 	switch source {
 	case customfield.DefaultType:
-		siteapiSiteCustomFieldType = site.SiteCustomFieldTypeString
+		siteapiCustomFieldType = site.CustomFieldTypeString
 	case customfield.TypeBool:
-		siteapiSiteCustomFieldType = site.SiteCustomFieldTypeBool
+		siteapiCustomFieldType = site.CustomFieldTypeBool
 	case customfield.TypeDatetime:
-		siteapiSiteCustomFieldType = site.SiteCustomFieldTypeDatetime
+		siteapiCustomFieldType = site.CustomFieldTypeDatetime
 	case customfield.TypeNumber:
-		siteapiSiteCustomFieldType = site.SiteCustomFieldTypeNumber
-	// Skipped TypeString(string) -> SiteCustomFieldTypeString(string) because it duplicates DefaultType(string) -> SiteCustomFieldTypeString(string)
+		siteapiCustomFieldType = site.CustomFieldTypeNumber
+	// Skipped TypeString(string) -> CustomFieldTypeString(string) because it duplicates DefaultType(string) -> CustomFieldTypeString(string)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteCustomFieldType
+	return siteapiCustomFieldType
 }
 func (c *ConverterImpl) CustomFieldsListPage(source pagination.Page[*ent.CustomField]) *site.SiteCustomFieldsListOK {
 	var siteapiSiteCustomFieldsListOK site.SiteCustomFieldsListOK
@@ -1058,12 +1058,12 @@ func (c *ConverterImpl) DeletedWorkspaceToResource(source *ent.Workspace) site.S
 	}
 	return siteapiSiteDeletedWorkspaceResource
 }
-func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.SiteDnsRecord {
-	var siteapiSiteDnsRecord site.SiteDnsRecord
-	siteapiSiteDnsRecord.Type = dnsRecordType(source)
-	siteapiSiteDnsRecord.Host = source.Host
-	siteapiSiteDnsRecord.Value = source.Value
-	return siteapiSiteDnsRecord
+func (c *ConverterImpl) DnsRecordToResource(source sendingdomains.Record) site.DnsRecord {
+	var siteapiDnsRecord site.DnsRecord
+	siteapiDnsRecord.Type = dnsRecordType(source)
+	siteapiDnsRecord.Host = source.Host
+	siteapiDnsRecord.Value = source.Value
+	return siteapiDnsRecord
 }
 func (c *ConverterImpl) DomainJoinToResource(source *ent.Workspace) *site.SiteDomainJoinResource {
 	var pSiteapiSiteDomainJoinResource *site.SiteDomainJoinResource
@@ -1116,57 +1116,57 @@ func (c *ConverterImpl) EmailTemplatesToResources(source []*ent.EmailTemplate) [
 	}
 	return siteapiSiteEmailTemplateResourceList
 }
-func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) site.SiteEnrollmentFailureKind {
-	var siteapiSiteEnrollmentFailureKind site.SiteEnrollmentFailureKind
+func (c *ConverterImpl) EnrollmentFailureKindToResource(source automationrun.FailureKind) site.EnrollmentFailureKind {
+	var siteapiEnrollmentFailureKind site.EnrollmentFailureKind
 	switch source {
 	case automationrun.FailureKindBlockedAddress:
-		siteapiSiteEnrollmentFailureKind = site.SiteEnrollmentFailureKindBlockedAddress
+		siteapiEnrollmentFailureKind = site.EnrollmentFailureKindBlockedAddress
 	case automationrun.FailureKindHTTPStatus:
-		siteapiSiteEnrollmentFailureKind = site.SiteEnrollmentFailureKindHTTPStatus
+		siteapiEnrollmentFailureKind = site.EnrollmentFailureKindHTTPStatus
 	case automationrun.FailureKindInvalidBody:
-		siteapiSiteEnrollmentFailureKind = site.SiteEnrollmentFailureKindInvalidBody
+		siteapiEnrollmentFailureKind = site.EnrollmentFailureKindInvalidBody
 	case automationrun.FailureKindNetwork:
-		siteapiSiteEnrollmentFailureKind = site.SiteEnrollmentFailureKindNetwork
+		siteapiEnrollmentFailureKind = site.EnrollmentFailureKindNetwork
 	case automationrun.FailureKindTimeout:
-		siteapiSiteEnrollmentFailureKind = site.SiteEnrollmentFailureKindTimeout
+		siteapiEnrollmentFailureKind = site.EnrollmentFailureKindTimeout
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteEnrollmentFailureKind
+	return siteapiEnrollmentFailureKind
 }
-func (c *ConverterImpl) EnrollmentStatusToResource(source automationrun.Status) site.SiteEnrollmentStatus {
-	var siteapiSiteEnrollmentStatus site.SiteEnrollmentStatus
+func (c *ConverterImpl) EnrollmentStatusToResource(source automationrun.Status) site.EnrollmentStatus {
+	var siteapiEnrollmentStatus site.EnrollmentStatus
 	switch source {
 	case automationrun.DefaultStatus:
-		siteapiSiteEnrollmentStatus = site.SiteEnrollmentStatusActive
-	// Skipped StatusActive(active) -> SiteEnrollmentStatusActive(active) because it duplicates DefaultStatus(active) -> SiteEnrollmentStatusActive(active)
+		siteapiEnrollmentStatus = site.EnrollmentStatusActive
+	// Skipped StatusActive(active) -> EnrollmentStatusActive(active) because it duplicates DefaultStatus(active) -> EnrollmentStatusActive(active)
 	case automationrun.StatusCompleted:
-		siteapiSiteEnrollmentStatus = site.SiteEnrollmentStatusCompleted
+		siteapiEnrollmentStatus = site.EnrollmentStatusCompleted
 	case automationrun.StatusExited:
-		siteapiSiteEnrollmentStatus = site.SiteEnrollmentStatusExited
+		siteapiEnrollmentStatus = site.EnrollmentStatusExited
 	case automationrun.StatusFailed:
-		siteapiSiteEnrollmentStatus = site.SiteEnrollmentStatusFailed
+		siteapiEnrollmentStatus = site.EnrollmentStatusFailed
 	case automationrun.StatusGoalReached:
-		siteapiSiteEnrollmentStatus = site.SiteEnrollmentStatusGoalReached
+		siteapiEnrollmentStatus = site.EnrollmentStatusGoalReached
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteEnrollmentStatus
+	return siteapiEnrollmentStatus
 }
-func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.SiteEnrollmentResource {
-	var siteapiSiteEnrollmentResource site.SiteEnrollmentResource
+func (c *ConverterImpl) EnrollmentToResource(source *ent.AutomationRun) site.EnrollmentResource {
+	var siteapiEnrollmentResource site.EnrollmentResource
 	if source != nil {
-		siteapiSiteEnrollmentResource.ID = site.EntityId((*source).ID)
-		siteapiSiteEnrollmentResource.AutomationId = site.EntityId((*source).AutomationID)
-		siteapiSiteEnrollmentResource.ContactId = site.EntityId((*source).ContactID)
-		siteapiSiteEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
-		siteapiSiteEnrollmentResource.CurrentStep = count((*source).CurrentStep)
-		siteapiSiteEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
-		siteapiSiteEnrollmentResource.Failure = enrollmentFailure(c, (*source))
-		siteapiSiteEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
-		siteapiSiteEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
+		siteapiEnrollmentResource.ID = site.EntityId((*source).ID)
+		siteapiEnrollmentResource.AutomationId = site.EntityId((*source).AutomationID)
+		siteapiEnrollmentResource.ContactId = site.EntityId((*source).ContactID)
+		siteapiEnrollmentResource.Status = c.EnrollmentStatusToResource((*source).Status)
+		siteapiEnrollmentResource.CurrentStep = count((*source).CurrentStep)
+		siteapiEnrollmentResource.ResumeAt = optTimestamp((*source).ResumeAt)
+		siteapiEnrollmentResource.Failure = enrollmentFailure(c, (*source))
+		siteapiEnrollmentResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiEnrollmentResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteEnrollmentResource
+	return siteapiEnrollmentResource
 }
 func (c *ConverterImpl) EnrollmentsListPage(source pagination.Page[*ent.AutomationRun]) *site.SiteEnrollmentsListOK {
 	var siteapiSiteEnrollmentsListOK site.SiteEnrollmentsListOK
@@ -1177,13 +1177,13 @@ func (c *ConverterImpl) EnrollmentsListPage(source pagination.Page[*ent.Automati
 	siteapiSiteEnrollmentsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteEnrollmentsListOK
 }
-func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []site.SiteEnrollmentResource {
-	var siteapiSiteEnrollmentResourceList []site.SiteEnrollmentResource
-	siteapiSiteEnrollmentResourceList = make([]site.SiteEnrollmentResource, len(source))
+func (c *ConverterImpl) EnrollmentsToResources(source []*ent.AutomationRun) []site.EnrollmentResource {
+	var siteapiEnrollmentResourceList []site.EnrollmentResource
+	siteapiEnrollmentResourceList = make([]site.EnrollmentResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteEnrollmentResourceList[i] = c.EnrollmentToResource(source[i])
+		siteapiEnrollmentResourceList[i] = c.EnrollmentToResource(source[i])
 	}
-	return siteapiSiteEnrollmentResourceList
+	return siteapiEnrollmentResourceList
 }
 func (c *ConverterImpl) EventToExport(source *ent.Event) site.ContactExportEvent {
 	var siteapiContactExportEvent site.ContactExportEvent
@@ -1297,37 +1297,37 @@ func (c *ConverterImpl) InstanceReleaseToResource(source instancestates.Release)
 	siteapiSiteInstanceRelease.LatestRelease = optString(source.LatestRelease)
 	return siteapiSiteInstanceRelease
 }
-func (c *ConverterImpl) IntegrationChannelToResource(source channels.Channel) site.SiteIntegrationChannel {
-	var siteapiSiteIntegrationChannel site.SiteIntegrationChannel
+func (c *ConverterImpl) IntegrationChannelToResource(source channels.Channel) site.IntegrationChannel {
+	var siteapiIntegrationChannel site.IntegrationChannel
 	switch source {
 	case channels.Email:
-		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelEmail
+		siteapiIntegrationChannel = site.IntegrationChannelEmail
 	case channels.SMS:
-		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelSMS
+		siteapiIntegrationChannel = site.IntegrationChannelSMS
 	case channels.Telegram:
-		siteapiSiteIntegrationChannel = site.SiteIntegrationChannelTelegram
+		siteapiIntegrationChannel = site.IntegrationChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteIntegrationChannel
+	return siteapiIntegrationChannel
 }
-func (c *ConverterImpl) IntegrationProviderToResource(source providers.Provider) site.SiteIntegrationProvider {
-	var siteapiSiteIntegrationProvider site.SiteIntegrationProvider
+func (c *ConverterImpl) IntegrationProviderToResource(source providers.Provider) site.IntegrationProvider {
+	var siteapiIntegrationProvider site.IntegrationProvider
 	switch source {
 	case providers.Inbox:
-		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderInbox
+		siteapiIntegrationProvider = site.IntegrationProviderInbox
 	case providers.SES:
-		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSes
+		siteapiIntegrationProvider = site.IntegrationProviderSes
 	case providers.SMTP:
-		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderSMTP
+		siteapiIntegrationProvider = site.IntegrationProviderSMTP
 	case providers.Telegram:
-		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTelegram
+		siteapiIntegrationProvider = site.IntegrationProviderTelegram
 	case providers.Twilio:
-		siteapiSiteIntegrationProvider = site.SiteIntegrationProviderTwilio
+		siteapiIntegrationProvider = site.IntegrationProviderTwilio
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteIntegrationProvider
+	return siteapiIntegrationProvider
 }
 func (c *ConverterImpl) IntegrationToResource(source *ent.Integration) site.SiteIntegrationResource {
 	var siteapiSiteIntegrationResource site.SiteIntegrationResource
@@ -1432,15 +1432,15 @@ func (c *ConverterImpl) LegalDocumentToSite(source signupitems.Document) site.Si
 	siteapiSiteLegalDocument.PublishedAt = timestamp(source.PublishedAt)
 	return siteapiSiteLegalDocument
 }
-func (c *ConverterImpl) LinkClicksToResource(source []linkclick.Clicks) []site.SiteLinkClicks {
-	var siteapiSiteLinkClicksList []site.SiteLinkClicks
+func (c *ConverterImpl) LinkClicksToResource(source []linkclick.Clicks) []site.LinkClicks {
+	var siteapiLinkClicksList []site.LinkClicks
 	if source != nil {
-		siteapiSiteLinkClicksList = make([]site.SiteLinkClicks, len(source))
+		siteapiLinkClicksList = make([]site.LinkClicks, len(source))
 		for i := 0; i < len(source); i++ {
-			siteapiSiteLinkClicksList[i] = c.linkclickClicksToSiteapiSiteLinkClicks(source[i])
+			siteapiLinkClicksList[i] = c.linkclickClicksToSiteapiLinkClicks(source[i])
 		}
 	}
-	return siteapiSiteLinkClicksList
+	return siteapiLinkClicksList
 }
 func (c *ConverterImpl) LintCodeToResource(source emailrender.Code) site.LintCode {
 	var siteapiLintCode site.LintCode
@@ -1537,12 +1537,12 @@ func (c *ConverterImpl) MembershipsToResources(source []*ent.Membership) []site.
 	}
 	return siteapiSiteMembershipResourceList
 }
-func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.SiteMessageRevenue {
-	var siteapiSiteMessageRevenue site.SiteMessageRevenue
-	siteapiSiteMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
-	siteapiSiteMessageRevenue.Orders = count(source.Credited.Orders)
-	siteapiSiteMessageRevenue.Amount = source.Credited.Amount
-	return siteapiSiteMessageRevenue
+func (c *ConverterImpl) MessageRevenueToResource(source orders.Revenue) site.MessageRevenue {
+	var siteapiMessageRevenue site.MessageRevenue
+	siteapiMessageRevenue.ReportingCurrency = nilCurrencyCode(source.Currency)
+	siteapiMessageRevenue.Orders = count(source.Credited.Orders)
+	siteapiMessageRevenue.Amount = source.Credited.Amount
+	return siteapiMessageRevenue
 }
 func (c *ConverterImpl) OptOutViaToResource(source unsubscribe.Via) site.OptOutVia {
 	var siteapiOptOutVia site.OptOutVia
@@ -1629,12 +1629,12 @@ func (c *ConverterImpl) OutboundMessageToExport(source *ent.OutboundMessage) sit
 	}
 	return siteapiContactExportOutboundMessage
 }
-func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.OwnershipRecord) site.SiteDnsRecord {
-	var siteapiSiteDnsRecord site.SiteDnsRecord
-	siteapiSiteDnsRecord.Type = ownershipRecordType(source)
-	siteapiSiteDnsRecord.Host = source.Host
-	siteapiSiteDnsRecord.Value = source.Value
-	return siteapiSiteDnsRecord
+func (c *ConverterImpl) OwnershipRecordToResource(source trackingdomains.OwnershipRecord) site.DnsRecord {
+	var siteapiDnsRecord site.DnsRecord
+	siteapiDnsRecord.Type = ownershipRecordType(source)
+	siteapiDnsRecord.Host = source.Host
+	siteapiDnsRecord.Value = source.Value
+	return siteapiDnsRecord
 }
 func (c *ConverterImpl) PasskeyToResource(source *ent.Passkey) site.SitePasskey {
 	var siteapiSitePasskey site.SitePasskey
@@ -1851,48 +1851,48 @@ func (c *ConverterImpl) PersonalTokensToResources(source []*ent.ApiToken) []site
 	}
 	return siteapiSitePersonalTokenResourceList
 }
-func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) site.SiteProviderLimitSource {
-	var siteapiSiteProviderLimitSource site.SiteProviderLimitSource
+func (c *ConverterImpl) ProviderLimitSourceToResource(source providerlimit.Source) site.ProviderLimitSource {
+	var siteapiProviderLimitSource site.ProviderLimitSource
 	switch source {
 	case providerlimit.SourceManual:
-		siteapiSiteProviderLimitSource = site.SiteProviderLimitSourceManual
+		siteapiProviderLimitSource = site.ProviderLimitSourceManual
 	case providerlimit.SourceProvider:
-		siteapiSiteProviderLimitSource = site.SiteProviderLimitSourceProvider
+		siteapiProviderLimitSource = site.ProviderLimitSourceProvider
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteProviderLimitSource
+	return siteapiProviderLimitSource
 }
-func (c *ConverterImpl) ProviderLimitToStatus(source providerlimit.Status) site.SiteProviderLimitStatus {
-	var siteapiSiteProviderLimitStatus site.SiteProviderLimitStatus
-	siteapiSiteProviderLimitStatus.PerSecond = c.providerlimitValueToSiteapiSiteProviderLimitValue(source.PerSecond)
-	siteapiSiteProviderLimitStatus.PerDay = c.providerlimitValueToSiteapiSiteProviderLimitValue(source.PerDay)
-	siteapiSiteProviderLimitStatus.SentLast24h = count(source.Sent24h)
+func (c *ConverterImpl) ProviderLimitToStatus(source providerlimit.Status) site.ProviderLimitStatus {
+	var siteapiProviderLimitStatus site.ProviderLimitStatus
+	siteapiProviderLimitStatus.PerSecond = c.providerlimitValueToSiteapiProviderLimitValue(source.PerSecond)
+	siteapiProviderLimitStatus.PerDay = c.providerlimitValueToSiteapiProviderLimitValue(source.PerDay)
+	siteapiProviderLimitStatus.SentLast24h = count(source.Sent24h)
 	if source.Warnings != nil {
-		siteapiSiteProviderLimitStatus.Warnings = make([]site.SiteProviderLimitWarning, len(source.Warnings))
+		siteapiProviderLimitStatus.Warnings = make([]site.ProviderLimitWarning, len(source.Warnings))
 		for i := 0; i < len(source.Warnings); i++ {
-			siteapiSiteProviderLimitStatus.Warnings[i] = c.ProviderLimitWarningToResource(source.Warnings[i])
+			siteapiProviderLimitStatus.Warnings[i] = c.ProviderLimitWarningToResource(source.Warnings[i])
 		}
 	}
-	return siteapiSiteProviderLimitStatus
+	return siteapiProviderLimitStatus
 }
-func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warning) site.SiteProviderLimitWarning {
-	var siteapiSiteProviderLimitWarning site.SiteProviderLimitWarning
+func (c *ConverterImpl) ProviderLimitWarningToResource(source providerlimit.Warning) site.ProviderLimitWarning {
+	var siteapiProviderLimitWarning site.ProviderLimitWarning
 	switch source {
 	case providerlimit.WarningProviderProbation:
-		siteapiSiteProviderLimitWarning = site.SiteProviderLimitWarningProviderProbation
+		siteapiProviderLimitWarning = site.ProviderLimitWarningProviderProbation
 	case providerlimit.WarningProviderQuotaUnavailable:
-		siteapiSiteProviderLimitWarning = site.SiteProviderLimitWarningProviderQuotaUnavailable
+		siteapiProviderLimitWarning = site.ProviderLimitWarningProviderQuotaUnavailable
 	case providerlimit.WarningProviderSandbox:
-		siteapiSiteProviderLimitWarning = site.SiteProviderLimitWarningProviderSandbox
+		siteapiProviderLimitWarning = site.ProviderLimitWarningProviderSandbox
 	case providerlimit.WarningProviderStopped:
-		siteapiSiteProviderLimitWarning = site.SiteProviderLimitWarningProviderStopped
+		siteapiProviderLimitWarning = site.ProviderLimitWarningProviderStopped
 	case providerlimit.WarningUnlimited:
-		siteapiSiteProviderLimitWarning = site.SiteProviderLimitWarningUnlimited
+		siteapiProviderLimitWarning = site.ProviderLimitWarningUnlimited
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteProviderLimitWarning
+	return siteapiProviderLimitWarning
 }
 func (c *ConverterImpl) RequiredPermissionsToResource(source map[string]memberships.Permission) site.SiteOAuthAuthorizationRequestRequiredPermissions {
 	var siteapiSiteOAuthAuthorizationRequestRequiredPermissions site.SiteOAuthAuthorizationRequestRequiredPermissions
@@ -1939,82 +1939,82 @@ func (c *ConverterImpl) RevenueToResource(source *orders.WorkspaceRevenue) site.
 	}
 	return siteapiSiteAnalyticsRevenue
 }
-func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) site.SiteRuleActionStatus {
-	var siteapiSiteRuleActionStatus site.SiteRuleActionStatus
+func (c *ConverterImpl) RuleActionStatusToResource(source rules.Outcome) site.RuleActionStatus {
+	var siteapiRuleActionStatus site.RuleActionStatus
 	switch source {
 	case rules.Failed:
-		siteapiSiteRuleActionStatus = site.SiteRuleActionStatusFailed
+		siteapiRuleActionStatus = site.RuleActionStatusFailed
 	case rules.Pending:
-		siteapiSiteRuleActionStatus = site.SiteRuleActionStatusPending
+		siteapiRuleActionStatus = site.RuleActionStatusPending
 	case rules.Skipped:
-		siteapiSiteRuleActionStatus = site.SiteRuleActionStatusSkipped
+		siteapiRuleActionStatus = site.RuleActionStatusSkipped
 	case rules.Succeeded:
-		siteapiSiteRuleActionStatus = site.SiteRuleActionStatusSucceeded
+		siteapiRuleActionStatus = site.RuleActionStatusSucceeded
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteRuleActionStatus
+	return siteapiRuleActionStatus
 }
-func (c *ConverterImpl) RuleActionTypeToResource(source rules.ActionType) site.SiteRuleActionType {
-	var siteapiSiteRuleActionType site.SiteRuleActionType
+func (c *ConverterImpl) RuleActionTypeToResource(source rules.ActionType) site.RuleActionType {
+	var siteapiRuleActionType site.RuleActionType
 	switch source {
 	case rules.ActionApplyTag:
-		siteapiSiteRuleActionType = site.SiteRuleActionTypeApplyTag
+		siteapiRuleActionType = site.RuleActionTypeApplyTag
 	case rules.ActionEnroll:
-		siteapiSiteRuleActionType = site.SiteRuleActionTypeEnrollAutomation
+		siteapiRuleActionType = site.RuleActionTypeEnrollAutomation
 	case rules.ActionHTTP:
-		siteapiSiteRuleActionType = site.SiteRuleActionTypeHTTP
+		siteapiRuleActionType = site.RuleActionTypeHTTP
 	case rules.ActionRemoveTag:
-		siteapiSiteRuleActionType = site.SiteRuleActionTypeRemoveTag
+		siteapiRuleActionType = site.RuleActionTypeRemoveTag
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteRuleActionType
+	return siteapiRuleActionType
 }
-func (c *ConverterImpl) RuleDryRunOutcomeToResource(source rules.DryRunOutcome) site.SiteRuleDryRunOutcome {
-	var siteapiSiteRuleDryRunOutcome site.SiteRuleDryRunOutcome
+func (c *ConverterImpl) RuleDryRunOutcomeToResource(source rules.DryRunOutcome) site.RuleDryRunOutcome {
+	var siteapiRuleDryRunOutcome site.RuleDryRunOutcome
 	switch source {
 	case rules.Backfill:
-		siteapiSiteRuleDryRunOutcome = site.SiteRuleDryRunOutcomeBackfill
+		siteapiRuleDryRunOutcome = site.RuleDryRunOutcomeBackfill
 	case rules.ConditionNotMet:
-		siteapiSiteRuleDryRunOutcome = site.SiteRuleDryRunOutcomeConditionNotMet
+		siteapiRuleDryRunOutcome = site.RuleDryRunOutcomeConditionNotMet
 	case rules.Machine:
-		siteapiSiteRuleDryRunOutcome = site.SiteRuleDryRunOutcomeMachine
+		siteapiRuleDryRunOutcome = site.RuleDryRunOutcomeMachine
 	case rules.NoContact:
-		siteapiSiteRuleDryRunOutcome = site.SiteRuleDryRunOutcomeNoContact
+		siteapiRuleDryRunOutcome = site.RuleDryRunOutcomeNoContact
 	case rules.NotTriggered:
-		siteapiSiteRuleDryRunOutcome = site.SiteRuleDryRunOutcomeNotTriggered
+		siteapiRuleDryRunOutcome = site.RuleDryRunOutcomeNotTriggered
 	case rules.WouldFire:
-		siteapiSiteRuleDryRunOutcome = site.SiteRuleDryRunOutcomeWouldFire
+		siteapiRuleDryRunOutcome = site.RuleDryRunOutcomeWouldFire
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteRuleDryRunOutcome
+	return siteapiRuleDryRunOutcome
 }
-func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) site.SiteRuleDryRunResource {
-	var siteapiSiteRuleDryRunResource site.SiteRuleDryRunResource
-	siteapiSiteRuleDryRunResource.Outcome = c.RuleDryRunOutcomeToResource(source.Outcome)
+func (c *ConverterImpl) RuleDryRunToResource(source rules.DryRun) site.RuleDryRunResource {
+	var siteapiRuleDryRunResource site.RuleDryRunResource
+	siteapiRuleDryRunResource.Outcome = c.RuleDryRunOutcomeToResource(source.Outcome)
 	if source.Actions != nil {
-		siteapiSiteRuleDryRunResource.Actions = make([]site.SiteRuleDryRunAction, len(source.Actions))
+		siteapiRuleDryRunResource.Actions = make([]site.RuleDryRunAction, len(source.Actions))
 		for i := 0; i < len(source.Actions); i++ {
-			siteapiSiteRuleDryRunResource.Actions[i] = c.rulesPlannedActionToSiteapiSiteRuleDryRunAction(source.Actions[i])
+			siteapiRuleDryRunResource.Actions[i] = c.rulesPlannedActionToSiteapiRuleDryRunAction(source.Actions[i])
 		}
 	}
-	return siteapiSiteRuleDryRunResource
+	return siteapiRuleDryRunResource
 }
-func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) site.SiteRuleFiringResource {
-	var siteapiSiteRuleFiringResource site.SiteRuleFiringResource
+func (c *ConverterImpl) RuleFiringToResource(source *ent.RuleFiring) site.RuleFiringResource {
+	var siteapiRuleFiringResource site.RuleFiringResource
 	if source != nil {
-		siteapiSiteRuleFiringResource.ID = site.EntityId((*source).ID)
-		siteapiSiteRuleFiringResource.RuleId = site.EntityId((*source).RuleID)
-		siteapiSiteRuleFiringResource.ContactId = site.EntityId((*source).ContactID)
-		siteapiSiteRuleFiringResource.Action = (*source).Action
-		siteapiSiteRuleFiringResource.EventSourceId = (*source).SourceID
-		siteapiSiteRuleFiringResource.Results = ruleResults(c, (*source).Results)
-		siteapiSiteRuleFiringResource.CompletedAt = optTimestamp((*source).CompletedAt)
-		siteapiSiteRuleFiringResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiRuleFiringResource.ID = site.EntityId((*source).ID)
+		siteapiRuleFiringResource.RuleId = site.EntityId((*source).RuleID)
+		siteapiRuleFiringResource.ContactId = site.EntityId((*source).ContactID)
+		siteapiRuleFiringResource.Action = (*source).Action
+		siteapiRuleFiringResource.EventSourceId = (*source).SourceID
+		siteapiRuleFiringResource.Results = ruleResults(c, (*source).Results)
+		siteapiRuleFiringResource.CompletedAt = optTimestamp((*source).CompletedAt)
+		siteapiRuleFiringResource.CreatedAt = timestamp((*source).CreatedAt)
 	}
-	return siteapiSiteRuleFiringResource
+	return siteapiRuleFiringResource
 }
 func (c *ConverterImpl) RuleFiringsListPage(source pagination.Page[*ent.RuleFiring]) *site.SiteRuleFiringsListOK {
 	var siteapiSiteRuleFiringsListOK site.SiteRuleFiringsListOK
@@ -2025,26 +2025,26 @@ func (c *ConverterImpl) RuleFiringsListPage(source pagination.Page[*ent.RuleFiri
 	siteapiSiteRuleFiringsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteRuleFiringsListOK
 }
-func (c *ConverterImpl) RuleFiringsToResources(source []*ent.RuleFiring) []site.SiteRuleFiringResource {
-	var siteapiSiteRuleFiringResourceList []site.SiteRuleFiringResource
-	siteapiSiteRuleFiringResourceList = make([]site.SiteRuleFiringResource, len(source))
+func (c *ConverterImpl) RuleFiringsToResources(source []*ent.RuleFiring) []site.RuleFiringResource {
+	var siteapiRuleFiringResourceList []site.RuleFiringResource
+	siteapiRuleFiringResourceList = make([]site.RuleFiringResource, len(source))
 	for i := 0; i < len(source); i++ {
-		siteapiSiteRuleFiringResourceList[i] = c.RuleFiringToResource(source[i])
+		siteapiRuleFiringResourceList[i] = c.RuleFiringToResource(source[i])
 	}
-	return siteapiSiteRuleFiringResourceList
+	return siteapiRuleFiringResourceList
 }
-func (c *ConverterImpl) RuleStatusToResource(source rule.Status) site.SiteRuleStatus {
-	var siteapiSiteRuleStatus site.SiteRuleStatus
+func (c *ConverterImpl) RuleStatusToResource(source rule.Status) site.RuleStatus {
+	var siteapiRuleStatus site.RuleStatus
 	switch source {
 	case rule.DefaultStatus:
-		siteapiSiteRuleStatus = site.SiteRuleStatusInactive
+		siteapiRuleStatus = site.RuleStatusInactive
 	case rule.StatusActive:
-		siteapiSiteRuleStatus = site.SiteRuleStatusActive
-	// Skipped StatusInactive(inactive) -> SiteRuleStatusInactive(inactive) because it duplicates DefaultStatus(inactive) -> SiteRuleStatusInactive(inactive)
+		siteapiRuleStatus = site.RuleStatusActive
+	// Skipped StatusInactive(inactive) -> RuleStatusInactive(inactive) because it duplicates DefaultStatus(inactive) -> RuleStatusInactive(inactive)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteRuleStatus
+	return siteapiRuleStatus
 }
 func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
 	var siteapiSiteRuleResource site.SiteRuleResource
@@ -2062,15 +2062,15 @@ func (c *ConverterImpl) RuleToResource(source *ent.Rule) site.SiteRuleResource {
 	}
 	return siteapiSiteRuleResource
 }
-func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) site.SiteRuleVersion {
-	var siteapiSiteRuleVersion site.SiteRuleVersion
+func (c *ConverterImpl) RuleVersionToResource(source *ent.RuleVersion) site.RuleVersion {
+	var siteapiRuleVersion site.RuleVersion
 	if source != nil {
-		siteapiSiteRuleVersion.Number = count((*source).Version)
-		siteapiSiteRuleVersion.TriggerEvents = ruleTriggerEvents(source)
-		siteapiSiteRuleVersion.Condition = segmentCondition((*source).Condition)
-		siteapiSiteRuleVersion.Actions = ruleActions(c, (*source).Actions)
+		siteapiRuleVersion.Number = count((*source).Version)
+		siteapiRuleVersion.TriggerEvents = ruleTriggerEvents(source)
+		siteapiRuleVersion.Condition = segmentCondition((*source).Condition)
+		siteapiRuleVersion.Actions = ruleActions(c, (*source).Actions)
 	}
-	return siteapiSiteRuleVersion
+	return siteapiRuleVersion
 }
 func (c *ConverterImpl) RulesListPage(source pagination.Page[*ent.Rule]) *site.SiteRulesListOK {
 	var siteapiSiteRulesListOK site.SiteRulesListOK
@@ -2128,37 +2128,37 @@ func (c *ConverterImpl) SegmentsToResources(source []*ent.Segment) []site.SiteSe
 	}
 	return siteapiSiteSegmentResourceList
 }
-func (c *ConverterImpl) SendCapStatusToResource(source *providerlimit.SendCapStatus) site.OptNilSiteSendCap {
+func (c *ConverterImpl) SendCapStatusToResource(source *providerlimit.SendCapStatus) site.OptNilSendCap {
 	return optNilSendCap(c, source)
 }
-func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) site.SiteSendCap {
-	var siteapiSiteSendCap site.SiteSendCap
-	siteapiSiteSendCap.PerDay = maxPerDay(source.PerDay)
-	siteapiSiteSendCap.SentLast24h = count(source.Sent24h)
-	return siteapiSiteSendCap
+func (c *ConverterImpl) SendCapToResource(source providerlimit.SendCapStatus) site.SendCap {
+	var siteapiSendCap site.SendCap
+	siteapiSendCap.PerDay = maxPerDay(source.PerDay)
+	siteapiSendCap.SentLast24h = count(source.Sent24h)
+	return siteapiSendCap
 }
-func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SiteSendingDomainResource {
-	var siteapiSiteSendingDomainResource site.SiteSendingDomainResource
+func (c *ConverterImpl) SendingDomainToResource(source *ent.SendingDomain) site.SendingDomainResource {
+	var siteapiSendingDomainResource site.SendingDomainResource
 	if source != nil {
-		siteapiSiteSendingDomainResource.ID = site.EntityId((*source).ID)
-		siteapiSiteSendingDomainResource.Domain = (*source).Domain
-		siteapiSiteSendingDomainResource.DkimSelector = (*source).DkimSelector
-		siteapiSiteSendingDomainResource.Verified = sendingDomainVerified((*source))
-		// siteapiSiteSendingDomainResource.DkimRecord: ignore
-		// siteapiSiteSendingDomainResource.SpfRecord: ignore
-		// siteapiSiteSendingDomainResource.DmarcRecord: ignore
-		siteapiSiteSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
-		siteapiSiteSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)
-		siteapiSiteSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
-		siteapiSiteSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
-		siteapiSiteSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
-		siteapiSiteSendingDomainResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
-		siteapiSiteSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
-		siteapiSiteSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+		siteapiSendingDomainResource.ID = site.EntityId((*source).ID)
+		siteapiSendingDomainResource.Domain = (*source).Domain
+		siteapiSendingDomainResource.DkimSelector = (*source).DkimSelector
+		siteapiSendingDomainResource.Verified = sendingDomainVerified((*source))
+		// siteapiSendingDomainResource.DkimRecord: ignore
+		// siteapiSendingDomainResource.SpfRecord: ignore
+		// siteapiSendingDomainResource.DmarcRecord: ignore
+		siteapiSendingDomainResource.DmarcCheckedAt = optNilTimestamp((*source).DmarcCheckedAt)
+		siteapiSendingDomainResource.DmarcFoundAt = optNilTimestamp((*source).DmarcFoundAt)
+		siteapiSendingDomainResource.LastCheckedAt = optNilTimestamp((*source).LastCheckedAt)
+		siteapiSendingDomainResource.VerifiedAt = optNilTimestamp((*source).VerifiedAt)
+		siteapiSendingDomainResource.VerificationLostAt = optNilTimestamp((*source).VerificationLostAt)
+		siteapiSendingDomainResource.DiscardedAt = optNilTimestamp((*source).DiscardedAt)
+		siteapiSendingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiSendingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteSendingDomainResource
+	return siteapiSendingDomainResource
 }
-func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[site.SiteSendingDomainResource]) *site.SiteSendingDomainsListOK {
+func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[site.SendingDomainResource]) *site.SiteSendingDomainsListOK {
 	var siteapiSiteSendingDomainsListOK site.SiteSendingDomainsListOK
 	siteapiSiteSendingDomainsListOK.Items = source.Items
 	siteapiSiteSendingDomainsListOK.Page = count(source.Page)
@@ -2167,15 +2167,15 @@ func (c *ConverterImpl) SendingDomainsListPage(source pagination.Page[site.SiteS
 	siteapiSiteSendingDomainsListOK.TotalPages = count(source.TotalPages)
 	return &siteapiSiteSendingDomainsListOK
 }
-func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SiteSesConfig {
-	var siteapiSiteSesConfig site.SiteSesConfig
-	siteapiSiteSesConfig.Kind = sesConfigKind(source)
-	siteapiSiteSesConfig.Region = source.Region
-	siteapiSiteSesConfig.From = site.EmailAddress(source.From)
-	siteapiSiteSesConfig.FromName = omitEmpty(source.FromName)
-	siteapiSiteSesConfig.Endpoint = omitEmpty(source.Endpoint)
-	siteapiSiteSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
-	return siteapiSiteSesConfig
+func (c *ConverterImpl) SesConfigToResource(source integrations.RedactedSES) site.SesConfig {
+	var siteapiSesConfig site.SesConfig
+	siteapiSesConfig.Kind = sesConfigKind(source)
+	siteapiSesConfig.Region = source.Region
+	siteapiSesConfig.From = site.EmailAddress(source.From)
+	siteapiSesConfig.FromName = omitEmpty(source.FromName)
+	siteapiSesConfig.Endpoint = omitEmpty(source.Endpoint)
+	siteapiSesConfig.AccessKeyIdLast4 = omitEmpty(source.AccessKeyIDLast4)
+	return siteapiSesConfig
 }
 func (c *ConverterImpl) SetupChecklistToResource(source setupchecklist.Checklist) site.SiteSetupProgress {
 	var siteapiSiteSetupProgress site.SiteSetupProgress
@@ -2286,15 +2286,15 @@ func (c *ConverterImpl) SmsOptOutToResource(source *confirmations.SMSOptOut) sit
 	}
 	return siteapiSmsOptOut
 }
-func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SiteSmtpConfig {
-	var siteapiSiteSmtpConfig site.SiteSmtpConfig
-	siteapiSiteSmtpConfig.Kind = smtpConfigKind(source)
-	siteapiSiteSmtpConfig.Host = source.Host
-	siteapiSiteSmtpConfig.Port = count(source.Port)
-	siteapiSiteSmtpConfig.Username = omitEmpty(source.Username)
-	siteapiSiteSmtpConfig.From = site.EmailAddress(source.From)
-	siteapiSiteSmtpConfig.FromName = omitEmpty(source.FromName)
-	return siteapiSiteSmtpConfig
+func (c *ConverterImpl) SmtpConfigToResource(source integrations.RedactedSMTP) site.SmtpConfig {
+	var siteapiSmtpConfig site.SmtpConfig
+	siteapiSmtpConfig.Kind = smtpConfigKind(source)
+	siteapiSmtpConfig.Host = source.Host
+	siteapiSmtpConfig.Port = count(source.Port)
+	siteapiSmtpConfig.Username = omitEmpty(source.Username)
+	siteapiSmtpConfig.From = site.EmailAddress(source.From)
+	siteapiSmtpConfig.FromName = omitEmpty(source.FromName)
+	return siteapiSmtpConfig
 }
 func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.TelegramStartLinkResource {
 	var siteapiTelegramStartLinkResource site.TelegramStartLinkResource
@@ -2302,34 +2302,34 @@ func (c *ConverterImpl) StartLinkToResource(source bindings.StartLink) site.Tele
 	siteapiTelegramStartLinkResource.ExpiresAt = timestamp(source.ExpiresAt)
 	return siteapiTelegramStartLinkResource
 }
-func (c *ConverterImpl) SuppressionChannelToResource(source channels.Channel) site.SiteSuppressionChannel {
-	var siteapiSiteSuppressionChannel site.SiteSuppressionChannel
+func (c *ConverterImpl) SuppressionChannelToResource(source channels.Channel) site.SuppressionChannel {
+	var siteapiSuppressionChannel site.SuppressionChannel
 	switch source {
 	case channels.Email:
-		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelEmail
+		siteapiSuppressionChannel = site.SuppressionChannelEmail
 	case channels.SMS:
-		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelSMS
+		siteapiSuppressionChannel = site.SuppressionChannelSMS
 	case channels.Telegram:
-		siteapiSiteSuppressionChannel = site.SiteSuppressionChannelTelegram
+		siteapiSuppressionChannel = site.SuppressionChannelTelegram
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteSuppressionChannel
+	return siteapiSuppressionChannel
 }
-func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) site.SiteSuppressionReason {
-	var siteapiSiteSuppressionReason site.SiteSuppressionReason
+func (c *ConverterImpl) SuppressionReasonToResource(source suppression.Reason) site.SuppressionReason {
+	var siteapiSuppressionReason site.SuppressionReason
 	switch source {
 	case suppression.DefaultReason:
-		siteapiSiteSuppressionReason = site.SiteSuppressionReasonManual
+		siteapiSuppressionReason = site.SuppressionReasonManual
 	case suppression.ReasonBounce:
-		siteapiSiteSuppressionReason = site.SiteSuppressionReasonBounce
+		siteapiSuppressionReason = site.SuppressionReasonBounce
 	case suppression.ReasonComplaint:
-		siteapiSiteSuppressionReason = site.SiteSuppressionReasonComplaint
-	// Skipped ReasonManual(manual) -> SiteSuppressionReasonManual(manual) because it duplicates DefaultReason(manual) -> SiteSuppressionReasonManual(manual)
+		siteapiSuppressionReason = site.SuppressionReasonComplaint
+	// Skipped ReasonManual(manual) -> SuppressionReasonManual(manual) because it duplicates DefaultReason(manual) -> SuppressionReasonManual(manual)
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteSuppressionReason
+	return siteapiSuppressionReason
 }
 func (c *ConverterImpl) SuppressionToExport(source *ent.Suppression) site.ContactExportSuppression {
 	var siteapiContactExportSuppression site.ContactExportSuppression
@@ -2442,12 +2442,12 @@ func (c *ConverterImpl) TelegramButtonToResource(source telegramrender.Button) s
 	siteapiTelegramButton.URL = source.URL
 	return siteapiTelegramButton
 }
-func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) site.SiteTelegramConfig {
-	var siteapiSiteTelegramConfig site.SiteTelegramConfig
-	siteapiSiteTelegramConfig.Kind = telegramConfigKind(source)
-	siteapiSiteTelegramConfig.BotId = source.BotID
-	siteapiSiteTelegramConfig.Username = source.Username
-	return siteapiSiteTelegramConfig
+func (c *ConverterImpl) TelegramConfigToResource(source integrations.RedactedTelegram) site.TelegramConfig {
+	var siteapiTelegramConfig site.TelegramConfig
+	siteapiTelegramConfig.Kind = telegramConfigKind(source)
+	siteapiTelegramConfig.BotId = source.BotID
+	siteapiTelegramConfig.Username = source.Username
+	return siteapiTelegramConfig
 }
 func (c *ConverterImpl) TemplatesListPage(source pagination.Page[*ent.EmailTemplate]) *site.SiteTemplatesListOK {
 	var siteapiSiteTemplatesListOK site.SiteTemplatesListOK
@@ -2491,62 +2491,62 @@ func (c *ConverterImpl) TokensToResources(source []*ent.ApiToken) []site.SiteApi
 	}
 	return siteapiSiteApiTokenResourceList
 }
-func (c *ConverterImpl) TrackingDomainRoleToResource(source trackingdomain.Role) site.SiteTrackingDomainRole {
-	var siteapiSiteTrackingDomainRole site.SiteTrackingDomainRole
+func (c *ConverterImpl) TrackingDomainRoleToResource(source trackingdomain.Role) site.TrackingDomainRole {
+	var siteapiTrackingDomainRole site.TrackingDomainRole
 	switch source {
 	case trackingdomain.RoleCurrent:
-		siteapiSiteTrackingDomainRole = site.SiteTrackingDomainRoleCurrent
+		siteapiTrackingDomainRole = site.TrackingDomainRoleCurrent
 	case trackingdomain.RoleReplacement:
-		siteapiSiteTrackingDomainRole = site.SiteTrackingDomainRoleReplacement
+		siteapiTrackingDomainRole = site.TrackingDomainRoleReplacement
 	case trackingdomain.RoleRetired:
-		siteapiSiteTrackingDomainRole = site.SiteTrackingDomainRoleRetired
+		siteapiTrackingDomainRole = site.TrackingDomainRoleRetired
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteTrackingDomainRole
+	return siteapiTrackingDomainRole
 }
-func (c *ConverterImpl) TrackingDomainToResource(source *ent.TrackingDomain) site.SiteTrackingDomainResource {
-	var siteapiSiteTrackingDomainResource site.SiteTrackingDomainResource
+func (c *ConverterImpl) TrackingDomainToResource(source *ent.TrackingDomain) site.TrackingDomainResource {
+	var siteapiTrackingDomainResource site.TrackingDomainResource
 	if source != nil {
-		siteapiSiteTrackingDomainResource.ID = site.EntityId((*source).ID)
-		siteapiSiteTrackingDomainResource.Host = (*source).Host
-		siteapiSiteTrackingDomainResource.Role = c.TrackingDomainRoleToResource((*source).Role)
-		siteapiSiteTrackingDomainResource.State = c.TrackingStateToResource((*source).State)
-		siteapiSiteTrackingDomainResource.Reason = optTrackingReason(c, (*source).Reason)
-		// siteapiSiteTrackingDomainResource.Record: ignore
-		// siteapiSiteTrackingDomainResource.OwnershipRecord: ignore
-		siteapiSiteTrackingDomainResource.ServedAt = optNilTimestamp((*source).ServedAt)
-		siteapiSiteTrackingDomainResource.LastCheckedAt = optNilTimestamp((*source).CheckedAt)
-		siteapiSiteTrackingDomainResource.StateChangedAt = optNilTimestamp((*source).StateChangedAt)
-		siteapiSiteTrackingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
-		siteapiSiteTrackingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
+		siteapiTrackingDomainResource.ID = site.EntityId((*source).ID)
+		siteapiTrackingDomainResource.Host = (*source).Host
+		siteapiTrackingDomainResource.Role = c.TrackingDomainRoleToResource((*source).Role)
+		siteapiTrackingDomainResource.State = c.TrackingStateToResource((*source).State)
+		siteapiTrackingDomainResource.Reason = optTrackingReason(c, (*source).Reason)
+		// siteapiTrackingDomainResource.Record: ignore
+		// siteapiTrackingDomainResource.OwnershipRecord: ignore
+		siteapiTrackingDomainResource.ServedAt = optNilTimestamp((*source).ServedAt)
+		siteapiTrackingDomainResource.LastCheckedAt = optNilTimestamp((*source).CheckedAt)
+		siteapiTrackingDomainResource.StateChangedAt = optNilTimestamp((*source).StateChangedAt)
+		siteapiTrackingDomainResource.CreatedAt = timestamp((*source).CreatedAt)
+		siteapiTrackingDomainResource.UpdatedAt = timestamp((*source).UpdatedAt)
 	}
-	return siteapiSiteTrackingDomainResource
+	return siteapiTrackingDomainResource
 }
-func (c *ConverterImpl) TrackingReasonToResource(source trackingdomain.Reason) site.SiteTrackingReason {
-	var siteapiSiteTrackingReason site.SiteTrackingReason
+func (c *ConverterImpl) TrackingReasonToResource(source trackingdomain.Reason) site.TrackingReason {
+	var siteapiTrackingReason site.TrackingReason
 	switch source {
 	case trackingdomain.ReasonHostTaken:
-		siteapiSiteTrackingReason = site.SiteTrackingReasonHostTaken
+		siteapiTrackingReason = site.TrackingReasonHostTaken
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteTrackingReason
+	return siteapiTrackingReason
 }
-func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) site.SiteTrackingState {
-	var siteapiSiteTrackingState site.SiteTrackingState
+func (c *ConverterImpl) TrackingStateToResource(source trackingdomain.State) site.TrackingState {
+	var siteapiTrackingState site.TrackingState
 	switch source {
 	case trackingdomain.DefaultState:
-		siteapiSiteTrackingState = site.SiteTrackingStatePending
+		siteapiTrackingState = site.TrackingStatePending
 	case trackingdomain.StateDNSVerified:
-		siteapiSiteTrackingState = site.SiteTrackingStateDNSVerified
-	// Skipped StatePending(pending) -> SiteTrackingStatePending(pending) because it duplicates DefaultState(pending) -> SiteTrackingStatePending(pending)
+		siteapiTrackingState = site.TrackingStateDNSVerified
+	// Skipped StatePending(pending) -> TrackingStatePending(pending) because it duplicates DefaultState(pending) -> TrackingStatePending(pending)
 	case trackingdomain.StateServing:
-		siteapiSiteTrackingState = site.SiteTrackingStateServing
+		siteapiTrackingState = site.TrackingStateServing
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteTrackingState
+	return siteapiTrackingState
 }
 func (c *ConverterImpl) TransactionalEmailsListPage(source pagination.Page[*ent.OutboundMessage]) *site.SiteTransactionalEmailsListOK {
 	var siteapiSiteTransactionalEmailsListOK site.SiteTransactionalEmailsListOK
@@ -2582,15 +2582,15 @@ func (c *ConverterImpl) TransactionalMessagesToResources(source []*ent.OutboundM
 	}
 	return siteapiSiteTransactionalEmailResourceList
 }
-func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwilio) site.SiteTwilioConfig {
-	var siteapiSiteTwilioConfig site.SiteTwilioConfig
-	siteapiSiteTwilioConfig.Kind = twilioConfigKind(source)
-	siteapiSiteTwilioConfig.AccountSid = source.AccountSID
-	siteapiSiteTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
-	siteapiSiteTwilioConfig.From = source.From
-	siteapiSiteTwilioConfig.FromKind = c.SmsFromKindToResource(source.FromKind)
-	siteapiSiteTwilioConfig.CallbacksSet = source.CallbacksSet
-	return siteapiSiteTwilioConfig
+func (c *ConverterImpl) TwilioConfigToResource(source integrations.RedactedTwilio) site.TwilioConfig {
+	var siteapiTwilioConfig site.TwilioConfig
+	siteapiTwilioConfig.Kind = twilioConfigKind(source)
+	siteapiTwilioConfig.AccountSid = source.AccountSID
+	siteapiTwilioConfig.ApiKeySid = twilioAPIKeySID(source)
+	siteapiTwilioConfig.From = source.From
+	siteapiTwilioConfig.FromKind = c.SmsFromKindToResource(source.FromKind)
+	siteapiTwilioConfig.CallbacksSet = source.CallbacksSet
+	return siteapiTwilioConfig
 }
 func (c *ConverterImpl) UnsubscribeToExport(source *ent.Unsubscribe) site.ContactExportUnsubscribe {
 	var siteapiContactExportUnsubscribe site.ContactExportUnsubscribe
@@ -2638,19 +2638,19 @@ func (c *ConverterImpl) VisitorToExport(source *ent.Visitor) site.ContactExportV
 	}
 	return siteapiContactExportVisitor
 }
-func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) site.SiteWebhookDisabledReason {
-	var siteapiSiteWebhookDisabledReason site.SiteWebhookDisabledReason
+func (c *ConverterImpl) WebhookDisabledReasonToResource(source webhookendpoint.DisabledReason) site.WebhookDisabledReason {
+	var siteapiWebhookDisabledReason site.WebhookDisabledReason
 	switch source {
 	case webhookendpoint.DisabledReasonGone:
-		siteapiSiteWebhookDisabledReason = site.SiteWebhookDisabledReasonGone
+		siteapiWebhookDisabledReason = site.WebhookDisabledReasonGone
 	case webhookendpoint.DisabledReasonOwner:
-		siteapiSiteWebhookDisabledReason = site.SiteWebhookDisabledReasonOwner
+		siteapiWebhookDisabledReason = site.WebhookDisabledReasonOwner
 	case webhookendpoint.DisabledReasonPersistentFailure:
-		siteapiSiteWebhookDisabledReason = site.SiteWebhookDisabledReasonPersistentFailure
+		siteapiWebhookDisabledReason = site.WebhookDisabledReasonPersistentFailure
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteWebhookDisabledReason
+	return siteapiWebhookDisabledReason
 }
 func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) site.SiteWebhookEndpointResource {
 	var siteapiSiteWebhookEndpointResource site.SiteWebhookEndpointResource
@@ -2672,21 +2672,21 @@ func (c *ConverterImpl) WebhookEndpointToResource(source *ent.WebhookEndpoint) s
 	}
 	return siteapiSiteWebhookEndpointResource
 }
-func (c *ConverterImpl) WebhookErrorKindToResource(source webhook.ErrorKind) site.SiteWebhookErrorKind {
-	var siteapiSiteWebhookErrorKind site.SiteWebhookErrorKind
+func (c *ConverterImpl) WebhookErrorKindToResource(source webhook.ErrorKind) site.WebhookErrorKind {
+	var siteapiWebhookErrorKind site.WebhookErrorKind
 	switch source {
 	case webhook.KindBlockedAddress:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindBlockedAddress
+		siteapiWebhookErrorKind = site.WebhookErrorKindBlockedAddress
 	case webhook.KindHTTPStatus:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindHTTPStatus
+		siteapiWebhookErrorKind = site.WebhookErrorKindHTTPStatus
 	case webhook.KindNetwork:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindNetwork
+		siteapiWebhookErrorKind = site.WebhookErrorKindNetwork
 	case webhook.KindTimeout:
-		siteapiSiteWebhookErrorKind = site.SiteWebhookErrorKindTimeout
+		siteapiWebhookErrorKind = site.WebhookErrorKindTimeout
 	default:
 		panic(fmt.Sprintf("unexpected enum element: %v", source))
 	}
-	return siteapiSiteWebhookErrorKind
+	return siteapiWebhookErrorKind
 }
 func (c *ConverterImpl) WebhooksListPage(source pagination.Page[site.SiteWebhookEndpointResource]) *site.SiteWebhooksListOK {
 	var siteapiSiteWebhooksListOK site.SiteWebhooksListOK
@@ -2804,18 +2804,18 @@ func (c *ConverterImpl) analyticsreportSubscribedPointToSiteapiSiteAnalyticsSubs
 	siteapiSiteAnalyticsSubscribedPoint.Net = count(source.Net)
 	return siteapiSiteAnalyticsSubscribedPoint
 }
-func (c *ConverterImpl) automationsStepFiguresToSiteapiSiteAutomationStepFigures(source automations.StepFigures) site.SiteAutomationStepFigures {
-	var siteapiSiteAutomationStepFigures site.SiteAutomationStepFigures
-	siteapiSiteAutomationStepFigures.Step = count(source.Step)
-	siteapiSiteAutomationStepFigures.Sent = count(source.Sent)
-	siteapiSiteAutomationStepFigures.Skipped = count(source.Skipped)
-	return siteapiSiteAutomationStepFigures
+func (c *ConverterImpl) automationsStepFiguresToSiteapiAutomationStepFigures(source automations.StepFigures) site.AutomationStepFigures {
+	var siteapiAutomationStepFigures site.AutomationStepFigures
+	siteapiAutomationStepFigures.Step = count(source.Step)
+	siteapiAutomationStepFigures.Sent = count(source.Sent)
+	siteapiAutomationStepFigures.Skipped = count(source.Skipped)
+	return siteapiAutomationStepFigures
 }
-func (c *ConverterImpl) linkclickClicksToSiteapiSiteLinkClicks(source linkclick.Clicks) site.SiteLinkClicks {
-	var siteapiSiteLinkClicks site.SiteLinkClicks
-	siteapiSiteLinkClicks.URL = source.URL
-	siteapiSiteLinkClicks.Clicks = count(source.Clicks)
-	return siteapiSiteLinkClicks
+func (c *ConverterImpl) linkclickClicksToSiteapiLinkClicks(source linkclick.Clicks) site.LinkClicks {
+	var siteapiLinkClicks site.LinkClicks
+	siteapiLinkClicks.URL = source.URL
+	siteapiLinkClicks.Clicks = count(source.Clicks)
+	return siteapiLinkClicks
 }
 func (c *ConverterImpl) needsattentionreportItemToSiteapiSiteAttentionItem(source needsattentionreport.Item) site.SiteAttentionItem {
 	var siteapiSiteAttentionItem site.SiteAttentionItem
@@ -2842,17 +2842,17 @@ func (c *ConverterImpl) ordersRevenueDayToSiteapiSiteRevenuePoint(source orders.
 	siteapiSiteRevenuePoint.Orders = count(source.Orders)
 	return siteapiSiteRevenuePoint
 }
-func (c *ConverterImpl) providerlimitValueToSiteapiSiteProviderLimitValue(source providerlimit.Value) site.SiteProviderLimitValue {
-	var siteapiSiteProviderLimitValue site.SiteProviderLimitValue
-	siteapiSiteProviderLimitValue.Limit = nilInt32(source.Limit)
-	siteapiSiteProviderLimitValue.Source = providerLimitSource(c, source.Source)
-	return siteapiSiteProviderLimitValue
+func (c *ConverterImpl) providerlimitValueToSiteapiProviderLimitValue(source providerlimit.Value) site.ProviderLimitValue {
+	var siteapiProviderLimitValue site.ProviderLimitValue
+	siteapiProviderLimitValue.Limit = nilInt32(source.Limit)
+	siteapiProviderLimitValue.Source = providerLimitSource(c, source.Source)
+	return siteapiProviderLimitValue
 }
-func (c *ConverterImpl) rulesPlannedActionToSiteapiSiteRuleDryRunAction(source rules.PlannedAction) site.SiteRuleDryRunAction {
-	var siteapiSiteRuleDryRunAction site.SiteRuleDryRunAction
-	siteapiSiteRuleDryRunAction.Type = string(source.Type)
-	siteapiSiteRuleDryRunAction.Summary = source.Summary
-	return siteapiSiteRuleDryRunAction
+func (c *ConverterImpl) rulesPlannedActionToSiteapiRuleDryRunAction(source rules.PlannedAction) site.RuleDryRunAction {
+	var siteapiRuleDryRunAction site.RuleDryRunAction
+	siteapiRuleDryRunAction.Type = string(source.Type)
+	siteapiRuleDryRunAction.Summary = source.Summary
+	return siteapiRuleDryRunAction
 }
 func (c *ConverterImpl) schemaCapturedHeaderToSiteapiSiteCapturedMessageHeader(source schema.CapturedHeader) site.SiteCapturedMessageHeader {
 	var siteapiSiteCapturedMessageHeader site.SiteCapturedMessageHeader

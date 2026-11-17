@@ -8,7 +8,7 @@ import {
   handleSiteEnrollmentsList,
   handleSiteIntegrationsList,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteAutomationResource, SiteAutomationStep } from '../../generated/site/types.gen.ts'
+import type { SiteAutomationResource, AutomationStep } from '../../generated/site/types.gen.ts'
 import { Route as automationsEditRoute } from '../../routes/workspaces/$workspaceId/automations/$automationId/edit.tsx'
 import { emailIntegration, TIMESTAMPS, testId } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
@@ -21,7 +21,7 @@ const EDIT_ROUTE = routeMount(automationsEditRoute, {
   automationId: testId(5),
 })
 
-const STEP: SiteAutomationStep = {
+const STEP: AutomationStep = {
   type: 'telegram',
   text: 'Hi <b>there</b>',
   integrationId: testId(31),
@@ -36,7 +36,7 @@ const INTEGRATIONS = [
   }),
 ]
 
-function stored(steps: SiteAutomationStep[]): SiteAutomationResource {
+function stored(steps: AutomationStep[]): SiteAutomationResource {
   return {
     id: testId(5),
     name: 'Welcome flow',
@@ -65,7 +65,7 @@ function canvasPane() {
 }
 
 test('a Telegram step round-trips: its bot and text load, an edit saves them back', async () => {
-  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  const bodies: { steps?: AutomationStep[] }[] = []
   let current = stored([STEP])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
@@ -121,7 +121,7 @@ test('a Telegram text over the limit is flagged by the counter', async () => {
 })
 
 test('adding an image switches the counter to the caption limit, and buttons and the preview switch round-trip', async () => {
-  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  const bodies: { steps?: AutomationStep[] }[] = []
   let current = stored([
     { type: 'telegram', text: 'Hello {{ first_name }}', integrationId: testId(31) },
   ])
@@ -178,7 +178,7 @@ test('adding an image switches the counter to the caption limit, and buttons and
 })
 
 test('the unsubscribe button of a Telegram step is switched on with a label and saved', async () => {
-  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  const bodies: { steps?: AutomationStep[] }[] = []
   let current = stored([STEP])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),
@@ -212,7 +212,7 @@ test('the unsubscribe button of a Telegram step is switched on with a label and 
 })
 
 test('a Telegram step with an unsubscribe button loads its label, and switching it off drops it', async () => {
-  const bodies: { steps?: SiteAutomationStep[] }[] = []
+  const bodies: { steps?: AutomationStep[] }[] = []
   let current = stored([{ ...STEP, unsubscribeButton: 'Stop' }])
   worker.use(
     handleSiteAutomationsGet(() => HttpResponse.json(current)),

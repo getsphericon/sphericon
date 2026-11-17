@@ -4,14 +4,14 @@ import {
   handleSiteCustomFieldsList,
   handleSiteEventsActions,
 } from '../../generated/site/msw.gen.ts'
-import type { SiteConditionGroup } from '../../generated/site/types.gen.ts'
+import type { ConditionGroup } from '../../generated/site/types.gen.ts'
 import { page } from '../../test/payloads.ts'
 import { renderWithRouter } from '../../test/renderWithRouter.tsx'
 import { worker } from '../../test/worker.ts'
 import type { ConditionDraft } from './condition.ts'
 import { ConditionBuilder } from './ConditionBuilder.tsx'
 
-const withProperty = (field: string): SiteConditionGroup => ({
+const withProperty = (field: string): ConditionGroup => ({
   kind: 'group',
   combinator: 'and',
   rules: [{ kind: 'rule', field, operator: 'eq', value: 'x' }],

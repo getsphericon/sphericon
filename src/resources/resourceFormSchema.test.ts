@@ -3,7 +3,7 @@ import { expect, test } from 'vitest'
 import { emptyGroup } from '../components/conditions/condition.ts'
 import {
   zCreateTemplateInput,
-  zSiteCreateRuleInput,
+  zCreateRuleInput,
   zSiteUpdateContactInput,
 } from '../generated/site/zod.gen.ts'
 import { resourceFormSchema } from './resourceFormSchema.ts'
@@ -35,7 +35,7 @@ test('an absent update preserves a field, a blank update clears it, and a blank 
 })
 
 test('a Rule keeps structured Conditions and Actions through hydration and unrelated edits', () => {
-  const form = resourceFormSchema(zSiteCreateRuleInput, {
+  const form = resourceFormSchema(zCreateRuleInput, {
     name: '',
     triggerEvents: [] as string[],
     condition: emptyGroup,
@@ -66,7 +66,7 @@ test('a Rule keeps structured Conditions and Actions through hydration and unrel
 })
 
 test('an incomplete Condition stays in the editor and is refused at its missing value', () => {
-  const form = resourceFormSchema(zSiteCreateRuleInput, {
+  const form = resourceFormSchema(zCreateRuleInput, {
     name: '',
     triggerEvents: [] as string[],
     condition: emptyGroup,
@@ -91,7 +91,7 @@ test('an incomplete Condition stays in the editor and is refused at its missing 
 })
 
 test('a nullable marker cannot silently omit a nonnullable structured field', () => {
-  const form = resourceFormSchema(zSiteCreateRuleInput, {
+  const form = resourceFormSchema(zCreateRuleInput, {
     name: '',
     triggerEvents: [] as string[],
     condition: emptyGroup,

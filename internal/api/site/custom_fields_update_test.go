@@ -40,7 +40,7 @@ func fieldByKey(t *testing.T, c *siteapi.Client, workspace siteapi.WorkspaceId, 
 	return field
 }
 
-func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.EntityId, in *siteapi.SiteUpdateCustomFieldInput) (*siteapi.SiteCustomFieldResource, error) {
+func updateField(c *siteapi.Client, workspace siteapi.WorkspaceId, id siteapi.EntityId, in *siteapi.UpdateCustomFieldInput) (*siteapi.SiteCustomFieldResource, error) {
 	return c.SiteCustomFieldsUpdate(context.Background(), in, siteapi.SiteCustomFieldsUpdateParams{WorkspaceId: workspace, ID: id})
 }
 
@@ -49,7 +49,7 @@ func previewDuff(t *testing.T, c *siteapi.Client, leaf string) int32 {
 	t.Helper()
 	def := `{"kind":"group","combinator":"and","rules":[` + leaf + `]}`
 	res, err := c.SiteSegmentsPreview(context.Background(), &siteapi.SitePreviewSegmentInput{
-		Condition: siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
+		Condition: siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, def)),
 	}, siteapi.SiteSegmentsPreviewParams{WorkspaceId: fixtures.DuffPublicID})
 	require.NoError(t, err)
 	return res.Count
@@ -67,13 +67,13 @@ func TestAContactWriteMakesADatetimeFieldFromAnISODate(t *testing.T) {
 		"d_slash": `"01/15/2026"`, "d_text": `"soon"`, "d_number": `1768435200`,
 	})
 
-	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_zulu").Type)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_offset").Type)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_local").Type)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_bare").Type)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeString, fieldByKey(t, c, fixtures.AcmePublicID, "d_slash").Type)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeString, fieldByKey(t, c, fixtures.AcmePublicID, "d_text").Type)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeNumber, fieldByKey(t, c, fixtures.AcmePublicID, "d_number").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_zulu").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_offset").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_local").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeDatetime, fieldByKey(t, c, fixtures.AcmePublicID, "d_bare").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeString, fieldByKey(t, c, fixtures.AcmePublicID, "d_slash").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeString, fieldByKey(t, c, fixtures.AcmePublicID, "d_text").Type)
+	assert.Equal(t, siteapi.CustomFieldTypeNumber, fieldByKey(t, c, fixtures.AcmePublicID, "d_number").Type)
 }
 
 // A date leaf matches a Contact holding each ISO form, an offset-less one judged in the Workspace
@@ -105,12 +105,12 @@ func TestChangingATypeToDatetimeMakesEarlierISOStringsMatch(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
 	field := fieldByKey(t, c, fixtures.DuffPublicID, "renewal")
-	require.Equal(t, siteapi.SiteCustomFieldTypeString, field.Type)
+	require.Equal(t, siteapi.CustomFieldTypeString, field.Type)
 
-	updated, err := updateField(c, fixtures.DuffPublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeDatetime)})
+	updated, err := updateField(c, fixtures.DuffPublicID, field.ID, &siteapi.UpdateCustomFieldInput{Revision: field.Revision, Type: siteapi.NewOptCustomFieldType(siteapi.CustomFieldTypeDatetime)})
 
 	require.NoError(t, err)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, updated.Type)
+	assert.Equal(t, siteapi.CustomFieldTypeDatetime, updated.Type)
 	assert.Equal(t, field.Key, updated.Key)
 	count := previewDuff(t, c, `{"kind":"date","field":"custom:renewal","operator":"after","at":"2026-01-01T00:00:00Z"}`)
 	assert.Equal(t, int32(1), count, "the ISO string matches, the text does not")
@@ -122,9 +122,9 @@ func TestChangingATypeToDatetimeMakesEarlierISOStringsMatch(t *testing.T) {
 func TestChangingATypeIsRefusedWhileASegmentUsesTheField(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.DuffOwnerDanEmail)
-	toString := func(key string) (siteapi.EntityId, *siteapi.SiteUpdateCustomFieldInput) {
+	toString := func(key string) (siteapi.EntityId, *siteapi.UpdateCustomFieldInput) {
 		field := fieldByKey(t, c, fixtures.DuffPublicID, key)
-		return field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Type: siteapi.NewOptSiteCustomFieldType(siteapi.SiteCustomFieldTypeString)}
+		return field.ID, &siteapi.UpdateCustomFieldInput{Revision: field.Revision, Type: siteapi.NewOptCustomFieldType(siteapi.CustomFieldTypeString)}
 	}
 
 	endsOn, in := toString("ends_on")
@@ -136,7 +136,7 @@ func TestChangingATypeIsRefusedWhileASegmentUsesTheField(t *testing.T) {
 
 	assert.Equal(t, []string{"Ends soon"}, lo.Map(problem.UsedBy, func(u siteapi.UsedBy, _ int) string { return u.Name }))
 	assert.Equal(t, siteapi.UsedByKindSegment, problem.UsedBy[0].Kind)
-	assert.Equal(t, siteapi.SiteCustomFieldTypeDatetime, fieldByKey(t, c, fixtures.DuffPublicID, "ends_on").Type, "the refused field keeps its type")
+	assert.Equal(t, siteapi.CustomFieldTypeDatetime, fieldByKey(t, c, fixtures.DuffPublicID, "ends_on").Type, "the refused field keeps its type")
 }
 
 // A member may not update a field; an owner and an admin may. The key never changes, the name
@@ -148,11 +148,11 @@ func TestOnlyOwnersAndAdminsUpdateACustomField(t *testing.T) {
 	member := env.SiteActor(t, fixtures.MemberMaryEmail)
 	field := fieldByKey(t, owner, fixtures.AcmePublicID, "plan")
 
-	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Alias")})
+	_, err := updateField(member, fixtures.AcmePublicID, field.ID, &siteapi.UpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Alias")})
 	testhelper.SiteRefusal(t, err, http.StatusForbidden)
-	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Alias")})
+	renamed, err := updateField(admin, fixtures.AcmePublicID, field.ID, &siteapi.UpdateCustomFieldInput{Revision: field.Revision, Name: siteapi.NewOptName("Alias")})
 	require.NoError(t, err)
-	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.SiteUpdateCustomFieldInput{Revision: renamed.Revision, Name: siteapi.NewOptName("Nick")})
+	final, err := updateField(owner, fixtures.AcmePublicID, field.ID, &siteapi.UpdateCustomFieldInput{Revision: renamed.Revision, Name: siteapi.NewOptName("Nick")})
 	require.NoError(t, err)
 
 	assert.Equal(t, "Alias", renamed.Name)

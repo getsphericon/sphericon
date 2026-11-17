@@ -7,76 +7,6 @@ namespace Sphericon;
 
 // --- Output config (secrets redacted; never echo passwords/keys) ---
 
-/** SMTP config without the password */
-model SmtpConfig {
-  kind: "smtp";
-  host: string;
-  port: int32;
-  username?: string | null;
-  from: EmailAddress;
-  fromName?: string | null;
-}
-
-/** SES config without the secret access key */
-model SesConfig {
-  kind: "ses";
-  region: string;
-  from: EmailAddress;
-  fromName?: string | null;
-
-  /** Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS */
-  endpoint?: string | null;
-
-  /** Last 4 chars of the access key id, for recognition */
-  accessKeyIdLast4?: string | null;
-}
-
-/** The Test inbox has no settings */
-model InboxConfig {
-  kind: "inbox";
-}
-
-/** A Telegram bot without its token: who it is, as Telegram said when it was connected */
-model TelegramConfig {
-  kind: "telegram";
-
-  /** The bot's numeric Telegram id */
-  botId: int64;
-
-  /** The bot's @username, without the @ */
-  username: string;
-}
-
-/** A Twilio account without its secret */
-model TwilioConfig {
-  kind: "twilio";
-
-  /** The Account SID */
-  accountSid: string;
-
-  /** The API key messages are sent with; null when they are sent with the Auth Token */
-  apiKeySid: string | null;
-
-  /** What messages go out from */
-  from: string;
-
-  /** What kind of sender `from` is */
-  fromKind: SmsFromKind;
-
-  /** Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID, which receives nothing, and when the credentials may not change the sender: then paste `hookUrl` into Twilio as the sender's inbound and status callback */
-  callbacksSet: boolean;
-}
-
-/** Provider config as returned, discriminated by `kind`. Secrets are omitted. */
-@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
-union IntegrationConfig {
-  smtp: SmtpConfig,
-  ses: SesConfig,
-  inbox: InboxConfig,
-  telegram: TelegramConfig,
-  twilio: TwilioConfig,
-}
-
 // The input config (carries secrets; write-only) is common/integrations.tsp.
 
 // --- Resource + request bodies ---
@@ -184,18 +114,6 @@ interface Integrations
 // the Preset's JSON Schema (`paramsSchema`) and an Integration's values (`params`) as
 // opaque objects. They are validated server side against that schema, never by the
 // generated client: read `paramsSchema` from `presets_list` before sending `params`.
-
-/** A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks */
-model PresetResource {
-  /** The name an Integration's `preset` refers to */
-  name: string;
-
-  /** What the Preset is for */
-  description: string;
-
-  /** JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked `writeOnly` is a secret: it is never returned by a read. */
-  paramsSchema: JsonObject;
-}
 
 @route("/presets")
 @tag("Integrations")

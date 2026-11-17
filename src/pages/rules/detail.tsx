@@ -16,8 +16,8 @@ import {
   siteRulesGetQueryKey,
   siteRulesListQueryKey,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
-import { SiteRuleActionStatus } from '../../generated/site/types.gen.ts'
-import type { SiteRuleVersion } from '../../generated/site/types.gen.ts'
+import { RuleActionStatus } from '../../generated/site/types.gen.ts'
+import type { RuleVersion } from '../../generated/site/types.gen.ts'
 import { useFormat } from '../../hooks/useFormat.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { Route as contactsDetailRoute } from '../../routes/workspaces/$workspaceId/contacts/$contactId/index.tsx'
@@ -28,14 +28,14 @@ import { withPage } from '../../searchSchemas.ts'
 import { ruleDraftActions } from './draftActions.ts'
 
 const resultColor = {
-  [SiteRuleActionStatus.SUCCEEDED]: 'teal',
-  [SiteRuleActionStatus.FAILED]: 'red',
-  [SiteRuleActionStatus.SKIPPED]: 'gray',
-  [SiteRuleActionStatus.PENDING]: 'blue',
+  [RuleActionStatus.SUCCEEDED]: 'teal',
+  [RuleActionStatus.FAILED]: 'red',
+  [RuleActionStatus.SKIPPED]: 'gray',
+  [RuleActionStatus.PENDING]: 'blue',
 }
 
 // What the live version does: its number, its Trigger events and its Actions in order.
-function RuleVersionSummary({ version }: { version: SiteRuleVersion }) {
+function RuleVersionSummary({ version }: { version: RuleVersion }) {
   const { t } = useTranslation()
   return (
     <Stack gap="xs">

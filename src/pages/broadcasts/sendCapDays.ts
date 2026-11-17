@@ -1,4 +1,4 @@
-import type { SiteSendCap } from '../../generated/site/types.gen.ts'
+import type { SendCap } from '../../generated/site/types.gen.ts'
 
 // How many days a Broadcast to `audience` contacts takes under the Send cap (ADR 0067), by the
 // server's model of its bucket: what the bucket holds goes out at once, the rest at the per-day
@@ -6,7 +6,7 @@ import type { SiteSendCap } from '../../generated/site/types.gen.ts'
 // last 24 hours (negative after Transactional sends beyond it): no more than the bucket holds, so
 // the estimate errs late. Null when no Send cap applies or the audience goes out within 24 hours,
 // so there is nothing to warn about.
-export function sendCapDays(audience: number, sendCap: SiteSendCap | null | undefined) {
+export function sendCapDays(audience: number, sendCap: SendCap | null | undefined) {
   if (!sendCap) {
     return null
   }

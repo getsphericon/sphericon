@@ -31,14 +31,14 @@ func (w *Workspace) PublishRule(r Rule) {
 	w.t.Helper()
 	ctx := w.t.Context()
 	ws := siteapi.WorkspaceId(w.publicID)
-	actions := []siteapi.SiteRuleActionInput{{Type: siteapi.SiteRuleActionTypeApplyTag, Tag: siteapi.NewOptString(r.Tag)}}
+	actions := []siteapi.RuleActionInput{{Type: siteapi.RuleActionTypeApplyTag, Tag: siteapi.NewOptString(r.Tag)}}
 	if r.EnrollIn != 0 {
-		actions = append(actions, siteapi.SiteRuleActionInput{
-			Type:         siteapi.SiteRuleActionTypeEnrollAutomation,
+		actions = append(actions, siteapi.RuleActionInput{
+			Type:         siteapi.RuleActionTypeEnrollAutomation,
 			AutomationId: siteapi.NewOptEntityId(siteapi.EntityId(r.EnrollIn)),
 		})
 	}
-	res, err := w.site.SiteRulesCreate(ctx, &siteapi.SiteCreateRuleInput{
+	res, err := w.site.SiteRulesCreate(ctx, &siteapi.CreateRuleInput{
 		Name:          siteapi.Name("e2e rule " + uniq()),
 		TriggerEvents: []string{r.TriggerEvent},
 		Actions:       actions,
@@ -47,7 +47,7 @@ func (w *Workspace) PublishRule(r Rule) {
 
 	published, err := w.site.SiteRulesPublish(ctx, &siteapi.RevisionInput{Revision: created.Revision}, siteapi.SiteRulesPublishParams{WorkspaceId: ws, ID: created.ID})
 	got := ok[siteapi.SiteRuleResource](w.t, "publish rule", published, err)
-	require.Equal(w.t, siteapi.SiteRuleStatusActive, got.Status)
+	require.Equal(w.t, siteapi.RuleStatusActive, got.Status)
 }
 
 // Visit is what the tracking snippet does on a customer's site: it identifies the visitor as the

@@ -39,10 +39,10 @@ func TestSiteRefusesContentThatCannotRender(t *testing.T) {
 	}, siteapi.SiteBroadcastsUpdateParams{WorkspaceId: workspaceID, ID: fixtures.BroadcastDraftID})
 	testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)
 
-	_, err = c.SiteAutomationsCreate(ctx, &siteapi.SiteCreateAutomationInput{
+	_, err = c.SiteAutomationsCreate(ctx, &siteapi.CreateAutomationInput{
 		Name: "Broken", TriggerEvent: systemevent.ContactCreated,
-		Steps: []siteapi.SiteAutomationStepInput{
-			{Type: siteapi.SiteAutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>hi</p></div>")},
+		Steps: []siteapi.AutomationStepInput{
+			{Type: siteapi.AutomationStepTypeEmail, Subject: siteapi.NewOptString("Hi"), Body: siteapi.NewOptString("<p>hi</p></div>")},
 		},
 	}, siteapi.SiteAutomationsCreateParams{WorkspaceId: workspaceID})
 	refusedAutomation := testhelper.SiteRefusal(t, err, http.StatusUnprocessableEntity)

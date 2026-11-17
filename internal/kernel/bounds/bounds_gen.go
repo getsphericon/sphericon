@@ -71,7 +71,7 @@ const (
 )
 
 // HTTPCallHeaders are the headers of an http Action or step.
-// From site SiteRuleActionInput.headers, external RuleActionInput.headers, site SiteAutomationStepInput.headers, external AutomationStepInput.headers.
+// From site RuleActionInput.headers, site AutomationStepInput.headers.
 const (
 	HTTPCallHeadersMaxItems = 5
 )
@@ -204,13 +204,13 @@ const (
 )
 
 // TelegramButtons are the buttons of a Telegram message.
-// From site TelegramBroadcastContentInput.buttons, site SiteAutomationStepInput.buttons, external AutomationStepInput.buttons.
+// From site TelegramBroadcastContentInput.buttons, site AutomationStepInput.buttons.
 const (
 	TelegramButtonsMaxItems = 8
 )
 
 // TelegramUnsubscribeButton is the label of a Telegram message's unsubscribe button.
-// From site TelegramBroadcastContentInput.unsubscribeButton, site SiteAutomationStepInput.unsubscribeButton, external AutomationStepInput.unsubscribeButton.
+// From site TelegramBroadcastContentInput.unsubscribeButton, site AutomationStepInput.unsubscribeButton.
 const (
 	TelegramUnsubscribeButtonMaxLength = 64
 )
@@ -281,19 +281,19 @@ const (
 )
 
 // RuleTriggerEvents are the Event actions that fire a Rule.
-// From site SiteCreateRuleInput.triggerEvents, site SiteUpdateRuleInput.triggerEvents, external CreateRuleInput.triggerEvents, external UpdateRuleInput.triggerEvents.
+// From site CreateRuleInput.triggerEvents, site UpdateRuleInput.triggerEvents.
 const (
 	RuleTriggerEventsMinItems = 1
 )
 
 // ConditionWithinDays is how many days back a condition leaf looks: an Event count's window or a date's.
-// From site SiteConditionEventLeafInput.withinDays, site SiteConditionDateWithinLeafInput.withinDays, external ConditionEventLeafInput.withinDays, external ConditionDateWithinLeafInput.withinDays.
+// From site ConditionEventLeafInput.withinDays, site ConditionDateWithinLeafInput.withinDays.
 const (
 	ConditionWithinDaysMin = 1
 )
 
 // ConditionEventTimes is how many Events of an action a condition leaf counts.
-// From site SiteConditionEventLeafInput.times, external ConditionEventLeafInput.times.
+// From site ConditionEventLeafInput.times.
 const (
 	ConditionEventTimesMin = 0
 )

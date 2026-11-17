@@ -26,7 +26,7 @@ import {
   siteWorkspacesListOptions,
 } from '../../generated/site/@tanstack/react-query.gen.ts'
 import { siteBrandKitSave } from '../../generated/site/sdk.gen.ts'
-import type { SiteBrandKitResource } from '../../generated/site/types.gen.ts'
+import type { BrandKitResource } from '../../generated/site/types.gen.ts'
 import { zSiteSaveBrandKitInput } from '../../generated/site/zod.gen.ts'
 import { useResourceMutation } from '../../hooks/useResourceMutation.ts'
 import { defineEditForm } from '../../resources/defineResource.tsx'
@@ -46,7 +46,7 @@ const FOOTER = zSiteSaveBrandKitInput.shape.footerText
 const zBrandKitBody = zSiteSaveBrandKitInput.omit({ revision: true })
 type BrandKitValues = z.output<typeof zBrandKitBody>
 
-function valuesOf(kit: SiteBrandKitResource): BrandKitValues {
+function valuesOf(kit: BrandKitResource): BrandKitValues {
   return {
     accentColor: kit.accentColor,
     textColor: kit.textColor,
@@ -204,7 +204,7 @@ function BrandKitActions({
   canChange,
 }: {
   workspaceId: string
-  kit: SiteBrandKitResource
+  kit: BrandKitResource
   canChange: boolean
 }) {
   const { t } = useTranslation()

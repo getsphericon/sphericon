@@ -15,14 +15,14 @@ import (
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
-func listTrackingDomains(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) []siteapi.SiteTrackingDomainResource {
+func listTrackingDomains(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId) []siteapi.TrackingDomainResource {
 	t.Helper()
 	list, err := c.SiteTrackingDomainsList(context.Background(), siteapi.SiteTrackingDomainsListParams{WorkspaceId: ws})
 	require.NoError(t, err)
 	return list
 }
 
-func setTrackingDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, host string) (*siteapi.SiteTrackingDomainResource, error) {
+func setTrackingDomain(t *testing.T, c *siteapi.Client, ws siteapi.WorkspaceId, host string) (*siteapi.TrackingDomainResource, error) {
 	t.Helper()
 	return c.SiteTrackingDomainsSet(context.Background(), &siteapi.SetTrackingDomainInput{Host: host},
 		siteapi.SiteTrackingDomainsSetParams{WorkspaceId: ws})
@@ -36,17 +36,17 @@ func TestSiteTrackingDomainsListsThemCurrentFirstWithTheRecordToPublish(t *testi
 	list := listTrackingDomains(t, env.SiteActor(t, fixtures.OwnerJaneEmail), fixtures.GlobexPublicID)
 	require.Len(t, list, 2)
 	assert.Equal(t, fixtures.TrackingDomainGlobexHost, list[0].Host)
-	assert.Equal(t, siteapi.SiteTrackingDomainRoleCurrent, list[0].Role)
-	assert.Equal(t, siteapi.SiteTrackingStateDNSVerified, list[0].State)
+	assert.Equal(t, siteapi.TrackingDomainRoleCurrent, list[0].Role)
+	assert.Equal(t, siteapi.TrackingStateDNSVerified, list[0].State)
 	assert.False(t, list[0].ServedAt.IsSet())
-	assert.Equal(t, siteapi.SiteTrackingDomainRoleReplacement, list[1].Role)
+	assert.Equal(t, siteapi.TrackingDomainRoleReplacement, list[1].Role)
 
 	rec := list[0].Record
-	assert.Equal(t, siteapi.SiteCnameRecordTypeCNAME, rec.Type)
+	assert.Equal(t, siteapi.CnameRecordTypeCNAME, rec.Type)
 	assert.Equal(t, fixtures.TrackingDomainGlobexHost, rec.Host)
 	assert.Equal(t, testhelper.TrackingCNAMETarget, rec.Target)
 	own := list[0].OwnershipRecord
-	assert.Equal(t, siteapi.SiteDnsRecordTypeTXT, own.Type)
+	assert.Equal(t, siteapi.DnsRecordTypeTXT, own.Type)
 	assert.Equal(t, "_sphericon-tracking."+fixtures.TrackingDomainGlobexHost, own.Host)
 	assert.Equal(t, "sphericon-tracking=fixture-"+fixtures.TrackingDomainGlobexHost, own.Value, "the row's own token (ADR 0173)")
 
@@ -62,8 +62,8 @@ func TestSiteTrackingDomainsSetReplacesAHostThatDoesNotServe(t *testing.T) {
 	got, err := setTrackingDomain(t, c, fixtures.AcmePublicID, "Links.Acme.com")
 	require.NoError(t, err)
 	assert.Equal(t, "links.acme.com", got.Host)
-	assert.Equal(t, siteapi.SiteTrackingDomainRoleCurrent, got.Role)
-	assert.Equal(t, siteapi.SiteTrackingStatePending, got.State)
+	assert.Equal(t, siteapi.TrackingDomainRoleCurrent, got.Role)
+	assert.Equal(t, siteapi.TrackingStatePending, got.State)
 
 	list := listTrackingDomains(t, c, fixtures.AcmePublicID)
 	require.Len(t, list, 1)
@@ -104,7 +104,7 @@ func TestSiteTrackingDomainsRemovePromotesTheReplacementThenCancelsIt(t *testing
 	list := listTrackingDomains(t, c, fixtures.GlobexPublicID)
 	require.Len(t, list, 1)
 	assert.Equal(t, fixtures.TrackingDomainGlobexReplacementHost, list[0].Host)
-	assert.Equal(t, siteapi.SiteTrackingDomainRoleCurrent, list[0].Role)
+	assert.Equal(t, siteapi.TrackingDomainRoleCurrent, list[0].Role)
 
 	require.NoError(t, remove(fixtures.TrackingDomainGlobexReplacementID))
 	assert.Empty(t, listTrackingDomains(t, c, fixtures.GlobexPublicID))

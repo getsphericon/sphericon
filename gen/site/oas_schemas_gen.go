@@ -1374,6 +1374,1458 @@ func (s *AuditTarget) SetName(val OptNilString) {
 	s.Name = val
 }
 
+// Closed error kind of an HTTP step's body.
+// Ref: #/components/schemas/AutomationHttpErrorKind
+type AutomationHttpErrorKind string
+
+const (
+	AutomationHttpErrorKindInvalidBody AutomationHttpErrorKind = "invalid_body"
+)
+
+// AllValues returns all AutomationHttpErrorKind values.
+func (AutomationHttpErrorKind) AllValues() []AutomationHttpErrorKind {
+	return []AutomationHttpErrorKind{
+		AutomationHttpErrorKindInvalidBody,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationHttpErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationHttpErrorKindInvalidBody:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationHttpErrorKind) UnmarshalText(data []byte) error {
+	switch AutomationHttpErrorKind(data) {
+	case AutomationHttpErrorKindInvalidBody:
+		*s = AutomationHttpErrorKindInvalidBody
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One request header of an HTTP step. The value is a secret: it is never returned.
+// Ref: #/components/schemas/AutomationHttpHeader
+type AutomationHttpHeader struct {
+	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+	Name string `json:"name"`
+	// Header value. Omit it when editing to keep the stored value of the header with this name.
+	Value OptString `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *AutomationHttpHeader) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *AutomationHttpHeader) GetValue() OptString {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *AutomationHttpHeader) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *AutomationHttpHeader) SetValue(val OptString) {
+	s.Value = val
+}
+
+// One request header of an HTTP step. The value is a secret: it is never returned.
+// Ref: #/components/schemas/AutomationHttpHeaderInput
+type AutomationHttpHeaderInput struct {
+	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
+	Name string `json:"name"`
+	// Header value. Omit it when editing to keep the stored value of the header with this name.
+	Value OptString `json:"value"`
+}
+
+// GetName returns the value of Name.
+func (s *AutomationHttpHeaderInput) GetName() string {
+	return s.Name
+}
+
+// GetValue returns the value of Value.
+func (s *AutomationHttpHeaderInput) GetValue() OptString {
+	return s.Value
+}
+
+// SetName sets the value of Name.
+func (s *AutomationHttpHeaderInput) SetName(val string) {
+	s.Name = val
+}
+
+// SetValue sets the value of Value.
+func (s *AutomationHttpHeaderInput) SetValue(val OptString) {
+	s.Value = val
+}
+
+// One period of an automation's results. Each count is what happened in the period: an enrollment
+// counts as entered on the Report day it began and under its outcome on the Report day it ended,
+// whenever it began, so an enrollment still running counts as entered only.
+// Ref: #/components/schemas/AutomationPeriodResults
+type AutomationPeriodResults struct {
+	// Enrollments that began: their triggering Event occurred in it.
+	Entered int32 `json:"entered"`
+	// Enrollments that walked every step and ended in it.
+	Completed int32 `json:"completed"`
+	// Enrollments that ended in it because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
+	Exited int32 `json:"exited"`
+	// Enrollments that ended in it on a step that failed.
+	Failed int32 `json:"failed"`
+	// The period's first Report day, `YYYY-MM-DD` in the Workspace time zone.
+	From string `json:"from"`
+	// The period's last Report day, included.
+	To string `json:"to"`
+	// Mean time in whole seconds from the beginning to the end of the enrollments that ended in the
+	// period, whatever their outcome; null when none ended.
+	AverageDurationSeconds NilInt64 `json:"averageDurationSeconds"`
+	// The orders credited to the automation that were completed in the period, and the net change of its
+	// revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064).
+	Revenue MessageRevenue `json:"revenue"`
+}
+
+// GetEntered returns the value of Entered.
+func (s *AutomationPeriodResults) GetEntered() int32 {
+	return s.Entered
+}
+
+// GetCompleted returns the value of Completed.
+func (s *AutomationPeriodResults) GetCompleted() int32 {
+	return s.Completed
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *AutomationPeriodResults) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// GetExited returns the value of Exited.
+func (s *AutomationPeriodResults) GetExited() int32 {
+	return s.Exited
+}
+
+// GetFailed returns the value of Failed.
+func (s *AutomationPeriodResults) GetFailed() int32 {
+	return s.Failed
+}
+
+// GetFrom returns the value of From.
+func (s *AutomationPeriodResults) GetFrom() string {
+	return s.From
+}
+
+// GetTo returns the value of To.
+func (s *AutomationPeriodResults) GetTo() string {
+	return s.To
+}
+
+// GetAverageDurationSeconds returns the value of AverageDurationSeconds.
+func (s *AutomationPeriodResults) GetAverageDurationSeconds() NilInt64 {
+	return s.AverageDurationSeconds
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *AutomationPeriodResults) GetRevenue() MessageRevenue {
+	return s.Revenue
+}
+
+// SetEntered sets the value of Entered.
+func (s *AutomationPeriodResults) SetEntered(val int32) {
+	s.Entered = val
+}
+
+// SetCompleted sets the value of Completed.
+func (s *AutomationPeriodResults) SetCompleted(val int32) {
+	s.Completed = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *AutomationPeriodResults) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
+// SetExited sets the value of Exited.
+func (s *AutomationPeriodResults) SetExited(val int32) {
+	s.Exited = val
+}
+
+// SetFailed sets the value of Failed.
+func (s *AutomationPeriodResults) SetFailed(val int32) {
+	s.Failed = val
+}
+
+// SetFrom sets the value of From.
+func (s *AutomationPeriodResults) SetFrom(val string) {
+	s.From = val
+}
+
+// SetTo sets the value of To.
+func (s *AutomationPeriodResults) SetTo(val string) {
+	s.To = val
+}
+
+// SetAverageDurationSeconds sets the value of AverageDurationSeconds.
+func (s *AutomationPeriodResults) SetAverageDurationSeconds(val NilInt64) {
+	s.AverageDurationSeconds = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *AutomationPeriodResults) SetRevenue(val MessageRevenue) {
+	s.Revenue = val
+}
+
+// An automation's engagement figures over its whole history and its results over a period.
+// Ref: #/components/schemas/AutomationReport
+type AutomationReport struct {
+	// Opens recorded on the automation's emails, every open counted; bounded by Event retention.
+	Opens int32 `json:"opens"`
+	// Clicks recorded on the automation's emails, every click counted; bounded by Event retention.
+	Clicks int32 `json:"clicks"`
+	// Messages the provider reported delivered, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Delivered int32 `json:"delivered"`
+	// Messages the provider reported bounced, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Bounced int32 `json:"bounced"`
+	// Messages a recipient complained about, read from the delivery result stamped on each message; not
+	// bounded by Event retention.
+	Complained int32 `json:"complained"`
+	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
+	Captured int32 `json:"captured"`
+	// Orders credited to the automation and their net revenue, over its whole history (ADR 0064).
+	Revenue MessageRevenue `json:"revenue"`
+	// One entry per clicked link, most clicked first.
+	Links []LinkClicks `json:"links"`
+	// What the automation's enrollments did over the chosen period and the period before it.
+	Results AutomationResults `json:"results"`
+	// The send steps' messages by step position, in step order: one entry per position any of the
+	// automation's messages was sent from, across its versions.
+	Steps []AutomationStepFigures `json:"steps"`
+}
+
+// GetOpens returns the value of Opens.
+func (s *AutomationReport) GetOpens() int32 {
+	return s.Opens
+}
+
+// GetClicks returns the value of Clicks.
+func (s *AutomationReport) GetClicks() int32 {
+	return s.Clicks
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *AutomationReport) GetDelivered() int32 {
+	return s.Delivered
+}
+
+// GetBounced returns the value of Bounced.
+func (s *AutomationReport) GetBounced() int32 {
+	return s.Bounced
+}
+
+// GetComplained returns the value of Complained.
+func (s *AutomationReport) GetComplained() int32 {
+	return s.Complained
+}
+
+// GetCaptured returns the value of Captured.
+func (s *AutomationReport) GetCaptured() int32 {
+	return s.Captured
+}
+
+// GetRevenue returns the value of Revenue.
+func (s *AutomationReport) GetRevenue() MessageRevenue {
+	return s.Revenue
+}
+
+// GetLinks returns the value of Links.
+func (s *AutomationReport) GetLinks() []LinkClicks {
+	return s.Links
+}
+
+// GetResults returns the value of Results.
+func (s *AutomationReport) GetResults() AutomationResults {
+	return s.Results
+}
+
+// GetSteps returns the value of Steps.
+func (s *AutomationReport) GetSteps() []AutomationStepFigures {
+	return s.Steps
+}
+
+// SetOpens sets the value of Opens.
+func (s *AutomationReport) SetOpens(val int32) {
+	s.Opens = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *AutomationReport) SetClicks(val int32) {
+	s.Clicks = val
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *AutomationReport) SetDelivered(val int32) {
+	s.Delivered = val
+}
+
+// SetBounced sets the value of Bounced.
+func (s *AutomationReport) SetBounced(val int32) {
+	s.Bounced = val
+}
+
+// SetComplained sets the value of Complained.
+func (s *AutomationReport) SetComplained(val int32) {
+	s.Complained = val
+}
+
+// SetCaptured sets the value of Captured.
+func (s *AutomationReport) SetCaptured(val int32) {
+	s.Captured = val
+}
+
+// SetRevenue sets the value of Revenue.
+func (s *AutomationReport) SetRevenue(val MessageRevenue) {
+	s.Revenue = val
+}
+
+// SetLinks sets the value of Links.
+func (s *AutomationReport) SetLinks(val []LinkClicks) {
+	s.Links = val
+}
+
+// SetResults sets the value of Results.
+func (s *AutomationReport) SetResults(val AutomationResults) {
+	s.Results = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *AutomationReport) SetSteps(val []AutomationStepFigures) {
+	s.Steps = val
+}
+
+// The length of the period an automation's results are read over, in Report days (ADR 0057), today
+// included.
+// Ref: #/components/schemas/AutomationReportPeriod
+type AutomationReportPeriod string
+
+const (
+	AutomationReportPeriod7d  AutomationReportPeriod = "7d"
+	AutomationReportPeriod14d AutomationReportPeriod = "14d"
+	AutomationReportPeriod30d AutomationReportPeriod = "30d"
+	AutomationReportPeriod90d AutomationReportPeriod = "90d"
+)
+
+// AllValues returns all AutomationReportPeriod values.
+func (AutomationReportPeriod) AllValues() []AutomationReportPeriod {
+	return []AutomationReportPeriod{
+		AutomationReportPeriod7d,
+		AutomationReportPeriod14d,
+		AutomationReportPeriod30d,
+		AutomationReportPeriod90d,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationReportPeriod) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationReportPeriod7d:
+		return []byte(s), nil
+	case AutomationReportPeriod14d:
+		return []byte(s), nil
+	case AutomationReportPeriod30d:
+		return []byte(s), nil
+	case AutomationReportPeriod90d:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationReportPeriod) UnmarshalText(data []byte) error {
+	switch AutomationReportPeriod(data) {
+	case AutomationReportPeriod7d:
+		*s = AutomationReportPeriod7d
+		return nil
+	case AutomationReportPeriod14d:
+		*s = AutomationReportPeriod14d
+		return nil
+	case AutomationReportPeriod30d:
+		*s = AutomationReportPeriod30d
+		return nil
+	case AutomationReportPeriod90d:
+		*s = AutomationReportPeriod90d
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// An automation's results over a period of Report days, read from its enrollments, with the period
+// just before it to compare with.
+// Ref: #/components/schemas/AutomationResults
+type AutomationResults struct {
+	// The period the results are read over.
+	Period AutomationReportPeriod `json:"period"`
+	// The period ending today.
+	Current AutomationPeriodResults `json:"current"`
+	// As many Report days just before it.
+	Previous AutomationPeriodResults `json:"previous"`
+	// The current period by Report day, oldest first, a day with nothing at zero.
+	Series []AutomationResultsPoint `json:"series"`
+}
+
+// GetPeriod returns the value of Period.
+func (s *AutomationResults) GetPeriod() AutomationReportPeriod {
+	return s.Period
+}
+
+// GetCurrent returns the value of Current.
+func (s *AutomationResults) GetCurrent() AutomationPeriodResults {
+	return s.Current
+}
+
+// GetPrevious returns the value of Previous.
+func (s *AutomationResults) GetPrevious() AutomationPeriodResults {
+	return s.Previous
+}
+
+// GetSeries returns the value of Series.
+func (s *AutomationResults) GetSeries() []AutomationResultsPoint {
+	return s.Series
+}
+
+// SetPeriod sets the value of Period.
+func (s *AutomationResults) SetPeriod(val AutomationReportPeriod) {
+	s.Period = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *AutomationResults) SetCurrent(val AutomationPeriodResults) {
+	s.Current = val
+}
+
+// SetPrevious sets the value of Previous.
+func (s *AutomationResults) SetPrevious(val AutomationPeriodResults) {
+	s.Previous = val
+}
+
+// SetSeries sets the value of Series.
+func (s *AutomationResults) SetSeries(val []AutomationResultsPoint) {
+	s.Series = val
+}
+
+// One Report day of an automation's results.
+// Ref: #/components/schemas/AutomationResultsPoint
+type AutomationResultsPoint struct {
+	// Enrollments that began: their triggering Event occurred in it.
+	Entered int32 `json:"entered"`
+	// Enrollments that walked every step and ended in it.
+	Completed int32 `json:"completed"`
+	// Enrollments that ended in it because their goal event was recorded.
+	GoalReached int32 `json:"goalReached"`
+	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
+	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
+	Exited int32 `json:"exited"`
+	// Enrollments that ended in it on a step that failed.
+	Failed int32 `json:"failed"`
+	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
+	Date string `json:"date"`
+}
+
+// GetEntered returns the value of Entered.
+func (s *AutomationResultsPoint) GetEntered() int32 {
+	return s.Entered
+}
+
+// GetCompleted returns the value of Completed.
+func (s *AutomationResultsPoint) GetCompleted() int32 {
+	return s.Completed
+}
+
+// GetGoalReached returns the value of GoalReached.
+func (s *AutomationResultsPoint) GetGoalReached() int32 {
+	return s.GoalReached
+}
+
+// GetExited returns the value of Exited.
+func (s *AutomationResultsPoint) GetExited() int32 {
+	return s.Exited
+}
+
+// GetFailed returns the value of Failed.
+func (s *AutomationResultsPoint) GetFailed() int32 {
+	return s.Failed
+}
+
+// GetDate returns the value of Date.
+func (s *AutomationResultsPoint) GetDate() string {
+	return s.Date
+}
+
+// SetEntered sets the value of Entered.
+func (s *AutomationResultsPoint) SetEntered(val int32) {
+	s.Entered = val
+}
+
+// SetCompleted sets the value of Completed.
+func (s *AutomationResultsPoint) SetCompleted(val int32) {
+	s.Completed = val
+}
+
+// SetGoalReached sets the value of GoalReached.
+func (s *AutomationResultsPoint) SetGoalReached(val int32) {
+	s.GoalReached = val
+}
+
+// SetExited sets the value of Exited.
+func (s *AutomationResultsPoint) SetExited(val int32) {
+	s.Exited = val
+}
+
+// SetFailed sets the value of Failed.
+func (s *AutomationResultsPoint) SetFailed(val int32) {
+	s.Failed = val
+}
+
+// SetDate sets the value of Date.
+func (s *AutomationResultsPoint) SetDate(val string) {
+	s.Date = val
+}
+
+// Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
+// Ref: #/components/schemas/AutomationStatus
+type AutomationStatus string
+
+const (
+	AutomationStatusActive   AutomationStatus = "active"
+	AutomationStatusInactive AutomationStatus = "inactive"
+)
+
+// AllValues returns all AutomationStatus values.
+func (AutomationStatus) AllValues() []AutomationStatus {
+	return []AutomationStatus{
+		AutomationStatusActive,
+		AutomationStatusInactive,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationStatusActive:
+		return []byte(s), nil
+	case AutomationStatusInactive:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationStatus) UnmarshalText(data []byte) error {
+	switch AutomationStatus(data) {
+	case AutomationStatusActive:
+		*s = AutomationStatusActive
+		return nil
+	case AutomationStatusInactive:
+		*s = AutomationStatusInactive
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
+// wait steps carry seconds, tag steps carry the tag name.
+// Ref: #/components/schemas/AutomationStep
+type AutomationStep struct {
+	// Step kind.
+	Type AutomationStepType `json:"type"`
+	// Email subject (email steps).
+	Subject OptString `json:"subject"`
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
+	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
+	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
+	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
+	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
+	// server renders the body from it in the same save, and a document that cannot be rendered refuses the
+	// whole save, naming the step. Writing only a body clears the step's document.
+	Doc OptEditorDocument `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
+	// Delay before the next step, in seconds (wait steps).
+	Seconds OptInt32 `json:"seconds"`
+	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
+	Tag OptString `json:"tag"`
+	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+	ID OptString `json:"id"`
+	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
+	Headers []AutomationHttpHeader `json:"headers"`
+	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
+	// Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (HTTP steps).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (HTTP steps, read only).
+	HasSecret OptBool `json:"hasSecret"`
+	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
+	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
+	// through several (ADR 0081).
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
+	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
+	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
+	// one is refused.
+	//
+	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
+	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
+	// short links.
+	Text OptString `json:"text"`
+	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
+	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
+	// message.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
+	Buttons []TelegramButton `json:"buttons"`
+	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
+	// image.
+	LinkPreview OptBool `json:"linkPreview"`
+	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
+	// `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
+}
+
+// GetType returns the value of Type.
+func (s *AutomationStep) GetType() AutomationStepType {
+	return s.Type
+}
+
+// GetSubject returns the value of Subject.
+func (s *AutomationStep) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *AutomationStep) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *AutomationStep) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *AutomationStep) GetEditorVersion() OptString {
+	return s.EditorVersion
+}
+
+// GetSeconds returns the value of Seconds.
+func (s *AutomationStep) GetSeconds() OptInt32 {
+	return s.Seconds
+}
+
+// GetTag returns the value of Tag.
+func (s *AutomationStep) GetTag() OptString {
+	return s.Tag
+}
+
+// GetID returns the value of ID.
+func (s *AutomationStep) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *AutomationStep) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *AutomationStep) GetHeaders() []AutomationHttpHeader {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *AutomationStep) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *AutomationStep) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *AutomationStep) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationStep) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// GetText returns the value of Text.
+func (s *AutomationStep) GetText() OptString {
+	return s.Text
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *AutomationStep) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *AutomationStep) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *AutomationStep) GetButtons() []TelegramButton {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *AutomationStep) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *AutomationStep) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
+// SetType sets the value of Type.
+func (s *AutomationStep) SetType(val AutomationStepType) {
+	s.Type = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *AutomationStep) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *AutomationStep) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *AutomationStep) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *AutomationStep) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
+// SetSeconds sets the value of Seconds.
+func (s *AutomationStep) SetSeconds(val OptInt32) {
+	s.Seconds = val
+}
+
+// SetTag sets the value of Tag.
+func (s *AutomationStep) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// SetID sets the value of ID.
+func (s *AutomationStep) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *AutomationStep) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *AutomationStep) SetHeaders(val []AutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *AutomationStep) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *AutomationStep) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *AutomationStep) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationStep) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// SetText sets the value of Text.
+func (s *AutomationStep) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *AutomationStep) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *AutomationStep) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *AutomationStep) SetButtons(val []TelegramButton) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *AutomationStep) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *AutomationStep) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
+}
+
+// The messages of the send step at one position.
+// Ref: #/components/schemas/AutomationStepFigures
+type AutomationStepFigures struct {
+	// The step's position, 0 for the first step.
+	Step int32 `json:"step"`
+	// Messages the provider accepted.
+	Sent int32 `json:"sent"`
+	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
+	// suppressed. The enrollment moved on to the next step.
+	Skipped int32 `json:"skipped"`
+}
+
+// GetStep returns the value of Step.
+func (s *AutomationStepFigures) GetStep() int32 {
+	return s.Step
+}
+
+// GetSent returns the value of Sent.
+func (s *AutomationStepFigures) GetSent() int32 {
+	return s.Sent
+}
+
+// GetSkipped returns the value of Skipped.
+func (s *AutomationStepFigures) GetSkipped() int32 {
+	return s.Skipped
+}
+
+// SetStep sets the value of Step.
+func (s *AutomationStepFigures) SetStep(val int32) {
+	s.Step = val
+}
+
+// SetSent sets the value of Sent.
+func (s *AutomationStepFigures) SetSent(val int32) {
+	s.Sent = val
+}
+
+// SetSkipped sets the value of Skipped.
+func (s *AutomationStepFigures) SetSkipped(val int32) {
+	s.Skipped = val
+}
+
+// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
+// wait steps carry seconds, tag steps carry the tag name.
+// Ref: #/components/schemas/AutomationStepInput
+type AutomationStepInput struct {
+	// Step kind.
+	Type AutomationStepType `json:"type"`
+	// Email subject (email steps).
+	Subject OptString `json:"subject"`
+	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
+	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
+	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
+	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
+	Body OptString `json:"body"`
+	// The editor's JSON document an email step's body was built from, an opaque object checked by the
+	// server against the schema `email_schema` returns. Write it instead of `body` (both is a 422): the
+	// server renders the body from it in the same save, and a document that cannot be rendered refuses the
+	// whole save, naming the step. Writing only a body clears the step's document.
+	Doc OptEditorDocument `json:"doc"`
+	// Version of the editor that rendered the document (email steps, read only).
+	EditorVersion OptString `json:"editorVersion"`
+	// Delay before the next step, in seconds (wait steps).
+	Seconds OptInt32 `json:"seconds"`
+	// Tag name to apply to or remove from the enrolled contact (apply_tag and remove_tag steps).
+	Tag OptString `json:"tag"`
+	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
+	ID OptString `json:"id"`
+	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
+	Headers []AutomationHttpHeaderInput `json:"headers"`
+	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
+	// Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (HTTP steps).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (HTTP steps, read only).
+	HasSecret OptBool `json:"hasSecret"`
+	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
+	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
+	// through several (ADR 0081).
+	IntegrationId OptNilEntityId `json:"integrationId"`
+	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
+	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
+	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
+	// one is refused.
+	//
+	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
+	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
+	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
+	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
+	// short links.
+	Text OptString `json:"text"`
+	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
+	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
+	UnsubscribeButton OptString `json:"unsubscribeButton"`
+	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
+	// message.
+	ImageUrl OptString `json:"imageUrl"`
+	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
+	Buttons []TelegramButtonInput `json:"buttons"`
+	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
+	// image.
+	LinkPreview OptBool `json:"linkPreview"`
+	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
+	// `sms.clicked` (ADR 0083). On when omitted.
+	LinkTracking OptBool `json:"linkTracking"`
+}
+
+// GetType returns the value of Type.
+func (s *AutomationStepInput) GetType() AutomationStepType {
+	return s.Type
+}
+
+// GetSubject returns the value of Subject.
+func (s *AutomationStepInput) GetSubject() OptString {
+	return s.Subject
+}
+
+// GetBody returns the value of Body.
+func (s *AutomationStepInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetDoc returns the value of Doc.
+func (s *AutomationStepInput) GetDoc() OptEditorDocument {
+	return s.Doc
+}
+
+// GetEditorVersion returns the value of EditorVersion.
+func (s *AutomationStepInput) GetEditorVersion() OptString {
+	return s.EditorVersion
+}
+
+// GetSeconds returns the value of Seconds.
+func (s *AutomationStepInput) GetSeconds() OptInt32 {
+	return s.Seconds
+}
+
+// GetTag returns the value of Tag.
+func (s *AutomationStepInput) GetTag() OptString {
+	return s.Tag
+}
+
+// GetID returns the value of ID.
+func (s *AutomationStepInput) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *AutomationStepInput) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *AutomationStepInput) GetHeaders() []AutomationHttpHeaderInput {
+	return s.Headers
+}
+
+// GetSecret returns the value of Secret.
+func (s *AutomationStepInput) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *AutomationStepInput) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *AutomationStepInput) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
+// GetIntegrationId returns the value of IntegrationId.
+func (s *AutomationStepInput) GetIntegrationId() OptNilEntityId {
+	return s.IntegrationId
+}
+
+// GetText returns the value of Text.
+func (s *AutomationStepInput) GetText() OptString {
+	return s.Text
+}
+
+// GetUnsubscribeButton returns the value of UnsubscribeButton.
+func (s *AutomationStepInput) GetUnsubscribeButton() OptString {
+	return s.UnsubscribeButton
+}
+
+// GetImageUrl returns the value of ImageUrl.
+func (s *AutomationStepInput) GetImageUrl() OptString {
+	return s.ImageUrl
+}
+
+// GetButtons returns the value of Buttons.
+func (s *AutomationStepInput) GetButtons() []TelegramButtonInput {
+	return s.Buttons
+}
+
+// GetLinkPreview returns the value of LinkPreview.
+func (s *AutomationStepInput) GetLinkPreview() OptBool {
+	return s.LinkPreview
+}
+
+// GetLinkTracking returns the value of LinkTracking.
+func (s *AutomationStepInput) GetLinkTracking() OptBool {
+	return s.LinkTracking
+}
+
+// SetType sets the value of Type.
+func (s *AutomationStepInput) SetType(val AutomationStepType) {
+	s.Type = val
+}
+
+// SetSubject sets the value of Subject.
+func (s *AutomationStepInput) SetSubject(val OptString) {
+	s.Subject = val
+}
+
+// SetBody sets the value of Body.
+func (s *AutomationStepInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetDoc sets the value of Doc.
+func (s *AutomationStepInput) SetDoc(val OptEditorDocument) {
+	s.Doc = val
+}
+
+// SetEditorVersion sets the value of EditorVersion.
+func (s *AutomationStepInput) SetEditorVersion(val OptString) {
+	s.EditorVersion = val
+}
+
+// SetSeconds sets the value of Seconds.
+func (s *AutomationStepInput) SetSeconds(val OptInt32) {
+	s.Seconds = val
+}
+
+// SetTag sets the value of Tag.
+func (s *AutomationStepInput) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// SetID sets the value of ID.
+func (s *AutomationStepInput) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *AutomationStepInput) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *AutomationStepInput) SetHeaders(val []AutomationHttpHeaderInput) {
+	s.Headers = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *AutomationStepInput) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *AutomationStepInput) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *AutomationStepInput) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
+// SetIntegrationId sets the value of IntegrationId.
+func (s *AutomationStepInput) SetIntegrationId(val OptNilEntityId) {
+	s.IntegrationId = val
+}
+
+// SetText sets the value of Text.
+func (s *AutomationStepInput) SetText(val OptString) {
+	s.Text = val
+}
+
+// SetUnsubscribeButton sets the value of UnsubscribeButton.
+func (s *AutomationStepInput) SetUnsubscribeButton(val OptString) {
+	s.UnsubscribeButton = val
+}
+
+// SetImageUrl sets the value of ImageUrl.
+func (s *AutomationStepInput) SetImageUrl(val OptString) {
+	s.ImageUrl = val
+}
+
+// SetButtons sets the value of Buttons.
+func (s *AutomationStepInput) SetButtons(val []TelegramButtonInput) {
+	s.Buttons = val
+}
+
+// SetLinkPreview sets the value of LinkPreview.
+func (s *AutomationStepInput) SetLinkPreview(val OptBool) {
+	s.LinkPreview = val
+}
+
+// SetLinkTracking sets the value of LinkTracking.
+func (s *AutomationStepInput) SetLinkTracking(val OptBool) {
+	s.LinkTracking = val
+}
+
+// Kind of automation step.
+// Ref: #/components/schemas/AutomationStepType
+type AutomationStepType string
+
+const (
+	AutomationStepTypeEmail     AutomationStepType = "email"
+	AutomationStepTypeTelegram  AutomationStepType = "telegram"
+	AutomationStepTypeSMS       AutomationStepType = "sms"
+	AutomationStepTypeWait      AutomationStepType = "wait"
+	AutomationStepTypeApplyTag  AutomationStepType = "apply_tag"
+	AutomationStepTypeRemoveTag AutomationStepType = "remove_tag"
+	AutomationStepTypeHTTP      AutomationStepType = "http"
+)
+
+// AllValues returns all AutomationStepType values.
+func (AutomationStepType) AllValues() []AutomationStepType {
+	return []AutomationStepType{
+		AutomationStepTypeEmail,
+		AutomationStepTypeTelegram,
+		AutomationStepTypeSMS,
+		AutomationStepTypeWait,
+		AutomationStepTypeApplyTag,
+		AutomationStepTypeRemoveTag,
+		AutomationStepTypeHTTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s AutomationStepType) MarshalText() ([]byte, error) {
+	switch s {
+	case AutomationStepTypeEmail:
+		return []byte(s), nil
+	case AutomationStepTypeTelegram:
+		return []byte(s), nil
+	case AutomationStepTypeSMS:
+		return []byte(s), nil
+	case AutomationStepTypeWait:
+		return []byte(s), nil
+	case AutomationStepTypeApplyTag:
+		return []byte(s), nil
+	case AutomationStepTypeRemoveTag:
+		return []byte(s), nil
+	case AutomationStepTypeHTTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *AutomationStepType) UnmarshalText(data []byte) error {
+	switch AutomationStepType(data) {
+	case AutomationStepTypeEmail:
+		*s = AutomationStepTypeEmail
+		return nil
+	case AutomationStepTypeTelegram:
+		*s = AutomationStepTypeTelegram
+		return nil
+	case AutomationStepTypeSMS:
+		*s = AutomationStepTypeSMS
+		return nil
+	case AutomationStepTypeWait:
+		*s = AutomationStepTypeWait
+		return nil
+	case AutomationStepTypeApplyTag:
+		*s = AutomationStepTypeApplyTag
+		return nil
+	case AutomationStepTypeRemoveTag:
+		*s = AutomationStepTypeRemoveTag
+		return nil
+	case AutomationStepTypeHTTP:
+		*s = AutomationStepTypeHTTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One version of an automation's definition: what publishing makes it do (ADR 0065).
+// Ref: #/components/schemas/AutomationVersion
+type AutomationVersion struct {
+	// 1 for the first version, plus one per version after it.
+	Number int32 `json:"number"`
+	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
+	TriggerEvent string `json:"triggerEvent"`
+	// Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only an Event
+	// that occurred once the enrollment began counts; machine opens and clicks never do.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
+	// there is none.
+	GoalEvent NilString `json:"goalEvent"`
+	// The ordered, linear steps.
+	Steps []AutomationStep `json:"steps"`
+}
+
+// GetNumber returns the value of Number.
+func (s *AutomationVersion) GetNumber() int32 {
+	return s.Number
+}
+
+// GetTriggerEvent returns the value of TriggerEvent.
+func (s *AutomationVersion) GetTriggerEvent() string {
+	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *AutomationVersion) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *AutomationVersion) GetGoalEvent() NilString {
+	return s.GoalEvent
+}
+
+// GetSteps returns the value of Steps.
+func (s *AutomationVersion) GetSteps() []AutomationStep {
+	return s.Steps
+}
+
+// SetNumber sets the value of Number.
+func (s *AutomationVersion) SetNumber(val int32) {
+	s.Number = val
+}
+
+// SetTriggerEvent sets the value of TriggerEvent.
+func (s *AutomationVersion) SetTriggerEvent(val string) {
+	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *AutomationVersion) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *AutomationVersion) SetGoalEvent(val NilString) {
+	s.GoalEvent = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *AutomationVersion) SetSteps(val []AutomationStep) {
+	s.Steps = val
+}
+
+// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
+// palette the editor offers and what an agent is told to use: write a message in these values. Its
+// values are written into a message when the message is authored, so saving it never changes a message
+// already written. A Workspace that has not saved one has the defaults and `saved` false.
+// Ref: #/components/schemas/BrandKitResource
+type BrandKitResource struct {
+	// False until the Brand kit is first saved; the values are then the defaults.
+	Saved bool `json:"saved"`
+	// Brand color of buttons and links, `#rrggbb`.
+	AccentColor string `json:"accentColor"`
+	// Color of text, `#rrggbb`.
+	TextColor string `json:"textColor"`
+	// Color of the message background, `#rrggbb`.
+	BackgroundColor string `json:"backgroundColor"`
+	// Font of headings: a CSS font-family list of web-safe families.
+	HeadingFont string `json:"headingFont"`
+	// Font of body text: a CSS font-family list of web-safe families.
+	BodyFont string `json:"bodyFont"`
+	// Address (http or https) of the logo image; empty for none.
+	LogoUrl string `json:"logoUrl"`
+	// Color of the text on a button, `#rrggbb`.
+	ButtonTextColor string `json:"buttonTextColor"`
+	// Corner radius of a button in pixels, 0 to 32.
+	ButtonRadius int32 `json:"buttonRadius"`
+	// Plain text printed under the starter messages, at most 500 characters; empty for none.
+	FooterText string `json:"footerText"`
+	// When the Brand kit was last saved; absent while it is not saved.
+	UpdatedAt OptNilTimestamp `json:"updatedAt"`
+	// The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet
+	// is revision 1.
+	Revision Revision `json:"revision"`
+}
+
+// GetSaved returns the value of Saved.
+func (s *BrandKitResource) GetSaved() bool {
+	return s.Saved
+}
+
+// GetAccentColor returns the value of AccentColor.
+func (s *BrandKitResource) GetAccentColor() string {
+	return s.AccentColor
+}
+
+// GetTextColor returns the value of TextColor.
+func (s *BrandKitResource) GetTextColor() string {
+	return s.TextColor
+}
+
+// GetBackgroundColor returns the value of BackgroundColor.
+func (s *BrandKitResource) GetBackgroundColor() string {
+	return s.BackgroundColor
+}
+
+// GetHeadingFont returns the value of HeadingFont.
+func (s *BrandKitResource) GetHeadingFont() string {
+	return s.HeadingFont
+}
+
+// GetBodyFont returns the value of BodyFont.
+func (s *BrandKitResource) GetBodyFont() string {
+	return s.BodyFont
+}
+
+// GetLogoUrl returns the value of LogoUrl.
+func (s *BrandKitResource) GetLogoUrl() string {
+	return s.LogoUrl
+}
+
+// GetButtonTextColor returns the value of ButtonTextColor.
+func (s *BrandKitResource) GetButtonTextColor() string {
+	return s.ButtonTextColor
+}
+
+// GetButtonRadius returns the value of ButtonRadius.
+func (s *BrandKitResource) GetButtonRadius() int32 {
+	return s.ButtonRadius
+}
+
+// GetFooterText returns the value of FooterText.
+func (s *BrandKitResource) GetFooterText() string {
+	return s.FooterText
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *BrandKitResource) GetUpdatedAt() OptNilTimestamp {
+	return s.UpdatedAt
+}
+
+// GetRevision returns the value of Revision.
+func (s *BrandKitResource) GetRevision() Revision {
+	return s.Revision
+}
+
+// SetSaved sets the value of Saved.
+func (s *BrandKitResource) SetSaved(val bool) {
+	s.Saved = val
+}
+
+// SetAccentColor sets the value of AccentColor.
+func (s *BrandKitResource) SetAccentColor(val string) {
+	s.AccentColor = val
+}
+
+// SetTextColor sets the value of TextColor.
+func (s *BrandKitResource) SetTextColor(val string) {
+	s.TextColor = val
+}
+
+// SetBackgroundColor sets the value of BackgroundColor.
+func (s *BrandKitResource) SetBackgroundColor(val string) {
+	s.BackgroundColor = val
+}
+
+// SetHeadingFont sets the value of HeadingFont.
+func (s *BrandKitResource) SetHeadingFont(val string) {
+	s.HeadingFont = val
+}
+
+// SetBodyFont sets the value of BodyFont.
+func (s *BrandKitResource) SetBodyFont(val string) {
+	s.BodyFont = val
+}
+
+// SetLogoUrl sets the value of LogoUrl.
+func (s *BrandKitResource) SetLogoUrl(val string) {
+	s.LogoUrl = val
+}
+
+// SetButtonTextColor sets the value of ButtonTextColor.
+func (s *BrandKitResource) SetButtonTextColor(val string) {
+	s.ButtonTextColor = val
+}
+
+// SetButtonRadius sets the value of ButtonRadius.
+func (s *BrandKitResource) SetButtonRadius(val int32) {
+	s.ButtonRadius = val
+}
+
+// SetFooterText sets the value of FooterText.
+func (s *BrandKitResource) SetFooterText(val string) {
+	s.FooterText = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *BrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
+	s.UpdatedAt = val
+}
+
+// SetRevision sets the value of Revision.
+func (s *BrandKitResource) SetRevision(val Revision) {
+	s.Revision = val
+}
+
 // The Channel a Broadcast sends on, fixed when it is created (ADR 0080).
 // Ref: #/components/schemas/BroadcastChannel
 type BroadcastChannel string
@@ -1708,6 +3160,1871 @@ func (s *BroadcastStatus) UnmarshalText(data []byte) error {
 		return nil
 	case BroadcastStatusFailed:
 		*s = BroadcastStatusFailed
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The surface that asked for the send a Captured message belongs to.
+// Ref: #/components/schemas/CapturedMessageSurface
+type CapturedMessageSurface string
+
+const (
+	CapturedMessageSurfaceBroadcast     CapturedMessageSurface = "broadcast"
+	CapturedMessageSurfaceAutomation    CapturedMessageSurface = "automation"
+	CapturedMessageSurfaceTransactional CapturedMessageSurface = "transactional"
+	CapturedMessageSurfaceTest          CapturedMessageSurface = "test"
+)
+
+// AllValues returns all CapturedMessageSurface values.
+func (CapturedMessageSurface) AllValues() []CapturedMessageSurface {
+	return []CapturedMessageSurface{
+		CapturedMessageSurfaceBroadcast,
+		CapturedMessageSurfaceAutomation,
+		CapturedMessageSurfaceTransactional,
+		CapturedMessageSurfaceTest,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CapturedMessageSurface) MarshalText() ([]byte, error) {
+	switch s {
+	case CapturedMessageSurfaceBroadcast:
+		return []byte(s), nil
+	case CapturedMessageSurfaceAutomation:
+		return []byte(s), nil
+	case CapturedMessageSurfaceTransactional:
+		return []byte(s), nil
+	case CapturedMessageSurfaceTest:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CapturedMessageSurface) UnmarshalText(data []byte) error {
+	switch CapturedMessageSurface(data) {
+	case CapturedMessageSurfaceBroadcast:
+		*s = CapturedMessageSurfaceBroadcast
+		return nil
+	case CapturedMessageSurfaceAutomation:
+		*s = CapturedMessageSurfaceAutomation
+		return nil
+	case CapturedMessageSurfaceTransactional:
+		*s = CapturedMessageSurfaceTransactional
+		return nil
+	case CapturedMessageSurfaceTest:
+		*s = CapturedMessageSurfaceTest
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The CNAME record to publish: `host` must point at `target`.
+// Ref: #/components/schemas/CnameRecord
+type CnameRecord struct {
+	// The record type (always CNAME).
+	Type CnameRecordType `json:"type"`
+	// The host to create the record at.
+	Host string `json:"host"`
+	// The edge host the CNAME must point at.
+	Target string `json:"target"`
+}
+
+// GetType returns the value of Type.
+func (s *CnameRecord) GetType() CnameRecordType {
+	return s.Type
+}
+
+// GetHost returns the value of Host.
+func (s *CnameRecord) GetHost() string {
+	return s.Host
+}
+
+// GetTarget returns the value of Target.
+func (s *CnameRecord) GetTarget() string {
+	return s.Target
+}
+
+// SetType sets the value of Type.
+func (s *CnameRecord) SetType(val CnameRecordType) {
+	s.Type = val
+}
+
+// SetHost sets the value of Host.
+func (s *CnameRecord) SetHost(val string) {
+	s.Host = val
+}
+
+// SetTarget sets the value of Target.
+func (s *CnameRecord) SetTarget(val string) {
+	s.Target = val
+}
+
+// The record type (always CNAME).
+type CnameRecordType string
+
+const (
+	CnameRecordTypeCNAME CnameRecordType = "CNAME"
+)
+
+// AllValues returns all CnameRecordType values.
+func (CnameRecordType) AllValues() []CnameRecordType {
+	return []CnameRecordType{
+		CnameRecordTypeCNAME,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CnameRecordType) MarshalText() ([]byte, error) {
+	switch s {
+	case CnameRecordTypeCNAME:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CnameRecordType) UnmarshalText(data []byte) error {
+	switch CnameRecordType(data) {
+	case CnameRecordTypeCNAME:
+		*s = CnameRecordTypeCNAME
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a condition group combines its entries.
+// Ref: #/components/schemas/ConditionCombinator
+type ConditionCombinator string
+
+const (
+	ConditionCombinatorAnd ConditionCombinator = "and"
+	ConditionCombinatorOr  ConditionCombinator = "or"
+)
+
+// AllValues returns all ConditionCombinator values.
+func (ConditionCombinator) AllValues() []ConditionCombinator {
+	return []ConditionCombinator{
+		ConditionCombinatorAnd,
+		ConditionCombinatorOr,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionCombinator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionCombinatorAnd:
+		return []byte(s), nil
+	case ConditionCombinatorOr:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionCombinator) UnmarshalText(data []byte) error {
+	switch ConditionCombinator(data) {
+	case ConditionCombinatorAnd:
+		*s = ConditionCombinatorAnd
+		return nil
+	case ConditionCombinatorOr:
+		*s = ConditionCombinatorOr
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
+// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
+// a date-time without an offset or a value that is not a date-time makes the leaf false.
+// Ref: #/components/schemas/ConditionDateLeaf
+type ConditionDateLeaf struct {
+	Kind ConditionDateLeafKind `json:"kind"`
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// Which side of `at` the moment is on.
+	Operator ConditionDateOperator `json:"operator"`
+	// The moment the field's is compared with.
+	At Timestamp `json:"at"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionDateLeaf) GetKind() ConditionDateLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionDateLeaf) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionDateLeaf) GetOperator() ConditionDateOperator {
+	return s.Operator
+}
+
+// GetAt returns the value of At.
+func (s *ConditionDateLeaf) GetAt() Timestamp {
+	return s.At
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionDateLeaf) SetKind(val ConditionDateLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionDateLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionDateLeaf) SetOperator(val ConditionDateOperator) {
+	s.Operator = val
+}
+
+// SetAt sets the value of At.
+func (s *ConditionDateLeaf) SetAt(val Timestamp) {
+	s.At = val
+}
+
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
+// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
+// a date-time without an offset or a value that is not a date-time makes the leaf false.
+// Ref: #/components/schemas/ConditionDateLeafInput
+type ConditionDateLeafInput struct {
+	Kind ConditionDateLeafInputKind `json:"kind"`
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// Which side of `at` the moment is on.
+	Operator ConditionDateOperator `json:"operator"`
+	// The moment the field's is compared with.
+	At Timestamp `json:"at"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionDateLeafInput) GetKind() ConditionDateLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionDateLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionDateLeafInput) GetOperator() ConditionDateOperator {
+	return s.Operator
+}
+
+// GetAt returns the value of At.
+func (s *ConditionDateLeafInput) GetAt() Timestamp {
+	return s.At
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionDateLeafInput) SetKind(val ConditionDateLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionDateLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionDateLeafInput) SetOperator(val ConditionDateOperator) {
+	s.Operator = val
+}
+
+// SetAt sets the value of At.
+func (s *ConditionDateLeafInput) SetAt(val Timestamp) {
+	s.At = val
+}
+
+type ConditionDateLeafInputKind string
+
+const (
+	ConditionDateLeafInputKindDate ConditionDateLeafInputKind = "date"
+)
+
+// AllValues returns all ConditionDateLeafInputKind values.
+func (ConditionDateLeafInputKind) AllValues() []ConditionDateLeafInputKind {
+	return []ConditionDateLeafInputKind{
+		ConditionDateLeafInputKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateLeafInputKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionDateLeafInputKind(data) {
+	case ConditionDateLeafInputKindDate:
+		*s = ConditionDateLeafInputKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConditionDateLeafKind string
+
+const (
+	ConditionDateLeafKindDate ConditionDateLeafKind = "date"
+)
+
+// AllValues returns all ConditionDateLeafKind values.
+func (ConditionDateLeafKind) AllValues() []ConditionDateLeafKind {
+	return []ConditionDateLeafKind{
+		ConditionDateLeafKindDate,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateLeafKindDate:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionDateLeafKind(data) {
+	case ConditionDateLeafKindDate:
+		*s = ConditionDateLeafKindDate
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the two
+// split time at `at`.
+// Ref: #/components/schemas/ConditionDateOperator
+type ConditionDateOperator string
+
+const (
+	ConditionDateOperatorBefore ConditionDateOperator = "before"
+	ConditionDateOperatorAfter  ConditionDateOperator = "after"
+)
+
+// AllValues returns all ConditionDateOperator values.
+func (ConditionDateOperator) AllValues() []ConditionDateOperator {
+	return []ConditionDateOperator{
+		ConditionDateOperatorBefore,
+		ConditionDateOperatorAfter,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateOperatorBefore:
+		return []byte(s), nil
+	case ConditionDateOperatorAfter:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateOperator) UnmarshalText(data []byte) error {
+	switch ConditionDateOperator(data) {
+	case ConditionDateOperatorBefore:
+		*s = ConditionDateOperatorBefore
+		return nil
+	case ConditionDateOperatorAfter:
+		*s = ConditionDateOperatorAfter
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
+// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
+// a UTC offset is a moment, as for the date leaf.
+// Ref: #/components/schemas/ConditionDateWithinLeaf
+type ConditionDateWithinLeaf struct {
+	Kind ConditionDateWithinLeafKind `json:"kind"`
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// The window, in days back from now.
+	WithinDays int32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionDateWithinLeaf) GetKind() ConditionDateWithinLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionDateWithinLeaf) GetField() string {
+	return s.Field
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionDateWithinLeaf) GetWithinDays() int32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionDateWithinLeaf) SetKind(val ConditionDateWithinLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionDateWithinLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionDateWithinLeaf) SetWithinDays(val int32) {
+	s.WithinDays = val
+}
+
+// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
+// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
+// a UTC offset is a moment, as for the date leaf.
+// Ref: #/components/schemas/ConditionDateWithinLeafInput
+type ConditionDateWithinLeafInput struct {
+	Kind ConditionDateWithinLeafInputKind `json:"kind"`
+	// What it tests: "birthday" or "custom:" for a datetime custom field.
+	Field string `json:"field"`
+	// The window, in days back from now.
+	WithinDays int32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionDateWithinLeafInput) GetKind() ConditionDateWithinLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionDateWithinLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionDateWithinLeafInput) GetWithinDays() int32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionDateWithinLeafInput) SetKind(val ConditionDateWithinLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionDateWithinLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionDateWithinLeafInput) SetWithinDays(val int32) {
+	s.WithinDays = val
+}
+
+type ConditionDateWithinLeafInputKind string
+
+const (
+	ConditionDateWithinLeafInputKindDateWithin ConditionDateWithinLeafInputKind = "dateWithin"
+)
+
+// AllValues returns all ConditionDateWithinLeafInputKind values.
+func (ConditionDateWithinLeafInputKind) AllValues() []ConditionDateWithinLeafInputKind {
+	return []ConditionDateWithinLeafInputKind{
+		ConditionDateWithinLeafInputKindDateWithin,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateWithinLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateWithinLeafInputKindDateWithin:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateWithinLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionDateWithinLeafInputKind(data) {
+	case ConditionDateWithinLeafInputKindDateWithin:
+		*s = ConditionDateWithinLeafInputKindDateWithin
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConditionDateWithinLeafKind string
+
+const (
+	ConditionDateWithinLeafKindDateWithin ConditionDateWithinLeafKind = "dateWithin"
+)
+
+// AllValues returns all ConditionDateWithinLeafKind values.
+func (ConditionDateWithinLeafKind) AllValues() []ConditionDateWithinLeafKind {
+	return []ConditionDateWithinLeafKind{
+		ConditionDateWithinLeafKindDateWithin,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionDateWithinLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionDateWithinLeafKindDateWithin:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionDateWithinLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionDateWithinLeafKind(data) {
+	case ConditionDateWithinLeafKindDateWithin:
+		*s = ConditionDateWithinLeafKindDateWithin
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A test of how many times a contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/ConditionEventLeaf
+type ConditionEventLeaf struct {
+	Kind ConditionEventLeafKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator ConditionEventOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionEventLeaf) GetKind() ConditionEventLeafKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *ConditionEventLeaf) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionEventLeaf) GetOperator() ConditionEventOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *ConditionEventLeaf) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionEventLeaf) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionEventLeaf) SetKind(val ConditionEventLeafKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *ConditionEventLeaf) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionEventLeaf) SetOperator(val ConditionEventOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *ConditionEventLeaf) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionEventLeaf) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+// A test of how many times a contact performed an Event action, over all time or within the last
+// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
+// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
+// Event retention is capped by it: expired Events are no longer counted.
+// Ref: #/components/schemas/ConditionEventLeafInput
+type ConditionEventLeafInput struct {
+	Kind ConditionEventLeafInputKind `json:"kind"`
+	// The Event action counted.
+	Action string `json:"action"`
+	// How the count is bounded.
+	Operator ConditionEventOperator `json:"operator"`
+	// The bound: atLeast takes 1 or more, atMost 0 or more.
+	Times int32 `json:"times"`
+	// Count only the Events of the last this many days; absent counts all time.
+	WithinDays OptInt32 `json:"withinDays"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionEventLeafInput) GetKind() ConditionEventLeafInputKind {
+	return s.Kind
+}
+
+// GetAction returns the value of Action.
+func (s *ConditionEventLeafInput) GetAction() string {
+	return s.Action
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionEventLeafInput) GetOperator() ConditionEventOperator {
+	return s.Operator
+}
+
+// GetTimes returns the value of Times.
+func (s *ConditionEventLeafInput) GetTimes() int32 {
+	return s.Times
+}
+
+// GetWithinDays returns the value of WithinDays.
+func (s *ConditionEventLeafInput) GetWithinDays() OptInt32 {
+	return s.WithinDays
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionEventLeafInput) SetKind(val ConditionEventLeafInputKind) {
+	s.Kind = val
+}
+
+// SetAction sets the value of Action.
+func (s *ConditionEventLeafInput) SetAction(val string) {
+	s.Action = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionEventLeafInput) SetOperator(val ConditionEventOperator) {
+	s.Operator = val
+}
+
+// SetTimes sets the value of Times.
+func (s *ConditionEventLeafInput) SetTimes(val int32) {
+	s.Times = val
+}
+
+// SetWithinDays sets the value of WithinDays.
+func (s *ConditionEventLeafInput) SetWithinDays(val OptInt32) {
+	s.WithinDays = val
+}
+
+type ConditionEventLeafInputKind string
+
+const (
+	ConditionEventLeafInputKindEvent ConditionEventLeafInputKind = "event"
+)
+
+// AllValues returns all ConditionEventLeafInputKind values.
+func (ConditionEventLeafInputKind) AllValues() []ConditionEventLeafInputKind {
+	return []ConditionEventLeafInputKind{
+		ConditionEventLeafInputKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionEventLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionEventLeafInputKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionEventLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionEventLeafInputKind(data) {
+	case ConditionEventLeafInputKindEvent:
+		*s = ConditionEventLeafInputKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConditionEventLeafKind string
+
+const (
+	ConditionEventLeafKindEvent ConditionEventLeafKind = "event"
+)
+
+// AllValues returns all ConditionEventLeafKind values.
+func (ConditionEventLeafKind) AllValues() []ConditionEventLeafKind {
+	return []ConditionEventLeafKind{
+		ConditionEventLeafKindEvent,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionEventLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionEventLeafKindEvent:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionEventLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionEventLeafKind(data) {
+	case ConditionEventLeafKindEvent:
+		*s = ConditionEventLeafKindEvent
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How an event leaf bounds the count: at least `times`, or at most `times`.
+// Ref: #/components/schemas/ConditionEventOperator
+type ConditionEventOperator string
+
+const (
+	ConditionEventOperatorAtLeast ConditionEventOperator = "atLeast"
+	ConditionEventOperatorAtMost  ConditionEventOperator = "atMost"
+)
+
+// AllValues returns all ConditionEventOperator values.
+func (ConditionEventOperator) AllValues() []ConditionEventOperator {
+	return []ConditionEventOperator{
+		ConditionEventOperatorAtLeast,
+		ConditionEventOperatorAtMost,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionEventOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionEventOperatorAtLeast:
+		return []byte(s), nil
+	case ConditionEventOperatorAtMost:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionEventOperator) UnmarshalText(data []byte) error {
+	switch ConditionEventOperator(data) {
+	case ConditionEventOperatorAtLeast:
+		*s = ConditionEventOperatorAtLeast
+		return nil
+	case ConditionEventOperatorAtMost:
+		*s = ConditionEventOperatorAtMost
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
+// empty negated group matches none).
+// Ref: #/components/schemas/ConditionGroup
+type ConditionGroup struct {
+	Kind ConditionGroupKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's leaves and nested groups.
+	Rules []ConditionNode `json:"rules"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionGroup) GetKind() ConditionGroupKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *ConditionGroup) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *ConditionGroup) GetNot() OptBool {
+	return s.Not
+}
+
+// GetRules returns the value of Rules.
+func (s *ConditionGroup) GetRules() []ConditionNode {
+	return s.Rules
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionGroup) SetKind(val ConditionGroupKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *ConditionGroup) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *ConditionGroup) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetRules sets the value of Rules.
+func (s *ConditionGroup) SetRules(val []ConditionNode) {
+	s.Rules = val
+}
+
+// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
+// empty negated group matches none).
+// Ref: #/components/schemas/ConditionGroupInput
+type ConditionGroupInput struct {
+	Kind ConditionGroupInputKind `json:"kind"`
+	// How the entries combine.
+	Combinator ConditionCombinator `json:"combinator"`
+	// Negate the whole group.
+	Not OptBool `json:"not"`
+	// The group's leaves and nested groups.
+	Rules []ConditionNodeInput `json:"rules"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionGroupInput) GetKind() ConditionGroupInputKind {
+	return s.Kind
+}
+
+// GetCombinator returns the value of Combinator.
+func (s *ConditionGroupInput) GetCombinator() ConditionCombinator {
+	return s.Combinator
+}
+
+// GetNot returns the value of Not.
+func (s *ConditionGroupInput) GetNot() OptBool {
+	return s.Not
+}
+
+// GetRules returns the value of Rules.
+func (s *ConditionGroupInput) GetRules() []ConditionNodeInput {
+	return s.Rules
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionGroupInput) SetKind(val ConditionGroupInputKind) {
+	s.Kind = val
+}
+
+// SetCombinator sets the value of Combinator.
+func (s *ConditionGroupInput) SetCombinator(val ConditionCombinator) {
+	s.Combinator = val
+}
+
+// SetNot sets the value of Not.
+func (s *ConditionGroupInput) SetNot(val OptBool) {
+	s.Not = val
+}
+
+// SetRules sets the value of Rules.
+func (s *ConditionGroupInput) SetRules(val []ConditionNodeInput) {
+	s.Rules = val
+}
+
+type ConditionGroupInputKind string
+
+const (
+	ConditionGroupInputKindGroup ConditionGroupInputKind = "group"
+)
+
+// AllValues returns all ConditionGroupInputKind values.
+func (ConditionGroupInputKind) AllValues() []ConditionGroupInputKind {
+	return []ConditionGroupInputKind{
+		ConditionGroupInputKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionGroupInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionGroupInputKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionGroupInputKind) UnmarshalText(data []byte) error {
+	switch ConditionGroupInputKind(data) {
+	case ConditionGroupInputKindGroup:
+		*s = ConditionGroupInputKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConditionGroupKind string
+
+const (
+	ConditionGroupKindGroup ConditionGroupKind = "group"
+)
+
+// AllValues returns all ConditionGroupKind values.
+func (ConditionGroupKind) AllValues() []ConditionGroupKind {
+	return []ConditionGroupKind{
+		ConditionGroupKindGroup,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionGroupKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionGroupKindGroup:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionGroupKind) UnmarshalText(data []byte) error {
+	switch ConditionGroupKind(data) {
+	case ConditionGroupKindGroup:
+		*s = ConditionGroupKindGroup
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One test of a condition: a field, an operator and a value.
+// Ref: #/components/schemas/ConditionLeaf
+type ConditionLeaf struct {
+	Kind ConditionLeafKind `json:"kind"`
+	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
+	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
+	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
+	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
+	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
+	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+	// that is not text; a number property is compared by a number leaf).
+	Field string `json:"field"`
+	// How the field is tested.
+	Operator ConditionOperator `json:"operator"`
+	// The value to test against: a tag name, blank for null and notNull.
+	Value OptString `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionLeaf) GetKind() ConditionLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionLeaf) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionLeaf) GetOperator() ConditionOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionLeaf) GetValue() OptString {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionLeaf) SetKind(val ConditionLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionLeaf) SetOperator(val ConditionOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionLeaf) SetValue(val OptString) {
+	s.Value = val
+}
+
+// One test of a condition: a field, an operator and a value.
+// Ref: #/components/schemas/ConditionLeafInput
+type ConditionLeafInput struct {
+	Kind ConditionLeafInputKind `json:"kind"`
+	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
+	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
+	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
+	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
+	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
+	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
+	// that is not text; a number property is compared by a number leaf).
+	Field string `json:"field"`
+	// How the field is tested.
+	Operator ConditionOperator `json:"operator"`
+	// The value to test against: a tag name, blank for null and notNull.
+	Value OptString `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionLeafInput) GetKind() ConditionLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionLeafInput) GetOperator() ConditionOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionLeafInput) GetValue() OptString {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionLeafInput) SetKind(val ConditionLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionLeafInput) SetOperator(val ConditionOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionLeafInput) SetValue(val OptString) {
+	s.Value = val
+}
+
+type ConditionLeafInputKind string
+
+const (
+	ConditionLeafInputKindRule ConditionLeafInputKind = "rule"
+)
+
+// AllValues returns all ConditionLeafInputKind values.
+func (ConditionLeafInputKind) AllValues() []ConditionLeafInputKind {
+	return []ConditionLeafInputKind{
+		ConditionLeafInputKindRule,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionLeafInputKindRule:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionLeafInputKind(data) {
+	case ConditionLeafInputKindRule:
+		*s = ConditionLeafInputKindRule
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConditionLeafKind string
+
+const (
+	ConditionLeafKindRule ConditionLeafKind = "rule"
+)
+
+// AllValues returns all ConditionLeafKind values.
+func (ConditionLeafKind) AllValues() []ConditionLeafKind {
+	return []ConditionLeafKind{
+		ConditionLeafKindRule,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionLeafKindRule:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionLeafKind(data) {
+	case ConditionLeafKindRule:
+		*s = ConditionLeafKindRule
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
+// inside a condition group, discriminated by `kind`.
+// Ref: #/components/schemas/ConditionNode
+type ConditionNode struct {
+	OneOf ConditionNodeSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *ConditionNode) GetOneOf() ConditionNodeSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *ConditionNode) SetOneOf(val ConditionNodeSum) {
+	s.OneOf = val
+}
+
+// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
+// inside a condition group, discriminated by `kind`.
+// Ref: #/components/schemas/ConditionNodeInput
+type ConditionNodeInput struct {
+	OneOf ConditionNodeInputSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *ConditionNodeInput) GetOneOf() ConditionNodeInputSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *ConditionNodeInput) SetOneOf(val ConditionNodeInputSum) {
+	s.OneOf = val
+}
+
+// ConditionNodeInputSum represents sum type.
+type ConditionNodeInputSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                         ConditionNodeInputSumType
+	ConditionLeafInput           ConditionLeafInput
+	ConditionEventLeafInput      ConditionEventLeafInput
+	ConditionNumberLeafInput     ConditionNumberLeafInput
+	ConditionDateLeafInput       ConditionDateLeafInput
+	ConditionDateWithinLeafInput ConditionDateWithinLeafInput
+	ConditionGroupInput          ConditionGroupInput
+}
+
+// ConditionNodeInputSumType is oneOf type of ConditionNodeInputSum.
+type ConditionNodeInputSumType string
+
+// Possible values for ConditionNodeInputSumType.
+const (
+	ConditionLeafInputConditionNodeInputSum           ConditionNodeInputSumType = "rule"
+	ConditionEventLeafInputConditionNodeInputSum      ConditionNodeInputSumType = "event"
+	ConditionNumberLeafInputConditionNodeInputSum     ConditionNodeInputSumType = "number"
+	ConditionDateLeafInputConditionNodeInputSum       ConditionNodeInputSumType = "date"
+	ConditionDateWithinLeafInputConditionNodeInputSum ConditionNodeInputSumType = "dateWithin"
+	ConditionGroupInputConditionNodeInputSum          ConditionNodeInputSumType = "group"
+)
+
+// IsConditionLeafInput reports whether ConditionNodeInputSum is ConditionLeafInput.
+func (s ConditionNodeInputSum) IsConditionLeafInput() bool {
+	return s.Type == ConditionLeafInputConditionNodeInputSum
+}
+
+// IsConditionEventLeafInput reports whether ConditionNodeInputSum is ConditionEventLeafInput.
+func (s ConditionNodeInputSum) IsConditionEventLeafInput() bool {
+	return s.Type == ConditionEventLeafInputConditionNodeInputSum
+}
+
+// IsConditionNumberLeafInput reports whether ConditionNodeInputSum is ConditionNumberLeafInput.
+func (s ConditionNodeInputSum) IsConditionNumberLeafInput() bool {
+	return s.Type == ConditionNumberLeafInputConditionNodeInputSum
+}
+
+// IsConditionDateLeafInput reports whether ConditionNodeInputSum is ConditionDateLeafInput.
+func (s ConditionNodeInputSum) IsConditionDateLeafInput() bool {
+	return s.Type == ConditionDateLeafInputConditionNodeInputSum
+}
+
+// IsConditionDateWithinLeafInput reports whether ConditionNodeInputSum is ConditionDateWithinLeafInput.
+func (s ConditionNodeInputSum) IsConditionDateWithinLeafInput() bool {
+	return s.Type == ConditionDateWithinLeafInputConditionNodeInputSum
+}
+
+// IsConditionGroupInput reports whether ConditionNodeInputSum is ConditionGroupInput.
+func (s ConditionNodeInputSum) IsConditionGroupInput() bool {
+	return s.Type == ConditionGroupInputConditionNodeInputSum
+}
+
+// SetConditionLeafInput sets ConditionNodeInputSum to ConditionLeafInput.
+func (s *ConditionNodeInputSum) SetConditionLeafInput(v ConditionLeafInput) {
+	s.Type = ConditionLeafInputConditionNodeInputSum
+	s.ConditionLeafInput = v
+}
+
+// GetConditionLeafInput returns ConditionLeafInput and true boolean if ConditionNodeInputSum is ConditionLeafInput.
+func (s ConditionNodeInputSum) GetConditionLeafInput() (v ConditionLeafInput, ok bool) {
+	if !s.IsConditionLeafInput() {
+		return v, false
+	}
+	return s.ConditionLeafInput, true
+}
+
+// NewConditionLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionLeafInput.
+func NewConditionLeafInputConditionNodeInputSum(v ConditionLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionLeafInput(v)
+	return s
+}
+
+// SetConditionEventLeafInput sets ConditionNodeInputSum to ConditionEventLeafInput.
+func (s *ConditionNodeInputSum) SetConditionEventLeafInput(v ConditionEventLeafInput) {
+	s.Type = ConditionEventLeafInputConditionNodeInputSum
+	s.ConditionEventLeafInput = v
+}
+
+// GetConditionEventLeafInput returns ConditionEventLeafInput and true boolean if ConditionNodeInputSum is ConditionEventLeafInput.
+func (s ConditionNodeInputSum) GetConditionEventLeafInput() (v ConditionEventLeafInput, ok bool) {
+	if !s.IsConditionEventLeafInput() {
+		return v, false
+	}
+	return s.ConditionEventLeafInput, true
+}
+
+// NewConditionEventLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionEventLeafInput.
+func NewConditionEventLeafInputConditionNodeInputSum(v ConditionEventLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionEventLeafInput(v)
+	return s
+}
+
+// SetConditionNumberLeafInput sets ConditionNodeInputSum to ConditionNumberLeafInput.
+func (s *ConditionNodeInputSum) SetConditionNumberLeafInput(v ConditionNumberLeafInput) {
+	s.Type = ConditionNumberLeafInputConditionNodeInputSum
+	s.ConditionNumberLeafInput = v
+}
+
+// GetConditionNumberLeafInput returns ConditionNumberLeafInput and true boolean if ConditionNodeInputSum is ConditionNumberLeafInput.
+func (s ConditionNodeInputSum) GetConditionNumberLeafInput() (v ConditionNumberLeafInput, ok bool) {
+	if !s.IsConditionNumberLeafInput() {
+		return v, false
+	}
+	return s.ConditionNumberLeafInput, true
+}
+
+// NewConditionNumberLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionNumberLeafInput.
+func NewConditionNumberLeafInputConditionNodeInputSum(v ConditionNumberLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionNumberLeafInput(v)
+	return s
+}
+
+// SetConditionDateLeafInput sets ConditionNodeInputSum to ConditionDateLeafInput.
+func (s *ConditionNodeInputSum) SetConditionDateLeafInput(v ConditionDateLeafInput) {
+	s.Type = ConditionDateLeafInputConditionNodeInputSum
+	s.ConditionDateLeafInput = v
+}
+
+// GetConditionDateLeafInput returns ConditionDateLeafInput and true boolean if ConditionNodeInputSum is ConditionDateLeafInput.
+func (s ConditionNodeInputSum) GetConditionDateLeafInput() (v ConditionDateLeafInput, ok bool) {
+	if !s.IsConditionDateLeafInput() {
+		return v, false
+	}
+	return s.ConditionDateLeafInput, true
+}
+
+// NewConditionDateLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionDateLeafInput.
+func NewConditionDateLeafInputConditionNodeInputSum(v ConditionDateLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionDateLeafInput(v)
+	return s
+}
+
+// SetConditionDateWithinLeafInput sets ConditionNodeInputSum to ConditionDateWithinLeafInput.
+func (s *ConditionNodeInputSum) SetConditionDateWithinLeafInput(v ConditionDateWithinLeafInput) {
+	s.Type = ConditionDateWithinLeafInputConditionNodeInputSum
+	s.ConditionDateWithinLeafInput = v
+}
+
+// GetConditionDateWithinLeafInput returns ConditionDateWithinLeafInput and true boolean if ConditionNodeInputSum is ConditionDateWithinLeafInput.
+func (s ConditionNodeInputSum) GetConditionDateWithinLeafInput() (v ConditionDateWithinLeafInput, ok bool) {
+	if !s.IsConditionDateWithinLeafInput() {
+		return v, false
+	}
+	return s.ConditionDateWithinLeafInput, true
+}
+
+// NewConditionDateWithinLeafInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionDateWithinLeafInput.
+func NewConditionDateWithinLeafInputConditionNodeInputSum(v ConditionDateWithinLeafInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionDateWithinLeafInput(v)
+	return s
+}
+
+// SetConditionGroupInput sets ConditionNodeInputSum to ConditionGroupInput.
+func (s *ConditionNodeInputSum) SetConditionGroupInput(v ConditionGroupInput) {
+	s.Type = ConditionGroupInputConditionNodeInputSum
+	s.ConditionGroupInput = v
+}
+
+// GetConditionGroupInput returns ConditionGroupInput and true boolean if ConditionNodeInputSum is ConditionGroupInput.
+func (s ConditionNodeInputSum) GetConditionGroupInput() (v ConditionGroupInput, ok bool) {
+	if !s.IsConditionGroupInput() {
+		return v, false
+	}
+	return s.ConditionGroupInput, true
+}
+
+// NewConditionGroupInputConditionNodeInputSum returns new ConditionNodeInputSum from ConditionGroupInput.
+func NewConditionGroupInputConditionNodeInputSum(v ConditionGroupInput) ConditionNodeInputSum {
+	var s ConditionNodeInputSum
+	s.SetConditionGroupInput(v)
+	return s
+}
+
+// ConditionNodeSum represents sum type.
+type ConditionNodeSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type                    ConditionNodeSumType
+	ConditionLeaf           ConditionLeaf
+	ConditionEventLeaf      ConditionEventLeaf
+	ConditionNumberLeaf     ConditionNumberLeaf
+	ConditionDateLeaf       ConditionDateLeaf
+	ConditionDateWithinLeaf ConditionDateWithinLeaf
+	ConditionGroup          ConditionGroup
+}
+
+// ConditionNodeSumType is oneOf type of ConditionNodeSum.
+type ConditionNodeSumType string
+
+// Possible values for ConditionNodeSumType.
+const (
+	ConditionLeafConditionNodeSum           ConditionNodeSumType = "rule"
+	ConditionEventLeafConditionNodeSum      ConditionNodeSumType = "event"
+	ConditionNumberLeafConditionNodeSum     ConditionNodeSumType = "number"
+	ConditionDateLeafConditionNodeSum       ConditionNodeSumType = "date"
+	ConditionDateWithinLeafConditionNodeSum ConditionNodeSumType = "dateWithin"
+	ConditionGroupConditionNodeSum          ConditionNodeSumType = "group"
+)
+
+// IsConditionLeaf reports whether ConditionNodeSum is ConditionLeaf.
+func (s ConditionNodeSum) IsConditionLeaf() bool { return s.Type == ConditionLeafConditionNodeSum }
+
+// IsConditionEventLeaf reports whether ConditionNodeSum is ConditionEventLeaf.
+func (s ConditionNodeSum) IsConditionEventLeaf() bool {
+	return s.Type == ConditionEventLeafConditionNodeSum
+}
+
+// IsConditionNumberLeaf reports whether ConditionNodeSum is ConditionNumberLeaf.
+func (s ConditionNodeSum) IsConditionNumberLeaf() bool {
+	return s.Type == ConditionNumberLeafConditionNodeSum
+}
+
+// IsConditionDateLeaf reports whether ConditionNodeSum is ConditionDateLeaf.
+func (s ConditionNodeSum) IsConditionDateLeaf() bool {
+	return s.Type == ConditionDateLeafConditionNodeSum
+}
+
+// IsConditionDateWithinLeaf reports whether ConditionNodeSum is ConditionDateWithinLeaf.
+func (s ConditionNodeSum) IsConditionDateWithinLeaf() bool {
+	return s.Type == ConditionDateWithinLeafConditionNodeSum
+}
+
+// IsConditionGroup reports whether ConditionNodeSum is ConditionGroup.
+func (s ConditionNodeSum) IsConditionGroup() bool { return s.Type == ConditionGroupConditionNodeSum }
+
+// SetConditionLeaf sets ConditionNodeSum to ConditionLeaf.
+func (s *ConditionNodeSum) SetConditionLeaf(v ConditionLeaf) {
+	s.Type = ConditionLeafConditionNodeSum
+	s.ConditionLeaf = v
+}
+
+// GetConditionLeaf returns ConditionLeaf and true boolean if ConditionNodeSum is ConditionLeaf.
+func (s ConditionNodeSum) GetConditionLeaf() (v ConditionLeaf, ok bool) {
+	if !s.IsConditionLeaf() {
+		return v, false
+	}
+	return s.ConditionLeaf, true
+}
+
+// NewConditionLeafConditionNodeSum returns new ConditionNodeSum from ConditionLeaf.
+func NewConditionLeafConditionNodeSum(v ConditionLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionLeaf(v)
+	return s
+}
+
+// SetConditionEventLeaf sets ConditionNodeSum to ConditionEventLeaf.
+func (s *ConditionNodeSum) SetConditionEventLeaf(v ConditionEventLeaf) {
+	s.Type = ConditionEventLeafConditionNodeSum
+	s.ConditionEventLeaf = v
+}
+
+// GetConditionEventLeaf returns ConditionEventLeaf and true boolean if ConditionNodeSum is ConditionEventLeaf.
+func (s ConditionNodeSum) GetConditionEventLeaf() (v ConditionEventLeaf, ok bool) {
+	if !s.IsConditionEventLeaf() {
+		return v, false
+	}
+	return s.ConditionEventLeaf, true
+}
+
+// NewConditionEventLeafConditionNodeSum returns new ConditionNodeSum from ConditionEventLeaf.
+func NewConditionEventLeafConditionNodeSum(v ConditionEventLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionEventLeaf(v)
+	return s
+}
+
+// SetConditionNumberLeaf sets ConditionNodeSum to ConditionNumberLeaf.
+func (s *ConditionNodeSum) SetConditionNumberLeaf(v ConditionNumberLeaf) {
+	s.Type = ConditionNumberLeafConditionNodeSum
+	s.ConditionNumberLeaf = v
+}
+
+// GetConditionNumberLeaf returns ConditionNumberLeaf and true boolean if ConditionNodeSum is ConditionNumberLeaf.
+func (s ConditionNodeSum) GetConditionNumberLeaf() (v ConditionNumberLeaf, ok bool) {
+	if !s.IsConditionNumberLeaf() {
+		return v, false
+	}
+	return s.ConditionNumberLeaf, true
+}
+
+// NewConditionNumberLeafConditionNodeSum returns new ConditionNodeSum from ConditionNumberLeaf.
+func NewConditionNumberLeafConditionNodeSum(v ConditionNumberLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionNumberLeaf(v)
+	return s
+}
+
+// SetConditionDateLeaf sets ConditionNodeSum to ConditionDateLeaf.
+func (s *ConditionNodeSum) SetConditionDateLeaf(v ConditionDateLeaf) {
+	s.Type = ConditionDateLeafConditionNodeSum
+	s.ConditionDateLeaf = v
+}
+
+// GetConditionDateLeaf returns ConditionDateLeaf and true boolean if ConditionNodeSum is ConditionDateLeaf.
+func (s ConditionNodeSum) GetConditionDateLeaf() (v ConditionDateLeaf, ok bool) {
+	if !s.IsConditionDateLeaf() {
+		return v, false
+	}
+	return s.ConditionDateLeaf, true
+}
+
+// NewConditionDateLeafConditionNodeSum returns new ConditionNodeSum from ConditionDateLeaf.
+func NewConditionDateLeafConditionNodeSum(v ConditionDateLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionDateLeaf(v)
+	return s
+}
+
+// SetConditionDateWithinLeaf sets ConditionNodeSum to ConditionDateWithinLeaf.
+func (s *ConditionNodeSum) SetConditionDateWithinLeaf(v ConditionDateWithinLeaf) {
+	s.Type = ConditionDateWithinLeafConditionNodeSum
+	s.ConditionDateWithinLeaf = v
+}
+
+// GetConditionDateWithinLeaf returns ConditionDateWithinLeaf and true boolean if ConditionNodeSum is ConditionDateWithinLeaf.
+func (s ConditionNodeSum) GetConditionDateWithinLeaf() (v ConditionDateWithinLeaf, ok bool) {
+	if !s.IsConditionDateWithinLeaf() {
+		return v, false
+	}
+	return s.ConditionDateWithinLeaf, true
+}
+
+// NewConditionDateWithinLeafConditionNodeSum returns new ConditionNodeSum from ConditionDateWithinLeaf.
+func NewConditionDateWithinLeafConditionNodeSum(v ConditionDateWithinLeaf) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionDateWithinLeaf(v)
+	return s
+}
+
+// SetConditionGroup sets ConditionNodeSum to ConditionGroup.
+func (s *ConditionNodeSum) SetConditionGroup(v ConditionGroup) {
+	s.Type = ConditionGroupConditionNodeSum
+	s.ConditionGroup = v
+}
+
+// GetConditionGroup returns ConditionGroup and true boolean if ConditionNodeSum is ConditionGroup.
+func (s ConditionNodeSum) GetConditionGroup() (v ConditionGroup, ok bool) {
+	if !s.IsConditionGroup() {
+		return v, false
+	}
+	return s.ConditionGroup, true
+}
+
+// NewConditionGroupConditionNodeSum returns new ConditionNodeSum from ConditionGroup.
+func NewConditionGroupConditionNodeSum(v ConditionGroup) ConditionNodeSum {
+	var s ConditionNodeSum
+	s.SetConditionGroup(v)
+	return s
+}
+
+// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
+// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
+// value that is not a number (text, a boolean, null, a list), makes the leaf false.
+// Ref: #/components/schemas/ConditionNumberLeaf
+type ConditionNumberLeaf struct {
+	Kind ConditionNumberLeafKind `json:"kind"`
+	// What it compares: "custom:" for a number custom field, or "trigger:".
+	Field string `json:"field"`
+	// How the field compares with `value`.
+	Operator ConditionNumberOperator `json:"operator"`
+	// The number the field is compared with.
+	Value float64 `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionNumberLeaf) GetKind() ConditionNumberLeafKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionNumberLeaf) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionNumberLeaf) GetOperator() ConditionNumberOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionNumberLeaf) GetValue() float64 {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionNumberLeaf) SetKind(val ConditionNumberLeafKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionNumberLeaf) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionNumberLeaf) SetOperator(val ConditionNumberOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionNumberLeaf) SetValue(val float64) {
+	s.Value = val
+}
+
+// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
+// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
+// value that is not a number (text, a boolean, null, a list), makes the leaf false.
+// Ref: #/components/schemas/ConditionNumberLeafInput
+type ConditionNumberLeafInput struct {
+	Kind ConditionNumberLeafInputKind `json:"kind"`
+	// What it compares: "custom:" for a number custom field, or "trigger:".
+	Field string `json:"field"`
+	// How the field compares with `value`.
+	Operator ConditionNumberOperator `json:"operator"`
+	// The number the field is compared with.
+	Value float64 `json:"value"`
+}
+
+// GetKind returns the value of Kind.
+func (s *ConditionNumberLeafInput) GetKind() ConditionNumberLeafInputKind {
+	return s.Kind
+}
+
+// GetField returns the value of Field.
+func (s *ConditionNumberLeafInput) GetField() string {
+	return s.Field
+}
+
+// GetOperator returns the value of Operator.
+func (s *ConditionNumberLeafInput) GetOperator() ConditionNumberOperator {
+	return s.Operator
+}
+
+// GetValue returns the value of Value.
+func (s *ConditionNumberLeafInput) GetValue() float64 {
+	return s.Value
+}
+
+// SetKind sets the value of Kind.
+func (s *ConditionNumberLeafInput) SetKind(val ConditionNumberLeafInputKind) {
+	s.Kind = val
+}
+
+// SetField sets the value of Field.
+func (s *ConditionNumberLeafInput) SetField(val string) {
+	s.Field = val
+}
+
+// SetOperator sets the value of Operator.
+func (s *ConditionNumberLeafInput) SetOperator(val ConditionNumberOperator) {
+	s.Operator = val
+}
+
+// SetValue sets the value of Value.
+func (s *ConditionNumberLeafInput) SetValue(val float64) {
+	s.Value = val
+}
+
+type ConditionNumberLeafInputKind string
+
+const (
+	ConditionNumberLeafInputKindNumber ConditionNumberLeafInputKind = "number"
+)
+
+// AllValues returns all ConditionNumberLeafInputKind values.
+func (ConditionNumberLeafInputKind) AllValues() []ConditionNumberLeafInputKind {
+	return []ConditionNumberLeafInputKind{
+		ConditionNumberLeafInputKindNumber,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionNumberLeafInputKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionNumberLeafInputKindNumber:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionNumberLeafInputKind) UnmarshalText(data []byte) error {
+	switch ConditionNumberLeafInputKind(data) {
+	case ConditionNumberLeafInputKindNumber:
+		*s = ConditionNumberLeafInputKindNumber
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type ConditionNumberLeafKind string
+
+const (
+	ConditionNumberLeafKindNumber ConditionNumberLeafKind = "number"
+)
+
+// AllValues returns all ConditionNumberLeafKind values.
+func (ConditionNumberLeafKind) AllValues() []ConditionNumberLeafKind {
+	return []ConditionNumberLeafKind{
+		ConditionNumberLeafKindNumber,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionNumberLeafKind) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionNumberLeafKindNumber:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionNumberLeafKind) UnmarshalText(data []byte) error {
+	switch ConditionNumberLeafKind(data) {
+	case ConditionNumberLeafKindNumber:
+		*s = ConditionNumberLeafKindNumber
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// How a number leaf compares the field with `value`: greater than, greater than or equal, less than,
+// or less than or equal.
+// Ref: #/components/schemas/ConditionNumberOperator
+type ConditionNumberOperator string
+
+const (
+	ConditionNumberOperatorGt  ConditionNumberOperator = "gt"
+	ConditionNumberOperatorGte ConditionNumberOperator = "gte"
+	ConditionNumberOperatorLt  ConditionNumberOperator = "lt"
+	ConditionNumberOperatorLte ConditionNumberOperator = "lte"
+)
+
+// AllValues returns all ConditionNumberOperator values.
+func (ConditionNumberOperator) AllValues() []ConditionNumberOperator {
+	return []ConditionNumberOperator{
+		ConditionNumberOperatorGt,
+		ConditionNumberOperatorGte,
+		ConditionNumberOperatorLt,
+		ConditionNumberOperatorLte,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionNumberOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionNumberOperatorGt:
+		return []byte(s), nil
+	case ConditionNumberOperatorGte:
+		return []byte(s), nil
+	case ConditionNumberOperatorLt:
+		return []byte(s), nil
+	case ConditionNumberOperatorLte:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionNumberOperator) UnmarshalText(data []byte) error {
+	switch ConditionNumberOperator(data) {
+	case ConditionNumberOperatorGt:
+		*s = ConditionNumberOperatorGt
+		return nil
+	case ConditionNumberOperatorGte:
+		*s = ConditionNumberOperatorGte
+		return nil
+	case ConditionNumberOperatorLt:
+		*s = ConditionNumberOperatorLt
+		return nil
+	case ConditionNumberOperatorLte:
+		*s = ConditionNumberOperatorLte
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
+// the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its
+// type, which the custom field lists as `ruleOperators` (a number custom field is also compared by a
+// number leaf, a datetime one tested by the date leaves).
+// Ref: #/components/schemas/ConditionOperator
+type ConditionOperator string
+
+const (
+	ConditionOperatorEq          ConditionOperator = "eq"
+	ConditionOperatorNeq         ConditionOperator = "neq"
+	ConditionOperatorContains    ConditionOperator = "contains"
+	ConditionOperatorBeginsWith  ConditionOperator = "beginsWith"
+	ConditionOperatorNull        ConditionOperator = "null"
+	ConditionOperatorNotNull     ConditionOperator = "notNull"
+	ConditionOperatorHas         ConditionOperator = "has"
+	ConditionOperatorDoesNotHave ConditionOperator = "doesNotHave"
+)
+
+// AllValues returns all ConditionOperator values.
+func (ConditionOperator) AllValues() []ConditionOperator {
+	return []ConditionOperator{
+		ConditionOperatorEq,
+		ConditionOperatorNeq,
+		ConditionOperatorContains,
+		ConditionOperatorBeginsWith,
+		ConditionOperatorNull,
+		ConditionOperatorNotNull,
+		ConditionOperatorHas,
+		ConditionOperatorDoesNotHave,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ConditionOperator) MarshalText() ([]byte, error) {
+	switch s {
+	case ConditionOperatorEq:
+		return []byte(s), nil
+	case ConditionOperatorNeq:
+		return []byte(s), nil
+	case ConditionOperatorContains:
+		return []byte(s), nil
+	case ConditionOperatorBeginsWith:
+		return []byte(s), nil
+	case ConditionOperatorNull:
+		return []byte(s), nil
+	case ConditionOperatorNotNull:
+		return []byte(s), nil
+	case ConditionOperatorHas:
+		return []byte(s), nil
+	case ConditionOperatorDoesNotHave:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ConditionOperator) UnmarshalText(data []byte) error {
+	switch ConditionOperator(data) {
+	case ConditionOperatorEq:
+		*s = ConditionOperatorEq
+		return nil
+	case ConditionOperatorNeq:
+		*s = ConditionOperatorNeq
+		return nil
+	case ConditionOperatorContains:
+		*s = ConditionOperatorContains
+		return nil
+	case ConditionOperatorBeginsWith:
+		*s = ConditionOperatorBeginsWith
+		return nil
+	case ConditionOperatorNull:
+		*s = ConditionOperatorNull
+		return nil
+	case ConditionOperatorNotNull:
+		*s = ConditionOperatorNotNull
+		return nil
+	case ConditionOperatorHas:
+		*s = ConditionOperatorHas
+		return nil
+	case ConditionOperatorDoesNotHave:
+		*s = ConditionOperatorDoesNotHave
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -3041,6 +6358,70 @@ func (s *ContactExportVisitor) SetCreatedAt(val Timestamp) {
 
 type CountryCode string
 
+// Request body for creating an automation (always created inactive).
+// Ref: #/components/schemas/CreateAutomationInput
+type CreateAutomationInput struct {
+	Name         Name   `json:"name"`
+	TriggerEvent string `json:"triggerEvent"`
+	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
+	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
+	// exit event. Null or omitted is none.
+	GoalEvent OptNilString          `json:"goalEvent"`
+	Steps     []AutomationStepInput `json:"steps"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateAutomationInput) GetName() Name {
+	return s.Name
+}
+
+// GetTriggerEvent returns the value of TriggerEvent.
+func (s *CreateAutomationInput) GetTriggerEvent() string {
+	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *CreateAutomationInput) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *CreateAutomationInput) GetGoalEvent() OptNilString {
+	return s.GoalEvent
+}
+
+// GetSteps returns the value of Steps.
+func (s *CreateAutomationInput) GetSteps() []AutomationStepInput {
+	return s.Steps
+}
+
+// SetName sets the value of Name.
+func (s *CreateAutomationInput) SetName(val Name) {
+	s.Name = val
+}
+
+// SetTriggerEvent sets the value of TriggerEvent.
+func (s *CreateAutomationInput) SetTriggerEvent(val string) {
+	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *CreateAutomationInput) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *CreateAutomationInput) SetGoalEvent(val OptNilString) {
+	s.GoalEvent = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *CreateAutomationInput) SetSteps(val []AutomationStepInput) {
+	s.Steps = val
+}
+
 // Request body for creating a broadcast.
 // Ref: #/components/schemas/CreateBroadcastInput
 type CreateBroadcastInput struct {
@@ -3205,6 +6586,86 @@ func (s *CreateIntegrationInput) SetParams(val OptJsonObject) {
 	s.Params = val
 }
 
+// Request body for creating a Rule: it is created inactive, with its definition as the draft.
+// Ref: #/components/schemas/CreateRuleInput
+type CreateRuleInput struct {
+	Name Name `json:"name"`
+	// The Event actions that make the Rule fire; at least one.
+	TriggerEvents []string               `json:"triggerEvents"`
+	Condition     OptConditionGroupInput `json:"condition"`
+	// The Actions to run, in order.
+	Actions []RuleActionInput `json:"actions"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateRuleInput) GetName() Name {
+	return s.Name
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *CreateRuleInput) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *CreateRuleInput) GetCondition() OptConditionGroupInput {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *CreateRuleInput) GetActions() []RuleActionInput {
+	return s.Actions
+}
+
+// SetName sets the value of Name.
+func (s *CreateRuleInput) SetName(val Name) {
+	s.Name = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *CreateRuleInput) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *CreateRuleInput) SetCondition(val OptConditionGroupInput) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *CreateRuleInput) SetActions(val []RuleActionInput) {
+	s.Actions = val
+}
+
+// Request body for creating a segment.
+// Ref: #/components/schemas/CreateSegmentInput
+type CreateSegmentInput struct {
+	// Segment name.
+	Name Name `json:"name"`
+	// Segment condition: the tree of tests; an empty group matches all contacts.
+	Condition ConditionGroupInput `json:"condition"`
+}
+
+// GetName returns the value of Name.
+func (s *CreateSegmentInput) GetName() Name {
+	return s.Name
+}
+
+// GetCondition returns the value of Condition.
+func (s *CreateSegmentInput) GetCondition() ConditionGroupInput {
+	return s.Condition
+}
+
+// SetName sets the value of Name.
+func (s *CreateSegmentInput) SetName(val Name) {
+	s.Name = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *CreateSegmentInput) SetCondition(val ConditionGroupInput) {
+	s.Condition = val
+}
+
 // Add a Sending domain; mints the DKIM keypair and returns the DNS records to publish.
 // Ref: #/components/schemas/CreateSendingDomainInput
 type CreateSendingDomainInput struct {
@@ -3331,6 +6792,226 @@ func (s *CreateWebhookInput) SetEnabled(val OptBool) {
 }
 
 type CurrencyCode string
+
+// A Custom field's value type.
+// Ref: #/components/schemas/CustomFieldType
+type CustomFieldType string
+
+const (
+	CustomFieldTypeString   CustomFieldType = "string"
+	CustomFieldTypeNumber   CustomFieldType = "number"
+	CustomFieldTypeBool     CustomFieldType = "bool"
+	CustomFieldTypeDatetime CustomFieldType = "datetime"
+)
+
+// AllValues returns all CustomFieldType values.
+func (CustomFieldType) AllValues() []CustomFieldType {
+	return []CustomFieldType{
+		CustomFieldTypeString,
+		CustomFieldTypeNumber,
+		CustomFieldTypeBool,
+		CustomFieldTypeDatetime,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s CustomFieldType) MarshalText() ([]byte, error) {
+	switch s {
+	case CustomFieldTypeString:
+		return []byte(s), nil
+	case CustomFieldTypeNumber:
+		return []byte(s), nil
+	case CustomFieldTypeBool:
+		return []byte(s), nil
+	case CustomFieldTypeDatetime:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *CustomFieldType) UnmarshalText(data []byte) error {
+	switch CustomFieldType(data) {
+	case CustomFieldTypeString:
+		*s = CustomFieldTypeString
+		return nil
+	case CustomFieldTypeNumber:
+		*s = CustomFieldTypeNumber
+		return nil
+	case CustomFieldTypeBool:
+		*s = CustomFieldTypeBool
+		return nil
+	case CustomFieldTypeDatetime:
+		*s = CustomFieldTypeDatetime
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A TXT record the caller publishes: a Sending domain's DKIM key, or a Tracking domain's ownership.
+// Ref: #/components/schemas/DnsRecord
+type DnsRecord struct {
+	// The record type (always TXT for the records we generate).
+	Type DnsRecordType `json:"type"`
+	// The host / name to create the record at.
+	Host string `json:"host"`
+	// The record value to publish.
+	Value string `json:"value"`
+}
+
+// GetType returns the value of Type.
+func (s *DnsRecord) GetType() DnsRecordType {
+	return s.Type
+}
+
+// GetHost returns the value of Host.
+func (s *DnsRecord) GetHost() string {
+	return s.Host
+}
+
+// GetValue returns the value of Value.
+func (s *DnsRecord) GetValue() string {
+	return s.Value
+}
+
+// SetType sets the value of Type.
+func (s *DnsRecord) SetType(val DnsRecordType) {
+	s.Type = val
+}
+
+// SetHost sets the value of Host.
+func (s *DnsRecord) SetHost(val string) {
+	s.Host = val
+}
+
+// SetValue sets the value of Value.
+func (s *DnsRecord) SetValue(val string) {
+	s.Value = val
+}
+
+// The record type (always TXT for the records we generate).
+type DnsRecordType string
+
+const (
+	DnsRecordTypeTXT DnsRecordType = "TXT"
+)
+
+// AllValues returns all DnsRecordType values.
+func (DnsRecordType) AllValues() []DnsRecordType {
+	return []DnsRecordType{
+		DnsRecordTypeTXT,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DnsRecordType) MarshalText() ([]byte, error) {
+	switch s {
+	case DnsRecordTypeTXT:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DnsRecordType) UnmarshalText(data []byte) error {
+	switch DnsRecordType(data) {
+	case DnsRecordTypeTXT:
+		*s = DnsRecordTypeTXT
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Request body for rendering an HTTP step's body for a Contact.
+// Ref: #/components/schemas/DryRunHttpStepInput
+type DryRunHttpStepInput struct {
+	// The Liquid JSON body to render. No Enrollment stands behind a dry run, so `event` is empty.
+	Body string `json:"body"`
+	// The Contact whose values fill the template.
+	ContactId EntityId `json:"contactId"`
+}
+
+// GetBody returns the value of Body.
+func (s *DryRunHttpStepInput) GetBody() string {
+	return s.Body
+}
+
+// GetContactId returns the value of ContactId.
+func (s *DryRunHttpStepInput) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// SetBody sets the value of Body.
+func (s *DryRunHttpStepInput) SetBody(val string) {
+	s.Body = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *DryRunHttpStepInput) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
+// Ref: #/components/schemas/DryRunHttpStepResult
+type DryRunHttpStepResult struct {
+	// The rendered, valid JSON body. Absent when errorKind is set.
+	Body OptString `json:"body"`
+	// Why the body could not be rendered.
+	ErrorKind OptAutomationHttpErrorKind `json:"errorKind"`
+	// Human-readable detail of the error.
+	Detail OptString `json:"detail"`
+}
+
+// GetBody returns the value of Body.
+func (s *DryRunHttpStepResult) GetBody() OptString {
+	return s.Body
+}
+
+// GetErrorKind returns the value of ErrorKind.
+func (s *DryRunHttpStepResult) GetErrorKind() OptAutomationHttpErrorKind {
+	return s.ErrorKind
+}
+
+// GetDetail returns the value of Detail.
+func (s *DryRunHttpStepResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetBody sets the value of Body.
+func (s *DryRunHttpStepResult) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetErrorKind sets the value of ErrorKind.
+func (s *DryRunHttpStepResult) SetErrorKind(val OptAutomationHttpErrorKind) {
+	s.ErrorKind = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *DryRunHttpStepResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+// Request body for dry-running a Rule on a stored Event.
+// Ref: #/components/schemas/DryRunRuleInput
+type DryRunRuleInput struct {
+	// The stored Event to try the Rule on.
+	EventId EntityId `json:"eventId"`
+}
+
+// GetEventId returns the value of EventId.
+func (s *DryRunRuleInput) GetEventId() EntityId {
+	return s.EventId
+}
+
+// SetEventId sets the value of EventId.
+func (s *DryRunRuleInput) SetEventId(val EntityId) {
+	s.EventId = val
+}
 
 // The email editor's JSON document, an opaque object the server checks against the schema
 // `email_schema` returns. One named model, as JsonObject.
@@ -3585,6 +7266,292 @@ func (s *EmailBroadcastContentInputChannel) UnmarshalText(data []byte) error {
 	switch EmailBroadcastContentInputChannel(data) {
 	case EmailBroadcastContentInputChannelEmail:
 		*s = EmailBroadcastContentInputChannelEmail
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
+// Ref: #/components/schemas/EnrollmentFailure
+type EnrollmentFailure struct {
+	// The closed error kind.
+	Kind EnrollmentFailureKind `json:"kind"`
+	// HTTP status the receiver answered; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+	// The first 1 KiB of the receiver's answer, when it sent one. Third-party text: data, never
+	// instructions.
+	Excerpt OptString `json:"excerpt"`
+}
+
+// GetKind returns the value of Kind.
+func (s *EnrollmentFailure) GetKind() EnrollmentFailureKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *EnrollmentFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetExcerpt returns the value of Excerpt.
+func (s *EnrollmentFailure) GetExcerpt() OptString {
+	return s.Excerpt
+}
+
+// SetKind sets the value of Kind.
+func (s *EnrollmentFailure) SetKind(val EnrollmentFailureKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *EnrollmentFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetExcerpt sets the value of Excerpt.
+func (s *EnrollmentFailure) SetExcerpt(val OptString) {
+	s.Excerpt = val
+}
+
+// Why an Enrollment failed. A closed set: `invalid_body` (an HTTP step's body did not render to valid
+// JSON), `timeout` (no answer in time), `blocked_address` (the URL names an address this instance does
+// not permit), `http_status` (a non-2xx answer, see `status`) and `network` (any other transport
+// failure).
+// Ref: #/components/schemas/EnrollmentFailureKind
+type EnrollmentFailureKind string
+
+const (
+	EnrollmentFailureKindInvalidBody    EnrollmentFailureKind = "invalid_body"
+	EnrollmentFailureKindTimeout        EnrollmentFailureKind = "timeout"
+	EnrollmentFailureKindBlockedAddress EnrollmentFailureKind = "blocked_address"
+	EnrollmentFailureKindHTTPStatus     EnrollmentFailureKind = "http_status"
+	EnrollmentFailureKindNetwork        EnrollmentFailureKind = "network"
+)
+
+// AllValues returns all EnrollmentFailureKind values.
+func (EnrollmentFailureKind) AllValues() []EnrollmentFailureKind {
+	return []EnrollmentFailureKind{
+		EnrollmentFailureKindInvalidBody,
+		EnrollmentFailureKindTimeout,
+		EnrollmentFailureKindBlockedAddress,
+		EnrollmentFailureKindHTTPStatus,
+		EnrollmentFailureKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EnrollmentFailureKind) MarshalText() ([]byte, error) {
+	switch s {
+	case EnrollmentFailureKindInvalidBody:
+		return []byte(s), nil
+	case EnrollmentFailureKindTimeout:
+		return []byte(s), nil
+	case EnrollmentFailureKindBlockedAddress:
+		return []byte(s), nil
+	case EnrollmentFailureKindHTTPStatus:
+		return []byte(s), nil
+	case EnrollmentFailureKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EnrollmentFailureKind) UnmarshalText(data []byte) error {
+	switch EnrollmentFailureKind(data) {
+	case EnrollmentFailureKindInvalidBody:
+		*s = EnrollmentFailureKindInvalidBody
+		return nil
+	case EnrollmentFailureKindTimeout:
+		*s = EnrollmentFailureKindTimeout
+		return nil
+	case EnrollmentFailureKindBlockedAddress:
+		*s = EnrollmentFailureKindBlockedAddress
+		return nil
+	case EnrollmentFailureKindHTTPStatus:
+		*s = EnrollmentFailureKindHTTPStatus
+		return nil
+	case EnrollmentFailureKindNetwork:
+		*s = EnrollmentFailureKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One Contact's progress through an Automation. Erased with the Contact.
+// Ref: #/components/schemas/EnrollmentResource
+type EnrollmentResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Automation the Contact was enrolled in.
+	AutomationId EntityId `json:"automationId"`
+	// The enrolled Contact.
+	ContactId EntityId `json:"contactId"`
+	// Where the Enrollment is.
+	Status EnrollmentStatus `json:"status"`
+	// Index of the next step to run (0-based).
+	CurrentStep int32 `json:"currentStep"`
+	// When a waiting Enrollment runs its next step.
+	ResumeAt OptTimestamp `json:"resumeAt"`
+	// Present on a failed Enrollment whose failure an HTTP step recorded.
+	Failure OptEnrollmentFailure `json:"failure"`
+	// When the Contact was enrolled.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *EnrollmentResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *EnrollmentResource) GetAutomationId() EntityId {
+	return s.AutomationId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *EnrollmentResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetStatus returns the value of Status.
+func (s *EnrollmentResource) GetStatus() EnrollmentStatus {
+	return s.Status
+}
+
+// GetCurrentStep returns the value of CurrentStep.
+func (s *EnrollmentResource) GetCurrentStep() int32 {
+	return s.CurrentStep
+}
+
+// GetResumeAt returns the value of ResumeAt.
+func (s *EnrollmentResource) GetResumeAt() OptTimestamp {
+	return s.ResumeAt
+}
+
+// GetFailure returns the value of Failure.
+func (s *EnrollmentResource) GetFailure() OptEnrollmentFailure {
+	return s.Failure
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *EnrollmentResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *EnrollmentResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *EnrollmentResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *EnrollmentResource) SetAutomationId(val EntityId) {
+	s.AutomationId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *EnrollmentResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetStatus sets the value of Status.
+func (s *EnrollmentResource) SetStatus(val EnrollmentStatus) {
+	s.Status = val
+}
+
+// SetCurrentStep sets the value of CurrentStep.
+func (s *EnrollmentResource) SetCurrentStep(val int32) {
+	s.CurrentStep = val
+}
+
+// SetResumeAt sets the value of ResumeAt.
+func (s *EnrollmentResource) SetResumeAt(val OptTimestamp) {
+	s.ResumeAt = val
+}
+
+// SetFailure sets the value of Failure.
+func (s *EnrollmentResource) SetFailure(val OptEnrollmentFailure) {
+	s.Failure = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *EnrollmentResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *EnrollmentResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+// Where a Contact is in an Automation.
+// Ref: #/components/schemas/EnrollmentStatus
+type EnrollmentStatus string
+
+const (
+	EnrollmentStatusActive      EnrollmentStatus = "active"
+	EnrollmentStatusCompleted   EnrollmentStatus = "completed"
+	EnrollmentStatusFailed      EnrollmentStatus = "failed"
+	EnrollmentStatusExited      EnrollmentStatus = "exited"
+	EnrollmentStatusGoalReached EnrollmentStatus = "goal_reached"
+)
+
+// AllValues returns all EnrollmentStatus values.
+func (EnrollmentStatus) AllValues() []EnrollmentStatus {
+	return []EnrollmentStatus{
+		EnrollmentStatusActive,
+		EnrollmentStatusCompleted,
+		EnrollmentStatusFailed,
+		EnrollmentStatusExited,
+		EnrollmentStatusGoalReached,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s EnrollmentStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case EnrollmentStatusActive:
+		return []byte(s), nil
+	case EnrollmentStatusCompleted:
+		return []byte(s), nil
+	case EnrollmentStatusFailed:
+		return []byte(s), nil
+	case EnrollmentStatusExited:
+		return []byte(s), nil
+	case EnrollmentStatusGoalReached:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *EnrollmentStatus) UnmarshalText(data []byte) error {
+	switch EnrollmentStatus(data) {
+	case EnrollmentStatusActive:
+		*s = EnrollmentStatusActive
+		return nil
+	case EnrollmentStatusCompleted:
+		*s = EnrollmentStatusCompleted
+		return nil
+	case EnrollmentStatusFailed:
+		*s = EnrollmentStatusFailed
+		return nil
+	case EnrollmentStatusExited:
+		*s = EnrollmentStatusExited
+		return nil
+	case EnrollmentStatusGoalReached:
+		*s = EnrollmentStatusGoalReached
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -3866,6 +7833,22 @@ func (s *HoldReason) UnmarshalText(data []byte) error {
 
 type ImageUrl string
 
+// The Test inbox has no settings.
+// Ref: #/components/schemas/InboxConfig
+type InboxConfig struct {
+	Kind InboxConfigKind `json:"kind"`
+}
+
+// GetKind returns the value of Kind.
+func (s *InboxConfig) GetKind() InboxConfigKind {
+	return s.Kind
+}
+
+// SetKind sets the value of Kind.
+func (s *InboxConfig) SetKind(val InboxConfigKind) {
+	s.Kind = val
+}
+
 // The Test inbox takes no credentials: a Workspace has at most one.
 // Ref: #/components/schemas/InboxConfigInput
 type InboxConfigInput struct {
@@ -3914,6 +7897,106 @@ func (s *InboxConfigInputKind) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+type InboxConfigKind string
+
+const (
+	InboxConfigKindInbox InboxConfigKind = "inbox"
+)
+
+// AllValues returns all InboxConfigKind values.
+func (InboxConfigKind) AllValues() []InboxConfigKind {
+	return []InboxConfigKind{
+		InboxConfigKindInbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s InboxConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case InboxConfigKindInbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *InboxConfigKind) UnmarshalText(data []byte) error {
+	switch InboxConfigKind(data) {
+	case InboxConfigKindInbox:
+		*s = InboxConfigKindInbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Delivery channel an integration belongs to.
+// Ref: #/components/schemas/IntegrationChannel
+type IntegrationChannel string
+
+const (
+	IntegrationChannelEmail    IntegrationChannel = "email"
+	IntegrationChannelSMS      IntegrationChannel = "sms"
+	IntegrationChannelTelegram IntegrationChannel = "telegram"
+)
+
+// AllValues returns all IntegrationChannel values.
+func (IntegrationChannel) AllValues() []IntegrationChannel {
+	return []IntegrationChannel{
+		IntegrationChannelEmail,
+		IntegrationChannelSMS,
+		IntegrationChannelTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s IntegrationChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case IntegrationChannelEmail:
+		return []byte(s), nil
+	case IntegrationChannelSMS:
+		return []byte(s), nil
+	case IntegrationChannelTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *IntegrationChannel) UnmarshalText(data []byte) error {
+	switch IntegrationChannel(data) {
+	case IntegrationChannelEmail:
+		*s = IntegrationChannelEmail
+		return nil
+	case IntegrationChannelSMS:
+		*s = IntegrationChannelSMS
+		return nil
+	case IntegrationChannelTelegram:
+		*s = IntegrationChannelTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Provider config as returned, discriminated by `kind`. Secrets are omitted.
+// Ref: #/components/schemas/IntegrationConfig
+type IntegrationConfig struct {
+	OneOf IntegrationConfigSum
+}
+
+// GetOneOf returns the value of OneOf.
+func (s *IntegrationConfig) GetOneOf() IntegrationConfigSum {
+	return s.OneOf
+}
+
+// SetOneOf sets the value of OneOf.
+func (s *IntegrationConfig) SetOneOf(val IntegrationConfigSum) {
+	s.OneOf = val
 }
 
 // Provider config submitted by the caller, discriminated by `kind`.
@@ -4085,6 +8168,217 @@ func NewTwilioConfigInputIntegrationConfigInputSum(v TwilioConfigInput) Integrat
 	return s
 }
 
+// IntegrationConfigSum represents sum type.
+type IntegrationConfigSum struct {
+	// Type selects the active sum variant, switch on this field.
+	Type           IntegrationConfigSumType
+	SmtpConfig     SmtpConfig
+	SesConfig      SesConfig
+	InboxConfig    InboxConfig
+	TelegramConfig TelegramConfig
+	TwilioConfig   TwilioConfig
+}
+
+// IntegrationConfigSumType is oneOf type of IntegrationConfigSum.
+type IntegrationConfigSumType string
+
+// Possible values for IntegrationConfigSumType.
+const (
+	SmtpConfigIntegrationConfigSum     IntegrationConfigSumType = "smtp"
+	SesConfigIntegrationConfigSum      IntegrationConfigSumType = "ses"
+	InboxConfigIntegrationConfigSum    IntegrationConfigSumType = "inbox"
+	TelegramConfigIntegrationConfigSum IntegrationConfigSumType = "telegram"
+	TwilioConfigIntegrationConfigSum   IntegrationConfigSumType = "twilio"
+)
+
+// IsSmtpConfig reports whether IntegrationConfigSum is SmtpConfig.
+func (s IntegrationConfigSum) IsSmtpConfig() bool { return s.Type == SmtpConfigIntegrationConfigSum }
+
+// IsSesConfig reports whether IntegrationConfigSum is SesConfig.
+func (s IntegrationConfigSum) IsSesConfig() bool { return s.Type == SesConfigIntegrationConfigSum }
+
+// IsInboxConfig reports whether IntegrationConfigSum is InboxConfig.
+func (s IntegrationConfigSum) IsInboxConfig() bool { return s.Type == InboxConfigIntegrationConfigSum }
+
+// IsTelegramConfig reports whether IntegrationConfigSum is TelegramConfig.
+func (s IntegrationConfigSum) IsTelegramConfig() bool {
+	return s.Type == TelegramConfigIntegrationConfigSum
+}
+
+// IsTwilioConfig reports whether IntegrationConfigSum is TwilioConfig.
+func (s IntegrationConfigSum) IsTwilioConfig() bool {
+	return s.Type == TwilioConfigIntegrationConfigSum
+}
+
+// SetSmtpConfig sets IntegrationConfigSum to SmtpConfig.
+func (s *IntegrationConfigSum) SetSmtpConfig(v SmtpConfig) {
+	s.Type = SmtpConfigIntegrationConfigSum
+	s.SmtpConfig = v
+}
+
+// GetSmtpConfig returns SmtpConfig and true boolean if IntegrationConfigSum is SmtpConfig.
+func (s IntegrationConfigSum) GetSmtpConfig() (v SmtpConfig, ok bool) {
+	if !s.IsSmtpConfig() {
+		return v, false
+	}
+	return s.SmtpConfig, true
+}
+
+// NewSmtpConfigIntegrationConfigSum returns new IntegrationConfigSum from SmtpConfig.
+func NewSmtpConfigIntegrationConfigSum(v SmtpConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetSmtpConfig(v)
+	return s
+}
+
+// SetSesConfig sets IntegrationConfigSum to SesConfig.
+func (s *IntegrationConfigSum) SetSesConfig(v SesConfig) {
+	s.Type = SesConfigIntegrationConfigSum
+	s.SesConfig = v
+}
+
+// GetSesConfig returns SesConfig and true boolean if IntegrationConfigSum is SesConfig.
+func (s IntegrationConfigSum) GetSesConfig() (v SesConfig, ok bool) {
+	if !s.IsSesConfig() {
+		return v, false
+	}
+	return s.SesConfig, true
+}
+
+// NewSesConfigIntegrationConfigSum returns new IntegrationConfigSum from SesConfig.
+func NewSesConfigIntegrationConfigSum(v SesConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetSesConfig(v)
+	return s
+}
+
+// SetInboxConfig sets IntegrationConfigSum to InboxConfig.
+func (s *IntegrationConfigSum) SetInboxConfig(v InboxConfig) {
+	s.Type = InboxConfigIntegrationConfigSum
+	s.InboxConfig = v
+}
+
+// GetInboxConfig returns InboxConfig and true boolean if IntegrationConfigSum is InboxConfig.
+func (s IntegrationConfigSum) GetInboxConfig() (v InboxConfig, ok bool) {
+	if !s.IsInboxConfig() {
+		return v, false
+	}
+	return s.InboxConfig, true
+}
+
+// NewInboxConfigIntegrationConfigSum returns new IntegrationConfigSum from InboxConfig.
+func NewInboxConfigIntegrationConfigSum(v InboxConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetInboxConfig(v)
+	return s
+}
+
+// SetTelegramConfig sets IntegrationConfigSum to TelegramConfig.
+func (s *IntegrationConfigSum) SetTelegramConfig(v TelegramConfig) {
+	s.Type = TelegramConfigIntegrationConfigSum
+	s.TelegramConfig = v
+}
+
+// GetTelegramConfig returns TelegramConfig and true boolean if IntegrationConfigSum is TelegramConfig.
+func (s IntegrationConfigSum) GetTelegramConfig() (v TelegramConfig, ok bool) {
+	if !s.IsTelegramConfig() {
+		return v, false
+	}
+	return s.TelegramConfig, true
+}
+
+// NewTelegramConfigIntegrationConfigSum returns new IntegrationConfigSum from TelegramConfig.
+func NewTelegramConfigIntegrationConfigSum(v TelegramConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetTelegramConfig(v)
+	return s
+}
+
+// SetTwilioConfig sets IntegrationConfigSum to TwilioConfig.
+func (s *IntegrationConfigSum) SetTwilioConfig(v TwilioConfig) {
+	s.Type = TwilioConfigIntegrationConfigSum
+	s.TwilioConfig = v
+}
+
+// GetTwilioConfig returns TwilioConfig and true boolean if IntegrationConfigSum is TwilioConfig.
+func (s IntegrationConfigSum) GetTwilioConfig() (v TwilioConfig, ok bool) {
+	if !s.IsTwilioConfig() {
+		return v, false
+	}
+	return s.TwilioConfig, true
+}
+
+// NewTwilioConfigIntegrationConfigSum returns new IntegrationConfigSum from TwilioConfig.
+func NewTwilioConfigIntegrationConfigSum(v TwilioConfig) IntegrationConfigSum {
+	var s IntegrationConfigSum
+	s.SetTwilioConfig(v)
+	return s
+}
+
+// Concrete sending provider.
+// Ref: #/components/schemas/IntegrationProvider
+type IntegrationProvider string
+
+const (
+	IntegrationProviderSMTP     IntegrationProvider = "smtp"
+	IntegrationProviderSes      IntegrationProvider = "ses"
+	IntegrationProviderInbox    IntegrationProvider = "inbox"
+	IntegrationProviderTelegram IntegrationProvider = "telegram"
+	IntegrationProviderTwilio   IntegrationProvider = "twilio"
+)
+
+// AllValues returns all IntegrationProvider values.
+func (IntegrationProvider) AllValues() []IntegrationProvider {
+	return []IntegrationProvider{
+		IntegrationProviderSMTP,
+		IntegrationProviderSes,
+		IntegrationProviderInbox,
+		IntegrationProviderTelegram,
+		IntegrationProviderTwilio,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s IntegrationProvider) MarshalText() ([]byte, error) {
+	switch s {
+	case IntegrationProviderSMTP:
+		return []byte(s), nil
+	case IntegrationProviderSes:
+		return []byte(s), nil
+	case IntegrationProviderInbox:
+		return []byte(s), nil
+	case IntegrationProviderTelegram:
+		return []byte(s), nil
+	case IntegrationProviderTwilio:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *IntegrationProvider) UnmarshalText(data []byte) error {
+	switch IntegrationProvider(data) {
+	case IntegrationProviderSMTP:
+		*s = IntegrationProviderSMTP
+		return nil
+	case IntegrationProviderSes:
+		*s = IntegrationProviderSes
+		return nil
+	case IntegrationProviderInbox:
+		*s = IntegrationProviderInbox
+		return nil
+	case IntegrationProviderTelegram:
+		*s = IntegrationProviderTelegram
+		return nil
+	case IntegrationProviderTwilio:
+		*s = IntegrationProviderTwilio
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // Request body for issuing a Telegram start link.
 // Ref: #/components/schemas/IssueTelegramStartLinkInput
 type IssueTelegramStartLinkInput struct {
@@ -4121,6 +8415,35 @@ func (s *JsonObject) init() JsonObject {
 type LegalDocumentLabel string
 
 type LegalDocumentMarkdown string
+
+// How often one link of a broadcast's or an automation's emails was clicked.
+// Ref: #/components/schemas/LinkClicks
+type LinkClicks struct {
+	// The link's destination URL.
+	URL string `json:"url"`
+	// Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention.
+	Clicks int32 `json:"clicks"`
+}
+
+// GetURL returns the value of URL.
+func (s *LinkClicks) GetURL() string {
+	return s.URL
+}
+
+// GetClicks returns the value of Clicks.
+func (s *LinkClicks) GetClicks() int32 {
+	return s.Clicks
+}
+
+// SetURL sets the value of URL.
+func (s *LinkClicks) SetURL(val string) {
+	s.URL = val
+}
+
+// SetClicks sets the value of Clicks.
+func (s *LinkClicks) SetClicks(val int32) {
+	s.Clicks = val
+}
 
 // What a lint finding is about (ADR 0040).
 // Ref: #/components/schemas/LintCode
@@ -4246,7 +8569,96 @@ type MaxPerDay int32
 
 type MaxPerSecond int32
 
+// The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
+// 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
+// on its own day. Orders in another currency are counted in neither field.
+// Ref: #/components/schemas/MessageRevenue
+type MessageRevenue struct {
+	// The Reporting currency, null until the first order or an owner or admin sets it; every figure is
+	// zero until then.
+	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
+	// Orders completed that are credited to it, in the Reporting currency.
+	Orders int32 `json:"orders"`
+	// Net revenue of those Orders, in the minor unit of the Reporting currency (cents for USD).
+	Amount int64 `json:"amount"`
+}
+
+// GetReportingCurrency returns the value of ReportingCurrency.
+func (s *MessageRevenue) GetReportingCurrency() NilCurrencyCode {
+	return s.ReportingCurrency
+}
+
+// GetOrders returns the value of Orders.
+func (s *MessageRevenue) GetOrders() int32 {
+	return s.Orders
+}
+
+// GetAmount returns the value of Amount.
+func (s *MessageRevenue) GetAmount() int64 {
+	return s.Amount
+}
+
+// SetReportingCurrency sets the value of ReportingCurrency.
+func (s *MessageRevenue) SetReportingCurrency(val NilCurrencyCode) {
+	s.ReportingCurrency = val
+}
+
+// SetOrders sets the value of Orders.
+func (s *MessageRevenue) SetOrders(val int32) {
+	s.Orders = val
+}
+
+// SetAmount sets the value of Amount.
+func (s *MessageRevenue) SetAmount(val int64) {
+	s.Amount = val
+}
+
 type Name string
+
+// NewNilAutomationVersion returns new NilAutomationVersion with value set to v.
+func NewNilAutomationVersion(v AutomationVersion) NilAutomationVersion {
+	return NilAutomationVersion{
+		Value: v,
+	}
+}
+
+// NilAutomationVersion is nullable AutomationVersion.
+type NilAutomationVersion struct {
+	Value AutomationVersion
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilAutomationVersion) SetTo(v AutomationVersion) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilAutomationVersion) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilAutomationVersion) SetToNull() {
+	o.Null = true
+	var v AutomationVersion
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilAutomationVersion) Get() (v AutomationVersion, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilAutomationVersion) Or(d AutomationVersion) AutomationVersion {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
 
 // NewNilCurrencyCode returns new NilCurrencyCode with value set to v.
 func NewNilCurrencyCode(v CurrencyCode) NilCurrencyCode {
@@ -4518,6 +8930,51 @@ func (o NilInt64) Or(d int64) int64 {
 	return d
 }
 
+// NewNilProviderLimitSource returns new NilProviderLimitSource with value set to v.
+func NewNilProviderLimitSource(v ProviderLimitSource) NilProviderLimitSource {
+	return NilProviderLimitSource{
+		Value: v,
+	}
+}
+
+// NilProviderLimitSource is nullable ProviderLimitSource.
+type NilProviderLimitSource struct {
+	Value ProviderLimitSource
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilProviderLimitSource) SetTo(v ProviderLimitSource) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilProviderLimitSource) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilProviderLimitSource) SetToNull() {
+	o.Null = true
+	var v ProviderLimitSource
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilProviderLimitSource) Get() (v ProviderLimitSource, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilProviderLimitSource) Or(d ProviderLimitSource) ProviderLimitSource {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewNilRegionalFormat returns new NilRegionalFormat with value set to v.
 func NewNilRegionalFormat(v RegionalFormat) NilRegionalFormat {
 	return NilRegionalFormat{
@@ -4608,37 +9065,37 @@ func (o NilRetentionDays) Or(d RetentionDays) RetentionDays {
 	return d
 }
 
-// NewNilSiteAutomationVersion returns new NilSiteAutomationVersion with value set to v.
-func NewNilSiteAutomationVersion(v SiteAutomationVersion) NilSiteAutomationVersion {
-	return NilSiteAutomationVersion{
+// NewNilRuleVersion returns new NilRuleVersion with value set to v.
+func NewNilRuleVersion(v RuleVersion) NilRuleVersion {
+	return NilRuleVersion{
 		Value: v,
 	}
 }
 
-// NilSiteAutomationVersion is nullable SiteAutomationVersion.
-type NilSiteAutomationVersion struct {
-	Value SiteAutomationVersion
+// NilRuleVersion is nullable RuleVersion.
+type NilRuleVersion struct {
+	Value RuleVersion
 	Null  bool
 }
 
 // SetTo sets value to v.
-func (o *NilSiteAutomationVersion) SetTo(v SiteAutomationVersion) {
+func (o *NilRuleVersion) SetTo(v RuleVersion) {
 	o.Null = false
 	o.Value = v
 }
 
 // IsNull returns true if value is Null.
-func (o NilSiteAutomationVersion) IsNull() bool { return o.Null }
+func (o NilRuleVersion) IsNull() bool { return o.Null }
 
 // SetToNull sets value to null.
-func (o *NilSiteAutomationVersion) SetToNull() {
+func (o *NilRuleVersion) SetToNull() {
 	o.Null = true
-	var v SiteAutomationVersion
+	var v RuleVersion
 	o.Value = v
 }
 
 // Get returns value and boolean that denotes whether value was set.
-func (o NilSiteAutomationVersion) Get() (v SiteAutomationVersion, ok bool) {
+func (o NilRuleVersion) Get() (v RuleVersion, ok bool) {
 	if o.Null {
 		return v, false
 	}
@@ -4646,7 +9103,7 @@ func (o NilSiteAutomationVersion) Get() (v SiteAutomationVersion, ok bool) {
 }
 
 // Or returns value if set, or given parameter if does not.
-func (o NilSiteAutomationVersion) Or(d SiteAutomationVersion) SiteAutomationVersion {
+func (o NilRuleVersion) Or(d RuleVersion) RuleVersion {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -4692,96 +9149,6 @@ func (o NilSiteBroadcastLimit) Get() (v SiteBroadcastLimit, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o NilSiteBroadcastLimit) Or(d SiteBroadcastLimit) SiteBroadcastLimit {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewNilSiteProviderLimitSource returns new NilSiteProviderLimitSource with value set to v.
-func NewNilSiteProviderLimitSource(v SiteProviderLimitSource) NilSiteProviderLimitSource {
-	return NilSiteProviderLimitSource{
-		Value: v,
-	}
-}
-
-// NilSiteProviderLimitSource is nullable SiteProviderLimitSource.
-type NilSiteProviderLimitSource struct {
-	Value SiteProviderLimitSource
-	Null  bool
-}
-
-// SetTo sets value to v.
-func (o *NilSiteProviderLimitSource) SetTo(v SiteProviderLimitSource) {
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o NilSiteProviderLimitSource) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *NilSiteProviderLimitSource) SetToNull() {
-	o.Null = true
-	var v SiteProviderLimitSource
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o NilSiteProviderLimitSource) Get() (v SiteProviderLimitSource, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o NilSiteProviderLimitSource) Or(d SiteProviderLimitSource) SiteProviderLimitSource {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewNilSiteRuleVersion returns new NilSiteRuleVersion with value set to v.
-func NewNilSiteRuleVersion(v SiteRuleVersion) NilSiteRuleVersion {
-	return NilSiteRuleVersion{
-		Value: v,
-	}
-}
-
-// NilSiteRuleVersion is nullable SiteRuleVersion.
-type NilSiteRuleVersion struct {
-	Value SiteRuleVersion
-	Null  bool
-}
-
-// SetTo sets value to v.
-func (o *NilSiteRuleVersion) SetTo(v SiteRuleVersion) {
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o NilSiteRuleVersion) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *NilSiteRuleVersion) SetToNull() {
-	o.Null = true
-	var v SiteRuleVersion
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o NilSiteRuleVersion) Get() (v SiteRuleVersion, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o NilSiteRuleVersion) Or(d SiteRuleVersion) SiteRuleVersion {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5061,6 +9428,52 @@ func (o OptAuditActorKind) Or(d AuditActorKind) AuditActorKind {
 	return d
 }
 
+// NewOptAutomationHttpErrorKind returns new OptAutomationHttpErrorKind with value set to v.
+func NewOptAutomationHttpErrorKind(v AutomationHttpErrorKind) OptAutomationHttpErrorKind {
+	return OptAutomationHttpErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptAutomationHttpErrorKind is optional AutomationHttpErrorKind.
+type OptAutomationHttpErrorKind struct {
+	Value AutomationHttpErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptAutomationHttpErrorKind was set.
+func (o OptAutomationHttpErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptAutomationHttpErrorKind) Reset() {
+	var v AutomationHttpErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptAutomationHttpErrorKind) SetTo(v AutomationHttpErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptAutomationHttpErrorKind) Get() (v AutomationHttpErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptAutomationHttpErrorKind) Or(d AutomationHttpErrorKind) AutomationHttpErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptBool returns new OptBool with value set to v.
 func NewOptBool(v bool) OptBool {
 	return OptBool{
@@ -5199,6 +9612,98 @@ func (o OptBroadcastContentInput) Or(d BroadcastContentInput) BroadcastContentIn
 	return d
 }
 
+// NewOptConditionGroup returns new OptConditionGroup with value set to v.
+func NewOptConditionGroup(v ConditionGroup) OptConditionGroup {
+	return OptConditionGroup{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConditionGroup is optional ConditionGroup.
+type OptConditionGroup struct {
+	Value ConditionGroup
+	Set   bool
+}
+
+// IsSet returns true if OptConditionGroup was set.
+func (o OptConditionGroup) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConditionGroup) Reset() {
+	var v ConditionGroup
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConditionGroup) SetTo(v ConditionGroup) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConditionGroup) Get() (v ConditionGroup, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConditionGroup) Or(d ConditionGroup) ConditionGroup {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptConditionGroupInput returns new OptConditionGroupInput with value set to v.
+func NewOptConditionGroupInput(v ConditionGroupInput) OptConditionGroupInput {
+	return OptConditionGroupInput{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptConditionGroupInput is optional ConditionGroupInput.
+type OptConditionGroupInput struct {
+	Value ConditionGroupInput
+	Set   bool
+}
+
+// IsSet returns true if OptConditionGroupInput was set.
+func (o OptConditionGroupInput) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptConditionGroupInput) Reset() {
+	var v ConditionGroupInput
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptConditionGroupInput) SetTo(v ConditionGroupInput) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptConditionGroupInput) Get() (v ConditionGroupInput, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptConditionGroupInput) Or(d ConditionGroupInput) ConditionGroupInput {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptCountryCode returns new OptCountryCode with value set to v.
 func NewOptCountryCode(v CountryCode) OptCountryCode {
 	return OptCountryCode{
@@ -5291,6 +9796,52 @@ func (o OptCurrencyCode) Or(d CurrencyCode) CurrencyCode {
 	return d
 }
 
+// NewOptCustomFieldType returns new OptCustomFieldType with value set to v.
+func NewOptCustomFieldType(v CustomFieldType) OptCustomFieldType {
+	return OptCustomFieldType{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptCustomFieldType is optional CustomFieldType.
+type OptCustomFieldType struct {
+	Value CustomFieldType
+	Set   bool
+}
+
+// IsSet returns true if OptCustomFieldType was set.
+func (o OptCustomFieldType) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptCustomFieldType) Reset() {
+	var v CustomFieldType
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptCustomFieldType) SetTo(v CustomFieldType) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptCustomFieldType) Get() (v CustomFieldType, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptCustomFieldType) Or(d CustomFieldType) CustomFieldType {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptEditorDocument returns new OptEditorDocument with value set to v.
 func NewOptEditorDocument(v EditorDocument) OptEditorDocument {
 	return OptEditorDocument{
@@ -5377,6 +9928,98 @@ func (o OptEmailAddress) Get() (v EmailAddress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptEmailAddress) Or(d EmailAddress) EmailAddress {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEnrollmentFailure returns new OptEnrollmentFailure with value set to v.
+func NewOptEnrollmentFailure(v EnrollmentFailure) OptEnrollmentFailure {
+	return OptEnrollmentFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEnrollmentFailure is optional EnrollmentFailure.
+type OptEnrollmentFailure struct {
+	Value EnrollmentFailure
+	Set   bool
+}
+
+// IsSet returns true if OptEnrollmentFailure was set.
+func (o OptEnrollmentFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEnrollmentFailure) Reset() {
+	var v EnrollmentFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEnrollmentFailure) SetTo(v EnrollmentFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEnrollmentFailure) Get() (v EnrollmentFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEnrollmentFailure) Or(d EnrollmentFailure) EnrollmentFailure {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptEnrollmentStatus returns new OptEnrollmentStatus with value set to v.
+func NewOptEnrollmentStatus(v EnrollmentStatus) OptEnrollmentStatus {
+	return OptEnrollmentStatus{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptEnrollmentStatus is optional EnrollmentStatus.
+type OptEnrollmentStatus struct {
+	Value EnrollmentStatus
+	Set   bool
+}
+
+// IsSet returns true if OptEnrollmentStatus was set.
+func (o OptEnrollmentStatus) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptEnrollmentStatus) Reset() {
+	var v EnrollmentStatus
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptEnrollmentStatus) SetTo(v EnrollmentStatus) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptEnrollmentStatus) Get() (v EnrollmentStatus, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptEnrollmentStatus) Or(d EnrollmentStatus) EnrollmentStatus {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -5561,6 +10204,52 @@ func (o OptJsonObject) Get() (v JsonObject, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptJsonObject) Or(d JsonObject) JsonObject {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMessageRevenue returns new OptMessageRevenue with value set to v.
+func NewOptMessageRevenue(v MessageRevenue) OptMessageRevenue {
+	return OptMessageRevenue{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMessageRevenue is optional MessageRevenue.
+type OptMessageRevenue struct {
+	Value MessageRevenue
+	Set   bool
+}
+
+// IsSet returns true if OptMessageRevenue was set.
+func (o OptMessageRevenue) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMessageRevenue) Reset() {
+	var v MessageRevenue
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMessageRevenue) SetTo(v MessageRevenue) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMessageRevenue) Get() (v MessageRevenue, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMessageRevenue) Or(d MessageRevenue) MessageRevenue {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -6701,6 +11390,74 @@ func (o OptNilRegionalFormat) Or(d RegionalFormat) RegionalFormat {
 	return d
 }
 
+// NewOptNilSendCap returns new OptNilSendCap with value set to v.
+func NewOptNilSendCap(v SendCap) OptNilSendCap {
+	return OptNilSendCap{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilSendCap is optional nullable SendCap.
+type OptNilSendCap struct {
+	Value SendCap
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilSendCap was set.
+func (o OptNilSendCap) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilSendCap) Reset() {
+	var v SendCap
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilSendCap) SetTo(v SendCap) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilSendCap) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilSendCap) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v SendCap
+	o.Value = v
+}
+
+// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
+func (o OptNilSendCap) IsEmpty() bool {
+	return !o.Set && !o.Null
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilSendCap) Get() (v SendCap, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilSendCap) Or(d SendCap) SendCap {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilSiteAttentionSubject returns new OptNilSiteAttentionSubject with value set to v.
 func NewOptNilSiteAttentionSubject(v SiteAttentionSubject) OptNilSiteAttentionSubject {
 	return OptNilSiteAttentionSubject{
@@ -6831,74 +11588,6 @@ func (o OptNilSiteBroadcastProgress) Get() (v SiteBroadcastProgress, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptNilSiteBroadcastProgress) Or(d SiteBroadcastProgress) SiteBroadcastProgress {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptNilSiteSendCap returns new OptNilSiteSendCap with value set to v.
-func NewOptNilSiteSendCap(v SiteSendCap) OptNilSiteSendCap {
-	return OptNilSiteSendCap{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptNilSiteSendCap is optional nullable SiteSendCap.
-type OptNilSiteSendCap struct {
-	Value SiteSendCap
-	Set   bool
-	Null  bool
-}
-
-// IsSet returns true if OptNilSiteSendCap was set.
-func (o OptNilSiteSendCap) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptNilSiteSendCap) Reset() {
-	var v SiteSendCap
-	o.Value = v
-	o.Set = false
-	o.Null = false
-}
-
-// SetTo sets value to v.
-func (o *OptNilSiteSendCap) SetTo(v SiteSendCap) {
-	o.Set = true
-	o.Null = false
-	o.Value = v
-}
-
-// IsNull returns true if value is Null.
-func (o OptNilSiteSendCap) IsNull() bool { return o.Null }
-
-// SetToNull sets value to null.
-func (o *OptNilSiteSendCap) SetToNull() {
-	o.Set = true
-	o.Null = true
-	var v SiteSendCap
-	o.Value = v
-}
-
-// IsEmpty returns true if the field was omitted from the payload (not Set and not Null).
-func (o OptNilSiteSendCap) IsEmpty() bool {
-	return !o.Set && !o.Null
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptNilSiteSendCap) Get() (v SiteSendCap, ok bool) {
-	if o.Null {
-		return v, false
-	}
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptNilSiteSendCap) Or(d SiteSendCap) SiteSendCap {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -7641,52 +12330,6 @@ func (o OptSiteAnalyticsRevenueRange) Or(d SiteAnalyticsRevenueRange) SiteAnalyt
 	return d
 }
 
-// NewOptSiteAutomationHttpErrorKind returns new OptSiteAutomationHttpErrorKind with value set to v.
-func NewOptSiteAutomationHttpErrorKind(v SiteAutomationHttpErrorKind) OptSiteAutomationHttpErrorKind {
-	return OptSiteAutomationHttpErrorKind{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteAutomationHttpErrorKind is optional SiteAutomationHttpErrorKind.
-type OptSiteAutomationHttpErrorKind struct {
-	Value SiteAutomationHttpErrorKind
-	Set   bool
-}
-
-// IsSet returns true if OptSiteAutomationHttpErrorKind was set.
-func (o OptSiteAutomationHttpErrorKind) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteAutomationHttpErrorKind) Reset() {
-	var v SiteAutomationHttpErrorKind
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteAutomationHttpErrorKind) SetTo(v SiteAutomationHttpErrorKind) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteAutomationHttpErrorKind) Get() (v SiteAutomationHttpErrorKind, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteAutomationHttpErrorKind) Or(d SiteAutomationHttpErrorKind) SiteAutomationHttpErrorKind {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSiteAutomationReportsGetPeriod returns new OptSiteAutomationReportsGetPeriod with value set to v.
 func NewOptSiteAutomationReportsGetPeriod(v SiteAutomationReportsGetPeriod) OptSiteAutomationReportsGetPeriod {
 	return OptSiteAutomationReportsGetPeriod{
@@ -7871,236 +12514,6 @@ func (o OptSiteBroadcastsOrder) Or(d SiteBroadcastsOrder) SiteBroadcastsOrder {
 	return d
 }
 
-// NewOptSiteConditionGroup returns new OptSiteConditionGroup with value set to v.
-func NewOptSiteConditionGroup(v SiteConditionGroup) OptSiteConditionGroup {
-	return OptSiteConditionGroup{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteConditionGroup is optional SiteConditionGroup.
-type OptSiteConditionGroup struct {
-	Value SiteConditionGroup
-	Set   bool
-}
-
-// IsSet returns true if OptSiteConditionGroup was set.
-func (o OptSiteConditionGroup) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteConditionGroup) Reset() {
-	var v SiteConditionGroup
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteConditionGroup) SetTo(v SiteConditionGroup) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteConditionGroup) Get() (v SiteConditionGroup, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteConditionGroup) Or(d SiteConditionGroup) SiteConditionGroup {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteConditionGroupInput returns new OptSiteConditionGroupInput with value set to v.
-func NewOptSiteConditionGroupInput(v SiteConditionGroupInput) OptSiteConditionGroupInput {
-	return OptSiteConditionGroupInput{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteConditionGroupInput is optional SiteConditionGroupInput.
-type OptSiteConditionGroupInput struct {
-	Value SiteConditionGroupInput
-	Set   bool
-}
-
-// IsSet returns true if OptSiteConditionGroupInput was set.
-func (o OptSiteConditionGroupInput) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteConditionGroupInput) Reset() {
-	var v SiteConditionGroupInput
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteConditionGroupInput) SetTo(v SiteConditionGroupInput) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteConditionGroupInput) Get() (v SiteConditionGroupInput, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteConditionGroupInput) Or(d SiteConditionGroupInput) SiteConditionGroupInput {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteCustomFieldType returns new OptSiteCustomFieldType with value set to v.
-func NewOptSiteCustomFieldType(v SiteCustomFieldType) OptSiteCustomFieldType {
-	return OptSiteCustomFieldType{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteCustomFieldType is optional SiteCustomFieldType.
-type OptSiteCustomFieldType struct {
-	Value SiteCustomFieldType
-	Set   bool
-}
-
-// IsSet returns true if OptSiteCustomFieldType was set.
-func (o OptSiteCustomFieldType) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteCustomFieldType) Reset() {
-	var v SiteCustomFieldType
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteCustomFieldType) SetTo(v SiteCustomFieldType) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteCustomFieldType) Get() (v SiteCustomFieldType, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteCustomFieldType) Or(d SiteCustomFieldType) SiteCustomFieldType {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteEnrollmentFailure returns new OptSiteEnrollmentFailure with value set to v.
-func NewOptSiteEnrollmentFailure(v SiteEnrollmentFailure) OptSiteEnrollmentFailure {
-	return OptSiteEnrollmentFailure{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteEnrollmentFailure is optional SiteEnrollmentFailure.
-type OptSiteEnrollmentFailure struct {
-	Value SiteEnrollmentFailure
-	Set   bool
-}
-
-// IsSet returns true if OptSiteEnrollmentFailure was set.
-func (o OptSiteEnrollmentFailure) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteEnrollmentFailure) Reset() {
-	var v SiteEnrollmentFailure
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteEnrollmentFailure) SetTo(v SiteEnrollmentFailure) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteEnrollmentFailure) Get() (v SiteEnrollmentFailure, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteEnrollmentFailure) Or(d SiteEnrollmentFailure) SiteEnrollmentFailure {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteEnrollmentStatus returns new OptSiteEnrollmentStatus with value set to v.
-func NewOptSiteEnrollmentStatus(v SiteEnrollmentStatus) OptSiteEnrollmentStatus {
-	return OptSiteEnrollmentStatus{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteEnrollmentStatus is optional SiteEnrollmentStatus.
-type OptSiteEnrollmentStatus struct {
-	Value SiteEnrollmentStatus
-	Set   bool
-}
-
-// IsSet returns true if OptSiteEnrollmentStatus was set.
-func (o OptSiteEnrollmentStatus) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteEnrollmentStatus) Reset() {
-	var v SiteEnrollmentStatus
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteEnrollmentStatus) SetTo(v SiteEnrollmentStatus) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteEnrollmentStatus) Get() (v SiteEnrollmentStatus, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteEnrollmentStatus) Or(d SiteEnrollmentStatus) SiteEnrollmentStatus {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSiteMembershipSource returns new OptSiteMembershipSource with value set to v.
 func NewOptSiteMembershipSource(v SiteMembershipSource) OptSiteMembershipSource {
 	return OptSiteMembershipSource{
@@ -8141,52 +12554,6 @@ func (o OptSiteMembershipSource) Get() (v SiteMembershipSource, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptSiteMembershipSource) Or(d SiteMembershipSource) SiteMembershipSource {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteMessageRevenue returns new OptSiteMessageRevenue with value set to v.
-func NewOptSiteMessageRevenue(v SiteMessageRevenue) OptSiteMessageRevenue {
-	return OptSiteMessageRevenue{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteMessageRevenue is optional SiteMessageRevenue.
-type OptSiteMessageRevenue struct {
-	Value SiteMessageRevenue
-	Set   bool
-}
-
-// IsSet returns true if OptSiteMessageRevenue was set.
-func (o OptSiteMessageRevenue) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteMessageRevenue) Reset() {
-	var v SiteMessageRevenue
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteMessageRevenue) SetTo(v SiteMessageRevenue) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteMessageRevenue) Get() (v SiteMessageRevenue, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteMessageRevenue) Or(d SiteMessageRevenue) SiteMessageRevenue {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -8515,236 +12882,6 @@ func (o OptSitePasskeyRequestOptionsUserVerification) Or(d SitePasskeyRequestOpt
 	return d
 }
 
-// NewOptSiteSuppressionChannel returns new OptSiteSuppressionChannel with value set to v.
-func NewOptSiteSuppressionChannel(v SiteSuppressionChannel) OptSiteSuppressionChannel {
-	return OptSiteSuppressionChannel{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteSuppressionChannel is optional SiteSuppressionChannel.
-type OptSiteSuppressionChannel struct {
-	Value SiteSuppressionChannel
-	Set   bool
-}
-
-// IsSet returns true if OptSiteSuppressionChannel was set.
-func (o OptSiteSuppressionChannel) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteSuppressionChannel) Reset() {
-	var v SiteSuppressionChannel
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteSuppressionChannel) SetTo(v SiteSuppressionChannel) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteSuppressionChannel) Get() (v SiteSuppressionChannel, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteSuppressionChannel) Or(d SiteSuppressionChannel) SiteSuppressionChannel {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteTrackingReason returns new OptSiteTrackingReason with value set to v.
-func NewOptSiteTrackingReason(v SiteTrackingReason) OptSiteTrackingReason {
-	return OptSiteTrackingReason{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteTrackingReason is optional SiteTrackingReason.
-type OptSiteTrackingReason struct {
-	Value SiteTrackingReason
-	Set   bool
-}
-
-// IsSet returns true if OptSiteTrackingReason was set.
-func (o OptSiteTrackingReason) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteTrackingReason) Reset() {
-	var v SiteTrackingReason
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteTrackingReason) SetTo(v SiteTrackingReason) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteTrackingReason) Get() (v SiteTrackingReason, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteTrackingReason) Or(d SiteTrackingReason) SiteTrackingReason {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteWebhookDisabledReason returns new OptSiteWebhookDisabledReason with value set to v.
-func NewOptSiteWebhookDisabledReason(v SiteWebhookDisabledReason) OptSiteWebhookDisabledReason {
-	return OptSiteWebhookDisabledReason{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteWebhookDisabledReason is optional SiteWebhookDisabledReason.
-type OptSiteWebhookDisabledReason struct {
-	Value SiteWebhookDisabledReason
-	Set   bool
-}
-
-// IsSet returns true if OptSiteWebhookDisabledReason was set.
-func (o OptSiteWebhookDisabledReason) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteWebhookDisabledReason) Reset() {
-	var v SiteWebhookDisabledReason
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteWebhookDisabledReason) SetTo(v SiteWebhookDisabledReason) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteWebhookDisabledReason) Get() (v SiteWebhookDisabledReason, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteWebhookDisabledReason) Or(d SiteWebhookDisabledReason) SiteWebhookDisabledReason {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteWebhookErrorKind returns new OptSiteWebhookErrorKind with value set to v.
-func NewOptSiteWebhookErrorKind(v SiteWebhookErrorKind) OptSiteWebhookErrorKind {
-	return OptSiteWebhookErrorKind{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteWebhookErrorKind is optional SiteWebhookErrorKind.
-type OptSiteWebhookErrorKind struct {
-	Value SiteWebhookErrorKind
-	Set   bool
-}
-
-// IsSet returns true if OptSiteWebhookErrorKind was set.
-func (o OptSiteWebhookErrorKind) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteWebhookErrorKind) Reset() {
-	var v SiteWebhookErrorKind
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteWebhookErrorKind) SetTo(v SiteWebhookErrorKind) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteWebhookErrorKind) Get() (v SiteWebhookErrorKind, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteWebhookErrorKind) Or(d SiteWebhookErrorKind) SiteWebhookErrorKind {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptSiteWebhookFailure returns new OptSiteWebhookFailure with value set to v.
-func NewOptSiteWebhookFailure(v SiteWebhookFailure) OptSiteWebhookFailure {
-	return OptSiteWebhookFailure{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptSiteWebhookFailure is optional SiteWebhookFailure.
-type OptSiteWebhookFailure struct {
-	Value SiteWebhookFailure
-	Set   bool
-}
-
-// IsSet returns true if OptSiteWebhookFailure was set.
-func (o OptSiteWebhookFailure) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptSiteWebhookFailure) Reset() {
-	var v SiteWebhookFailure
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptSiteWebhookFailure) SetTo(v SiteWebhookFailure) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptSiteWebhookFailure) Get() (v SiteWebhookFailure, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptSiteWebhookFailure) Or(d SiteWebhookFailure) SiteWebhookFailure {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // NewOptSortDirection returns new OptSortDirection with value set to v.
 func NewOptSortDirection(v SortDirection) OptSortDirection {
 	return OptSortDirection{
@@ -8837,6 +12974,52 @@ func (o OptString) Or(d string) string {
 	return d
 }
 
+// NewOptSuppressionChannel returns new OptSuppressionChannel with value set to v.
+func NewOptSuppressionChannel(v SuppressionChannel) OptSuppressionChannel {
+	return OptSuppressionChannel{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptSuppressionChannel is optional SuppressionChannel.
+type OptSuppressionChannel struct {
+	Value SuppressionChannel
+	Set   bool
+}
+
+// IsSet returns true if OptSuppressionChannel was set.
+func (o OptSuppressionChannel) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptSuppressionChannel) Reset() {
+	var v SuppressionChannel
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptSuppressionChannel) SetTo(v SuppressionChannel) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptSuppressionChannel) Get() (v SuppressionChannel, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptSuppressionChannel) Or(d SuppressionChannel) SuppressionChannel {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptTimestamp returns new OptTimestamp with value set to v.
 func NewOptTimestamp(v Timestamp) OptTimestamp {
 	return OptTimestamp{
@@ -8883,6 +13066,52 @@ func (o OptTimestamp) Or(d Timestamp) Timestamp {
 	return d
 }
 
+// NewOptTrackingReason returns new OptTrackingReason with value set to v.
+func NewOptTrackingReason(v TrackingReason) OptTrackingReason {
+	return OptTrackingReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptTrackingReason is optional TrackingReason.
+type OptTrackingReason struct {
+	Value TrackingReason
+	Set   bool
+}
+
+// IsSet returns true if OptTrackingReason was set.
+func (o OptTrackingReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptTrackingReason) Reset() {
+	var v TrackingReason
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptTrackingReason) SetTo(v TrackingReason) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptTrackingReason) Get() (v TrackingReason, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptTrackingReason) Or(d TrackingReason) TrackingReason {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptUserName returns new OptUserName with value set to v.
 func NewOptUserName(v UserName) OptUserName {
 	return OptUserName{
@@ -8923,6 +13152,144 @@ func (o OptUserName) Get() (v UserName, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptUserName) Or(d UserName) UserName {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptWebhookDisabledReason returns new OptWebhookDisabledReason with value set to v.
+func NewOptWebhookDisabledReason(v WebhookDisabledReason) OptWebhookDisabledReason {
+	return OptWebhookDisabledReason{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookDisabledReason is optional WebhookDisabledReason.
+type OptWebhookDisabledReason struct {
+	Value WebhookDisabledReason
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookDisabledReason was set.
+func (o OptWebhookDisabledReason) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookDisabledReason) Reset() {
+	var v WebhookDisabledReason
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookDisabledReason) SetTo(v WebhookDisabledReason) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookDisabledReason) Get() (v WebhookDisabledReason, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookDisabledReason) Or(d WebhookDisabledReason) WebhookDisabledReason {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptWebhookErrorKind returns new OptWebhookErrorKind with value set to v.
+func NewOptWebhookErrorKind(v WebhookErrorKind) OptWebhookErrorKind {
+	return OptWebhookErrorKind{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookErrorKind is optional WebhookErrorKind.
+type OptWebhookErrorKind struct {
+	Value WebhookErrorKind
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookErrorKind was set.
+func (o OptWebhookErrorKind) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookErrorKind) Reset() {
+	var v WebhookErrorKind
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookErrorKind) SetTo(v WebhookErrorKind) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookErrorKind) Get() (v WebhookErrorKind, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookErrorKind) Or(d WebhookErrorKind) WebhookErrorKind {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptWebhookFailure returns new OptWebhookFailure with value set to v.
+func NewOptWebhookFailure(v WebhookFailure) OptWebhookFailure {
+	return OptWebhookFailure{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptWebhookFailure is optional WebhookFailure.
+type OptWebhookFailure struct {
+	Value WebhookFailure
+	Set   bool
+}
+
+// IsSet returns true if OptWebhookFailure was set.
+func (o OptWebhookFailure) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptWebhookFailure) Reset() {
+	var v WebhookFailure
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptWebhookFailure) SetTo(v WebhookFailure) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptWebhookFailure) Get() (v WebhookFailure, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptWebhookFailure) Or(d WebhookFailure) WebhookFailure {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -9372,6 +13739,48 @@ func (s *PersonalScope) UnmarshalText(data []byte) error {
 	}
 }
 
+// A Preset: how an Instance verifies and reads one provider's bounce and complaint callbacks.
+// Ref: #/components/schemas/PresetResource
+type PresetResource struct {
+	// The name an Integration's `preset` refers to.
+	Name string `json:"name"`
+	// What the Preset is for.
+	Description string `json:"description"`
+	// JSON Schema (draft 2020-12) of the `params` an Integration of this Preset takes. A string marked
+	// `writeOnly` is a secret: it is never returned by a read.
+	ParamsSchema JsonObject `json:"paramsSchema"`
+}
+
+// GetName returns the value of Name.
+func (s *PresetResource) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *PresetResource) GetDescription() string {
+	return s.Description
+}
+
+// GetParamsSchema returns the value of ParamsSchema.
+func (s *PresetResource) GetParamsSchema() JsonObject {
+	return s.ParamsSchema
+}
+
+// SetName sets the value of Name.
+func (s *PresetResource) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PresetResource) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetParamsSchema sets the value of ParamsSchema.
+func (s *PresetResource) SetParamsSchema(val JsonObject) {
+	s.ParamsSchema = val
+}
+
 // A machine-readable reason a client branches on, beyond the HTTP status.
 // Ref: #/components/schemas/ProblemCode
 type ProblemCode string
@@ -9729,6 +14138,195 @@ func (s *ProblemDetailsStatusCode) SetResponse(val ProblemDetails) {
 	s.Response = val
 }
 
+// Where an effective Provider limit comes from.
+// Ref: #/components/schemas/ProviderLimitSource
+type ProviderLimitSource string
+
+const (
+	ProviderLimitSourceManual   ProviderLimitSource = "manual"
+	ProviderLimitSourceProvider ProviderLimitSource = "provider"
+)
+
+// AllValues returns all ProviderLimitSource values.
+func (ProviderLimitSource) AllValues() []ProviderLimitSource {
+	return []ProviderLimitSource{
+		ProviderLimitSourceManual,
+		ProviderLimitSourceProvider,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ProviderLimitSource) MarshalText() ([]byte, error) {
+	switch s {
+	case ProviderLimitSourceManual:
+		return []byte(s), nil
+	case ProviderLimitSourceProvider:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ProviderLimitSource) UnmarshalText(data []byte) error {
+	switch ProviderLimitSource(data) {
+	case ProviderLimitSourceManual:
+		*s = ProviderLimitSourceManual
+		return nil
+	case ProviderLimitSourceProvider:
+		*s = ProviderLimitSourceProvider
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The Provider limit as enforced, with the last 24 hours of usage.
+// Ref: #/components/schemas/ProviderLimitStatus
+type ProviderLimitStatus struct {
+	// Most messages per second.
+	PerSecond ProviderLimitValue `json:"perSecond"`
+	// Most messages per rolling 24 hours.
+	PerDay ProviderLimitValue `json:"perDay"`
+	// Messages the provider accepted from this Integration in the last 24 hours.
+	SentLast24h int32 `json:"sentLast24h"`
+	// Reasons to review the limit; empty when there is nothing to flag.
+	Warnings []ProviderLimitWarning `json:"warnings"`
+}
+
+// GetPerSecond returns the value of PerSecond.
+func (s *ProviderLimitStatus) GetPerSecond() ProviderLimitValue {
+	return s.PerSecond
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *ProviderLimitStatus) GetPerDay() ProviderLimitValue {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *ProviderLimitStatus) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// GetWarnings returns the value of Warnings.
+func (s *ProviderLimitStatus) GetWarnings() []ProviderLimitWarning {
+	return s.Warnings
+}
+
+// SetPerSecond sets the value of PerSecond.
+func (s *ProviderLimitStatus) SetPerSecond(val ProviderLimitValue) {
+	s.PerSecond = val
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *ProviderLimitStatus) SetPerDay(val ProviderLimitValue) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *ProviderLimitStatus) SetSentLast24h(val int32) {
+	s.SentLast24h = val
+}
+
+// SetWarnings sets the value of Warnings.
+func (s *ProviderLimitStatus) SetWarnings(val []ProviderLimitWarning) {
+	s.Warnings = val
+}
+
+// One effective ceiling: the lowest of the manual and provider values, manual on a tie.
+// Ref: #/components/schemas/ProviderLimitValue
+type ProviderLimitValue struct {
+	// The ceiling in messages; null means this window is not limited.
+	Limit NilInt32 `json:"limit"`
+	// Where the ceiling comes from; null when there is none.
+	Source NilProviderLimitSource `json:"source"`
+}
+
+// GetLimit returns the value of Limit.
+func (s *ProviderLimitValue) GetLimit() NilInt32 {
+	return s.Limit
+}
+
+// GetSource returns the value of Source.
+func (s *ProviderLimitValue) GetSource() NilProviderLimitSource {
+	return s.Source
+}
+
+// SetLimit sets the value of Limit.
+func (s *ProviderLimitValue) SetLimit(val NilInt32) {
+	s.Limit = val
+}
+
+// SetSource sets the value of Source.
+func (s *ProviderLimitValue) SetSource(val NilProviderLimitSource) {
+	s.Source = val
+}
+
+// A reason to look at an Integration's Provider limit.
+// Ref: #/components/schemas/ProviderLimitWarning
+type ProviderLimitWarning string
+
+const (
+	ProviderLimitWarningUnlimited                ProviderLimitWarning = "unlimited"
+	ProviderLimitWarningProviderQuotaUnavailable ProviderLimitWarning = "providerQuotaUnavailable"
+	ProviderLimitWarningProviderStopped          ProviderLimitWarning = "providerStopped"
+	ProviderLimitWarningProviderProbation        ProviderLimitWarning = "providerProbation"
+	ProviderLimitWarningProviderSandbox          ProviderLimitWarning = "providerSandbox"
+)
+
+// AllValues returns all ProviderLimitWarning values.
+func (ProviderLimitWarning) AllValues() []ProviderLimitWarning {
+	return []ProviderLimitWarning{
+		ProviderLimitWarningUnlimited,
+		ProviderLimitWarningProviderQuotaUnavailable,
+		ProviderLimitWarningProviderStopped,
+		ProviderLimitWarningProviderProbation,
+		ProviderLimitWarningProviderSandbox,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s ProviderLimitWarning) MarshalText() ([]byte, error) {
+	switch s {
+	case ProviderLimitWarningUnlimited:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderQuotaUnavailable:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderStopped:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderProbation:
+		return []byte(s), nil
+	case ProviderLimitWarningProviderSandbox:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *ProviderLimitWarning) UnmarshalText(data []byte) error {
+	switch ProviderLimitWarning(data) {
+	case ProviderLimitWarningUnlimited:
+		*s = ProviderLimitWarningUnlimited
+		return nil
+	case ProviderLimitWarningProviderQuotaUnavailable:
+		*s = ProviderLimitWarningProviderQuotaUnavailable
+		return nil
+	case ProviderLimitWarningProviderStopped:
+		*s = ProviderLimitWarningProviderStopped
+		return nil
+	case ProviderLimitWarningProviderProbation:
+		*s = ProviderLimitWarningProviderProbation
+		return nil
+	case ProviderLimitWarningProviderSandbox:
+		*s = ProviderLimitWarningProviderSandbox
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A rate as the (numerator, denominator, rate) triple (ADR 0011), shown as it is, with no display
 // floor: the rate is null only when the denominator is zero, an undefined rate never being reported as
 // 0.
@@ -9796,6 +14394,745 @@ func (s *RevisionInput) SetRevision(val Revision) {
 	s.Revision = val
 }
 
+// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
+// name, http actions the call.
+// Ref: #/components/schemas/RuleAction
+type RuleAction struct {
+	// Action kind.
+	Type RuleActionType `json:"type"`
+	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
+	Tag OptString `json:"tag"`
+	// Automation to enroll the Contact in, once ever (enroll_automation).
+	AutomationId OptEntityId `json:"automationId"`
+	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
+	ID OptString `json:"id"`
+	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (http actions). On read, only the names are returned.
+	Headers []AutomationHttpHeader `json:"headers"`
+	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
+	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
+	Body OptString `json:"body"`
+	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
+	// returned. Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (http actions).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (http actions, read only).
+	HasSecret OptBool `json:"hasSecret"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleAction) GetType() RuleActionType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *RuleAction) GetTag() OptString {
+	return s.Tag
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *RuleAction) GetAutomationId() OptEntityId {
+	return s.AutomationId
+}
+
+// GetID returns the value of ID.
+func (s *RuleAction) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *RuleAction) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *RuleAction) GetHeaders() []AutomationHttpHeader {
+	return s.Headers
+}
+
+// GetBody returns the value of Body.
+func (s *RuleAction) GetBody() OptString {
+	return s.Body
+}
+
+// GetSecret returns the value of Secret.
+func (s *RuleAction) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *RuleAction) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *RuleAction) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
+// SetType sets the value of Type.
+func (s *RuleAction) SetType(val RuleActionType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *RuleAction) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *RuleAction) SetAutomationId(val OptEntityId) {
+	s.AutomationId = val
+}
+
+// SetID sets the value of ID.
+func (s *RuleAction) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *RuleAction) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *RuleAction) SetHeaders(val []AutomationHttpHeader) {
+	s.Headers = val
+}
+
+// SetBody sets the value of Body.
+func (s *RuleAction) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *RuleAction) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *RuleAction) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *RuleAction) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
+// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
+// name, http actions the call.
+// Ref: #/components/schemas/RuleActionInput
+type RuleActionInput struct {
+	// Action kind.
+	Type RuleActionType `json:"type"`
+	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
+	Tag OptString `json:"tag"`
+	// Automation to enroll the Contact in, once ever (enroll_automation).
+	AutomationId OptEntityId `json:"automationId"`
+	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
+	ID OptString `json:"id"`
+	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
+	// URL. Up to 2 KiB, http or https.
+	URL OptString `json:"url"`
+	// Up to 5 request headers (http actions). On read, only the names are returned.
+	Headers []AutomationHttpHeaderInput `json:"headers"`
+	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
+	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
+	Body OptString `json:"body"`
+	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
+	// returned. Omit it when editing to keep the stored secret.
+	Secret OptString `json:"secret"`
+	// Remove the signing secret on save (http actions).
+	ClearSecret OptBool `json:"clearSecret"`
+	// Whether a signing secret is stored (http actions, read only).
+	HasSecret OptBool `json:"hasSecret"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleActionInput) GetType() RuleActionType {
+	return s.Type
+}
+
+// GetTag returns the value of Tag.
+func (s *RuleActionInput) GetTag() OptString {
+	return s.Tag
+}
+
+// GetAutomationId returns the value of AutomationId.
+func (s *RuleActionInput) GetAutomationId() OptEntityId {
+	return s.AutomationId
+}
+
+// GetID returns the value of ID.
+func (s *RuleActionInput) GetID() OptString {
+	return s.ID
+}
+
+// GetURL returns the value of URL.
+func (s *RuleActionInput) GetURL() OptString {
+	return s.URL
+}
+
+// GetHeaders returns the value of Headers.
+func (s *RuleActionInput) GetHeaders() []AutomationHttpHeaderInput {
+	return s.Headers
+}
+
+// GetBody returns the value of Body.
+func (s *RuleActionInput) GetBody() OptString {
+	return s.Body
+}
+
+// GetSecret returns the value of Secret.
+func (s *RuleActionInput) GetSecret() OptString {
+	return s.Secret
+}
+
+// GetClearSecret returns the value of ClearSecret.
+func (s *RuleActionInput) GetClearSecret() OptBool {
+	return s.ClearSecret
+}
+
+// GetHasSecret returns the value of HasSecret.
+func (s *RuleActionInput) GetHasSecret() OptBool {
+	return s.HasSecret
+}
+
+// SetType sets the value of Type.
+func (s *RuleActionInput) SetType(val RuleActionType) {
+	s.Type = val
+}
+
+// SetTag sets the value of Tag.
+func (s *RuleActionInput) SetTag(val OptString) {
+	s.Tag = val
+}
+
+// SetAutomationId sets the value of AutomationId.
+func (s *RuleActionInput) SetAutomationId(val OptEntityId) {
+	s.AutomationId = val
+}
+
+// SetID sets the value of ID.
+func (s *RuleActionInput) SetID(val OptString) {
+	s.ID = val
+}
+
+// SetURL sets the value of URL.
+func (s *RuleActionInput) SetURL(val OptString) {
+	s.URL = val
+}
+
+// SetHeaders sets the value of Headers.
+func (s *RuleActionInput) SetHeaders(val []AutomationHttpHeaderInput) {
+	s.Headers = val
+}
+
+// SetBody sets the value of Body.
+func (s *RuleActionInput) SetBody(val OptString) {
+	s.Body = val
+}
+
+// SetSecret sets the value of Secret.
+func (s *RuleActionInput) SetSecret(val OptString) {
+	s.Secret = val
+}
+
+// SetClearSecret sets the value of ClearSecret.
+func (s *RuleActionInput) SetClearSecret(val OptBool) {
+	s.ClearSecret = val
+}
+
+// SetHasSecret sets the value of HasSecret.
+func (s *RuleActionInput) SetHasSecret(val OptBool) {
+	s.HasSecret = val
+}
+
+// What one Action did when a Rule fired.
+// Ref: #/components/schemas/RuleActionResult
+type RuleActionResult struct {
+	// The Action's kind.
+	Type RuleActionType `json:"type"`
+	// How it ended; a skipped Action is an expected outcome, not an error.
+	Status RuleActionStatus `json:"status"`
+	// Why it failed or was skipped.
+	Detail OptString `json:"detail"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleActionResult) GetType() RuleActionType {
+	return s.Type
+}
+
+// GetStatus returns the value of Status.
+func (s *RuleActionResult) GetStatus() RuleActionStatus {
+	return s.Status
+}
+
+// GetDetail returns the value of Detail.
+func (s *RuleActionResult) GetDetail() OptString {
+	return s.Detail
+}
+
+// SetType sets the value of Type.
+func (s *RuleActionResult) SetType(val RuleActionType) {
+	s.Type = val
+}
+
+// SetStatus sets the value of Status.
+func (s *RuleActionResult) SetStatus(val RuleActionStatus) {
+	s.Status = val
+}
+
+// SetDetail sets the value of Detail.
+func (s *RuleActionResult) SetDetail(val OptString) {
+	s.Detail = val
+}
+
+// How one Action of a Firing ended.
+// Ref: #/components/schemas/RuleActionStatus
+type RuleActionStatus string
+
+const (
+	RuleActionStatusSucceeded RuleActionStatus = "succeeded"
+	RuleActionStatusFailed    RuleActionStatus = "failed"
+	RuleActionStatusSkipped   RuleActionStatus = "skipped"
+	RuleActionStatusPending   RuleActionStatus = "pending"
+)
+
+// AllValues returns all RuleActionStatus values.
+func (RuleActionStatus) AllValues() []RuleActionStatus {
+	return []RuleActionStatus{
+		RuleActionStatusSucceeded,
+		RuleActionStatusFailed,
+		RuleActionStatusSkipped,
+		RuleActionStatusPending,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleActionStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleActionStatusSucceeded:
+		return []byte(s), nil
+	case RuleActionStatusFailed:
+		return []byte(s), nil
+	case RuleActionStatusSkipped:
+		return []byte(s), nil
+	case RuleActionStatusPending:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleActionStatus) UnmarshalText(data []byte) error {
+	switch RuleActionStatus(data) {
+	case RuleActionStatusSucceeded:
+		*s = RuleActionStatusSucceeded
+		return nil
+	case RuleActionStatusFailed:
+		*s = RuleActionStatusFailed
+		return nil
+	case RuleActionStatusSkipped:
+		*s = RuleActionStatusSkipped
+		return nil
+	case RuleActionStatusPending:
+		*s = RuleActionStatusPending
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Kind of Rule action.
+// Ref: #/components/schemas/RuleActionType
+type RuleActionType string
+
+const (
+	RuleActionTypeApplyTag         RuleActionType = "apply_tag"
+	RuleActionTypeRemoveTag        RuleActionType = "remove_tag"
+	RuleActionTypeEnrollAutomation RuleActionType = "enroll_automation"
+	RuleActionTypeHTTP             RuleActionType = "http"
+)
+
+// AllValues returns all RuleActionType values.
+func (RuleActionType) AllValues() []RuleActionType {
+	return []RuleActionType{
+		RuleActionTypeApplyTag,
+		RuleActionTypeRemoveTag,
+		RuleActionTypeEnrollAutomation,
+		RuleActionTypeHTTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleActionType) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleActionTypeApplyTag:
+		return []byte(s), nil
+	case RuleActionTypeRemoveTag:
+		return []byte(s), nil
+	case RuleActionTypeEnrollAutomation:
+		return []byte(s), nil
+	case RuleActionTypeHTTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleActionType) UnmarshalText(data []byte) error {
+	switch RuleActionType(data) {
+	case RuleActionTypeApplyTag:
+		*s = RuleActionTypeApplyTag
+		return nil
+	case RuleActionTypeRemoveTag:
+		*s = RuleActionTypeRemoveTag
+		return nil
+	case RuleActionTypeEnrollAutomation:
+		*s = RuleActionTypeEnrollAutomation
+		return nil
+	case RuleActionTypeHTTP:
+		*s = RuleActionTypeHTTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One Action a Rule would run, described without running it.
+// Ref: #/components/schemas/RuleDryRunAction
+type RuleDryRunAction struct {
+	// The Action's kind.
+	Type string `json:"type"`
+	// One line saying what the Action would do.
+	Summary string `json:"summary"`
+}
+
+// GetType returns the value of Type.
+func (s *RuleDryRunAction) GetType() string {
+	return s.Type
+}
+
+// GetSummary returns the value of Summary.
+func (s *RuleDryRunAction) GetSummary() string {
+	return s.Summary
+}
+
+// SetType sets the value of Type.
+func (s *RuleDryRunAction) SetType(val string) {
+	s.Type = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *RuleDryRunAction) SetSummary(val string) {
+	s.Summary = val
+}
+
+// Whether a stored Event would fire a Rule, and if not, why.
+// Ref: #/components/schemas/RuleDryRunOutcome
+type RuleDryRunOutcome string
+
+const (
+	RuleDryRunOutcomeWouldFire       RuleDryRunOutcome = "would_fire"
+	RuleDryRunOutcomeNotTriggered    RuleDryRunOutcome = "not_triggered"
+	RuleDryRunOutcomeNoContact       RuleDryRunOutcome = "no_contact"
+	RuleDryRunOutcomeMachine         RuleDryRunOutcome = "machine"
+	RuleDryRunOutcomeBackfill        RuleDryRunOutcome = "backfill"
+	RuleDryRunOutcomeConditionNotMet RuleDryRunOutcome = "condition_not_met"
+)
+
+// AllValues returns all RuleDryRunOutcome values.
+func (RuleDryRunOutcome) AllValues() []RuleDryRunOutcome {
+	return []RuleDryRunOutcome{
+		RuleDryRunOutcomeWouldFire,
+		RuleDryRunOutcomeNotTriggered,
+		RuleDryRunOutcomeNoContact,
+		RuleDryRunOutcomeMachine,
+		RuleDryRunOutcomeBackfill,
+		RuleDryRunOutcomeConditionNotMet,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleDryRunOutcome) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleDryRunOutcomeWouldFire:
+		return []byte(s), nil
+	case RuleDryRunOutcomeNotTriggered:
+		return []byte(s), nil
+	case RuleDryRunOutcomeNoContact:
+		return []byte(s), nil
+	case RuleDryRunOutcomeMachine:
+		return []byte(s), nil
+	case RuleDryRunOutcomeBackfill:
+		return []byte(s), nil
+	case RuleDryRunOutcomeConditionNotMet:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleDryRunOutcome) UnmarshalText(data []byte) error {
+	switch RuleDryRunOutcome(data) {
+	case RuleDryRunOutcomeWouldFire:
+		*s = RuleDryRunOutcomeWouldFire
+		return nil
+	case RuleDryRunOutcomeNotTriggered:
+		*s = RuleDryRunOutcomeNotTriggered
+		return nil
+	case RuleDryRunOutcomeNoContact:
+		*s = RuleDryRunOutcomeNoContact
+		return nil
+	case RuleDryRunOutcomeMachine:
+		*s = RuleDryRunOutcomeMachine
+		return nil
+	case RuleDryRunOutcomeBackfill:
+		*s = RuleDryRunOutcomeBackfill
+		return nil
+	case RuleDryRunOutcomeConditionNotMet:
+		*s = RuleDryRunOutcomeConditionNotMet
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// What a stored Event would do to a Rule. Nothing was written or run.
+// Ref: #/components/schemas/RuleDryRunResource
+type RuleDryRunResource struct {
+	// Whether the Rule would fire and, if not, why.
+	Outcome RuleDryRunOutcome `json:"outcome"`
+	// The Actions that would run, in order; empty unless the Rule would fire.
+	Actions []RuleDryRunAction `json:"actions"`
+}
+
+// GetOutcome returns the value of Outcome.
+func (s *RuleDryRunResource) GetOutcome() RuleDryRunOutcome {
+	return s.Outcome
+}
+
+// GetActions returns the value of Actions.
+func (s *RuleDryRunResource) GetActions() []RuleDryRunAction {
+	return s.Actions
+}
+
+// SetOutcome sets the value of Outcome.
+func (s *RuleDryRunResource) SetOutcome(val RuleDryRunOutcome) {
+	s.Outcome = val
+}
+
+// SetActions sets the value of Actions.
+func (s *RuleDryRunResource) SetActions(val []RuleDryRunAction) {
+	s.Actions = val
+}
+
+// One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
+// Ref: #/components/schemas/RuleFiringResource
+type RuleFiringResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The Rule that fired.
+	RuleId EntityId `json:"ruleId"`
+	// The Contact the Event was for.
+	ContactId EntityId `json:"contactId"`
+	// The Trigger event: the action of the Event that fired the Rule.
+	Action string `json:"action"`
+	// The Event's source id: the same Event delivered twice fires a Rule once.
+	EventSourceId string `json:"eventSourceId"`
+	// One result per Action run so far, in the Rule's order.
+	Results []RuleActionResult `json:"results"`
+	// When the last Action finished; absent while Actions are still to run.
+	CompletedAt OptTimestamp `json:"completedAt"`
+	// When the Rule fired.
+	CreatedAt Timestamp `json:"createdAt"`
+}
+
+// GetID returns the value of ID.
+func (s *RuleFiringResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetRuleId returns the value of RuleId.
+func (s *RuleFiringResource) GetRuleId() EntityId {
+	return s.RuleId
+}
+
+// GetContactId returns the value of ContactId.
+func (s *RuleFiringResource) GetContactId() EntityId {
+	return s.ContactId
+}
+
+// GetAction returns the value of Action.
+func (s *RuleFiringResource) GetAction() string {
+	return s.Action
+}
+
+// GetEventSourceId returns the value of EventSourceId.
+func (s *RuleFiringResource) GetEventSourceId() string {
+	return s.EventSourceId
+}
+
+// GetResults returns the value of Results.
+func (s *RuleFiringResource) GetResults() []RuleActionResult {
+	return s.Results
+}
+
+// GetCompletedAt returns the value of CompletedAt.
+func (s *RuleFiringResource) GetCompletedAt() OptTimestamp {
+	return s.CompletedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *RuleFiringResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *RuleFiringResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetRuleId sets the value of RuleId.
+func (s *RuleFiringResource) SetRuleId(val EntityId) {
+	s.RuleId = val
+}
+
+// SetContactId sets the value of ContactId.
+func (s *RuleFiringResource) SetContactId(val EntityId) {
+	s.ContactId = val
+}
+
+// SetAction sets the value of Action.
+func (s *RuleFiringResource) SetAction(val string) {
+	s.Action = val
+}
+
+// SetEventSourceId sets the value of EventSourceId.
+func (s *RuleFiringResource) SetEventSourceId(val string) {
+	s.EventSourceId = val
+}
+
+// SetResults sets the value of Results.
+func (s *RuleFiringResource) SetResults(val []RuleActionResult) {
+	s.Results = val
+}
+
+// SetCompletedAt sets the value of CompletedAt.
+func (s *RuleFiringResource) SetCompletedAt(val OptTimestamp) {
+	s.CompletedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *RuleFiringResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// Rule lifecycle status: active reacts to Events, inactive acts on nothing.
+// Ref: #/components/schemas/RuleStatus
+type RuleStatus string
+
+const (
+	RuleStatusActive   RuleStatus = "active"
+	RuleStatusInactive RuleStatus = "inactive"
+)
+
+// AllValues returns all RuleStatus values.
+func (RuleStatus) AllValues() []RuleStatus {
+	return []RuleStatus{
+		RuleStatusActive,
+		RuleStatusInactive,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RuleStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case RuleStatusActive:
+		return []byte(s), nil
+	case RuleStatusInactive:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RuleStatus) UnmarshalText(data []byte) error {
+	switch RuleStatus(data) {
+	case RuleStatusActive:
+		*s = RuleStatusActive
+		return nil
+	case RuleStatusInactive:
+		*s = RuleStatusInactive
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions.
+// Ref: #/components/schemas/RuleVersion
+type RuleVersion struct {
+	// 1 for the first version, plus one per version after it.
+	Number int32 `json:"number"`
+	// The Event actions that make the Rule fire; any one of them does.
+	TriggerEvents []string `json:"triggerEvents"`
+	// The Contact must match this condition for the Rule to fire; absent means every Contact.
+	Condition OptConditionGroup `json:"condition"`
+	// The Rule's ordered Actions.
+	Actions []RuleAction `json:"actions"`
+}
+
+// GetNumber returns the value of Number.
+func (s *RuleVersion) GetNumber() int32 {
+	return s.Number
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *RuleVersion) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *RuleVersion) GetCondition() OptConditionGroup {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *RuleVersion) GetActions() []RuleAction {
+	return s.Actions
+}
+
+// SetNumber sets the value of Number.
+func (s *RuleVersion) SetNumber(val int32) {
+	s.Number = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *RuleVersion) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *RuleVersion) SetCondition(val OptConditionGroup) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *RuleVersion) SetActions(val []RuleAction) {
+	s.Actions = val
+}
+
 // Request body for scheduling a broadcast.
 // Ref: #/components/schemas/ScheduleBroadcastInput
 type ScheduleBroadcastInput struct {
@@ -9824,6 +15161,38 @@ func (s *ScheduleBroadcastInput) SetRevision(val Revision) {
 // SetScheduledAt sets the value of ScheduledAt.
 func (s *ScheduleBroadcastInput) SetScheduledAt(val Timestamp) {
 	s.ScheduledAt = val
+}
+
+// The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
+// its Integrations, Transactional included. The platform sets it; the Workspace only reads it. Sends
+// beyond it are deferred until the 24-hour window frees up, never refused; Transactional mail is never
+// delayed. It is not a Provider limit, which each Integration sets for its own provider account.
+// Ref: #/components/schemas/SendCap
+type SendCap struct {
+	// Messages per rolling 24 hours.
+	PerDay MaxPerDay `json:"perDay"`
+	// Messages the Workspace sent over the last 24 hours.
+	SentLast24h int32 `json:"sentLast24h"`
+}
+
+// GetPerDay returns the value of PerDay.
+func (s *SendCap) GetPerDay() MaxPerDay {
+	return s.PerDay
+}
+
+// GetSentLast24h returns the value of SentLast24h.
+func (s *SendCap) GetSentLast24h() int32 {
+	return s.SentLast24h
+}
+
+// SetPerDay sets the value of PerDay.
+func (s *SendCap) SetPerDay(val MaxPerDay) {
+	s.PerDay = val
+}
+
+// SetSentLast24h sets the value of SentLast24h.
+func (s *SendCap) SetSentLast24h(val int32) {
+	s.SentLast24h = val
 }
 
 // Send-class scopes (ADR 0016, "Send is a second lock"). An OAuth client gets them only when the user
@@ -9883,6 +15252,270 @@ func (s *SendScope) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+// Sending domain (ADR 0010). sphericon generates the DKIM keypair; the caller publishes the DKIM TXT
+// record. The private key is never returned. `verified` is re-checked in the background: the domain
+// loses it (`verificationLostAt`) if the DNS record disappears.
+// Ref: #/components/schemas/SendingDomainResource
+type SendingDomainResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The authenticated domain, e.g. "mail.acme.com".
+	Domain string `json:"domain"`
+	// DKIM selector; the record host is "._domainkey.".
+	DkimSelector string `json:"dkimSelector"`
+	// Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since.
+	Verified bool `json:"verified"`
+	// The required DKIM TXT record.
+	DkimRecord DnsRecord `json:"dkimRecord"`
+	// The suggested SPF TXT record (advisory: does not gate sending).
+	SpfRecord DnsRecord `json:"spfRecord"`
+	// The suggested DMARC TXT record (advisory bulk-readiness signal).
+	DmarcRecord DnsRecord `json:"dmarcRecord"`
+	// When a DMARC lookup of the domain most recently answered, the record found or not (null = none has).
+	DmarcCheckedAt OptNilTimestamp `json:"dmarcCheckedAt"`
+	// When a lookup first found a DMARC record published for the domain, at the domain or its
+	// organizational domain (null = the last lookup found none, or none has answered). The domain is
+	// bulk-ready while it is set (ADR 0012); it never gates sending.
+	DmarcFoundAt OptNilTimestamp `json:"dmarcFoundAt"`
+	// When the DKIM DNS was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the domain most recently became verified (null = never); kept after a loss.
+	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
+	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
+	// verified again since).
+	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
+	// When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer
+	// listed, is read-only, is never checked again and cannot be restored, but stays readable by id.
+	DiscardedAt OptNilTimestamp `json:"discardedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *SendingDomainResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetDomain returns the value of Domain.
+func (s *SendingDomainResource) GetDomain() string {
+	return s.Domain
+}
+
+// GetDkimSelector returns the value of DkimSelector.
+func (s *SendingDomainResource) GetDkimSelector() string {
+	return s.DkimSelector
+}
+
+// GetVerified returns the value of Verified.
+func (s *SendingDomainResource) GetVerified() bool {
+	return s.Verified
+}
+
+// GetDkimRecord returns the value of DkimRecord.
+func (s *SendingDomainResource) GetDkimRecord() DnsRecord {
+	return s.DkimRecord
+}
+
+// GetSpfRecord returns the value of SpfRecord.
+func (s *SendingDomainResource) GetSpfRecord() DnsRecord {
+	return s.SpfRecord
+}
+
+// GetDmarcRecord returns the value of DmarcRecord.
+func (s *SendingDomainResource) GetDmarcRecord() DnsRecord {
+	return s.DmarcRecord
+}
+
+// GetDmarcCheckedAt returns the value of DmarcCheckedAt.
+func (s *SendingDomainResource) GetDmarcCheckedAt() OptNilTimestamp {
+	return s.DmarcCheckedAt
+}
+
+// GetDmarcFoundAt returns the value of DmarcFoundAt.
+func (s *SendingDomainResource) GetDmarcFoundAt() OptNilTimestamp {
+	return s.DmarcFoundAt
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *SendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetVerifiedAt returns the value of VerifiedAt.
+func (s *SendingDomainResource) GetVerifiedAt() OptNilTimestamp {
+	return s.VerifiedAt
+}
+
+// GetVerificationLostAt returns the value of VerificationLostAt.
+func (s *SendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
+	return s.VerificationLostAt
+}
+
+// GetDiscardedAt returns the value of DiscardedAt.
+func (s *SendingDomainResource) GetDiscardedAt() OptNilTimestamp {
+	return s.DiscardedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *SendingDomainResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *SendingDomainResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *SendingDomainResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetDomain sets the value of Domain.
+func (s *SendingDomainResource) SetDomain(val string) {
+	s.Domain = val
+}
+
+// SetDkimSelector sets the value of DkimSelector.
+func (s *SendingDomainResource) SetDkimSelector(val string) {
+	s.DkimSelector = val
+}
+
+// SetVerified sets the value of Verified.
+func (s *SendingDomainResource) SetVerified(val bool) {
+	s.Verified = val
+}
+
+// SetDkimRecord sets the value of DkimRecord.
+func (s *SendingDomainResource) SetDkimRecord(val DnsRecord) {
+	s.DkimRecord = val
+}
+
+// SetSpfRecord sets the value of SpfRecord.
+func (s *SendingDomainResource) SetSpfRecord(val DnsRecord) {
+	s.SpfRecord = val
+}
+
+// SetDmarcRecord sets the value of DmarcRecord.
+func (s *SendingDomainResource) SetDmarcRecord(val DnsRecord) {
+	s.DmarcRecord = val
+}
+
+// SetDmarcCheckedAt sets the value of DmarcCheckedAt.
+func (s *SendingDomainResource) SetDmarcCheckedAt(val OptNilTimestamp) {
+	s.DmarcCheckedAt = val
+}
+
+// SetDmarcFoundAt sets the value of DmarcFoundAt.
+func (s *SendingDomainResource) SetDmarcFoundAt(val OptNilTimestamp) {
+	s.DmarcFoundAt = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *SendingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetVerifiedAt sets the value of VerifiedAt.
+func (s *SendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
+	s.VerifiedAt = val
+}
+
+// SetVerificationLostAt sets the value of VerificationLostAt.
+func (s *SendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
+	s.VerificationLostAt = val
+}
+
+// SetDiscardedAt sets the value of DiscardedAt.
+func (s *SendingDomainResource) SetDiscardedAt(val OptNilTimestamp) {
+	s.DiscardedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *SendingDomainResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *SendingDomainResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+// SES config without the secret access key.
+// Ref: #/components/schemas/SesConfig
+type SesConfig struct {
+	Kind     SesConfigKind `json:"kind"`
+	Region   string        `json:"region"`
+	From     EmailAddress  `json:"from"`
+	FromName OptNilString  `json:"fromName"`
+	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
+	Endpoint OptNilString `json:"endpoint"`
+	// Last 4 chars of the access key id, for recognition.
+	AccessKeyIdLast4 OptNilString `json:"accessKeyIdLast4"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SesConfig) GetKind() SesConfigKind {
+	return s.Kind
+}
+
+// GetRegion returns the value of Region.
+func (s *SesConfig) GetRegion() string {
+	return s.Region
+}
+
+// GetFrom returns the value of From.
+func (s *SesConfig) GetFrom() EmailAddress {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *SesConfig) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// GetEndpoint returns the value of Endpoint.
+func (s *SesConfig) GetEndpoint() OptNilString {
+	return s.Endpoint
+}
+
+// GetAccessKeyIdLast4 returns the value of AccessKeyIdLast4.
+func (s *SesConfig) GetAccessKeyIdLast4() OptNilString {
+	return s.AccessKeyIdLast4
+}
+
+// SetKind sets the value of Kind.
+func (s *SesConfig) SetKind(val SesConfigKind) {
+	s.Kind = val
+}
+
+// SetRegion sets the value of Region.
+func (s *SesConfig) SetRegion(val string) {
+	s.Region = val
+}
+
+// SetFrom sets the value of From.
+func (s *SesConfig) SetFrom(val EmailAddress) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SesConfig) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
+// SetEndpoint sets the value of Endpoint.
+func (s *SesConfig) SetEndpoint(val OptNilString) {
+	s.Endpoint = val
+}
+
+// SetAccessKeyIdLast4 sets the value of AccessKeyIdLast4.
+func (s *SesConfig) SetAccessKeyIdLast4(val OptNilString) {
+	s.AccessKeyIdLast4 = val
 }
 
 // SES credentials.
@@ -9996,6 +15629,40 @@ func (s *SesConfigInputKind) UnmarshalText(data []byte) error {
 	switch SesConfigInputKind(data) {
 	case SesConfigInputKindSes:
 		*s = SesConfigInputKindSes
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SesConfigKind string
+
+const (
+	SesConfigKindSes SesConfigKind = "ses"
+)
+
+// AllValues returns all SesConfigKind values.
+func (SesConfigKind) AllValues() []SesConfigKind {
+	return []SesConfigKind{
+		SesConfigKindSes,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SesConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SesConfigKindSes:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SesConfigKind) UnmarshalText(data []byte) error {
+	switch SesConfigKind(data) {
+	case SesConfigKindSes:
+		*s = SesConfigKindSes
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -12396,405 +18063,6 @@ func (s *SiteAuthSigninStartFound) SetSetCookie(val string) {
 	s.SetCookie = val
 }
 
-// Closed error kind of an HTTP step's body.
-// Ref: #/components/schemas/SiteAutomationHttpErrorKind
-type SiteAutomationHttpErrorKind string
-
-const (
-	SiteAutomationHttpErrorKindInvalidBody SiteAutomationHttpErrorKind = "invalid_body"
-)
-
-// AllValues returns all SiteAutomationHttpErrorKind values.
-func (SiteAutomationHttpErrorKind) AllValues() []SiteAutomationHttpErrorKind {
-	return []SiteAutomationHttpErrorKind{
-		SiteAutomationHttpErrorKindInvalidBody,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteAutomationHttpErrorKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteAutomationHttpErrorKindInvalidBody:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteAutomationHttpErrorKind) UnmarshalText(data []byte) error {
-	switch SiteAutomationHttpErrorKind(data) {
-	case SiteAutomationHttpErrorKindInvalidBody:
-		*s = SiteAutomationHttpErrorKindInvalidBody
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One request header of an HTTP step. The value is a secret: it is never returned.
-// Ref: #/components/schemas/SiteAutomationHttpHeader
-type SiteAutomationHttpHeader struct {
-	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
-	Name string `json:"name"`
-	// Header value. Omit it when editing to keep the stored value of the header with this name.
-	Value OptString `json:"value"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteAutomationHttpHeader) GetName() string {
-	return s.Name
-}
-
-// GetValue returns the value of Value.
-func (s *SiteAutomationHttpHeader) GetValue() OptString {
-	return s.Value
-}
-
-// SetName sets the value of Name.
-func (s *SiteAutomationHttpHeader) SetName(val string) {
-	s.Name = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteAutomationHttpHeader) SetValue(val OptString) {
-	s.Value = val
-}
-
-// One request header of an HTTP step. The value is a secret: it is never returned.
-// Ref: #/components/schemas/SiteAutomationHttpHeaderInput
-type SiteAutomationHttpHeaderInput struct {
-	// Header name. Content-Type, Content-Length, Host and the webhook-* headers are set by sphericon.
-	Name string `json:"name"`
-	// Header value. Omit it when editing to keep the stored value of the header with this name.
-	Value OptString `json:"value"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteAutomationHttpHeaderInput) GetName() string {
-	return s.Name
-}
-
-// GetValue returns the value of Value.
-func (s *SiteAutomationHttpHeaderInput) GetValue() OptString {
-	return s.Value
-}
-
-// SetName sets the value of Name.
-func (s *SiteAutomationHttpHeaderInput) SetName(val string) {
-	s.Name = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteAutomationHttpHeaderInput) SetValue(val OptString) {
-	s.Value = val
-}
-
-// One period of an automation's results. Each count is what happened in the period: an enrollment
-// counts as entered on the Report day it began and under its outcome on the Report day it ended,
-// whenever it began, so an enrollment still running counts as entered only.
-// Ref: #/components/schemas/SiteAutomationPeriodResults
-type SiteAutomationPeriodResults struct {
-	// Enrollments that began: their triggering Event occurred in it.
-	Entered int32 `json:"entered"`
-	// Enrollments that walked every step and ended in it.
-	Completed int32 `json:"completed"`
-	// Enrollments that ended in it because their goal event was recorded.
-	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
-	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
-	Exited int32 `json:"exited"`
-	// Enrollments that ended in it on a step that failed.
-	Failed int32 `json:"failed"`
-	// The period's first Report day, `YYYY-MM-DD` in the Workspace time zone.
-	From string `json:"from"`
-	// The period's last Report day, included.
-	To string `json:"to"`
-	// Mean time in whole seconds from the beginning to the end of the enrollments that ended in the
-	// period, whatever their outcome; null when none ended.
-	AverageDurationSeconds NilInt64 `json:"averageDurationSeconds"`
-	// The orders credited to the automation that were completed in the period, and the net change of its
-	// revenue in the period: every Movement of a credited Order counts on its own day (ADR 0064).
-	Revenue SiteMessageRevenue `json:"revenue"`
-}
-
-// GetEntered returns the value of Entered.
-func (s *SiteAutomationPeriodResults) GetEntered() int32 {
-	return s.Entered
-}
-
-// GetCompleted returns the value of Completed.
-func (s *SiteAutomationPeriodResults) GetCompleted() int32 {
-	return s.Completed
-}
-
-// GetGoalReached returns the value of GoalReached.
-func (s *SiteAutomationPeriodResults) GetGoalReached() int32 {
-	return s.GoalReached
-}
-
-// GetExited returns the value of Exited.
-func (s *SiteAutomationPeriodResults) GetExited() int32 {
-	return s.Exited
-}
-
-// GetFailed returns the value of Failed.
-func (s *SiteAutomationPeriodResults) GetFailed() int32 {
-	return s.Failed
-}
-
-// GetFrom returns the value of From.
-func (s *SiteAutomationPeriodResults) GetFrom() string {
-	return s.From
-}
-
-// GetTo returns the value of To.
-func (s *SiteAutomationPeriodResults) GetTo() string {
-	return s.To
-}
-
-// GetAverageDurationSeconds returns the value of AverageDurationSeconds.
-func (s *SiteAutomationPeriodResults) GetAverageDurationSeconds() NilInt64 {
-	return s.AverageDurationSeconds
-}
-
-// GetRevenue returns the value of Revenue.
-func (s *SiteAutomationPeriodResults) GetRevenue() SiteMessageRevenue {
-	return s.Revenue
-}
-
-// SetEntered sets the value of Entered.
-func (s *SiteAutomationPeriodResults) SetEntered(val int32) {
-	s.Entered = val
-}
-
-// SetCompleted sets the value of Completed.
-func (s *SiteAutomationPeriodResults) SetCompleted(val int32) {
-	s.Completed = val
-}
-
-// SetGoalReached sets the value of GoalReached.
-func (s *SiteAutomationPeriodResults) SetGoalReached(val int32) {
-	s.GoalReached = val
-}
-
-// SetExited sets the value of Exited.
-func (s *SiteAutomationPeriodResults) SetExited(val int32) {
-	s.Exited = val
-}
-
-// SetFailed sets the value of Failed.
-func (s *SiteAutomationPeriodResults) SetFailed(val int32) {
-	s.Failed = val
-}
-
-// SetFrom sets the value of From.
-func (s *SiteAutomationPeriodResults) SetFrom(val string) {
-	s.From = val
-}
-
-// SetTo sets the value of To.
-func (s *SiteAutomationPeriodResults) SetTo(val string) {
-	s.To = val
-}
-
-// SetAverageDurationSeconds sets the value of AverageDurationSeconds.
-func (s *SiteAutomationPeriodResults) SetAverageDurationSeconds(val NilInt64) {
-	s.AverageDurationSeconds = val
-}
-
-// SetRevenue sets the value of Revenue.
-func (s *SiteAutomationPeriodResults) SetRevenue(val SiteMessageRevenue) {
-	s.Revenue = val
-}
-
-// An automation's engagement figures.
-// Ref: #/components/schemas/SiteAutomationReport
-type SiteAutomationReport struct {
-	// Opens recorded on the automation's emails, every open counted; bounded by Event retention.
-	Opens int32 `json:"opens"`
-	// Clicks recorded on the automation's emails, every click counted; bounded by Event retention.
-	Clicks int32 `json:"clicks"`
-	// Messages the provider reported delivered, read from the delivery result stamped on each message; not
-	// bounded by Event retention.
-	Delivered int32 `json:"delivered"`
-	// Messages the provider reported bounced, read from the delivery result stamped on each message; not
-	// bounded by Event retention.
-	Bounced int32 `json:"bounced"`
-	// Messages a recipient complained about, read from the delivery result stamped on each message; not
-	// bounded by Event retention.
-	Complained int32 `json:"complained"`
-	// Messages that went through a Test inbox: captured, not delivered; they count as delivered too.
-	Captured int32 `json:"captured"`
-	// Orders credited to the automation and their net revenue (ADR 0064).
-	Revenue SiteMessageRevenue `json:"revenue"`
-	// One entry per clicked link, most clicked first.
-	Links []SiteLinkClicks `json:"links"`
-	// What the automation's enrollments did over the chosen period and the period before it.
-	Results SiteAutomationResults `json:"results"`
-	// The send steps' messages by step position, in step order: one entry per position any of the
-	// automation's messages was sent from, across its versions.
-	Steps []SiteAutomationStepFigures `json:"steps"`
-}
-
-// GetOpens returns the value of Opens.
-func (s *SiteAutomationReport) GetOpens() int32 {
-	return s.Opens
-}
-
-// GetClicks returns the value of Clicks.
-func (s *SiteAutomationReport) GetClicks() int32 {
-	return s.Clicks
-}
-
-// GetDelivered returns the value of Delivered.
-func (s *SiteAutomationReport) GetDelivered() int32 {
-	return s.Delivered
-}
-
-// GetBounced returns the value of Bounced.
-func (s *SiteAutomationReport) GetBounced() int32 {
-	return s.Bounced
-}
-
-// GetComplained returns the value of Complained.
-func (s *SiteAutomationReport) GetComplained() int32 {
-	return s.Complained
-}
-
-// GetCaptured returns the value of Captured.
-func (s *SiteAutomationReport) GetCaptured() int32 {
-	return s.Captured
-}
-
-// GetRevenue returns the value of Revenue.
-func (s *SiteAutomationReport) GetRevenue() SiteMessageRevenue {
-	return s.Revenue
-}
-
-// GetLinks returns the value of Links.
-func (s *SiteAutomationReport) GetLinks() []SiteLinkClicks {
-	return s.Links
-}
-
-// GetResults returns the value of Results.
-func (s *SiteAutomationReport) GetResults() SiteAutomationResults {
-	return s.Results
-}
-
-// GetSteps returns the value of Steps.
-func (s *SiteAutomationReport) GetSteps() []SiteAutomationStepFigures {
-	return s.Steps
-}
-
-// SetOpens sets the value of Opens.
-func (s *SiteAutomationReport) SetOpens(val int32) {
-	s.Opens = val
-}
-
-// SetClicks sets the value of Clicks.
-func (s *SiteAutomationReport) SetClicks(val int32) {
-	s.Clicks = val
-}
-
-// SetDelivered sets the value of Delivered.
-func (s *SiteAutomationReport) SetDelivered(val int32) {
-	s.Delivered = val
-}
-
-// SetBounced sets the value of Bounced.
-func (s *SiteAutomationReport) SetBounced(val int32) {
-	s.Bounced = val
-}
-
-// SetComplained sets the value of Complained.
-func (s *SiteAutomationReport) SetComplained(val int32) {
-	s.Complained = val
-}
-
-// SetCaptured sets the value of Captured.
-func (s *SiteAutomationReport) SetCaptured(val int32) {
-	s.Captured = val
-}
-
-// SetRevenue sets the value of Revenue.
-func (s *SiteAutomationReport) SetRevenue(val SiteMessageRevenue) {
-	s.Revenue = val
-}
-
-// SetLinks sets the value of Links.
-func (s *SiteAutomationReport) SetLinks(val []SiteLinkClicks) {
-	s.Links = val
-}
-
-// SetResults sets the value of Results.
-func (s *SiteAutomationReport) SetResults(val SiteAutomationResults) {
-	s.Results = val
-}
-
-// SetSteps sets the value of Steps.
-func (s *SiteAutomationReport) SetSteps(val []SiteAutomationStepFigures) {
-	s.Steps = val
-}
-
-// The length of the period an automation's results are read over, in Report days (ADR 0057), today
-// included.
-// Ref: #/components/schemas/SiteAutomationReportPeriod
-type SiteAutomationReportPeriod string
-
-const (
-	SiteAutomationReportPeriod7d  SiteAutomationReportPeriod = "7d"
-	SiteAutomationReportPeriod14d SiteAutomationReportPeriod = "14d"
-	SiteAutomationReportPeriod30d SiteAutomationReportPeriod = "30d"
-	SiteAutomationReportPeriod90d SiteAutomationReportPeriod = "90d"
-)
-
-// AllValues returns all SiteAutomationReportPeriod values.
-func (SiteAutomationReportPeriod) AllValues() []SiteAutomationReportPeriod {
-	return []SiteAutomationReportPeriod{
-		SiteAutomationReportPeriod7d,
-		SiteAutomationReportPeriod14d,
-		SiteAutomationReportPeriod30d,
-		SiteAutomationReportPeriod90d,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteAutomationReportPeriod) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteAutomationReportPeriod7d:
-		return []byte(s), nil
-	case SiteAutomationReportPeriod14d:
-		return []byte(s), nil
-	case SiteAutomationReportPeriod30d:
-		return []byte(s), nil
-	case SiteAutomationReportPeriod90d:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteAutomationReportPeriod) UnmarshalText(data []byte) error {
-	switch SiteAutomationReportPeriod(data) {
-	case SiteAutomationReportPeriod7d:
-		*s = SiteAutomationReportPeriod7d
-		return nil
-	case SiteAutomationReportPeriod14d:
-		*s = SiteAutomationReportPeriod14d
-		return nil
-	case SiteAutomationReportPeriod30d:
-		*s = SiteAutomationReportPeriod30d
-		return nil
-	case SiteAutomationReportPeriod90d:
-		*s = SiteAutomationReportPeriod90d
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // Merged schema.
 type SiteAutomationReportsGetPeriod string
 
@@ -12859,16 +18127,16 @@ type SiteAutomationResource struct {
 	// Automation name.
 	Name string `json:"name"`
 	// Lifecycle status.
-	Status SiteAutomationStatus `json:"status"`
+	Status AutomationStatus `json:"status"`
 	// What it does now: the version new enrollments begin on; null until first published.
-	Live NilSiteAutomationVersion `json:"live"`
+	Live NilAutomationVersion `json:"live"`
 	// Unpublished changes, the one version above live; null when there are none.
-	Draft NilSiteAutomationVersion `json:"draft"`
+	Draft NilAutomationVersion `json:"draft"`
 	// When the automation was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// Orders credited to the automation and their net revenue (ADR 0064); set on the list and on the
 	// single read, absent on the responses of a change.
-	Revenue OptSiteMessageRevenue `json:"revenue"`
+	Revenue OptMessageRevenue `json:"revenue"`
 	// The revision of the state this answer shows (ADR 0119): an update, Publish and Revert name it.
 	Revision Revision `json:"revision"`
 	// Creation timestamp.
@@ -12888,17 +18156,17 @@ func (s *SiteAutomationResource) GetName() string {
 }
 
 // GetStatus returns the value of Status.
-func (s *SiteAutomationResource) GetStatus() SiteAutomationStatus {
+func (s *SiteAutomationResource) GetStatus() AutomationStatus {
 	return s.Status
 }
 
 // GetLive returns the value of Live.
-func (s *SiteAutomationResource) GetLive() NilSiteAutomationVersion {
+func (s *SiteAutomationResource) GetLive() NilAutomationVersion {
 	return s.Live
 }
 
 // GetDraft returns the value of Draft.
-func (s *SiteAutomationResource) GetDraft() NilSiteAutomationVersion {
+func (s *SiteAutomationResource) GetDraft() NilAutomationVersion {
 	return s.Draft
 }
 
@@ -12908,7 +18176,7 @@ func (s *SiteAutomationResource) GetArchivedAt() OptNilTimestamp {
 }
 
 // GetRevenue returns the value of Revenue.
-func (s *SiteAutomationResource) GetRevenue() OptSiteMessageRevenue {
+func (s *SiteAutomationResource) GetRevenue() OptMessageRevenue {
 	return s.Revenue
 }
 
@@ -12938,17 +18206,17 @@ func (s *SiteAutomationResource) SetName(val string) {
 }
 
 // SetStatus sets the value of Status.
-func (s *SiteAutomationResource) SetStatus(val SiteAutomationStatus) {
+func (s *SiteAutomationResource) SetStatus(val AutomationStatus) {
 	s.Status = val
 }
 
 // SetLive sets the value of Live.
-func (s *SiteAutomationResource) SetLive(val NilSiteAutomationVersion) {
+func (s *SiteAutomationResource) SetLive(val NilAutomationVersion) {
 	s.Live = val
 }
 
 // SetDraft sets the value of Draft.
-func (s *SiteAutomationResource) SetDraft(val NilSiteAutomationVersion) {
+func (s *SiteAutomationResource) SetDraft(val NilAutomationVersion) {
 	s.Draft = val
 }
 
@@ -12958,7 +18226,7 @@ func (s *SiteAutomationResource) SetArchivedAt(val OptNilTimestamp) {
 }
 
 // SetRevenue sets the value of Revenue.
-func (s *SiteAutomationResource) SetRevenue(val OptSiteMessageRevenue) {
+func (s *SiteAutomationResource) SetRevenue(val OptMessageRevenue) {
 	s.Revenue = val
 }
 
@@ -12975,138 +18243,6 @@ func (s *SiteAutomationResource) SetCreatedAt(val Timestamp) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *SiteAutomationResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
-}
-
-// An automation's results over a period of Report days, read from its enrollments, with the period
-// just before it to compare with.
-// Ref: #/components/schemas/SiteAutomationResults
-type SiteAutomationResults struct {
-	// The period the results are read over.
-	Period SiteAutomationReportPeriod `json:"period"`
-	// The period ending today.
-	Current SiteAutomationPeriodResults `json:"current"`
-	// As many Report days just before it.
-	Previous SiteAutomationPeriodResults `json:"previous"`
-	// The current period by Report day, oldest first, a day with nothing at zero.
-	Series []SiteAutomationResultsPoint `json:"series"`
-}
-
-// GetPeriod returns the value of Period.
-func (s *SiteAutomationResults) GetPeriod() SiteAutomationReportPeriod {
-	return s.Period
-}
-
-// GetCurrent returns the value of Current.
-func (s *SiteAutomationResults) GetCurrent() SiteAutomationPeriodResults {
-	return s.Current
-}
-
-// GetPrevious returns the value of Previous.
-func (s *SiteAutomationResults) GetPrevious() SiteAutomationPeriodResults {
-	return s.Previous
-}
-
-// GetSeries returns the value of Series.
-func (s *SiteAutomationResults) GetSeries() []SiteAutomationResultsPoint {
-	return s.Series
-}
-
-// SetPeriod sets the value of Period.
-func (s *SiteAutomationResults) SetPeriod(val SiteAutomationReportPeriod) {
-	s.Period = val
-}
-
-// SetCurrent sets the value of Current.
-func (s *SiteAutomationResults) SetCurrent(val SiteAutomationPeriodResults) {
-	s.Current = val
-}
-
-// SetPrevious sets the value of Previous.
-func (s *SiteAutomationResults) SetPrevious(val SiteAutomationPeriodResults) {
-	s.Previous = val
-}
-
-// SetSeries sets the value of Series.
-func (s *SiteAutomationResults) SetSeries(val []SiteAutomationResultsPoint) {
-	s.Series = val
-}
-
-// One Report day of an automation's results.
-// Ref: #/components/schemas/SiteAutomationResultsPoint
-type SiteAutomationResultsPoint struct {
-	// Enrollments that began: their triggering Event occurred in it.
-	Entered int32 `json:"entered"`
-	// Enrollments that walked every step and ended in it.
-	Completed int32 `json:"completed"`
-	// Enrollments that ended in it because their goal event was recorded.
-	GoalReached int32 `json:"goalReached"`
-	// Enrollments that left early in it: an unsubscribe from the automation or an exit event. A skipped
-	// send (no address, an opt-out from the Channel, a suppression) moves on instead.
-	Exited int32 `json:"exited"`
-	// Enrollments that ended in it on a step that failed.
-	Failed int32 `json:"failed"`
-	// The Report day, `YYYY-MM-DD` in the Workspace time zone.
-	Date string `json:"date"`
-}
-
-// GetEntered returns the value of Entered.
-func (s *SiteAutomationResultsPoint) GetEntered() int32 {
-	return s.Entered
-}
-
-// GetCompleted returns the value of Completed.
-func (s *SiteAutomationResultsPoint) GetCompleted() int32 {
-	return s.Completed
-}
-
-// GetGoalReached returns the value of GoalReached.
-func (s *SiteAutomationResultsPoint) GetGoalReached() int32 {
-	return s.GoalReached
-}
-
-// GetExited returns the value of Exited.
-func (s *SiteAutomationResultsPoint) GetExited() int32 {
-	return s.Exited
-}
-
-// GetFailed returns the value of Failed.
-func (s *SiteAutomationResultsPoint) GetFailed() int32 {
-	return s.Failed
-}
-
-// GetDate returns the value of Date.
-func (s *SiteAutomationResultsPoint) GetDate() string {
-	return s.Date
-}
-
-// SetEntered sets the value of Entered.
-func (s *SiteAutomationResultsPoint) SetEntered(val int32) {
-	s.Entered = val
-}
-
-// SetCompleted sets the value of Completed.
-func (s *SiteAutomationResultsPoint) SetCompleted(val int32) {
-	s.Completed = val
-}
-
-// SetGoalReached sets the value of GoalReached.
-func (s *SiteAutomationResultsPoint) SetGoalReached(val int32) {
-	s.GoalReached = val
-}
-
-// SetExited sets the value of Exited.
-func (s *SiteAutomationResultsPoint) SetExited(val int32) {
-	s.Exited = val
-}
-
-// SetFailed sets the value of Failed.
-func (s *SiteAutomationResultsPoint) SetFailed(val int32) {
-	s.Failed = val
-}
-
-// SetDate sets the value of Date.
-func (s *SiteAutomationResultsPoint) SetDate(val string) {
-	s.Date = val
 }
 
 // The state an automation is in, as the list shows it: draft until it is first published, then active
@@ -13158,774 +18294,6 @@ func (s *SiteAutomationState) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
-}
-
-// Automation lifecycle status: active enrolls Contacts, inactive enrolls nobody.
-// Ref: #/components/schemas/SiteAutomationStatus
-type SiteAutomationStatus string
-
-const (
-	SiteAutomationStatusActive   SiteAutomationStatus = "active"
-	SiteAutomationStatusInactive SiteAutomationStatus = "inactive"
-)
-
-// AllValues returns all SiteAutomationStatus values.
-func (SiteAutomationStatus) AllValues() []SiteAutomationStatus {
-	return []SiteAutomationStatus{
-		SiteAutomationStatusActive,
-		SiteAutomationStatusInactive,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteAutomationStatus) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteAutomationStatusActive:
-		return []byte(s), nil
-	case SiteAutomationStatusInactive:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteAutomationStatus) UnmarshalText(data []byte) error {
-	switch SiteAutomationStatus(data) {
-	case SiteAutomationStatusActive:
-		*s = SiteAutomationStatusActive
-		return nil
-	case SiteAutomationStatusInactive:
-		*s = SiteAutomationStatusInactive
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
-// wait steps carry seconds.
-// Ref: #/components/schemas/SiteAutomationStep
-type SiteAutomationStep struct {
-	// Step kind.
-	Type SiteAutomationStepType `json:"type"`
-	// Email subject (email steps).
-	Subject OptString `json:"subject"`
-	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
-	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
-	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
-	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
-	Body OptString `json:"body"`
-	// The editor's JSON document an email step's body was built from, an opaque object checked by the
-	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
-	// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
-	// body clears the step's document.
-	Doc OptEditorDocument `json:"doc"`
-	// Version of the editor that rendered the document (email steps, read only).
-	EditorVersion OptString `json:"editorVersion"`
-	// Delay before the next step, in seconds (wait steps).
-	Seconds OptInt32 `json:"seconds"`
-	// Tag name to apply or remove (apply_tag and remove_tag steps).
-	Tag OptString `json:"tag"`
-	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
-	ID OptString `json:"id"`
-	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
-	// URL. Up to 2 KiB, http or https.
-	URL OptString `json:"url"`
-	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
-	Headers []SiteAutomationHttpHeader `json:"headers"`
-	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
-	// Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
-	// Remove the signing secret on save (HTTP steps).
-	ClearSecret OptBool `json:"clearSecret"`
-	// Whether a signing secret is stored (HTTP steps, read only).
-	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
-	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
-	// through several (ADR 0081).
-	IntegrationId OptNilEntityId `json:"integrationId"`
-	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
-	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
-	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
-	// one is refused.
-	//
-	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
-	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
-	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
-	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
-	// short links.
-	Text OptString `json:"text"`
-	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
-	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
-	UnsubscribeButton OptString `json:"unsubscribeButton"`
-	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
-	// message.
-	ImageUrl OptString `json:"imageUrl"`
-	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
-	Buttons []TelegramButton `json:"buttons"`
-	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
-	// image.
-	LinkPreview OptBool `json:"linkPreview"`
-	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
-	// `sms.clicked` (ADR 0083). On when omitted.
-	LinkTracking OptBool `json:"linkTracking"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteAutomationStep) GetType() SiteAutomationStepType {
-	return s.Type
-}
-
-// GetSubject returns the value of Subject.
-func (s *SiteAutomationStep) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetBody returns the value of Body.
-func (s *SiteAutomationStep) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *SiteAutomationStep) GetDoc() OptEditorDocument {
-	return s.Doc
-}
-
-// GetEditorVersion returns the value of EditorVersion.
-func (s *SiteAutomationStep) GetEditorVersion() OptString {
-	return s.EditorVersion
-}
-
-// GetSeconds returns the value of Seconds.
-func (s *SiteAutomationStep) GetSeconds() OptInt32 {
-	return s.Seconds
-}
-
-// GetTag returns the value of Tag.
-func (s *SiteAutomationStep) GetTag() OptString {
-	return s.Tag
-}
-
-// GetID returns the value of ID.
-func (s *SiteAutomationStep) GetID() OptString {
-	return s.ID
-}
-
-// GetURL returns the value of URL.
-func (s *SiteAutomationStep) GetURL() OptString {
-	return s.URL
-}
-
-// GetHeaders returns the value of Headers.
-func (s *SiteAutomationStep) GetHeaders() []SiteAutomationHttpHeader {
-	return s.Headers
-}
-
-// GetSecret returns the value of Secret.
-func (s *SiteAutomationStep) GetSecret() OptString {
-	return s.Secret
-}
-
-// GetClearSecret returns the value of ClearSecret.
-func (s *SiteAutomationStep) GetClearSecret() OptBool {
-	return s.ClearSecret
-}
-
-// GetHasSecret returns the value of HasSecret.
-func (s *SiteAutomationStep) GetHasSecret() OptBool {
-	return s.HasSecret
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteAutomationStep) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
-// GetText returns the value of Text.
-func (s *SiteAutomationStep) GetText() OptString {
-	return s.Text
-}
-
-// GetUnsubscribeButton returns the value of UnsubscribeButton.
-func (s *SiteAutomationStep) GetUnsubscribeButton() OptString {
-	return s.UnsubscribeButton
-}
-
-// GetImageUrl returns the value of ImageUrl.
-func (s *SiteAutomationStep) GetImageUrl() OptString {
-	return s.ImageUrl
-}
-
-// GetButtons returns the value of Buttons.
-func (s *SiteAutomationStep) GetButtons() []TelegramButton {
-	return s.Buttons
-}
-
-// GetLinkPreview returns the value of LinkPreview.
-func (s *SiteAutomationStep) GetLinkPreview() OptBool {
-	return s.LinkPreview
-}
-
-// GetLinkTracking returns the value of LinkTracking.
-func (s *SiteAutomationStep) GetLinkTracking() OptBool {
-	return s.LinkTracking
-}
-
-// SetType sets the value of Type.
-func (s *SiteAutomationStep) SetType(val SiteAutomationStepType) {
-	s.Type = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *SiteAutomationStep) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteAutomationStep) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *SiteAutomationStep) SetDoc(val OptEditorDocument) {
-	s.Doc = val
-}
-
-// SetEditorVersion sets the value of EditorVersion.
-func (s *SiteAutomationStep) SetEditorVersion(val OptString) {
-	s.EditorVersion = val
-}
-
-// SetSeconds sets the value of Seconds.
-func (s *SiteAutomationStep) SetSeconds(val OptInt32) {
-	s.Seconds = val
-}
-
-// SetTag sets the value of Tag.
-func (s *SiteAutomationStep) SetTag(val OptString) {
-	s.Tag = val
-}
-
-// SetID sets the value of ID.
-func (s *SiteAutomationStep) SetID(val OptString) {
-	s.ID = val
-}
-
-// SetURL sets the value of URL.
-func (s *SiteAutomationStep) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetHeaders sets the value of Headers.
-func (s *SiteAutomationStep) SetHeaders(val []SiteAutomationHttpHeader) {
-	s.Headers = val
-}
-
-// SetSecret sets the value of Secret.
-func (s *SiteAutomationStep) SetSecret(val OptString) {
-	s.Secret = val
-}
-
-// SetClearSecret sets the value of ClearSecret.
-func (s *SiteAutomationStep) SetClearSecret(val OptBool) {
-	s.ClearSecret = val
-}
-
-// SetHasSecret sets the value of HasSecret.
-func (s *SiteAutomationStep) SetHasSecret(val OptBool) {
-	s.HasSecret = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteAutomationStep) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
-// SetText sets the value of Text.
-func (s *SiteAutomationStep) SetText(val OptString) {
-	s.Text = val
-}
-
-// SetUnsubscribeButton sets the value of UnsubscribeButton.
-func (s *SiteAutomationStep) SetUnsubscribeButton(val OptString) {
-	s.UnsubscribeButton = val
-}
-
-// SetImageUrl sets the value of ImageUrl.
-func (s *SiteAutomationStep) SetImageUrl(val OptString) {
-	s.ImageUrl = val
-}
-
-// SetButtons sets the value of Buttons.
-func (s *SiteAutomationStep) SetButtons(val []TelegramButton) {
-	s.Buttons = val
-}
-
-// SetLinkPreview sets the value of LinkPreview.
-func (s *SiteAutomationStep) SetLinkPreview(val OptBool) {
-	s.LinkPreview = val
-}
-
-// SetLinkTracking sets the value of LinkTracking.
-func (s *SiteAutomationStep) SetLinkTracking(val OptBool) {
-	s.LinkTracking = val
-}
-
-// The messages of the send step at one position.
-// Ref: #/components/schemas/SiteAutomationStepFigures
-type SiteAutomationStepFigures struct {
-	// The step's position, 0 for the first step.
-	Step int32 `json:"step"`
-	// Messages the provider accepted.
-	Sent int32 `json:"sent"`
-	// Messages skipped: the contact had no address on the step's Channel, had opted out of it, or was
-	// suppressed. The enrollment moved on to the next step.
-	Skipped int32 `json:"skipped"`
-}
-
-// GetStep returns the value of Step.
-func (s *SiteAutomationStepFigures) GetStep() int32 {
-	return s.Step
-}
-
-// GetSent returns the value of Sent.
-func (s *SiteAutomationStepFigures) GetSent() int32 {
-	return s.Sent
-}
-
-// GetSkipped returns the value of Skipped.
-func (s *SiteAutomationStepFigures) GetSkipped() int32 {
-	return s.Skipped
-}
-
-// SetStep sets the value of Step.
-func (s *SiteAutomationStepFigures) SetStep(val int32) {
-	s.Step = val
-}
-
-// SetSent sets the value of Sent.
-func (s *SiteAutomationStepFigures) SetSent(val int32) {
-	s.Sent = val
-}
-
-// SetSkipped sets the value of Skipped.
-func (s *SiteAutomationStepFigures) SetSkipped(val int32) {
-	s.Skipped = val
-}
-
-// One node in an automation's ordered, linear sequence. A flat shape: email steps carry subject/body,
-// wait steps carry seconds.
-// Ref: #/components/schemas/SiteAutomationStepInput
-type SiteAutomationStepInput struct {
-	// Step kind.
-	Type SiteAutomationStepType `json:"type"`
-	// Email subject (email steps).
-	Subject OptString `json:"subject"`
-	// Email body as HTML (email steps), or the Liquid JSON request body (HTTP steps: strings JSON-escaped,
-	// up to 64 KiB, must render to valid JSON, also with every tag empty). Both bind the Contact's fields
-	// plus `event.action` and `event.properties`: the Event the Enrollment began on (the one a Rule fired
-	// on, when a Rule enrolled), copied when it began; empty when no Event began it.
-	Body OptString `json:"body"`
-	// The editor's JSON document an email step's body was built from, an opaque object checked by the
-	// server. Write it instead of `body` (both is a 422): the server renders the body from it in the same
-	// save, and a document that cannot be rendered refuses the whole save, naming the step. Writing only a
-	// body clears the step's document.
-	Doc OptEditorDocument `json:"doc"`
-	// Version of the editor that rendered the document (email steps, read only).
-	EditorVersion OptString `json:"editorVersion"`
-	// Delay before the next step, in seconds (wait steps).
-	Seconds OptInt32 `json:"seconds"`
-	// Tag name to apply or remove (apply_tag and remove_tag steps).
-	Tag OptString `json:"tag"`
-	// Step id (HTTP steps). Assigned on save; send it back on edit so the step keeps its secrets.
-	ID OptString `json:"id"`
-	// Hook URL to POST to (HTTP steps). A secret: never returned. Omit it when editing to keep the stored
-	// URL. Up to 2 KiB, http or https.
-	URL OptString `json:"url"`
-	// Up to 5 request headers (HTTP steps). On read, only the names are returned.
-	Headers []SiteAutomationHttpHeaderInput `json:"headers"`
-	// Signing secret (HTTP steps): when set, the request is signed with Standard Webhooks. Never returned.
-	// Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
-	// Remove the signing secret on save (HTTP steps).
-	ClearSecret OptBool `json:"clearSecret"`
-	// Whether a signing secret is stored (HTTP steps, read only).
-	HasSecret OptBool `json:"hasSecret"`
-	// The Integration a send step sends through (email, Telegram and SMS steps), of the step's Channel;
-	// null or omitted is that Channel's default. Each send step names its own, so one automation may send
-	// through several (ADR 0081).
-	IntegrationId OptNilEntityId `json:"integrationId"`
-	// The message of a Telegram step: Telegram's HTML subset (b, strong, i, em, u, ins, s, strike, del, a
-	// with an http(s) href, code, pre, tg-spoiler, blockquote) with Liquid merge tags, whose values are
-	// escaped. Up to 4096 characters as written, or 1024 with an image (its caption): publishing a longer
-	// one is refused.
-	//
-	// The text of an SMS step: plain text with Liquid merge tags (the Contact's fields, `event.action` and
-	// `event.properties`, `unsubscribe_url`), whose values are written as they are. It is sent to the
-	// Contact's phone with nothing appended, each http(s) link a short tracked link on the Tracking domain
-	// unless `linkTracking` is false; the save refuses a text over the part limit, its links counted as
-	// short links.
-	Text OptString `json:"text"`
-	// The label of an unsubscribe button under a Telegram step's message, up to 64 characters. Pressing it
-	// is the person's Channel-wide Telegram opt-out; empty or omitted adds no button.
-	UnsubscribeButton OptString `json:"unsubscribeButton"`
-	// An https image sent with a Telegram step; the text becomes its caption. Omitted or empty for a text
-	// message.
-	ImageUrl OptString `json:"imageUrl"`
-	// Up to 8 link buttons under a Telegram step's message, one per row, in order.
-	Buttons []TelegramButtonInput `json:"buttons"`
-	// Whether a link in a Telegram step's text unfolds a preview. On when omitted; no effect with an
-	// image.
-	LinkPreview OptBool `json:"linkPreview"`
-	// Whether the links of an SMS step's text go out as short tracked links, whose clicks record
-	// `sms.clicked` (ADR 0083). On when omitted.
-	LinkTracking OptBool `json:"linkTracking"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteAutomationStepInput) GetType() SiteAutomationStepType {
-	return s.Type
-}
-
-// GetSubject returns the value of Subject.
-func (s *SiteAutomationStepInput) GetSubject() OptString {
-	return s.Subject
-}
-
-// GetBody returns the value of Body.
-func (s *SiteAutomationStepInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetDoc returns the value of Doc.
-func (s *SiteAutomationStepInput) GetDoc() OptEditorDocument {
-	return s.Doc
-}
-
-// GetEditorVersion returns the value of EditorVersion.
-func (s *SiteAutomationStepInput) GetEditorVersion() OptString {
-	return s.EditorVersion
-}
-
-// GetSeconds returns the value of Seconds.
-func (s *SiteAutomationStepInput) GetSeconds() OptInt32 {
-	return s.Seconds
-}
-
-// GetTag returns the value of Tag.
-func (s *SiteAutomationStepInput) GetTag() OptString {
-	return s.Tag
-}
-
-// GetID returns the value of ID.
-func (s *SiteAutomationStepInput) GetID() OptString {
-	return s.ID
-}
-
-// GetURL returns the value of URL.
-func (s *SiteAutomationStepInput) GetURL() OptString {
-	return s.URL
-}
-
-// GetHeaders returns the value of Headers.
-func (s *SiteAutomationStepInput) GetHeaders() []SiteAutomationHttpHeaderInput {
-	return s.Headers
-}
-
-// GetSecret returns the value of Secret.
-func (s *SiteAutomationStepInput) GetSecret() OptString {
-	return s.Secret
-}
-
-// GetClearSecret returns the value of ClearSecret.
-func (s *SiteAutomationStepInput) GetClearSecret() OptBool {
-	return s.ClearSecret
-}
-
-// GetHasSecret returns the value of HasSecret.
-func (s *SiteAutomationStepInput) GetHasSecret() OptBool {
-	return s.HasSecret
-}
-
-// GetIntegrationId returns the value of IntegrationId.
-func (s *SiteAutomationStepInput) GetIntegrationId() OptNilEntityId {
-	return s.IntegrationId
-}
-
-// GetText returns the value of Text.
-func (s *SiteAutomationStepInput) GetText() OptString {
-	return s.Text
-}
-
-// GetUnsubscribeButton returns the value of UnsubscribeButton.
-func (s *SiteAutomationStepInput) GetUnsubscribeButton() OptString {
-	return s.UnsubscribeButton
-}
-
-// GetImageUrl returns the value of ImageUrl.
-func (s *SiteAutomationStepInput) GetImageUrl() OptString {
-	return s.ImageUrl
-}
-
-// GetButtons returns the value of Buttons.
-func (s *SiteAutomationStepInput) GetButtons() []TelegramButtonInput {
-	return s.Buttons
-}
-
-// GetLinkPreview returns the value of LinkPreview.
-func (s *SiteAutomationStepInput) GetLinkPreview() OptBool {
-	return s.LinkPreview
-}
-
-// GetLinkTracking returns the value of LinkTracking.
-func (s *SiteAutomationStepInput) GetLinkTracking() OptBool {
-	return s.LinkTracking
-}
-
-// SetType sets the value of Type.
-func (s *SiteAutomationStepInput) SetType(val SiteAutomationStepType) {
-	s.Type = val
-}
-
-// SetSubject sets the value of Subject.
-func (s *SiteAutomationStepInput) SetSubject(val OptString) {
-	s.Subject = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteAutomationStepInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetDoc sets the value of Doc.
-func (s *SiteAutomationStepInput) SetDoc(val OptEditorDocument) {
-	s.Doc = val
-}
-
-// SetEditorVersion sets the value of EditorVersion.
-func (s *SiteAutomationStepInput) SetEditorVersion(val OptString) {
-	s.EditorVersion = val
-}
-
-// SetSeconds sets the value of Seconds.
-func (s *SiteAutomationStepInput) SetSeconds(val OptInt32) {
-	s.Seconds = val
-}
-
-// SetTag sets the value of Tag.
-func (s *SiteAutomationStepInput) SetTag(val OptString) {
-	s.Tag = val
-}
-
-// SetID sets the value of ID.
-func (s *SiteAutomationStepInput) SetID(val OptString) {
-	s.ID = val
-}
-
-// SetURL sets the value of URL.
-func (s *SiteAutomationStepInput) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetHeaders sets the value of Headers.
-func (s *SiteAutomationStepInput) SetHeaders(val []SiteAutomationHttpHeaderInput) {
-	s.Headers = val
-}
-
-// SetSecret sets the value of Secret.
-func (s *SiteAutomationStepInput) SetSecret(val OptString) {
-	s.Secret = val
-}
-
-// SetClearSecret sets the value of ClearSecret.
-func (s *SiteAutomationStepInput) SetClearSecret(val OptBool) {
-	s.ClearSecret = val
-}
-
-// SetHasSecret sets the value of HasSecret.
-func (s *SiteAutomationStepInput) SetHasSecret(val OptBool) {
-	s.HasSecret = val
-}
-
-// SetIntegrationId sets the value of IntegrationId.
-func (s *SiteAutomationStepInput) SetIntegrationId(val OptNilEntityId) {
-	s.IntegrationId = val
-}
-
-// SetText sets the value of Text.
-func (s *SiteAutomationStepInput) SetText(val OptString) {
-	s.Text = val
-}
-
-// SetUnsubscribeButton sets the value of UnsubscribeButton.
-func (s *SiteAutomationStepInput) SetUnsubscribeButton(val OptString) {
-	s.UnsubscribeButton = val
-}
-
-// SetImageUrl sets the value of ImageUrl.
-func (s *SiteAutomationStepInput) SetImageUrl(val OptString) {
-	s.ImageUrl = val
-}
-
-// SetButtons sets the value of Buttons.
-func (s *SiteAutomationStepInput) SetButtons(val []TelegramButtonInput) {
-	s.Buttons = val
-}
-
-// SetLinkPreview sets the value of LinkPreview.
-func (s *SiteAutomationStepInput) SetLinkPreview(val OptBool) {
-	s.LinkPreview = val
-}
-
-// SetLinkTracking sets the value of LinkTracking.
-func (s *SiteAutomationStepInput) SetLinkTracking(val OptBool) {
-	s.LinkTracking = val
-}
-
-// Kind of automation step.
-// Ref: #/components/schemas/SiteAutomationStepType
-type SiteAutomationStepType string
-
-const (
-	SiteAutomationStepTypeEmail     SiteAutomationStepType = "email"
-	SiteAutomationStepTypeTelegram  SiteAutomationStepType = "telegram"
-	SiteAutomationStepTypeSMS       SiteAutomationStepType = "sms"
-	SiteAutomationStepTypeWait      SiteAutomationStepType = "wait"
-	SiteAutomationStepTypeApplyTag  SiteAutomationStepType = "apply_tag"
-	SiteAutomationStepTypeRemoveTag SiteAutomationStepType = "remove_tag"
-	SiteAutomationStepTypeHTTP      SiteAutomationStepType = "http"
-)
-
-// AllValues returns all SiteAutomationStepType values.
-func (SiteAutomationStepType) AllValues() []SiteAutomationStepType {
-	return []SiteAutomationStepType{
-		SiteAutomationStepTypeEmail,
-		SiteAutomationStepTypeTelegram,
-		SiteAutomationStepTypeSMS,
-		SiteAutomationStepTypeWait,
-		SiteAutomationStepTypeApplyTag,
-		SiteAutomationStepTypeRemoveTag,
-		SiteAutomationStepTypeHTTP,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteAutomationStepType) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteAutomationStepTypeEmail:
-		return []byte(s), nil
-	case SiteAutomationStepTypeTelegram:
-		return []byte(s), nil
-	case SiteAutomationStepTypeSMS:
-		return []byte(s), nil
-	case SiteAutomationStepTypeWait:
-		return []byte(s), nil
-	case SiteAutomationStepTypeApplyTag:
-		return []byte(s), nil
-	case SiteAutomationStepTypeRemoveTag:
-		return []byte(s), nil
-	case SiteAutomationStepTypeHTTP:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteAutomationStepType) UnmarshalText(data []byte) error {
-	switch SiteAutomationStepType(data) {
-	case SiteAutomationStepTypeEmail:
-		*s = SiteAutomationStepTypeEmail
-		return nil
-	case SiteAutomationStepTypeTelegram:
-		*s = SiteAutomationStepTypeTelegram
-		return nil
-	case SiteAutomationStepTypeSMS:
-		*s = SiteAutomationStepTypeSMS
-		return nil
-	case SiteAutomationStepTypeWait:
-		*s = SiteAutomationStepTypeWait
-		return nil
-	case SiteAutomationStepTypeApplyTag:
-		*s = SiteAutomationStepTypeApplyTag
-		return nil
-	case SiteAutomationStepTypeRemoveTag:
-		*s = SiteAutomationStepTypeRemoveTag
-		return nil
-	case SiteAutomationStepTypeHTTP:
-		*s = SiteAutomationStepTypeHTTP
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One version of an automation's definition: what publishing makes it do (ADR 0065).
-// Ref: #/components/schemas/SiteAutomationVersion
-type SiteAutomationVersion struct {
-	// 1 for the first version, plus one per version after it.
-	Number int32 `json:"number"`
-	// Event action that enrolls a contact (e.g. "contact.created", "email.opened").
-	TriggerEvent string `json:"triggerEvent"`
-	// Event actions that end an active enrollment early, as exited (e.g. "plan_downgraded"). Only an Event
-	// that occurred once the enrollment began counts; machine opens and clicks never do.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached (e.g. "payment_succeeded"); null when
-	// there is none.
-	GoalEvent NilString `json:"goalEvent"`
-	// The ordered, linear steps.
-	Steps []SiteAutomationStep `json:"steps"`
-}
-
-// GetNumber returns the value of Number.
-func (s *SiteAutomationVersion) GetNumber() int32 {
-	return s.Number
-}
-
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *SiteAutomationVersion) GetTriggerEvent() string {
-	return s.TriggerEvent
-}
-
-// GetExitEvents returns the value of ExitEvents.
-func (s *SiteAutomationVersion) GetExitEvents() []string {
-	return s.ExitEvents
-}
-
-// GetGoalEvent returns the value of GoalEvent.
-func (s *SiteAutomationVersion) GetGoalEvent() NilString {
-	return s.GoalEvent
-}
-
-// GetSteps returns the value of Steps.
-func (s *SiteAutomationVersion) GetSteps() []SiteAutomationStep {
-	return s.Steps
-}
-
-// SetNumber sets the value of Number.
-func (s *SiteAutomationVersion) SetNumber(val int32) {
-	s.Number = val
-}
-
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *SiteAutomationVersion) SetTriggerEvent(val string) {
-	s.TriggerEvent = val
-}
-
-// SetExitEvents sets the value of ExitEvents.
-func (s *SiteAutomationVersion) SetExitEvents(val []string) {
-	s.ExitEvents = val
-}
-
-// SetGoalEvent sets the value of GoalEvent.
-func (s *SiteAutomationVersion) SetGoalEvent(val NilString) {
-	s.GoalEvent = val
-}
-
-// SetSteps sets the value of Steps.
-func (s *SiteAutomationVersion) SetSteps(val []SiteAutomationStep) {
-	s.Steps = val
 }
 
 // Paginated response.
@@ -14101,159 +18469,6 @@ func (s *SiteBindingResource) SetBoundAt(val Timestamp) {
 	s.BoundAt = val
 }
 
-// The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets the
-// palette the editor offers and what an agent is told to use. Its values are written into a message
-// when the message is authored, so saving it never changes a message already written. A Workspace that
-// has not saved one has the defaults and `saved` false.
-// Ref: #/components/schemas/SiteBrandKitResource
-type SiteBrandKitResource struct {
-	// False until the Brand kit is first saved; the values are then the defaults.
-	Saved bool `json:"saved"`
-	// Brand color of buttons and links, `#rrggbb`.
-	AccentColor string `json:"accentColor"`
-	// Color of text, `#rrggbb`.
-	TextColor string `json:"textColor"`
-	// Color of the message background, `#rrggbb`.
-	BackgroundColor string `json:"backgroundColor"`
-	// Font of headings: a CSS font-family list of web-safe families.
-	HeadingFont string `json:"headingFont"`
-	// Font of body text: a CSS font-family list of web-safe families.
-	BodyFont string `json:"bodyFont"`
-	// Address (http or https) of the logo image; empty for none.
-	LogoUrl string `json:"logoUrl"`
-	// Color of the text on a button, `#rrggbb`.
-	ButtonTextColor string `json:"buttonTextColor"`
-	// Corner radius of a button in pixels, 0 to 32.
-	ButtonRadius int32 `json:"buttonRadius"`
-	// Plain text printed under the starter messages, at most 500 characters; empty for none.
-	FooterText string `json:"footerText"`
-	// When the Brand kit was last saved; absent while it is not saved.
-	UpdatedAt OptNilTimestamp `json:"updatedAt"`
-	// The revision of the state this answer shows (ADR 0119): a save names it. A Brand kit not saved yet
-	// is revision 1.
-	Revision Revision `json:"revision"`
-}
-
-// GetSaved returns the value of Saved.
-func (s *SiteBrandKitResource) GetSaved() bool {
-	return s.Saved
-}
-
-// GetAccentColor returns the value of AccentColor.
-func (s *SiteBrandKitResource) GetAccentColor() string {
-	return s.AccentColor
-}
-
-// GetTextColor returns the value of TextColor.
-func (s *SiteBrandKitResource) GetTextColor() string {
-	return s.TextColor
-}
-
-// GetBackgroundColor returns the value of BackgroundColor.
-func (s *SiteBrandKitResource) GetBackgroundColor() string {
-	return s.BackgroundColor
-}
-
-// GetHeadingFont returns the value of HeadingFont.
-func (s *SiteBrandKitResource) GetHeadingFont() string {
-	return s.HeadingFont
-}
-
-// GetBodyFont returns the value of BodyFont.
-func (s *SiteBrandKitResource) GetBodyFont() string {
-	return s.BodyFont
-}
-
-// GetLogoUrl returns the value of LogoUrl.
-func (s *SiteBrandKitResource) GetLogoUrl() string {
-	return s.LogoUrl
-}
-
-// GetButtonTextColor returns the value of ButtonTextColor.
-func (s *SiteBrandKitResource) GetButtonTextColor() string {
-	return s.ButtonTextColor
-}
-
-// GetButtonRadius returns the value of ButtonRadius.
-func (s *SiteBrandKitResource) GetButtonRadius() int32 {
-	return s.ButtonRadius
-}
-
-// GetFooterText returns the value of FooterText.
-func (s *SiteBrandKitResource) GetFooterText() string {
-	return s.FooterText
-}
-
-// GetUpdatedAt returns the value of UpdatedAt.
-func (s *SiteBrandKitResource) GetUpdatedAt() OptNilTimestamp {
-	return s.UpdatedAt
-}
-
-// GetRevision returns the value of Revision.
-func (s *SiteBrandKitResource) GetRevision() Revision {
-	return s.Revision
-}
-
-// SetSaved sets the value of Saved.
-func (s *SiteBrandKitResource) SetSaved(val bool) {
-	s.Saved = val
-}
-
-// SetAccentColor sets the value of AccentColor.
-func (s *SiteBrandKitResource) SetAccentColor(val string) {
-	s.AccentColor = val
-}
-
-// SetTextColor sets the value of TextColor.
-func (s *SiteBrandKitResource) SetTextColor(val string) {
-	s.TextColor = val
-}
-
-// SetBackgroundColor sets the value of BackgroundColor.
-func (s *SiteBrandKitResource) SetBackgroundColor(val string) {
-	s.BackgroundColor = val
-}
-
-// SetHeadingFont sets the value of HeadingFont.
-func (s *SiteBrandKitResource) SetHeadingFont(val string) {
-	s.HeadingFont = val
-}
-
-// SetBodyFont sets the value of BodyFont.
-func (s *SiteBrandKitResource) SetBodyFont(val string) {
-	s.BodyFont = val
-}
-
-// SetLogoUrl sets the value of LogoUrl.
-func (s *SiteBrandKitResource) SetLogoUrl(val string) {
-	s.LogoUrl = val
-}
-
-// SetButtonTextColor sets the value of ButtonTextColor.
-func (s *SiteBrandKitResource) SetButtonTextColor(val string) {
-	s.ButtonTextColor = val
-}
-
-// SetButtonRadius sets the value of ButtonRadius.
-func (s *SiteBrandKitResource) SetButtonRadius(val int32) {
-	s.ButtonRadius = val
-}
-
-// SetFooterText sets the value of FooterText.
-func (s *SiteBrandKitResource) SetFooterText(val string) {
-	s.FooterText = val
-}
-
-// SetUpdatedAt sets the value of UpdatedAt.
-func (s *SiteBrandKitResource) SetUpdatedAt(val OptNilTimestamp) {
-	s.UpdatedAt = val
-}
-
-// SetRevision sets the value of Revision.
-func (s *SiteBrandKitResource) SetRevision(val Revision) {
-	s.Revision = val
-}
-
 // What slows a sending broadcast.
 // Ref: #/components/schemas/SiteBroadcastLimit
 type SiteBroadcastLimit string
@@ -14301,16 +18516,16 @@ func (s *SiteBroadcastLimit) UnmarshalText(data []byte) error {
 // Ref: #/components/schemas/SiteBroadcastLinkClicksList
 type SiteBroadcastLinkClicksList struct {
 	// One entry per clicked link.
-	Items []SiteLinkClicks `json:"items"`
+	Items []LinkClicks `json:"items"`
 }
 
 // GetItems returns the value of Items.
-func (s *SiteBroadcastLinkClicksList) GetItems() []SiteLinkClicks {
+func (s *SiteBroadcastLinkClicksList) GetItems() []LinkClicks {
 	return s.Items
 }
 
 // SetItems sets the value of Items.
-func (s *SiteBroadcastLinkClicksList) SetItems(val []SiteLinkClicks) {
+func (s *SiteBroadcastLinkClicksList) SetItems(val []LinkClicks) {
 	s.Items = val
 }
 
@@ -14664,7 +18879,7 @@ type SiteBroadcastStats struct {
 	// Send failures ÷ recipients targeted (0–1).
 	FailureRate float32 `json:"failureRate"`
 	// Orders credited to the Broadcast and their net revenue (ADR 0064).
-	Revenue SiteMessageRevenue `json:"revenue"`
+	Revenue MessageRevenue `json:"revenue"`
 }
 
 // GetRecipientsTotal returns the value of RecipientsTotal.
@@ -14763,7 +18978,7 @@ func (s *SiteBroadcastStats) GetFailureRate() float32 {
 }
 
 // GetRevenue returns the value of Revenue.
-func (s *SiteBroadcastStats) GetRevenue() SiteMessageRevenue {
+func (s *SiteBroadcastStats) GetRevenue() MessageRevenue {
 	return s.Revenue
 }
 
@@ -14863,7 +19078,7 @@ func (s *SiteBroadcastStats) SetFailureRate(val float32) {
 }
 
 // SetRevenue sets the value of Revenue.
-func (s *SiteBroadcastStats) SetRevenue(val SiteMessageRevenue) {
+func (s *SiteBroadcastStats) SetRevenue(val MessageRevenue) {
 	s.Revenue = val
 }
 
@@ -15018,7 +19233,7 @@ type SiteCapturedMessageResource struct {
 	// The Outbound message of the send; null for a Test send, which records none.
 	OutboundMessageId NilEntityId `json:"outboundMessageId"`
 	// The surface that asked for the send.
-	Surface SiteCapturedMessageSurface `json:"surface"`
+	Surface CapturedMessageSurface `json:"surface"`
 	// The Sending source of a Broadcast or Automation send; null for a Transactional or Test send.
 	SendingSource NilString `json:"sendingSource"`
 	// Normalized (lower-cased) recipient address.
@@ -15060,7 +19275,7 @@ func (s *SiteCapturedMessageResource) GetOutboundMessageId() NilEntityId {
 }
 
 // GetSurface returns the value of Surface.
-func (s *SiteCapturedMessageResource) GetSurface() SiteCapturedMessageSurface {
+func (s *SiteCapturedMessageResource) GetSurface() CapturedMessageSurface {
 	return s.Surface
 }
 
@@ -15135,7 +19350,7 @@ func (s *SiteCapturedMessageResource) SetOutboundMessageId(val NilEntityId) {
 }
 
 // SetSurface sets the value of Surface.
-func (s *SiteCapturedMessageResource) SetSurface(val SiteCapturedMessageSurface) {
+func (s *SiteCapturedMessageResource) SetSurface(val CapturedMessageSurface) {
 	s.Surface = val
 }
 
@@ -15204,7 +19419,7 @@ type SiteCapturedMessageSummary struct {
 	// The Outbound message of the send; null for a Test send, which records none.
 	OutboundMessageId NilEntityId `json:"outboundMessageId"`
 	// The surface that asked for the send.
-	Surface SiteCapturedMessageSurface `json:"surface"`
+	Surface CapturedMessageSurface `json:"surface"`
 	// The Sending source of a Broadcast or Automation send; null for a Transactional or Test send.
 	SendingSource NilString `json:"sendingSource"`
 	// Normalized (lower-cased) recipient address.
@@ -15238,7 +19453,7 @@ func (s *SiteCapturedMessageSummary) GetOutboundMessageId() NilEntityId {
 }
 
 // GetSurface returns the value of Surface.
-func (s *SiteCapturedMessageSummary) GetSurface() SiteCapturedMessageSurface {
+func (s *SiteCapturedMessageSummary) GetSurface() CapturedMessageSurface {
 	return s.Surface
 }
 
@@ -15293,7 +19508,7 @@ func (s *SiteCapturedMessageSummary) SetOutboundMessageId(val NilEntityId) {
 }
 
 // SetSurface sets the value of Surface.
-func (s *SiteCapturedMessageSummary) SetSurface(val SiteCapturedMessageSurface) {
+func (s *SiteCapturedMessageSummary) SetSurface(val CapturedMessageSurface) {
 	s.Surface = val
 }
 
@@ -15330,63 +19545,6 @@ func (s *SiteCapturedMessageSummary) SetFromUnverified(val bool) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *SiteCapturedMessageSummary) SetCreatedAt(val Timestamp) {
 	s.CreatedAt = val
-}
-
-// The surface that asked for the send a Captured message belongs to.
-// Ref: #/components/schemas/SiteCapturedMessageSurface
-type SiteCapturedMessageSurface string
-
-const (
-	SiteCapturedMessageSurfaceBroadcast     SiteCapturedMessageSurface = "broadcast"
-	SiteCapturedMessageSurfaceAutomation    SiteCapturedMessageSurface = "automation"
-	SiteCapturedMessageSurfaceTransactional SiteCapturedMessageSurface = "transactional"
-	SiteCapturedMessageSurfaceTest          SiteCapturedMessageSurface = "test"
-)
-
-// AllValues returns all SiteCapturedMessageSurface values.
-func (SiteCapturedMessageSurface) AllValues() []SiteCapturedMessageSurface {
-	return []SiteCapturedMessageSurface{
-		SiteCapturedMessageSurfaceBroadcast,
-		SiteCapturedMessageSurfaceAutomation,
-		SiteCapturedMessageSurfaceTransactional,
-		SiteCapturedMessageSurfaceTest,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteCapturedMessageSurface) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteCapturedMessageSurfaceBroadcast:
-		return []byte(s), nil
-	case SiteCapturedMessageSurfaceAutomation:
-		return []byte(s), nil
-	case SiteCapturedMessageSurfaceTransactional:
-		return []byte(s), nil
-	case SiteCapturedMessageSurfaceTest:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteCapturedMessageSurface) UnmarshalText(data []byte) error {
-	switch SiteCapturedMessageSurface(data) {
-	case SiteCapturedMessageSurfaceBroadcast:
-		*s = SiteCapturedMessageSurfaceBroadcast
-		return nil
-	case SiteCapturedMessageSurfaceAutomation:
-		*s = SiteCapturedMessageSurfaceAutomation
-		return nil
-	case SiteCapturedMessageSurfaceTransactional:
-		*s = SiteCapturedMessageSurfaceTransactional
-		return nil
-	case SiteCapturedMessageSurfaceTest:
-		*s = SiteCapturedMessageSurfaceTest
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 // SiteCapturedMessagesDeleteAllNoContent is response for SiteCapturedMessagesDeleteAll operation.
@@ -15457,1818 +19615,6 @@ func (s *SiteCapturedMessagesListOK) SetTotalItems(val int32) {
 // SetTotalPages sets the value of TotalPages.
 func (s *SiteCapturedMessagesListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
-}
-
-// The CNAME record to publish: `host` must point at `target`.
-// Ref: #/components/schemas/SiteCnameRecord
-type SiteCnameRecord struct {
-	// The record type (always CNAME).
-	Type SiteCnameRecordType `json:"type"`
-	// The host to create the record at.
-	Host string `json:"host"`
-	// The edge host the CNAME must point at.
-	Target string `json:"target"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteCnameRecord) GetType() SiteCnameRecordType {
-	return s.Type
-}
-
-// GetHost returns the value of Host.
-func (s *SiteCnameRecord) GetHost() string {
-	return s.Host
-}
-
-// GetTarget returns the value of Target.
-func (s *SiteCnameRecord) GetTarget() string {
-	return s.Target
-}
-
-// SetType sets the value of Type.
-func (s *SiteCnameRecord) SetType(val SiteCnameRecordType) {
-	s.Type = val
-}
-
-// SetHost sets the value of Host.
-func (s *SiteCnameRecord) SetHost(val string) {
-	s.Host = val
-}
-
-// SetTarget sets the value of Target.
-func (s *SiteCnameRecord) SetTarget(val string) {
-	s.Target = val
-}
-
-// The record type (always CNAME).
-type SiteCnameRecordType string
-
-const (
-	SiteCnameRecordTypeCNAME SiteCnameRecordType = "CNAME"
-)
-
-// AllValues returns all SiteCnameRecordType values.
-func (SiteCnameRecordType) AllValues() []SiteCnameRecordType {
-	return []SiteCnameRecordType{
-		SiteCnameRecordTypeCNAME,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteCnameRecordType) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteCnameRecordTypeCNAME:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteCnameRecordType) UnmarshalText(data []byte) error {
-	switch SiteCnameRecordType(data) {
-	case SiteCnameRecordTypeCNAME:
-		*s = SiteCnameRecordTypeCNAME
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How a condition group combines its entries.
-// Ref: #/components/schemas/SiteConditionCombinator
-type SiteConditionCombinator string
-
-const (
-	SiteConditionCombinatorAnd SiteConditionCombinator = "and"
-	SiteConditionCombinatorOr  SiteConditionCombinator = "or"
-)
-
-// AllValues returns all SiteConditionCombinator values.
-func (SiteConditionCombinator) AllValues() []SiteConditionCombinator {
-	return []SiteConditionCombinator{
-		SiteConditionCombinatorAnd,
-		SiteConditionCombinatorOr,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionCombinator) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionCombinatorAnd:
-		return []byte(s), nil
-	case SiteConditionCombinatorOr:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionCombinator) UnmarshalText(data []byte) error {
-	switch SiteConditionCombinator(data) {
-	case SiteConditionCombinatorAnd:
-		*s = SiteConditionCombinatorAnd
-		return nil
-	case SiteConditionCombinatorOr:
-		*s = SiteConditionCombinatorOr
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
-// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
-// a date-time without an offset or a value that is not a date-time makes the leaf false.
-// Ref: #/components/schemas/SiteConditionDateLeaf
-type SiteConditionDateLeaf struct {
-	Kind SiteConditionDateLeafKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// Which side of `at` the moment is on.
-	Operator SiteConditionDateOperator `json:"operator"`
-	// The moment the field's is compared with.
-	At Timestamp `json:"at"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionDateLeaf) GetKind() SiteConditionDateLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionDateLeaf) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionDateLeaf) GetOperator() SiteConditionDateOperator {
-	return s.Operator
-}
-
-// GetAt returns the value of At.
-func (s *SiteConditionDateLeaf) GetAt() Timestamp {
-	return s.At
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionDateLeaf) SetKind(val SiteConditionDateLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionDateLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionDateLeaf) SetOperator(val SiteConditionDateOperator) {
-	s.Operator = val
-}
-
-// SetAt sets the value of At.
-func (s *SiteConditionDateLeaf) SetAt(val Timestamp) {
-	s.At = val
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is before
-// or after `at`. Only a date-time with a UTC offset is a moment: a missing key, a date without a time,
-// a date-time without an offset or a value that is not a date-time makes the leaf false.
-// Ref: #/components/schemas/SiteConditionDateLeafInput
-type SiteConditionDateLeafInput struct {
-	Kind SiteConditionDateLeafInputKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// Which side of `at` the moment is on.
-	Operator SiteConditionDateOperator `json:"operator"`
-	// The moment the field's is compared with.
-	At Timestamp `json:"at"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionDateLeafInput) GetKind() SiteConditionDateLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionDateLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionDateLeafInput) GetOperator() SiteConditionDateOperator {
-	return s.Operator
-}
-
-// GetAt returns the value of At.
-func (s *SiteConditionDateLeafInput) GetAt() Timestamp {
-	return s.At
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionDateLeafInput) SetKind(val SiteConditionDateLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionDateLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionDateLeafInput) SetOperator(val SiteConditionDateOperator) {
-	s.Operator = val
-}
-
-// SetAt sets the value of At.
-func (s *SiteConditionDateLeafInput) SetAt(val Timestamp) {
-	s.At = val
-}
-
-type SiteConditionDateLeafInputKind string
-
-const (
-	SiteConditionDateLeafInputKindDate SiteConditionDateLeafInputKind = "date"
-)
-
-// AllValues returns all SiteConditionDateLeafInputKind values.
-func (SiteConditionDateLeafInputKind) AllValues() []SiteConditionDateLeafInputKind {
-	return []SiteConditionDateLeafInputKind{
-		SiteConditionDateLeafInputKindDate,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionDateLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionDateLeafInputKindDate:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionDateLeafInputKind) UnmarshalText(data []byte) error {
-	switch SiteConditionDateLeafInputKind(data) {
-	case SiteConditionDateLeafInputKindDate:
-		*s = SiteConditionDateLeafInputKindDate
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SiteConditionDateLeafKind string
-
-const (
-	SiteConditionDateLeafKindDate SiteConditionDateLeafKind = "date"
-)
-
-// AllValues returns all SiteConditionDateLeafKind values.
-func (SiteConditionDateLeafKind) AllValues() []SiteConditionDateLeafKind {
-	return []SiteConditionDateLeafKind{
-		SiteConditionDateLeafKindDate,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionDateLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionDateLeafKindDate:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionDateLeafKind) UnmarshalText(data []byte) error {
-	switch SiteConditionDateLeafKind(data) {
-	case SiteConditionDateLeafKindDate:
-		*s = SiteConditionDateLeafKindDate
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Which side of `at` a date leaf takes: before is strictly earlier, after is at or later, so the two
-// split time at `at`.
-// Ref: #/components/schemas/SiteConditionDateOperator
-type SiteConditionDateOperator string
-
-const (
-	SiteConditionDateOperatorBefore SiteConditionDateOperator = "before"
-	SiteConditionDateOperatorAfter  SiteConditionDateOperator = "after"
-)
-
-// AllValues returns all SiteConditionDateOperator values.
-func (SiteConditionDateOperator) AllValues() []SiteConditionDateOperator {
-	return []SiteConditionDateOperator{
-		SiteConditionDateOperatorBefore,
-		SiteConditionDateOperatorAfter,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionDateOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionDateOperatorBefore:
-		return []byte(s), nil
-	case SiteConditionDateOperatorAfter:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionDateOperator) UnmarshalText(data []byte) error {
-	switch SiteConditionDateOperator(data) {
-	case SiteConditionDateOperatorBefore:
-		*s = SiteConditionDateOperatorBefore
-		return nil
-	case SiteConditionDateOperatorAfter:
-		*s = SiteConditionDateOperatorAfter
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
-// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
-// a UTC offset is a moment, as for the date leaf.
-// Ref: #/components/schemas/SiteConditionDateWithinLeaf
-type SiteConditionDateWithinLeaf struct {
-	Kind SiteConditionDateWithinLeafKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// The window, in days back from now.
-	WithinDays int32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionDateWithinLeaf) GetKind() SiteConditionDateWithinLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionDateWithinLeaf) GetField() string {
-	return s.Field
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *SiteConditionDateWithinLeaf) GetWithinDays() int32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionDateWithinLeaf) SetKind(val SiteConditionDateWithinLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionDateWithinLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *SiteConditionDateWithinLeaf) SetWithinDays(val int32) {
-	s.WithinDays = val
-}
-
-// A test of a custom field of the workspace whose type is datetime ("custom:"): its moment is within
-// the last `withinDays` days up to now, so a moment still to come is not within. Only a date-time with
-// a UTC offset is a moment, as for the date leaf.
-// Ref: #/components/schemas/SiteConditionDateWithinLeafInput
-type SiteConditionDateWithinLeafInput struct {
-	Kind SiteConditionDateWithinLeafInputKind `json:"kind"`
-	// What it tests: "birthday" or "custom:" for a datetime custom field.
-	Field string `json:"field"`
-	// The window, in days back from now.
-	WithinDays int32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionDateWithinLeafInput) GetKind() SiteConditionDateWithinLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionDateWithinLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *SiteConditionDateWithinLeafInput) GetWithinDays() int32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionDateWithinLeafInput) SetKind(val SiteConditionDateWithinLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionDateWithinLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *SiteConditionDateWithinLeafInput) SetWithinDays(val int32) {
-	s.WithinDays = val
-}
-
-type SiteConditionDateWithinLeafInputKind string
-
-const (
-	SiteConditionDateWithinLeafInputKindDateWithin SiteConditionDateWithinLeafInputKind = "dateWithin"
-)
-
-// AllValues returns all SiteConditionDateWithinLeafInputKind values.
-func (SiteConditionDateWithinLeafInputKind) AllValues() []SiteConditionDateWithinLeafInputKind {
-	return []SiteConditionDateWithinLeafInputKind{
-		SiteConditionDateWithinLeafInputKindDateWithin,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionDateWithinLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionDateWithinLeafInputKindDateWithin:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionDateWithinLeafInputKind) UnmarshalText(data []byte) error {
-	switch SiteConditionDateWithinLeafInputKind(data) {
-	case SiteConditionDateWithinLeafInputKindDateWithin:
-		*s = SiteConditionDateWithinLeafInputKindDateWithin
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SiteConditionDateWithinLeafKind string
-
-const (
-	SiteConditionDateWithinLeafKindDateWithin SiteConditionDateWithinLeafKind = "dateWithin"
-)
-
-// AllValues returns all SiteConditionDateWithinLeafKind values.
-func (SiteConditionDateWithinLeafKind) AllValues() []SiteConditionDateWithinLeafKind {
-	return []SiteConditionDateWithinLeafKind{
-		SiteConditionDateWithinLeafKindDateWithin,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionDateWithinLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionDateWithinLeafKindDateWithin:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionDateWithinLeafKind) UnmarshalText(data []byte) error {
-	switch SiteConditionDateWithinLeafKind(data) {
-	case SiteConditionDateWithinLeafKindDateWithin:
-		*s = SiteConditionDateWithinLeafKindDateWithin
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A test of how many times a contact performed an Event action, over all time or within the last
-// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
-// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
-// Event retention is capped by it: expired Events are no longer counted.
-// Ref: #/components/schemas/SiteConditionEventLeaf
-type SiteConditionEventLeaf struct {
-	Kind SiteConditionEventLeafKind `json:"kind"`
-	// The Event action counted.
-	Action string `json:"action"`
-	// How the count is bounded.
-	Operator SiteConditionEventOperator `json:"operator"`
-	// The bound: atLeast takes 1 or more, atMost 0 or more.
-	Times int32 `json:"times"`
-	// Count only the Events of the last this many days; absent counts all time.
-	WithinDays OptInt32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionEventLeaf) GetKind() SiteConditionEventLeafKind {
-	return s.Kind
-}
-
-// GetAction returns the value of Action.
-func (s *SiteConditionEventLeaf) GetAction() string {
-	return s.Action
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionEventLeaf) GetOperator() SiteConditionEventOperator {
-	return s.Operator
-}
-
-// GetTimes returns the value of Times.
-func (s *SiteConditionEventLeaf) GetTimes() int32 {
-	return s.Times
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *SiteConditionEventLeaf) GetWithinDays() OptInt32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionEventLeaf) SetKind(val SiteConditionEventLeafKind) {
-	s.Kind = val
-}
-
-// SetAction sets the value of Action.
-func (s *SiteConditionEventLeaf) SetAction(val string) {
-	s.Action = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionEventLeaf) SetOperator(val SiteConditionEventOperator) {
-	s.Operator = val
-}
-
-// SetTimes sets the value of Times.
-func (s *SiteConditionEventLeaf) SetTimes(val int32) {
-	s.Times = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *SiteConditionEventLeaf) SetWithinDays(val OptInt32) {
-	s.WithinDays = val
-}
-
-// A test of how many times a contact performed an Event action, over all time or within the last
-// `withinDays` days. Performed is atLeast 1, not performed is atMost 0; "exactly" is a group of both.
-// Engagement Events made by software (machine opens and clicks) are not counted. A window longer than
-// Event retention is capped by it: expired Events are no longer counted.
-// Ref: #/components/schemas/SiteConditionEventLeafInput
-type SiteConditionEventLeafInput struct {
-	Kind SiteConditionEventLeafInputKind `json:"kind"`
-	// The Event action counted.
-	Action string `json:"action"`
-	// How the count is bounded.
-	Operator SiteConditionEventOperator `json:"operator"`
-	// The bound: atLeast takes 1 or more, atMost 0 or more.
-	Times int32 `json:"times"`
-	// Count only the Events of the last this many days; absent counts all time.
-	WithinDays OptInt32 `json:"withinDays"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionEventLeafInput) GetKind() SiteConditionEventLeafInputKind {
-	return s.Kind
-}
-
-// GetAction returns the value of Action.
-func (s *SiteConditionEventLeafInput) GetAction() string {
-	return s.Action
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionEventLeafInput) GetOperator() SiteConditionEventOperator {
-	return s.Operator
-}
-
-// GetTimes returns the value of Times.
-func (s *SiteConditionEventLeafInput) GetTimes() int32 {
-	return s.Times
-}
-
-// GetWithinDays returns the value of WithinDays.
-func (s *SiteConditionEventLeafInput) GetWithinDays() OptInt32 {
-	return s.WithinDays
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionEventLeafInput) SetKind(val SiteConditionEventLeafInputKind) {
-	s.Kind = val
-}
-
-// SetAction sets the value of Action.
-func (s *SiteConditionEventLeafInput) SetAction(val string) {
-	s.Action = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionEventLeafInput) SetOperator(val SiteConditionEventOperator) {
-	s.Operator = val
-}
-
-// SetTimes sets the value of Times.
-func (s *SiteConditionEventLeafInput) SetTimes(val int32) {
-	s.Times = val
-}
-
-// SetWithinDays sets the value of WithinDays.
-func (s *SiteConditionEventLeafInput) SetWithinDays(val OptInt32) {
-	s.WithinDays = val
-}
-
-type SiteConditionEventLeafInputKind string
-
-const (
-	SiteConditionEventLeafInputKindEvent SiteConditionEventLeafInputKind = "event"
-)
-
-// AllValues returns all SiteConditionEventLeafInputKind values.
-func (SiteConditionEventLeafInputKind) AllValues() []SiteConditionEventLeafInputKind {
-	return []SiteConditionEventLeafInputKind{
-		SiteConditionEventLeafInputKindEvent,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionEventLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionEventLeafInputKindEvent:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionEventLeafInputKind) UnmarshalText(data []byte) error {
-	switch SiteConditionEventLeafInputKind(data) {
-	case SiteConditionEventLeafInputKindEvent:
-		*s = SiteConditionEventLeafInputKindEvent
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SiteConditionEventLeafKind string
-
-const (
-	SiteConditionEventLeafKindEvent SiteConditionEventLeafKind = "event"
-)
-
-// AllValues returns all SiteConditionEventLeafKind values.
-func (SiteConditionEventLeafKind) AllValues() []SiteConditionEventLeafKind {
-	return []SiteConditionEventLeafKind{
-		SiteConditionEventLeafKindEvent,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionEventLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionEventLeafKindEvent:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionEventLeafKind) UnmarshalText(data []byte) error {
-	switch SiteConditionEventLeafKind(data) {
-	case SiteConditionEventLeafKindEvent:
-		*s = SiteConditionEventLeafKindEvent
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How an event leaf bounds the count: at least `times`, or at most `times`.
-// Ref: #/components/schemas/SiteConditionEventOperator
-type SiteConditionEventOperator string
-
-const (
-	SiteConditionEventOperatorAtLeast SiteConditionEventOperator = "atLeast"
-	SiteConditionEventOperatorAtMost  SiteConditionEventOperator = "atMost"
-)
-
-// AllValues returns all SiteConditionEventOperator values.
-func (SiteConditionEventOperator) AllValues() []SiteConditionEventOperator {
-	return []SiteConditionEventOperator{
-		SiteConditionEventOperatorAtLeast,
-		SiteConditionEventOperatorAtMost,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionEventOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionEventOperatorAtLeast:
-		return []byte(s), nil
-	case SiteConditionEventOperatorAtMost:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionEventOperator) UnmarshalText(data []byte) error {
-	switch SiteConditionEventOperator(data) {
-	case SiteConditionEventOperatorAtLeast:
-		*s = SiteConditionEventOperatorAtLeast
-		return nil
-	case SiteConditionEventOperatorAtMost:
-		*s = SiteConditionEventOperatorAtMost
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
-// empty negated group matches none).
-// Ref: #/components/schemas/SiteConditionGroup
-type SiteConditionGroup struct {
-	Kind SiteConditionGroupKind `json:"kind"`
-	// How the entries combine.
-	Combinator SiteConditionCombinator `json:"combinator"`
-	// Negate the whole group.
-	Not OptBool `json:"not"`
-	// The group's leaves and nested groups.
-	Rules []SiteConditionNode `json:"rules"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionGroup) GetKind() SiteConditionGroupKind {
-	return s.Kind
-}
-
-// GetCombinator returns the value of Combinator.
-func (s *SiteConditionGroup) GetCombinator() SiteConditionCombinator {
-	return s.Combinator
-}
-
-// GetNot returns the value of Not.
-func (s *SiteConditionGroup) GetNot() OptBool {
-	return s.Not
-}
-
-// GetRules returns the value of Rules.
-func (s *SiteConditionGroup) GetRules() []SiteConditionNode {
-	return s.Rules
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionGroup) SetKind(val SiteConditionGroupKind) {
-	s.Kind = val
-}
-
-// SetCombinator sets the value of Combinator.
-func (s *SiteConditionGroup) SetCombinator(val SiteConditionCombinator) {
-	s.Combinator = val
-}
-
-// SetNot sets the value of Not.
-func (s *SiteConditionGroup) SetNot(val OptBool) {
-	s.Not = val
-}
-
-// SetRules sets the value of Rules.
-func (s *SiteConditionGroup) SetRules(val []SiteConditionNode) {
-	s.Rules = val
-}
-
-// A group of tests combined with and/or, optionally negated. An empty group matches every contact (an
-// empty negated group matches none).
-// Ref: #/components/schemas/SiteConditionGroupInput
-type SiteConditionGroupInput struct {
-	Kind SiteConditionGroupInputKind `json:"kind"`
-	// How the entries combine.
-	Combinator SiteConditionCombinator `json:"combinator"`
-	// Negate the whole group.
-	Not OptBool `json:"not"`
-	// The group's leaves and nested groups.
-	Rules []SiteConditionNodeInput `json:"rules"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionGroupInput) GetKind() SiteConditionGroupInputKind {
-	return s.Kind
-}
-
-// GetCombinator returns the value of Combinator.
-func (s *SiteConditionGroupInput) GetCombinator() SiteConditionCombinator {
-	return s.Combinator
-}
-
-// GetNot returns the value of Not.
-func (s *SiteConditionGroupInput) GetNot() OptBool {
-	return s.Not
-}
-
-// GetRules returns the value of Rules.
-func (s *SiteConditionGroupInput) GetRules() []SiteConditionNodeInput {
-	return s.Rules
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionGroupInput) SetKind(val SiteConditionGroupInputKind) {
-	s.Kind = val
-}
-
-// SetCombinator sets the value of Combinator.
-func (s *SiteConditionGroupInput) SetCombinator(val SiteConditionCombinator) {
-	s.Combinator = val
-}
-
-// SetNot sets the value of Not.
-func (s *SiteConditionGroupInput) SetNot(val OptBool) {
-	s.Not = val
-}
-
-// SetRules sets the value of Rules.
-func (s *SiteConditionGroupInput) SetRules(val []SiteConditionNodeInput) {
-	s.Rules = val
-}
-
-type SiteConditionGroupInputKind string
-
-const (
-	SiteConditionGroupInputKindGroup SiteConditionGroupInputKind = "group"
-)
-
-// AllValues returns all SiteConditionGroupInputKind values.
-func (SiteConditionGroupInputKind) AllValues() []SiteConditionGroupInputKind {
-	return []SiteConditionGroupInputKind{
-		SiteConditionGroupInputKindGroup,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionGroupInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionGroupInputKindGroup:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionGroupInputKind) UnmarshalText(data []byte) error {
-	switch SiteConditionGroupInputKind(data) {
-	case SiteConditionGroupInputKindGroup:
-		*s = SiteConditionGroupInputKindGroup
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SiteConditionGroupKind string
-
-const (
-	SiteConditionGroupKindGroup SiteConditionGroupKind = "group"
-)
-
-// AllValues returns all SiteConditionGroupKind values.
-func (SiteConditionGroupKind) AllValues() []SiteConditionGroupKind {
-	return []SiteConditionGroupKind{
-		SiteConditionGroupKindGroup,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionGroupKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionGroupKindGroup:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionGroupKind) UnmarshalText(data []byte) error {
-	switch SiteConditionGroupKind(data) {
-	case SiteConditionGroupKindGroup:
-		*s = SiteConditionGroupKindGroup
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One test of a condition: a field, an operator and a value.
-// Ref: #/components/schemas/SiteConditionLeaf
-type SiteConditionLeaf struct {
-	Kind SiteConditionLeafKind `json:"kind"`
-	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
-	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
-	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
-	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
-	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
-	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
-	// that is not text; a number property is compared by a number leaf).
-	Field string `json:"field"`
-	// How the field is tested.
-	Operator SiteConditionOperator `json:"operator"`
-	// The value to test against: a tag name, blank for null and notNull.
-	Value OptString `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionLeaf) GetKind() SiteConditionLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionLeaf) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionLeaf) GetOperator() SiteConditionOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *SiteConditionLeaf) GetValue() OptString {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionLeaf) SetKind(val SiteConditionLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionLeaf) SetOperator(val SiteConditionOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteConditionLeaf) SetValue(val OptString) {
-	s.Value = val
-}
-
-// One test of a condition: a field, an operator and a value.
-// Ref: #/components/schemas/SiteConditionLeafInput
-type SiteConditionLeafInput struct {
-	Kind SiteConditionLeafInputKind `json:"kind"`
-	// What it tests: a contact attribute (email, phone, subject_id, first_name, last_name, time_zone,
-	// country, locale, city), "tag", "telegram" (has a Telegram chat bound, on its own or through a
-	// Visitor; the value is ignored), "sms" (has a phone that can be texted: one with an SMS Confirmation
-	// and no SMS opt-out or Suppression; the value is ignored), "custom:" for a custom field of the
-	// workspace, or "trigger:" (a property of the Event that fired a rule: valid only in a rule, refused
-	// in a segment, takes the text operators, and is false when the Event lacks the key or holds a value
-	// that is not text; a number property is compared by a number leaf).
-	Field string `json:"field"`
-	// How the field is tested.
-	Operator SiteConditionOperator `json:"operator"`
-	// The value to test against: a tag name, blank for null and notNull.
-	Value OptString `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionLeafInput) GetKind() SiteConditionLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionLeafInput) GetOperator() SiteConditionOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *SiteConditionLeafInput) GetValue() OptString {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionLeafInput) SetKind(val SiteConditionLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionLeafInput) SetOperator(val SiteConditionOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteConditionLeafInput) SetValue(val OptString) {
-	s.Value = val
-}
-
-type SiteConditionLeafInputKind string
-
-const (
-	SiteConditionLeafInputKindRule SiteConditionLeafInputKind = "rule"
-)
-
-// AllValues returns all SiteConditionLeafInputKind values.
-func (SiteConditionLeafInputKind) AllValues() []SiteConditionLeafInputKind {
-	return []SiteConditionLeafInputKind{
-		SiteConditionLeafInputKindRule,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionLeafInputKindRule:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionLeafInputKind) UnmarshalText(data []byte) error {
-	switch SiteConditionLeafInputKind(data) {
-	case SiteConditionLeafInputKindRule:
-		*s = SiteConditionLeafInputKindRule
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SiteConditionLeafKind string
-
-const (
-	SiteConditionLeafKindRule SiteConditionLeafKind = "rule"
-)
-
-// AllValues returns all SiteConditionLeafKind values.
-func (SiteConditionLeafKind) AllValues() []SiteConditionLeafKind {
-	return []SiteConditionLeafKind{
-		SiteConditionLeafKindRule,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionLeafKindRule:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionLeafKind) UnmarshalText(data []byte) error {
-	switch SiteConditionLeafKind(data) {
-	case SiteConditionLeafKindRule:
-		*s = SiteConditionLeafKindRule
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
-// inside a condition group, discriminated by `kind`.
-// Ref: #/components/schemas/SiteConditionNode
-type SiteConditionNode struct {
-	OneOf SiteConditionNodeSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *SiteConditionNode) GetOneOf() SiteConditionNodeSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *SiteConditionNode) SetOneOf(val SiteConditionNodeSum) {
-	s.OneOf = val
-}
-
-// A leaf (a test of a field, an event count, a comparison of a number or of a date) or a nested group
-// inside a condition group, discriminated by `kind`.
-// Ref: #/components/schemas/SiteConditionNodeInput
-type SiteConditionNodeInput struct {
-	OneOf SiteConditionNodeInputSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *SiteConditionNodeInput) GetOneOf() SiteConditionNodeInputSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *SiteConditionNodeInput) SetOneOf(val SiteConditionNodeInputSum) {
-	s.OneOf = val
-}
-
-// SiteConditionNodeInputSum represents sum type.
-type SiteConditionNodeInputSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type                             SiteConditionNodeInputSumType
-	SiteConditionLeafInput           SiteConditionLeafInput
-	SiteConditionEventLeafInput      SiteConditionEventLeafInput
-	SiteConditionNumberLeafInput     SiteConditionNumberLeafInput
-	SiteConditionDateLeafInput       SiteConditionDateLeafInput
-	SiteConditionDateWithinLeafInput SiteConditionDateWithinLeafInput
-	SiteConditionGroupInput          SiteConditionGroupInput
-}
-
-// SiteConditionNodeInputSumType is oneOf type of SiteConditionNodeInputSum.
-type SiteConditionNodeInputSumType string
-
-// Possible values for SiteConditionNodeInputSumType.
-const (
-	SiteConditionLeafInputSiteConditionNodeInputSum           SiteConditionNodeInputSumType = "rule"
-	SiteConditionEventLeafInputSiteConditionNodeInputSum      SiteConditionNodeInputSumType = "event"
-	SiteConditionNumberLeafInputSiteConditionNodeInputSum     SiteConditionNodeInputSumType = "number"
-	SiteConditionDateLeafInputSiteConditionNodeInputSum       SiteConditionNodeInputSumType = "date"
-	SiteConditionDateWithinLeafInputSiteConditionNodeInputSum SiteConditionNodeInputSumType = "dateWithin"
-	SiteConditionGroupInputSiteConditionNodeInputSum          SiteConditionNodeInputSumType = "group"
-)
-
-// IsSiteConditionLeafInput reports whether SiteConditionNodeInputSum is SiteConditionLeafInput.
-func (s SiteConditionNodeInputSum) IsSiteConditionLeafInput() bool {
-	return s.Type == SiteConditionLeafInputSiteConditionNodeInputSum
-}
-
-// IsSiteConditionEventLeafInput reports whether SiteConditionNodeInputSum is SiteConditionEventLeafInput.
-func (s SiteConditionNodeInputSum) IsSiteConditionEventLeafInput() bool {
-	return s.Type == SiteConditionEventLeafInputSiteConditionNodeInputSum
-}
-
-// IsSiteConditionNumberLeafInput reports whether SiteConditionNodeInputSum is SiteConditionNumberLeafInput.
-func (s SiteConditionNodeInputSum) IsSiteConditionNumberLeafInput() bool {
-	return s.Type == SiteConditionNumberLeafInputSiteConditionNodeInputSum
-}
-
-// IsSiteConditionDateLeafInput reports whether SiteConditionNodeInputSum is SiteConditionDateLeafInput.
-func (s SiteConditionNodeInputSum) IsSiteConditionDateLeafInput() bool {
-	return s.Type == SiteConditionDateLeafInputSiteConditionNodeInputSum
-}
-
-// IsSiteConditionDateWithinLeafInput reports whether SiteConditionNodeInputSum is SiteConditionDateWithinLeafInput.
-func (s SiteConditionNodeInputSum) IsSiteConditionDateWithinLeafInput() bool {
-	return s.Type == SiteConditionDateWithinLeafInputSiteConditionNodeInputSum
-}
-
-// IsSiteConditionGroupInput reports whether SiteConditionNodeInputSum is SiteConditionGroupInput.
-func (s SiteConditionNodeInputSum) IsSiteConditionGroupInput() bool {
-	return s.Type == SiteConditionGroupInputSiteConditionNodeInputSum
-}
-
-// SetSiteConditionLeafInput sets SiteConditionNodeInputSum to SiteConditionLeafInput.
-func (s *SiteConditionNodeInputSum) SetSiteConditionLeafInput(v SiteConditionLeafInput) {
-	s.Type = SiteConditionLeafInputSiteConditionNodeInputSum
-	s.SiteConditionLeafInput = v
-}
-
-// GetSiteConditionLeafInput returns SiteConditionLeafInput and true boolean if SiteConditionNodeInputSum is SiteConditionLeafInput.
-func (s SiteConditionNodeInputSum) GetSiteConditionLeafInput() (v SiteConditionLeafInput, ok bool) {
-	if !s.IsSiteConditionLeafInput() {
-		return v, false
-	}
-	return s.SiteConditionLeafInput, true
-}
-
-// NewSiteConditionLeafInputSiteConditionNodeInputSum returns new SiteConditionNodeInputSum from SiteConditionLeafInput.
-func NewSiteConditionLeafInputSiteConditionNodeInputSum(v SiteConditionLeafInput) SiteConditionNodeInputSum {
-	var s SiteConditionNodeInputSum
-	s.SetSiteConditionLeafInput(v)
-	return s
-}
-
-// SetSiteConditionEventLeafInput sets SiteConditionNodeInputSum to SiteConditionEventLeafInput.
-func (s *SiteConditionNodeInputSum) SetSiteConditionEventLeafInput(v SiteConditionEventLeafInput) {
-	s.Type = SiteConditionEventLeafInputSiteConditionNodeInputSum
-	s.SiteConditionEventLeafInput = v
-}
-
-// GetSiteConditionEventLeafInput returns SiteConditionEventLeafInput and true boolean if SiteConditionNodeInputSum is SiteConditionEventLeafInput.
-func (s SiteConditionNodeInputSum) GetSiteConditionEventLeafInput() (v SiteConditionEventLeafInput, ok bool) {
-	if !s.IsSiteConditionEventLeafInput() {
-		return v, false
-	}
-	return s.SiteConditionEventLeafInput, true
-}
-
-// NewSiteConditionEventLeafInputSiteConditionNodeInputSum returns new SiteConditionNodeInputSum from SiteConditionEventLeafInput.
-func NewSiteConditionEventLeafInputSiteConditionNodeInputSum(v SiteConditionEventLeafInput) SiteConditionNodeInputSum {
-	var s SiteConditionNodeInputSum
-	s.SetSiteConditionEventLeafInput(v)
-	return s
-}
-
-// SetSiteConditionNumberLeafInput sets SiteConditionNodeInputSum to SiteConditionNumberLeafInput.
-func (s *SiteConditionNodeInputSum) SetSiteConditionNumberLeafInput(v SiteConditionNumberLeafInput) {
-	s.Type = SiteConditionNumberLeafInputSiteConditionNodeInputSum
-	s.SiteConditionNumberLeafInput = v
-}
-
-// GetSiteConditionNumberLeafInput returns SiteConditionNumberLeafInput and true boolean if SiteConditionNodeInputSum is SiteConditionNumberLeafInput.
-func (s SiteConditionNodeInputSum) GetSiteConditionNumberLeafInput() (v SiteConditionNumberLeafInput, ok bool) {
-	if !s.IsSiteConditionNumberLeafInput() {
-		return v, false
-	}
-	return s.SiteConditionNumberLeafInput, true
-}
-
-// NewSiteConditionNumberLeafInputSiteConditionNodeInputSum returns new SiteConditionNodeInputSum from SiteConditionNumberLeafInput.
-func NewSiteConditionNumberLeafInputSiteConditionNodeInputSum(v SiteConditionNumberLeafInput) SiteConditionNodeInputSum {
-	var s SiteConditionNodeInputSum
-	s.SetSiteConditionNumberLeafInput(v)
-	return s
-}
-
-// SetSiteConditionDateLeafInput sets SiteConditionNodeInputSum to SiteConditionDateLeafInput.
-func (s *SiteConditionNodeInputSum) SetSiteConditionDateLeafInput(v SiteConditionDateLeafInput) {
-	s.Type = SiteConditionDateLeafInputSiteConditionNodeInputSum
-	s.SiteConditionDateLeafInput = v
-}
-
-// GetSiteConditionDateLeafInput returns SiteConditionDateLeafInput and true boolean if SiteConditionNodeInputSum is SiteConditionDateLeafInput.
-func (s SiteConditionNodeInputSum) GetSiteConditionDateLeafInput() (v SiteConditionDateLeafInput, ok bool) {
-	if !s.IsSiteConditionDateLeafInput() {
-		return v, false
-	}
-	return s.SiteConditionDateLeafInput, true
-}
-
-// NewSiteConditionDateLeafInputSiteConditionNodeInputSum returns new SiteConditionNodeInputSum from SiteConditionDateLeafInput.
-func NewSiteConditionDateLeafInputSiteConditionNodeInputSum(v SiteConditionDateLeafInput) SiteConditionNodeInputSum {
-	var s SiteConditionNodeInputSum
-	s.SetSiteConditionDateLeafInput(v)
-	return s
-}
-
-// SetSiteConditionDateWithinLeafInput sets SiteConditionNodeInputSum to SiteConditionDateWithinLeafInput.
-func (s *SiteConditionNodeInputSum) SetSiteConditionDateWithinLeafInput(v SiteConditionDateWithinLeafInput) {
-	s.Type = SiteConditionDateWithinLeafInputSiteConditionNodeInputSum
-	s.SiteConditionDateWithinLeafInput = v
-}
-
-// GetSiteConditionDateWithinLeafInput returns SiteConditionDateWithinLeafInput and true boolean if SiteConditionNodeInputSum is SiteConditionDateWithinLeafInput.
-func (s SiteConditionNodeInputSum) GetSiteConditionDateWithinLeafInput() (v SiteConditionDateWithinLeafInput, ok bool) {
-	if !s.IsSiteConditionDateWithinLeafInput() {
-		return v, false
-	}
-	return s.SiteConditionDateWithinLeafInput, true
-}
-
-// NewSiteConditionDateWithinLeafInputSiteConditionNodeInputSum returns new SiteConditionNodeInputSum from SiteConditionDateWithinLeafInput.
-func NewSiteConditionDateWithinLeafInputSiteConditionNodeInputSum(v SiteConditionDateWithinLeafInput) SiteConditionNodeInputSum {
-	var s SiteConditionNodeInputSum
-	s.SetSiteConditionDateWithinLeafInput(v)
-	return s
-}
-
-// SetSiteConditionGroupInput sets SiteConditionNodeInputSum to SiteConditionGroupInput.
-func (s *SiteConditionNodeInputSum) SetSiteConditionGroupInput(v SiteConditionGroupInput) {
-	s.Type = SiteConditionGroupInputSiteConditionNodeInputSum
-	s.SiteConditionGroupInput = v
-}
-
-// GetSiteConditionGroupInput returns SiteConditionGroupInput and true boolean if SiteConditionNodeInputSum is SiteConditionGroupInput.
-func (s SiteConditionNodeInputSum) GetSiteConditionGroupInput() (v SiteConditionGroupInput, ok bool) {
-	if !s.IsSiteConditionGroupInput() {
-		return v, false
-	}
-	return s.SiteConditionGroupInput, true
-}
-
-// NewSiteConditionGroupInputSiteConditionNodeInputSum returns new SiteConditionNodeInputSum from SiteConditionGroupInput.
-func NewSiteConditionGroupInputSiteConditionNodeInputSum(v SiteConditionGroupInput) SiteConditionNodeInputSum {
-	var s SiteConditionNodeInputSum
-	s.SetSiteConditionGroupInput(v)
-	return s
-}
-
-// SiteConditionNodeSum represents sum type.
-type SiteConditionNodeSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type                        SiteConditionNodeSumType
-	SiteConditionLeaf           SiteConditionLeaf
-	SiteConditionEventLeaf      SiteConditionEventLeaf
-	SiteConditionNumberLeaf     SiteConditionNumberLeaf
-	SiteConditionDateLeaf       SiteConditionDateLeaf
-	SiteConditionDateWithinLeaf SiteConditionDateWithinLeaf
-	SiteConditionGroup          SiteConditionGroup
-}
-
-// SiteConditionNodeSumType is oneOf type of SiteConditionNodeSum.
-type SiteConditionNodeSumType string
-
-// Possible values for SiteConditionNodeSumType.
-const (
-	SiteConditionLeafSiteConditionNodeSum           SiteConditionNodeSumType = "rule"
-	SiteConditionEventLeafSiteConditionNodeSum      SiteConditionNodeSumType = "event"
-	SiteConditionNumberLeafSiteConditionNodeSum     SiteConditionNodeSumType = "number"
-	SiteConditionDateLeafSiteConditionNodeSum       SiteConditionNodeSumType = "date"
-	SiteConditionDateWithinLeafSiteConditionNodeSum SiteConditionNodeSumType = "dateWithin"
-	SiteConditionGroupSiteConditionNodeSum          SiteConditionNodeSumType = "group"
-)
-
-// IsSiteConditionLeaf reports whether SiteConditionNodeSum is SiteConditionLeaf.
-func (s SiteConditionNodeSum) IsSiteConditionLeaf() bool {
-	return s.Type == SiteConditionLeafSiteConditionNodeSum
-}
-
-// IsSiteConditionEventLeaf reports whether SiteConditionNodeSum is SiteConditionEventLeaf.
-func (s SiteConditionNodeSum) IsSiteConditionEventLeaf() bool {
-	return s.Type == SiteConditionEventLeafSiteConditionNodeSum
-}
-
-// IsSiteConditionNumberLeaf reports whether SiteConditionNodeSum is SiteConditionNumberLeaf.
-func (s SiteConditionNodeSum) IsSiteConditionNumberLeaf() bool {
-	return s.Type == SiteConditionNumberLeafSiteConditionNodeSum
-}
-
-// IsSiteConditionDateLeaf reports whether SiteConditionNodeSum is SiteConditionDateLeaf.
-func (s SiteConditionNodeSum) IsSiteConditionDateLeaf() bool {
-	return s.Type == SiteConditionDateLeafSiteConditionNodeSum
-}
-
-// IsSiteConditionDateWithinLeaf reports whether SiteConditionNodeSum is SiteConditionDateWithinLeaf.
-func (s SiteConditionNodeSum) IsSiteConditionDateWithinLeaf() bool {
-	return s.Type == SiteConditionDateWithinLeafSiteConditionNodeSum
-}
-
-// IsSiteConditionGroup reports whether SiteConditionNodeSum is SiteConditionGroup.
-func (s SiteConditionNodeSum) IsSiteConditionGroup() bool {
-	return s.Type == SiteConditionGroupSiteConditionNodeSum
-}
-
-// SetSiteConditionLeaf sets SiteConditionNodeSum to SiteConditionLeaf.
-func (s *SiteConditionNodeSum) SetSiteConditionLeaf(v SiteConditionLeaf) {
-	s.Type = SiteConditionLeafSiteConditionNodeSum
-	s.SiteConditionLeaf = v
-}
-
-// GetSiteConditionLeaf returns SiteConditionLeaf and true boolean if SiteConditionNodeSum is SiteConditionLeaf.
-func (s SiteConditionNodeSum) GetSiteConditionLeaf() (v SiteConditionLeaf, ok bool) {
-	if !s.IsSiteConditionLeaf() {
-		return v, false
-	}
-	return s.SiteConditionLeaf, true
-}
-
-// NewSiteConditionLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionLeaf.
-func NewSiteConditionLeafSiteConditionNodeSum(v SiteConditionLeaf) SiteConditionNodeSum {
-	var s SiteConditionNodeSum
-	s.SetSiteConditionLeaf(v)
-	return s
-}
-
-// SetSiteConditionEventLeaf sets SiteConditionNodeSum to SiteConditionEventLeaf.
-func (s *SiteConditionNodeSum) SetSiteConditionEventLeaf(v SiteConditionEventLeaf) {
-	s.Type = SiteConditionEventLeafSiteConditionNodeSum
-	s.SiteConditionEventLeaf = v
-}
-
-// GetSiteConditionEventLeaf returns SiteConditionEventLeaf and true boolean if SiteConditionNodeSum is SiteConditionEventLeaf.
-func (s SiteConditionNodeSum) GetSiteConditionEventLeaf() (v SiteConditionEventLeaf, ok bool) {
-	if !s.IsSiteConditionEventLeaf() {
-		return v, false
-	}
-	return s.SiteConditionEventLeaf, true
-}
-
-// NewSiteConditionEventLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionEventLeaf.
-func NewSiteConditionEventLeafSiteConditionNodeSum(v SiteConditionEventLeaf) SiteConditionNodeSum {
-	var s SiteConditionNodeSum
-	s.SetSiteConditionEventLeaf(v)
-	return s
-}
-
-// SetSiteConditionNumberLeaf sets SiteConditionNodeSum to SiteConditionNumberLeaf.
-func (s *SiteConditionNodeSum) SetSiteConditionNumberLeaf(v SiteConditionNumberLeaf) {
-	s.Type = SiteConditionNumberLeafSiteConditionNodeSum
-	s.SiteConditionNumberLeaf = v
-}
-
-// GetSiteConditionNumberLeaf returns SiteConditionNumberLeaf and true boolean if SiteConditionNodeSum is SiteConditionNumberLeaf.
-func (s SiteConditionNodeSum) GetSiteConditionNumberLeaf() (v SiteConditionNumberLeaf, ok bool) {
-	if !s.IsSiteConditionNumberLeaf() {
-		return v, false
-	}
-	return s.SiteConditionNumberLeaf, true
-}
-
-// NewSiteConditionNumberLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionNumberLeaf.
-func NewSiteConditionNumberLeafSiteConditionNodeSum(v SiteConditionNumberLeaf) SiteConditionNodeSum {
-	var s SiteConditionNodeSum
-	s.SetSiteConditionNumberLeaf(v)
-	return s
-}
-
-// SetSiteConditionDateLeaf sets SiteConditionNodeSum to SiteConditionDateLeaf.
-func (s *SiteConditionNodeSum) SetSiteConditionDateLeaf(v SiteConditionDateLeaf) {
-	s.Type = SiteConditionDateLeafSiteConditionNodeSum
-	s.SiteConditionDateLeaf = v
-}
-
-// GetSiteConditionDateLeaf returns SiteConditionDateLeaf and true boolean if SiteConditionNodeSum is SiteConditionDateLeaf.
-func (s SiteConditionNodeSum) GetSiteConditionDateLeaf() (v SiteConditionDateLeaf, ok bool) {
-	if !s.IsSiteConditionDateLeaf() {
-		return v, false
-	}
-	return s.SiteConditionDateLeaf, true
-}
-
-// NewSiteConditionDateLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionDateLeaf.
-func NewSiteConditionDateLeafSiteConditionNodeSum(v SiteConditionDateLeaf) SiteConditionNodeSum {
-	var s SiteConditionNodeSum
-	s.SetSiteConditionDateLeaf(v)
-	return s
-}
-
-// SetSiteConditionDateWithinLeaf sets SiteConditionNodeSum to SiteConditionDateWithinLeaf.
-func (s *SiteConditionNodeSum) SetSiteConditionDateWithinLeaf(v SiteConditionDateWithinLeaf) {
-	s.Type = SiteConditionDateWithinLeafSiteConditionNodeSum
-	s.SiteConditionDateWithinLeaf = v
-}
-
-// GetSiteConditionDateWithinLeaf returns SiteConditionDateWithinLeaf and true boolean if SiteConditionNodeSum is SiteConditionDateWithinLeaf.
-func (s SiteConditionNodeSum) GetSiteConditionDateWithinLeaf() (v SiteConditionDateWithinLeaf, ok bool) {
-	if !s.IsSiteConditionDateWithinLeaf() {
-		return v, false
-	}
-	return s.SiteConditionDateWithinLeaf, true
-}
-
-// NewSiteConditionDateWithinLeafSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionDateWithinLeaf.
-func NewSiteConditionDateWithinLeafSiteConditionNodeSum(v SiteConditionDateWithinLeaf) SiteConditionNodeSum {
-	var s SiteConditionNodeSum
-	s.SetSiteConditionDateWithinLeaf(v)
-	return s
-}
-
-// SetSiteConditionGroup sets SiteConditionNodeSum to SiteConditionGroup.
-func (s *SiteConditionNodeSum) SetSiteConditionGroup(v SiteConditionGroup) {
-	s.Type = SiteConditionGroupSiteConditionNodeSum
-	s.SiteConditionGroup = v
-}
-
-// GetSiteConditionGroup returns SiteConditionGroup and true boolean if SiteConditionNodeSum is SiteConditionGroup.
-func (s SiteConditionNodeSum) GetSiteConditionGroup() (v SiteConditionGroup, ok bool) {
-	if !s.IsSiteConditionGroup() {
-		return v, false
-	}
-	return s.SiteConditionGroup, true
-}
-
-// NewSiteConditionGroupSiteConditionNodeSum returns new SiteConditionNodeSum from SiteConditionGroup.
-func NewSiteConditionGroupSiteConditionNodeSum(v SiteConditionGroup) SiteConditionNodeSum {
-	var s SiteConditionNodeSum
-	s.SetSiteConditionGroup(v)
-	return s
-}
-
-// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
-// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
-// value that is not a number (text, a boolean, null, a list), makes the leaf false.
-// Ref: #/components/schemas/SiteConditionNumberLeaf
-type SiteConditionNumberLeaf struct {
-	Kind SiteConditionNumberLeafKind `json:"kind"`
-	// What it compares: "custom:" for a number custom field, or "trigger:".
-	Field string `json:"field"`
-	// How the field compares with `value`.
-	Operator SiteConditionNumberOperator `json:"operator"`
-	// The number the field is compared with.
-	Value float64 `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionNumberLeaf) GetKind() SiteConditionNumberLeafKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionNumberLeaf) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionNumberLeaf) GetOperator() SiteConditionNumberOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *SiteConditionNumberLeaf) GetValue() float64 {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionNumberLeaf) SetKind(val SiteConditionNumberLeafKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionNumberLeaf) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionNumberLeaf) SetOperator(val SiteConditionNumberOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteConditionNumberLeaf) SetValue(val float64) {
-	s.Value = val
-}
-
-// A comparison of a number: a custom field of the workspace whose type is number ("custom:"), or a
-// property of the Event that fired a rule ("trigger:", valid only in a rule). A missing key, or a
-// value that is not a number (text, a boolean, null, a list), makes the leaf false.
-// Ref: #/components/schemas/SiteConditionNumberLeafInput
-type SiteConditionNumberLeafInput struct {
-	Kind SiteConditionNumberLeafInputKind `json:"kind"`
-	// What it compares: "custom:" for a number custom field, or "trigger:".
-	Field string `json:"field"`
-	// How the field compares with `value`.
-	Operator SiteConditionNumberOperator `json:"operator"`
-	// The number the field is compared with.
-	Value float64 `json:"value"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteConditionNumberLeafInput) GetKind() SiteConditionNumberLeafInputKind {
-	return s.Kind
-}
-
-// GetField returns the value of Field.
-func (s *SiteConditionNumberLeafInput) GetField() string {
-	return s.Field
-}
-
-// GetOperator returns the value of Operator.
-func (s *SiteConditionNumberLeafInput) GetOperator() SiteConditionNumberOperator {
-	return s.Operator
-}
-
-// GetValue returns the value of Value.
-func (s *SiteConditionNumberLeafInput) GetValue() float64 {
-	return s.Value
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteConditionNumberLeafInput) SetKind(val SiteConditionNumberLeafInputKind) {
-	s.Kind = val
-}
-
-// SetField sets the value of Field.
-func (s *SiteConditionNumberLeafInput) SetField(val string) {
-	s.Field = val
-}
-
-// SetOperator sets the value of Operator.
-func (s *SiteConditionNumberLeafInput) SetOperator(val SiteConditionNumberOperator) {
-	s.Operator = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteConditionNumberLeafInput) SetValue(val float64) {
-	s.Value = val
-}
-
-type SiteConditionNumberLeafInputKind string
-
-const (
-	SiteConditionNumberLeafInputKindNumber SiteConditionNumberLeafInputKind = "number"
-)
-
-// AllValues returns all SiteConditionNumberLeafInputKind values.
-func (SiteConditionNumberLeafInputKind) AllValues() []SiteConditionNumberLeafInputKind {
-	return []SiteConditionNumberLeafInputKind{
-		SiteConditionNumberLeafInputKindNumber,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionNumberLeafInputKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionNumberLeafInputKindNumber:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionNumberLeafInputKind) UnmarshalText(data []byte) error {
-	switch SiteConditionNumberLeafInputKind(data) {
-	case SiteConditionNumberLeafInputKindNumber:
-		*s = SiteConditionNumberLeafInputKindNumber
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-type SiteConditionNumberLeafKind string
-
-const (
-	SiteConditionNumberLeafKindNumber SiteConditionNumberLeafKind = "number"
-)
-
-// AllValues returns all SiteConditionNumberLeafKind values.
-func (SiteConditionNumberLeafKind) AllValues() []SiteConditionNumberLeafKind {
-	return []SiteConditionNumberLeafKind{
-		SiteConditionNumberLeafKindNumber,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionNumberLeafKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionNumberLeafKindNumber:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionNumberLeafKind) UnmarshalText(data []byte) error {
-	switch SiteConditionNumberLeafKind(data) {
-	case SiteConditionNumberLeafKindNumber:
-		*s = SiteConditionNumberLeafKindNumber
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// How a number leaf compares the field with `value`: greater than, greater than or equal, less than,
-// or less than or equal.
-// Ref: #/components/schemas/SiteConditionNumberOperator
-type SiteConditionNumberOperator string
-
-const (
-	SiteConditionNumberOperatorGt  SiteConditionNumberOperator = "gt"
-	SiteConditionNumberOperatorGte SiteConditionNumberOperator = "gte"
-	SiteConditionNumberOperatorLt  SiteConditionNumberOperator = "lt"
-	SiteConditionNumberOperatorLte SiteConditionNumberOperator = "lte"
-)
-
-// AllValues returns all SiteConditionNumberOperator values.
-func (SiteConditionNumberOperator) AllValues() []SiteConditionNumberOperator {
-	return []SiteConditionNumberOperator{
-		SiteConditionNumberOperatorGt,
-		SiteConditionNumberOperatorGte,
-		SiteConditionNumberOperatorLt,
-		SiteConditionNumberOperatorLte,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionNumberOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionNumberOperatorGt:
-		return []byte(s), nil
-	case SiteConditionNumberOperatorGte:
-		return []byte(s), nil
-	case SiteConditionNumberOperatorLt:
-		return []byte(s), nil
-	case SiteConditionNumberOperatorLte:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionNumberOperator) UnmarshalText(data []byte) error {
-	switch SiteConditionNumberOperator(data) {
-	case SiteConditionNumberOperatorGt:
-		*s = SiteConditionNumberOperatorGt
-		return nil
-	case SiteConditionNumberOperatorGte:
-		*s = SiteConditionNumberOperatorGte
-		return nil
-	case SiteConditionNumberOperatorLt:
-		*s = SiteConditionNumberOperatorLt
-		return nil
-	case SiteConditionNumberOperatorLte:
-		*s = SiteConditionNumberOperatorLte
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// What a condition leaf tests. A text attribute takes eq, neq, contains, beginsWith, null and notNull;
-// the tag, telegram and sms fields take has and doesNotHave; a custom field takes the operators of its
-// type, which the custom field lists as `ruleOperators` (a number custom field is also compared by a
-// number leaf, a datetime one tested by the date leaves).
-// Ref: #/components/schemas/SiteConditionOperator
-type SiteConditionOperator string
-
-const (
-	SiteConditionOperatorEq          SiteConditionOperator = "eq"
-	SiteConditionOperatorNeq         SiteConditionOperator = "neq"
-	SiteConditionOperatorContains    SiteConditionOperator = "contains"
-	SiteConditionOperatorBeginsWith  SiteConditionOperator = "beginsWith"
-	SiteConditionOperatorNull        SiteConditionOperator = "null"
-	SiteConditionOperatorNotNull     SiteConditionOperator = "notNull"
-	SiteConditionOperatorHas         SiteConditionOperator = "has"
-	SiteConditionOperatorDoesNotHave SiteConditionOperator = "doesNotHave"
-)
-
-// AllValues returns all SiteConditionOperator values.
-func (SiteConditionOperator) AllValues() []SiteConditionOperator {
-	return []SiteConditionOperator{
-		SiteConditionOperatorEq,
-		SiteConditionOperatorNeq,
-		SiteConditionOperatorContains,
-		SiteConditionOperatorBeginsWith,
-		SiteConditionOperatorNull,
-		SiteConditionOperatorNotNull,
-		SiteConditionOperatorHas,
-		SiteConditionOperatorDoesNotHave,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteConditionOperator) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteConditionOperatorEq:
-		return []byte(s), nil
-	case SiteConditionOperatorNeq:
-		return []byte(s), nil
-	case SiteConditionOperatorContains:
-		return []byte(s), nil
-	case SiteConditionOperatorBeginsWith:
-		return []byte(s), nil
-	case SiteConditionOperatorNull:
-		return []byte(s), nil
-	case SiteConditionOperatorNotNull:
-		return []byte(s), nil
-	case SiteConditionOperatorHas:
-		return []byte(s), nil
-	case SiteConditionOperatorDoesNotHave:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteConditionOperator) UnmarshalText(data []byte) error {
-	switch SiteConditionOperator(data) {
-	case SiteConditionOperatorEq:
-		*s = SiteConditionOperatorEq
-		return nil
-	case SiteConditionOperatorNeq:
-		*s = SiteConditionOperatorNeq
-		return nil
-	case SiteConditionOperatorContains:
-		*s = SiteConditionOperatorContains
-		return nil
-	case SiteConditionOperatorBeginsWith:
-		*s = SiteConditionOperatorBeginsWith
-		return nil
-	case SiteConditionOperatorNull:
-		*s = SiteConditionOperatorNull
-		return nil
-	case SiteConditionOperatorNotNull:
-		*s = SiteConditionOperatorNotNull
-		return nil
-	case SiteConditionOperatorHas:
-		*s = SiteConditionOperatorHas
-		return nil
-	case SiteConditionOperatorDoesNotHave:
-		*s = SiteConditionOperatorDoesNotHave
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 // Confirm a requested email change using the token sent to the new address.
@@ -17781,70 +20127,6 @@ func (s *SiteContactsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-// Site request body for creating an automation.
-// Ref: #/components/schemas/SiteCreateAutomationInput
-type SiteCreateAutomationInput struct {
-	Name         Name   `json:"name"`
-	TriggerEvent string `json:"triggerEvent"`
-	// Event actions that end an active enrollment early; none of them may be the trigger. Each follows the
-	// trigger's rule: any customer action, and of the email events only opened, clicked and unsubscribed.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached; it may be neither the trigger nor an
-	// exit event. Null or omitted is none.
-	GoalEvent OptNilString              `json:"goalEvent"`
-	Steps     []SiteAutomationStepInput `json:"steps"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteCreateAutomationInput) GetName() Name {
-	return s.Name
-}
-
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *SiteCreateAutomationInput) GetTriggerEvent() string {
-	return s.TriggerEvent
-}
-
-// GetExitEvents returns the value of ExitEvents.
-func (s *SiteCreateAutomationInput) GetExitEvents() []string {
-	return s.ExitEvents
-}
-
-// GetGoalEvent returns the value of GoalEvent.
-func (s *SiteCreateAutomationInput) GetGoalEvent() OptNilString {
-	return s.GoalEvent
-}
-
-// GetSteps returns the value of Steps.
-func (s *SiteCreateAutomationInput) GetSteps() []SiteAutomationStepInput {
-	return s.Steps
-}
-
-// SetName sets the value of Name.
-func (s *SiteCreateAutomationInput) SetName(val Name) {
-	s.Name = val
-}
-
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *SiteCreateAutomationInput) SetTriggerEvent(val string) {
-	s.TriggerEvent = val
-}
-
-// SetExitEvents sets the value of ExitEvents.
-func (s *SiteCreateAutomationInput) SetExitEvents(val []string) {
-	s.ExitEvents = val
-}
-
-// SetGoalEvent sets the value of GoalEvent.
-func (s *SiteCreateAutomationInput) SetGoalEvent(val OptNilString) {
-	s.GoalEvent = val
-}
-
-// SetSteps sets the value of Steps.
-func (s *SiteCreateAutomationInput) SetSteps(val []SiteAutomationStepInput) {
-	s.Steps = val
-}
-
 // Site request body for creating a contact: the attributes /api takes, and its tags. The app's contact
 // form sets the tags in the same save; /api tags a contact through its own operations (`tags_apply`,
 // `tags_remove`), which is why its body has no tags.
@@ -18134,98 +20416,18 @@ func (s *SiteCreatePersonalTokenResponse) SetResource(val SitePersonalTokenResou
 	s.Resource = val
 }
 
-// Site request body for creating a Rule: it is created inactive, with its definition as the draft.
-// Ref: #/components/schemas/SiteCreateRuleInput
-type SiteCreateRuleInput struct {
-	Name Name `json:"name"`
-	// The Event actions that make the Rule fire; at least one.
-	TriggerEvents []string                   `json:"triggerEvents"`
-	Condition     OptSiteConditionGroupInput `json:"condition"`
-	// The Actions to run, in order.
-	Actions []SiteRuleActionInput `json:"actions"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteCreateRuleInput) GetName() Name {
-	return s.Name
-}
-
-// GetTriggerEvents returns the value of TriggerEvents.
-func (s *SiteCreateRuleInput) GetTriggerEvents() []string {
-	return s.TriggerEvents
-}
-
-// GetCondition returns the value of Condition.
-func (s *SiteCreateRuleInput) GetCondition() OptSiteConditionGroupInput {
-	return s.Condition
-}
-
-// GetActions returns the value of Actions.
-func (s *SiteCreateRuleInput) GetActions() []SiteRuleActionInput {
-	return s.Actions
-}
-
-// SetName sets the value of Name.
-func (s *SiteCreateRuleInput) SetName(val Name) {
-	s.Name = val
-}
-
-// SetTriggerEvents sets the value of TriggerEvents.
-func (s *SiteCreateRuleInput) SetTriggerEvents(val []string) {
-	s.TriggerEvents = val
-}
-
-// SetCondition sets the value of Condition.
-func (s *SiteCreateRuleInput) SetCondition(val OptSiteConditionGroupInput) {
-	s.Condition = val
-}
-
-// SetActions sets the value of Actions.
-func (s *SiteCreateRuleInput) SetActions(val []SiteRuleActionInput) {
-	s.Actions = val
-}
-
-// Site request body for creating a segment.
-// Ref: #/components/schemas/SiteCreateSegmentInput
-type SiteCreateSegmentInput struct {
-	// Segment name.
-	Name Name `json:"name"`
-	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition SiteConditionGroupInput `json:"condition"`
-}
-
-// GetName returns the value of Name.
-func (s *SiteCreateSegmentInput) GetName() Name {
-	return s.Name
-}
-
-// GetCondition returns the value of Condition.
-func (s *SiteCreateSegmentInput) GetCondition() SiteConditionGroupInput {
-	return s.Condition
-}
-
-// SetName sets the value of Name.
-func (s *SiteCreateSegmentInput) SetName(val Name) {
-	s.Name = val
-}
-
-// SetCondition sets the value of Condition.
-func (s *SiteCreateSegmentInput) SetCondition(val SiteConditionGroupInput) {
-	s.Condition = val
-}
-
 // Site request body for manually suppressing a destination.
 // Ref: #/components/schemas/SiteCreateSuppressionInput
 type SiteCreateSuppressionInput struct {
 	// Channel (defaults to email when omitted).
-	Channel OptSiteSuppressionChannel `json:"channel"`
+	Channel OptSuppressionChannel `json:"channel"`
 	// The destination to suppress: an email address on `email`, a Telegram user id (digits) on `telegram`,
 	// a phone number with its country code on `sms` (stored in E.164).
 	Destination string `json:"destination"`
 }
 
 // GetChannel returns the value of Channel.
-func (s *SiteCreateSuppressionInput) GetChannel() OptSiteSuppressionChannel {
+func (s *SiteCreateSuppressionInput) GetChannel() OptSuppressionChannel {
 	return s.Channel
 }
 
@@ -18235,7 +20437,7 @@ func (s *SiteCreateSuppressionInput) GetDestination() string {
 }
 
 // SetChannel sets the value of Channel.
-func (s *SiteCreateSuppressionInput) SetChannel(val OptSiteSuppressionChannel) {
+func (s *SiteCreateSuppressionInput) SetChannel(val OptSuppressionChannel) {
 	s.Channel = val
 }
 
@@ -18337,9 +20539,9 @@ type SiteCustomFieldResource struct {
 	// Display name (renameable).
 	Name string `json:"name"`
 	// Value type: inferred from the first value, changed by an owner or admin.
-	Type SiteCustomFieldType `json:"type"`
+	Type CustomFieldType `json:"type"`
 	// The operators a rule leaf on this field takes, by its type.
-	RuleOperators []SiteConditionOperator `json:"ruleOperators"`
+	RuleOperators []ConditionOperator `json:"ruleOperators"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
 	Revision Revision `json:"revision"`
 	// Creation timestamp.
@@ -18364,12 +20566,12 @@ func (s *SiteCustomFieldResource) GetName() string {
 }
 
 // GetType returns the value of Type.
-func (s *SiteCustomFieldResource) GetType() SiteCustomFieldType {
+func (s *SiteCustomFieldResource) GetType() CustomFieldType {
 	return s.Type
 }
 
 // GetRuleOperators returns the value of RuleOperators.
-func (s *SiteCustomFieldResource) GetRuleOperators() []SiteConditionOperator {
+func (s *SiteCustomFieldResource) GetRuleOperators() []ConditionOperator {
 	return s.RuleOperators
 }
 
@@ -18404,12 +20606,12 @@ func (s *SiteCustomFieldResource) SetName(val string) {
 }
 
 // SetType sets the value of Type.
-func (s *SiteCustomFieldResource) SetType(val SiteCustomFieldType) {
+func (s *SiteCustomFieldResource) SetType(val CustomFieldType) {
 	s.Type = val
 }
 
 // SetRuleOperators sets the value of RuleOperators.
-func (s *SiteCustomFieldResource) SetRuleOperators(val []SiteConditionOperator) {
+func (s *SiteCustomFieldResource) SetRuleOperators(val []ConditionOperator) {
 	s.RuleOperators = val
 }
 
@@ -18426,63 +20628,6 @@ func (s *SiteCustomFieldResource) SetCreatedAt(val Timestamp) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *SiteCustomFieldResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
-}
-
-// A Custom field's value type.
-// Ref: #/components/schemas/SiteCustomFieldType
-type SiteCustomFieldType string
-
-const (
-	SiteCustomFieldTypeString   SiteCustomFieldType = "string"
-	SiteCustomFieldTypeNumber   SiteCustomFieldType = "number"
-	SiteCustomFieldTypeBool     SiteCustomFieldType = "bool"
-	SiteCustomFieldTypeDatetime SiteCustomFieldType = "datetime"
-)
-
-// AllValues returns all SiteCustomFieldType values.
-func (SiteCustomFieldType) AllValues() []SiteCustomFieldType {
-	return []SiteCustomFieldType{
-		SiteCustomFieldTypeString,
-		SiteCustomFieldTypeNumber,
-		SiteCustomFieldTypeBool,
-		SiteCustomFieldTypeDatetime,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteCustomFieldType) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteCustomFieldTypeString:
-		return []byte(s), nil
-	case SiteCustomFieldTypeNumber:
-		return []byte(s), nil
-	case SiteCustomFieldTypeBool:
-		return []byte(s), nil
-	case SiteCustomFieldTypeDatetime:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteCustomFieldType) UnmarshalText(data []byte) error {
-	switch SiteCustomFieldType(data) {
-	case SiteCustomFieldTypeString:
-		*s = SiteCustomFieldTypeString
-		return nil
-	case SiteCustomFieldTypeNumber:
-		*s = SiteCustomFieldTypeNumber
-		return nil
-	case SiteCustomFieldTypeBool:
-		*s = SiteCustomFieldTypeBool
-		return nil
-	case SiteCustomFieldTypeDatetime:
-		*s = SiteCustomFieldTypeDatetime
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 // Paginated response.
@@ -18705,82 +20850,6 @@ func (s *SiteDeletedWorkspaceResource) SetOnlyOwner(val bool) {
 	s.OnlyOwner = val
 }
 
-// A TXT record the user publishes: a sending domain's DKIM key, or a tracking domain's ownership.
-// Ref: #/components/schemas/SiteDnsRecord
-type SiteDnsRecord struct {
-	// The record type (always TXT for the records we generate).
-	Type SiteDnsRecordType `json:"type"`
-	// The host / name to create the record at.
-	Host string `json:"host"`
-	// The record value to publish.
-	Value string `json:"value"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteDnsRecord) GetType() SiteDnsRecordType {
-	return s.Type
-}
-
-// GetHost returns the value of Host.
-func (s *SiteDnsRecord) GetHost() string {
-	return s.Host
-}
-
-// GetValue returns the value of Value.
-func (s *SiteDnsRecord) GetValue() string {
-	return s.Value
-}
-
-// SetType sets the value of Type.
-func (s *SiteDnsRecord) SetType(val SiteDnsRecordType) {
-	s.Type = val
-}
-
-// SetHost sets the value of Host.
-func (s *SiteDnsRecord) SetHost(val string) {
-	s.Host = val
-}
-
-// SetValue sets the value of Value.
-func (s *SiteDnsRecord) SetValue(val string) {
-	s.Value = val
-}
-
-// The record type (always TXT for the records we generate).
-type SiteDnsRecordType string
-
-const (
-	SiteDnsRecordTypeTXT SiteDnsRecordType = "TXT"
-)
-
-// AllValues returns all SiteDnsRecordType values.
-func (SiteDnsRecordType) AllValues() []SiteDnsRecordType {
-	return []SiteDnsRecordType{
-		SiteDnsRecordTypeTXT,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteDnsRecordType) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteDnsRecordTypeTXT:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteDnsRecordType) UnmarshalText(data []byte) error {
-	switch SiteDnsRecordType(data) {
-	case SiteDnsRecordTypeTXT:
-		*s = SiteDnsRecordTypeTXT
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // Whether the Workspace admits Users by Join domain.
 // Ref: #/components/schemas/SiteDomainJoinResource
 type SiteDomainJoinResource struct {
@@ -18809,93 +20878,6 @@ func (s *SiteDomainJoinResource) SetEnabled(val bool) {
 // SetRevision sets the value of Revision.
 func (s *SiteDomainJoinResource) SetRevision(val Revision) {
 	s.Revision = val
-}
-
-// Request body for rendering an HTTP step's body for a Contact.
-// Ref: #/components/schemas/SiteDryRunHttpStepInput
-type SiteDryRunHttpStepInput struct {
-	// The Liquid JSON body to render. No Enrollment stands behind a dry run, so `event` is empty.
-	Body string `json:"body"`
-	// The Contact whose values fill the template.
-	ContactId EntityId `json:"contactId"`
-}
-
-// GetBody returns the value of Body.
-func (s *SiteDryRunHttpStepInput) GetBody() string {
-	return s.Body
-}
-
-// GetContactId returns the value of ContactId.
-func (s *SiteDryRunHttpStepInput) GetContactId() EntityId {
-	return s.ContactId
-}
-
-// SetBody sets the value of Body.
-func (s *SiteDryRunHttpStepInput) SetBody(val string) {
-	s.Body = val
-}
-
-// SetContactId sets the value of ContactId.
-func (s *SiteDryRunHttpStepInput) SetContactId(val EntityId) {
-	s.ContactId = val
-}
-
-// The body rendered for a Contact, or the kind of error that stopped it. Nothing is called.
-// Ref: #/components/schemas/SiteDryRunHttpStepResult
-type SiteDryRunHttpStepResult struct {
-	// The rendered, valid JSON body. Absent when errorKind is set.
-	Body OptString `json:"body"`
-	// Why the body could not be rendered.
-	ErrorKind OptSiteAutomationHttpErrorKind `json:"errorKind"`
-	// Human-readable detail of the error.
-	Detail OptString `json:"detail"`
-}
-
-// GetBody returns the value of Body.
-func (s *SiteDryRunHttpStepResult) GetBody() OptString {
-	return s.Body
-}
-
-// GetErrorKind returns the value of ErrorKind.
-func (s *SiteDryRunHttpStepResult) GetErrorKind() OptSiteAutomationHttpErrorKind {
-	return s.ErrorKind
-}
-
-// GetDetail returns the value of Detail.
-func (s *SiteDryRunHttpStepResult) GetDetail() OptString {
-	return s.Detail
-}
-
-// SetBody sets the value of Body.
-func (s *SiteDryRunHttpStepResult) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetErrorKind sets the value of ErrorKind.
-func (s *SiteDryRunHttpStepResult) SetErrorKind(val OptSiteAutomationHttpErrorKind) {
-	s.ErrorKind = val
-}
-
-// SetDetail sets the value of Detail.
-func (s *SiteDryRunHttpStepResult) SetDetail(val OptString) {
-	s.Detail = val
-}
-
-// Site request body for dry-running a Rule on a stored Event.
-// Ref: #/components/schemas/SiteDryRunRuleInput
-type SiteDryRunRuleInput struct {
-	// The stored Event to try the Rule on.
-	EventId EntityId `json:"eventId"`
-}
-
-// GetEventId returns the value of EventId.
-func (s *SiteDryRunRuleInput) GetEventId() EntityId {
-	return s.EventId
-}
-
-// SetEventId sets the value of EventId.
-func (s *SiteDryRunRuleInput) SetEventId(val EntityId) {
-	s.EventId = val
 }
 
 // Request a change of the login email. The new address must be confirmed via a link sent to it before
@@ -19054,293 +21036,10 @@ func (s *SiteEmailTemplateResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
 }
 
-// What an HTTP step recorded when it failed an Enrollment; absent on any other Enrollment.
-// Ref: #/components/schemas/SiteEnrollmentFailure
-type SiteEnrollmentFailure struct {
-	// The closed error kind.
-	Kind SiteEnrollmentFailureKind `json:"kind"`
-	// HTTP status the receiver answered; present only for kind `http_status`.
-	Status OptInt32 `json:"status"`
-	// The first 1 KiB of the receiver's answer, when it sent one.
-	Excerpt OptString `json:"excerpt"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteEnrollmentFailure) GetKind() SiteEnrollmentFailureKind {
-	return s.Kind
-}
-
-// GetStatus returns the value of Status.
-func (s *SiteEnrollmentFailure) GetStatus() OptInt32 {
-	return s.Status
-}
-
-// GetExcerpt returns the value of Excerpt.
-func (s *SiteEnrollmentFailure) GetExcerpt() OptString {
-	return s.Excerpt
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteEnrollmentFailure) SetKind(val SiteEnrollmentFailureKind) {
-	s.Kind = val
-}
-
-// SetStatus sets the value of Status.
-func (s *SiteEnrollmentFailure) SetStatus(val OptInt32) {
-	s.Status = val
-}
-
-// SetExcerpt sets the value of Excerpt.
-func (s *SiteEnrollmentFailure) SetExcerpt(val OptString) {
-	s.Excerpt = val
-}
-
-// Why an Enrollment failed. A closed set: `invalid_body`, `timeout`, `blocked_address`, `http_status`
-// (see `status`) and `network`.
-// Ref: #/components/schemas/SiteEnrollmentFailureKind
-type SiteEnrollmentFailureKind string
-
-const (
-	SiteEnrollmentFailureKindInvalidBody    SiteEnrollmentFailureKind = "invalid_body"
-	SiteEnrollmentFailureKindTimeout        SiteEnrollmentFailureKind = "timeout"
-	SiteEnrollmentFailureKindBlockedAddress SiteEnrollmentFailureKind = "blocked_address"
-	SiteEnrollmentFailureKindHTTPStatus     SiteEnrollmentFailureKind = "http_status"
-	SiteEnrollmentFailureKindNetwork        SiteEnrollmentFailureKind = "network"
-)
-
-// AllValues returns all SiteEnrollmentFailureKind values.
-func (SiteEnrollmentFailureKind) AllValues() []SiteEnrollmentFailureKind {
-	return []SiteEnrollmentFailureKind{
-		SiteEnrollmentFailureKindInvalidBody,
-		SiteEnrollmentFailureKindTimeout,
-		SiteEnrollmentFailureKindBlockedAddress,
-		SiteEnrollmentFailureKindHTTPStatus,
-		SiteEnrollmentFailureKindNetwork,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteEnrollmentFailureKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteEnrollmentFailureKindInvalidBody:
-		return []byte(s), nil
-	case SiteEnrollmentFailureKindTimeout:
-		return []byte(s), nil
-	case SiteEnrollmentFailureKindBlockedAddress:
-		return []byte(s), nil
-	case SiteEnrollmentFailureKindHTTPStatus:
-		return []byte(s), nil
-	case SiteEnrollmentFailureKindNetwork:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteEnrollmentFailureKind) UnmarshalText(data []byte) error {
-	switch SiteEnrollmentFailureKind(data) {
-	case SiteEnrollmentFailureKindInvalidBody:
-		*s = SiteEnrollmentFailureKindInvalidBody
-		return nil
-	case SiteEnrollmentFailureKindTimeout:
-		*s = SiteEnrollmentFailureKindTimeout
-		return nil
-	case SiteEnrollmentFailureKindBlockedAddress:
-		*s = SiteEnrollmentFailureKindBlockedAddress
-		return nil
-	case SiteEnrollmentFailureKindHTTPStatus:
-		*s = SiteEnrollmentFailureKindHTTPStatus
-		return nil
-	case SiteEnrollmentFailureKindNetwork:
-		*s = SiteEnrollmentFailureKindNetwork
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One Contact's progress through an Automation.
-// Ref: #/components/schemas/SiteEnrollmentResource
-type SiteEnrollmentResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// The Automation the Contact was enrolled in.
-	AutomationId EntityId `json:"automationId"`
-	// The enrolled Contact.
-	ContactId EntityId `json:"contactId"`
-	// Where the Enrollment is.
-	Status SiteEnrollmentStatus `json:"status"`
-	// Index of the next step to run (0-based).
-	CurrentStep int32 `json:"currentStep"`
-	// When a waiting Enrollment runs its next step.
-	ResumeAt OptTimestamp `json:"resumeAt"`
-	// Present on a failed Enrollment whose failure an HTTP step recorded.
-	Failure OptSiteEnrollmentFailure `json:"failure"`
-	// When the Contact was enrolled.
-	CreatedAt Timestamp `json:"createdAt"`
-	// Last update timestamp.
-	UpdatedAt Timestamp `json:"updatedAt"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteEnrollmentResource) GetID() EntityId {
-	return s.ID
-}
-
-// GetAutomationId returns the value of AutomationId.
-func (s *SiteEnrollmentResource) GetAutomationId() EntityId {
-	return s.AutomationId
-}
-
-// GetContactId returns the value of ContactId.
-func (s *SiteEnrollmentResource) GetContactId() EntityId {
-	return s.ContactId
-}
-
-// GetStatus returns the value of Status.
-func (s *SiteEnrollmentResource) GetStatus() SiteEnrollmentStatus {
-	return s.Status
-}
-
-// GetCurrentStep returns the value of CurrentStep.
-func (s *SiteEnrollmentResource) GetCurrentStep() int32 {
-	return s.CurrentStep
-}
-
-// GetResumeAt returns the value of ResumeAt.
-func (s *SiteEnrollmentResource) GetResumeAt() OptTimestamp {
-	return s.ResumeAt
-}
-
-// GetFailure returns the value of Failure.
-func (s *SiteEnrollmentResource) GetFailure() OptSiteEnrollmentFailure {
-	return s.Failure
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *SiteEnrollmentResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// GetUpdatedAt returns the value of UpdatedAt.
-func (s *SiteEnrollmentResource) GetUpdatedAt() Timestamp {
-	return s.UpdatedAt
-}
-
-// SetID sets the value of ID.
-func (s *SiteEnrollmentResource) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetAutomationId sets the value of AutomationId.
-func (s *SiteEnrollmentResource) SetAutomationId(val EntityId) {
-	s.AutomationId = val
-}
-
-// SetContactId sets the value of ContactId.
-func (s *SiteEnrollmentResource) SetContactId(val EntityId) {
-	s.ContactId = val
-}
-
-// SetStatus sets the value of Status.
-func (s *SiteEnrollmentResource) SetStatus(val SiteEnrollmentStatus) {
-	s.Status = val
-}
-
-// SetCurrentStep sets the value of CurrentStep.
-func (s *SiteEnrollmentResource) SetCurrentStep(val int32) {
-	s.CurrentStep = val
-}
-
-// SetResumeAt sets the value of ResumeAt.
-func (s *SiteEnrollmentResource) SetResumeAt(val OptTimestamp) {
-	s.ResumeAt = val
-}
-
-// SetFailure sets the value of Failure.
-func (s *SiteEnrollmentResource) SetFailure(val OptSiteEnrollmentFailure) {
-	s.Failure = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *SiteEnrollmentResource) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-// SetUpdatedAt sets the value of UpdatedAt.
-func (s *SiteEnrollmentResource) SetUpdatedAt(val Timestamp) {
-	s.UpdatedAt = val
-}
-
-// Where a Contact is in an Automation.
-// Ref: #/components/schemas/SiteEnrollmentStatus
-type SiteEnrollmentStatus string
-
-const (
-	SiteEnrollmentStatusActive      SiteEnrollmentStatus = "active"
-	SiteEnrollmentStatusCompleted   SiteEnrollmentStatus = "completed"
-	SiteEnrollmentStatusFailed      SiteEnrollmentStatus = "failed"
-	SiteEnrollmentStatusExited      SiteEnrollmentStatus = "exited"
-	SiteEnrollmentStatusGoalReached SiteEnrollmentStatus = "goal_reached"
-)
-
-// AllValues returns all SiteEnrollmentStatus values.
-func (SiteEnrollmentStatus) AllValues() []SiteEnrollmentStatus {
-	return []SiteEnrollmentStatus{
-		SiteEnrollmentStatusActive,
-		SiteEnrollmentStatusCompleted,
-		SiteEnrollmentStatusFailed,
-		SiteEnrollmentStatusExited,
-		SiteEnrollmentStatusGoalReached,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteEnrollmentStatus) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteEnrollmentStatusActive:
-		return []byte(s), nil
-	case SiteEnrollmentStatusCompleted:
-		return []byte(s), nil
-	case SiteEnrollmentStatusFailed:
-		return []byte(s), nil
-	case SiteEnrollmentStatusExited:
-		return []byte(s), nil
-	case SiteEnrollmentStatusGoalReached:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteEnrollmentStatus) UnmarshalText(data []byte) error {
-	switch SiteEnrollmentStatus(data) {
-	case SiteEnrollmentStatusActive:
-		*s = SiteEnrollmentStatusActive
-		return nil
-	case SiteEnrollmentStatusCompleted:
-		*s = SiteEnrollmentStatusCompleted
-		return nil
-	case SiteEnrollmentStatusFailed:
-		*s = SiteEnrollmentStatusFailed
-		return nil
-	case SiteEnrollmentStatusExited:
-		*s = SiteEnrollmentStatusExited
-		return nil
-	case SiteEnrollmentStatusGoalReached:
-		*s = SiteEnrollmentStatusGoalReached
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // Paginated response.
 type SiteEnrollmentsListOK struct {
 	// List of items.
-	Items []SiteEnrollmentResource `json:"items"`
+	Items []EnrollmentResource `json:"items"`
 	// Page number (1-based).
 	Page int32 `json:"page"`
 	// Page size.
@@ -19352,7 +21051,7 @@ type SiteEnrollmentsListOK struct {
 }
 
 // GetItems returns the value of Items.
-func (s *SiteEnrollmentsListOK) GetItems() []SiteEnrollmentResource {
+func (s *SiteEnrollmentsListOK) GetItems() []EnrollmentResource {
 	return s.Items
 }
 
@@ -19377,7 +21076,7 @@ func (s *SiteEnrollmentsListOK) GetTotalPages() int32 {
 }
 
 // SetItems sets the value of Items.
-func (s *SiteEnrollmentsListOK) SetItems(val []SiteEnrollmentResource) {
+func (s *SiteEnrollmentsListOK) SetItems(val []EnrollmentResource) {
 	s.Items = val
 }
 
@@ -19659,56 +21358,6 @@ func (s *SiteIdentitySecretResource) SetSecret(val OptString) {
 	s.Secret = val
 }
 
-// The Test inbox has no settings.
-// Ref: #/components/schemas/SiteInboxConfig
-type SiteInboxConfig struct {
-	Kind SiteInboxConfigKind `json:"kind"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteInboxConfig) GetKind() SiteInboxConfigKind {
-	return s.Kind
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteInboxConfig) SetKind(val SiteInboxConfigKind) {
-	s.Kind = val
-}
-
-type SiteInboxConfigKind string
-
-const (
-	SiteInboxConfigKindInbox SiteInboxConfigKind = "inbox"
-)
-
-// AllValues returns all SiteInboxConfigKind values.
-func (SiteInboxConfigKind) AllValues() []SiteInboxConfigKind {
-	return []SiteInboxConfigKind{
-		SiteInboxConfigKindInbox,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteInboxConfigKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteInboxConfigKindInbox:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteInboxConfigKind) UnmarshalText(data []byte) error {
-	switch SiteInboxConfigKind(data) {
-	case SiteInboxConfigKindInbox:
-		*s = SiteInboxConfigKindInbox
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // What the Release check found (ADR 0032): the one part of the Instance's state a Workspace Owner
 // sees. The Instance's settings are the Staff console's (ADR 0063).
 // Ref: #/components/schemas/SiteInstanceRelease
@@ -19729,289 +21378,6 @@ func (s *SiteInstanceRelease) SetLatestRelease(val OptString) {
 	s.LatestRelease = val
 }
 
-// Delivery channel an integration belongs to.
-// Ref: #/components/schemas/SiteIntegrationChannel
-type SiteIntegrationChannel string
-
-const (
-	SiteIntegrationChannelEmail    SiteIntegrationChannel = "email"
-	SiteIntegrationChannelSMS      SiteIntegrationChannel = "sms"
-	SiteIntegrationChannelTelegram SiteIntegrationChannel = "telegram"
-)
-
-// AllValues returns all SiteIntegrationChannel values.
-func (SiteIntegrationChannel) AllValues() []SiteIntegrationChannel {
-	return []SiteIntegrationChannel{
-		SiteIntegrationChannelEmail,
-		SiteIntegrationChannelSMS,
-		SiteIntegrationChannelTelegram,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteIntegrationChannel) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteIntegrationChannelEmail:
-		return []byte(s), nil
-	case SiteIntegrationChannelSMS:
-		return []byte(s), nil
-	case SiteIntegrationChannelTelegram:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteIntegrationChannel) UnmarshalText(data []byte) error {
-	switch SiteIntegrationChannel(data) {
-	case SiteIntegrationChannelEmail:
-		*s = SiteIntegrationChannelEmail
-		return nil
-	case SiteIntegrationChannelSMS:
-		*s = SiteIntegrationChannelSMS
-		return nil
-	case SiteIntegrationChannelTelegram:
-		*s = SiteIntegrationChannelTelegram
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Provider config returned to the UI, discriminated by `kind`. Secrets are omitted.
-// Ref: #/components/schemas/SiteIntegrationConfig
-type SiteIntegrationConfig struct {
-	OneOf SiteIntegrationConfigSum
-}
-
-// GetOneOf returns the value of OneOf.
-func (s *SiteIntegrationConfig) GetOneOf() SiteIntegrationConfigSum {
-	return s.OneOf
-}
-
-// SetOneOf sets the value of OneOf.
-func (s *SiteIntegrationConfig) SetOneOf(val SiteIntegrationConfigSum) {
-	s.OneOf = val
-}
-
-// SiteIntegrationConfigSum represents sum type.
-type SiteIntegrationConfigSum struct {
-	// Type selects the active sum variant, switch on this field.
-	Type               SiteIntegrationConfigSumType
-	SiteSmtpConfig     SiteSmtpConfig
-	SiteSesConfig      SiteSesConfig
-	SiteInboxConfig    SiteInboxConfig
-	SiteTelegramConfig SiteTelegramConfig
-	SiteTwilioConfig   SiteTwilioConfig
-}
-
-// SiteIntegrationConfigSumType is oneOf type of SiteIntegrationConfigSum.
-type SiteIntegrationConfigSumType string
-
-// Possible values for SiteIntegrationConfigSumType.
-const (
-	SiteSmtpConfigSiteIntegrationConfigSum     SiteIntegrationConfigSumType = "smtp"
-	SiteSesConfigSiteIntegrationConfigSum      SiteIntegrationConfigSumType = "ses"
-	SiteInboxConfigSiteIntegrationConfigSum    SiteIntegrationConfigSumType = "inbox"
-	SiteTelegramConfigSiteIntegrationConfigSum SiteIntegrationConfigSumType = "telegram"
-	SiteTwilioConfigSiteIntegrationConfigSum   SiteIntegrationConfigSumType = "twilio"
-)
-
-// IsSiteSmtpConfig reports whether SiteIntegrationConfigSum is SiteSmtpConfig.
-func (s SiteIntegrationConfigSum) IsSiteSmtpConfig() bool {
-	return s.Type == SiteSmtpConfigSiteIntegrationConfigSum
-}
-
-// IsSiteSesConfig reports whether SiteIntegrationConfigSum is SiteSesConfig.
-func (s SiteIntegrationConfigSum) IsSiteSesConfig() bool {
-	return s.Type == SiteSesConfigSiteIntegrationConfigSum
-}
-
-// IsSiteInboxConfig reports whether SiteIntegrationConfigSum is SiteInboxConfig.
-func (s SiteIntegrationConfigSum) IsSiteInboxConfig() bool {
-	return s.Type == SiteInboxConfigSiteIntegrationConfigSum
-}
-
-// IsSiteTelegramConfig reports whether SiteIntegrationConfigSum is SiteTelegramConfig.
-func (s SiteIntegrationConfigSum) IsSiteTelegramConfig() bool {
-	return s.Type == SiteTelegramConfigSiteIntegrationConfigSum
-}
-
-// IsSiteTwilioConfig reports whether SiteIntegrationConfigSum is SiteTwilioConfig.
-func (s SiteIntegrationConfigSum) IsSiteTwilioConfig() bool {
-	return s.Type == SiteTwilioConfigSiteIntegrationConfigSum
-}
-
-// SetSiteSmtpConfig sets SiteIntegrationConfigSum to SiteSmtpConfig.
-func (s *SiteIntegrationConfigSum) SetSiteSmtpConfig(v SiteSmtpConfig) {
-	s.Type = SiteSmtpConfigSiteIntegrationConfigSum
-	s.SiteSmtpConfig = v
-}
-
-// GetSiteSmtpConfig returns SiteSmtpConfig and true boolean if SiteIntegrationConfigSum is SiteSmtpConfig.
-func (s SiteIntegrationConfigSum) GetSiteSmtpConfig() (v SiteSmtpConfig, ok bool) {
-	if !s.IsSiteSmtpConfig() {
-		return v, false
-	}
-	return s.SiteSmtpConfig, true
-}
-
-// NewSiteSmtpConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteSmtpConfig.
-func NewSiteSmtpConfigSiteIntegrationConfigSum(v SiteSmtpConfig) SiteIntegrationConfigSum {
-	var s SiteIntegrationConfigSum
-	s.SetSiteSmtpConfig(v)
-	return s
-}
-
-// SetSiteSesConfig sets SiteIntegrationConfigSum to SiteSesConfig.
-func (s *SiteIntegrationConfigSum) SetSiteSesConfig(v SiteSesConfig) {
-	s.Type = SiteSesConfigSiteIntegrationConfigSum
-	s.SiteSesConfig = v
-}
-
-// GetSiteSesConfig returns SiteSesConfig and true boolean if SiteIntegrationConfigSum is SiteSesConfig.
-func (s SiteIntegrationConfigSum) GetSiteSesConfig() (v SiteSesConfig, ok bool) {
-	if !s.IsSiteSesConfig() {
-		return v, false
-	}
-	return s.SiteSesConfig, true
-}
-
-// NewSiteSesConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteSesConfig.
-func NewSiteSesConfigSiteIntegrationConfigSum(v SiteSesConfig) SiteIntegrationConfigSum {
-	var s SiteIntegrationConfigSum
-	s.SetSiteSesConfig(v)
-	return s
-}
-
-// SetSiteInboxConfig sets SiteIntegrationConfigSum to SiteInboxConfig.
-func (s *SiteIntegrationConfigSum) SetSiteInboxConfig(v SiteInboxConfig) {
-	s.Type = SiteInboxConfigSiteIntegrationConfigSum
-	s.SiteInboxConfig = v
-}
-
-// GetSiteInboxConfig returns SiteInboxConfig and true boolean if SiteIntegrationConfigSum is SiteInboxConfig.
-func (s SiteIntegrationConfigSum) GetSiteInboxConfig() (v SiteInboxConfig, ok bool) {
-	if !s.IsSiteInboxConfig() {
-		return v, false
-	}
-	return s.SiteInboxConfig, true
-}
-
-// NewSiteInboxConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteInboxConfig.
-func NewSiteInboxConfigSiteIntegrationConfigSum(v SiteInboxConfig) SiteIntegrationConfigSum {
-	var s SiteIntegrationConfigSum
-	s.SetSiteInboxConfig(v)
-	return s
-}
-
-// SetSiteTelegramConfig sets SiteIntegrationConfigSum to SiteTelegramConfig.
-func (s *SiteIntegrationConfigSum) SetSiteTelegramConfig(v SiteTelegramConfig) {
-	s.Type = SiteTelegramConfigSiteIntegrationConfigSum
-	s.SiteTelegramConfig = v
-}
-
-// GetSiteTelegramConfig returns SiteTelegramConfig and true boolean if SiteIntegrationConfigSum is SiteTelegramConfig.
-func (s SiteIntegrationConfigSum) GetSiteTelegramConfig() (v SiteTelegramConfig, ok bool) {
-	if !s.IsSiteTelegramConfig() {
-		return v, false
-	}
-	return s.SiteTelegramConfig, true
-}
-
-// NewSiteTelegramConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteTelegramConfig.
-func NewSiteTelegramConfigSiteIntegrationConfigSum(v SiteTelegramConfig) SiteIntegrationConfigSum {
-	var s SiteIntegrationConfigSum
-	s.SetSiteTelegramConfig(v)
-	return s
-}
-
-// SetSiteTwilioConfig sets SiteIntegrationConfigSum to SiteTwilioConfig.
-func (s *SiteIntegrationConfigSum) SetSiteTwilioConfig(v SiteTwilioConfig) {
-	s.Type = SiteTwilioConfigSiteIntegrationConfigSum
-	s.SiteTwilioConfig = v
-}
-
-// GetSiteTwilioConfig returns SiteTwilioConfig and true boolean if SiteIntegrationConfigSum is SiteTwilioConfig.
-func (s SiteIntegrationConfigSum) GetSiteTwilioConfig() (v SiteTwilioConfig, ok bool) {
-	if !s.IsSiteTwilioConfig() {
-		return v, false
-	}
-	return s.SiteTwilioConfig, true
-}
-
-// NewSiteTwilioConfigSiteIntegrationConfigSum returns new SiteIntegrationConfigSum from SiteTwilioConfig.
-func NewSiteTwilioConfigSiteIntegrationConfigSum(v SiteTwilioConfig) SiteIntegrationConfigSum {
-	var s SiteIntegrationConfigSum
-	s.SetSiteTwilioConfig(v)
-	return s
-}
-
-// Concrete sending provider.
-// Ref: #/components/schemas/SiteIntegrationProvider
-type SiteIntegrationProvider string
-
-const (
-	SiteIntegrationProviderSMTP     SiteIntegrationProvider = "smtp"
-	SiteIntegrationProviderSes      SiteIntegrationProvider = "ses"
-	SiteIntegrationProviderInbox    SiteIntegrationProvider = "inbox"
-	SiteIntegrationProviderTelegram SiteIntegrationProvider = "telegram"
-	SiteIntegrationProviderTwilio   SiteIntegrationProvider = "twilio"
-)
-
-// AllValues returns all SiteIntegrationProvider values.
-func (SiteIntegrationProvider) AllValues() []SiteIntegrationProvider {
-	return []SiteIntegrationProvider{
-		SiteIntegrationProviderSMTP,
-		SiteIntegrationProviderSes,
-		SiteIntegrationProviderInbox,
-		SiteIntegrationProviderTelegram,
-		SiteIntegrationProviderTwilio,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteIntegrationProvider) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteIntegrationProviderSMTP:
-		return []byte(s), nil
-	case SiteIntegrationProviderSes:
-		return []byte(s), nil
-	case SiteIntegrationProviderInbox:
-		return []byte(s), nil
-	case SiteIntegrationProviderTelegram:
-		return []byte(s), nil
-	case SiteIntegrationProviderTwilio:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteIntegrationProvider) UnmarshalText(data []byte) error {
-	switch SiteIntegrationProvider(data) {
-	case SiteIntegrationProviderSMTP:
-		*s = SiteIntegrationProviderSMTP
-		return nil
-	case SiteIntegrationProviderSes:
-		*s = SiteIntegrationProviderSes
-		return nil
-	case SiteIntegrationProviderInbox:
-		*s = SiteIntegrationProviderInbox
-		return nil
-	case SiteIntegrationProviderTelegram:
-		*s = SiteIntegrationProviderTelegram
-		return nil
-	case SiteIntegrationProviderTwilio:
-		*s = SiteIntegrationProviderTwilio
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // A workspace sending-provider integration.
 // Ref: #/components/schemas/SiteIntegrationResource
 type SiteIntegrationResource struct {
@@ -20020,9 +21386,9 @@ type SiteIntegrationResource struct {
 	// Human-readable label.
 	Name string `json:"name"`
 	// Delivery channel.
-	Channel SiteIntegrationChannel `json:"channel"`
+	Channel IntegrationChannel `json:"channel"`
 	// Concrete provider.
-	Provider SiteIntegrationProvider `json:"provider"`
+	Provider IntegrationProvider `json:"provider"`
 	// Whether this integration may be used for sending.
 	Enabled bool `json:"enabled"`
 	// Whether this is the default provider for its channel.
@@ -20032,9 +21398,9 @@ type SiteIntegrationResource struct {
 	// Provider limit: most messages per rolling 24 hours; null means no daily limit.
 	MaxPerDay NilInt32 `json:"maxPerDay"`
 	// The Provider limit as enforced (manual and provider-reported values) and 24-hour usage.
-	ProviderLimit SiteProviderLimitStatus `json:"providerLimit"`
+	ProviderLimit ProviderLimitStatus `json:"providerLimit"`
 	// Provider config (secrets redacted).
-	Config SiteIntegrationConfig `json:"config"`
+	Config IntegrationConfig `json:"config"`
 	// The Preset this Integration's provider callbacks are read with; null when it receives none.
 	Preset NilString `json:"preset"`
 	// The Preset's params as saved. A secret param (`writeOnly` in the Preset's schema) is shown as
@@ -20071,12 +21437,12 @@ func (s *SiteIntegrationResource) GetName() string {
 }
 
 // GetChannel returns the value of Channel.
-func (s *SiteIntegrationResource) GetChannel() SiteIntegrationChannel {
+func (s *SiteIntegrationResource) GetChannel() IntegrationChannel {
 	return s.Channel
 }
 
 // GetProvider returns the value of Provider.
-func (s *SiteIntegrationResource) GetProvider() SiteIntegrationProvider {
+func (s *SiteIntegrationResource) GetProvider() IntegrationProvider {
 	return s.Provider
 }
 
@@ -20101,12 +21467,12 @@ func (s *SiteIntegrationResource) GetMaxPerDay() NilInt32 {
 }
 
 // GetProviderLimit returns the value of ProviderLimit.
-func (s *SiteIntegrationResource) GetProviderLimit() SiteProviderLimitStatus {
+func (s *SiteIntegrationResource) GetProviderLimit() ProviderLimitStatus {
 	return s.ProviderLimit
 }
 
 // GetConfig returns the value of Config.
-func (s *SiteIntegrationResource) GetConfig() SiteIntegrationConfig {
+func (s *SiteIntegrationResource) GetConfig() IntegrationConfig {
 	return s.Config
 }
 
@@ -20161,12 +21527,12 @@ func (s *SiteIntegrationResource) SetName(val string) {
 }
 
 // SetChannel sets the value of Channel.
-func (s *SiteIntegrationResource) SetChannel(val SiteIntegrationChannel) {
+func (s *SiteIntegrationResource) SetChannel(val IntegrationChannel) {
 	s.Channel = val
 }
 
 // SetProvider sets the value of Provider.
-func (s *SiteIntegrationResource) SetProvider(val SiteIntegrationProvider) {
+func (s *SiteIntegrationResource) SetProvider(val IntegrationProvider) {
 	s.Provider = val
 }
 
@@ -20191,12 +21557,12 @@ func (s *SiteIntegrationResource) SetMaxPerDay(val NilInt32) {
 }
 
 // SetProviderLimit sets the value of ProviderLimit.
-func (s *SiteIntegrationResource) SetProviderLimit(val SiteProviderLimitStatus) {
+func (s *SiteIntegrationResource) SetProviderLimit(val ProviderLimitStatus) {
 	s.ProviderLimit = val
 }
 
 // SetConfig sets the value of Config.
-func (s *SiteIntegrationResource) SetConfig(val SiteIntegrationConfig) {
+func (s *SiteIntegrationResource) SetConfig(val IntegrationConfig) {
 	s.Config = val
 }
 
@@ -20407,7 +21773,7 @@ type SiteJoinDomainResource struct {
 	// Whether the TXT record was found and the Workspace holds the domain.
 	Verified bool `json:"verified"`
 	// The TXT record to publish to prove the domain.
-	Record SiteDnsRecord `json:"record"`
+	Record DnsRecord `json:"record"`
 	// When the TXT record was most recently checked (null = never).
 	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
 	// When the domain most recently became verified (null = pending).
@@ -20434,7 +21800,7 @@ func (s *SiteJoinDomainResource) GetVerified() bool {
 }
 
 // GetRecord returns the value of Record.
-func (s *SiteJoinDomainResource) GetRecord() SiteDnsRecord {
+func (s *SiteJoinDomainResource) GetRecord() DnsRecord {
 	return s.Record
 }
 
@@ -20474,7 +21840,7 @@ func (s *SiteJoinDomainResource) SetVerified(val bool) {
 }
 
 // SetRecord sets the value of Record.
-func (s *SiteJoinDomainResource) SetRecord(val SiteDnsRecord) {
+func (s *SiteJoinDomainResource) SetRecord(val DnsRecord) {
 	s.Record = val
 }
 
@@ -20562,35 +21928,6 @@ func (s *SiteLegalDocument) SetMarkdown(val LegalDocumentMarkdown) {
 // SetPublishedAt sets the value of PublishedAt.
 func (s *SiteLegalDocument) SetPublishedAt(val Timestamp) {
 	s.PublishedAt = val
-}
-
-// How often one link of a broadcast's or an automation's emails was clicked.
-// Ref: #/components/schemas/SiteLinkClicks
-type SiteLinkClicks struct {
-	// The link's destination URL.
-	URL string `json:"url"`
-	// Clicks recorded on it, every click counted (not unique per contact); bounded by Event retention.
-	Clicks int32 `json:"clicks"`
-}
-
-// GetURL returns the value of URL.
-func (s *SiteLinkClicks) GetURL() string {
-	return s.URL
-}
-
-// GetClicks returns the value of Clicks.
-func (s *SiteLinkClicks) GetClicks() int32 {
-	return s.Clicks
-}
-
-// SetURL sets the value of URL.
-func (s *SiteLinkClicks) SetURL(val string) {
-	s.URL = val
-}
-
-// SetClicks sets the value of Clicks.
-func (s *SiteLinkClicks) SetClicks(val int32) {
-	s.Clicks = val
 }
 
 // The Linked identities of the authenticated User.
@@ -21012,50 +22349,6 @@ type SiteMembershipsDeleteNoContent struct{}
 
 // SiteMembershipsResetSecondFactorNoContent is response for SiteMembershipsResetSecondFactor operation.
 type SiteMembershipsResetSecondFactorNoContent struct{}
-
-// The Orders credited to one Broadcast or Automation and the net revenue of their Movements (ADR
-// 0064), in the Reporting currency, read from the Movements and never stored: a refund lowers `amount`
-// on its own day. Until the currency is set `reportingCurrency` is null and there is no figure to
-// show. Orders in another currency are counted in neither field.
-// Ref: #/components/schemas/SiteMessageRevenue
-type SiteMessageRevenue struct {
-	// The Reporting currency, null until set.
-	ReportingCurrency NilCurrencyCode `json:"reportingCurrency"`
-	// Orders completed that are credited to it, in the Reporting currency.
-	Orders int32 `json:"orders"`
-	// Net revenue of those Orders, in the minor unit of the Reporting currency.
-	Amount int64 `json:"amount"`
-}
-
-// GetReportingCurrency returns the value of ReportingCurrency.
-func (s *SiteMessageRevenue) GetReportingCurrency() NilCurrencyCode {
-	return s.ReportingCurrency
-}
-
-// GetOrders returns the value of Orders.
-func (s *SiteMessageRevenue) GetOrders() int32 {
-	return s.Orders
-}
-
-// GetAmount returns the value of Amount.
-func (s *SiteMessageRevenue) GetAmount() int64 {
-	return s.Amount
-}
-
-// SetReportingCurrency sets the value of ReportingCurrency.
-func (s *SiteMessageRevenue) SetReportingCurrency(val NilCurrencyCode) {
-	s.ReportingCurrency = val
-}
-
-// SetOrders sets the value of Orders.
-func (s *SiteMessageRevenue) SetOrders(val int32) {
-	s.Orders = val
-}
-
-// SetAmount sets the value of Amount.
-func (s *SiteMessageRevenue) SetAmount(val int64) {
-	s.Amount = val
-}
 
 // One Report day of the New people report: the Contacts created that day by the door they came
 // through, zero-filled across the range.
@@ -22874,52 +24167,11 @@ func (s *SitePersonalTokenResource) SetCreatedAt(val Timestamp) {
 // SitePersonalTokensDeleteNoContent is response for SitePersonalTokensDelete operation.
 type SitePersonalTokensDeleteNoContent struct{}
 
-// A Preset the Instance offers.
-// Ref: #/components/schemas/SitePresetResource
-type SitePresetResource struct {
-	// The name an integration's `preset` refers to.
-	Name string `json:"name"`
-	// What the Preset is for.
-	Description string `json:"description"`
-	// JSON Schema (draft 2020-12) of the params; a string marked `writeOnly` is a secret.
-	ParamsSchema JsonObject `json:"paramsSchema"`
-}
-
-// GetName returns the value of Name.
-func (s *SitePresetResource) GetName() string {
-	return s.Name
-}
-
-// GetDescription returns the value of Description.
-func (s *SitePresetResource) GetDescription() string {
-	return s.Description
-}
-
-// GetParamsSchema returns the value of ParamsSchema.
-func (s *SitePresetResource) GetParamsSchema() JsonObject {
-	return s.ParamsSchema
-}
-
-// SetName sets the value of Name.
-func (s *SitePresetResource) SetName(val string) {
-	s.Name = val
-}
-
-// SetDescription sets the value of Description.
-func (s *SitePresetResource) SetDescription(val string) {
-	s.Description = val
-}
-
-// SetParamsSchema sets the value of ParamsSchema.
-func (s *SitePresetResource) SetParamsSchema(val JsonObject) {
-	s.ParamsSchema = val
-}
-
 // Request body for previewing a condition's segment.
 // Ref: #/components/schemas/SitePreviewSegmentInput
 type SitePreviewSegmentInput struct {
 	// Condition; absent means all contacts.
-	Condition OptSiteConditionGroupInput `json:"condition"`
+	Condition OptConditionGroupInput `json:"condition"`
 	// The Channel of a Broadcast the audience is asked for. When given, the result also counts the
 	// recipients the Broadcast would take: the matching contacts it could send to now.
 	Channel OptBroadcastChannel `json:"channel"`
@@ -22929,7 +24181,7 @@ type SitePreviewSegmentInput struct {
 }
 
 // GetCondition returns the value of Condition.
-func (s *SitePreviewSegmentInput) GetCondition() OptSiteConditionGroupInput {
+func (s *SitePreviewSegmentInput) GetCondition() OptConditionGroupInput {
 	return s.Condition
 }
 
@@ -22944,7 +24196,7 @@ func (s *SitePreviewSegmentInput) GetIntegrationId() OptNilEntityId {
 }
 
 // SetCondition sets the value of Condition.
-func (s *SitePreviewSegmentInput) SetCondition(val OptSiteConditionGroupInput) {
+func (s *SitePreviewSegmentInput) SetCondition(val OptConditionGroupInput) {
 	s.Condition = val
 }
 
@@ -22987,195 +24239,6 @@ func (s *SitePreviewSegmentResult) SetCount(val int32) {
 // SetRecipients sets the value of Recipients.
 func (s *SitePreviewSegmentResult) SetRecipients(val OptInt32) {
 	s.Recipients = val
-}
-
-// Where an effective Provider limit comes from.
-// Ref: #/components/schemas/SiteProviderLimitSource
-type SiteProviderLimitSource string
-
-const (
-	SiteProviderLimitSourceManual   SiteProviderLimitSource = "manual"
-	SiteProviderLimitSourceProvider SiteProviderLimitSource = "provider"
-)
-
-// AllValues returns all SiteProviderLimitSource values.
-func (SiteProviderLimitSource) AllValues() []SiteProviderLimitSource {
-	return []SiteProviderLimitSource{
-		SiteProviderLimitSourceManual,
-		SiteProviderLimitSourceProvider,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteProviderLimitSource) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteProviderLimitSourceManual:
-		return []byte(s), nil
-	case SiteProviderLimitSourceProvider:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteProviderLimitSource) UnmarshalText(data []byte) error {
-	switch SiteProviderLimitSource(data) {
-	case SiteProviderLimitSourceManual:
-		*s = SiteProviderLimitSourceManual
-		return nil
-	case SiteProviderLimitSourceProvider:
-		*s = SiteProviderLimitSourceProvider
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// The Provider limit as enforced, with the last 24 hours of usage.
-// Ref: #/components/schemas/SiteProviderLimitStatus
-type SiteProviderLimitStatus struct {
-	// Most messages per second.
-	PerSecond SiteProviderLimitValue `json:"perSecond"`
-	// Most messages per rolling 24 hours.
-	PerDay SiteProviderLimitValue `json:"perDay"`
-	// Messages the provider accepted from this Integration in the last 24 hours.
-	SentLast24h int32 `json:"sentLast24h"`
-	// Reasons to review the limit; empty when there is nothing to flag.
-	Warnings []SiteProviderLimitWarning `json:"warnings"`
-}
-
-// GetPerSecond returns the value of PerSecond.
-func (s *SiteProviderLimitStatus) GetPerSecond() SiteProviderLimitValue {
-	return s.PerSecond
-}
-
-// GetPerDay returns the value of PerDay.
-func (s *SiteProviderLimitStatus) GetPerDay() SiteProviderLimitValue {
-	return s.PerDay
-}
-
-// GetSentLast24h returns the value of SentLast24h.
-func (s *SiteProviderLimitStatus) GetSentLast24h() int32 {
-	return s.SentLast24h
-}
-
-// GetWarnings returns the value of Warnings.
-func (s *SiteProviderLimitStatus) GetWarnings() []SiteProviderLimitWarning {
-	return s.Warnings
-}
-
-// SetPerSecond sets the value of PerSecond.
-func (s *SiteProviderLimitStatus) SetPerSecond(val SiteProviderLimitValue) {
-	s.PerSecond = val
-}
-
-// SetPerDay sets the value of PerDay.
-func (s *SiteProviderLimitStatus) SetPerDay(val SiteProviderLimitValue) {
-	s.PerDay = val
-}
-
-// SetSentLast24h sets the value of SentLast24h.
-func (s *SiteProviderLimitStatus) SetSentLast24h(val int32) {
-	s.SentLast24h = val
-}
-
-// SetWarnings sets the value of Warnings.
-func (s *SiteProviderLimitStatus) SetWarnings(val []SiteProviderLimitWarning) {
-	s.Warnings = val
-}
-
-// One effective ceiling: the lowest of the manual and provider values, manual on a tie.
-// Ref: #/components/schemas/SiteProviderLimitValue
-type SiteProviderLimitValue struct {
-	// The ceiling in messages; null means this window is not limited.
-	Limit NilInt32 `json:"limit"`
-	// Where the ceiling comes from; null when there is none.
-	Source NilSiteProviderLimitSource `json:"source"`
-}
-
-// GetLimit returns the value of Limit.
-func (s *SiteProviderLimitValue) GetLimit() NilInt32 {
-	return s.Limit
-}
-
-// GetSource returns the value of Source.
-func (s *SiteProviderLimitValue) GetSource() NilSiteProviderLimitSource {
-	return s.Source
-}
-
-// SetLimit sets the value of Limit.
-func (s *SiteProviderLimitValue) SetLimit(val NilInt32) {
-	s.Limit = val
-}
-
-// SetSource sets the value of Source.
-func (s *SiteProviderLimitValue) SetSource(val NilSiteProviderLimitSource) {
-	s.Source = val
-}
-
-// A reason to look at an Integration's Provider limit.
-// Ref: #/components/schemas/SiteProviderLimitWarning
-type SiteProviderLimitWarning string
-
-const (
-	SiteProviderLimitWarningUnlimited                SiteProviderLimitWarning = "unlimited"
-	SiteProviderLimitWarningProviderQuotaUnavailable SiteProviderLimitWarning = "providerQuotaUnavailable"
-	SiteProviderLimitWarningProviderStopped          SiteProviderLimitWarning = "providerStopped"
-	SiteProviderLimitWarningProviderProbation        SiteProviderLimitWarning = "providerProbation"
-	SiteProviderLimitWarningProviderSandbox          SiteProviderLimitWarning = "providerSandbox"
-)
-
-// AllValues returns all SiteProviderLimitWarning values.
-func (SiteProviderLimitWarning) AllValues() []SiteProviderLimitWarning {
-	return []SiteProviderLimitWarning{
-		SiteProviderLimitWarningUnlimited,
-		SiteProviderLimitWarningProviderQuotaUnavailable,
-		SiteProviderLimitWarningProviderStopped,
-		SiteProviderLimitWarningProviderProbation,
-		SiteProviderLimitWarningProviderSandbox,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteProviderLimitWarning) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteProviderLimitWarningUnlimited:
-		return []byte(s), nil
-	case SiteProviderLimitWarningProviderQuotaUnavailable:
-		return []byte(s), nil
-	case SiteProviderLimitWarningProviderStopped:
-		return []byte(s), nil
-	case SiteProviderLimitWarningProviderProbation:
-		return []byte(s), nil
-	case SiteProviderLimitWarningProviderSandbox:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteProviderLimitWarning) UnmarshalText(data []byte) error {
-	switch SiteProviderLimitWarning(data) {
-	case SiteProviderLimitWarningUnlimited:
-		*s = SiteProviderLimitWarningUnlimited
-		return nil
-	case SiteProviderLimitWarningProviderQuotaUnavailable:
-		*s = SiteProviderLimitWarningProviderQuotaUnavailable
-		return nil
-	case SiteProviderLimitWarningProviderStopped:
-		*s = SiteProviderLimitWarningProviderStopped
-		return nil
-	case SiteProviderLimitWarningProviderProbation:
-		*s = SiteProviderLimitWarningProviderProbation
-		return nil
-	case SiteProviderLimitWarningProviderSandbox:
-		*s = SiteProviderLimitWarningProviderSandbox
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 // SitePublicConfirmationsPerformNoContent is response for SitePublicConfirmationsPerform operation.
@@ -23380,653 +24443,10 @@ func (s *SiteRevenueSettingsResource) SetRevision(val Revision) {
 	s.Revision = val
 }
 
-// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
-// name, http actions the call.
-// Ref: #/components/schemas/SiteRuleAction
-type SiteRuleAction struct {
-	// Action kind.
-	Type SiteRuleActionType `json:"type"`
-	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
-	Tag OptString `json:"tag"`
-	// Automation to enroll the Contact in, once ever (enroll_automation).
-	AutomationId OptEntityId `json:"automationId"`
-	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
-	ID OptString `json:"id"`
-	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
-	// URL. Up to 2 KiB, http or https.
-	URL OptString `json:"url"`
-	// Up to 5 request headers (http actions). On read, only the names are returned.
-	Headers []SiteAutomationHttpHeader `json:"headers"`
-	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
-	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
-	Body OptString `json:"body"`
-	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
-	// returned. Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
-	// Remove the signing secret on save (http actions).
-	ClearSecret OptBool `json:"clearSecret"`
-	// Whether a signing secret is stored (http actions, read only).
-	HasSecret OptBool `json:"hasSecret"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteRuleAction) GetType() SiteRuleActionType {
-	return s.Type
-}
-
-// GetTag returns the value of Tag.
-func (s *SiteRuleAction) GetTag() OptString {
-	return s.Tag
-}
-
-// GetAutomationId returns the value of AutomationId.
-func (s *SiteRuleAction) GetAutomationId() OptEntityId {
-	return s.AutomationId
-}
-
-// GetID returns the value of ID.
-func (s *SiteRuleAction) GetID() OptString {
-	return s.ID
-}
-
-// GetURL returns the value of URL.
-func (s *SiteRuleAction) GetURL() OptString {
-	return s.URL
-}
-
-// GetHeaders returns the value of Headers.
-func (s *SiteRuleAction) GetHeaders() []SiteAutomationHttpHeader {
-	return s.Headers
-}
-
-// GetBody returns the value of Body.
-func (s *SiteRuleAction) GetBody() OptString {
-	return s.Body
-}
-
-// GetSecret returns the value of Secret.
-func (s *SiteRuleAction) GetSecret() OptString {
-	return s.Secret
-}
-
-// GetClearSecret returns the value of ClearSecret.
-func (s *SiteRuleAction) GetClearSecret() OptBool {
-	return s.ClearSecret
-}
-
-// GetHasSecret returns the value of HasSecret.
-func (s *SiteRuleAction) GetHasSecret() OptBool {
-	return s.HasSecret
-}
-
-// SetType sets the value of Type.
-func (s *SiteRuleAction) SetType(val SiteRuleActionType) {
-	s.Type = val
-}
-
-// SetTag sets the value of Tag.
-func (s *SiteRuleAction) SetTag(val OptString) {
-	s.Tag = val
-}
-
-// SetAutomationId sets the value of AutomationId.
-func (s *SiteRuleAction) SetAutomationId(val OptEntityId) {
-	s.AutomationId = val
-}
-
-// SetID sets the value of ID.
-func (s *SiteRuleAction) SetID(val OptString) {
-	s.ID = val
-}
-
-// SetURL sets the value of URL.
-func (s *SiteRuleAction) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetHeaders sets the value of Headers.
-func (s *SiteRuleAction) SetHeaders(val []SiteAutomationHttpHeader) {
-	s.Headers = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteRuleAction) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetSecret sets the value of Secret.
-func (s *SiteRuleAction) SetSecret(val OptString) {
-	s.Secret = val
-}
-
-// SetClearSecret sets the value of ClearSecret.
-func (s *SiteRuleAction) SetClearSecret(val OptBool) {
-	s.ClearSecret = val
-}
-
-// SetHasSecret sets the value of HasSecret.
-func (s *SiteRuleAction) SetHasSecret(val OptBool) {
-	s.HasSecret = val
-}
-
-// One Action of a Rule, run in order when the Rule fires. A flat shape: tag actions carry the tag
-// name, http actions the call.
-// Ref: #/components/schemas/SiteRuleActionInput
-type SiteRuleActionInput struct {
-	// Action kind.
-	Type SiteRuleActionType `json:"type"`
-	// Tag name to apply to or remove from the Contact (apply_tag and remove_tag).
-	Tag OptString `json:"tag"`
-	// Automation to enroll the Contact in, once ever (enroll_automation).
-	AutomationId OptEntityId `json:"automationId"`
-	// Action id (http actions). Assigned on save; send it back on edit so the action keeps its secrets.
-	ID OptString `json:"id"`
-	// URL to POST to (http actions). A secret: never returned. Omit it when editing to keep the stored
-	// URL. Up to 2 KiB, http or https.
-	URL OptString `json:"url"`
-	// Up to 5 request headers (http actions). On read, only the names are returned.
-	Headers []SiteAutomationHttpHeaderInput `json:"headers"`
-	// Liquid JSON request body (http actions): Contact bindings plus `event.action` and
-	// `event.properties`, strings JSON-escaped, up to 64 KiB, must render to valid JSON.
-	Body OptString `json:"body"`
-	// Signing secret (http actions): when set, the request is signed with Standard Webhooks. Never
-	// returned. Omit it when editing to keep the stored secret.
-	Secret OptString `json:"secret"`
-	// Remove the signing secret on save (http actions).
-	ClearSecret OptBool `json:"clearSecret"`
-	// Whether a signing secret is stored (http actions, read only).
-	HasSecret OptBool `json:"hasSecret"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteRuleActionInput) GetType() SiteRuleActionType {
-	return s.Type
-}
-
-// GetTag returns the value of Tag.
-func (s *SiteRuleActionInput) GetTag() OptString {
-	return s.Tag
-}
-
-// GetAutomationId returns the value of AutomationId.
-func (s *SiteRuleActionInput) GetAutomationId() OptEntityId {
-	return s.AutomationId
-}
-
-// GetID returns the value of ID.
-func (s *SiteRuleActionInput) GetID() OptString {
-	return s.ID
-}
-
-// GetURL returns the value of URL.
-func (s *SiteRuleActionInput) GetURL() OptString {
-	return s.URL
-}
-
-// GetHeaders returns the value of Headers.
-func (s *SiteRuleActionInput) GetHeaders() []SiteAutomationHttpHeaderInput {
-	return s.Headers
-}
-
-// GetBody returns the value of Body.
-func (s *SiteRuleActionInput) GetBody() OptString {
-	return s.Body
-}
-
-// GetSecret returns the value of Secret.
-func (s *SiteRuleActionInput) GetSecret() OptString {
-	return s.Secret
-}
-
-// GetClearSecret returns the value of ClearSecret.
-func (s *SiteRuleActionInput) GetClearSecret() OptBool {
-	return s.ClearSecret
-}
-
-// GetHasSecret returns the value of HasSecret.
-func (s *SiteRuleActionInput) GetHasSecret() OptBool {
-	return s.HasSecret
-}
-
-// SetType sets the value of Type.
-func (s *SiteRuleActionInput) SetType(val SiteRuleActionType) {
-	s.Type = val
-}
-
-// SetTag sets the value of Tag.
-func (s *SiteRuleActionInput) SetTag(val OptString) {
-	s.Tag = val
-}
-
-// SetAutomationId sets the value of AutomationId.
-func (s *SiteRuleActionInput) SetAutomationId(val OptEntityId) {
-	s.AutomationId = val
-}
-
-// SetID sets the value of ID.
-func (s *SiteRuleActionInput) SetID(val OptString) {
-	s.ID = val
-}
-
-// SetURL sets the value of URL.
-func (s *SiteRuleActionInput) SetURL(val OptString) {
-	s.URL = val
-}
-
-// SetHeaders sets the value of Headers.
-func (s *SiteRuleActionInput) SetHeaders(val []SiteAutomationHttpHeaderInput) {
-	s.Headers = val
-}
-
-// SetBody sets the value of Body.
-func (s *SiteRuleActionInput) SetBody(val OptString) {
-	s.Body = val
-}
-
-// SetSecret sets the value of Secret.
-func (s *SiteRuleActionInput) SetSecret(val OptString) {
-	s.Secret = val
-}
-
-// SetClearSecret sets the value of ClearSecret.
-func (s *SiteRuleActionInput) SetClearSecret(val OptBool) {
-	s.ClearSecret = val
-}
-
-// SetHasSecret sets the value of HasSecret.
-func (s *SiteRuleActionInput) SetHasSecret(val OptBool) {
-	s.HasSecret = val
-}
-
-// What one Action did when a Rule fired.
-// Ref: #/components/schemas/SiteRuleActionResult
-type SiteRuleActionResult struct {
-	// The Action's kind.
-	Type SiteRuleActionType `json:"type"`
-	// How it ended; a skipped Action is an expected outcome, not an error.
-	Status SiteRuleActionStatus `json:"status"`
-	// Why it failed or was skipped.
-	Detail OptString `json:"detail"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteRuleActionResult) GetType() SiteRuleActionType {
-	return s.Type
-}
-
-// GetStatus returns the value of Status.
-func (s *SiteRuleActionResult) GetStatus() SiteRuleActionStatus {
-	return s.Status
-}
-
-// GetDetail returns the value of Detail.
-func (s *SiteRuleActionResult) GetDetail() OptString {
-	return s.Detail
-}
-
-// SetType sets the value of Type.
-func (s *SiteRuleActionResult) SetType(val SiteRuleActionType) {
-	s.Type = val
-}
-
-// SetStatus sets the value of Status.
-func (s *SiteRuleActionResult) SetStatus(val SiteRuleActionStatus) {
-	s.Status = val
-}
-
-// SetDetail sets the value of Detail.
-func (s *SiteRuleActionResult) SetDetail(val OptString) {
-	s.Detail = val
-}
-
-// How one Action of a Firing ended.
-// Ref: #/components/schemas/SiteRuleActionStatus
-type SiteRuleActionStatus string
-
-const (
-	SiteRuleActionStatusSucceeded SiteRuleActionStatus = "succeeded"
-	SiteRuleActionStatusFailed    SiteRuleActionStatus = "failed"
-	SiteRuleActionStatusSkipped   SiteRuleActionStatus = "skipped"
-	SiteRuleActionStatusPending   SiteRuleActionStatus = "pending"
-)
-
-// AllValues returns all SiteRuleActionStatus values.
-func (SiteRuleActionStatus) AllValues() []SiteRuleActionStatus {
-	return []SiteRuleActionStatus{
-		SiteRuleActionStatusSucceeded,
-		SiteRuleActionStatusFailed,
-		SiteRuleActionStatusSkipped,
-		SiteRuleActionStatusPending,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteRuleActionStatus) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteRuleActionStatusSucceeded:
-		return []byte(s), nil
-	case SiteRuleActionStatusFailed:
-		return []byte(s), nil
-	case SiteRuleActionStatusSkipped:
-		return []byte(s), nil
-	case SiteRuleActionStatusPending:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteRuleActionStatus) UnmarshalText(data []byte) error {
-	switch SiteRuleActionStatus(data) {
-	case SiteRuleActionStatusSucceeded:
-		*s = SiteRuleActionStatusSucceeded
-		return nil
-	case SiteRuleActionStatusFailed:
-		*s = SiteRuleActionStatusFailed
-		return nil
-	case SiteRuleActionStatusSkipped:
-		*s = SiteRuleActionStatusSkipped
-		return nil
-	case SiteRuleActionStatusPending:
-		*s = SiteRuleActionStatusPending
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Kind of Rule action.
-// Ref: #/components/schemas/SiteRuleActionType
-type SiteRuleActionType string
-
-const (
-	SiteRuleActionTypeApplyTag         SiteRuleActionType = "apply_tag"
-	SiteRuleActionTypeRemoveTag        SiteRuleActionType = "remove_tag"
-	SiteRuleActionTypeEnrollAutomation SiteRuleActionType = "enroll_automation"
-	SiteRuleActionTypeHTTP             SiteRuleActionType = "http"
-)
-
-// AllValues returns all SiteRuleActionType values.
-func (SiteRuleActionType) AllValues() []SiteRuleActionType {
-	return []SiteRuleActionType{
-		SiteRuleActionTypeApplyTag,
-		SiteRuleActionTypeRemoveTag,
-		SiteRuleActionTypeEnrollAutomation,
-		SiteRuleActionTypeHTTP,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteRuleActionType) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteRuleActionTypeApplyTag:
-		return []byte(s), nil
-	case SiteRuleActionTypeRemoveTag:
-		return []byte(s), nil
-	case SiteRuleActionTypeEnrollAutomation:
-		return []byte(s), nil
-	case SiteRuleActionTypeHTTP:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteRuleActionType) UnmarshalText(data []byte) error {
-	switch SiteRuleActionType(data) {
-	case SiteRuleActionTypeApplyTag:
-		*s = SiteRuleActionTypeApplyTag
-		return nil
-	case SiteRuleActionTypeRemoveTag:
-		*s = SiteRuleActionTypeRemoveTag
-		return nil
-	case SiteRuleActionTypeEnrollAutomation:
-		*s = SiteRuleActionTypeEnrollAutomation
-		return nil
-	case SiteRuleActionTypeHTTP:
-		*s = SiteRuleActionTypeHTTP
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One Action a Rule would run, described without running it.
-// Ref: #/components/schemas/SiteRuleDryRunAction
-type SiteRuleDryRunAction struct {
-	// The Action's kind.
-	Type string `json:"type"`
-	// One line saying what the Action would do.
-	Summary string `json:"summary"`
-}
-
-// GetType returns the value of Type.
-func (s *SiteRuleDryRunAction) GetType() string {
-	return s.Type
-}
-
-// GetSummary returns the value of Summary.
-func (s *SiteRuleDryRunAction) GetSummary() string {
-	return s.Summary
-}
-
-// SetType sets the value of Type.
-func (s *SiteRuleDryRunAction) SetType(val string) {
-	s.Type = val
-}
-
-// SetSummary sets the value of Summary.
-func (s *SiteRuleDryRunAction) SetSummary(val string) {
-	s.Summary = val
-}
-
-// Whether a stored Event would fire a Rule, and if not, why.
-// Ref: #/components/schemas/SiteRuleDryRunOutcome
-type SiteRuleDryRunOutcome string
-
-const (
-	SiteRuleDryRunOutcomeWouldFire       SiteRuleDryRunOutcome = "would_fire"
-	SiteRuleDryRunOutcomeNotTriggered    SiteRuleDryRunOutcome = "not_triggered"
-	SiteRuleDryRunOutcomeNoContact       SiteRuleDryRunOutcome = "no_contact"
-	SiteRuleDryRunOutcomeMachine         SiteRuleDryRunOutcome = "machine"
-	SiteRuleDryRunOutcomeBackfill        SiteRuleDryRunOutcome = "backfill"
-	SiteRuleDryRunOutcomeConditionNotMet SiteRuleDryRunOutcome = "condition_not_met"
-)
-
-// AllValues returns all SiteRuleDryRunOutcome values.
-func (SiteRuleDryRunOutcome) AllValues() []SiteRuleDryRunOutcome {
-	return []SiteRuleDryRunOutcome{
-		SiteRuleDryRunOutcomeWouldFire,
-		SiteRuleDryRunOutcomeNotTriggered,
-		SiteRuleDryRunOutcomeNoContact,
-		SiteRuleDryRunOutcomeMachine,
-		SiteRuleDryRunOutcomeBackfill,
-		SiteRuleDryRunOutcomeConditionNotMet,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteRuleDryRunOutcome) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteRuleDryRunOutcomeWouldFire:
-		return []byte(s), nil
-	case SiteRuleDryRunOutcomeNotTriggered:
-		return []byte(s), nil
-	case SiteRuleDryRunOutcomeNoContact:
-		return []byte(s), nil
-	case SiteRuleDryRunOutcomeMachine:
-		return []byte(s), nil
-	case SiteRuleDryRunOutcomeBackfill:
-		return []byte(s), nil
-	case SiteRuleDryRunOutcomeConditionNotMet:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteRuleDryRunOutcome) UnmarshalText(data []byte) error {
-	switch SiteRuleDryRunOutcome(data) {
-	case SiteRuleDryRunOutcomeWouldFire:
-		*s = SiteRuleDryRunOutcomeWouldFire
-		return nil
-	case SiteRuleDryRunOutcomeNotTriggered:
-		*s = SiteRuleDryRunOutcomeNotTriggered
-		return nil
-	case SiteRuleDryRunOutcomeNoContact:
-		*s = SiteRuleDryRunOutcomeNoContact
-		return nil
-	case SiteRuleDryRunOutcomeMachine:
-		*s = SiteRuleDryRunOutcomeMachine
-		return nil
-	case SiteRuleDryRunOutcomeBackfill:
-		*s = SiteRuleDryRunOutcomeBackfill
-		return nil
-	case SiteRuleDryRunOutcomeConditionNotMet:
-		*s = SiteRuleDryRunOutcomeConditionNotMet
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// What a stored Event would do to a Rule. Nothing was written or run.
-// Ref: #/components/schemas/SiteRuleDryRunResource
-type SiteRuleDryRunResource struct {
-	// Whether the Rule would fire and, if not, why.
-	Outcome SiteRuleDryRunOutcome `json:"outcome"`
-	// The Actions that would run, in order; empty unless the Rule would fire.
-	Actions []SiteRuleDryRunAction `json:"actions"`
-}
-
-// GetOutcome returns the value of Outcome.
-func (s *SiteRuleDryRunResource) GetOutcome() SiteRuleDryRunOutcome {
-	return s.Outcome
-}
-
-// GetActions returns the value of Actions.
-func (s *SiteRuleDryRunResource) GetActions() []SiteRuleDryRunAction {
-	return s.Actions
-}
-
-// SetOutcome sets the value of Outcome.
-func (s *SiteRuleDryRunResource) SetOutcome(val SiteRuleDryRunOutcome) {
-	s.Outcome = val
-}
-
-// SetActions sets the value of Actions.
-func (s *SiteRuleDryRunResource) SetActions(val []SiteRuleDryRunAction) {
-	s.Actions = val
-}
-
-// One execution of a Rule for one Event, with what each Action did. Erased with the Contact.
-// Ref: #/components/schemas/SiteRuleFiringResource
-type SiteRuleFiringResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// The Rule that fired.
-	RuleId EntityId `json:"ruleId"`
-	// The Contact the Event was for.
-	ContactId EntityId `json:"contactId"`
-	// The Trigger event: the action of the Event that fired the Rule.
-	Action string `json:"action"`
-	// The Event's source id: the same Event delivered twice fires a Rule once.
-	EventSourceId string `json:"eventSourceId"`
-	// One result per Action run so far, in the Rule's order.
-	Results []SiteRuleActionResult `json:"results"`
-	// When the last Action finished; absent while Actions are still to run.
-	CompletedAt OptTimestamp `json:"completedAt"`
-	// When the Rule fired.
-	CreatedAt Timestamp `json:"createdAt"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteRuleFiringResource) GetID() EntityId {
-	return s.ID
-}
-
-// GetRuleId returns the value of RuleId.
-func (s *SiteRuleFiringResource) GetRuleId() EntityId {
-	return s.RuleId
-}
-
-// GetContactId returns the value of ContactId.
-func (s *SiteRuleFiringResource) GetContactId() EntityId {
-	return s.ContactId
-}
-
-// GetAction returns the value of Action.
-func (s *SiteRuleFiringResource) GetAction() string {
-	return s.Action
-}
-
-// GetEventSourceId returns the value of EventSourceId.
-func (s *SiteRuleFiringResource) GetEventSourceId() string {
-	return s.EventSourceId
-}
-
-// GetResults returns the value of Results.
-func (s *SiteRuleFiringResource) GetResults() []SiteRuleActionResult {
-	return s.Results
-}
-
-// GetCompletedAt returns the value of CompletedAt.
-func (s *SiteRuleFiringResource) GetCompletedAt() OptTimestamp {
-	return s.CompletedAt
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *SiteRuleFiringResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// SetID sets the value of ID.
-func (s *SiteRuleFiringResource) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetRuleId sets the value of RuleId.
-func (s *SiteRuleFiringResource) SetRuleId(val EntityId) {
-	s.RuleId = val
-}
-
-// SetContactId sets the value of ContactId.
-func (s *SiteRuleFiringResource) SetContactId(val EntityId) {
-	s.ContactId = val
-}
-
-// SetAction sets the value of Action.
-func (s *SiteRuleFiringResource) SetAction(val string) {
-	s.Action = val
-}
-
-// SetEventSourceId sets the value of EventSourceId.
-func (s *SiteRuleFiringResource) SetEventSourceId(val string) {
-	s.EventSourceId = val
-}
-
-// SetResults sets the value of Results.
-func (s *SiteRuleFiringResource) SetResults(val []SiteRuleActionResult) {
-	s.Results = val
-}
-
-// SetCompletedAt sets the value of CompletedAt.
-func (s *SiteRuleFiringResource) SetCompletedAt(val OptTimestamp) {
-	s.CompletedAt = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *SiteRuleFiringResource) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
 // Paginated response.
 type SiteRuleFiringsListOK struct {
 	// List of items.
-	Items []SiteRuleFiringResource `json:"items"`
+	Items []RuleFiringResource `json:"items"`
 	// Page number (1-based).
 	Page int32 `json:"page"`
 	// Page size.
@@ -24038,7 +24458,7 @@ type SiteRuleFiringsListOK struct {
 }
 
 // GetItems returns the value of Items.
-func (s *SiteRuleFiringsListOK) GetItems() []SiteRuleFiringResource {
+func (s *SiteRuleFiringsListOK) GetItems() []RuleFiringResource {
 	return s.Items
 }
 
@@ -24063,7 +24483,7 @@ func (s *SiteRuleFiringsListOK) GetTotalPages() int32 {
 }
 
 // SetItems sets the value of Items.
-func (s *SiteRuleFiringsListOK) SetItems(val []SiteRuleFiringResource) {
+func (s *SiteRuleFiringsListOK) SetItems(val []RuleFiringResource) {
 	s.Items = val
 }
 
@@ -24096,11 +24516,11 @@ type SiteRuleResource struct {
 	// Rule name.
 	Name string `json:"name"`
 	// Lifecycle status.
-	Status SiteRuleStatus `json:"status"`
+	Status RuleStatus `json:"status"`
 	// What the Rule does now; null until it is first published.
-	Live NilSiteRuleVersion `json:"live"`
+	Live NilRuleVersion `json:"live"`
 	// Unpublished changes, the one version above live; null when there are none.
-	Draft NilSiteRuleVersion `json:"draft"`
+	Draft NilRuleVersion `json:"draft"`
 	// When the Rule last became active by Publish. It acts only on Events recorded after it.
 	ActivatedAt OptNilTimestamp `json:"activatedAt"`
 	// When the Rule was deleted (discarded): it is kept with its Firings, read by id only, never fires and
@@ -24125,17 +24545,17 @@ func (s *SiteRuleResource) GetName() string {
 }
 
 // GetStatus returns the value of Status.
-func (s *SiteRuleResource) GetStatus() SiteRuleStatus {
+func (s *SiteRuleResource) GetStatus() RuleStatus {
 	return s.Status
 }
 
 // GetLive returns the value of Live.
-func (s *SiteRuleResource) GetLive() NilSiteRuleVersion {
+func (s *SiteRuleResource) GetLive() NilRuleVersion {
 	return s.Live
 }
 
 // GetDraft returns the value of Draft.
-func (s *SiteRuleResource) GetDraft() NilSiteRuleVersion {
+func (s *SiteRuleResource) GetDraft() NilRuleVersion {
 	return s.Draft
 }
 
@@ -24175,17 +24595,17 @@ func (s *SiteRuleResource) SetName(val string) {
 }
 
 // SetStatus sets the value of Status.
-func (s *SiteRuleResource) SetStatus(val SiteRuleStatus) {
+func (s *SiteRuleResource) SetStatus(val RuleStatus) {
 	s.Status = val
 }
 
 // SetLive sets the value of Live.
-func (s *SiteRuleResource) SetLive(val NilSiteRuleVersion) {
+func (s *SiteRuleResource) SetLive(val NilRuleVersion) {
 	s.Live = val
 }
 
 // SetDraft sets the value of Draft.
-func (s *SiteRuleResource) SetDraft(val NilSiteRuleVersion) {
+func (s *SiteRuleResource) SetDraft(val NilRuleVersion) {
 	s.Draft = val
 }
 
@@ -24212,102 +24632,6 @@ func (s *SiteRuleResource) SetCreatedAt(val Timestamp) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *SiteRuleResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
-}
-
-// Rule lifecycle status: active reacts to Events, inactive acts on nothing.
-// Ref: #/components/schemas/SiteRuleStatus
-type SiteRuleStatus string
-
-const (
-	SiteRuleStatusActive   SiteRuleStatus = "active"
-	SiteRuleStatusInactive SiteRuleStatus = "inactive"
-)
-
-// AllValues returns all SiteRuleStatus values.
-func (SiteRuleStatus) AllValues() []SiteRuleStatus {
-	return []SiteRuleStatus{
-		SiteRuleStatusActive,
-		SiteRuleStatusInactive,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteRuleStatus) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteRuleStatusActive:
-		return []byte(s), nil
-	case SiteRuleStatusInactive:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteRuleStatus) UnmarshalText(data []byte) error {
-	switch SiteRuleStatus(data) {
-	case SiteRuleStatusActive:
-		*s = SiteRuleStatusActive
-		return nil
-	case SiteRuleStatusInactive:
-		*s = SiteRuleStatusInactive
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// One version of a Rule's definition (ADR 0065): its Trigger events, Condition and Actions.
-// Ref: #/components/schemas/SiteRuleVersion
-type SiteRuleVersion struct {
-	// 1 for the first version, plus one per version after it.
-	Number int32 `json:"number"`
-	// The Event actions that make the Rule fire; any one of them does.
-	TriggerEvents []string `json:"triggerEvents"`
-	// The Contact must match this condition for the Rule to fire; absent means every Contact.
-	Condition OptSiteConditionGroup `json:"condition"`
-	// The Rule's ordered Actions.
-	Actions []SiteRuleAction `json:"actions"`
-}
-
-// GetNumber returns the value of Number.
-func (s *SiteRuleVersion) GetNumber() int32 {
-	return s.Number
-}
-
-// GetTriggerEvents returns the value of TriggerEvents.
-func (s *SiteRuleVersion) GetTriggerEvents() []string {
-	return s.TriggerEvents
-}
-
-// GetCondition returns the value of Condition.
-func (s *SiteRuleVersion) GetCondition() OptSiteConditionGroup {
-	return s.Condition
-}
-
-// GetActions returns the value of Actions.
-func (s *SiteRuleVersion) GetActions() []SiteRuleAction {
-	return s.Actions
-}
-
-// SetNumber sets the value of Number.
-func (s *SiteRuleVersion) SetNumber(val int32) {
-	s.Number = val
-}
-
-// SetTriggerEvents sets the value of TriggerEvents.
-func (s *SiteRuleVersion) SetTriggerEvents(val []string) {
-	s.TriggerEvents = val
-}
-
-// SetCondition sets the value of Condition.
-func (s *SiteRuleVersion) SetCondition(val OptSiteConditionGroup) {
-	s.Condition = val
-}
-
-// SetActions sets the value of Actions.
-func (s *SiteRuleVersion) SetActions(val []SiteRuleAction) {
-	s.Actions = val
 }
 
 // SiteRulesDeleteNoContent is response for SiteRulesDelete operation.
@@ -24810,7 +25134,7 @@ type SiteSegmentResource struct {
 	// Segment name.
 	Name string `json:"name"`
 	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptSiteConditionGroup `json:"condition"`
+	Condition OptConditionGroup `json:"condition"`
 	// When the segment was archived; null while it is kept.
 	ArchivedAt OptNilTimestamp `json:"archivedAt"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
@@ -24832,7 +25156,7 @@ func (s *SiteSegmentResource) GetName() string {
 }
 
 // GetCondition returns the value of Condition.
-func (s *SiteSegmentResource) GetCondition() OptSiteConditionGroup {
+func (s *SiteSegmentResource) GetCondition() OptConditionGroup {
 	return s.Condition
 }
 
@@ -24867,7 +25191,7 @@ func (s *SiteSegmentResource) SetName(val string) {
 }
 
 // SetCondition sets the value of Condition.
-func (s *SiteSegmentResource) SetCondition(val OptSiteConditionGroup) {
+func (s *SiteSegmentResource) SetCondition(val OptConditionGroup) {
 	s.Condition = val
 }
 
@@ -24955,38 +25279,6 @@ func (s *SiteSegmentsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-// The Workspace's Send cap (ADR 0067): the most messages it may send per rolling 24 hours across all
-// its Integrations, Transactional included. The platform sets it; the Workspace only reads it. Sends
-// beyond it wait for the 24-hour window to free up; Transactional mail is never delayed. It is not a
-// Provider limit, which each Integration sets for its own provider account.
-// Ref: #/components/schemas/SiteSendCap
-type SiteSendCap struct {
-	// Messages per rolling 24 hours.
-	PerDay MaxPerDay `json:"perDay"`
-	// Messages the Workspace sent over the last 24 hours.
-	SentLast24h int32 `json:"sentLast24h"`
-}
-
-// GetPerDay returns the value of PerDay.
-func (s *SiteSendCap) GetPerDay() MaxPerDay {
-	return s.PerDay
-}
-
-// GetSentLast24h returns the value of SentLast24h.
-func (s *SiteSendCap) GetSentLast24h() int32 {
-	return s.SentLast24h
-}
-
-// SetPerDay sets the value of PerDay.
-func (s *SiteSendCap) SetPerDay(val MaxPerDay) {
-	s.PerDay = val
-}
-
-// SetSentLast24h sets the value of SentLast24h.
-func (s *SiteSendCap) SetSentLast24h(val int32) {
-	s.SentLast24h = val
-}
-
 // The Complaint and Bounce rates of one Sending domain over a window.
 // Ref: #/components/schemas/SiteSendingDomainRates
 type SiteSendingDomainRates struct {
@@ -25040,205 +25332,13 @@ func (s *SiteSendingDomainRates) SetBounceRate(val RateTriple) {
 	s.BounceRate = val
 }
 
-// Sending domain resource used by the site UI (ADR 0010). sphericon generates the DKIM keypair; the
-// user publishes the DKIM TXT to authenticate the domain. The private key is never exposed. `verified`
-// is re-checked in the background: the domain loses it (`verificationLostAt`) if the DNS record
-// disappears.
-// Ref: #/components/schemas/SiteSendingDomainResource
-type SiteSendingDomainResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// The authenticated domain, e.g. "mail.acme.com".
-	Domain string `json:"domain"`
-	// DKIM selector; the record host is "._domainkey.".
-	DkimSelector string `json:"dkimSelector"`
-	// Whether the domain is verified now: it has a `verifiedAt` and no `verificationLostAt` since.
-	Verified bool `json:"verified"`
-	// The required DKIM TXT record (gates sending in a later slice).
-	DkimRecord SiteDnsRecord `json:"dkimRecord"`
-	// The suggested SPF TXT record (advisory — does not gate).
-	SpfRecord SiteDnsRecord `json:"spfRecord"`
-	// The suggested DMARC TXT record (advisory bulk-readiness signal).
-	DmarcRecord SiteDnsRecord `json:"dmarcRecord"`
-	// When a DMARC lookup of the domain most recently answered, the record found or not (null = none has).
-	DmarcCheckedAt OptNilTimestamp `json:"dmarcCheckedAt"`
-	// When a lookup first found a DMARC record published for the domain, at the domain or its
-	// organizational domain (null = the last lookup found none, or none has answered). The domain is
-	// bulk-ready while it is set (ADR 0012); it never gates sending.
-	DmarcFoundAt OptNilTimestamp `json:"dmarcFoundAt"`
-	// When the DKIM DNS was most recently checked (null = never).
-	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the domain most recently became verified (null = never); kept after a loss.
-	VerifiedAt OptNilTimestamp `json:"verifiedAt"`
-	// When a re-check most recently found the verified DKIM DNS gone (null = not lost: never verified, or
-	// verified again since).
-	VerificationLostAt OptNilTimestamp `json:"verificationLostAt"`
-	// When the domain was deleted (discarded); null while it is kept. A deleted domain is no longer
-	// listed, is read-only, is never checked again and cannot be restored, but stays readable by id.
-	DiscardedAt OptNilTimestamp `json:"discardedAt"`
-	// Creation timestamp.
-	CreatedAt Timestamp `json:"createdAt"`
-	// Last update timestamp.
-	UpdatedAt Timestamp `json:"updatedAt"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteSendingDomainResource) GetID() EntityId {
-	return s.ID
-}
-
-// GetDomain returns the value of Domain.
-func (s *SiteSendingDomainResource) GetDomain() string {
-	return s.Domain
-}
-
-// GetDkimSelector returns the value of DkimSelector.
-func (s *SiteSendingDomainResource) GetDkimSelector() string {
-	return s.DkimSelector
-}
-
-// GetVerified returns the value of Verified.
-func (s *SiteSendingDomainResource) GetVerified() bool {
-	return s.Verified
-}
-
-// GetDkimRecord returns the value of DkimRecord.
-func (s *SiteSendingDomainResource) GetDkimRecord() SiteDnsRecord {
-	return s.DkimRecord
-}
-
-// GetSpfRecord returns the value of SpfRecord.
-func (s *SiteSendingDomainResource) GetSpfRecord() SiteDnsRecord {
-	return s.SpfRecord
-}
-
-// GetDmarcRecord returns the value of DmarcRecord.
-func (s *SiteSendingDomainResource) GetDmarcRecord() SiteDnsRecord {
-	return s.DmarcRecord
-}
-
-// GetDmarcCheckedAt returns the value of DmarcCheckedAt.
-func (s *SiteSendingDomainResource) GetDmarcCheckedAt() OptNilTimestamp {
-	return s.DmarcCheckedAt
-}
-
-// GetDmarcFoundAt returns the value of DmarcFoundAt.
-func (s *SiteSendingDomainResource) GetDmarcFoundAt() OptNilTimestamp {
-	return s.DmarcFoundAt
-}
-
-// GetLastCheckedAt returns the value of LastCheckedAt.
-func (s *SiteSendingDomainResource) GetLastCheckedAt() OptNilTimestamp {
-	return s.LastCheckedAt
-}
-
-// GetVerifiedAt returns the value of VerifiedAt.
-func (s *SiteSendingDomainResource) GetVerifiedAt() OptNilTimestamp {
-	return s.VerifiedAt
-}
-
-// GetVerificationLostAt returns the value of VerificationLostAt.
-func (s *SiteSendingDomainResource) GetVerificationLostAt() OptNilTimestamp {
-	return s.VerificationLostAt
-}
-
-// GetDiscardedAt returns the value of DiscardedAt.
-func (s *SiteSendingDomainResource) GetDiscardedAt() OptNilTimestamp {
-	return s.DiscardedAt
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *SiteSendingDomainResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// GetUpdatedAt returns the value of UpdatedAt.
-func (s *SiteSendingDomainResource) GetUpdatedAt() Timestamp {
-	return s.UpdatedAt
-}
-
-// SetID sets the value of ID.
-func (s *SiteSendingDomainResource) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetDomain sets the value of Domain.
-func (s *SiteSendingDomainResource) SetDomain(val string) {
-	s.Domain = val
-}
-
-// SetDkimSelector sets the value of DkimSelector.
-func (s *SiteSendingDomainResource) SetDkimSelector(val string) {
-	s.DkimSelector = val
-}
-
-// SetVerified sets the value of Verified.
-func (s *SiteSendingDomainResource) SetVerified(val bool) {
-	s.Verified = val
-}
-
-// SetDkimRecord sets the value of DkimRecord.
-func (s *SiteSendingDomainResource) SetDkimRecord(val SiteDnsRecord) {
-	s.DkimRecord = val
-}
-
-// SetSpfRecord sets the value of SpfRecord.
-func (s *SiteSendingDomainResource) SetSpfRecord(val SiteDnsRecord) {
-	s.SpfRecord = val
-}
-
-// SetDmarcRecord sets the value of DmarcRecord.
-func (s *SiteSendingDomainResource) SetDmarcRecord(val SiteDnsRecord) {
-	s.DmarcRecord = val
-}
-
-// SetDmarcCheckedAt sets the value of DmarcCheckedAt.
-func (s *SiteSendingDomainResource) SetDmarcCheckedAt(val OptNilTimestamp) {
-	s.DmarcCheckedAt = val
-}
-
-// SetDmarcFoundAt sets the value of DmarcFoundAt.
-func (s *SiteSendingDomainResource) SetDmarcFoundAt(val OptNilTimestamp) {
-	s.DmarcFoundAt = val
-}
-
-// SetLastCheckedAt sets the value of LastCheckedAt.
-func (s *SiteSendingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
-	s.LastCheckedAt = val
-}
-
-// SetVerifiedAt sets the value of VerifiedAt.
-func (s *SiteSendingDomainResource) SetVerifiedAt(val OptNilTimestamp) {
-	s.VerifiedAt = val
-}
-
-// SetVerificationLostAt sets the value of VerificationLostAt.
-func (s *SiteSendingDomainResource) SetVerificationLostAt(val OptNilTimestamp) {
-	s.VerificationLostAt = val
-}
-
-// SetDiscardedAt sets the value of DiscardedAt.
-func (s *SiteSendingDomainResource) SetDiscardedAt(val OptNilTimestamp) {
-	s.DiscardedAt = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *SiteSendingDomainResource) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-// SetUpdatedAt sets the value of UpdatedAt.
-func (s *SiteSendingDomainResource) SetUpdatedAt(val Timestamp) {
-	s.UpdatedAt = val
-}
-
 // SiteSendingDomainsDeleteNoContent is response for SiteSendingDomainsDelete operation.
 type SiteSendingDomainsDeleteNoContent struct{}
 
 // Paginated response.
 type SiteSendingDomainsListOK struct {
 	// List of items.
-	Items []SiteSendingDomainResource `json:"items"`
+	Items []SendingDomainResource `json:"items"`
 	// Page number (1-based).
 	Page int32 `json:"page"`
 	// Page size.
@@ -25250,7 +25350,7 @@ type SiteSendingDomainsListOK struct {
 }
 
 // GetItems returns the value of Items.
-func (s *SiteSendingDomainsListOK) GetItems() []SiteSendingDomainResource {
+func (s *SiteSendingDomainsListOK) GetItems() []SendingDomainResource {
 	return s.Items
 }
 
@@ -25275,7 +25375,7 @@ func (s *SiteSendingDomainsListOK) GetTotalPages() int32 {
 }
 
 // SetItems sets the value of Items.
-func (s *SiteSendingDomainsListOK) SetItems(val []SiteSendingDomainResource) {
+func (s *SiteSendingDomainsListOK) SetItems(val []SendingDomainResource) {
 	s.Items = val
 }
 
@@ -25297,113 +25397,6 @@ func (s *SiteSendingDomainsListOK) SetTotalItems(val int32) {
 // SetTotalPages sets the value of TotalPages.
 func (s *SiteSendingDomainsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
-}
-
-// SES config without the secret access key.
-// Ref: #/components/schemas/SiteSesConfig
-type SiteSesConfig struct {
-	Kind     SiteSesConfigKind `json:"kind"`
-	Region   string            `json:"region"`
-	From     EmailAddress      `json:"from"`
-	FromName OptNilString      `json:"fromName"`
-	// Custom SES-compatible API endpoint (e.g. Yandex Cloud Postbox); empty for AWS.
-	Endpoint OptNilString `json:"endpoint"`
-	// Last 4 chars of the access key id, for recognition.
-	AccessKeyIdLast4 OptNilString `json:"accessKeyIdLast4"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteSesConfig) GetKind() SiteSesConfigKind {
-	return s.Kind
-}
-
-// GetRegion returns the value of Region.
-func (s *SiteSesConfig) GetRegion() string {
-	return s.Region
-}
-
-// GetFrom returns the value of From.
-func (s *SiteSesConfig) GetFrom() EmailAddress {
-	return s.From
-}
-
-// GetFromName returns the value of FromName.
-func (s *SiteSesConfig) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// GetEndpoint returns the value of Endpoint.
-func (s *SiteSesConfig) GetEndpoint() OptNilString {
-	return s.Endpoint
-}
-
-// GetAccessKeyIdLast4 returns the value of AccessKeyIdLast4.
-func (s *SiteSesConfig) GetAccessKeyIdLast4() OptNilString {
-	return s.AccessKeyIdLast4
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteSesConfig) SetKind(val SiteSesConfigKind) {
-	s.Kind = val
-}
-
-// SetRegion sets the value of Region.
-func (s *SiteSesConfig) SetRegion(val string) {
-	s.Region = val
-}
-
-// SetFrom sets the value of From.
-func (s *SiteSesConfig) SetFrom(val EmailAddress) {
-	s.From = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *SiteSesConfig) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-// SetEndpoint sets the value of Endpoint.
-func (s *SiteSesConfig) SetEndpoint(val OptNilString) {
-	s.Endpoint = val
-}
-
-// SetAccessKeyIdLast4 sets the value of AccessKeyIdLast4.
-func (s *SiteSesConfig) SetAccessKeyIdLast4(val OptNilString) {
-	s.AccessKeyIdLast4 = val
-}
-
-type SiteSesConfigKind string
-
-const (
-	SiteSesConfigKindSes SiteSesConfigKind = "ses"
-)
-
-// AllValues returns all SiteSesConfigKind values.
-func (SiteSesConfigKind) AllValues() []SiteSesConfigKind {
-	return []SiteSesConfigKind{
-		SiteSesConfigKindSes,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSesConfigKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSesConfigKindSes:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSesConfigKind) UnmarshalText(data []byte) error {
-	switch SiteSesConfigKind(data) {
-	case SiteSesConfigKindSes:
-		*s = SiteSesConfigKindSes
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
 }
 
 // Switch domain join on or off.
@@ -25977,223 +25970,17 @@ func (s *SiteSmsLengthLimit) SetUcs2(val int32) {
 	s.Ucs2 = val
 }
 
-// SMTP config without the password.
-// Ref: #/components/schemas/SiteSmtpConfig
-type SiteSmtpConfig struct {
-	Kind     SiteSmtpConfigKind `json:"kind"`
-	Host     string             `json:"host"`
-	Port     int32              `json:"port"`
-	Username OptNilString       `json:"username"`
-	From     EmailAddress       `json:"from"`
-	FromName OptNilString       `json:"fromName"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteSmtpConfig) GetKind() SiteSmtpConfigKind {
-	return s.Kind
-}
-
-// GetHost returns the value of Host.
-func (s *SiteSmtpConfig) GetHost() string {
-	return s.Host
-}
-
-// GetPort returns the value of Port.
-func (s *SiteSmtpConfig) GetPort() int32 {
-	return s.Port
-}
-
-// GetUsername returns the value of Username.
-func (s *SiteSmtpConfig) GetUsername() OptNilString {
-	return s.Username
-}
-
-// GetFrom returns the value of From.
-func (s *SiteSmtpConfig) GetFrom() EmailAddress {
-	return s.From
-}
-
-// GetFromName returns the value of FromName.
-func (s *SiteSmtpConfig) GetFromName() OptNilString {
-	return s.FromName
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteSmtpConfig) SetKind(val SiteSmtpConfigKind) {
-	s.Kind = val
-}
-
-// SetHost sets the value of Host.
-func (s *SiteSmtpConfig) SetHost(val string) {
-	s.Host = val
-}
-
-// SetPort sets the value of Port.
-func (s *SiteSmtpConfig) SetPort(val int32) {
-	s.Port = val
-}
-
-// SetUsername sets the value of Username.
-func (s *SiteSmtpConfig) SetUsername(val OptNilString) {
-	s.Username = val
-}
-
-// SetFrom sets the value of From.
-func (s *SiteSmtpConfig) SetFrom(val EmailAddress) {
-	s.From = val
-}
-
-// SetFromName sets the value of FromName.
-func (s *SiteSmtpConfig) SetFromName(val OptNilString) {
-	s.FromName = val
-}
-
-type SiteSmtpConfigKind string
-
-const (
-	SiteSmtpConfigKindSMTP SiteSmtpConfigKind = "smtp"
-)
-
-// AllValues returns all SiteSmtpConfigKind values.
-func (SiteSmtpConfigKind) AllValues() []SiteSmtpConfigKind {
-	return []SiteSmtpConfigKind{
-		SiteSmtpConfigKindSMTP,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSmtpConfigKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSmtpConfigKindSMTP:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSmtpConfigKind) UnmarshalText(data []byte) error {
-	switch SiteSmtpConfigKind(data) {
-	case SiteSmtpConfigKindSMTP:
-		*s = SiteSmtpConfigKindSMTP
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// The channel a suppression applies to.
-// Ref: #/components/schemas/SiteSuppressionChannel
-type SiteSuppressionChannel string
-
-const (
-	SiteSuppressionChannelEmail    SiteSuppressionChannel = "email"
-	SiteSuppressionChannelTelegram SiteSuppressionChannel = "telegram"
-	SiteSuppressionChannelSMS      SiteSuppressionChannel = "sms"
-)
-
-// AllValues returns all SiteSuppressionChannel values.
-func (SiteSuppressionChannel) AllValues() []SiteSuppressionChannel {
-	return []SiteSuppressionChannel{
-		SiteSuppressionChannelEmail,
-		SiteSuppressionChannelTelegram,
-		SiteSuppressionChannelSMS,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSuppressionChannel) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSuppressionChannelEmail:
-		return []byte(s), nil
-	case SiteSuppressionChannelTelegram:
-		return []byte(s), nil
-	case SiteSuppressionChannelSMS:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSuppressionChannel) UnmarshalText(data []byte) error {
-	switch SiteSuppressionChannel(data) {
-	case SiteSuppressionChannelEmail:
-		*s = SiteSuppressionChannelEmail
-		return nil
-	case SiteSuppressionChannelTelegram:
-		*s = SiteSuppressionChannelTelegram
-		return nil
-	case SiteSuppressionChannelSMS:
-		*s = SiteSuppressionChannelSMS
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Why a destination is on the suppression (do-not-send) list. Unsubscribe is not a suppression — it
-// is a separate, per-source opt-out.
-// Ref: #/components/schemas/SiteSuppressionReason
-type SiteSuppressionReason string
-
-const (
-	SiteSuppressionReasonBounce    SiteSuppressionReason = "bounce"
-	SiteSuppressionReasonComplaint SiteSuppressionReason = "complaint"
-	SiteSuppressionReasonManual    SiteSuppressionReason = "manual"
-)
-
-// AllValues returns all SiteSuppressionReason values.
-func (SiteSuppressionReason) AllValues() []SiteSuppressionReason {
-	return []SiteSuppressionReason{
-		SiteSuppressionReasonBounce,
-		SiteSuppressionReasonComplaint,
-		SiteSuppressionReasonManual,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteSuppressionReason) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteSuppressionReasonBounce:
-		return []byte(s), nil
-	case SiteSuppressionReasonComplaint:
-		return []byte(s), nil
-	case SiteSuppressionReasonManual:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteSuppressionReason) UnmarshalText(data []byte) error {
-	switch SiteSuppressionReason(data) {
-	case SiteSuppressionReasonBounce:
-		*s = SiteSuppressionReasonBounce
-		return nil
-	case SiteSuppressionReasonComplaint:
-		*s = SiteSuppressionReasonComplaint
-		return nil
-	case SiteSuppressionReasonManual:
-		*s = SiteSuppressionReasonManual
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // A suppressed destination: the send path skips it on every surface.
 // Ref: #/components/schemas/SiteSuppressionResource
 type SiteSuppressionResource struct {
 	// Unique identifier.
 	ID EntityId `json:"id"`
 	// The channel this suppression applies to.
-	Channel SiteSuppressionChannel `json:"channel"`
+	Channel SuppressionChannel `json:"channel"`
 	// Normalized (lower-cased) channel-specific destination address.
 	Destination string `json:"destination"`
 	// Why the destination is suppressed.
-	Reason SiteSuppressionReason `json:"reason"`
+	Reason SuppressionReason `json:"reason"`
 	// When the suppression was lifted; null while it is active. A lifted one no longer blocks sends.
 	LiftedAt OptNilTimestamp `json:"liftedAt"`
 	// Creation timestamp.
@@ -26208,7 +25995,7 @@ func (s *SiteSuppressionResource) GetID() EntityId {
 }
 
 // GetChannel returns the value of Channel.
-func (s *SiteSuppressionResource) GetChannel() SiteSuppressionChannel {
+func (s *SiteSuppressionResource) GetChannel() SuppressionChannel {
 	return s.Channel
 }
 
@@ -26218,7 +26005,7 @@ func (s *SiteSuppressionResource) GetDestination() string {
 }
 
 // GetReason returns the value of Reason.
-func (s *SiteSuppressionResource) GetReason() SiteSuppressionReason {
+func (s *SiteSuppressionResource) GetReason() SuppressionReason {
 	return s.Reason
 }
 
@@ -26243,7 +26030,7 @@ func (s *SiteSuppressionResource) SetID(val EntityId) {
 }
 
 // SetChannel sets the value of Channel.
-func (s *SiteSuppressionResource) SetChannel(val SiteSuppressionChannel) {
+func (s *SiteSuppressionResource) SetChannel(val SuppressionChannel) {
 	s.Channel = val
 }
 
@@ -26253,7 +26040,7 @@ func (s *SiteSuppressionResource) SetDestination(val string) {
 }
 
 // SetReason sets the value of Reason.
-func (s *SiteSuppressionResource) SetReason(val SiteSuppressionReason) {
+func (s *SiteSuppressionResource) SetReason(val SuppressionReason) {
 	s.Reason = val
 }
 
@@ -26514,80 +26301,6 @@ func (s *SiteTagsListOK) SetTotalPages(val int32) {
 // SiteTagsRemoveNoContent is response for SiteTagsRemove operation.
 type SiteTagsRemoveNoContent struct{}
 
-// A Telegram bot without its token: who it is, as Telegram said when it was connected.
-// Ref: #/components/schemas/SiteTelegramConfig
-type SiteTelegramConfig struct {
-	Kind SiteTelegramConfigKind `json:"kind"`
-	// The bot's numeric Telegram id.
-	BotId int64 `json:"botId"`
-	// The bot's.
-	Username string `json:"username"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteTelegramConfig) GetKind() SiteTelegramConfigKind {
-	return s.Kind
-}
-
-// GetBotId returns the value of BotId.
-func (s *SiteTelegramConfig) GetBotId() int64 {
-	return s.BotId
-}
-
-// GetUsername returns the value of Username.
-func (s *SiteTelegramConfig) GetUsername() string {
-	return s.Username
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteTelegramConfig) SetKind(val SiteTelegramConfigKind) {
-	s.Kind = val
-}
-
-// SetBotId sets the value of BotId.
-func (s *SiteTelegramConfig) SetBotId(val int64) {
-	s.BotId = val
-}
-
-// SetUsername sets the value of Username.
-func (s *SiteTelegramConfig) SetUsername(val string) {
-	s.Username = val
-}
-
-type SiteTelegramConfigKind string
-
-const (
-	SiteTelegramConfigKindTelegram SiteTelegramConfigKind = "telegram"
-)
-
-// AllValues returns all SiteTelegramConfigKind values.
-func (SiteTelegramConfigKind) AllValues() []SiteTelegramConfigKind {
-	return []SiteTelegramConfigKind{
-		SiteTelegramConfigKindTelegram,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteTelegramConfigKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteTelegramConfigKindTelegram:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteTelegramConfigKind) UnmarshalText(data []byte) error {
-	switch SiteTelegramConfigKind(data) {
-	case SiteTelegramConfigKindTelegram:
-		*s = SiteTelegramConfigKindTelegram
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // SiteTemplatesDeleteNoContent is response for SiteTemplatesDelete operation.
 type SiteTemplatesDeleteNoContent struct{}
 
@@ -26690,300 +26403,8 @@ func (s *SiteTestSendBroadcastResult) SetCaptured(val bool) {
 // SiteTokensDeleteNoContent is response for SiteTokensDelete operation.
 type SiteTokensDeleteNoContent struct{}
 
-// A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and
-// the first-party tracker are served.
-// Ref: #/components/schemas/SiteTrackingDomainResource
-type SiteTrackingDomainResource struct {
-	// Unique identifier.
-	ID EntityId `json:"id"`
-	// The host, lower case with IDN as punycode, e.g. "t.example.com".
-	Host string `json:"host"`
-	// What the host does for the Workspace.
-	Role SiteTrackingDomainRole `json:"role"`
-	// Where the host's verification stands.
-	State SiteTrackingState `json:"state"`
-	// Why the host is not advancing; absent when nothing holds it back.
-	Reason OptSiteTrackingReason `json:"reason"`
-	// The CNAME to publish.
-	Record SiteCnameRecord `json:"record"`
-	// The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every check
-	// needs both (ADR 0173).
-	OwnershipRecord SiteDnsRecord `json:"ownershipRecord"`
-	// When the host first served (null = never): only a host that served is retired rather than deleted.
-	ServedAt OptNilTimestamp `json:"servedAt"`
-	// When the host was most recently checked (null = never).
-	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
-	// When the state most recently changed (null = never).
-	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
-	// Creation timestamp.
-	CreatedAt Timestamp `json:"createdAt"`
-	// Last update timestamp.
-	UpdatedAt Timestamp `json:"updatedAt"`
-}
-
-// GetID returns the value of ID.
-func (s *SiteTrackingDomainResource) GetID() EntityId {
-	return s.ID
-}
-
-// GetHost returns the value of Host.
-func (s *SiteTrackingDomainResource) GetHost() string {
-	return s.Host
-}
-
-// GetRole returns the value of Role.
-func (s *SiteTrackingDomainResource) GetRole() SiteTrackingDomainRole {
-	return s.Role
-}
-
-// GetState returns the value of State.
-func (s *SiteTrackingDomainResource) GetState() SiteTrackingState {
-	return s.State
-}
-
-// GetReason returns the value of Reason.
-func (s *SiteTrackingDomainResource) GetReason() OptSiteTrackingReason {
-	return s.Reason
-}
-
-// GetRecord returns the value of Record.
-func (s *SiteTrackingDomainResource) GetRecord() SiteCnameRecord {
-	return s.Record
-}
-
-// GetOwnershipRecord returns the value of OwnershipRecord.
-func (s *SiteTrackingDomainResource) GetOwnershipRecord() SiteDnsRecord {
-	return s.OwnershipRecord
-}
-
-// GetServedAt returns the value of ServedAt.
-func (s *SiteTrackingDomainResource) GetServedAt() OptNilTimestamp {
-	return s.ServedAt
-}
-
-// GetLastCheckedAt returns the value of LastCheckedAt.
-func (s *SiteTrackingDomainResource) GetLastCheckedAt() OptNilTimestamp {
-	return s.LastCheckedAt
-}
-
-// GetStateChangedAt returns the value of StateChangedAt.
-func (s *SiteTrackingDomainResource) GetStateChangedAt() OptNilTimestamp {
-	return s.StateChangedAt
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *SiteTrackingDomainResource) GetCreatedAt() Timestamp {
-	return s.CreatedAt
-}
-
-// GetUpdatedAt returns the value of UpdatedAt.
-func (s *SiteTrackingDomainResource) GetUpdatedAt() Timestamp {
-	return s.UpdatedAt
-}
-
-// SetID sets the value of ID.
-func (s *SiteTrackingDomainResource) SetID(val EntityId) {
-	s.ID = val
-}
-
-// SetHost sets the value of Host.
-func (s *SiteTrackingDomainResource) SetHost(val string) {
-	s.Host = val
-}
-
-// SetRole sets the value of Role.
-func (s *SiteTrackingDomainResource) SetRole(val SiteTrackingDomainRole) {
-	s.Role = val
-}
-
-// SetState sets the value of State.
-func (s *SiteTrackingDomainResource) SetState(val SiteTrackingState) {
-	s.State = val
-}
-
-// SetReason sets the value of Reason.
-func (s *SiteTrackingDomainResource) SetReason(val OptSiteTrackingReason) {
-	s.Reason = val
-}
-
-// SetRecord sets the value of Record.
-func (s *SiteTrackingDomainResource) SetRecord(val SiteCnameRecord) {
-	s.Record = val
-}
-
-// SetOwnershipRecord sets the value of OwnershipRecord.
-func (s *SiteTrackingDomainResource) SetOwnershipRecord(val SiteDnsRecord) {
-	s.OwnershipRecord = val
-}
-
-// SetServedAt sets the value of ServedAt.
-func (s *SiteTrackingDomainResource) SetServedAt(val OptNilTimestamp) {
-	s.ServedAt = val
-}
-
-// SetLastCheckedAt sets the value of LastCheckedAt.
-func (s *SiteTrackingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
-	s.LastCheckedAt = val
-}
-
-// SetStateChangedAt sets the value of StateChangedAt.
-func (s *SiteTrackingDomainResource) SetStateChangedAt(val OptNilTimestamp) {
-	s.StateChangedAt = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *SiteTrackingDomainResource) SetCreatedAt(val Timestamp) {
-	s.CreatedAt = val
-}
-
-// SetUpdatedAt sets the value of UpdatedAt.
-func (s *SiteTrackingDomainResource) SetUpdatedAt(val Timestamp) {
-	s.UpdatedAt = val
-}
-
-// What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
-// snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
-// the links already sent and the snippet already installed on it, until its CNAME leaves the edge.
-// Ref: #/components/schemas/SiteTrackingDomainRole
-type SiteTrackingDomainRole string
-
-const (
-	SiteTrackingDomainRoleCurrent     SiteTrackingDomainRole = "current"
-	SiteTrackingDomainRoleReplacement SiteTrackingDomainRole = "replacement"
-	SiteTrackingDomainRoleRetired     SiteTrackingDomainRole = "retired"
-)
-
-// AllValues returns all SiteTrackingDomainRole values.
-func (SiteTrackingDomainRole) AllValues() []SiteTrackingDomainRole {
-	return []SiteTrackingDomainRole{
-		SiteTrackingDomainRoleCurrent,
-		SiteTrackingDomainRoleReplacement,
-		SiteTrackingDomainRoleRetired,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteTrackingDomainRole) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteTrackingDomainRoleCurrent:
-		return []byte(s), nil
-	case SiteTrackingDomainRoleReplacement:
-		return []byte(s), nil
-	case SiteTrackingDomainRoleRetired:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteTrackingDomainRole) UnmarshalText(data []byte) error {
-	switch SiteTrackingDomainRole(data) {
-	case SiteTrackingDomainRoleCurrent:
-		*s = SiteTrackingDomainRoleCurrent
-		return nil
-	case SiteTrackingDomainRoleReplacement:
-		*s = SiteTrackingDomainRoleReplacement
-		return nil
-	case SiteTrackingDomainRoleRetired:
-		*s = SiteTrackingDomainRoleRetired
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // SiteTrackingDomainsRemoveNoContent is response for SiteTrackingDomainsRemove operation.
 type SiteTrackingDomainsRemoveNoContent struct{}
-
-// Why a Tracking domain is held back although its records may be right: `host_taken` means another
-// Workspace already has this host verified (ADR 0038).
-// Ref: #/components/schemas/SiteTrackingReason
-type SiteTrackingReason string
-
-const (
-	SiteTrackingReasonHostTaken SiteTrackingReason = "host_taken"
-)
-
-// AllValues returns all SiteTrackingReason values.
-func (SiteTrackingReason) AllValues() []SiteTrackingReason {
-	return []SiteTrackingReason{
-		SiteTrackingReasonHostTaken,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteTrackingReason) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteTrackingReasonHostTaken:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteTrackingReason) UnmarshalText(data []byte) error {
-	switch SiteTrackingReason(data) {
-	case SiteTrackingReasonHostTaken:
-		*s = SiteTrackingReasonHostTaken
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the
-// ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS
-// on the host answers.
-// Ref: #/components/schemas/SiteTrackingState
-type SiteTrackingState string
-
-const (
-	SiteTrackingStatePending     SiteTrackingState = "pending"
-	SiteTrackingStateDNSVerified SiteTrackingState = "dns_verified"
-	SiteTrackingStateServing     SiteTrackingState = "serving"
-)
-
-// AllValues returns all SiteTrackingState values.
-func (SiteTrackingState) AllValues() []SiteTrackingState {
-	return []SiteTrackingState{
-		SiteTrackingStatePending,
-		SiteTrackingStateDNSVerified,
-		SiteTrackingStateServing,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteTrackingState) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteTrackingStatePending:
-		return []byte(s), nil
-	case SiteTrackingStateDNSVerified:
-		return []byte(s), nil
-	case SiteTrackingStateServing:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteTrackingState) UnmarshalText(data []byte) error {
-	switch SiteTrackingState(data) {
-	case SiteTrackingStatePending:
-		*s = SiteTrackingStatePending
-		return nil
-	case SiteTrackingStateDNSVerified:
-		*s = SiteTrackingStateDNSVerified
-		return nil
-	case SiteTrackingStateServing:
-		*s = SiteTrackingStateServing
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
 
 // The channel a transactional send went out on (email today; sms reserved).
 // Ref: #/components/schemas/SiteTransactionalEmailChannel
@@ -27255,194 +26676,6 @@ func (s *SiteTransactionalEmailsListOK) SetTotalPages(val int32) {
 	s.TotalPages = val
 }
 
-// A Twilio account without its secret.
-// Ref: #/components/schemas/SiteTwilioConfig
-type SiteTwilioConfig struct {
-	Kind SiteTwilioConfigKind `json:"kind"`
-	// The Account SID.
-	AccountSid string `json:"accountSid"`
-	// The API key messages are sent with; null when they are sent with the Auth Token.
-	ApiKeySid NilString `json:"apiKeySid"`
-	// What messages go out from.
-	From string `json:"from"`
-	// What kind of sender `from` is.
-	FromKind SmsFromKind `json:"fromKind"`
-	// Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID,
-	// which receives nothing, and when the credentials may not change the sender: then paste `hookUrl`
-	// into Twilio as the sender's inbound and status callback.
-	CallbacksSet bool `json:"callbacksSet"`
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteTwilioConfig) GetKind() SiteTwilioConfigKind {
-	return s.Kind
-}
-
-// GetAccountSid returns the value of AccountSid.
-func (s *SiteTwilioConfig) GetAccountSid() string {
-	return s.AccountSid
-}
-
-// GetApiKeySid returns the value of ApiKeySid.
-func (s *SiteTwilioConfig) GetApiKeySid() NilString {
-	return s.ApiKeySid
-}
-
-// GetFrom returns the value of From.
-func (s *SiteTwilioConfig) GetFrom() string {
-	return s.From
-}
-
-// GetFromKind returns the value of FromKind.
-func (s *SiteTwilioConfig) GetFromKind() SmsFromKind {
-	return s.FromKind
-}
-
-// GetCallbacksSet returns the value of CallbacksSet.
-func (s *SiteTwilioConfig) GetCallbacksSet() bool {
-	return s.CallbacksSet
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteTwilioConfig) SetKind(val SiteTwilioConfigKind) {
-	s.Kind = val
-}
-
-// SetAccountSid sets the value of AccountSid.
-func (s *SiteTwilioConfig) SetAccountSid(val string) {
-	s.AccountSid = val
-}
-
-// SetApiKeySid sets the value of ApiKeySid.
-func (s *SiteTwilioConfig) SetApiKeySid(val NilString) {
-	s.ApiKeySid = val
-}
-
-// SetFrom sets the value of From.
-func (s *SiteTwilioConfig) SetFrom(val string) {
-	s.From = val
-}
-
-// SetFromKind sets the value of FromKind.
-func (s *SiteTwilioConfig) SetFromKind(val SmsFromKind) {
-	s.FromKind = val
-}
-
-// SetCallbacksSet sets the value of CallbacksSet.
-func (s *SiteTwilioConfig) SetCallbacksSet(val bool) {
-	s.CallbacksSet = val
-}
-
-type SiteTwilioConfigKind string
-
-const (
-	SiteTwilioConfigKindTwilio SiteTwilioConfigKind = "twilio"
-)
-
-// AllValues returns all SiteTwilioConfigKind values.
-func (SiteTwilioConfigKind) AllValues() []SiteTwilioConfigKind {
-	return []SiteTwilioConfigKind{
-		SiteTwilioConfigKindTwilio,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteTwilioConfigKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteTwilioConfigKindTwilio:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteTwilioConfigKind) UnmarshalText(data []byte) error {
-	switch SiteTwilioConfigKind(data) {
-	case SiteTwilioConfigKindTwilio:
-		*s = SiteTwilioConfigKindTwilio
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// Site request body for updating an automation. The name changes at once; the trigger, exit and goal
-// events and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live
-// version's, and publishing makes the draft live.
-// Ref: #/components/schemas/SiteUpdateAutomationInput
-type SiteUpdateAutomationInput struct {
-	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
-	Revision     Revision  `json:"revision"`
-	Name         OptName   `json:"name"`
-	TriggerEvent OptString `json:"triggerEvent"`
-	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
-	ExitEvents []string `json:"exitEvents"`
-	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
-	GoalEvent OptNilString              `json:"goalEvent"`
-	Steps     []SiteAutomationStepInput `json:"steps"`
-}
-
-// GetRevision returns the value of Revision.
-func (s *SiteUpdateAutomationInput) GetRevision() Revision {
-	return s.Revision
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateAutomationInput) GetName() OptName {
-	return s.Name
-}
-
-// GetTriggerEvent returns the value of TriggerEvent.
-func (s *SiteUpdateAutomationInput) GetTriggerEvent() OptString {
-	return s.TriggerEvent
-}
-
-// GetExitEvents returns the value of ExitEvents.
-func (s *SiteUpdateAutomationInput) GetExitEvents() []string {
-	return s.ExitEvents
-}
-
-// GetGoalEvent returns the value of GoalEvent.
-func (s *SiteUpdateAutomationInput) GetGoalEvent() OptNilString {
-	return s.GoalEvent
-}
-
-// GetSteps returns the value of Steps.
-func (s *SiteUpdateAutomationInput) GetSteps() []SiteAutomationStepInput {
-	return s.Steps
-}
-
-// SetRevision sets the value of Revision.
-func (s *SiteUpdateAutomationInput) SetRevision(val Revision) {
-	s.Revision = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateAutomationInput) SetName(val OptName) {
-	s.Name = val
-}
-
-// SetTriggerEvent sets the value of TriggerEvent.
-func (s *SiteUpdateAutomationInput) SetTriggerEvent(val OptString) {
-	s.TriggerEvent = val
-}
-
-// SetExitEvents sets the value of ExitEvents.
-func (s *SiteUpdateAutomationInput) SetExitEvents(val []string) {
-	s.ExitEvents = val
-}
-
-// SetGoalEvent sets the value of GoalEvent.
-func (s *SiteUpdateAutomationInput) SetGoalEvent(val OptNilString) {
-	s.GoalEvent = val
-}
-
-// SetSteps sets the value of Steps.
-func (s *SiteUpdateAutomationInput) SetSteps(val []SiteAutomationStepInput) {
-	s.Steps = val
-}
-
 // Site request body for updating a contact: the attributes /api takes, and its tag set. The app's
 // contact form sets the tags in the same save; /api tags a contact through its own operations
 // (`tags_apply`, `tags_remove`), which is why its body has no tags.
@@ -27624,47 +26857,6 @@ func (s *SiteUpdateContactInput) SetTags(val []string) {
 	s.Tags = val
 }
 
-// Request body for updating a custom field: its key never changes.
-// Ref: #/components/schemas/SiteUpdateCustomFieldInput
-type SiteUpdateCustomFieldInput struct {
-	// The custom field's `revision` the edit was made on (ADR 0119): the one it was read with.
-	Revision Revision `json:"revision"`
-	// Display name.
-	Name OptName `json:"name"`
-	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
-	Type OptSiteCustomFieldType `json:"type"`
-}
-
-// GetRevision returns the value of Revision.
-func (s *SiteUpdateCustomFieldInput) GetRevision() Revision {
-	return s.Revision
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateCustomFieldInput) GetName() OptName {
-	return s.Name
-}
-
-// GetType returns the value of Type.
-func (s *SiteUpdateCustomFieldInput) GetType() OptSiteCustomFieldType {
-	return s.Type
-}
-
-// SetRevision sets the value of Revision.
-func (s *SiteUpdateCustomFieldInput) SetRevision(val Revision) {
-	s.Revision = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateCustomFieldInput) SetName(val OptName) {
-	s.Name = val
-}
-
-// SetType sets the value of Type.
-func (s *SiteUpdateCustomFieldInput) SetType(val OptSiteCustomFieldType) {
-	s.Type = val
-}
-
 // Update the authenticated user's profile. To change the password, provide both currentPassword and
 // newPassword.
 // Ref: #/components/schemas/SiteUpdateMeInput
@@ -27788,111 +26980,6 @@ func (s *SiteUpdateRevenueSettingsInput) SetReportingCurrency(val OptCurrencyCod
 // SetAttributionWindowDays sets the value of AttributionWindowDays.
 func (s *SiteUpdateRevenueSettingsInput) SetAttributionWindowDays(val OptAttributionWindowDays) {
 	s.AttributionWindowDays = val
-}
-
-// Site request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and
-// Actions write the draft, and the ones left out keep the draft's, else the live version's.
-// Ref: #/components/schemas/SiteUpdateRuleInput
-type SiteUpdateRuleInput struct {
-	// The rule's `revision` the edit was made on (ADR 0119): the one it was read with.
-	Revision Revision `json:"revision"`
-	Name     OptName  `json:"name"`
-	// The Event actions that make the Rule fire; at least one.
-	TriggerEvents []string                   `json:"triggerEvents"`
-	Condition     OptSiteConditionGroupInput `json:"condition"`
-	// The Actions to run, in order.
-	Actions []SiteRuleActionInput `json:"actions"`
-}
-
-// GetRevision returns the value of Revision.
-func (s *SiteUpdateRuleInput) GetRevision() Revision {
-	return s.Revision
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateRuleInput) GetName() OptName {
-	return s.Name
-}
-
-// GetTriggerEvents returns the value of TriggerEvents.
-func (s *SiteUpdateRuleInput) GetTriggerEvents() []string {
-	return s.TriggerEvents
-}
-
-// GetCondition returns the value of Condition.
-func (s *SiteUpdateRuleInput) GetCondition() OptSiteConditionGroupInput {
-	return s.Condition
-}
-
-// GetActions returns the value of Actions.
-func (s *SiteUpdateRuleInput) GetActions() []SiteRuleActionInput {
-	return s.Actions
-}
-
-// SetRevision sets the value of Revision.
-func (s *SiteUpdateRuleInput) SetRevision(val Revision) {
-	s.Revision = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateRuleInput) SetName(val OptName) {
-	s.Name = val
-}
-
-// SetTriggerEvents sets the value of TriggerEvents.
-func (s *SiteUpdateRuleInput) SetTriggerEvents(val []string) {
-	s.TriggerEvents = val
-}
-
-// SetCondition sets the value of Condition.
-func (s *SiteUpdateRuleInput) SetCondition(val OptSiteConditionGroupInput) {
-	s.Condition = val
-}
-
-// SetActions sets the value of Actions.
-func (s *SiteUpdateRuleInput) SetActions(val []SiteRuleActionInput) {
-	s.Actions = val
-}
-
-// Site request body for updating a segment.
-// Ref: #/components/schemas/SiteUpdateSegmentInput
-type SiteUpdateSegmentInput struct {
-	// The segment's `revision` the edit was made on (ADR 0119): the one it was read with.
-	Revision Revision `json:"revision"`
-	// Segment name.
-	Name OptName `json:"name"`
-	// Segment condition: the tree of tests; an empty group matches all contacts.
-	Condition OptSiteConditionGroupInput `json:"condition"`
-}
-
-// GetRevision returns the value of Revision.
-func (s *SiteUpdateSegmentInput) GetRevision() Revision {
-	return s.Revision
-}
-
-// GetName returns the value of Name.
-func (s *SiteUpdateSegmentInput) GetName() OptName {
-	return s.Name
-}
-
-// GetCondition returns the value of Condition.
-func (s *SiteUpdateSegmentInput) GetCondition() OptSiteConditionGroupInput {
-	return s.Condition
-}
-
-// SetRevision sets the value of Revision.
-func (s *SiteUpdateSegmentInput) SetRevision(val Revision) {
-	s.Revision = val
-}
-
-// SetName sets the value of Name.
-func (s *SiteUpdateSegmentInput) SetName(val OptName) {
-	s.Name = val
-}
-
-// SetCondition sets the value of Condition.
-func (s *SiteUpdateSegmentInput) SetCondition(val OptSiteConditionGroupInput) {
-	s.Condition = val
 }
 
 // Rename an API token.
@@ -28214,58 +27301,6 @@ func (s *SiteVerifyEmailResultHeaders) SetResponse(val SiteVerifyEmailResult) {
 	s.Response = val
 }
 
-// Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
-// answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
-// while the endpoint is enabled.
-// Ref: #/components/schemas/SiteWebhookDisabledReason
-type SiteWebhookDisabledReason string
-
-const (
-	SiteWebhookDisabledReasonOwner             SiteWebhookDisabledReason = "owner"
-	SiteWebhookDisabledReasonGone              SiteWebhookDisabledReason = "gone"
-	SiteWebhookDisabledReasonPersistentFailure SiteWebhookDisabledReason = "persistent_failure"
-)
-
-// AllValues returns all SiteWebhookDisabledReason values.
-func (SiteWebhookDisabledReason) AllValues() []SiteWebhookDisabledReason {
-	return []SiteWebhookDisabledReason{
-		SiteWebhookDisabledReasonOwner,
-		SiteWebhookDisabledReasonGone,
-		SiteWebhookDisabledReasonPersistentFailure,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteWebhookDisabledReason) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteWebhookDisabledReasonOwner:
-		return []byte(s), nil
-	case SiteWebhookDisabledReasonGone:
-		return []byte(s), nil
-	case SiteWebhookDisabledReasonPersistentFailure:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteWebhookDisabledReason) UnmarshalText(data []byte) error {
-	switch SiteWebhookDisabledReason(data) {
-	case SiteWebhookDisabledReasonOwner:
-		*s = SiteWebhookDisabledReasonOwner
-		return nil
-	case SiteWebhookDisabledReasonGone:
-		*s = SiteWebhookDisabledReasonGone
-		return nil
-	case SiteWebhookDisabledReasonPersistentFailure:
-		*s = SiteWebhookDisabledReasonPersistentFailure
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
 // Webhook endpoint resource used by the site UI.
 // Ref: #/components/schemas/SiteWebhookEndpointResource
 type SiteWebhookEndpointResource struct {
@@ -28283,9 +27318,9 @@ type SiteWebhookEndpointResource struct {
 	// When the endpoint was turned off; absent while it is enabled.
 	DisabledAt OptTimestamp `json:"disabledAt"`
 	// Why the endpoint is off; present exactly when `disabledAt` is.
-	DisabledReason OptSiteWebhookDisabledReason `json:"disabledReason"`
+	DisabledReason OptWebhookDisabledReason `json:"disabledReason"`
 	// Present while deliveries are failing; cleared by the next 2xx.
-	Failure OptSiteWebhookFailure `json:"failure"`
+	Failure OptWebhookFailure `json:"failure"`
 	// The revision of the state this answer shows (ADR 0119): an update names it.
 	Revision Revision `json:"revision"`
 	// Creation timestamp.
@@ -28325,12 +27360,12 @@ func (s *SiteWebhookEndpointResource) GetDisabledAt() OptTimestamp {
 }
 
 // GetDisabledReason returns the value of DisabledReason.
-func (s *SiteWebhookEndpointResource) GetDisabledReason() OptSiteWebhookDisabledReason {
+func (s *SiteWebhookEndpointResource) GetDisabledReason() OptWebhookDisabledReason {
 	return s.DisabledReason
 }
 
 // GetFailure returns the value of Failure.
-func (s *SiteWebhookEndpointResource) GetFailure() OptSiteWebhookFailure {
+func (s *SiteWebhookEndpointResource) GetFailure() OptWebhookFailure {
 	return s.Failure
 }
 
@@ -28380,12 +27415,12 @@ func (s *SiteWebhookEndpointResource) SetDisabledAt(val OptTimestamp) {
 }
 
 // SetDisabledReason sets the value of DisabledReason.
-func (s *SiteWebhookEndpointResource) SetDisabledReason(val OptSiteWebhookDisabledReason) {
+func (s *SiteWebhookEndpointResource) SetDisabledReason(val OptWebhookDisabledReason) {
 	s.DisabledReason = val
 }
 
 // SetFailure sets the value of Failure.
-func (s *SiteWebhookEndpointResource) SetFailure(val OptSiteWebhookFailure) {
+func (s *SiteWebhookEndpointResource) SetFailure(val OptWebhookFailure) {
 	s.Failure = val
 }
 
@@ -28402,171 +27437,6 @@ func (s *SiteWebhookEndpointResource) SetCreatedAt(val Timestamp) {
 // SetUpdatedAt sets the value of UpdatedAt.
 func (s *SiteWebhookEndpointResource) SetUpdatedAt(val Timestamp) {
 	s.UpdatedAt = val
-}
-
-// Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
-// `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
-// answer, see `status`) and `network` (any other transport failure).
-// Ref: #/components/schemas/SiteWebhookErrorKind
-type SiteWebhookErrorKind string
-
-const (
-	SiteWebhookErrorKindTimeout        SiteWebhookErrorKind = "timeout"
-	SiteWebhookErrorKindBlockedAddress SiteWebhookErrorKind = "blocked_address"
-	SiteWebhookErrorKindHTTPStatus     SiteWebhookErrorKind = "http_status"
-	SiteWebhookErrorKindNetwork        SiteWebhookErrorKind = "network"
-)
-
-// AllValues returns all SiteWebhookErrorKind values.
-func (SiteWebhookErrorKind) AllValues() []SiteWebhookErrorKind {
-	return []SiteWebhookErrorKind{
-		SiteWebhookErrorKindTimeout,
-		SiteWebhookErrorKindBlockedAddress,
-		SiteWebhookErrorKindHTTPStatus,
-		SiteWebhookErrorKindNetwork,
-	}
-}
-
-// MarshalText implements encoding.TextMarshaler.
-func (s SiteWebhookErrorKind) MarshalText() ([]byte, error) {
-	switch s {
-	case SiteWebhookErrorKindTimeout:
-		return []byte(s), nil
-	case SiteWebhookErrorKindBlockedAddress:
-		return []byte(s), nil
-	case SiteWebhookErrorKindHTTPStatus:
-		return []byte(s), nil
-	case SiteWebhookErrorKindNetwork:
-		return []byte(s), nil
-	default:
-		return nil, errors.Errorf("invalid value: %q", s)
-	}
-}
-
-// UnmarshalText implements encoding.TextUnmarshaler.
-func (s *SiteWebhookErrorKind) UnmarshalText(data []byte) error {
-	switch SiteWebhookErrorKind(data) {
-	case SiteWebhookErrorKindTimeout:
-		*s = SiteWebhookErrorKindTimeout
-		return nil
-	case SiteWebhookErrorKindBlockedAddress:
-		*s = SiteWebhookErrorKindBlockedAddress
-		return nil
-	case SiteWebhookErrorKindHTTPStatus:
-		*s = SiteWebhookErrorKindHTTPStatus
-		return nil
-	case SiteWebhookErrorKindNetwork:
-		*s = SiteWebhookErrorKindNetwork
-		return nil
-	default:
-		return errors.Errorf("invalid value: %q", data)
-	}
-}
-
-// The failure state of an endpoint that is currently failing; absent while it is healthy.
-// Ref: #/components/schemas/SiteWebhookFailure
-type SiteWebhookFailure struct {
-	// Deliveries that failed in a row.
-	ConsecutiveFailures int32 `json:"consecutiveFailures"`
-	// When the current run of failures began.
-	Since Timestamp `json:"since"`
-	// When the latest delivery failed.
-	LastFailureAt Timestamp `json:"lastFailureAt"`
-	// Kind of the latest failure.
-	Kind SiteWebhookErrorKind `json:"kind"`
-	// HTTP status of the latest failure; present only for kind `http_status`.
-	Status OptInt32 `json:"status"`
-}
-
-// GetConsecutiveFailures returns the value of ConsecutiveFailures.
-func (s *SiteWebhookFailure) GetConsecutiveFailures() int32 {
-	return s.ConsecutiveFailures
-}
-
-// GetSince returns the value of Since.
-func (s *SiteWebhookFailure) GetSince() Timestamp {
-	return s.Since
-}
-
-// GetLastFailureAt returns the value of LastFailureAt.
-func (s *SiteWebhookFailure) GetLastFailureAt() Timestamp {
-	return s.LastFailureAt
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteWebhookFailure) GetKind() SiteWebhookErrorKind {
-	return s.Kind
-}
-
-// GetStatus returns the value of Status.
-func (s *SiteWebhookFailure) GetStatus() OptInt32 {
-	return s.Status
-}
-
-// SetConsecutiveFailures sets the value of ConsecutiveFailures.
-func (s *SiteWebhookFailure) SetConsecutiveFailures(val int32) {
-	s.ConsecutiveFailures = val
-}
-
-// SetSince sets the value of Since.
-func (s *SiteWebhookFailure) SetSince(val Timestamp) {
-	s.Since = val
-}
-
-// SetLastFailureAt sets the value of LastFailureAt.
-func (s *SiteWebhookFailure) SetLastFailureAt(val Timestamp) {
-	s.LastFailureAt = val
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteWebhookFailure) SetKind(val SiteWebhookErrorKind) {
-	s.Kind = val
-}
-
-// SetStatus sets the value of Status.
-func (s *SiteWebhookFailure) SetStatus(val OptInt32) {
-	s.Status = val
-}
-
-// What the receiver answered to a test delivery. The endpoint's failure state is not touched.
-// Ref: #/components/schemas/SiteWebhookTestResult
-type SiteWebhookTestResult struct {
-	// Whether the receiver answered 2xx.
-	Delivered bool `json:"delivered"`
-	// HTTP status the receiver answered, when it answered.
-	Status OptInt32 `json:"status"`
-	// Why the delivery failed; absent when delivered.
-	Kind OptSiteWebhookErrorKind `json:"kind"`
-}
-
-// GetDelivered returns the value of Delivered.
-func (s *SiteWebhookTestResult) GetDelivered() bool {
-	return s.Delivered
-}
-
-// GetStatus returns the value of Status.
-func (s *SiteWebhookTestResult) GetStatus() OptInt32 {
-	return s.Status
-}
-
-// GetKind returns the value of Kind.
-func (s *SiteWebhookTestResult) GetKind() OptSiteWebhookErrorKind {
-	return s.Kind
-}
-
-// SetDelivered sets the value of Delivered.
-func (s *SiteWebhookTestResult) SetDelivered(val bool) {
-	s.Delivered = val
-}
-
-// SetStatus sets the value of Status.
-func (s *SiteWebhookTestResult) SetStatus(val OptInt32) {
-	s.Status = val
-}
-
-// SetKind sets the value of Kind.
-func (s *SiteWebhookTestResult) SetKind(val OptSiteWebhookErrorKind) {
-	s.Kind = val
 }
 
 // SiteWebhooksDeleteNoContent is response for SiteWebhooksDelete operation.
@@ -28768,7 +27638,7 @@ type SiteWorkspaceResource struct {
 	SecondFactorRequirementGraceEndsAt OptNilTimestamp `json:"secondFactorRequirementGraceEndsAt"`
 	// The Send cap the platform set on the Workspace, with its sends over the last 24 hours; null when no
 	// Send cap applies. Read-only: no operation lets the Workspace change it.
-	SendCap OptNilSiteSendCap `json:"sendCap"`
+	SendCap OptNilSendCap `json:"sendCap"`
 	// Whether the authenticated User may open the Account link: true only for an Owner, and only on an
 	// installation configured for it.
 	AccountLinkAvailable bool `json:"accountLinkAvailable"`
@@ -28876,7 +27746,7 @@ func (s *SiteWorkspaceResource) GetSecondFactorRequirementGraceEndsAt() OptNilTi
 }
 
 // GetSendCap returns the value of SendCap.
-func (s *SiteWorkspaceResource) GetSendCap() OptNilSiteSendCap {
+func (s *SiteWorkspaceResource) GetSendCap() OptNilSendCap {
 	return s.SendCap
 }
 
@@ -28991,7 +27861,7 @@ func (s *SiteWorkspaceResource) SetSecondFactorRequirementGraceEndsAt(val OptNil
 }
 
 // SetSendCap sets the value of SendCap.
-func (s *SiteWorkspaceResource) SetSendCap(val OptNilSiteSendCap) {
+func (s *SiteWorkspaceResource) SetSendCap(val OptNilSendCap) {
 	s.SendCap = val
 }
 
@@ -29387,6 +28257,77 @@ func (s *SmsOptOut) SetOptedOutAt(val Timestamp) {
 	s.OptedOutAt = val
 }
 
+// SMTP config without the password.
+// Ref: #/components/schemas/SmtpConfig
+type SmtpConfig struct {
+	Kind     SmtpConfigKind `json:"kind"`
+	Host     string         `json:"host"`
+	Port     int32          `json:"port"`
+	Username OptNilString   `json:"username"`
+	From     EmailAddress   `json:"from"`
+	FromName OptNilString   `json:"fromName"`
+}
+
+// GetKind returns the value of Kind.
+func (s *SmtpConfig) GetKind() SmtpConfigKind {
+	return s.Kind
+}
+
+// GetHost returns the value of Host.
+func (s *SmtpConfig) GetHost() string {
+	return s.Host
+}
+
+// GetPort returns the value of Port.
+func (s *SmtpConfig) GetPort() int32 {
+	return s.Port
+}
+
+// GetUsername returns the value of Username.
+func (s *SmtpConfig) GetUsername() OptNilString {
+	return s.Username
+}
+
+// GetFrom returns the value of From.
+func (s *SmtpConfig) GetFrom() EmailAddress {
+	return s.From
+}
+
+// GetFromName returns the value of FromName.
+func (s *SmtpConfig) GetFromName() OptNilString {
+	return s.FromName
+}
+
+// SetKind sets the value of Kind.
+func (s *SmtpConfig) SetKind(val SmtpConfigKind) {
+	s.Kind = val
+}
+
+// SetHost sets the value of Host.
+func (s *SmtpConfig) SetHost(val string) {
+	s.Host = val
+}
+
+// SetPort sets the value of Port.
+func (s *SmtpConfig) SetPort(val int32) {
+	s.Port = val
+}
+
+// SetUsername sets the value of Username.
+func (s *SmtpConfig) SetUsername(val OptNilString) {
+	s.Username = val
+}
+
+// SetFrom sets the value of From.
+func (s *SmtpConfig) SetFrom(val EmailAddress) {
+	s.From = val
+}
+
+// SetFromName sets the value of FromName.
+func (s *SmtpConfig) SetFromName(val OptNilString) {
+	s.FromName = val
+}
+
 // SMTP credentials.
 // Ref: #/components/schemas/SmtpConfigInput
 type SmtpConfigInput struct {
@@ -29503,6 +28444,40 @@ func (s *SmtpConfigInputKind) UnmarshalText(data []byte) error {
 	}
 }
 
+type SmtpConfigKind string
+
+const (
+	SmtpConfigKindSMTP SmtpConfigKind = "smtp"
+)
+
+// AllValues returns all SmtpConfigKind values.
+func (SmtpConfigKind) AllValues() []SmtpConfigKind {
+	return []SmtpConfigKind{
+		SmtpConfigKindSMTP,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SmtpConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case SmtpConfigKindSMTP:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SmtpConfigKind) UnmarshalText(data []byte) error {
+	switch SmtpConfigKind(data) {
+	case SmtpConfigKindSMTP:
+		*s = SmtpConfigKindSMTP
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
 // A Workspace the User is the only Owner of, which blocks User deletion.
 // Ref: #/components/schemas/SoleOwnedWorkspace
 type SoleOwnedWorkspace struct {
@@ -29570,6 +28545,107 @@ func (s *SortDirection) UnmarshalText(data []byte) error {
 		return nil
 	case SortDirectionDesc:
 		*s = SortDirectionDesc
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Channel a destination can be suppressed on.
+// Ref: #/components/schemas/SuppressionChannel
+type SuppressionChannel string
+
+const (
+	SuppressionChannelEmail    SuppressionChannel = "email"
+	SuppressionChannelTelegram SuppressionChannel = "telegram"
+	SuppressionChannelSMS      SuppressionChannel = "sms"
+)
+
+// AllValues returns all SuppressionChannel values.
+func (SuppressionChannel) AllValues() []SuppressionChannel {
+	return []SuppressionChannel{
+		SuppressionChannelEmail,
+		SuppressionChannelTelegram,
+		SuppressionChannelSMS,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SuppressionChannel) MarshalText() ([]byte, error) {
+	switch s {
+	case SuppressionChannelEmail:
+		return []byte(s), nil
+	case SuppressionChannelTelegram:
+		return []byte(s), nil
+	case SuppressionChannelSMS:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SuppressionChannel) UnmarshalText(data []byte) error {
+	switch SuppressionChannel(data) {
+	case SuppressionChannelEmail:
+		*s = SuppressionChannelEmail
+		return nil
+	case SuppressionChannelTelegram:
+		*s = SuppressionChannelTelegram
+		return nil
+	case SuppressionChannelSMS:
+		*s = SuppressionChannelSMS
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a suppression: it
+// is a separate, per-source opt-out.
+// Ref: #/components/schemas/SuppressionReason
+type SuppressionReason string
+
+const (
+	SuppressionReasonBounce    SuppressionReason = "bounce"
+	SuppressionReasonComplaint SuppressionReason = "complaint"
+	SuppressionReasonManual    SuppressionReason = "manual"
+)
+
+// AllValues returns all SuppressionReason values.
+func (SuppressionReason) AllValues() []SuppressionReason {
+	return []SuppressionReason{
+		SuppressionReasonBounce,
+		SuppressionReasonComplaint,
+		SuppressionReasonManual,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s SuppressionReason) MarshalText() ([]byte, error) {
+	switch s {
+	case SuppressionReasonBounce:
+		return []byte(s), nil
+	case SuppressionReasonComplaint:
+		return []byte(s), nil
+	case SuppressionReasonManual:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *SuppressionReason) UnmarshalText(data []byte) error {
+	switch SuppressionReason(data) {
+	case SuppressionReasonBounce:
+		*s = SuppressionReasonBounce
+		return nil
+	case SuppressionReasonComplaint:
+		*s = SuppressionReasonComplaint
+		return nil
+	case SuppressionReasonManual:
+		*s = SuppressionReasonManual
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -29864,6 +28940,46 @@ func (s *TelegramButtonInput) SetURL(val string) {
 	s.URL = val
 }
 
+// A Telegram bot without its token: who it is, as Telegram said when it was connected.
+// Ref: #/components/schemas/TelegramConfig
+type TelegramConfig struct {
+	Kind TelegramConfigKind `json:"kind"`
+	// The bot's numeric Telegram id.
+	BotId int64 `json:"botId"`
+	// The bot's.
+	Username string `json:"username"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TelegramConfig) GetKind() TelegramConfigKind {
+	return s.Kind
+}
+
+// GetBotId returns the value of BotId.
+func (s *TelegramConfig) GetBotId() int64 {
+	return s.BotId
+}
+
+// GetUsername returns the value of Username.
+func (s *TelegramConfig) GetUsername() string {
+	return s.Username
+}
+
+// SetKind sets the value of Kind.
+func (s *TelegramConfig) SetKind(val TelegramConfigKind) {
+	s.Kind = val
+}
+
+// SetBotId sets the value of BotId.
+func (s *TelegramConfig) SetBotId(val int64) {
+	s.BotId = val
+}
+
+// SetUsername sets the value of Username.
+func (s *TelegramConfig) SetUsername(val string) {
+	s.Username = val
+}
+
 // A Telegram bot of the Workspace's own, on the `telegram` channel. Saving it checks the token with
 // Telegram and points the bot's webhook at the integration's hook, replacing any webhook the bot had:
 // use a bot dedicated to sphericon.
@@ -29922,6 +29038,40 @@ func (s *TelegramConfigInputKind) UnmarshalText(data []byte) error {
 	switch TelegramConfigInputKind(data) {
 	case TelegramConfigInputKindTelegram:
 		*s = TelegramConfigInputKindTelegram
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type TelegramConfigKind string
+
+const (
+	TelegramConfigKindTelegram TelegramConfigKind = "telegram"
+)
+
+// AllValues returns all TelegramConfigKind values.
+func (TelegramConfigKind) AllValues() []TelegramConfigKind {
+	return []TelegramConfigKind{
+		TelegramConfigKindTelegram,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TelegramConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TelegramConfigKindTelegram:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TelegramConfigKind) UnmarshalText(data []byte) error {
+	switch TelegramConfigKind(data) {
+	case TelegramConfigKindTelegram:
+		*s = TelegramConfigKindTelegram
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)
@@ -30010,6 +29160,376 @@ func (s *TestWebhookInput) SetEventType(val string) {
 type TimeZoneName string
 
 type Timestamp time.Time
+
+// A Tracking domain of the Workspace (ADR 0071): a host of its own on which the links of its mail and
+// the first-party tracker are served.
+// Ref: #/components/schemas/TrackingDomainResource
+type TrackingDomainResource struct {
+	// Unique identifier.
+	ID EntityId `json:"id"`
+	// The host, lower case with IDN as punycode, e.g. "t.example.com".
+	Host string `json:"host"`
+	// What the host does for the Workspace.
+	Role TrackingDomainRole `json:"role"`
+	// Where the host's verification stands.
+	State TrackingState `json:"state"`
+	// Why the host is not advancing; absent when nothing holds it back.
+	Reason OptTrackingReason `json:"reason"`
+	// The CNAME to publish.
+	Record CnameRecord `json:"record"`
+	// The TXT record to publish beside the CNAME, which shows the host is this Workspace's: every check
+	// needs both (ADR 0173).
+	OwnershipRecord DnsRecord `json:"ownershipRecord"`
+	// When the host first served (null = never): only a host that served is retired rather than deleted.
+	ServedAt OptNilTimestamp `json:"servedAt"`
+	// When the host was most recently checked (null = never).
+	LastCheckedAt OptNilTimestamp `json:"lastCheckedAt"`
+	// When the state most recently changed (null = never).
+	StateChangedAt OptNilTimestamp `json:"stateChangedAt"`
+	// Creation timestamp.
+	CreatedAt Timestamp `json:"createdAt"`
+	// Last update timestamp.
+	UpdatedAt Timestamp `json:"updatedAt"`
+}
+
+// GetID returns the value of ID.
+func (s *TrackingDomainResource) GetID() EntityId {
+	return s.ID
+}
+
+// GetHost returns the value of Host.
+func (s *TrackingDomainResource) GetHost() string {
+	return s.Host
+}
+
+// GetRole returns the value of Role.
+func (s *TrackingDomainResource) GetRole() TrackingDomainRole {
+	return s.Role
+}
+
+// GetState returns the value of State.
+func (s *TrackingDomainResource) GetState() TrackingState {
+	return s.State
+}
+
+// GetReason returns the value of Reason.
+func (s *TrackingDomainResource) GetReason() OptTrackingReason {
+	return s.Reason
+}
+
+// GetRecord returns the value of Record.
+func (s *TrackingDomainResource) GetRecord() CnameRecord {
+	return s.Record
+}
+
+// GetOwnershipRecord returns the value of OwnershipRecord.
+func (s *TrackingDomainResource) GetOwnershipRecord() DnsRecord {
+	return s.OwnershipRecord
+}
+
+// GetServedAt returns the value of ServedAt.
+func (s *TrackingDomainResource) GetServedAt() OptNilTimestamp {
+	return s.ServedAt
+}
+
+// GetLastCheckedAt returns the value of LastCheckedAt.
+func (s *TrackingDomainResource) GetLastCheckedAt() OptNilTimestamp {
+	return s.LastCheckedAt
+}
+
+// GetStateChangedAt returns the value of StateChangedAt.
+func (s *TrackingDomainResource) GetStateChangedAt() OptNilTimestamp {
+	return s.StateChangedAt
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *TrackingDomainResource) GetCreatedAt() Timestamp {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *TrackingDomainResource) GetUpdatedAt() Timestamp {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *TrackingDomainResource) SetID(val EntityId) {
+	s.ID = val
+}
+
+// SetHost sets the value of Host.
+func (s *TrackingDomainResource) SetHost(val string) {
+	s.Host = val
+}
+
+// SetRole sets the value of Role.
+func (s *TrackingDomainResource) SetRole(val TrackingDomainRole) {
+	s.Role = val
+}
+
+// SetState sets the value of State.
+func (s *TrackingDomainResource) SetState(val TrackingState) {
+	s.State = val
+}
+
+// SetReason sets the value of Reason.
+func (s *TrackingDomainResource) SetReason(val OptTrackingReason) {
+	s.Reason = val
+}
+
+// SetRecord sets the value of Record.
+func (s *TrackingDomainResource) SetRecord(val CnameRecord) {
+	s.Record = val
+}
+
+// SetOwnershipRecord sets the value of OwnershipRecord.
+func (s *TrackingDomainResource) SetOwnershipRecord(val DnsRecord) {
+	s.OwnershipRecord = val
+}
+
+// SetServedAt sets the value of ServedAt.
+func (s *TrackingDomainResource) SetServedAt(val OptNilTimestamp) {
+	s.ServedAt = val
+}
+
+// SetLastCheckedAt sets the value of LastCheckedAt.
+func (s *TrackingDomainResource) SetLastCheckedAt(val OptNilTimestamp) {
+	s.LastCheckedAt = val
+}
+
+// SetStateChangedAt sets the value of StateChangedAt.
+func (s *TrackingDomainResource) SetStateChangedAt(val OptNilTimestamp) {
+	s.StateChangedAt = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *TrackingDomainResource) SetCreatedAt(val Timestamp) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *TrackingDomainResource) SetUpdatedAt(val Timestamp) {
+	s.UpdatedAt = val
+}
+
+// What a Tracking domain does for the Workspace (ADR 0071): `current` is used for new mail and the
+// snippet while it is `serving`; `replacement` takes over once it is `serving`; `retired` serves only
+// the links already sent and the snippet already installed on it, until its CNAME leaves the edge.
+// Ref: #/components/schemas/TrackingDomainRole
+type TrackingDomainRole string
+
+const (
+	TrackingDomainRoleCurrent     TrackingDomainRole = "current"
+	TrackingDomainRoleReplacement TrackingDomainRole = "replacement"
+	TrackingDomainRoleRetired     TrackingDomainRole = "retired"
+)
+
+// AllValues returns all TrackingDomainRole values.
+func (TrackingDomainRole) AllValues() []TrackingDomainRole {
+	return []TrackingDomainRole{
+		TrackingDomainRoleCurrent,
+		TrackingDomainRoleReplacement,
+		TrackingDomainRoleRetired,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingDomainRole) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingDomainRoleCurrent:
+		return []byte(s), nil
+	case TrackingDomainRoleReplacement:
+		return []byte(s), nil
+	case TrackingDomainRoleRetired:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingDomainRole) UnmarshalText(data []byte) error {
+	switch TrackingDomainRole(data) {
+	case TrackingDomainRoleCurrent:
+		*s = TrackingDomainRoleCurrent
+		return nil
+	case TrackingDomainRoleReplacement:
+		*s = TrackingDomainRoleReplacement
+		return nil
+	case TrackingDomainRoleRetired:
+		*s = TrackingDomainRoleRetired
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Why a Tracking domain is held back although its records may be right: `host_taken` means another
+// Workspace already has this host verified (ADR 0038).
+// Ref: #/components/schemas/TrackingReason
+type TrackingReason string
+
+const (
+	TrackingReasonHostTaken TrackingReason = "host_taken"
+)
+
+// AllValues returns all TrackingReason values.
+func (TrackingReason) AllValues() []TrackingReason {
+	return []TrackingReason{
+		TrackingReasonHostTaken,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingReason) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingReasonHostTaken:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingReason) UnmarshalText(data []byte) error {
+	switch TrackingReason(data) {
+	case TrackingReasonHostTaken:
+		*s = TrackingReasonHostTaken
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// State of a Tracking domain (ADR 0038): `pending` until the CNAME is found at the edge host with the
+// ownership TXT beside it, `dns_verified` once both are (the edge may provision), `serving` once HTTPS
+// on the host answers.
+// Ref: #/components/schemas/TrackingState
+type TrackingState string
+
+const (
+	TrackingStatePending     TrackingState = "pending"
+	TrackingStateDNSVerified TrackingState = "dns_verified"
+	TrackingStateServing     TrackingState = "serving"
+)
+
+// AllValues returns all TrackingState values.
+func (TrackingState) AllValues() []TrackingState {
+	return []TrackingState{
+		TrackingStatePending,
+		TrackingStateDNSVerified,
+		TrackingStateServing,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TrackingState) MarshalText() ([]byte, error) {
+	switch s {
+	case TrackingStatePending:
+		return []byte(s), nil
+	case TrackingStateDNSVerified:
+		return []byte(s), nil
+	case TrackingStateServing:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TrackingState) UnmarshalText(data []byte) error {
+	switch TrackingState(data) {
+	case TrackingStatePending:
+		*s = TrackingStatePending
+		return nil
+	case TrackingStateDNSVerified:
+		*s = TrackingStateDNSVerified
+		return nil
+	case TrackingStateServing:
+		*s = TrackingStateServing
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// A Twilio account without its secret.
+// Ref: #/components/schemas/TwilioConfig
+type TwilioConfig struct {
+	Kind TwilioConfigKind `json:"kind"`
+	// The Account SID.
+	AccountSid string `json:"accountSid"`
+	// The API key messages are sent with; null when they are sent with the Auth Token.
+	ApiKeySid NilString `json:"apiKeySid"`
+	// What messages go out from.
+	From string `json:"from"`
+	// What kind of sender `from` is.
+	FromKind SmsFromKind `json:"fromKind"`
+	// Whether connecting pointed the sender's callbacks at the hook. False for an alphanumeric sender ID,
+	// which receives nothing, and when the credentials may not change the sender: then paste `hookUrl`
+	// into Twilio as the sender's inbound and status callback.
+	CallbacksSet bool `json:"callbacksSet"`
+}
+
+// GetKind returns the value of Kind.
+func (s *TwilioConfig) GetKind() TwilioConfigKind {
+	return s.Kind
+}
+
+// GetAccountSid returns the value of AccountSid.
+func (s *TwilioConfig) GetAccountSid() string {
+	return s.AccountSid
+}
+
+// GetApiKeySid returns the value of ApiKeySid.
+func (s *TwilioConfig) GetApiKeySid() NilString {
+	return s.ApiKeySid
+}
+
+// GetFrom returns the value of From.
+func (s *TwilioConfig) GetFrom() string {
+	return s.From
+}
+
+// GetFromKind returns the value of FromKind.
+func (s *TwilioConfig) GetFromKind() SmsFromKind {
+	return s.FromKind
+}
+
+// GetCallbacksSet returns the value of CallbacksSet.
+func (s *TwilioConfig) GetCallbacksSet() bool {
+	return s.CallbacksSet
+}
+
+// SetKind sets the value of Kind.
+func (s *TwilioConfig) SetKind(val TwilioConfigKind) {
+	s.Kind = val
+}
+
+// SetAccountSid sets the value of AccountSid.
+func (s *TwilioConfig) SetAccountSid(val string) {
+	s.AccountSid = val
+}
+
+// SetApiKeySid sets the value of ApiKeySid.
+func (s *TwilioConfig) SetApiKeySid(val NilString) {
+	s.ApiKeySid = val
+}
+
+// SetFrom sets the value of From.
+func (s *TwilioConfig) SetFrom(val string) {
+	s.From = val
+}
+
+// SetFromKind sets the value of FromKind.
+func (s *TwilioConfig) SetFromKind(val SmsFromKind) {
+	s.FromKind = val
+}
+
+// SetCallbacksSet sets the value of CallbacksSet.
+func (s *TwilioConfig) SetCallbacksSet(val bool) {
+	s.CallbacksSet = val
+}
 
 // A Workspace's own Twilio account on the `sms` channel. Saving it reads the sender with the
 // credentials (a wrong or revoked key is a 422) and points the sender's inbound messages, and a
@@ -30115,6 +29635,116 @@ func (s *TwilioConfigInputKind) UnmarshalText(data []byte) error {
 	}
 }
 
+type TwilioConfigKind string
+
+const (
+	TwilioConfigKindTwilio TwilioConfigKind = "twilio"
+)
+
+// AllValues returns all TwilioConfigKind values.
+func (TwilioConfigKind) AllValues() []TwilioConfigKind {
+	return []TwilioConfigKind{
+		TwilioConfigKindTwilio,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s TwilioConfigKind) MarshalText() ([]byte, error) {
+	switch s {
+	case TwilioConfigKindTwilio:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *TwilioConfigKind) UnmarshalText(data []byte) error {
+	switch TwilioConfigKind(data) {
+	case TwilioConfigKindTwilio:
+		*s = TwilioConfigKindTwilio
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Request body for updating an automation. The name changes at once; the trigger, exit and goal events
+// and the steps write the draft (ADR 0065): omitted fields keep the draft's, else the live version's,
+// and only publishing makes the draft live.
+// Ref: #/components/schemas/UpdateAutomationInput
+type UpdateAutomationInput struct {
+	// The automation's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision     Revision  `json:"revision"`
+	Name         OptName   `json:"name"`
+	TriggerEvent OptString `json:"triggerEvent"`
+	// Event actions that end an active enrollment early; replaces the list, omitted keeps it.
+	ExitEvents []string `json:"exitEvents"`
+	// Event action that ends an active enrollment as goal_reached; null removes it, omitted keeps it.
+	GoalEvent OptNilString          `json:"goalEvent"`
+	Steps     []AutomationStepInput `json:"steps"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateAutomationInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetName returns the value of Name.
+func (s *UpdateAutomationInput) GetName() OptName {
+	return s.Name
+}
+
+// GetTriggerEvent returns the value of TriggerEvent.
+func (s *UpdateAutomationInput) GetTriggerEvent() OptString {
+	return s.TriggerEvent
+}
+
+// GetExitEvents returns the value of ExitEvents.
+func (s *UpdateAutomationInput) GetExitEvents() []string {
+	return s.ExitEvents
+}
+
+// GetGoalEvent returns the value of GoalEvent.
+func (s *UpdateAutomationInput) GetGoalEvent() OptNilString {
+	return s.GoalEvent
+}
+
+// GetSteps returns the value of Steps.
+func (s *UpdateAutomationInput) GetSteps() []AutomationStepInput {
+	return s.Steps
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateAutomationInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetName sets the value of Name.
+func (s *UpdateAutomationInput) SetName(val OptName) {
+	s.Name = val
+}
+
+// SetTriggerEvent sets the value of TriggerEvent.
+func (s *UpdateAutomationInput) SetTriggerEvent(val OptString) {
+	s.TriggerEvent = val
+}
+
+// SetExitEvents sets the value of ExitEvents.
+func (s *UpdateAutomationInput) SetExitEvents(val []string) {
+	s.ExitEvents = val
+}
+
+// SetGoalEvent sets the value of GoalEvent.
+func (s *UpdateAutomationInput) SetGoalEvent(val OptNilString) {
+	s.GoalEvent = val
+}
+
+// SetSteps sets the value of Steps.
+func (s *UpdateAutomationInput) SetSteps(val []AutomationStepInput) {
+	s.Steps = val
+}
+
 // Request body for updating a draft broadcast: an omitted field keeps its value, null clears it.
 // Ref: #/components/schemas/UpdateBroadcastInput
 type UpdateBroadcastInput struct {
@@ -30180,6 +29810,47 @@ func (s *UpdateBroadcastInput) SetSegmentId(val OptNilEntityId) {
 // SetIntegrationId sets the value of IntegrationId.
 func (s *UpdateBroadcastInput) SetIntegrationId(val OptNilEntityId) {
 	s.IntegrationId = val
+}
+
+// Request body for updating a custom field: its key never changes.
+// Ref: #/components/schemas/UpdateCustomFieldInput
+type UpdateCustomFieldInput struct {
+	// The custom field's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	// Display name.
+	Name OptName `json:"name"`
+	// Value type. Stored values are not rewritten: the leaves of the new type read them as they are.
+	Type OptCustomFieldType `json:"type"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateCustomFieldInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetName returns the value of Name.
+func (s *UpdateCustomFieldInput) GetName() OptName {
+	return s.Name
+}
+
+// GetType returns the value of Type.
+func (s *UpdateCustomFieldInput) GetType() OptCustomFieldType {
+	return s.Type
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateCustomFieldInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetName sets the value of Name.
+func (s *UpdateCustomFieldInput) SetName(val OptName) {
+	s.Name = val
+}
+
+// SetType sets the value of Type.
+func (s *UpdateCustomFieldInput) SetType(val OptCustomFieldType) {
+	s.Type = val
 }
 
 // Update an Integration. Omit `config` to keep stored credentials; blank secret fields inside it keep
@@ -30307,6 +29978,111 @@ func (s *UpdateIntegrationInput) SetParams(val OptJsonObject) {
 // SetRetireSecrets sets the value of RetireSecrets.
 func (s *UpdateIntegrationInput) SetRetireSecrets(val OptBool) {
 	s.RetireSecrets = val
+}
+
+// Request body for updating a Rule. The name is the Rule's own; the Trigger events, condition and
+// Actions write the draft, and the ones left out keep the draft's, else the live version's.
+// Ref: #/components/schemas/UpdateRuleInput
+type UpdateRuleInput struct {
+	// The rule's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	Name     OptName  `json:"name"`
+	// The Event actions that make the Rule fire; at least one.
+	TriggerEvents []string               `json:"triggerEvents"`
+	Condition     OptConditionGroupInput `json:"condition"`
+	// The Actions to run, in order.
+	Actions []RuleActionInput `json:"actions"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateRuleInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetName returns the value of Name.
+func (s *UpdateRuleInput) GetName() OptName {
+	return s.Name
+}
+
+// GetTriggerEvents returns the value of TriggerEvents.
+func (s *UpdateRuleInput) GetTriggerEvents() []string {
+	return s.TriggerEvents
+}
+
+// GetCondition returns the value of Condition.
+func (s *UpdateRuleInput) GetCondition() OptConditionGroupInput {
+	return s.Condition
+}
+
+// GetActions returns the value of Actions.
+func (s *UpdateRuleInput) GetActions() []RuleActionInput {
+	return s.Actions
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateRuleInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetName sets the value of Name.
+func (s *UpdateRuleInput) SetName(val OptName) {
+	s.Name = val
+}
+
+// SetTriggerEvents sets the value of TriggerEvents.
+func (s *UpdateRuleInput) SetTriggerEvents(val []string) {
+	s.TriggerEvents = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *UpdateRuleInput) SetCondition(val OptConditionGroupInput) {
+	s.Condition = val
+}
+
+// SetActions sets the value of Actions.
+func (s *UpdateRuleInput) SetActions(val []RuleActionInput) {
+	s.Actions = val
+}
+
+// Request body for updating a segment.
+// Ref: #/components/schemas/UpdateSegmentInput
+type UpdateSegmentInput struct {
+	// The segment's `revision` the edit was made on (ADR 0119): the one it was read with.
+	Revision Revision `json:"revision"`
+	// Segment name.
+	Name OptName `json:"name"`
+	// Segment condition: the tree of tests; an empty group matches all contacts.
+	Condition OptConditionGroupInput `json:"condition"`
+}
+
+// GetRevision returns the value of Revision.
+func (s *UpdateSegmentInput) GetRevision() Revision {
+	return s.Revision
+}
+
+// GetName returns the value of Name.
+func (s *UpdateSegmentInput) GetName() OptName {
+	return s.Name
+}
+
+// GetCondition returns the value of Condition.
+func (s *UpdateSegmentInput) GetCondition() OptConditionGroupInput {
+	return s.Condition
+}
+
+// SetRevision sets the value of Revision.
+func (s *UpdateSegmentInput) SetRevision(val Revision) {
+	s.Revision = val
+}
+
+// SetName sets the value of Name.
+func (s *UpdateSegmentInput) SetName(val OptName) {
+	s.Name = val
+}
+
+// SetCondition sets the value of Condition.
+func (s *UpdateSegmentInput) SetCondition(val OptConditionGroupInput) {
+	s.Condition = val
 }
 
 // Request body for updating a template.
@@ -30549,5 +30325,222 @@ func (s *UsedByKind) UnmarshalText(data []byte) error {
 }
 
 type UserName string
+
+// Why an endpoint is off. A closed set: `owner` (a member turned it off), `gone` (the receiver
+// answered 410 Gone) and `persistent_failure` (deliveries failed for longer than the window). Absent
+// while the endpoint is enabled.
+// Ref: #/components/schemas/WebhookDisabledReason
+type WebhookDisabledReason string
+
+const (
+	WebhookDisabledReasonOwner             WebhookDisabledReason = "owner"
+	WebhookDisabledReasonGone              WebhookDisabledReason = "gone"
+	WebhookDisabledReasonPersistentFailure WebhookDisabledReason = "persistent_failure"
+)
+
+// AllValues returns all WebhookDisabledReason values.
+func (WebhookDisabledReason) AllValues() []WebhookDisabledReason {
+	return []WebhookDisabledReason{
+		WebhookDisabledReasonOwner,
+		WebhookDisabledReasonGone,
+		WebhookDisabledReasonPersistentFailure,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WebhookDisabledReason) MarshalText() ([]byte, error) {
+	switch s {
+	case WebhookDisabledReasonOwner:
+		return []byte(s), nil
+	case WebhookDisabledReasonGone:
+		return []byte(s), nil
+	case WebhookDisabledReasonPersistentFailure:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WebhookDisabledReason) UnmarshalText(data []byte) error {
+	switch WebhookDisabledReason(data) {
+	case WebhookDisabledReasonOwner:
+		*s = WebhookDisabledReasonOwner
+		return nil
+	case WebhookDisabledReasonGone:
+		*s = WebhookDisabledReasonGone
+		return nil
+	case WebhookDisabledReasonPersistentFailure:
+		*s = WebhookDisabledReasonPersistentFailure
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Why a delivery to a webhook endpoint failed. A closed set: `timeout` (no answer in time),
+// `blocked_address` (the URL names an address this instance does not permit), `http_status` (a non-2xx
+// answer, see `status`) and `network` (any other transport failure).
+// Ref: #/components/schemas/WebhookErrorKind
+type WebhookErrorKind string
+
+const (
+	WebhookErrorKindTimeout        WebhookErrorKind = "timeout"
+	WebhookErrorKindBlockedAddress WebhookErrorKind = "blocked_address"
+	WebhookErrorKindHTTPStatus     WebhookErrorKind = "http_status"
+	WebhookErrorKindNetwork        WebhookErrorKind = "network"
+)
+
+// AllValues returns all WebhookErrorKind values.
+func (WebhookErrorKind) AllValues() []WebhookErrorKind {
+	return []WebhookErrorKind{
+		WebhookErrorKindTimeout,
+		WebhookErrorKindBlockedAddress,
+		WebhookErrorKindHTTPStatus,
+		WebhookErrorKindNetwork,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WebhookErrorKind) MarshalText() ([]byte, error) {
+	switch s {
+	case WebhookErrorKindTimeout:
+		return []byte(s), nil
+	case WebhookErrorKindBlockedAddress:
+		return []byte(s), nil
+	case WebhookErrorKindHTTPStatus:
+		return []byte(s), nil
+	case WebhookErrorKindNetwork:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WebhookErrorKind) UnmarshalText(data []byte) error {
+	switch WebhookErrorKind(data) {
+	case WebhookErrorKindTimeout:
+		*s = WebhookErrorKindTimeout
+		return nil
+	case WebhookErrorKindBlockedAddress:
+		*s = WebhookErrorKindBlockedAddress
+		return nil
+	case WebhookErrorKindHTTPStatus:
+		*s = WebhookErrorKindHTTPStatus
+		return nil
+	case WebhookErrorKindNetwork:
+		*s = WebhookErrorKindNetwork
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// The failure state of an endpoint that is currently failing; absent while it is healthy.
+// Ref: #/components/schemas/WebhookFailure
+type WebhookFailure struct {
+	// Deliveries that failed in a row.
+	ConsecutiveFailures int32 `json:"consecutiveFailures"`
+	// When the current run of failures began.
+	Since Timestamp `json:"since"`
+	// When the latest delivery failed.
+	LastFailureAt Timestamp `json:"lastFailureAt"`
+	// Kind of the latest failure.
+	Kind WebhookErrorKind `json:"kind"`
+	// HTTP status of the latest failure; present only for kind `http_status`.
+	Status OptInt32 `json:"status"`
+}
+
+// GetConsecutiveFailures returns the value of ConsecutiveFailures.
+func (s *WebhookFailure) GetConsecutiveFailures() int32 {
+	return s.ConsecutiveFailures
+}
+
+// GetSince returns the value of Since.
+func (s *WebhookFailure) GetSince() Timestamp {
+	return s.Since
+}
+
+// GetLastFailureAt returns the value of LastFailureAt.
+func (s *WebhookFailure) GetLastFailureAt() Timestamp {
+	return s.LastFailureAt
+}
+
+// GetKind returns the value of Kind.
+func (s *WebhookFailure) GetKind() WebhookErrorKind {
+	return s.Kind
+}
+
+// GetStatus returns the value of Status.
+func (s *WebhookFailure) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// SetConsecutiveFailures sets the value of ConsecutiveFailures.
+func (s *WebhookFailure) SetConsecutiveFailures(val int32) {
+	s.ConsecutiveFailures = val
+}
+
+// SetSince sets the value of Since.
+func (s *WebhookFailure) SetSince(val Timestamp) {
+	s.Since = val
+}
+
+// SetLastFailureAt sets the value of LastFailureAt.
+func (s *WebhookFailure) SetLastFailureAt(val Timestamp) {
+	s.LastFailureAt = val
+}
+
+// SetKind sets the value of Kind.
+func (s *WebhookFailure) SetKind(val WebhookErrorKind) {
+	s.Kind = val
+}
+
+// SetStatus sets the value of Status.
+func (s *WebhookFailure) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// What the receiver answered to a test delivery. The endpoint's failure state is not touched.
+// Ref: #/components/schemas/WebhookTestResult
+type WebhookTestResult struct {
+	// Whether the receiver answered 2xx.
+	Delivered bool `json:"delivered"`
+	// HTTP status the receiver answered, when it answered.
+	Status OptInt32 `json:"status"`
+	// Why the delivery failed; absent when delivered.
+	Kind OptWebhookErrorKind `json:"kind"`
+}
+
+// GetDelivered returns the value of Delivered.
+func (s *WebhookTestResult) GetDelivered() bool {
+	return s.Delivered
+}
+
+// GetStatus returns the value of Status.
+func (s *WebhookTestResult) GetStatus() OptInt32 {
+	return s.Status
+}
+
+// GetKind returns the value of Kind.
+func (s *WebhookTestResult) GetKind() OptWebhookErrorKind {
+	return s.Kind
+}
+
+// SetDelivered sets the value of Delivered.
+func (s *WebhookTestResult) SetDelivered(val bool) {
+	s.Delivered = val
+}
+
+// SetStatus sets the value of Status.
+func (s *WebhookTestResult) SetStatus(val OptInt32) {
+	s.Status = val
+}
+
+// SetKind sets the value of Kind.
+func (s *WebhookTestResult) SetKind(val OptWebhookErrorKind) {
+	s.Kind = val
+}
 
 type WorkspaceId string

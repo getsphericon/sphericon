@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest'
 
-import type { SitePresetResource } from '../../generated/site/types.gen.ts'
+import type { PresetResource } from '../../generated/site/types.gen.ts'
 import { formSchema, formUi, formValues, paramsToSave, savedSecrets } from './presetParams.ts'
 
 const TEXTS = { keep: 'keep', rotates: 'rotates' }
 
-const signed: SitePresetResource = {
+const signed: PresetResource = {
   name: 'signed',
   description: 'A signed hook',
   paramsSchema: {
@@ -19,7 +19,7 @@ const signed: SitePresetResource = {
 }
 
 test('a Preset without properties has no params, so nothing is a secret', () => {
-  const bare: SitePresetResource = {
+  const bare: PresetResource = {
     name: 'bare',
     description: '',
     paramsSchema: { type: 'object' },

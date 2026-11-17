@@ -190,7 +190,7 @@ func Nil[N any, T any, P interface {
 }
 
 // NilVia is Nil of v mapped through f, null when v is nil: a nullable object goes through its
-// converter's method, NilVia[siteapi.OptNilSiteSendCap](v, c.SendCapToResource).
+// converter's method, NilVia[siteapi.OptNilSendCap](v, c.SendCapToResource).
 func NilVia[N any, S any, T any, P interface {
 	*N
 	SetTo(v T)
@@ -222,7 +222,7 @@ func Opt[O any, T any, P setter[O, T]](v *T) O {
 }
 
 // OptVia is Opt of v mapped through f, absent when v is nil: an optional enum goes through its
-// converter's enum method, OptVia[siteapi.OptSiteTrackingReason](v, c.TrackingReasonToResource).
+// converter's enum method, OptVia[siteapi.OptTrackingReason](v, c.TrackingReasonToResource).
 func OptVia[O any, S any, T any, P setter[O, T]](v *S, f func(S) T) O {
 	if v == nil {
 		var o O

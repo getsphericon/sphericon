@@ -22,9 +22,9 @@ func createTwilio(t *testing.T, c *siteapi.Client, cfg siteapi.IntegrationConfig
 	return c.SiteIntegrationsCreate(t.Context(), in, siteapi.SiteIntegrationsCreateParams{WorkspaceId: fixtures.AcmePublicID})
 }
 
-func twilioConfigOf(t *testing.T, row *siteapi.SiteIntegrationResource) siteapi.SiteTwilioConfig {
+func twilioConfigOf(t *testing.T, row *siteapi.SiteIntegrationResource) siteapi.TwilioConfig {
 	t.Helper()
-	cfg, ok := row.Config.OneOf.GetSiteTwilioConfig()
+	cfg, ok := row.Config.OneOf.GetTwilioConfig()
 	require.Truef(t, ok, "config is twilio, got %v", row.Config.OneOf.Type)
 	return cfg
 }
@@ -35,8 +35,8 @@ func TestSiteTwilioConnectsANumberWithAnAPIKey(t *testing.T) {
 	sms := env.ConnectTwilio(t)
 
 	row := sms.Integration
-	assert.Equal(t, siteapi.SiteIntegrationChannelSMS, row.Channel)
-	assert.Equal(t, siteapi.SiteIntegrationProviderTwilio, row.Provider)
+	assert.Equal(t, siteapi.IntegrationChannelSMS, row.Channel)
+	assert.Equal(t, siteapi.IntegrationProviderTwilio, row.Provider)
 	assert.Equal(t, "twilio", row.Preset.Or(""))
 	cfg := twilioConfigOf(t, row)
 	assert.Equal(t, sms.Account.SID, cfg.AccountSid)
@@ -143,7 +143,7 @@ func TestSiteTwilioRefusesWhatTwilioRefuses(t *testing.T) {
 	list, err := c.SiteIntegrationsList(t.Context(), siteapi.SiteIntegrationsListParams{WorkspaceId: fixtures.AcmePublicID})
 	require.NoError(t, err)
 	accounts := lo.Filter(list, func(row siteapi.SiteIntegrationResource, _ int) bool {
-		return row.Provider == siteapi.SiteIntegrationProviderTwilio
+		return row.Provider == siteapi.IntegrationProviderTwilio
 	})
 	assert.Len(t, accounts, 1, "a refused connect saved nothing: only the fixture account is there")
 }

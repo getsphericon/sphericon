@@ -21,7 +21,7 @@ func listSendingDomains(t *testing.T, c *siteapi.Client) []int64 {
 		PageSize:    siteapi.NewOptInt32(100),
 	})
 	require.NoError(t, err)
-	return lo.Map(list.Items, func(d siteapi.SiteSendingDomainResource, _ int) int64 { return int64(d.ID) })
+	return lo.Map(list.Items, func(d siteapi.SendingDomainResource, _ int) int64 { return int64(d.ID) })
 }
 
 func deleteSendingDomain(t *testing.T, c *siteapi.Client, id int64) error {

@@ -173,31 +173,31 @@ type Inputs interface {
 	// goverter:map . Core
 	ContactUpdate(source *siteapi.SiteUpdateContactInput) contacts.UpdateInput
 
-	CustomFieldUpdate(source *siteapi.SiteUpdateCustomFieldInput) contacts.CustomFieldUpdateInput
+	CustomFieldUpdate(source *siteapi.UpdateCustomFieldInput) contacts.CustomFieldUpdateInput
 
 	IntegrationCreate(source *siteapi.CreateIntegrationInput) (integrations.CreateInput, error)
 	IntegrationUpdate(source *siteapi.UpdateIntegrationInput) (integrations.UpdateInput, error)
 
 	// goverter:map Condition | createSegmentCondition
-	SegmentCreate(source *siteapi.SiteCreateSegmentInput) (segments.CreateInput, error)
+	SegmentCreate(source *siteapi.CreateSegmentInput) (segments.CreateInput, error)
 	// goverter:map Condition | segmentConditionPatch
-	SegmentUpdate(source *siteapi.SiteUpdateSegmentInput) (segments.UpdateInput, error)
+	SegmentUpdate(source *siteapi.UpdateSegmentInput) (segments.UpdateInput, error)
 	// goverter:map Condition | conditionIn
 	SegmentPreview(source *siteapi.SitePreviewSegmentInput) (segments.PreviewInput, error)
 
 	// The editor version is the save's own: the module renders the document and stamps it.
 	// goverter:ignore EditorVersion
-	AutomationStep(source siteapi.SiteAutomationStepInput) automationstep.Step
-	AutomationSteps(source []siteapi.SiteAutomationStepInput) []automationstep.Step
+	AutomationStep(source siteapi.AutomationStepInput) automationstep.Step
+	AutomationSteps(source []siteapi.AutomationStepInput) []automationstep.Step
 	TelegramButton(source siteapi.TelegramButtonInput) telegramrender.Button
-	AutomationCreate(source *siteapi.SiteCreateAutomationInput) automations.CreateInput
-	AutomationUpdate(source *siteapi.SiteUpdateAutomationInput) automations.UpdateInput
+	AutomationCreate(source *siteapi.CreateAutomationInput) automations.CreateInput
+	AutomationUpdate(source *siteapi.UpdateAutomationInput) automations.UpdateInput
 
-	RuleActions(source []siteapi.SiteRuleActionInput) []rules.Action
+	RuleActions(source []siteapi.RuleActionInput) []rules.Action
 	// goverter:map Condition | conditionIn
-	RuleCreate(source *siteapi.SiteCreateRuleInput) (rules.CreateInput, error)
+	RuleCreate(source *siteapi.CreateRuleInput) (rules.CreateInput, error)
 	// goverter:map Condition | conditionIn
-	RuleUpdate(source *siteapi.SiteUpdateRuleInput) (rules.UpdateInput, error)
+	RuleUpdate(source *siteapi.UpdateRuleInput) (rules.UpdateInput, error)
 
 	TokenCreate(source *siteapi.SiteCreateTokenInput) apitokens.Input
 	PersonalTokenCreate(source *siteapi.SiteCreatePersonalTokenInput) apitokens.PersonalInput
@@ -223,7 +223,7 @@ type Inputs interface {
 	// goverter:enum:map SiteAnalyticsRange90d Window90Days
 	AnalyticsWindow(source siteapi.SiteAnalyticsRange) analyticsreport.Window
 	// goverter:enum:transform value
-	SuppressionChannel(source siteapi.SiteSuppressionChannel) channels.Channel
+	SuppressionChannel(source siteapi.SuppressionChannel) channels.Channel
 	// goverter:enum:map SiteAnalyticsRevenueRange7d Window7Days
 	// goverter:enum:map SiteAnalyticsRevenueRange30d Window30Days
 	// goverter:enum:map SiteAnalyticsRevenueRange90d Window90Days
@@ -253,7 +253,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	SortDirection(source siteapi.SortDirection) pagination.Direction
 	// goverter:enum:transform value
-	AutomationStepType(source siteapi.SiteAutomationStepType) automationstep.Kind
+	AutomationStepType(source siteapi.AutomationStepType) automationstep.Kind
 	// goverter:enum:transform value
 	InvitableRole(source siteapi.SiteInvitableRole) invitation.Role
 	// goverter:enum:transform value
@@ -261,7 +261,7 @@ type Inputs interface {
 	// goverter:enum:transform value
 	PersonalScope(source siteapi.PersonalScope) tokenscope.PersonalScope
 	// goverter:enum:transform value
-	RuleActionType(source siteapi.SiteRuleActionType) rules.ActionType
+	RuleActionType(source siteapi.RuleActionType) rules.ActionType
 	// goverter:enum:transform value
 	SignupCompanySize(source siteapi.SignupCompanySize) signupsurveyresponse.CompanySize
 	// goverter:enum:transform value
@@ -278,7 +278,7 @@ func nameIn(n siteapi.Name) string                        { return string(n) }
 func namePtrIn(o siteapi.OptName) *string                 { return convert.StringPtr(o) }
 
 // customFieldTypePatch is a Custom field's new type as the enum's value: the module reads it as its own.
-func customFieldTypePatch(o siteapi.OptSiteCustomFieldType) patch.Field[string] {
+func customFieldTypePatch(o siteapi.OptCustomFieldType) patch.Field[string] {
 	return convert.StringPatch(o)
 }
 func nilStringPatch(o siteapi.OptNilString) patch.Field[string]      { return convert.Patch(o) }
@@ -364,7 +364,7 @@ func signupSourcePtrIn(c Inputs, o siteapi.OptSignupSource) *signupsurveyrespons
 }
 
 // automationStepsPtrIn is the steps an update replaces: omitted (nil) keeps the stored ones.
-func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStepInput) *[]automationstep.Step {
+func automationStepsPtrIn(c Inputs, steps []siteapi.AutomationStepInput) *[]automationstep.Step {
 	if steps == nil {
 		return nil
 	}
@@ -373,7 +373,7 @@ func automationStepsPtrIn(c Inputs, steps []siteapi.SiteAutomationStepInput) *[]
 }
 
 // ruleActionsPtrIn is the Actions an update replaces: omitted (nil) keeps the stored ones.
-func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleActionInput) *[]rules.Action {
+func ruleActionsPtrIn(c Inputs, actions []siteapi.RuleActionInput) *[]rules.Action {
 	if actions == nil {
 		return nil
 	}
@@ -383,7 +383,7 @@ func ruleActionsPtrIn(c Inputs, actions []siteapi.SiteRuleActionInput) *[]rules.
 
 // conditionIn is a Condition the request may leave out, encoded as the modules store it; nil when
 // it is absent.
-func conditionIn(o siteapi.OptSiteConditionGroupInput) (*string, error) {
+func conditionIn(o siteapi.OptConditionGroupInput) (*string, error) {
 	return condition.EncodeOptional(o)
 }
 
@@ -534,7 +534,7 @@ func sortDirectionIn(c Inputs, o siteapi.OptSortDirection) pagination.Direction 
 	return c.SortDirection(v)
 }
 
-func createSegmentCondition(g siteapi.SiteConditionGroupInput) (*string, error) {
+func createSegmentCondition(g siteapi.ConditionGroupInput) (*string, error) {
 	def, err := condition.Encode(&g)
 	if err != nil {
 		return nil, err
@@ -542,7 +542,7 @@ func createSegmentCondition(g siteapi.SiteConditionGroupInput) (*string, error) 
 	return &def, nil
 }
 
-func segmentConditionPatch(o siteapi.OptSiteConditionGroupInput) (patch.Field[string], error) {
+func segmentConditionPatch(o siteapi.OptConditionGroupInput) (patch.Field[string], error) {
 	def, err := condition.EncodeOptional(o)
 	if err != nil {
 		return patch.Field[string]{}, err

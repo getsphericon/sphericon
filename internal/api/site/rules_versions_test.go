@@ -40,13 +40,13 @@ func TestSiteSavingALiveRuleUnchangedMakesNoDraft(t *testing.T) {
 	env := testhelper.Setup(t)
 	c := env.SiteActor(t, fixtures.OwnerJohnEmail)
 
-	updated, err := c.SiteRulesUpdate(context.Background(), &siteapi.SiteUpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleMultiTriggerID)))),
+	updated, err := c.SiteRulesUpdate(context.Background(), &siteapi.UpdateRuleInput{Revision: siteapi.Revision(env.RuleRevision(t.Context(), t, int64(siteapi.EntityId(fixtures.RuleMultiTriggerID)))),
 		Name:          siteapi.NewOptName("Either of two events"),
 		TriggerEvents: []string{"rule_multi_a", "rule_multi_b"},
-		Condition:     siteapi.NewOptSiteConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)),
-		Actions: []siteapi.SiteRuleActionInput{
-			tagAction(siteapi.SiteRuleActionTypeApplyTag, "rule-multi"),
-			tagAction(siteapi.SiteRuleActionTypeRemoveTag, "vip"),
+		Condition:     siteapi.NewOptConditionGroupInput(testhelper.SiteRuleGroup(t, `{"kind":"group","combinator":"and","rules":[]}`)),
+		Actions: []siteapi.RuleActionInput{
+			tagAction(siteapi.RuleActionTypeApplyTag, "rule-multi"),
+			tagAction(siteapi.RuleActionTypeRemoveTag, "vip"),
 		},
 	}, siteapi.SiteRulesUpdateParams{WorkspaceId: siteapi.WorkspaceId(fixtures.AcmePublicID), ID: siteapi.EntityId(fixtures.RuleMultiTriggerID)})
 

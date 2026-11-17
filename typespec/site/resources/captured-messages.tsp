@@ -5,16 +5,6 @@ using TypeSpec.OpenAPI;
 
 namespace Sphericon;
 
-/** The surface that asked for the send a Captured message belongs to */
-enum SiteCapturedMessageSurface {
-  broadcast,
-  automation,
-  transactional,
-
-  /** A Test send of a Broadcast: it has no Outbound message */
-  test,
-}
-
 /** One header line of a Captured message */
 model SiteCapturedMessageHeader {
   name: string;
@@ -30,7 +20,7 @@ model SiteCapturedMessageFields {
   outboundMessageId: EntityId | null;
 
   /** The surface that asked for the send */
-  surface: SiteCapturedMessageSurface;
+  surface: CapturedMessageSurface;
 
   /** The Sending source of a Broadcast or Automation send; null for a Transactional or Test send */
   sendingSource: string | null;

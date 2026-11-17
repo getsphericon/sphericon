@@ -821,8 +821,10 @@ export type AutomationVersion = {
 };
 
 /**
- * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. Write a
- * message in these values. A Workspace that has not saved one has the defaults and `saved` false.
+ * The Workspace's Brand kit (ADR 0040): its colors, fonts, logo, button style and footer. It sets
+ * the palette the editor offers and what an agent is told to use: write a message in these values.
+ * Its values are written into a message when the message is authored, so saving it never changes a
+ * message already written. A Workspace that has not saved one has the defaults and `saved` false.
  */
 export type BrandKitResource = {
   /**
@@ -3615,7 +3617,7 @@ export type JsonObject = {
 };
 
 /**
- * How often one link of an automation's emails was clicked
+ * How often one link of a broadcast's or an automation's emails was clicked
  */
 export type LinkClicks = {
   /**
@@ -3717,7 +3719,9 @@ export type MaxPerDay = number;
 export type MaxPerSecond = number;
 
 /**
- * Orders credited to a broadcast or an automation and their net revenue (ADR 0064)
+ * The Orders credited to one Broadcast or Automation and the net revenue of their Movements
+ * (ADR 0064), in the Reporting currency, read from the Movements and never stored: a refund
+ * lowers `amount` on its own day. Orders in another currency are counted in neither field.
  */
 export type MessageRevenue = {
   /**
@@ -4882,7 +4886,8 @@ export const SuppressionChannel = {
 export type SuppressionChannel = typeof SuppressionChannel[keyof typeof SuppressionChannel];
 
 /**
- * Why a destination is on the suppression (do-not-send) list
+ * Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a
+ * suppression: it is a separate, per-source opt-out.
  */
 export const SuppressionReason = {
   BOUNCE: 'bounce',
@@ -4891,7 +4896,8 @@ export const SuppressionReason = {
 } as const;
 
 /**
- * Why a destination is on the suppression (do-not-send) list
+ * Why a destination is on the suppression (do-not-send) list. An Unsubscribe is not a
+ * suppression: it is a separate, per-source opt-out.
  */
 export type SuppressionReason = typeof SuppressionReason[keyof typeof SuppressionReason];
 

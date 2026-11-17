@@ -5,7 +5,7 @@ package condition
 // Combinator is how a Group joins its rules: And, every rule matches; Or, any rule does.
 type Combinator string
 
-// The values of the contract's SiteConditionCombinator enum, in its order.
+// The values of the contract's ConditionCombinator enum, in its order.
 const (
 	And Combinator = "and"
 	Or  Combinator = "or"

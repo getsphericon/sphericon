@@ -40,8 +40,8 @@ import { SystemEventAction } from '../../generated/site/types.gen.ts'
 import type {
   CreateWebhookInput,
   SiteWebhookEndpointResource,
-  SiteWebhookFailure,
-  SiteWebhookTestResult,
+  WebhookFailure,
+  WebhookTestResult,
 } from '../../generated/site/types.gen.ts'
 import { useAuditLogOffered } from '../../hooks/useAuditLogOffered.ts'
 import { useConfirmation } from '../../hooks/useConfirmation.tsx'
@@ -77,7 +77,7 @@ const EVENT_OPTIONS = [
 function useFailureSummary() {
   const { t } = useTranslation()
   const { formatDateTime } = useFormat()
-  return (failure: SiteWebhookFailure) =>
+  return (failure: WebhookFailure) =>
     t(($) => $.settings.webhooks.failureSummary, {
       reason: {
         timeout: t(($) => $.settings.webhooks.errorTimeout),
@@ -138,7 +138,7 @@ function WebhookStatus({ record }: { record: SiteWebhookEndpointResource }) {
 // A sample can be sent for any customer event; audit.entry is Enterprise and has no sample.
 const TEST_EVENT_OPTIONS = EVENT_OPTIONS.filter((name) => name !== AUDIT_ENTRY_EVENT)
 
-function TestResultAlert({ result }: { result: SiteWebhookTestResult }) {
+function TestResultAlert({ result }: { result: WebhookTestResult }) {
   const { t } = useTranslation()
   if (result.delivered) {
     return (
@@ -172,7 +172,7 @@ function TestEventModal({
   const { t } = useTranslation()
   const labelOf = useEventActionLabel()
   const [eventType, setEventType] = useState<string | null>(TEST_EVENT_OPTIONS[0] ?? null)
-  const [result, setResult] = useState<SiteWebhookTestResult | null>(null)
+  const [result, setResult] = useState<WebhookTestResult | null>(null)
 
   const testMutation = useResourceMutation({
     mutation: siteWebhooksTestMutation(),

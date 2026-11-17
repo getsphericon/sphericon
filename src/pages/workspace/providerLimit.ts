@@ -1,9 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-import type {
-  SiteIntegrationProvider,
-  SiteProviderLimitWarning,
-} from '../../generated/site/types.gen.ts'
+import type { IntegrationProvider, ProviderLimitWarning } from '../../generated/site/types.gen.ts'
 import { zMaxPerDay, zMaxPerSecond } from '../../generated/site/zod.gen.ts'
 import { boundsOf } from '../../utils/bounds.ts'
 
@@ -33,7 +30,7 @@ export function fromLimit(limit: number | null): number | string {
 // Whether an Integration must carry both values (ADR 0067): an SES one with its own endpoint is an
 // SES-compatible service, which cannot report its limits. The server refuses it otherwise.
 export function requiresProviderLimit(
-  kind: SiteIntegrationProvider,
+  kind: IntegrationProvider,
   endpoint: string | null | undefined,
 ): boolean {
   return kind === 'ses' && (endpoint ?? '').trim() !== ''
@@ -62,7 +59,7 @@ export function useProviderLimitValidators<Values>(
 }
 
 export interface ProviderLimitWarningCopy {
-  warning: SiteProviderLimitWarning
+  warning: ProviderLimitWarning
   color: 'red' | 'yellow'
   // The short label on an Integration's row.
   badge: string

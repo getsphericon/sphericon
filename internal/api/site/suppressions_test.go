@@ -29,7 +29,7 @@ func TestSiteSuppressionsCRUD(t *testing.T) {
 	require.NoError(t, err)
 	res := created
 	assert.Equal(t, "blocked@example.com", res.Destination)
-	assert.Equal(t, siteapi.SiteSuppressionReasonManual, res.Reason)
+	assert.Equal(t, siteapi.SuppressionReasonManual, res.Reason)
 
 	// Suppressing the same destination again is idempotent (no duplicate).
 	again, err := c.SiteSuppressionsCreate(ctx, &siteapi.SiteCreateSuppressionInput{Destination: "blocked@example.com"},

@@ -19,7 +19,7 @@ func (h *Handlers) SiteSegmentsList(ctx context.Context, params siteapi.SiteSegm
 	return mapper.SegmentsListPage(page), nil
 }
 
-func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.SiteCreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (*siteapi.SiteSegmentResource, error) {
+func (h *Handlers) SiteSegmentsCreate(ctx context.Context, req *siteapi.CreateSegmentInput, _ siteapi.SiteSegmentsCreateParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	in, err := inputs.SegmentCreate(req)
@@ -46,7 +46,7 @@ func (h *Handlers) SiteSegmentsGet(ctx context.Context, params siteapi.SiteSegme
 	return &res, nil
 }
 
-func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.SiteUpdateSegmentInput, params siteapi.SiteSegmentsUpdateParams) (*siteapi.SiteSegmentResource, error) {
+func (h *Handlers) SiteSegmentsUpdate(ctx context.Context, req *siteapi.UpdateSegmentInput, params siteapi.SiteSegmentsUpdateParams) (*siteapi.SiteSegmentResource, error) {
 	ws := workspaceScope(ctx)
 
 	id := int64(params.ID)
