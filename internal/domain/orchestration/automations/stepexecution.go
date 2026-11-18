@@ -220,16 +220,15 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 	if err != nil {
 		return fmt.Errorf("load version %d of run %d: %w", run.VersionID, run.ID, err)
 	}
-	steps := version.Steps
-
 	if run.ResumeAt != nil && run.ResumeAt.After(m.now()) {
 		return m.requeue(ctx, s, run.ID, step, *run.ResumeAt)
 	}
-	if step >= len(steps) {
+	st, ok := automationstep.At(version.Steps, step)
+	if !ok {
 		return m.complete(ctx, s, run.ID)
 	}
 
-	switch st := steps[step]; st.Type {
+	switch st.Type {
 	case automationstep.Wait:
 		resume := m.now().Add(time.Duration(st.Seconds) * time.Second)
 		return m.advance(ctx, s, run.ID, step, stepMove{resumeAt: &resume})
@@ -256,7 +255,7 @@ func (m *StepExecution) Step(ctx context.Context, s *ent.Scoped, runID int64, st
 
 	default:
 		if _, sends := st.Type.Channel(); sends {
-			return m.send(ctx, s, a, run, SendStep{Index: step, Step: st})
+			return m.send(ctx, s, a, run, SendStep{Index: step, Step: *st})
 		}
 		return m.fail(ctx, s, run.ID, fmt.Errorf("unknown step type %q", st.Type))
 	}

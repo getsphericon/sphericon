@@ -44,11 +44,10 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	steps := version.Steps
-	if step < 0 || step >= len(steps) || steps[step].Type != automationstep.HTTP {
+	st, ok := automationstep.At(version.Steps, step)
+	if !ok || st.Type != automationstep.HTTP {
 		return httpcall.Execution{}, nil
 	}
-	st := steps[step]
 	c, err := s.Contact().Get(ctx, run.ContactID)
 	if ent.IsNotFound(err) {
 		return httpcall.Execution{}, nil
@@ -56,7 +55,7 @@ func (m *StepExecution) ExecuteHTTP(ctx context.Context, s *ent.Scoped, in Execu
 	if err != nil {
 		return httpcall.Execution{}, err
 	}
-	opened, err := openHTTP(m.cipher, st)
+	opened, err := openHTTP(m.cipher, *st)
 	if err != nil {
 		return httpcall.Execution{}, err
 	}

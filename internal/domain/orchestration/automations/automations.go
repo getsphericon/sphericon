@@ -90,44 +90,43 @@ var (
 // StoredSteps are the steps as a version stores them, dropping the fields that do not belong to
 // each step's type and trimming tag names.
 func StoredSteps(steps []automationstep.Step) []automationstep.Step {
-	stored := make([]automationstep.Step, 0, len(steps))
-	for i := range steps {
-		s := &steps[i]
-		switch s.Type {
-		case automationstep.Wait:
-			stored = append(stored, automationstep.Step{Type: automationstep.Wait, Seconds: s.Seconds})
-		case automationstep.ApplyTag, automationstep.RemoveTag:
-			stored = append(stored, automationstep.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)})
-		case automationstep.HTTP:
-			stored = append(stored, automationstep.Step{Type: automationstep.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret})
-		case automationstep.Telegram:
-			stored = append(stored, automationstep.Step{
-				Type: automationstep.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
-				ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
-				UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
-			})
-		case automationstep.SMS:
-			sms := automationstep.Step{Type: automationstep.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
-			if !s.TracksLinks() {
-				sms.LinkTracking = new(false) // on is the default, stored as nothing
-			}
-			stored = append(stored, sms)
-		default:
-			email := automationstep.Step{Type: automationstep.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: s.Body}
-			if len(s.Doc) > 0 {
-				email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
-			}
-			stored = append(stored, email)
+	return automationstep.Rewrite(steps, func(_ int, st *automationstep.Step) automationstep.Step { return storedStep(st) })
+}
+
+// storedStep is the step as a version stores it.
+func storedStep(s *automationstep.Step) automationstep.Step {
+	switch s.Type {
+	case automationstep.Wait:
+		return automationstep.Step{Type: automationstep.Wait, Seconds: s.Seconds}
+	case automationstep.ApplyTag, automationstep.RemoveTag:
+		return automationstep.Step{Type: s.Type, Tag: strings.TrimSpace(s.Tag)}
+	case automationstep.HTTP:
+		return automationstep.Step{Type: automationstep.HTTP, ID: s.ID, URL: s.URL, Headers: s.Headers, Body: s.Body, Secret: s.Secret}
+	case automationstep.Telegram:
+		return automationstep.Step{
+			Type: automationstep.Telegram, IntegrationID: s.IntegrationID, Text: s.Text,
+			ImageURL: strings.TrimSpace(s.ImageURL), Buttons: s.Buttons, LinkPreview: s.LinkPreview,
+			UnsubscribeButton: strings.TrimSpace(s.UnsubscribeButton),
 		}
+	case automationstep.SMS:
+		sms := automationstep.Step{Type: automationstep.SMS, IntegrationID: s.IntegrationID, Text: s.Text}
+		if !s.TracksLinks() {
+			sms.LinkTracking = new(false) // on is the default, stored as nothing
+		}
+		return sms
+	default:
+		email := automationstep.Step{Type: automationstep.Email, IntegrationID: s.IntegrationID, Subject: s.Subject, Body: s.Body}
+		if len(s.Doc) > 0 {
+			email.Doc, email.EditorVersion = s.Doc, s.EditorVersion
+		}
+		return email
 	}
-	return stored
 }
 
 // validate checks each step on its own. linkLength is the length of the Workspace's short tracked
 // links, what an SMS step's links count as.
 func validate(steps []automationstep.Step, linkLength int) error {
-	for i := range steps {
-		s := &steps[i]
+	for i, s := range automationstep.All(steps) {
 		switch s.Type {
 		case automationstep.Email:
 			if err := emailrender.Lint(s.Subject, s.Body, nil).Error; err != nil {
@@ -211,11 +210,10 @@ func (s SendStep) Content() (outboundmessages.Content, error) {
 
 // SendSteps are the send steps of the version, in step order.
 func SendSteps(v *ent.AutomationVersion) []SendStep {
-	steps := v.Steps
 	var out []SendStep
-	for i := range steps {
-		if _, sends := steps[i].Type.Channel(); sends {
-			out = append(out, SendStep{Index: i, Step: steps[i]})
+	for i, st := range automationstep.All(v.Steps) {
+		if _, sends := st.Type.Channel(); sends {
+			out = append(out, SendStep{Index: i, Step: *st})
 		}
 	}
 	return out
@@ -262,12 +260,10 @@ func New(cipher *secrets.Cipher, bus *events.Bus, renderer *emaildoc.Renderer, o
 // be rendered refuses the whole save, naming the step (1-based). A step with no document is
 // left as it is, so a body-only write stores no document.
 func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]automationstep.Step, error) {
-	out := make([]automationstep.Step, len(steps))
-	copy(out, steps)
-	for i := range out {
-		s := out[i]
+	return automationstep.Map(steps, func(i int, st *automationstep.Step) (automationstep.Step, error) {
+		s := *st
 		if s.Type != automationstep.Email || len(s.Doc) == 0 {
-			continue
+			return s, nil
 		}
 		var body *string
 		if s.Body != "" {
@@ -276,15 +272,15 @@ func (m *Module) build(ctx context.Context, steps []automationstep.Step) ([]auto
 		c, err := emailrender.ResolveContent(ctx, m.renderer, &s.Subject, body, s.Doc, errBodyAndDoc)
 		switch {
 		case errors.Is(err, errBodyAndDoc):
-			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
+			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: write a body or a doc, not both", i+1))
 		case errors.Is(err, emailrender.ErrInvalidContent):
-			return nil, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
+			return automationstep.Step{}, ErrInvalidStep.With(fmt.Sprintf("step %d: %s", i+1, err))
 		case err != nil:
-			return nil, err
+			return automationstep.Step{}, err
 		}
-		out[i].Body, out[i].EditorVersion = c.Authored.Body, c.Authored.EditorVersion
-	}
-	return out, nil
+		s.Body, s.EditorVersion = c.Authored.Body, c.Authored.EditorVersion
+		return s, nil
+	})
 }
 
 // engagementTriggers are the `email.` Events an Automation may start from: what a recipient does.
@@ -533,9 +529,12 @@ func (v versioned) Merge(ctx context.Context, ts *ent.Scoped, base *ent.Automati
 			return definition{}, err
 		}
 		// Each Integration the steps name is checked once, however many steps send through it.
-		named := lo.FilterMap(*e.steps, func(st automationstep.Step, _ int) (int64, bool) {
-			return lo.FromPtr(st.IntegrationID), st.IntegrationID != nil
-		})
+		var named []int64
+		for _, st := range automationstep.All(*e.steps) {
+			if st.IntegrationID != nil {
+				named = append(named, *st.IntegrationID)
+			}
+		}
 		for _, id := range lo.Uniq(named) {
 			if err := checkIntegration(ctx, ts, &id); err != nil {
 				return definition{}, err

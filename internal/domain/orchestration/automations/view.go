@@ -46,8 +46,8 @@ type HeaderName struct {
 // Views are the views of a version's steps.
 func Views(stored []automationstep.Step) []StepView {
 	views := make([]StepView, 0, len(stored))
-	for i := range stored {
-		views = append(views, viewOf(&stored[i]))
+	for _, st := range automationstep.All(stored) {
+		views = append(views, viewOf(st))
 	}
 	return views
 }
