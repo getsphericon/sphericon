@@ -15,8 +15,7 @@ was near a purchase, not what the messages added: someone who would have bought 
 The accepted way to measure that is incrementality: a random group that receives none of the messages
 being measured, and Orders compared between that group and everyone else. Marketing platforms offer it
 as a control group excluded from every campaign and journey, and an agent driving an email platform is
-expected to prove an optimisation with a holdout, never with last-touch credit, keeping it for at least
-about a month.
+expected to prove an optimisation with a holdout, never with last-touch credit.
 
 A holdout inside one Broadcast measures nothing here: attribution credits clicks, and a group sent nothing
 has none (ADR 0152).

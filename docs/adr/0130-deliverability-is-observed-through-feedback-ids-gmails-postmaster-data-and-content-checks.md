@@ -6,6 +6,10 @@ terms: [Content check, Feedback-ID]
 
 # Deliverability is observed through Feedback-IDs, Gmail's Postmaster data and content checks
 
+> **Amended by [[0185-the-complaint-rate-counts-mail-to-providers-that-report-complaints]]:** Gmail's spam rate is shown beside the Workspace's Complaint rate, which leaves Gmail out.
+
+> **Amended by [[0188-content-checks-flag-placeholders-hidden-text-and-no-reply-senders]]:** the 102 KB rule goes; reserved example hosts, hidden text, invisible characters, no-reply senders and a preview text equal to the subject are Content checks.
+
 > **Amended by [[0132-what-an-injected-agent-could-do-is-bounded-by-origin-marks-an-egress-lock-and-review]]:**
 > the list of link hosts, with the new ones marked, joins the Content checks at Schedule and Publish.
 
@@ -19,8 +23,8 @@ in the field:
 
 - **Gmail's own view.** Gmail sends no per-message complaint to senders. It reports aggregates in
   Postmaster Tools: a domain's spam rate, its compliance with Gmail's sender requirements and, by
-  the `Feedback-ID` header, a spam rate per identifier the sender chose. Since September 2025
-  Postmaster Tools has no domain or IP reputation.
+  the `Feedback-ID` header, a spam rate per identifier the sender chose. Postmaster Tools v2 has no
+  domain or IP reputation, and Google has announced the retirement of the v1 dashboards that show it.
 - **The feedback loops of Yahoo and Microsoft**, which send each complaint as an ARF report by
   mail.
 - **A check of a message before it is sent.**

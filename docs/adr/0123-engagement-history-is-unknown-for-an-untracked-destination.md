@@ -5,11 +5,12 @@ build: [1593, 1594, 1563]
 
 # Engagement history is unknown for an untracked Destination
 
-A Condition counts Events: "did `email.opened` at most 0 times in the last 90 days" is how a
-Workspace finds the people its mail no longer reaches, and drops them. Since ADR 0120, a
-Destination whose Engagement tracking consent is `denied`, or that falls under a `dont_track`
-default, has no opens recorded, and a `denied` deletes the ones it had. Such a person matches "never
-opens" and is the first to be dropped, for refusing to be tracked. ADR 0122 made a Branch's test of
+A Condition counts Events: "did `email.clicked` at most 0 times in the last 90 days" is how a
+Workspace finds the people its mail no longer reaches, and drops them (clicks rather than opens: a
+mail client's privacy proxy opens messages no one read). Since ADR 0120, a Destination whose
+Engagement tracking consent is `denied`, or that falls under a `dont_track` default, has no clicks
+recorded, and a `denied` deletes the ones it had. Such a person matches "never clicks" and is the
+first to be dropped, for refusing to be tracked. ADR 0122 made a Branch's test of
 its own message three-valued for this reason and left history tests two-valued; the same harm
 reaches every Segment, Rule and Branch that counts engagement.
 

@@ -4,6 +4,8 @@ status: accepted
 
 # MCP surface: a projection of the external `/api`, not a second implementation
 
+> **Amended by [[0182-an-operation-declares-its-effect-and-mcp-hints-follow-it]]:** every operation declares its effect (read, write, send, remove) in the contract; send-class is the `send` effect, and a tool's MCP hints follow the effect, not the HTTP method.
+
 > **Amended by [[0150-a-sending-broadcast-is-cancelled-and-a-deactivated-automation-may-end-its-enrollments]]:**
 > Cancel of a sending Broadcast and Deactivate's `end` are authoring, not send-class: they only
 > narrow reach.

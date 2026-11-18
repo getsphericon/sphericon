@@ -421,7 +421,7 @@ _Avoid_: Subscription (a rejected concept), endpoint, device, channel identity
 
 **Suppression**:
 The workspace's authoritative, (channel, destination)-keyed do-not-send registry for hard,
-global facts: hard bounce, spam complaint, and manual bans. On SMS a number the provider reports
+global facts: hard bounce, spam complaint, a **Soft bounce run**, and manual bans. On SMS a number the provider reports
 reaches no handset (no mobile number, unknown) is suppressed as a bounce; an ambiguous failure (a
 carrier filter, an unknown code) never is. Destination-centric (covers
 destinations with no contact) and a compliance ratchet (bounce/complaint do not auto-clear).
@@ -866,6 +866,12 @@ never re-arms a send or brings a form back onto a site.
 A Broadcast is not one: a scheduled Broadcast holds a copy of its Condition instead.
 _Avoid_: Versioned entity, revisioned object, publishable
 
+**Operation effect**:
+What an operation of the app's API does, one of four: it reads, writes, sends (reaches people outside
+the app and cannot be taken back: Schedule, Publish, an Email send) or removes. A send-class operation
+is one whose effect is to send; an agent needs the send lock for it, and its host is told to confirm it.
+_Avoid_: Side effect, operation type, verb
+
 **Publish**:
 The send-class act that makes the draft of a Versioned definition (an Automation, a Rule, an
 On-site form, a Broadcast series) its live version and makes it active; with no draft, it makes the
@@ -1281,23 +1287,26 @@ holds a send.
 _Avoid_: Reputation (Gmail no longer reports it), Gmail stats
 
 **Content check**:
-A fixed rule an email is checked against before it is sent (clipped size, images without text, a
-link or image off `https`, a URL shortener, an image without `alt`, a merge tag that renders empty,
-the Workspace's missing **Postal address**),
+A fixed rule an email is checked against before it is sent (images without text, a link or image off
+`https`, a URL shortener, an image without `alt`, a merge tag that renders empty, a link to a name
+reserved for examples, text hidden from the reader, invisible characters, a no-reply sender, a preview
+text that repeats the subject, the Workspace's missing **Postal address**),
 shown as a warning in the editor, at Schedule and Publish and when a Template is saved; it never
 blocks and is never a score.
 _Avoid_: Spam score, spam check, lint
 
 **Postal address**:
-The Workspace's physical mailing address (a PO box or a virtual office will do) that the footer of every
-marketing email carries. Marketing email is not armed without one, and while some is armed it can be
+The Workspace's physical mailing address that the footer of every marketing email carries: a street
+address, a PO box registered with the postal service, or a mailbox at a commercial mail receiving agency,
+in the fields its country's format names (a city and a country are not an address). Marketing email is not armed without one, and while some is armed it can be
 changed but not cleared. Only a person sets it.
 _Avoid_: Physical address (unqualified), company address, sender address (that is the From)
 
 **Complaint rate**:
 The reputation-monitoring ratio `complaints / delivered`, per (Workspace, **Sending domain**), over a
-trailing time window, where `delivered` is the count of `email.delivered` Events (mailbox providers
-judge complaint rate over delivered mail). A **flow rate**: each event counts by its own
+trailing time window, where `delivered` is the count of `email.delivered` Events to a **Mailbox
+provider** that reports complaints: Gmail reports none, so mail delivered there is left out, and
+Gmail's own spam rate is shown beside it. A **flow rate**: each event counts by its own
 `occurred_at`, so it is always current and never needs a Delivery notice to be linked back to its
 send. Derived from the `email.complained` / `email.delivered` Events (source of truth), **not** a
 stored status — a core, user-facing number computed live; the automated-suspension _thresholds_ that
@@ -1598,9 +1607,21 @@ _Avoid_: Permanent bounce, permanent failure (the industry says hard; one word f
 
 **Soft bounce**:
 A bounce the receiving side reports as temporary: a full mailbox, a server that is down, a
-message that is too large. It does not suppress and does not count in the **Bounce rate**, but
-the Outbound message still carries it as a bounce.
+message that is too large. It does not count in the **Bounce rate**, and one alone does not
+suppress, but a **Soft bounce run** does; the Outbound message still carries it as a bounce.
 _Avoid_: Transient bounce, temporary failure (the industry says soft; one word for one thing)
+
+**Soft bounce run**:
+Five **Soft bounces** in a row to one Destination on the recipient's side (its mailbox, not the
+message or the sender), with no delivery between them and at least seven days from the first to the
+last. It suppresses the Destination; a delivery ends it.
+_Avoid_: Soft bounce limit, soft bounce threshold
+
+**Mailbox provider**:
+Who runs a recipient domain's mail, read from where its mail goes (Gmail and Google Workspace,
+Microsoft, Yahoo, Apple, other), whatever the domain's name. It decides whether a delivery counts in
+the **Complaint rate**.
+_Avoid_: ISP, inbox provider, email provider (that is the Integration's provider)
 
 **Machine engagement**:
 An open or click made by software rather than the recipient: a mail client's privacy proxy (Apple

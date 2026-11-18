@@ -4,6 +4,8 @@ status: accepted
 
 # Marketing email is armed only with a postal address
 
+> **Amended by [[0183-a-postal-address-is-structured-by-its-country]]:** the Postal address is fields validated by its country's format; a city and a country are not an address, a PO box or a commercial mail receiving agency's mailbox is an address line.
+
 > Amends [[0056-marketing-email-is-always-html-with-a-derived-text-part]] (the footer's postal address
 > is never empty).
 
@@ -14,8 +16,8 @@ The footer of a marketing email carries the Workspace's postal address beside th
 anyway: no check warns or stops a Broadcast or an Automation, and the external `GET /workspace` does
 not return the address, so an agent preparing a send cannot see it missing.
 
-CAN-SPAM requires a valid physical postal address in every commercial email; a PO box or a virtual
-office address satisfies it. Email platforms require the address before a business can send (when its
+CAN-SPAM requires a valid physical postal address in every commercial email: a street address, a PO
+box registered with the Postal Service, or a mailbox at a commercial mail receiving agency. Email platforms require the address before a business can send (when its
 audience or account is set up) and put it in every footer. An agent driving an email platform is
 expected to block a send without the address, as a gate it cannot edit its way around.
 

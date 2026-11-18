@@ -4,6 +4,10 @@ status: superseded in part by ADR 0053 (a delivered denominator replaces the pro
 
 # Deliverability rate metrics: complaint & bounce rate in core, thresholds in EE
 
+> **Amended by [[0185-the-complaint-rate-counts-mail-to-providers-that-report-complaints]]:** the Complaint rate leaves mail delivered to Gmail out of its denominator.
+
+> **Amended by [[0186-a-run-of-soft-bounces-suppresses-a-destination]]:** a run of five soft bounces on the recipient's side over at least seven days suppresses the Destination; a soft bounce still counts in no rate.
+
 > **Amended by [[0130-deliverability-is-observed-through-feedback-ids-gmails-postmaster-data-and-content-checks]]:**
 > Gmail's own spam rate for the whole domain is shown beside the Complaint rate as Gmail's, never
 > read by automated decisions.

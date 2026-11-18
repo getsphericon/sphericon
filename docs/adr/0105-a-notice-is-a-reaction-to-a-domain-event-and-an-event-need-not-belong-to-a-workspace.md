@@ -4,6 +4,8 @@ status: accepted
 
 # A notice is a reaction to a domain event, and an event need not belong to a Workspace
 
+> **Amended by [[0187-what-needs-attention-reaches-a-webhook-endpoint-that-asks-for-it]]:** the changes of Needs attention, a suspension and a Staff hold also leave through a Webhook endpoint whose filter names them.
+
 > Amends [[0101-a-domain-event-is-a-river-job-for-each-consumer-that-wants-it]]: an event belongs to a
 > Workspace or to the Instance, and only a Workspace's event can be an Event with a row. Replaces the
 > owner-notice seam of [[0102-the-core-is-layered-and-an-operation-across-modules-is-a-use-case]]

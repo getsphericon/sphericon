@@ -7,6 +7,8 @@ status: accepted
 
 # Send-eligibility: (channel, destination)-keyed Suppression + scoped Unsubscribe, no contact status
 
+> **Amended by [[0186-a-run-of-soft-bounces-suppresses-a-destination]]:** a run of soft bounces is a reason of Suppression (`soft_bounce_run`).
+
 A Contact has no "subscribed/unsubscribed" status. Whether a message on channel C from
 sending source S may reach destination D (the channel-specific address — email, phone,
 messenger id) is decided in layers: (1) (C, D) in the **Suppression** list → never;

@@ -4,6 +4,8 @@ status: accepted
 
 # The overview leads with what needs attention
 
+> **Amended by [[0187-what-needs-attention-reaches-a-webhook-endpoint-that-asks-for-it]]:** a job compares Needs attention with the items it saw open and publishes `needs_attention.opened` and `needs_attention.resolved`; the list itself stays a live read.
+
 > **Amended by [[0053-delivery-and-engagement-events-cover-every-send]]:** the open and click rates
 > now cover the Broadcast and Automation messages, not only the Broadcast cohort.
 

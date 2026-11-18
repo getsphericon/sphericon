@@ -4,6 +4,8 @@ status: accepted
 
 # Email content is authored in an embedded editor; the server builds the HTML
 
+> **Amended by [[0188-content-checks-flag-placeholders-hidden-text-and-no-reply-senders]]:** weight is not among the lint's warnings; the Brand kit has the business's website, and the starter Templates link to it.
+
 > **Amended by [[0118-email-html-is-stored-and-sent-as-written]]:** point 8 is replaced. A body is
 > stored and sent as written; the sanitizer and the lint's `unknown_construct` are gone, and any view
 > of a message's HTML in the app is a sandboxed iframe.
