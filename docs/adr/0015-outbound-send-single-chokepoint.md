@@ -4,6 +4,11 @@ status: accepted
 
 # Outbound send: one module, one message record, two outcome scopes
 
+> **Amended by [[0013-double-opt-in-confirmation]]:** the double opt-in confirmation email is an
+> Outbound message of its own kind, `confirmation`, and Send-eligibility takes its mode as a closed
+> type (marketing with its Sending source, transactional, a confirmation the Workspace asked for, one
+> the person asked for) instead of an empty Sending source standing for transactional.
+
 > **Amended by [[0178-a-frequency-cap-counts-each-destination-a-message-is-claimed-for-after-eligibility]]:**
 > Outbound send runs the targets and Send-eligibility before the claim, and the frequency cap with
 > the claim under the Destination's lock.
@@ -41,10 +46,10 @@ ways. Workspace suspension (ADR 0007) had no single place to be enforced at all.
   or `email.sent` Event, but it still passes the freeze check and the Sending-domain gate and is
   DKIM-signed — a suspended Workspace sends nothing, test or not. (Amended by ADR 0041: with no
   verified Sending domain it goes from the System sender instead, to the asking User only.)
-- **In:** the double opt-in confirmation email (ADR 0013), an Outbound message of the kind
-  `confirmation`. It goes to a Destination on the Workspace's behalf, so it needs Suppression, the
-  freeze check, the domain gate and signing; it has no Sending source and no unsubscribe, like
-  Transactional, and its own mode of Send-eligibility, chosen by who asked for it.
+- **In, when it exists:** the double-opt-in Confirmation mail (ADR 0013). It goes to a Destination
+  on the Workspace's behalf, so it needs Suppression, the freeze check, the domain gate and
+  signing; it has no Sending source and no unsubscribe, like Transactional. Today the confirmation
+  link and endpoint exist but nothing in sphericon sends the mail, so there is nothing to migrate.
 - **Out:** platform mail to sphericon's own Users — welcome, email verification, password reset, member
   invitations, and the "sending domain no longer verified" owner notice. It is sent by the
   instance's system sender, is not scoped to a Workspace's Sending domain, and must keep working
@@ -124,12 +129,10 @@ exists; a render error on one contact's data fails only that message.
 ### Eligibility is one destination-keyed rule, evaluated per message at send time
 
 Send-eligibility (ADR 0001, 0013) is a single rule keyed by (channel, Destination) — a
-Transactional destination may have no Contact. The rule takes its mode as a closed type
-(marketing with its Sending source, transactional, a confirmation the Workspace asked for, one the
-person asked for, ADR 0013), never an empty Sending source standing for one. Broadcast planning
-uses its batch form (a join from Contact to destination) to select the audience cheaply, but the
-authoritative decision is made for each message at send time and is fail-closed: if the check
-cannot be made, the message is not sent. There is no second, hand-written point-lookup implementation of the layers, and the
+Transactional destination may have no Contact. Broadcast planning uses its batch form (a join
+from Contact to destination) to select the audience cheaply, but the authoritative decision is made
+for each message at send time and is fail-closed: if the check cannot be made, the message is not
+sent. There is no second, hand-written point-lookup implementation of the layers, and the
 workspace's require-confirmed-opt-in policy is read inside the rule, never passed in by callers.
 
 ### Marketing sends fail closed on unsubscribe

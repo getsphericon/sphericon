@@ -83,8 +83,8 @@ tracking grant, ADR 0120) is different: it is recorded where no refusal stands, 
   serves, beside the confirmation email; it is a message the person asked for, in ADR 0013's mode
   that only Suppression (and on SMS and Telegram a Channel stop) stops.
 - The Unsubscribe module gains a lift of a source or of `everything` on email and of a source on
-  Telegram, reachable only from the page's proven actions and from a confirmation link issued
-  after the opt-out (ADR 0013); no `/site`, `/api` or MCP operation widens.
+  Telegram, reachable only from the page's proven actions and from a confirmation link's
+  `POST` (ADR 0013); no `/site`, `/api` or MCP operation widens.
 - The email footer loses ADR 0120's separate tracking link.
 
 ## Considered options

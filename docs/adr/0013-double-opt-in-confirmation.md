@@ -87,9 +87,9 @@ the existing list un-mailable overnight. Enabling records a Confirmation with pr
 Suppression, no `everything` opt-out, no Confirmation yet), keeping the eligibility gate
 _uniform_ ("Confirmation EXISTS" always) rather than a non-auditable time-based carve-out. "Did
 this contact confirm?" is answerable per-contact from a record. Each one has its
-`marketing.confirmed` Event, recorded as a **Backfill** (ADR 0044): history to segmentation, never a
-trigger, so turning the policy on starts no welcome Automation and reaches no webhook. The records
-are written before the policy turns on, and the last of them and the policy change share one
+`marketing.confirmed` Event, recorded as history: segmentation sees it, and like a Backfill (ADR 0044) it is never a trigger, so turning the policy on starts no welcome Automation and reaches no
+webhook. It is not a Backfill: the assertion is made now, not loaded from an earlier system. The
+records are written before the policy turns on, and the last of them and the policy change share one
 transaction, so no Destination mailable at that moment is left unconfirmed and no Broadcast
 in flight skips its audience.
 
@@ -180,11 +180,11 @@ _confirms_ **fabricates consent you never had**, poisoning the exact audit trail
 exists to create. The explicit button-click _is_ the deliberate human act that makes the opt-in
 valid.
 
-**The confirmation lifts an `everything` opt-out recorded before its link was issued**: the person
-acting on a link delivered to the address after they left is the person coming back (ADR 0121). It
-deletes that Unsubscribe and records `email.resubscribed`, then the Confirmation. An opt-out
-recorded after the link was issued wins, and the click changes nothing (ADR 0154). A per-source
-opt-out is not lifted: the person returns to everything else and keeps the narrower refusal.
+**The confirmation lifts an `everything` opt-out**: pressing Confirm on a link delivered to the
+address no more than 7 days before is the person's own act on fresh proof, as a widening on the
+Preference page is (ADR 0121). It deletes that Unsubscribe and records `email.resubscribed`, then
+the Confirmation, ordered with the opt-out by when each occurred (ADR 0154). A per-source opt-out
+is not lifted: the person returns to everything else and keeps the narrower refusal.
 
 ### Eligibility ordering: negatives dominate
 
@@ -217,8 +217,8 @@ the unchanged subtractive model.
 ## Consequences
 
 - A `Confirmation` and a `Confirmation request` in the glossary, and a `marketing.confirmed` Event,
-  backfilled when it grandfathers; the policy and the confirmation email on the Workspace's
-  settings, with `requireConfirmedOptIn` read-only on the external `GET /workspace`.
+  recorded as history (no trigger) when it grandfathers; the policy and the confirmation email on
+  the Workspace's settings, with `requireConfirmedOptIn` read-only on the external `GET /workspace`.
 - Send-eligibility takes a closed mode instead of an empty Sending source; Outbound message gains
   the kind `confirmation`.
 - `POST /contacts/{contactId}/confirmation-requests` on `/api` and MCP, the same action on a
@@ -242,5 +242,8 @@ the unchanged subtractive model.
   any address typed into a form.
 - **Grandfathering without an Event, or with a live one.** Without one, the row is no longer
   derived from the log; a live one starts the welcome Automation for the whole list.
+- **Lifting `everything` only with a link issued after the opt-out.** The Preference page already
+  lets a link of the last 7 days widen whenever it was sent; a second rule for the same proof would
+  differ by door.
 - **The Transactional kind for the confirmation email.** Its counts and reports would mix the
   customer's mail with sphericon's, and its mode would be the empty Sending source this ADR retires.

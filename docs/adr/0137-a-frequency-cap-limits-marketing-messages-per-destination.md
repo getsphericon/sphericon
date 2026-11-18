@@ -34,9 +34,9 @@ in full when it is retried.
   is audited (ADR 0022). The external API only reads the Workspace, so no Connection can widen them
   (ADR 0132).
 - **"One subject" is not modelled: every marketing message on the Channel counts.** That is a
-  Broadcast's, a Broadcast series' issue and an Automation's send. Transactional sends and the messages
-  the person just asked for (an opt-in confirmation, a fresh link of the Preference page) neither count
-  nor wait. A Test send is outside it.
+  Broadcast's, a Broadcast series' issue and an Automation's send. Transactional sends, opt-in
+  confirmation emails (ADR 0013, whoever asked for them) and the Preference page's fresh links
+  neither count nor wait. A Test send is outside it.
 - **It counts by Destination**, the number, the address or the chat, never by Contact. The law speaks
   of the number, and a Destination stays one when two Contacts of one person are merged (ADR 0128).
   What counts is the marketing messages to it in the period that are sent (accepted by the provider)
