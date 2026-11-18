@@ -28,17 +28,19 @@ const (
 
 	opBefore operator = "before"
 	opAfter  operator = "after"
+	// opWithin is the moment test of the last days up to now, the `dateWithin` leaf's.
+	opWithin operator = "within"
 )
 
-// textTest is one test of a text value, in the two places a Condition is evaluated: contact
-// compiles it to a predicate on a Contact attribute (SQL), event runs it in Go on a property of
-// the triggering Event. They are one table so a Contact leaf and a Rule's "trigger:" leaf mean
-// the same by the same operator; TestOperatorsAgreeOnTheContactSideAndTheEventSide runs the same
+// textTest's operators, in the two places a Condition is evaluated: contact compiles one to a
+// predicate on a Contact attribute (SQL), event runs it in Go on a property of the triggering
+// Event. They are one table so a Contact leaf and a Rule's test of the triggering Event mean the
+// same by the same operator; TestOperatorsAgreeOnTheContactSideAndTheEventSide runs the same
 // cases through both.
-type textTest struct {
+type textOperator struct {
 	contact func(f textField, want string) predicate.Contact
 	// event reports whether the property's value, present in the Event, passes. Only a string
-	// can: a value of another type fails every operator but null.
+	// can: a value of another type fails every operator.
 	event func(have any, want string) bool
 }
 
@@ -48,7 +50,7 @@ func text(have any) (string, bool) {
 	return s, ok
 }
 
-var textTests = map[operator]textTest{
+var textTests = map[operator]textOperator{
 	opEQ: {
 		contact: func(f textField, want string) predicate.Contact { return f.eq(want) },
 		event:   func(have any, want string) bool { s, ok := text(have); return ok && s == want },
@@ -68,20 +70,40 @@ var textTests = map[operator]textTest{
 		contact: func(f textField, want string) predicate.Contact { return f.beginsWith(want) },
 		event:   func(have any, want string) bool { s, ok := text(have); return ok && strings.HasPrefix(s, want) },
 	},
-	opNull: {
-		contact: func(f textField, _ string) predicate.Contact { return f.null },
-		event:   func(have any, _ string) bool { return have == nil },
-	},
-	opNotNull: {
-		contact: func(f textField, _ string) predicate.Contact { return f.notNull },
-		event:   func(have any, _ string) bool { _, ok := text(have); return ok },
-	},
 }
 
-// comparison is one operator of a number leaf, in the two places it is evaluated: filter is its
+// contact is the presence test of a Contact's text attribute: set or null. Like textTests, it
+// means the same as event, its test of a property of the triggering Event.
+func (p presenceTest) contact(f textField) predicate.Contact {
+	if p.set {
+		return f.notNull
+	}
+	return f.null
+}
+
+// event is the presence test of a property present in the triggering Event: set is a text value,
+// not set is JSON null.
+func (p presenceTest) event(have any) bool {
+	if p.set {
+		_, ok := text(have)
+		return ok
+	}
+	return have == nil
+}
+
+// operator is the stored operator of a value's presence test, notNull or null: the one the table
+// of what fits a Custom field (customFieldOperators) is written in.
+func (p presenceTest) operator() operator {
+	if p.set {
+		return opNotNull
+	}
+	return opNull
+}
+
+// comparison is one operator of a number test, in the two places it is evaluated: filter is its
 // jsonpath test of a number Custom field's value @ against the operand $v (SQL), holds runs it in
 // Go on a number property of the triggering Event. One table, so a Segment's leaf and a Rule's
-// "trigger:" leaf mean the same by the same operator;
+// test of the triggering Event mean the same by the same operator;
 // TestNumberLeavesAgreeOnTheContactSideAndTheEventSide runs the same cases through both.
 type comparison struct {
 	filter string
