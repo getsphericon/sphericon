@@ -39,8 +39,9 @@ sent it and, for a click, the link. Analytical Events expire after the Instance'
 - **A Broadcast or an Automation is named by its id, and an archived one still matches.** Neither is
   ever removed by its owner (ADR 0100), and archiving one keeps its row and the Events that name it,
   so a filter that names it keeps counting them, and a save may name an archived one: "clicked in last
-  month's newsletter" is a question about history. A save naming one the Workspace does not have is
-  refused. The editor offers the kept ones, and the archived ones on request, marked as archived. A
+  month's newsletter" is a question about history. It differs from a Rule's Enroll, whose Publish
+  refuses an archived Automation (ADR 0100): an Enroll sends new work into the Automation, a filter
+  only reads the Events it already left. A save naming one the Workspace does not have is refused. The editor offers the kept ones, and the archived ones on request, marked as archived. A
   Broadcast or Automation is therefore not Definition use and the Removal check does not read it.
 - **A filter that names a Tag, Custom field or Score is Definition use**, as ADR 0133 has it for a
   matcher: the Removal check reads the filters of a Segment's, a Rule's and an Automation's
