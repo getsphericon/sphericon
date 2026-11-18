@@ -4,6 +4,12 @@ status: accepted
 
 # Delivery and engagement Events cover every send, and machine engagement is flagged, not dropped
 
+> **Amended by #1553:** an Event from the Automation's own message, on any Channel, is no longer
+> left out of its Trigger. One active Enrollment at a time, the cooldown and the cycle guard bound it
+> ([[0127-an-automation-may-enroll-a-contact-again-one-enrollment-at-a-time]]), a skip is recorded with its reason, and an author who wants it left out filters the
+> Trigger by the Broadcast or Automation that sent the message
+> ([[0180-a-property-test-runs-in-postgres-as-one-sql-json-path]]).
+
 > **Amended below:** the rollup of a human open and click moved from the Broadcast recipient to
 > the Outbound message, so it covers every surface.
 >

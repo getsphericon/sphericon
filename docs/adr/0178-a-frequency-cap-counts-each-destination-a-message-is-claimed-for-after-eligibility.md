@@ -5,6 +5,10 @@ build: [1592]
 
 # A frequency cap counts each Destination a message is claimed for, after Send-eligibility
 
+> **Revised before it was built** (#1592): a final Outcome outranks a temporary one, so an unsubscribed
+> Contact's send is Skipped rather than deferred; what the Enrollment does next is ADR 0081's and ADR
+> 0127's (an unsubscribe from the Automation exits only the Enrollment active when it arrives).
+
 > Amends [[0137-a-frequency-cap-limits-marketing-messages-per-destination]] (what is counted, the
 > order of the checks, the takeover of a claim, who decides between Skipped and Deferral, and the
 > record of a wait), [[0134-marketing-sms-waits-for-the-workspaces-sending-window-in-the-recipients-time]]
@@ -41,7 +45,7 @@ Sending window; an Automation's send is deferred in both cases first.
 - **Outbound send runs: replay, the Erasure check, holds (the Workspace freeze first), the targets,
   Send-eligibility of each target, the Sending window, then under the lock the frequency cap of each
   target and the claim; then render, the Provider limit and the Send cap, the provider call.** A final
-  Outcome outranks a temporary one: an unsubscribed Contact's Automation exits at once. The cap is the
+  Outcome outranks a temporary one: an unsubscribed Contact's send is Skipped, never deferred. The cap is the
   last check before the claim, and the holds stay first.
 - **A send Skipped by Send-eligibility is recorded as a decided Outbound message**, as today, without a
   claim: nothing goes to the provider.
