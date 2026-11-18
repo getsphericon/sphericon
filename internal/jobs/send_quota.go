@@ -7,6 +7,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/sending/integrations"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 )
 
 // quotaRefreshBatchSize bounds how many Integrations one hourly tick refreshes, like
@@ -39,7 +40,7 @@ func (w *RefreshSendQuotasWorker) Work(ctx context.Context, _ *river.Job[Refresh
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(row *ent.Integration) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(row *ent.Integration) river.JobArgs {
 		return integrations.RefreshQuotaArgs{WorkspaceID: row.WorkspaceID, IntegrationID: row.ID}
 	})
 }

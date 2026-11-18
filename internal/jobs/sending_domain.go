@@ -9,6 +9,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/identity/joindomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/sendingdomains"
 	"github.com/getsphericon/sphericon/internal/domain/sending/trackingdomains"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
@@ -79,7 +80,7 @@ func (w *RecheckSendingDomainsWorker) Work(ctx context.Context, _ *river.Job[Rec
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(row *ent.SendingDomain) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(row *ent.SendingDomain) river.JobArgs {
 		return VerifySendingDomainArgs{WorkspaceID: row.WorkspaceID, SendingDomainID: row.ID}
 	})
 }
@@ -136,7 +137,7 @@ func (w *RecheckTrackingDomainsWorker) Work(ctx context.Context, _ *river.Job[Re
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(row *ent.TrackingDomain) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(row *ent.TrackingDomain) river.JobArgs {
 		return VerifyTrackingDomainArgs{WorkspaceID: row.WorkspaceID, TrackingDomainID: row.ID}
 	})
 }
@@ -196,7 +197,7 @@ func (w *RecheckJoinDomainsWorker) Work(ctx context.Context, _ *river.Job[Rechec
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(row *ent.JoinDomain) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(row *ent.JoinDomain) river.JobArgs {
 		return VerifyJoinDomainArgs{WorkspaceID: row.WorkspaceID, JoinDomainID: row.ID}
 	})
 }

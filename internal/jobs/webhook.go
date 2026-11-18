@@ -11,6 +11,7 @@ import (
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/webhookendpoints"
 	"github.com/getsphericon/sphericon/internal/infra/events"
 	"github.com/getsphericon/sphericon/internal/infra/webhook"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/kernel/secrets"
 )
@@ -101,7 +102,7 @@ func (d webhookDispatcher) Dispatch(ctx context.Context, s *ent.Scoped, delivery
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, endpoints, func(e *ent.WebhookEndpoint) river.JobArgs {
+	return jobextension.QueueEach(ctx, endpoints, func(e *ent.WebhookEndpoint) river.JobArgs {
 		return DeliverWebhookArgs{
 			WorkspaceID: e.WorkspaceID,
 			EndpointID:  e.ID,

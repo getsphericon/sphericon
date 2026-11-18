@@ -429,9 +429,11 @@ func TestAJobForAWorkspaceThatLeftTheDetectorsReachChangesNothing(t *testing.T) 
 	require.NoError(t, err)
 	bluth, err := d.detector.Judge(t.Context(), fixtures.BluthID)
 	require.NoError(t, err)
+	reason := env.DB.Workspace.GetX(t.Context(), fixtures.MonarchID).SuspensionReason
+	bluthSuspended := suspended(t, env, fixtures.BluthID)
 
 	assert.Equal(t, abusedetector.Unchanged, monarch)
-	assert.Equal(t, "chargeback", *env.DB.Workspace.GetX(t.Context(), fixtures.MonarchID).SuspensionReason)
+	assert.Equal(t, "chargeback", *reason)
 	assert.Equal(t, abusedetector.Unchanged, bluth)
-	assert.False(t, suspended(t, env, fixtures.BluthID))
+	assert.False(t, bluthSuspended)
 }

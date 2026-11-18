@@ -10,6 +10,7 @@ import (
 
 	"github.com/getsphericon/sphericon/ent"
 	"github.com/getsphericon/sphericon/internal/domain/orchestration/broadcasts"
+	"github.com/getsphericon/sphericon/internal/kernel/jobextension"
 	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 )
 
@@ -90,7 +91,7 @@ func (RecipientJobs) Schedule(ctx context.Context, workspaceID, broadcastID int6
 			InsertOpts: &river.InsertOpts{ScheduledAt: send.At},
 		}
 	}
-	return insertMany(ctx, rc, params)
+	return jobextension.InsertMany(ctx, rc, params)
 }
 
 // SendRecipientWorker delivers one broadcast recipient. Each recipient is its

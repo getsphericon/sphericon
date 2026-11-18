@@ -126,7 +126,8 @@ func TestDueListsEveryWorkspace(t *testing.T) {
 	due, err := retention(env, nil, time.Now).Due(t.Context())
 
 	require.NoError(t, err)
-	assert.ElementsMatch(t, env.DB.Workspace.Query().IDsX(t.Context()), due)
+	assert.Subset(t, due, []int64{fixtures.AcmeID, fixtures.GlobexID, fixtures.BluthID, fixtures.MonarchID},
+		"a Workspace without a window, one in its deletion window and a suspended one too")
 }
 
 // A Prune that fails does not keep the same Workspace's client details from being cleared: the

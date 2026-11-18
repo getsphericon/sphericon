@@ -244,8 +244,9 @@ func TestRefreshSkipsAWorkspaceInItsDeletionWindow(t *testing.T) {
 	due, err := m.Due(t.Context())
 	require.NoError(t, err)
 	require.NoError(t, m.Refresh(t.Context(), fixtures.BluthID))
+	after := bluth.Clone().CountX(t.Context())
 
 	assert.Contains(t, due, int64(fixtures.AcmeID), "live Workspaces are still measured")
 	assert.NotContains(t, due, int64(fixtures.BluthID))
-	assert.Equal(t, before, bluth.Clone().CountX(t.Context()), "Bluth's job stores nothing")
+	assert.Equal(t, before, after, "Bluth's job stores nothing")
 }

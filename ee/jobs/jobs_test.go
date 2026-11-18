@@ -19,6 +19,7 @@ import (
 	"github.com/getsphericon/sphericon/ent/auditentry"
 	entusage "github.com/getsphericon/sphericon/ent/usage"
 	"github.com/getsphericon/sphericon/internal/fixtures"
+	"github.com/getsphericon/sphericon/internal/kernel/jobkind"
 	"github.com/getsphericon/sphericon/internal/testhelper"
 )
 
@@ -42,9 +43,7 @@ func tick(t *testing.T, env *testhelper.TestEnv, args river.JobArgs) {
 func stateOf(t *testing.T, env *testhelper.TestEnv, kind string, ws int64) rivertype.JobState {
 	t.Helper()
 	row, ok := lo.Find(env.JobRowsOf(t, kind), func(r *rivertype.JobRow) bool {
-		var args struct {
-			WorkspaceID int64 `json:"workspaceId"`
-		}
+		var args jobkind.Workspace
 		return json.Unmarshal(r.EncodedArgs, &args) == nil && args.WorkspaceID == ws
 	})
 	require.Truef(t, ok, "no %s job for workspace %d", kind, ws)
@@ -96,10 +95,12 @@ func TestTheUsageTickRefreshesEachWorkspaceInAJobOfItsOwn(t *testing.T) {
 	refreshed := func(ws int64) int {
 		return env.DB.Scoped(ws).Usage().Query().Where(entusage.ComputedAt(now)).CountX(t.Context())
 	}
-	assert.Equal(t, rivertype.JobStateRetryable, stateOf(t, env, kind, fixtures.AcmeID))
-	assert.Zero(t, refreshed(fixtures.AcmeID))
-	assert.Equal(t, rivertype.JobStateCompleted, stateOf(t, env, kind, fixtures.GlobexID))
-	assert.Positive(t, refreshed(fixtures.GlobexID))
+	acme, acmeRows := stateOf(t, env, kind, fixtures.AcmeID), refreshed(fixtures.AcmeID)
+	globex, globexRows := stateOf(t, env, kind, fixtures.GlobexID), refreshed(fixtures.GlobexID)
+	assert.Equal(t, rivertype.JobStateRetryable, acme)
+	assert.Zero(t, acmeRows)
+	assert.Equal(t, rivertype.JobStateCompleted, globex)
+	assert.Positive(t, globexRows)
 }
 
 // The abuse detector's tick queues a judgement per Workspace: Kramerica's freeze fails and stays
@@ -116,10 +117,12 @@ func TestTheAbuseTickJudgesEachWorkspaceInAJobOfItsOwn(t *testing.T) {
 	env.TryPerformEnqueuedJobs(t, jobs.WorkspaceAbuseDetectionArgs{})
 
 	suspended := func(ws int64) bool { return env.DB.Workspace.GetX(t.Context(), ws).SuspendedAt != nil }
-	assert.Equal(t, rivertype.JobStateRetryable, stateOf(t, env, kind, fixtures.KramericaID))
-	assert.False(t, suspended(fixtures.KramericaID))
-	assert.Equal(t, rivertype.JobStateCompleted, stateOf(t, env, kind, fixtures.VandelayID))
-	assert.True(t, suspended(fixtures.VandelayID))
+	kramerica, kramericaSuspended := stateOf(t, env, kind, fixtures.KramericaID), suspended(fixtures.KramericaID)
+	vandelay, vandelaySuspended := stateOf(t, env, kind, fixtures.VandelayID), suspended(fixtures.VandelayID)
+	assert.Equal(t, rivertype.JobStateRetryable, kramerica)
+	assert.False(t, kramericaSuspended)
+	assert.Equal(t, rivertype.JobStateCompleted, vandelay)
+	assert.True(t, vandelaySuspended)
 }
 
 // juneFirst is past the retention windows below and ClientWindow for every fixture Audit entry
@@ -142,10 +145,12 @@ func TestTheRetentionTickPrunesEachWorkspaceInAJobOfItsOwn(t *testing.T) {
 	tick(t, env, jobs.RetentionPruneArgs{})
 	env.TryPerformEnqueuedJobs(t, jobs.WorkspaceRetentionPruneArgs{})
 
-	assert.Equal(t, rivertype.JobStateRetryable, stateOf(t, env, kind, fixtures.AcmeID))
-	assert.Equal(t, 1, entries(t, env, fixtures.AcmeID))
-	assert.Equal(t, rivertype.JobStateCompleted, stateOf(t, env, kind, fixtures.GlobexID))
-	assert.Zero(t, entries(t, env, fixtures.GlobexID))
+	acme, acmeEntries := stateOf(t, env, kind, fixtures.AcmeID), entries(t, env, fixtures.AcmeID)
+	globex, globexEntries := stateOf(t, env, kind, fixtures.GlobexID), entries(t, env, fixtures.GlobexID)
+	assert.Equal(t, rivertype.JobStateRetryable, acme)
+	assert.Equal(t, 1, acmeEntries)
+	assert.Equal(t, rivertype.JobStateCompleted, globex)
+	assert.Zero(t, globexEntries)
 }
 
 // The retention tick clears the client details of each Workspace in a job of its own: Acme's
@@ -162,8 +167,10 @@ func TestTheRetentionTickForgetsTheClientsOfEachWorkspaceInAJobOfItsOwn(t *testi
 	ip := func(id int64) *string {
 		return env.DB.AuditEntry.Query().Where(auditentry.ID(id)).OnlyX(t.Context()).IP
 	}
-	assert.Equal(t, rivertype.JobStateRetryable, stateOf(t, env, kind, fixtures.AcmeID))
-	assert.NotNil(t, ip(fixtures.AcmeAuditEntryID))
-	assert.Equal(t, rivertype.JobStateCompleted, stateOf(t, env, kind, fixtures.GlobexID))
-	assert.Nil(t, ip(fixtures.GlobexAuditIntegrationUpdateID))
+	acme, acmeIP := stateOf(t, env, kind, fixtures.AcmeID), ip(fixtures.AcmeAuditEntryID)
+	globex, globexIP := stateOf(t, env, kind, fixtures.GlobexID), ip(fixtures.GlobexAuditIntegrationUpdateID)
+	assert.Equal(t, rivertype.JobStateRetryable, acme)
+	assert.NotNil(t, acmeIP)
+	assert.Equal(t, rivertype.JobStateCompleted, globex)
+	assert.Nil(t, globexIP)
 }

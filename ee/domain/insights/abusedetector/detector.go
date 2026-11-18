@@ -58,8 +58,8 @@ const (
 	Frozen
 )
 
-// judged matches the Workspaces the detector judges: live, not suspended and not exempt.
-func judged() predicate.Workspace {
+// inReach matches the Workspaces the detector judges: live, not suspended and not exempt.
+func inReach() predicate.Workspace {
 	return workspace.And(suspension.NotSuspended(), workspace.AbuseExempt(false), workspaces.Live())
 }
 
@@ -69,14 +69,14 @@ func outOfReach() predicate.Workspace {
 	return workspace.And(workspaces.AbuseWarned(), workspace.Or(suspension.Suspended(), workspace.AbuseExempt(true)))
 }
 
-// Due is the Workspaces a pass judges one by one (Judge): the judged ones, and the warned ones out
+// Due is the Workspaces a pass judges one by one (Judge): the ones in its reach, and the warned ones out
 // of the detector's reach, whose episode a pass ends. Unlicensed it is none.
 func (d *Detector) Due(ctx context.Context) ([]int64, error) {
 	if !d.watch.Licensed() {
 		return nil, nil
 	}
 	ids, err := d.client.Workspace.Query().
-		Where(workspace.Or(judged(), outOfReach())).
+		Where(workspace.Or(inReach(), outOfReach())).
 		Order(ent.Asc(workspace.FieldID)).
 		IDs(ctx)
 	if err != nil {
@@ -99,7 +99,7 @@ func (d *Detector) Judge(ctx context.Context, workspaceID int64) (Outcome, error
 	}
 	now := d.watch.now()
 	ws, err := d.client.Workspace.Query().
-		Where(workspace.ID(workspaceID), judged()).
+		Where(workspace.ID(workspaceID), inReach()).
 		WithStanding().
 		Only(ctx)
 	if ent.IsNotFound(err) {

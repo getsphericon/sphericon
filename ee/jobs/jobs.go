@@ -9,8 +9,6 @@ package jobs
 
 import (
 	"context"
-	"database/sql"
-	"slices"
 	"time"
 
 	"github.com/riverqueue/river"
@@ -114,7 +112,7 @@ func (w *RetentionPruneWorker) Work(ctx context.Context, _ *river.Job[RetentionP
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(ws int64) river.JobArgs {
 		return WorkspaceRetentionPruneArgs{WorkspaceID: ws}
 	})
 }
@@ -172,7 +170,7 @@ func (w *UsageRefreshWorker) Work(ctx context.Context, _ *river.Job[UsageRefresh
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(ws int64) river.JobArgs {
 		return WorkspaceUsageRefreshArgs{WorkspaceID: ws}
 	})
 }
@@ -229,7 +227,7 @@ func (w *AbuseDetectionWorker) Work(ctx context.Context, _ *river.Job[AbuseDetec
 	if err != nil {
 		return err
 	}
-	return queueEach(ctx, due, func(ws int64) river.JobArgs {
+	return jobextension.QueueEach(ctx, due, func(ws int64) river.JobArgs {
 		return WorkspaceAbuseDetectionArgs{WorkspaceID: ws}
 	})
 }
@@ -262,29 +260,6 @@ func NewWorkspaceAbuseDetectionWorker(detector *abusedetector.Detector) *Workspa
 func (w *WorkspaceAbuseDetectionWorker) Work(ctx context.Context, job *river.Job[WorkspaceAbuseDetectionArgs]) error {
 	_, err := w.detector.Judge(ctx, job.Args.WorkspaceID)
 	return err
-}
-
-// insertChunk bounds a single InsertMany of a fan-out, so a large instance is queued in pieces
-// rather than in one huge statement.
-const insertChunk = 1000
-
-// queueEach fans a tick out into one job per Workspace, args(ws) each, through the river client of
-// the job it runs in. No Workspaces queue nothing and need no river client.
-func queueEach(ctx context.Context, workspaceIDs []int64, args func(int64) river.JobArgs) error {
-	if len(workspaceIDs) == 0 {
-		return nil
-	}
-	rc := river.ClientFromContext[*sql.Tx](ctx)
-	for chunk := range slices.Chunk(workspaceIDs, insertChunk) {
-		params := make([]river.InsertManyParams, len(chunk))
-		for i, ws := range chunk {
-			params[i] = river.InsertManyParams{Args: args(ws)}
-		}
-		if _, err := rc.InsertMany(ctx, params); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // ExportPruneArgs prunes the Erasures stream past the instance's Event retention window (ADR 0019,
