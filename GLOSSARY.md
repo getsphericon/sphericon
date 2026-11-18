@@ -867,8 +867,9 @@ A Broadcast is not one: a scheduled Broadcast holds a copy of its Condition inst
 _Avoid_: Versioned entity, revisioned object, publishable
 
 **Operation effect**:
-What an operation of the app's API does, one of four: it reads, writes, sends (reaches people outside
-the app and cannot be taken back: Schedule, Publish, an Email send) or removes. A send-class operation
+What an operation of the app's API does, one of five: it reads, creates (only adds), changes (alters,
+replaces or moves what exists to another state), removes, or sends (arms, starts or withdraws mail to
+people outside the app: Schedule, Unschedule, Publish, an Email send). A send-class operation
 is one whose effect is to send; an agent needs the send lock for it, and its host is told to confirm it.
 _Avoid_: Side effect, operation type, verb
 
