@@ -5,6 +5,11 @@ build: [1546, 1606]
 
 # What an injected agent could do is bounded by origin marks, an egress lock and review
 
+> **Amended by #1713:** a date Trigger reads no Event, so the Contact keeps, per date field
+> (`birthday` and each datetime Custom field), whether its last write came through a Connection
+> without `mcp:send`. An occurrence of such a value enrolls no one until a write without the mark;
+> a Wait until starts no Enrollment and ignores it.
+
 > **Amended by [[0139-workspace-skills-and-inline-intents-on-an-instance-configured-model]]:**
 > the app now runs a model for inline intents: its inputs are wrapped by origin as here, its output is
 > reviewed by host and author as here, and it gets no Contact; an author may be that assistant; a

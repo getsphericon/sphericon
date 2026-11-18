@@ -1,7 +1,13 @@
 ---
 status: accepted
-build: [1613]
+build: [1613, 1710, 1711, 1712, 1713, 1714, 1715, 1716]
 ---
+
+> **Amended by #1713:** the floor of a date Trigger is the later of the Automation's activation and
+> the Publish of its live version, so a version that changes the Trigger while the Automation is
+> active enrolls nothing before that Publish. An occurrence of a date last written through a
+> Connection without `mcp:send` enrolls no one until a write without the mark
+> ([[0132-what-an-injected-agent-could-do-is-bounded-by-origin-marks-an-egress-lock-and-review]]).
 
 > **Amended by [[0166-wait-until-may-wait-for-a-window-and-go-on-inside-it]]:** Wait until has a
 > window form that goes on at once inside the window.
