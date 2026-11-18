@@ -1,20 +1,20 @@
 // Package condition is the Condition: the typed tree of tests on a Contact (the API
 // contract's tree, ADR 0029, ADR 0054), its validation and its compiler to a Contact
-// predicate. A Segment is a named Condition and a Rule holds one. A group {kind: "group", combinator: and|or, not,
-// rules[]} whose entries are nested groups, leaves {kind: "rule", field, operator, value}, event
-// counts {kind: "event", action, operator, times, withinDays}, number comparisons {kind: "number",
-// field, operator, value} and date tests {kind: "date", field, operator, at} and {kind:
-// "dateWithin", field, withinDays}, told apart by `kind`.
+// predicate. A Segment is a named Condition and a Rule holds one. A stored Condition is read once
+// into the typed tree (decode, tree.go): groups with a combinator, a negation and their entries,
+// whose leaves test a Contact attribute, a Tag, Telegram and SMS reachability, a Custom field, a
+// count of the Contact's Events or a property of the triggering Event, each by a test typed by
+// the value it reads (text, presence, number or moment). Everything else here works on that tree.
 //
 // A leaf is built from ent's generated predicates wherever one exists: the core
 // attributes (contact.EmailEQ …) and Tags (contact.HasTagsWith). An event count is a correlated
 // COUNT(*) of the Contact's Events, built with ent's SQL builder and the generated Event
 // predicates. The one dynamic piece is a Custom field's key inside the
 // custom_fields JSON column, which no generated predicate covers; it is addressed
-// with ent's JSON predicates (sqljson) after the key is checked, and by a number or date leaf with a
-// jsonpath filter, which is false on a value of another type where a cast would fail the query. A
-// leaf may only name a core attribute, a Tag, an Event action, or a Custom field of the Workspace's
-// catalogue (ADR 0006), and a number or date leaf only a Custom field of its type.
+// with ent's JSON predicates (sqljson) after the key is checked, and by a number or moment test
+// with a jsonpath filter, which is false on a value of another type where a cast would fail the
+// query. A leaf may only name a core attribute, a Tag, an Event action, or a Custom field of the
+// Workspace's catalogue (ADR 0006), and a number or moment test only a Custom field of its type.
 package condition
 
 import (
@@ -40,84 +40,9 @@ import (
 	"github.com/getsphericon/sphericon/ent/tag"
 	"github.com/getsphericon/sphericon/internal/domain/contacts/eligibility"
 	"github.com/getsphericon/sphericon/internal/infra/events"
-	"github.com/getsphericon/sphericon/internal/kernel/bounds"
-	"github.com/getsphericon/sphericon/internal/kernel/fieldname"
 	"github.com/getsphericon/sphericon/internal/kernel/reportday"
 	"github.com/getsphericon/sphericon/internal/kernel/validation"
 )
-
-const (
-	// customFieldPrefix marks a leaf as a Custom field condition: "custom:<key>".
-	customFieldPrefix = "custom:"
-	// tagField marks a leaf as a Tag condition: field "tag" with operator "has" or
-	// "doesNotHave" and value = the Tag name.
-	tagField = "tag"
-
-	// telegramField marks a leaf as the Telegram condition (ADR 0075): operator "has" or
-	// "doesNotHave", no value.
-	telegramField = "telegram"
-
-	// smsField marks a leaf as the "can be texted" condition: operator "has" or "doesNotHave", no
-	// value.
-	smsField = "sms"
-	// triggerFieldPrefix marks a leaf as a test on the triggering Event's own properties:
-	// "trigger:<key>". Valid only in a Rule (RulePredicate); a Segment refuses it.
-	triggerFieldPrefix = "trigger:"
-)
-
-const (
-	kindRule       = "rule"
-	kindEvent      = "event"
-	kindNumber     = "number"
-	kindDate       = "date"
-	kindDateWithin = "dateWithin"
-)
-
-// Leaf is one test of the tree: a field, an operator and a value.
-type Leaf struct {
-	Kind     string `json:"kind"`
-	Field    string `json:"field"`
-	Operator string `json:"operator"`
-	Value    string `json:"value"`
-}
-
-// EventLeaf is a count of the Contact's Events of one action: at least or at most Times of
-// them, over all time or within the last WithinDays days. Times is a pointer so that a leaf
-// without it is refused instead of read as zero.
-type EventLeaf struct {
-	Kind       string `json:"kind"`
-	Action     string `json:"action"`
-	Operator   string `json:"operator"`
-	Times      *int   `json:"times"`
-	WithinDays *int   `json:"withinDays,omitempty"`
-}
-
-// NumberLeaf compares a number: a Custom field of type number ("custom:<key>") or, in a Rule, a
-// property of the triggering Event ("trigger:<key>"). Value is a pointer so that a leaf without it
-// is refused instead of read as zero.
-type NumberLeaf struct {
-	Kind     string   `json:"kind"`
-	Field    string   `json:"field"`
-	Operator string   `json:"operator"`
-	Value    *float64 `json:"value"`
-}
-
-// DateLeaf tests a Custom field of type datetime ("custom:<key>"): its moment is before At, or at
-// or after it.
-type DateLeaf struct {
-	Kind     string    `json:"kind"`
-	Field    string    `json:"field"`
-	Operator string    `json:"operator"`
-	At       time.Time `json:"at"`
-}
-
-// DateWithinLeaf tests a Custom field of type datetime ("custom:<key>"): its moment is within the
-// last WithinDays days up to now.
-type DateWithinLeaf struct {
-	Kind       string `json:"kind"`
-	Field      string `json:"field"`
-	WithinDays int    `json:"withinDays"`
-}
 
 // textField is the generated predicates of one core text attribute.
 type textField struct {
@@ -137,10 +62,6 @@ var textFields = map[string]textField{
 	"locale":     {contact.LocaleEQ, contact.LocaleNEQ, contact.LocaleContainsFold, contact.LocaleHasPrefix, contact.LocaleIsNil(), contact.LocaleNotNil()},
 	"city":       {contact.CityEQ, contact.CityNEQ, contact.CityContainsFold, contact.CityHasPrefix, contact.CityIsNil(), contact.CityNotNil()},
 }
-
-// birthdayField is the one core attribute a date leaf tests: the Contact's date of birth, a
-// column, so a leaf of it is a column predicate rather than a jsonpath of the Custom fields.
-const birthdayField = "birthday"
 
 // birthdaySides is the predicate of each side of a date leaf on the birthday.
 var birthdaySides = map[operator]func(time.Time) predicate.Contact{
@@ -167,19 +88,27 @@ func New(now func() time.Time) *Module { return &Module{now: now} }
 
 // Compile turns a condition group into a Contact predicate. An empty rule set
 // matches everyone (an empty negated group matches no one) — deliberate, so an
-// empty rule is never a silent "nobody". A "trigger:" leaf is refused: only a Rule has an Event.
-// A relative date (in the last N days) counts back from the Instance clock's time.
+// empty rule is never a silent "nobody". A test of the triggering Event is refused: only a Rule
+// has an Event. A relative date (in the last N days) counts back from the Instance clock's time.
 func (m *Module) Compile(ctx context.Context, s *ent.Scoped, g conditiontree.Group) (predicate.Contact, error) {
-	return (&compiler{s: s, now: m.now()}).group(ctx, g)
+	tree, err := decode(g)
+	if err != nil {
+		return nil, err
+	}
+	return (&compiler{s: s, now: m.now()}).group(ctx, tree)
 }
 
-// RulePredicate compiles a Rule's Condition for the Workspace of s, with
-// "trigger:<key>" leaves allowed. They are evaluated in memory against props, the properties of
+// RulePredicate compiles a Rule's Condition for the Workspace of s, with tests of the triggering
+// Event's properties allowed. They are evaluated in memory against props, the properties of
 // the Event that fired the Rule, and folded into the tree as constants before the rest compiles
 // to a predicate (the Event's row may not exist yet). A key the Event lacks, or a value of
 // another type, makes the leaf false. Any key is valid, so props may be nil to only validate.
 func (m *Module) RulePredicate(ctx context.Context, s *ent.Scoped, g conditiontree.Group, props map[string]any) (predicate.Contact, error) {
-	return (&compiler{s: s, now: m.now(), trigger: &props}).group(ctx, g)
+	tree, err := decode(g)
+	if err != nil {
+		return nil, err
+	}
+	return (&compiler{s: s, now: m.now(), trigger: &props}).group(ctx, tree)
 }
 
 // compiler holds what one compilation needs: the Workspace's Custom field keys are
@@ -188,23 +117,17 @@ type compiler struct {
 	s    *ent.Scoped
 	now  time.Time
 	keys map[string]customfield.Type
-	// loc is the Workspace time zone, loaded by the first date leaf that needs it.
+	// loc is the Workspace time zone, loaded by the first moment test that needs it.
 	loc *time.Location
-	// trigger is the properties of the Event a Rule's "trigger:" leaves read; nil in a Segment,
-	// where such a leaf is refused.
+	// trigger is the properties of the Event a Rule's tests of the triggering Event read; nil in a
+	// Segment, where such a leaf is refused.
 	trigger *map[string]any
 }
 
-func (c *compiler) group(ctx context.Context, g conditiontree.Group) (predicate.Contact, error) {
-	if g.Kind != conditiontree.KindGroup {
-		return nil, fmt.Errorf("unknown group kind %q", g.Kind)
-	}
-	if g.Combinator != conditiontree.And && g.Combinator != conditiontree.Or {
-		return nil, fmt.Errorf("unknown combinator %q", g.Combinator)
-	}
-	preds := make([]predicate.Contact, 0, len(g.Rules))
-	for i, raw := range g.Rules {
-		p, err := c.entry(ctx, raw)
+func (c *compiler) group(ctx context.Context, g group) (predicate.Contact, error) {
+	preds := make([]predicate.Contact, 0, len(g.entries))
+	for i, n := range g.entries {
+		p, err := c.node(ctx, n)
 		if err != nil {
 			return nil, fmt.Errorf("rule %d: %w", i, err)
 		}
@@ -212,95 +135,91 @@ func (c *compiler) group(ctx context.Context, g conditiontree.Group) (predicate.
 	}
 
 	if len(preds) == 0 {
-		if g.Not {
+		if g.not {
 			return predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) }), nil
 		}
 		return contact.And(), nil
 	}
 
 	p := contact.And(preds...)
-	if g.Combinator == conditiontree.Or {
+	if g.combinator == conditiontree.Or {
 		p = contact.Or(preds...)
 	}
-	if g.Not {
+	if g.not {
 		p = contact.Not(p)
 	}
 	return p, nil
 }
 
-// entry decodes a rules[] entry by its `kind`: a nested group or a leaf rule.
-func (c *compiler) entry(ctx context.Context, raw json.RawMessage) (predicate.Contact, error) {
-	var probe struct {
-		Kind string `json:"kind"`
-	}
-	if err := json.Unmarshal(raw, &probe); err != nil {
-		return nil, fmt.Errorf("malformed rule: %w", err)
-	}
-	switch probe.Kind {
-	case conditiontree.KindGroup:
-		var g conditiontree.Group
-		if err := json.Unmarshal(raw, &g); err != nil {
-			return nil, fmt.Errorf("malformed group: %w", err)
-		}
-		return c.group(ctx, g)
-	case kindRule:
-		var r Leaf
-		if err := json.Unmarshal(raw, &r); err != nil {
-			return nil, fmt.Errorf("malformed rule: %w", err)
-		}
-		return c.rule(ctx, r)
-	case kindEvent:
-		var l EventLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed event leaf: %w", err)
-		}
-		return c.event(l)
-	case kindNumber:
-		var l NumberLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed number leaf: %w", err)
-		}
-		return c.number(ctx, l)
-	case kindDate:
-		var l DateLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed date leaf: %w", err)
-		}
-		return c.date(ctx, l)
-	case kindDateWithin:
-		var l DateWithinLeaf
-		if err := json.Unmarshal(raw, &l); err != nil {
-			return nil, fmt.Errorf("malformed date leaf: %w", err)
-		}
-		return c.dateWithin(ctx, l)
+// node compiles one entry of a group: a nested group or a leaf.
+func (c *compiler) node(ctx context.Context, n node) (predicate.Contact, error) {
+	switch l := n.(type) {
+	case group:
+		return c.group(ctx, l)
+	case attributeLeaf:
+		return c.attribute(l)
+	case tagLeaf:
+		return tagRule(l), nil
+	case telegramLeaf:
+		// The subject has a Binding on a Telegram Integration of the Workspace. A Visitor's
+		// Binding is no Contact's (ADR 0171). Evaluated live; a Binding exists only for a Telegram
+		// Integration and goes with it, so the existence of one is the test.
+		return present(contact.HasBindings(), l.test), nil
+	case smsLeaf:
+		return present(textable(), l.test), nil
+	case customFieldLeaf:
+		return c.custom(ctx, l)
+	case eventCountLeaf:
+		return c.event(l), nil
+	case propertyLeaf:
+		return c.property(l)
 	default:
-		return nil, fmt.Errorf("unknown rule kind %q", probe.Kind)
+		return nil, fmt.Errorf("unknown leaf %T", n)
 	}
 }
 
-func (c *compiler) rule(ctx context.Context, r Leaf) (predicate.Contact, error) {
-	op := operator(r.Operator)
-	switch {
-	case r.Field == tagField:
-		return tagRule(op, r.Value)
-	case r.Field == telegramField:
-		return telegramRule(op)
-	case r.Field == smsField:
-		return smsRule(op)
-	case strings.HasPrefix(r.Field, customFieldPrefix):
-		return c.custom(ctx, strings.TrimPrefix(r.Field, customFieldPrefix), op, r.Value)
-	case strings.HasPrefix(r.Field, triggerFieldPrefix):
-		return c.triggerRule(strings.TrimPrefix(r.Field, triggerFieldPrefix), op, r.Value)
+// attribute tests a core attribute: a text attribute by a text or presence test, the birthday by
+// a moment test.
+func (c *compiler) attribute(l attributeLeaf) (predicate.Contact, error) {
+	if l.name == birthdayField {
+		t, ok := l.test.(momentTest)
+		if !ok {
+			return nil, fmt.Errorf("unsupported test %T for field %q", l.test, l.name)
+		}
+		return c.birthday(t), nil
 	}
-	f, ok := textFields[r.Field]
+	f, ok := textFields[l.name]
 	if !ok {
-		return nil, fmt.Errorf("unknown field %q", r.Field)
+		return nil, fmt.Errorf("unknown field %q", l.name)
 	}
-	t, ok := textTests[op]
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q", r.Operator)
+	switch t := l.test.(type) {
+	case textTest:
+		return textOperators[t.op].contact(f, t.value), nil
+	case presenceTest:
+		return t.contact(f), nil
+	default:
+		return nil, fmt.Errorf("unsupported test %T for field %q", l.test, l.name)
 	}
-	return t.contact(f, r.Value), nil
+}
+
+// birthday places the Contact's date of birth: before or after a moment, or within the last days
+// up to now.
+func (c *compiler) birthday(t momentTest) predicate.Contact {
+	if t.op == opWithin {
+		since := c.since(t.withinDays)
+		return contact.And(contact.BirthdayGTE(since.UTC()), contact.BirthdayLTE(c.now.UTC()))
+	}
+	return birthdaySides[t.op](t.at.UTC())
+}
+
+// since is the start of a window of the last days up to now. A window reaching back past the first
+// year starts there: no moment is older, and a cutoff before it would overflow a stored timestamp.
+func (c *compiler) since(days int) time.Time {
+	since := c.now.AddDate(0, 0, -days)
+	if since.Year() < 1 {
+		since = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
+	}
+	return since
 }
 
 // everyone and nobody are the predicates every Contact and no Contact satisfies. everyone is an
@@ -310,112 +229,35 @@ var (
 	nobody   = predicate.Contact(func(s *sql.Selector) { s.Where(sql.False()) })
 )
 
-// triggerRule is a text test on one property of the triggering Event.
-func (c *compiler) triggerRule(key string, op operator, value string) (predicate.Contact, error) {
-	t, ok := textTests[op]
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q for trigger field", op)
-	}
-	return c.fold(key, func(have any) bool { return t.event(have, value) })
-}
-
-// fold decides a test on the property key of the triggering Event here, in memory, and makes it
+// property is a test of one property of the triggering Event, decided here, in memory, and made
 // the constant predicate "everyone" or "no one" for the rest of the tree. A key the Event lacks
 // fails the test.
-func (c *compiler) fold(key string, holds func(have any) bool) (predicate.Contact, error) {
+func (c *compiler) property(l propertyLeaf) (predicate.Contact, error) {
 	if c.trigger == nil {
-		return nil, fmt.Errorf("field %q tests the triggering Event and is valid only in a Rule", triggerFieldPrefix+key)
+		return nil, fmt.Errorf("property %q of the triggering Event is tested only in a Rule", l.key)
 	}
-	if key == "" {
-		return nil, fmt.Errorf("unknown field %q", triggerFieldPrefix)
+	var holds func(have any) bool
+	switch t := l.test.(type) {
+	case textTest:
+		holds = func(have any) bool { return textOperators[t.op].event(have, t.value) }
+	case presenceTest:
+		holds = t.event
+	case numberTest:
+		holds = func(have any) bool {
+			n, ok := number(have)
+			return ok && comparisons[t.op].holds(n, t.value)
+		}
+	default:
+		return nil, fmt.Errorf("unsupported test %T for property %q", l.test, l.key)
 	}
-	if have, present := (*c.trigger)[key]; present && holds(have) {
+	if have, present := (*c.trigger)[l.key]; present && holds(have) {
 		return everyone, nil
 	}
 	return nobody, nil
 }
 
-// number compares a number Custom field (in SQL) or a property of the triggering Event (in Go, by
-// the same operator table) with the leaf's value.
-func (c *compiler) number(ctx context.Context, l NumberLeaf) (predicate.Contact, error) {
-	cmp, ok := comparisons[operator(l.Operator)]
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q for number leaf", l.Operator)
-	}
-	if l.Value == nil {
-		return nil, errors.New("number leaf value is required")
-	}
-	want := *l.Value
-	switch {
-	case strings.HasPrefix(l.Field, customFieldPrefix):
-		key := strings.TrimPrefix(l.Field, customFieldPrefix)
-		if err := c.requireCustomFieldOf(ctx, key, customfield.TypeNumber); err != nil {
-			return nil, err
-		}
-		return jsonPath(key, asIs, cmp.filter, map[string]any{"v": want})
-	case strings.HasPrefix(l.Field, triggerFieldPrefix):
-		return c.fold(strings.TrimPrefix(l.Field, triggerFieldPrefix), func(have any) bool {
-			n, ok := number(have)
-			return ok && cmp.holds(n, want)
-		})
-	default:
-		return nil, fmt.Errorf("field %q: a number leaf takes a custom field of type %s or a trigger property", l.Field, customfield.TypeNumber)
-	}
-}
-
-// date tests which side of the leaf's moment a datetime Custom field's moment, or the birthday,
-// is on.
-func (c *compiler) date(ctx context.Context, l DateLeaf) (predicate.Contact, error) {
-	filter, ok := sides[operator(l.Operator)]
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q for date leaf", l.Operator)
-	}
-	if l.Field == birthdayField {
-		return birthdaySides[operator(l.Operator)](l.At.UTC()), nil
-	}
-	key, err := c.datetimeField(ctx, l.Field)
-	if err != nil {
-		return nil, err
-	}
-	loc, err := c.location(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return jsonPath(key, asMoment, filter, map[string]any{
-		"at": l.At.UTC().Format(momentLayout), "atLocal": l.At.In(loc).Format(localLayout),
-	})
-}
-
-// dateWithin tests that a datetime Custom field's moment is within the last WithinDays days up to
-// now, so a moment still to come is not within. A window reaching back past the first year starts
-// there.
-func (c *compiler) dateWithin(ctx context.Context, l DateWithinLeaf) (predicate.Contact, error) {
-	if err := validation.Min(fieldname.WithinDays, l.WithinDays, bounds.ConditionWithinDaysMin); err != nil {
-		return nil, boundError{err}
-	}
-	since := c.now.AddDate(0, 0, -l.WithinDays)
-	if since.Year() < 1 {
-		since = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
-	}
-	if l.Field == birthdayField {
-		return contact.And(contact.BirthdayGTE(since.UTC()), contact.BirthdayLTE(c.now.UTC())), nil
-	}
-	key, err := c.datetimeField(ctx, l.Field)
-	if err != nil {
-		return nil, err
-	}
-	loc, err := c.location(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return jsonPath(key, asMoment, window, map[string]any{
-		"since": since.UTC().Format(momentLayout), "now": c.now.UTC().Format(momentLayout),
-		"sinceLocal": since.In(loc).Format(localLayout), "nowLocal": c.now.In(loc).Format(localLayout),
-	})
-}
-
 // location is the Workspace time zone, in which a datetime Custom field's value without an offset
-// is read (ADR 0087); it is loaded the first time a date leaf needs it.
+// is read (ADR 0087); it is loaded the first time a moment test needs it.
 func (c *compiler) location(ctx context.Context) (*time.Location, error) {
 	if c.loc != nil {
 		return c.loc, nil
@@ -430,19 +272,6 @@ func (c *compiler) location(ctx context.Context) (*time.Location, error) {
 	}
 	c.loc = loc
 	return loc, nil
-}
-
-// datetimeField is the key of the datetime Custom field a date leaf tests. An Event's property has
-// no type, so a date leaf takes no "trigger:" field.
-func (c *compiler) datetimeField(ctx context.Context, field string) (string, error) {
-	if !strings.HasPrefix(field, customFieldPrefix) {
-		return "", fmt.Errorf("field %q: a date leaf takes a custom field of type %s", field, customfield.TypeDatetime)
-	}
-	key := strings.TrimPrefix(field, customFieldPrefix)
-	if err := c.requireCustomFieldOf(ctx, key, customfield.TypeDatetime); err != nil {
-		return "", err
-	}
-	return key, nil
 }
 
 // target writes the JSON value a jsonpath filter reads, from the custom_fields column and key.
@@ -513,48 +342,23 @@ var eventCounts = map[eventOperator]eventCount{
 	}},
 }
 
-// event is the subject performed `action` at least (or at most) Times times, over all time or
-// within the last WithinDays days. Events attach to a Contact by the stable contact_id, so
+// event is the subject performed `action` at least (or at most) times times, over all time or
+// within the last withinDays days. Events attach to a Contact by the stable contact_id, so
 // anonymous events stitched onto it at Identify are counted here (ADR 0002), and the count is
 // correlated on it, so an anonymous Event (a NULL contact_id) is in no Contact's count.
-func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
-	action := strings.TrimSpace(l.Action)
-	if action == "" {
-		return nil, errors.New("event action is required")
-	}
-	op, ok := eventCounts[eventOperator(l.Operator)]
-	if !ok {
-		return nil, fmt.Errorf("unsupported operator %q for event leaf", l.Operator)
-	}
-	if l.Times == nil {
-		return nil, errors.New("event leaf times is required")
-	}
-	times := *l.Times
-	if err := validation.Min(fieldname.Times, times, bounds.ConditionEventTimesMin); err != nil {
-		return nil, boundError{err}
-	}
-	if times < op.least {
-		return nil, fmt.Errorf("%s takes times of %d or more, got %d", l.Operator, op.least, times)
-	}
-
-	preds := []predicate.Event{event.Action(action)}
-	if events.IsEngagement(action) {
+func (c *compiler) event(l eventCountLeaf) predicate.Contact {
+	preds := []predicate.Event{event.Action(l.action)}
+	if events.IsEngagement(l.action) {
 		// A machine open or click is in the log and in no count (ADR 0053).
 		preds = append(preds, events.HumanOnly())
 	}
-	if l.WithinDays != nil {
-		days := *l.WithinDays
-		if err := validation.Min(fieldname.WithinDays, days, bounds.ConditionWithinDaysMin); err != nil {
-			return nil, boundError{err}
-		}
-		// A window reaching back past the first year counts all time: no Event is older, and a
-		// cutoff that far back would overflow a stored timestamp. A window longer than Event
-		// retention is capped by it (ADR 0019).
-		if since := c.now.AddDate(0, 0, -days); since.Year() >= 1 {
-			preds = append(preds, event.OccurredAtGTE(since))
-		}
+	if l.withinDays != nil {
+		// A window reaching back past the first year starts there (since), which counts all time:
+		// no Event is older. A window longer than Event retention is capped by it (ADR 0019).
+		preds = append(preds, event.OccurredAtGTE(c.since(*l.withinDays)))
 	}
 
+	holds := eventCounts[l.op].holds
 	return predicate.Contact(func(s *sql.Selector) {
 		t := sql.Table(event.Table)
 		count := sql.Dialect(s.Dialect()).Select(sql.Count("*")).From(t)
@@ -562,79 +366,92 @@ func (c *compiler) event(l EventLeaf) (predicate.Contact, error) {
 		for _, p := range preds {
 			p(count)
 		}
-		s.Where(op.holds(count, times))
-	}), nil
+		s.Where(holds(count, l.times))
+	})
 }
 
-// tagRule is the subject has (or lacks) the Tag named value. Evaluated live —
-// membership is never materialized.
-func tagRule(op operator, value string) (predicate.Contact, error) {
-	var negate bool
-	switch op {
-	case opHas:
-	case opDoesNotHave:
-		negate = true
-	default:
-		return nil, fmt.Errorf("unsupported operator %q for tag field", op)
-	}
-	name := strings.TrimSpace(value)
-	if name == "" {
-		return nil, errors.New("tag name is required")
-	}
-
-	p := contact.HasTagsWith(tag.NameKey(tagname.Key(name)))
-	if negate {
-		p = contact.Not(p)
-	}
-	return p, nil
+// tagRule is the subject has (or lacks) the Tag. Evaluated live — membership is never
+// materialized.
+func tagRule(l tagLeaf) predicate.Contact {
+	has := contact.HasTagsWith(tag.NameKey(tagname.Key(l.name)))
+	return present(has, l.test)
 }
 
-// telegramRule is the subject has (or lacks) a Binding on a Telegram Integration of the Workspace.
-// A Visitor's Binding is no Contact's (ADR 0171). Evaluated live; a Binding exists only for a Telegram Integration
-// and goes with it, so the existence of one is the test.
-func telegramRule(op operator) (predicate.Contact, error) {
-	p := contact.HasBindings()
-	switch op {
-	case opHas:
-		return p, nil
-	case opDoesNotHave:
-		return contact.Not(p), nil
-	default:
-		return nil, fmt.Errorf("unsupported operator %q for telegram field", op)
+// present is p, what a Contact has (a Tag, a Binding, an eligible phone), when the presence test
+// asks for it, its negation when it asks for its absence.
+func present(p predicate.Contact, t presenceTest) predicate.Contact {
+	if t.set {
+		return p
 	}
+	return contact.Not(p)
 }
 
-// smsRule is the subject can (or cannot) be texted: its phone is a Destination Send-eligibility on
-// sms lets a marketing text reach, that is, one with an SMS Confirmation and no SMS opt-out or
-// Suppression (ADR 0077). A phone alone is "phone is set"; on Telegram the Binding is itself the
-// opt-in, on sms the Confirmation is, so the counterpart of the Telegram condition is the eligible
-// phone. Evaluated live through the audience predicate, the rule's single definition. Every SMS
-// opt-out is of everything, so the Sending source named here changes nothing.
-func smsRule(op operator) (predicate.Contact, error) {
-	p := eligibility.Audience(eligibility.PhoneDestination(), eligibility.SourceBroadcasts)
-	switch op {
-	case opHas:
-		return p, nil
-	case opDoesNotHave:
-		return contact.Not(p), nil
-	default:
-		return nil, fmt.Errorf("unsupported operator %q for sms field", op)
-	}
+// textable is the subject can be texted: its phone is a Destination Send-eligibility on sms lets a
+// marketing text reach, that is, one with an SMS Confirmation and no SMS opt-out or Suppression
+// (ADR 0077). A phone alone is "phone is set"; on Telegram the Binding is itself the opt-in, on
+// sms the Confirmation is, so the counterpart of the Telegram condition is the eligible phone.
+// Evaluated live through the audience predicate, the rule's single definition. Every SMS opt-out
+// is of everything, so the Sending source named here changes nothing.
+func textable() predicate.Contact {
+	return eligibility.Audience(eligibility.PhoneDestination(), eligibility.SourceBroadcasts)
 }
 
-// custom is a condition on one Custom field. The key must be in the Workspace's
-// catalogue (ADR 0006), the operator must fit its type (RuleOperators), and it is addressed with
-// ent's JSON predicates (sqljson), since no generated predicate addresses a key of the
-// custom_fields JSON column.
-func (c *compiler) custom(ctx context.Context, key string, op operator, value string) (predicate.Contact, error) {
-	t, err := c.customFieldType(ctx, key)
+// custom is a test of one Custom field. The key must be in the Workspace's catalogue (ADR 0006)
+// and the test must fit its type (fits). A text or presence test is addressed with ent's JSON
+// predicates (sqljson), since no generated predicate addresses a key of the custom_fields JSON
+// column; a number or moment test with a jsonpath filter.
+func (c *compiler) custom(ctx context.Context, l customFieldLeaf) (predicate.Contact, error) {
+	t, err := c.customFieldType(ctx, l.key)
 	if err != nil {
 		return nil, err
 	}
-	if !slices.Contains(customFieldOperators[t], op) {
-		return nil, fmt.Errorf("unsupported operator %q for json field %q of type %s", op, key, t)
+	if err := l.fits(t); err != nil {
+		return nil, err
 	}
+	switch test := l.test.(type) {
+	case numberTest:
+		return jsonPath(l.key, asIs, comparisons[test.op].filter, map[string]any{"v": test.value})
+	case momentTest:
+		return c.customMoment(ctx, l.key, test)
+	default:
+		return customJSON(l.key, l.test)
+	}
+}
 
+// fits refuses the leaf's test on a Custom field of type t: a text or presence test whose operator
+// t does not take (the one table, customFieldOperators, which the API lists as each Custom field's
+// ruleOperators), a number test on a field that is not a number, a moment test on one that is not
+// a datetime.
+func (l customFieldLeaf) fits(t customfield.Type) error {
+	var want customfield.Type
+	switch test := l.test.(type) {
+	case numberTest:
+		want = customfield.TypeNumber
+	case momentTest:
+		want = customfield.TypeDatetime
+	case textTest:
+		return fitsOperator(test.op, l.key, t)
+	case presenceTest:
+		return fitsOperator(test.operator(), l.key, t)
+	default:
+		return fmt.Errorf("unsupported test %T for custom field %q", l.test, l.key)
+	}
+	if t != want {
+		return fmt.Errorf("custom field %q is of type %s, not %s", l.key, t, want)
+	}
+	return nil
+}
+
+// fitsOperator refuses op on a Custom field of type t unless t takes it.
+func fitsOperator(op operator, key string, t customfield.Type) error {
+	if !slices.Contains(customFieldOperators[t], op) {
+		return fmt.Errorf("unsupported operator %q for json field %q of type %s", op, key, t)
+	}
+	return nil
+}
+
+// customJSON is a text or presence test of a Custom field, addressed with ent's JSON predicates.
+func customJSON(key string, t test) (predicate.Contact, error) {
 	// ent inlines a JSON path key into the statement as a quoted literal instead of binding
 	// it: quotes are doubled so any key stays one literal (standard_conforming_strings
 	// makes a backslash plain), and a key ent would read as an array index is refused.
@@ -643,25 +460,53 @@ func (c *compiler) custom(ctx context.Context, key string, op operator, value st
 	}
 	path := sqljson.Path(strings.ReplaceAll(key, "'", "''"))
 	var cond func(column string) *sql.Predicate
-	switch op {
-	case opEQ:
-		cond = func(column string) *sql.Predicate { return sqljson.ValueEQ(column, value, path) }
-	case opNEQ:
-		cond = func(column string) *sql.Predicate { return sqljson.ValueNEQ(column, value, path) }
-	case opContains:
-		// Membership of a JSON array (jsonb containment of the encoded value). The value
-		// is read as JSON, not unquoted to text, so a string element matches as a string.
-		cond = func(column string) *sql.Predicate {
-			return sqljson.ValueContains(column, value, path, sqljson.Unquote(false))
+	switch t := t.(type) {
+	case presenceTest:
+		// Only "set" fits a Custom field type (fits): a key that is not set is no test here.
+		if t.set {
+			cond = func(column string) *sql.Predicate { return sqljson.HasKey(column, path) }
 		}
-	case opNotNull:
-		cond = func(column string) *sql.Predicate { return sqljson.HasKey(column, path) }
-	default:
-		return nil, fmt.Errorf("unsupported operator %q for json field", op)
+	case textTest:
+		switch t.op {
+		case opEQ:
+			cond = func(column string) *sql.Predicate { return sqljson.ValueEQ(column, t.value, path) }
+		case opNEQ:
+			cond = func(column string) *sql.Predicate { return sqljson.ValueNEQ(column, t.value, path) }
+		case opContains:
+			// Membership of a JSON array (jsonb containment of the encoded value). The value
+			// is read as JSON, not unquoted to text, so a string element matches as a string.
+			cond = func(column string) *sql.Predicate {
+				return sqljson.ValueContains(column, t.value, path, sqljson.Unquote(false))
+			}
+		default:
+			// beginsWith fits no Custom field type (fits), so it never reaches here.
+		}
+	}
+	if cond == nil {
+		return nil, fmt.Errorf("unsupported test %T for json field %q", t, key)
 	}
 	return predicate.Contact(func(s *sql.Selector) {
 		s.Where(cond(s.C(contact.FieldCustomFields)))
 	}), nil
+}
+
+// customMoment places a datetime Custom field's moment: which side of a bound it is on, or within
+// the last days up to now, so a moment still to come is not within.
+func (c *compiler) customMoment(ctx context.Context, key string, t momentTest) (predicate.Contact, error) {
+	loc, err := c.location(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if t.op == opWithin {
+		since := c.since(t.withinDays)
+		return jsonPath(key, asMoment, window, map[string]any{
+			"since": since.UTC().Format(momentLayout), "now": c.now.UTC().Format(momentLayout),
+			"sinceLocal": since.In(loc).Format(localLayout), "nowLocal": c.now.In(loc).Format(localLayout),
+		})
+	}
+	return jsonPath(key, asMoment, sides[t.op], map[string]any{
+		"at": t.at.UTC().Format(momentLayout), "atLocal": t.at.In(loc).Format(localLayout),
+	})
 }
 
 // isIndexKey reports whether ent would read key as an array index ("[0]") rather than
@@ -676,9 +521,6 @@ var ErrStorage = errors.New("condition: storage")
 
 // customFieldType checks key against the Workspace's Custom field catalogue and returns its type.
 func (c *compiler) customFieldType(ctx context.Context, key string) (customfield.Type, error) {
-	if key == "" {
-		return "", fmt.Errorf("unknown field %q", customFieldPrefix)
-	}
 	if c.keys == nil {
 		fields, err := c.s.CustomField().Query().All(ctx)
 		if err != nil {
@@ -694,18 +536,6 @@ func (c *compiler) customFieldType(ctx context.Context, key string) (customfield
 		return "", fmt.Errorf("unknown custom field %q", key)
 	}
 	return t, nil
-}
-
-// requireCustomFieldOf checks that key is a Custom field of the Workspace of type want.
-func (c *compiler) requireCustomFieldOf(ctx context.Context, key string, want customfield.Type) error {
-	t, err := c.customFieldType(ctx, key)
-	if err != nil {
-		return err
-	}
-	if t != want {
-		return fmt.Errorf("custom field %q is of type %s, not %s", key, t, want)
-	}
-	return nil
 }
 
 // FromDTO is a Condition given as an API DTO: the API's typed tree is the stored shape (ADR 0169).
@@ -750,69 +580,35 @@ func ToDTO(g conditiontree.Group, into json.Unmarshaler) error {
 }
 
 // FitsCustomFieldType reports whether every leaf of the group, at any depth, that tests the Custom
-// field key would still compile were the field of type t: a rule leaf whose operator t takes (the
-// one table, customFieldOperators), a number leaf only on a number field, a date leaf only on a
-// datetime one. A malformed entry tests nothing.
+// field key would still compile were the field of type t (customFieldLeaf.fits). A malformed entry
+// tests nothing.
 func FitsCustomFieldType(g conditiontree.Group, key string, t customfield.Type) bool {
-	field := customFieldPrefix + key
-	for _, raw := range g.Rules {
-		var probe struct {
-			Kind  string `json:"kind"`
-			Field string `json:"field"`
-		}
-		if json.Unmarshal(raw, &probe) != nil {
-			continue
-		}
-		if probe.Kind == conditiontree.KindGroup {
-			var sub conditiontree.Group
-			if json.Unmarshal(raw, &sub) == nil && !FitsCustomFieldType(sub, key, t) {
-				return false
-			}
-			continue
-		}
-		if probe.Field == field && !leafFits(probe.Kind, raw, t) {
+	for n := range decodeSkipping(g).leaves() {
+		if l, ok := n.(customFieldLeaf); ok && l.key == key && l.fits(t) != nil {
 			return false
 		}
 	}
 	return true
 }
 
-// leafFits reports whether the leaf raw of kind, on a Custom field, compiles on a field of type t.
-func leafFits(kind string, raw json.RawMessage, t customfield.Type) bool {
-	switch kind {
-	case kindNumber:
-		return t == customfield.TypeNumber
-	case kindDate, kindDateWithin:
-		return t == customfield.TypeDatetime
-	case kindRule:
-		var r Leaf
-		return json.Unmarshal(raw, &r) != nil || slices.Contains(customFieldOperators[t], operator(r.Operator))
-	default:
-		return true
+// NamesTag reports whether any leaf of the group, at any depth, tests the Tag called name.
+// A malformed entry names nothing.
+func NamesTag(g conditiontree.Group, name string) bool {
+	for n := range decodeSkipping(g).leaves() {
+		if l, ok := n.(tagLeaf); ok && tagname.Same(l.name, name) {
+			return true
+		}
 	}
+	return false
 }
 
-// NamesTag reports whether any rule of the group, at any depth, targets the Tag called name.
-// A malformed condition names nothing.
-func NamesTag(g conditiontree.Group, name string) bool {
-	for _, raw := range g.Rules {
-		var probe struct {
-			Kind string `json:"kind"`
-		}
-		if json.Unmarshal(raw, &probe) != nil {
-			continue
-		}
-		switch probe.Kind {
-		case conditiontree.KindGroup:
-			var sub conditiontree.Group
-			if json.Unmarshal(raw, &sub) == nil && NamesTag(sub, name) {
-				return true
-			}
-		case kindRule:
-			var r Leaf
-			if json.Unmarshal(raw, &r) == nil && r.Field == tagField && tagname.Same(r.Value, name) {
-				return true
-			}
+// CanBeUnknown reports whether the group can be unknown for a Contact (ADR 0181): it can when a
+// leaf, at any depth and under a negation too, counts an open or a click, whose tracking a Contact
+// may have refused. A malformed entry counts nothing.
+func CanBeUnknown(g conditiontree.Group) bool {
+	for n := range decodeSkipping(g).leaves() {
+		if l, ok := n.(eventCountLeaf); ok && events.IsEngagement(l.action) {
+			return true
 		}
 	}
 	return false
